@@ -173,6 +173,15 @@ func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Insta
 	return instance, nil
 }
 
+// GetShareLink retrieves a share link by ID.
+func (s *TemplateService) GetShareLink(ctx context.Context, id string) (*models.ShareLink, error) {
+	shareLink, err := s.shareLinkRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("finding share link: %w", err)
+	}
+	return shareLink, nil
+}
+
 // Find retrieves all templates.
 func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Instance, error) {
 	instances, err := s.instanceRepo.FindTemplates(ctx, userID)
@@ -252,7 +261,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 		return "", fmt.Errorf("creating share link: %w", err)
 	}
 
-	url := helpers.URL("/templates/share/" + shareLink.ID)
+	url := helpers.URL("/templates/" + shareLink.ID)
 
 	return url, nil
 }
