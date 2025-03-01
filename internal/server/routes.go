@@ -155,6 +155,10 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 		r.Get("/*", publicHandler.Docs)
 	})
 
+	router.Route("/templates", func(r chi.Router) {
+		r.Get("/{id}", publicHandler.TemplatesPreview)
+	})
+
 	router.NotFound(publicHandler.NotFound)
 
 }

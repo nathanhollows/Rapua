@@ -45,6 +45,7 @@ func Start(logger *slog.Logger,
 		logger,
 		authService,
 		emailService,
+		&templateService,
 		userService,
 	)
 
