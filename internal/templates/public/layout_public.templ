@@ -6,7 +6,7 @@ templ PublicLayout(contents templ.Component, title string) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@publicHeader(title)
-		<body class="h-full">
+		<body class="h-full flex flex-col">
 			<div id="alerts" class="toast toast-center"></div>
 			@publicNav(title)
 			@contents
@@ -35,7 +35,7 @@ templ publicHeader(title string) {
 
 templ publicFooter() {
 	<!-- Footer -->
-	<footer class="text-base-content bg-base-200">
+	<footer class="text-base-content bg-base-200 mt-auto">
 		<div class="footer footer-center p-10 max-w-7xl mx-auto">
 			<!-- Socials -->
 			<nav class="grid grid-flow-col gap-6">

@@ -1,5 +1,5 @@
 <!doctype html><html lang=\"en\" class=\"h-full\">
-<body class=\"h-full\"><div id=\"app\" class=\"m-auto\" data-v-app=\"\">
+<body class=\"h-full flex flex-col\"><div id=\"app\" data-v-app=\"\">
 <div class=\"toast toast-center z-50\" id=\"alerts\"></div><span id=\"mapbox_key\" class=\"hidden\" data-key=\"
 \"></span><main class=\"max-w-7xl m-auto pb-8\">
 </main></div></body></html>

@@ -3,7 +3,7 @@ package templates
 import "os"
 
 templ Contact() {
-	<div class="max-w-7xl mx-auto p-8 gp-8 flex flex-col md:flex-row mb-12">
+	<div class="max-w-7xl mx-auto p-8 gp-8 flex flex-col md:flex-row mb-12 w-full">
 		<div class="prose self-center w-full md:w-1/2">
 			<h1>Get in Touch</h1>
 			<p>Have a question, query, or comment? Get in touch!</p>
@@ -26,7 +26,7 @@ templ Contact() {
 				</li>
 			</ul>
 		</div>
-		<div class="card bg-base-200 p-0 md:p-5 mt-5 w-full md:w-1/2">
+		<div class="card md:bg-base-200 p-0 md:p-5 mt-5 w-full md:w-1/2">
 			<span class="font-bold text-lg mb-3 mt-5 md:mt-0">
 				Send a message
 				<span id="contact-spinner" class="loading loading-dots htmx-indicator"></span>
