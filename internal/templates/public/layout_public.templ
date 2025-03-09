@@ -1,6 +1,9 @@
 package templates
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 templ PublicLayout(contents templ.Component, title string) {
 	<!DOCTYPE html>
@@ -24,6 +27,7 @@ templ publicHeader(title string) {
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
+		<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 		<title>{ title } | Rapua</title>
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
