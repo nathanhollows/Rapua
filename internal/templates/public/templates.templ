@@ -45,10 +45,7 @@ templ TemplatePeview(link models.ShareLink) {
 							<select
 								id="pages"
 								class="select select-sm select-bordered w-56 md:w-96 mx-auto text-ellipsis"
-								_="on change
-									set #preview's innerText to my.options[my.selectedIndex].text
-									on load trigger change on me
-									"
+								_="on load trigger change on me "
 								hx-get="/lobby"
 								hx-trigger="change"
 								hx-swap="innerHTML"

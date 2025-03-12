@@ -6561,6 +6561,10 @@ html:has(.drawer-toggle:checked) {
   height: 0.75rem;
 }
 
+.h-3\/4 {
+  height: 75%;
+}
+
 .h-4 {
   height: 1rem;
 }
@@ -6613,14 +6617,6 @@ html:has(.drawer-toggle:checked) {
 
 .h-screen {
   height: 100vh;
-}
-
-.h-\[48rem\] {
-  height: 48rem;
-}
-
-.h-3\/4 {
-  height: 75%;
 }
 
 .min-h-96 {
@@ -6898,10 +6894,6 @@ html:has(.drawer-toggle:checked) {
 
 .flex-wrap {
   flex-wrap: wrap;
-}
-
-.place-content-center {
-  place-content: center;
 }
 
 .content-center {
