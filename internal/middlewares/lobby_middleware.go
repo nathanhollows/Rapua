@@ -14,6 +14,12 @@ import (
 // LobbyMiddleware redirects to the lobby if the game is scheduled to start.
 func LobbyMiddleware(teamService services.TeamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Preview requests should pass through
+		if r.Context().Value(contextkeys.PreviewKey) != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Extract the session
 		session, err := sessions.Get(r, "scanscout")
 		if err != nil {
