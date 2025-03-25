@@ -46,9 +46,6 @@ func PreviewMiddleware(teamService teamService, next http.Handler) http.Handler 
 			EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
 		}
 
-		team.Instance.StartTime = schema.NullTime{Time: time.Now()}
-		team.Instance.EndTime = schema.NullTime{Time: time.Now().Add(1 * time.Hour)}
-
 		ctx := context.WithValue(r.Context(), contextkeys.TeamKey, &team)
 		ctx = context.WithValue(ctx, contextkeys.PreviewKey, true)
 
