@@ -13,12 +13,13 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
-type loadRelation interface {
+type teamService interface {
 	LoadRelation(context.Context, *models.Team, string) error
+	FindTeamByCode(context.Context, string) (*models.Team, error)
 }
 
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
-func PreviewMiddleware(teamService loadRelation, next http.Handler) http.Handler {
+func PreviewMiddleware(teamService teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isPreviewRequest(r) {
 			next.ServeHTTP(w, r)

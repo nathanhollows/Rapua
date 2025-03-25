@@ -6,13 +6,12 @@ import (
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 // LobbyMiddleware redirects to the lobby if the game is scheduled to start.
-func LobbyMiddleware(teamService services.TeamService, next http.Handler) http.Handler {
+func LobbyMiddleware(teamService teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Preview requests should pass through
 		if r.Context().Value(contextkeys.PreviewKey) != nil {
