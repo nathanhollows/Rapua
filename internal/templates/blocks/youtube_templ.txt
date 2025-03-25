@@ -1,3 +1,5 @@
+<div class=\"skeleton w-full aspect-square\">
+</div>
 <form hx-post=\"
 \" hx-trigger=\"
 \" hx-swap=\"none\"><label for=\"
