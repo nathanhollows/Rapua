@@ -16,13 +16,6 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.TeamService.LoadRelation(r.Context(), team, "Instance")
-	if err != nil {
-		h.Logger.Error("loading instance", "error", err.Error())
-		h.redirect(w, r, "/play")
-		return
-	}
-
 	c := templates.Lobby(*team)
 	err = templates.Layout(c, "Lobby", team.Messages).Render(r.Context(), w)
 	if err != nil {
@@ -51,7 +44,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.TeamID(*team).Render(r.Context(), w)
+	err = templates.TeamID(*team, true).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("rendering team id", "error", err.Error())
 	}
