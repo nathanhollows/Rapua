@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
@@ -217,18 +219,25 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 
 // CheckInView shows the page for a specific location.
 func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
+	// If the user is in preview mode, show the preview
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		h.checkInPreview(w, r)
+		return
+	}
+
 	locationCode := chi.URLParam(r, "id")
 
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		flash.NewError("Error loading team.").Save(w, r)
+		h.Logger.Error("loading team", "error", err.Error())
 		http.Redirect(w, r, "/play", http.StatusFound)
 		return
 	}
 
+	var index int
 	err = h.TeamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		flash.NewError("Error loading locations.").Save(w, r)
+		h.Logger.Error("loading team relations", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
 	}
@@ -240,7 +249,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the index of the location in the team's scans
-	index := -1
+	index = -1
 	for i, scan := range team.CheckIns {
 		if scan.Location.MarkerID == locationCode {
 			index = i
@@ -264,6 +273,60 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	err = templates.Layout(c, team.CheckIns[index].Location.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("rendering checkin view", "error", err.Error())
+	}
+
+}
+
+// checkInPreview shows a player preview of the given location.
+func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
+	locationCode := chi.URLParam(r, "id")
+
+	team, err := h.getTeamFromContext(r.Context())
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: getting team", "Error getting team", "error", err)
+		return
+	}
+
+	err = h.TeamService.LoadRelation(r.Context(), team, "Instance")
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: loading instance", "Error loading instance", "error", err)
+		return
+	}
+
+	var location models.Location
+	for _, loc := range team.Instance.Locations {
+		if loc.MarkerID == locationCode {
+			location = loc
+			break
+		}
+	}
+	if location.MarkerID == "" {
+		h.handleError(w, r, "LocationPreview: finding location", "Location not found", "error", "Location not found")
+		return
+	}
+
+	scan := models.CheckIn{
+		Location: location,
+	}
+
+	contentBlocks, err := h.BlockService.FindByLocationID(r.Context(), location.ID)
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
+		return
+	}
+
+	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
+	for _, block := range contentBlocks {
+		blockStates[block.GetID()], err = h.BlockService.NewMockBlockState(r.Context(), block.GetID(), "")
+		if err != nil {
+			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
+			return
+		}
+	}
+
+	err = templates.CheckInView(team.Instance.Settings, scan, contentBlocks, blockStates).Render(r.Context(), w)
+	if err != nil {
+		h.Logger.Error("LocationPreview: rendering template", "error", err)
 	}
 
 }
