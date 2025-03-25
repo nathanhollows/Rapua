@@ -29,10 +29,6 @@ Admins should be able to help players who are stuck. This could include marking 
 
 Track progress: https://github.com/nathanhollows/Rapua/issues/21
 
-## Duplicating games with share links
-
-Users can already duplicate games that they have created, however, while writing the [docs](/docs/), I realised that it would be useful to have a share link that allow facilitators to share their games setups with other facilitators. This would make replicating games in other settings much easier.
-
 ## User account settings
 
 A lot of basic functionality is missing from the user account settings. There ought to be a dedicated page for users to update their email address, password, and other settings.
