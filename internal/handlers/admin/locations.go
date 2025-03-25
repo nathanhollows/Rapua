@@ -5,10 +5,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
-	playerTemplates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
@@ -265,41 +263,4 @@ func (h *AdminHandler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/locations")
-}
-
-// LocationPreview shows a player preview of the given location.
-func (h *AdminHandler) LocationPreview(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	locationCode := chi.URLParam(r, "id")
-
-	location, err := h.LocationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, locationCode)
-	if err != nil {
-		h.handleError(w, r, "LocationEditPost: finding location", "Error finding location", "error", err)
-		return
-	}
-
-	scan := models.CheckIn{
-		Location: *location,
-	}
-
-	contentBlocks, err := h.BlockService.FindByLocationID(r.Context(), location.ID)
-	if err != nil {
-		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
-		return
-	}
-
-	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
-	for _, block := range contentBlocks {
-		blockStates[block.GetID()], err = h.BlockService.NewMockBlockState(r.Context(), block.GetID(), "")
-		if err != nil {
-			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
-			return
-		}
-	}
-
-	err = playerTemplates.CheckInView(user.CurrentInstance.Settings, scan, contentBlocks, blockStates).Render(r.Context(), w)
-	if err != nil {
-		h.Logger.Error("LocationPreview: rendering template", "error", err)
-	}
-
 }
