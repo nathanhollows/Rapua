@@ -18,16 +18,16 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 			</p>
 		</div>
 	</div>
-	<div class="max-w-7xl m-auto px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8">
+	<div class="max-w-7xl m-auto px-4 md:px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8">
 		<main
 			class="w-full h-full"
 			_="on load wait 1s set my.style.height to my.offsetHeight + 'px'"
 		>
 			<section class="w-full max-w-full grow flex flex-col h-full">
-				<div class="prose">
+				<div class="prose pb-4 md:pb-0">
 					<h2>Preview</h2>
 				</div>
-				<div class="mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-xl">
+				<div class="mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-2xl md:shadow-xl">
 					<div class="mockup-browser-toolbar">
 						<div class="flex gap-2 mx-auto">
 							<button
@@ -140,9 +140,9 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						</div>
 					</div>
 					<div
-						class=" border-t border-base-300 h-3/4 md:h-full overflow-scroll"
+						class=" border-t border-base-300 overflow-scroll"
 					>
-						<div id="preview" class="overflow-scroll py-12" hx-disable>
+						<div id="preview" class="overflow-scroll py-12 px-4" hx-disable>
 							<span class="loading loading-spinner loading-lg"></span>
 						</div>
 					</div>

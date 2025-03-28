@@ -6586,10 +6586,6 @@ html:has(.drawer-toggle:checked) {
   height: 0.75rem;
 }
 
-.h-3\/4 {
-  height: 75%;
-}
-
 .h-4 {
   height: 1rem;
 }
@@ -7313,10 +7309,6 @@ html:has(.drawer-toggle:checked) {
   fill: var(--fallback-n,oklch(var(--n)/1));
 }
 
-.fill-primary {
-  fill: var(--fallback-p,oklch(var(--p)/1));
-}
-
 .stroke-base-content {
   stroke: var(--fallback-bc,oklch(var(--bc)/1));
 }
@@ -7459,6 +7451,10 @@ html:has(.drawer-toggle:checked) {
 
 .pb-3 {
   padding-bottom: 0.75rem;
+}
+
+.pb-4 {
+  padding-bottom: 1rem;
 }
 
 .pb-5 {
@@ -7837,7 +7833,7 @@ html:has(.drawer-toggle:checked) {
 
 /* Custom CSS */
 
-.artboard #player-nav {
+.artboard #player-nav, #preview #player-nav {
   display: none;
 }
 
@@ -9418,11 +9414,6 @@ html:has(.drawer-toggle:checked) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.group:hover .group-hover\:translate-y-1 {
-  --tw-translate-y: 0.25rem;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
 .group.tab-active .group-\[\.tab-active\]\:stroke-primary-content {
   stroke: var(--fallback-pc,oklch(var(--pc)/1));
 }
@@ -9551,10 +9542,6 @@ html:has(.drawer-toggle:checked) {
     height: 12rem;
   }
 
-  .md\:h-full {
-    height: 100%;
-  }
-
   .md\:w-1\/2 {
     width: 50%;
   }
@@ -9622,6 +9609,15 @@ html:has(.drawer-toggle:checked) {
     padding: 1.5rem;
   }
 
+  .md\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .md\:pb-0 {
+    padding-bottom: 0px;
+  }
+
   .md\:text-6xl {
     font-size: 3.75rem;
     line-height: 1;
@@ -9630,6 +9626,12 @@ html:has(.drawer-toggle:checked) {
   .md\:text-xl {
     font-size: 1.25rem;
     line-height: 1.75rem;
+  }
+
+  .md\:shadow-xl {
+    --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   }
 }
 

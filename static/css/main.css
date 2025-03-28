@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* Custom CSS */
-.artboard #player-nav {
+.artboard #player-nav, #preview #player-nav {
   @apply hidden;
 }
 
