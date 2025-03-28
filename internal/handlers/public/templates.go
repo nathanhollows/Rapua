@@ -17,8 +17,8 @@ func (h *PublicHandler) TemplatesPreview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	c := templates.TemplatePeview(*shareLink)
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	c := templates.TemplatePeview(*shareLink, authed)
 	err = templates.PublicLayout(c, "Template", authed).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("Contact: rendering template", "error", err)
