@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
 )
 
@@ -17,7 +18,8 @@ func (h *PublicHandler) TemplatesPreview(w http.ResponseWriter, r *http.Request)
 	}
 
 	c := templates.TemplatePeview(*shareLink)
-	err = templates.PublicLayout(c, "Template").Render(r.Context(), w)
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	err = templates.PublicLayout(c, "Template", authed).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("Contact: rendering template", "error", err)
 	}
