@@ -6,12 +6,15 @@ import (
 	"regexp"
 
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type AuthenticatedUserGetter interface {
+	GetAuthenticatedUser(r *http.Request) (*models.User, error)
+}
+
 // AdminAuthMiddleware ensures the user is authenticated and has verified their email.
-func AdminAuthMiddleware(authService services.AuthService, next http.Handler) http.Handler {
+func AdminAuthMiddleware(authService AuthenticatedUserGetter, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Make sure the user is authenticated
 		user, err := authService.GetAuthenticatedUser(r)
