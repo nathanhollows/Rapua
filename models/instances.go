@@ -20,9 +20,10 @@ type Instance struct {
 	Status                GameStatus   `bun:"-"`
 	IsQuickStartDismissed bool         `bun:"is_quick_start_dismissed,type:bool"`
 
-	Teams     []Team           `bun:"rel:has-many,join:id=instance_id"`
-	Locations []Location       `bun:"rel:has-many,join:id=instance_id"`
-	Settings  InstanceSettings `bun:"rel:has-one,join:id=instance_id"`
+	Teams      []Team           `bun:"rel:has-many,join:id=instance_id"`
+	Locations  []Location       `bun:"rel:has-many,join:id=instance_id"`
+	Settings   InstanceSettings `bun:"rel:has-one,join:id=instance_id"`
+	ShareLinks []ShareLink      `bun:"rel:has-many,join:id=template_id"`
 }
 
 // GetStatus returns the status of the instance.

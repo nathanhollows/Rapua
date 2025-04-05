@@ -82,6 +82,7 @@ func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.In
 		Relation("Locations.Blocks").
 		Relation("Locations.Clues").
 		Relation("Settings").
+		Relation("ShareLinks").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -135,6 +136,12 @@ func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) 
 
 	// Delete locations
 	_, err = tx.NewDelete().Model(&models.Location{}).Where("instance_id = ?", id).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Delete ShareLinks
+	_, err = tx.NewDelete().Model(&models.ShareLink{}).Where("template_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}
