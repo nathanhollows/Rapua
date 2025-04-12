@@ -21,3 +21,10 @@ type ShareLink struct {
 
 	Template *Instance `bun:"rel:belongs-to,join:template_id=id"`
 }
+
+// IsExpired checks if the share link is expired.
+func (s *ShareLink) IsExpired() bool {
+	return (s.UsedCount >= s.MaxUses && s.MaxUses > 0) ||
+		(s.ExpiresAt == bun.NullTime{} ||
+			s.ExpiresAt.Time.Before(time.Now()))
+}
