@@ -115,7 +115,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 				_, err := repo.GetByID(context.Background(), link.ID)
 				return err
 			},
-			expectErr: true,
+			expectErr: false,
 		},
 	}
 

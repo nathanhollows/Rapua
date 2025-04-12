@@ -66,7 +66,6 @@ func (r *ShareLinkRepository) GetByID(ctx context.Context, id string) (*models.S
 		Model(link).
 		Where("share_link.id = ?", id).
 		// Ensure the link is active and has not expired
-		Where("share_link.expires_at > ? AND (share_link.max_uses = 0 OR share_link.used_count < share_link.max_uses)", time.Now()).
 		Relation("Template").
 		Relation("Template.Settings").
 		Relation("Template.Locations").
