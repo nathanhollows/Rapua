@@ -263,6 +263,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Delete("/", adminHandler.TemplatesDelete)
 			// Launch
 			r.Post("/launch", adminHandler.TemplatesLaunch)
+			r.Post("/launch-from-link", adminHandler.TemplatesLaunchFromLink)
 			// Edit
 			r.Get("/{id}/name", adminHandler.TemplatesName)
 			r.Get("/{id}/edit/name", adminHandler.TemplatesNameEdit)
