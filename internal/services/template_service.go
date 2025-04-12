@@ -161,6 +161,81 @@ func (s *TemplateService) LaunchInstance(ctx context.Context, userID, templateID
 	return newInstance, nil
 }
 
+// LaunchInstanceFromShareLink creates a new instance from a share link.
+func (s *TemplateService) LaunchInstanceFromShareLink(ctx context.Context, userID, shareLinkID string, name string, regen bool) (*models.Instance, error) {
+	if userID == "" {
+		return nil, NewValidationError("userID")
+	}
+	if name == "" {
+		return nil, NewValidationError("name")
+	}
+	if shareLinkID == "" {
+		return nil, NewValidationError("shareLinkID")
+	}
+	shareLink, err := s.shareLinkRepo.GetByID(ctx, shareLinkID)
+	if err != nil {
+		return nil, fmt.Errorf("finding share link: %w", err)
+	}
+
+	// Thankfully this checks the expiration date and max uses
+	if shareLink.IsExpired() {
+		return nil, errors.New("share link is expired")
+	}
+
+	if shareLink.UserID != userID {
+		return nil, ErrPermissionDenied
+	}
+
+	template, err := s.instanceRepo.GetByID(ctx, shareLink.TemplateID)
+	if err != nil {
+		return nil, fmt.Errorf("finding template: %w", err)
+	}
+	if template == nil {
+		return nil, errors.New("template not found")
+	}
+	if !template.IsTemplate {
+		return nil, errors.New("instance is not a template")
+	}
+	if template.UserID != shareLink.UserID {
+		return nil, ErrPermissionDenied
+	}
+	locations, err := s.locationService.FindByInstance(ctx, template.ID)
+	if err != nil {
+		return nil, fmt.Errorf("finding locations: %w", err)
+	}
+	newInstance := &models.Instance{
+		Name:       name,
+		UserID:     userID,
+		IsTemplate: false,
+	}
+	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
+		return nil, fmt.Errorf("creating instance: %w", err)
+	}
+	// Copy locations
+	for _, location := range locations {
+		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
+		if err != nil {
+			return nil, fmt.Errorf("duplicating location: %w", err)
+		}
+	}
+	// Copy settings
+	settings := template.Settings
+	settings.InstanceID = newInstance.ID
+	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
+		return nil, fmt.Errorf("creating settings: %w", err)
+	}
+	// Increment the used count
+	shareLink.UsedCount++
+	if shareLink.MaxUses > 0 && shareLink.UsedCount >= shareLink.MaxUses {
+		shareLink.ExpiresAt = bun.NullTime{Time: time.Now()}
+	}
+	if err := s.shareLinkRepo.Use(ctx, shareLink); err != nil {
+		return nil, fmt.Errorf("updating share link: %w", err)
+	}
+
+	return newInstance, nil
+}
+
 // GetByID retrieves a template by ID.
 func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Instance, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, id)
@@ -184,6 +259,9 @@ func (s *TemplateService) GetShareLink(ctx context.Context, id string) (*models.
 
 // Find retrieves all templates.
 func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Instance, error) {
+	if userID == "" {
+		return nil, NewValidationError("userID")
+	}
 	instances, err := s.instanceRepo.FindTemplates(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("finding templates: %w", err)
@@ -245,7 +323,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 
 	switch data.Validity {
 	case "always":
-		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(100, 0, 0)} // The lifetime of a tortoise
+		shareLink.ExpiresAt = bun.NullTime{}
 	case "day":
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, 1)}
 	case "week":
