@@ -30,9 +30,27 @@ func (r *ShareLinkRepository) Create(ctx context.Context, link *models.ShareLink
 	if link.TemplateID == "" {
 		return fmt.Errorf("template ID is required")
 	}
-	if link.ExpiresAt == (bun.NullTime{}) {
-		return fmt.Errorf("expires at is required")
+
+	// If the link has no expiration date and no max uses, we first search for an existing link
+	if link.ExpiresAt == (bun.NullTime{}) && link.MaxUses == 0 {
+		existingLink := new(models.ShareLink)
+		err := r.db.NewSelect().
+			Model(existingLink).
+			Where("share_link.template_id = ?", link.TemplateID).
+			Where("share_link.user_id = ?", link.UserID).
+			Where("share_link.expires_at IS NULL AND share_link.max_uses = 0").
+			Limit(1).
+			Scan(ctx)
+		if err != nil && err.Error() != "sql: no rows in result set" {
+			return fmt.Errorf("failed to check for existing link: %w", err)
+		}
+		if existingLink != nil && existingLink.ID != "" {
+			fmt.Println("Found existing link:", existingLink.ID)
+			link.ID = existingLink.ID
+			return nil
+		}
 	}
+
 	// We always want to generate a new UUID for the link
 	link.ID = uuid.New().String()
 	link.CreatedAt = time.Now()

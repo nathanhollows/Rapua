@@ -88,19 +88,19 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "TemplateCreate: parsing form", "Error parsing form", "error", err)
+		h.handleError(w, r, "TemplatesLaunch: parsing form", "Error parsing form", "error", err)
 		return
 	}
 
 	id := r.FormValue("id")
 	if id == "" {
-		h.handleError(w, r, "TemplateCreate: missing id", "Could not find the instance ID")
+		h.handleError(w, r, "TemplatesLaunch: missing id", "Could not find the instance ID")
 		return
 	}
 
 	name := r.FormValue("name")
 	if name == "" {
-		h.handleError(w, r, "TemplateCreate: missing name", "Please provide a name for the template")
+		h.handleError(w, r, "TemplatesLaunch: missing name", "Please provide a name for the template")
 		return
 	}
 
@@ -110,14 +110,64 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	// Create a new instance from the template
 	newGame, err := h.TemplateService.LaunchInstance(r.Context(), user.ID, id, name, regen)
 	if err != nil {
-		h.handleError(w, r, "TemplateCreate: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
+		h.handleError(w, r, "TemplatesLaunch: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
 		return
 	}
 
 	// Switch to the new instance
 	err = h.UserService.SwitchInstance(r.Context(), user, newGame.ID)
 	if err != nil {
-		h.handleError(w, r, "InstancesCreate: switching instance", "Error switching instance", "error", err)
+		h.handleError(w, r, "TemplatesLaunch: switching instance", "Error switching instance", "error", err)
+		return
+	}
+
+	h.redirect(w, r, "/admin/instances")
+}
+
+// TemplatesLaunchFromLink launches an instance from a share link.
+func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, r, "TemplatesLaunchFromLink: parsing form", "Error parsing form", "error", err)
+		return
+	}
+
+	linkID := r.FormValue("link")
+	if linkID == "" {
+		h.handleError(w, r, "TemplatesLaunchFromLink: missing link", "Could not find the share link ID")
+		return
+	}
+
+	shareLink, err := h.TemplateService.GetShareLink(r.Context(), linkID)
+	if err != nil {
+		h.handleError(w, r, "TemplatesLaunchFromLink: getting template", "Error getting template", "error", err)
+		return
+	}
+	if shareLink.IsExpired() {
+		h.handleError(w, r, "TemplatesLaunchFromLink: expired link", "The share link has expired")
+		return
+	}
+
+	name := r.FormValue("name")
+	if name == "" {
+		h.handleError(w, r, "TemplatesLaunchFromLink: missing name", "Please provide a name for the template")
+		return
+	}
+
+	// Regenerate refers to location codes
+	regen := r.Form.Has("regenerate")
+
+	// Create a new instance from the template
+	newGame, err := h.TemplateService.LaunchInstanceFromShareLink(r.Context(), user.ID, linkID, name, regen)
+	if err != nil {
+		h.handleError(w, r, "TemplatesLaunchFromLink: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
+		return
+	}
+
+	// Switch to the new instance
+	err = h.UserService.SwitchInstance(r.Context(), user, newGame.ID)
+	if err != nil {
+		h.handleError(w, r, "TemplatesLaunchFromLink: switching instance", "Error switching instance", "error", err)
 		return
 	}
 
