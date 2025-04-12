@@ -8,7 +8,8 @@ import (
 
 // Instance represents an entire game state.
 type Instance struct {
-	baseModel
+	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 
 	ID                    string       `bun:"id,pk,type:varchar(36)"`
 	Name                  string       `bun:"name,type:varchar(255)"`
