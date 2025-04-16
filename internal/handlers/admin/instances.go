@@ -20,7 +20,7 @@ func (h *AdminHandler) Instances(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Instances(user.Instances, user.CurrentInstance, gameTemplates)
-	err = templates.Layout(c, *user, "Instances", "Instances").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Games and Templates", "Games and Templates").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)
 	}
