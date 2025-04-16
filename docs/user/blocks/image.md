@@ -18,9 +18,7 @@ Image Blocks don't currently allow uploads, so you'll need to host your images e
 
 ## Example
 
-**Image Block:**
-
-![](/static/images/docs/user/blocks/block-image.webp)
+<iframe width="100%" class="rounded-2xl" style="aspect-ratio: 4/3;" src="/static/images/docs/user/blocks/block-image.mp4" frameborder="0" allowfullscreen></iframe>
 
 **Player Perspective:**
 

@@ -9614,10 +9614,6 @@ html:has(.drawer-toggle:checked) {
     padding-right: 2rem;
   }
 
-  .md\:pb-0 {
-    padding-bottom: 0px;
-  }
-
   .md\:text-6xl {
     font-size: 3.75rem;
     line-height: 1;
