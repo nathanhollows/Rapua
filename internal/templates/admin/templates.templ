@@ -377,14 +377,14 @@ templ templateModals() {
 	<dialog
 		id="share_template_modal"
 		class="modal modal-bottom sm:modal-middle"
-		_="on htmx:afterSettle
-	share_template_modal.showModal()
-	"
 	></dialog>
 }
 
 templ TemplateShareModal(template models.Instance) {
-	<div class="modal-box">
+	<div
+		class="modal-box"
+		_="on load share_template_modal.showModal()"
+	>
 		<form
 			hx-post={ fmt.Sprint("/admin/templates/", template.ID, "/share") }
 			hx-target="#share_template_modal"
