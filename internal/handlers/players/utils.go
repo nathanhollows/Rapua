@@ -83,8 +83,8 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	if err != nil {
 		return fmt.Errorf("saving session: %w", err)
 	}
-	return nil
 
+	return nil
 }
 
 // invalidateSession invalidates the current session.
