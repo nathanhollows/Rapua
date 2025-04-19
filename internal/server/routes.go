@@ -47,8 +47,14 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
-	router.Get("/play", playerHandler.Play)
-	router.Post("/play", playerHandler.PlayPost)
+	router.Route("/play", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+		})
+
+		r.Get("/", playerHandler.Play)
+		r.Post("/", playerHandler.PlayPost)
+	})
 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
