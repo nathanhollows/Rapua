@@ -55,7 +55,7 @@ func main() {
 	// Run CLI or app
 	if err := app.Run(os.Args); err != nil {
 		logger.Error("application error", "error", err)
-		os.Exit(1)
+		defer os.Exit(1)
 	}
 }
 
