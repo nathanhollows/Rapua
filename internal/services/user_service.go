@@ -88,7 +88,10 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			err := tx.Rollback()
+			if err != nil {
+				fmt.Println("failed to rollback transaction:", err)
+			}
 			panic(p)
 		}
 	}()

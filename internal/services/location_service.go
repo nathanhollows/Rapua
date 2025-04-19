@@ -252,7 +252,10 @@ func (s locationService) UpdateName(ctx context.Context, location *models.Locati
 
 func (s locationService) UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error {
 	if location.Marker.Code == "" {
-		s.locationRepo.LoadMarker(ctx, location)
+		err := s.locationRepo.LoadMarker(ctx, location)
+		if err != nil {
+			return fmt.Errorf("loading marker: %v", err)
+		}
 	}
 
 	// Set up the marker data
@@ -367,14 +370,20 @@ func (s locationService) DeleteLocation(ctx context.Context, locationID string) 
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				panic(fmt.Errorf("rolling back transaction: %v; %v", p, rollbackErr))
+			}
 			panic(p)
 		}
 	}()
 
 	err = s.deleteLocation(ctx, tx, locationID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
+		}
 		return fmt.Errorf("deleting location: %v", err)
 	}
 
@@ -385,7 +394,10 @@ func (s locationService) DeleteLocation(ctx context.Context, locationID string) 
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
+		}
 		return fmt.Errorf("committing transaction: %v", err)
 	}
 

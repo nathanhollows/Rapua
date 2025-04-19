@@ -26,7 +26,10 @@ func PreviewMiddleware(teamService teamService, next http.Handler) http.Handler 
 			return
 		}
 
-		r.ParseForm()
+		err := r.ParseForm()
+		if err != nil {
+			slog.Error("preview middleware: unable to parse form", "err", err, "ctx", r.Context(), "url", r.URL)
+		}
 
 		team := models.Team{
 			Code:       "preview",

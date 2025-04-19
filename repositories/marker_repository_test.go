@@ -387,7 +387,8 @@ func TestMarkerRepository_DeleteUnused(t *testing.T) {
 			if err == nil {
 				tt.cleanupFunc()
 			}
-			tx.Rollback() // Assuming rollback for test isolation
+			rollbackErr := tx.Rollback() // Assuming rollback for test isolation
+			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		})
 	}
 }

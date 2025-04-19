@@ -212,38 +212,56 @@ func (s *teamService) AwardPoints(ctx context.Context, team *models.Team, points
 func (s *teamService) Reset(ctx context.Context, instanceID string, teamCodes []string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("starting transaction: %w", err)
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+			}
 			panic(p)
 		}
 	}()
 
 	err = s.teamRepo.Reset(ctx, tx, instanceID, teamCodes)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("resetting team: rollback failed: %w", rollbackErr)
+		}
 		return fmt.Errorf("resetting team: %w", err)
 	}
 
 	err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("deleting check ins: %w", err)
 	}
 
 	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, teamCodes)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("deleting block states: %w", err)
 	}
 
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("updating location statistics: %w", err)
 	}
 
@@ -254,38 +272,56 @@ func (s *teamService) Reset(ctx context.Context, instanceID string, teamCodes []
 func (s *teamService) Delete(ctx context.Context, instanceID string, teamCode string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("starting transaction: %w", err)
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+			}
 			panic(p)
 		}
 	}()
 
 	err = s.teamRepo.Delete(ctx, tx, instanceID, teamCode)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("deleting team: %w", err)
 	}
 
 	err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, []string{teamCode})
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("deleting check ins: %w", err)
 	}
 
 	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, []string{teamCode})
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("deleting block states: %w", err)
 	}
 
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return fmt.Errorf("updating location statistics: %w", err)
 	}
 

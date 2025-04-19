@@ -184,45 +184,66 @@ func (s *instanceService) DeleteInstance(ctx context.Context, user *models.User,
 	}
 
 	for i, location := range instance.Locations {
-		s.locationService.LoadRelations(ctx, &location)
+		err := s.locationService.LoadRelations(ctx, &location)
+		if err != nil {
+			return false, fmt.Errorf("loading relations for location: %w", err)
+		}
 		instance.Locations[i] = location
 	}
 
 	// Start transaction
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", err2)
+		}
 		return false, fmt.Errorf("beginning transaction: %w", err)
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			err := tx.Rollback()
+			if err != nil {
+				panic(fmt.Errorf("rolling back transaction: %w", err))
+			}
 			panic(p)
 		}
 	}()
 
 	err = s.instanceRepo.Delete(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", err2)
+		}
 		return false, fmt.Errorf("deleting instance: %w", err)
 	}
 
 	err = s.instanceSettingsRepo.Delete(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return false, fmt.Errorf("deleting instance settings: %w", err)
 	}
 
 	err = s.teamService.DeleteByInstanceID(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return false, fmt.Errorf("deleting teams: %w", err)
 	}
 
 	err = s.locationService.DeleteLocations(ctx, tx, instance.Locations)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return false, fmt.Errorf("deleting locations: %w", err)
 	}
 

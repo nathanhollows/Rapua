@@ -77,6 +77,10 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	if err != nil {
+		h.handleError(w, r, "TemplatesCreate: getting templates", "Error getting templates", "error", err)
+		return
+	}
 	err = templates.Templates(gameTemplates).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)
@@ -206,6 +210,10 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	if err != nil {
+		h.handleError(w, r, "TemplatesCreate: getting templates", "Error getting templates", "error", err)
+		return
+	}
 	err = templates.Templates(gameTemplates).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)

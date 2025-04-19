@@ -368,10 +368,14 @@ func TestInstanceRepository_Delete(t *testing.T) {
 			err = repo.Delete(ctx, tx, inst.ID)
 
 			if tc.wantErr {
-				tx.Rollback()
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+				}
 				assert.Error(t, err)
 			} else {
-				tx.Commit()
+				assert.NoError(t, err)
+				err = tx.Commit()
 				assert.NoError(t, err)
 
 				// Double-check that the instance no longer exists
@@ -425,10 +429,14 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 
 			err = repo.DeleteByUser(ctx, tx, tc.userID)
 			if tc.wantErr {
-				tx.Rollback()
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+				}
 				assert.Error(t, err)
 			} else {
-				tx.Commit()
+				assert.NoError(t, err)
+				err = tx.Commit()
 				assert.NoError(t, err)
 				// Ensure none remain
 				found, err := repo.FindByUserID(ctx, tc.userID)

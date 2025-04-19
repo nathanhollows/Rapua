@@ -204,7 +204,6 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 
 	err = h.TeamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		flash.NewError("Error loading check ins.").Save(w, r)
 		h.Logger.Error("loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
@@ -242,12 +241,6 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if team.MustCheckOut != "" {
-		if team.BlockingLocation.MarkerID != locationCode {
-			flash.NewDefault("You are currently checked into "+team.BlockingLocation.Name).Save(w, r)
-		}
-	}
-
 	// Get the index of the location in the team's scans
 	index = -1
 	for i, scan := range team.CheckIns {
@@ -258,7 +251,6 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if index == -1 {
-		flash.NewWarning("Please double check the code and try again.").Save(w, r)
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
 	}

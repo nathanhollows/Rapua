@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 )
 
@@ -26,7 +25,6 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		flash.NewError("Error loading team.").Save(w, r)
 		h.redirect(w, r, "/play")
 		return
 	}

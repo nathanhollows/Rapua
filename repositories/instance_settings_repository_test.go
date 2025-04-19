@@ -108,7 +108,11 @@ func TestInstanceSettingsRepository(t *testing.T) {
 				_ = repo.Create(ctx, settings)
 
 				tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
-				defer tx.Rollback()
+				defer (func() {
+					if err := tx.Commit(); err != nil {
+						t.Error(err)
+					}
+				})()
 
 				return repo.Delete(ctx, tx, settings.InstanceID)
 			},

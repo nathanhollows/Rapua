@@ -160,12 +160,18 @@ func (s *blockService) DeleteBlock(ctx context.Context, blockID string) error {
 	}()
 
 	if err := s.blockRepo.Delete(ctx, tx, blockID); err != nil {
-		tx.Rollback()
+		err := tx.Rollback()
+		if err != nil {
+			return fmt.Errorf("deleting block: transaction rollback: %w", err)
+		}
 		return fmt.Errorf("deleting block: %w", err)
 	}
 
 	if err := s.blockStateRepo.DeleteByBlockID(ctx, tx, blockID); err != nil {
-		tx.Rollback()
+		err := tx.Rollback()
+		if err != nil {
+			return fmt.Errorf("deleting block state: transaction rollback: %w", err)
+		}
 		return fmt.Errorf("deleting block state: %w", err)
 	}
 

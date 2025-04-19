@@ -25,6 +25,6 @@ type ShareLink struct {
 // IsExpired checks if the share link is expired.
 func (s *ShareLink) IsExpired() bool {
 	return (s.UsedCount >= s.MaxUses && s.MaxUses > 0) ||
-		(s.ExpiresAt.Time.IsZero() == false &&
+		(!s.ExpiresAt.Time.IsZero() &&
 			s.ExpiresAt.Time.Before(time.Now()))
 }
