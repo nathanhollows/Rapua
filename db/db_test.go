@@ -25,7 +25,7 @@ func TestMustOpen_Sqlite3(t *testing.T) {
 }
 
 // TestMustOpen_MissingEnv tests what happens when env variables are missing.
-// NOTE: This test is ommitted because it would cause the program to exit.
+// NOTE: This test is omitted because it would cause the program to exit.
 // log.Fatal() produces a single line of output and then calls os.Exit(1),
 // which is desirable in a production environment, but not in a test.
 
