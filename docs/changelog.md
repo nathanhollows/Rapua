@@ -43,7 +43,8 @@ order: 100
 - Fixed highlighting in navigation menus and corrected preview context logic.
 - Corrected docs for [Image Blocks](/docs/user/blocks/image) to reflect new upload capabilities.
 - Corrected docs for [Installation](/docs/developer/installation#installing) instructions to include folder permissions for uploads.
-- Preview system fixes [#48](https://github.com/nathanhollows/Rapua/issues/48)
+- Preview system fixes [#48](https://github.com/nathanhollows/Rapua/issues/48) by enabling admins to interact with closed games.
+- Fixed issues identified by `golangci-lint`, specifically using `gosec`, `gocritic`, `bodyclose`, `whitespace` (\-\-fix), `misspell`, `govet`, `unused`, and `errcheck`.
 
 ### Removed
 
