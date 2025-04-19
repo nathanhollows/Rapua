@@ -118,7 +118,6 @@ func TestUserRepository_Update(t *testing.T) {
 	assert.Equal(t, newEmailVerified, fetchedUser.EmailVerified)
 	assert.Equal(t, newPassword, fetchedUser.Password)
 	assert.Equal(t, newCurrentInstanceID, fetchedUser.CurrentInstanceID)
-
 }
 
 func TestUserRepository_FindUserByID(t *testing.T) {

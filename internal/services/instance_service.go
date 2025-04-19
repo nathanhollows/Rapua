@@ -14,7 +14,6 @@ import (
 type instanceService struct {
 	transactor           db.Transactor
 	locationService      LocationService
-	userService          UserService
 	teamService          TeamService
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
@@ -26,20 +25,18 @@ type InstanceService interface {
 	// DuplicateInstance duplicates an instance for the given user
 	DuplicateInstance(ctx context.Context, user *models.User, id, name string) (*models.Instance, error)
 
+	// FindByUserID returns all instances for the given user
+	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
 	// FindInstanceIDsForUser returns the IDs of all instances for the given user
 	FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error)
 
 	// DeleteInstance deletes an instance for the given user
 	DeleteInstance(ctx context.Context, user *models.User, instanceID, confirmName string) (bool, error)
-
-	// SwitchInstance switches the user's current instance
-	SwitchInstance(ctx context.Context, user *models.User, instanceID string) (*models.Instance, error)
 }
 
 func NewInstanceService(
 	transactor db.Transactor,
 	locationService LocationService,
-	userService UserService,
 	teamService TeamService,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
@@ -47,7 +44,6 @@ func NewInstanceService(
 	return &instanceService{
 		transactor:           transactor,
 		locationService:      locationService,
-		userService:          userService,
 		teamService:          teamService,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
@@ -65,18 +61,13 @@ func (s *instanceService) CreateInstance(ctx context.Context, name string, user 
 	}
 
 	instance := &models.Instance{
-		Name:   name,
-		UserID: user.ID,
+		Name:       name,
+		UserID:     user.ID,
+		IsTemplate: false,
 	}
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
 		return nil, fmt.Errorf("creating instance: %w", err)
-	}
-
-	user.CurrentInstanceID = instance.ID
-	err := s.userService.UpdateUser(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("updating user: %w", err)
 	}
 
 	settings := &models.InstanceSettings{
@@ -98,6 +89,10 @@ func (s *instanceService) DuplicateInstance(ctx context.Context, user *models.Us
 	oldInstance, err := s.instanceRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("finding instance: %w", err)
+	}
+
+	if oldInstance.IsTemplate {
+		return nil, errors.New("cannot duplicate a template")
 	}
 
 	locations, err := s.locationService.FindByInstance(ctx, oldInstance.ID)
@@ -136,9 +131,16 @@ func (s *instanceService) DuplicateInstance(ctx context.Context, user *models.Us
 		return nil, fmt.Errorf("creating settings: %w", err)
 	}
 
-	// TODO: Copy blocks and clues
-
 	return newInstance, nil
+}
+
+// FindByUserID implements InstanceService.
+func (s *instanceService) FindByUserID(ctx context.Context, userID string) ([]models.Instance, error) {
+	instances, err := s.instanceRepo.FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("finding instances for user: %w", err)
+	}
+	return instances, nil
 }
 
 // FindInstanceIDsForUser implements InstanceService.
@@ -181,61 +183,74 @@ func (s *instanceService) DeleteInstance(ctx context.Context, user *models.User,
 		return false, errors.New("cannot delete an instance that is currently in use")
 	}
 
+	for i, location := range instance.Locations {
+		err := s.locationService.LoadRelations(ctx, &location)
+		if err != nil {
+			return false, fmt.Errorf("loading relations for location: %w", err)
+		}
+		instance.Locations[i] = location
+	}
+
 	// Start transaction
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", err2)
+		}
 		return false, fmt.Errorf("beginning transaction: %w", err)
 	}
 
+	defer func() {
+		if p := recover(); p != nil {
+			err := tx.Rollback()
+			if err != nil {
+				panic(fmt.Errorf("rolling back transaction: %w", err))
+			}
+			panic(p)
+		}
+	}()
+
 	err = s.instanceRepo.Delete(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", err2)
+		}
 		return false, fmt.Errorf("deleting instance: %w", err)
 	}
 
 	err = s.instanceSettingsRepo.Delete(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return false, fmt.Errorf("deleting instance settings: %w", err)
 	}
 
 	err = s.teamService.DeleteByInstanceID(ctx, tx, instanceID)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
 		return false, fmt.Errorf("deleting teams: %w", err)
+	}
+
+	err = s.locationService.DeleteLocations(ctx, tx, instance.Locations)
+	if err != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+		}
+		return false, fmt.Errorf("deleting locations: %w", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
 		return false, fmt.Errorf("committing transaction: %w", err)
 	}
 
 	return true, nil
-}
-
-// SwitchInstance implements InstanceService.
-func (s *instanceService) SwitchInstance(ctx context.Context, user *models.User, instanceID string) (*models.Instance, error) {
-	if user == nil {
-		return nil, ErrUserNotAuthenticated
-	}
-
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
-	if err != nil {
-		return nil, errors.New("instance not found")
-	}
-
-	// Make sure the user has permission to switch to this instance
-	if instance.UserID != user.ID {
-		return nil, ErrPermissionDenied
-	}
-
-	user.CurrentInstanceID = instance.ID
-	err = s.userService.UpdateUser(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("updating user: %w", err)
-	}
-
-	return instance, nil
 }

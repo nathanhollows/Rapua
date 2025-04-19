@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
@@ -79,7 +81,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 	err = h.GameplayService.CheckIn(r.Context(), team, locationCode)
 	if err != nil {
 		if errors.Is(err, services.ErrLocationNotFound) {
-			h.handleError(w, r, "CheckInPost: checking in", "Location not found. Please try agian.", "error", err, "team", team.Code, "location", locationCode)
+			h.handleError(w, r, "CheckInPost: checking in", "Location not found. Please try again.", "error", err, "team", team.Code, "location", locationCode)
 			return
 		}
 		if errors.Is(err, services.ErrAlreadyCheckedIn) {
@@ -129,7 +131,6 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("rendering checkin", "error", err.Error())
 	}
-
 }
 
 func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
@@ -158,32 +159,23 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.GameplayService.CheckOut(r.Context(), team, locationCode)
+
+	var message *flash.Message
 	if err != nil {
-		if errors.Is(err, services.ErrLocationNotFound) {
-			err := templates.Toast(*flash.NewError("Location not found. Please double check the code and try again.")).Render(r.Context(), w)
-			if err != nil {
-				h.handleError(w, r, "CheckOutPost: checking out", "Error checking out", "error", err, "team", team.Code, "location", locationCode)
-			}
-			return
-		} else if errors.Is(err, services.ErrUnecessaryCheckOut) {
-			err := templates.Toast(*flash.NewInfo("You are not checked in anywhere.")).Render(r.Context(), w)
-			if err != nil {
-				h.handleError(w, r, "CheckOutPost: checking out", "Error checking out", "error", err, "team", team.Code, "location", locationCode)
-			}
-			return
-		} else if errors.Is(err, services.ErrCheckOutAtWrongLocation) {
-			err := templates.Toast(*flash.NewInfo("You are not checked in here.")).Render(r.Context(), w)
-			if err != nil {
-				h.handleError(w, r, "CheckOutPost: checking out", "Error checking out", "error", err, "team", team.Code, "location", locationCode)
-			}
-			return
-		} else if errors.Is(err, services.ErrUnfinishedCheckIn) {
-			err := templates.Toast(*flash.NewInfo("Whoops! You still have unfinished activities.")).Render(r.Context(), w)
-			if err != nil {
-				h.handleError(w, r, "CheckOutPost: checking out", "Error checking out", "error", err, "team", team.Code, "location", locationCode)
-			}
-			return
-		} else {
+		switch {
+		case errors.Is(err, services.ErrLocationNotFound):
+			message = flash.NewError("Location not found. Please double check the code and try again.")
+		case errors.Is(err, services.ErrUnecessaryCheckOut):
+			message = flash.NewInfo("You are not checked in anywhere.")
+		case errors.Is(err, services.ErrCheckOutAtWrongLocation):
+			message = flash.NewInfo("You are not checked in here.")
+		case errors.Is(err, services.ErrUnfinishedCheckIn):
+			message = flash.NewInfo("Whoops! You still have unfinished activities.")
+		default:
+			message = flash.NewError("Error checking out. Please try again.")
+		}
+		err = templates.Toast(*message).Render(r.Context(), w)
+		if err != nil {
 			h.handleError(w, r, "CheckOutPost: checking out", "Error checking out", "error", err, "team", team.Code, "location", locationCode)
 		}
 		return
@@ -202,7 +194,6 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 
 	err = h.TeamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		flash.NewError("Error loading check ins.").Save(w, r)
 		h.Logger.Error("loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
@@ -217,30 +208,31 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 
 // CheckInView shows the page for a specific location.
 func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
+	// If the user is in preview mode, show the preview
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		h.checkInPreview(w, r)
+		return
+	}
+
 	locationCode := chi.URLParam(r, "id")
 
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		flash.NewError("Error loading team.").Save(w, r)
+		h.Logger.Error("loading team", "error", err.Error())
 		http.Redirect(w, r, "/play", http.StatusFound)
 		return
 	}
 
+	var index int
 	err = h.TeamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		flash.NewError("Error loading locations.").Save(w, r)
+		h.Logger.Error("loading team relations", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
 	}
 
-	if team.MustCheckOut != "" {
-		if team.BlockingLocation.MarkerID != locationCode {
-			flash.NewDefault("You are currently checked into "+team.BlockingLocation.Name).Save(w, r)
-		}
-	}
-
 	// Get the index of the location in the team's scans
-	index := -1
+	index = -1
 	for i, scan := range team.CheckIns {
 		if scan.Location.MarkerID == locationCode {
 			index = i
@@ -249,7 +241,6 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if index == -1 {
-		flash.NewWarning("Please double check the code and try again.").Save(w, r)
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
 	}
@@ -265,5 +256,57 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("rendering checkin view", "error", err.Error())
 	}
+}
 
+// checkInPreview shows a player preview of the given location.
+func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
+	locationCode := chi.URLParam(r, "id")
+
+	team, err := h.getTeamFromContext(r.Context())
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: getting team", "Error getting team", "error", err)
+		return
+	}
+
+	err = h.TeamService.LoadRelation(r.Context(), team, "Instance")
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: loading instance", "Error loading instance", "error", err)
+		return
+	}
+
+	var location models.Location
+	for _, loc := range team.Instance.Locations {
+		if loc.MarkerID == locationCode {
+			location = loc
+			break
+		}
+	}
+	if location.MarkerID == "" {
+		h.handleError(w, r, "LocationPreview: finding location", "Location not found", "error", "Location not found")
+		return
+	}
+
+	scan := models.CheckIn{
+		Location: location,
+	}
+
+	contentBlocks, err := h.BlockService.FindByLocationID(r.Context(), location.ID)
+	if err != nil {
+		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
+		return
+	}
+
+	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
+	for _, block := range contentBlocks {
+		blockStates[block.GetID()], err = h.BlockService.NewMockBlockState(r.Context(), block.GetID(), "")
+		if err != nil {
+			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
+			return
+		}
+	}
+
+	err = templates.CheckInView(team.Instance.Settings, scan, contentBlocks, blockStates).Render(r.Context(), w)
+	if err != nil {
+		h.Logger.Error("LocationPreview: rendering template", "error", err)
+	}
 }

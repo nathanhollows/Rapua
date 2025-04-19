@@ -168,6 +168,83 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 	}
 }
 
+func TestInstanceRepository_FindTemplates(t *testing.T) {
+	testCases := []struct {
+		name          string
+		userID        string
+		templateCount int
+		instanceCount int
+		wantErr       bool
+	}{
+		{
+			name:          "Multiple templates for one user",
+			userID:        gofakeit.UUID(),
+			templateCount: 3,
+			instanceCount: 2,
+			wantErr:       false,
+		},
+		{
+			name:          "No templates for this user",
+			userID:        gofakeit.UUID(),
+			templateCount: 0,
+			instanceCount: 2,
+			wantErr:       false,
+		},
+		{
+			name:          "No instances for this user",
+			userID:        gofakeit.UUID(),
+			templateCount: 2,
+			instanceCount: 0,
+			wantErr:       false,
+		},
+		{
+			name:          "No instances or templates for this user",
+			userID:        gofakeit.UUID(),
+			templateCount: 0,
+			instanceCount: 0,
+			wantErr:       false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo, _, cleanup := setupInstanceRepo(t)
+			defer cleanup()
+
+			ctx := context.Background()
+			// Create instances for the given user
+			for i := 0; i < tc.templateCount; i++ {
+				inst := &models.Instance{
+					ID:         gofakeit.UUID(),
+					Name:       gofakeit.Word(),
+					UserID:     tc.userID,
+					IsTemplate: true,
+				}
+				err := repo.Create(ctx, inst)
+				assert.NoError(t, err)
+			}
+			for i := 0; i < tc.instanceCount; i++ {
+				inst := &models.Instance{
+					ID:     gofakeit.UUID(),
+					Name:   gofakeit.Word(),
+					UserID: tc.userID,
+				}
+				err := repo.Create(ctx, inst)
+				assert.NoError(t, err)
+			}
+
+			instances, err := repo.FindTemplates(ctx, tc.userID)
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Empty(t, instances)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, instances, tc.templateCount)
+			}
+		})
+	}
+}
+
 func TestInstanceRepository_Update(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -291,10 +368,14 @@ func TestInstanceRepository_Delete(t *testing.T) {
 			err = repo.Delete(ctx, tx, inst.ID)
 
 			if tc.wantErr {
-				tx.Rollback()
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+				}
 				assert.Error(t, err)
 			} else {
-				tx.Commit()
+				assert.NoError(t, err)
+				err = tx.Commit()
 				assert.NoError(t, err)
 
 				// Double-check that the instance no longer exists
@@ -302,7 +383,6 @@ func TestInstanceRepository_Delete(t *testing.T) {
 				assert.Error(t, findErr)
 				assert.Nil(t, found)
 			}
-
 		})
 	}
 }
@@ -348,10 +428,14 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 
 			err = repo.DeleteByUser(ctx, tx, tc.userID)
 			if tc.wantErr {
-				tx.Rollback()
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+				}
 				assert.Error(t, err)
 			} else {
-				tx.Commit()
+				assert.NoError(t, err)
+				err = tx.Commit()
 				assert.NoError(t, err)
 				// Ensure none remain
 				found, err := repo.FindByUserID(ctx, tc.userID)

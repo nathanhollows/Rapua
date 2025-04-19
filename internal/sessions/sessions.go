@@ -36,7 +36,6 @@ func Start() {
 			"profile",
 		),
 	)
-
 }
 
 // Get returns a session for the given request.

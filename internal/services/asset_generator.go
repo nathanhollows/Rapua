@@ -227,9 +227,9 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 
 	// Render the URL
 	scanText := page.URL
-	scanText = strings.Replace(scanText, "https://", "", -1)
-	scanText = strings.Replace(scanText, "http://", "", -1)
-	scanText = strings.Replace(scanText, "www.", "", -1)
+	scanText = strings.ReplaceAll(scanText, "https://", "")
+	scanText = strings.ReplaceAll(scanText, "http://", "")
+	scanText = strings.ReplaceAll(scanText, "www.", "")
 	pdf.SetY(180)
 	pdf.SetX((210 - pdf.GetStringWidth(scanText)) / 2)
 	pdf.Cell(40, 70, scanText)

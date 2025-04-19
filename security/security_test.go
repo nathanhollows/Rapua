@@ -41,7 +41,7 @@ func TestHashPasswordError(t *testing.T) {
 	hash, err := security.HashPassword(password)
 	require.NoError(t, err, "hashing an empty password should not produce an error if allowed")
 
-	// Ensure the hash is still valid for empty string comparision, this checks bcrypt consistency
+	// Ensure the hash is still valid for empty string comparison, this checks bcrypt consistency
 	matches := security.CheckPasswordHash(password, hash)
 	assert.True(t, matches, "empty password should match the hash of the empty password if allowed to hash")
 }

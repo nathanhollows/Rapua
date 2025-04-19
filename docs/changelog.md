@@ -6,6 +6,52 @@ order: 100
 
 # Changelog
 
+## 3.5.0 (2025-04-19)
+
+### Added
+
+- **Templates System** ([#50](https://github.com/nathanhollows/Rapua/issues/50)):
+  - Introduced [Templates](/docs/user/templates) for reusing game setups. Templates can be created from existing games and launched into new instances.
+  - Added support for shareable template links, including unique and "unlimited" options.
+  - Admins can now manage templates (create, update, delete, rename) via a dedicated interface.
+  - Share links load associated content (blocks, clues, markers), with appropriate handling for expired or missing templates.
+
+- **Preview System Enhancements**:
+  - Middleware now handles previewing of routes for players, locations, navigation, and check-ins.
+  - Added context keys and logic to support admin previewing without triggering other middleware layers.
+
+- **Authentication Awareness**:
+  - Public pages now detect if an admin is logged in and adjust UI accordingly (e.g., showing admin button).
+
+- **Miscellaneous**:
+  - Added unit and integration tests for affected areas, including template and instance service, middleware, and preview systems.
+  - Major updates to template pages, instance lists, modals, mobile responsiveness, and admin views.
+  - Added skeleton loaders for media content to enhance perceived performance.
+
+### Changed
+
+- Renamed **instances** to **games** across UI and documentation for clarity.
+- Improved service layering and dependency isolation in the `template`, `instance`, and `user` services.
+- Refactored middleware to accept minimal interfaces, improving testability and reducing coupling.
+- SQLite now uses Write-Ahead Logging (WAL) mode to avoid read/write contention.
+- Lobby [middleware](/docs/developer/middleware#3-lobby-middleware) now redirects and handles teams more efficiently.
+
+### Fixed
+
+- Cleaned up orphaned markers when locations are deleted.
+- Ensured proper validation and error reporting across services.
+- Fixed highlighting in navigation menus and corrected preview context logic.
+- Corrected docs for [Image Blocks](/docs/user/blocks/image) to reflect new upload capabilities.
+- Corrected docs for [Installation](/docs/developer/installation#installing) instructions to include folder permissions for uploads.
+- Preview system fixes [#48](https://github.com/nathanhollows/Rapua/issues/48) by enabling admins to interact with closed games.
+- Fixed issues identified by `golangci-lint`, specifically using `gosec`, `gocritic`, `bodyclose`, `whitespace` (\-\-fix), `misspell`, `govet`, `unused`, and `errcheck`.
+
+### Removed
+
+- Cleaned up debug code, placeholders, and commented-out logic.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.5.0)
+
 ## 3.4.0 (2025-02-11)
 
 ### Added

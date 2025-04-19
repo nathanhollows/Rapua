@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
 )
 
 // DismissNotificationPost dismisses a message.
@@ -25,7 +24,6 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 
 	if err != nil {
 		h.Logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
-		flash.NewError("Error dismissing notification").Save(w, r)
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusSeeOther)
 
 		return

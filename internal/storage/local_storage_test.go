@@ -91,6 +91,7 @@ func TestLocalStorage_Upload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
 			if tt.name == "Context cancellation" {
 				cancel()
 			}

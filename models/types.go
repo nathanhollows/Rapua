@@ -93,12 +93,12 @@ func GetGameStatuses() GameStatuses {
 
 // String returns the string representation of the NavigationMode.
 func (n NavigationMode) String() string {
-	return [...]string{"Random", "Free Roam", "Ordered"}[n]
+	return [...]string{"Randomised Route", "Open Exploration", "Guided Path"}[n]
 }
 
 // String returns the string representation of the NavigationMethod.
 func (n NavigationMethod) String() string {
-	return [...]string{"Show Map", "Show Map and Names", "Show Location Names", "Show Clues"}[n]
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based"}[n]
 }
 
 // String returns the string representation of the CompletionMethod.
@@ -153,11 +153,11 @@ func (g GameStatus) Description() string {
 // Parse NavigationMode.
 func ParseNavigationMode(s string) (NavigationMode, error) {
 	switch s {
-	case "Random":
+	case "Random", "Randomised Route":
 		return RandomNav, nil
-	case "Free Roam":
+	case "Free Roam", "Open Exploration":
 		return FreeRoamNav, nil
-	case "Ordered":
+	case "Ordered", "Guided Path":
 		return OrderedNav, nil
 	default:
 		return 0, errors.New("invalid NavigationMode")
@@ -167,13 +167,13 @@ func ParseNavigationMode(s string) (NavigationMode, error) {
 // Parse NavigationMethod.
 func ParseNavigationMethod(s string) (NavigationMethod, error) {
 	switch s {
-	case "Show Map":
+	case "Show Map", "Map Only":
 		return ShowMap, nil
-	case "Show Map and Names":
+	case "Show Map and Names", "Labelled Map":
 		return ShowMapAndNames, nil
-	case "Show Location Names":
+	case "Show Location Names", "Location List":
 		return ShowNames, nil
-	case "Show Clues":
+	case "Show Clues", "Clue-Based":
 		return ShowClues, nil
 	default:
 		return ShowMap, errors.New("invalid NavigationMethod")

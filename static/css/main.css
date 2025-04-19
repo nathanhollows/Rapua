@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* Custom CSS */
-.artboard #player-nav {
+.artboard #player-nav, #preview #player-nav {
   @apply hidden;
 }
 
@@ -219,4 +219,9 @@
 /* Docs */
 .anchor {
   @apply no-underline opacity-50 hover:opacity-100 transition-opacity;
+}
+
+.mockup-browser .mockup-browser-toolbar {
+  @apply bg-base-300 py-3 my-0;
+
 }

@@ -21,10 +21,11 @@ type AdminHandler struct {
 	FacilitatorService  services.FacilitatorService
 	GameManagerService  services.GameManagerService
 	GameplayService     services.GameplayService
-	IntanceService      services.InstanceService
+	InstanceService     services.InstanceService
 	LocationService     services.LocationService
 	NotificationService services.NotificationService
 	TeamService         services.TeamService
+	TemplateService     services.TemplateService
 	UploadService       services.UploadService
 	UserService         services.UserService
 }
@@ -42,6 +43,7 @@ func NewAdminHandler(
 	locationService services.LocationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
+	templateService services.TemplateService,
 	uploadService services.UploadService,
 	userService services.UserService,
 ) *AdminHandler {
@@ -54,10 +56,11 @@ func NewAdminHandler(
 		FacilitatorService:  facilitatorService,
 		GameManagerService:  gameManagerService,
 		GameplayService:     gameplayService,
-		IntanceService:      instanceService,
+		InstanceService:     instanceService,
 		LocationService:     locationService,
 		NotificationService: notificationService,
 		TeamService:         teamService,
+		TemplateService:     templateService,
 		UploadService:       uploadService,
 		UserService:         userService,
 	}

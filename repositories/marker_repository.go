@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v3/helpers"
@@ -24,11 +25,15 @@ type MarkerRepository interface {
 	UpdateCoords(ctx context.Context, marker *models.Marker, lat, lng float64) error
 
 	// Delete deletes a marker from the database
+	// NOTE: Scheduled for removal
 	Delete(ctx context.Context, code string) error
+	// Deletes all unused markers
+	DeleteUnused(ctx context.Context, tx *bun.Tx) error
 
 	// IsShared checks if a marker is used by more than one location
 	IsShared(ctx context.Context, code string) (bool, error)
 	// UserOwnsMarker checks if a user owns a marker
+	// NOTE: Scheduled for removal
 	UserOwnsMarker(ctx context.Context, userID, markerCode string) (bool, error)
 }
 
@@ -44,6 +49,9 @@ func NewMarkerRepository(db *bun.DB) MarkerRepository {
 
 // Create saves or updates a marker in the database.
 func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) error {
+	if marker.Name == "" {
+		return fmt.Errorf("marker name is required")
+	}
 	if marker.Code == "" {
 		// TODO: Remove magic number
 		marker.Code = helpers.NewCode(5)
@@ -56,6 +64,16 @@ func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) er
 
 // Update updates a marker in the database.
 func (r *markerRepository) Update(ctx context.Context, marker *models.Marker) error {
+	if marker == nil {
+		return fmt.Errorf("marker is required")
+	}
+	if marker.Code == "" {
+		return fmt.Errorf("marker code is required")
+	}
+	if marker.Name == "" {
+		return fmt.Errorf("marker name is required")
+	}
+
 	_, err := r.db.
 		NewUpdate().
 		Model(marker).
@@ -69,6 +87,19 @@ func (r *markerRepository) Update(ctx context.Context, marker *models.Marker) er
 // Delete deletes a marker from the database.
 func (r *markerRepository) Delete(ctx context.Context, markerCode string) error {
 	_, err := r.db.NewDelete().Model(&models.Marker{Code: markerCode}).WherePK().Exec(ctx)
+	return err
+}
+
+// DeleteUnused deletes all markers that are not used by any location.
+func (r *markerRepository) DeleteUnused(ctx context.Context, tx *bun.Tx) error {
+	subq := tx.NewSelect().
+		Model((*models.Location)(nil)).
+		Column("marker_id")
+
+	_, err := tx.NewDelete().
+		Model((*models.Marker)(nil)).
+		Where("code NOT IN (?)", subq).
+		Exec(ctx)
 	return err
 }
 
@@ -96,6 +127,12 @@ func (r *markerRepository) FindNotInInstance(ctx context.Context, instanceID str
 
 // UpdateCoords updates the latitude and longitude of a marker in the database.
 func (r *markerRepository) UpdateCoords(ctx context.Context, marker *models.Marker, lat, lng float64) error {
+	if marker == nil {
+		return fmt.Errorf("marker is required")
+	}
+	if marker.Code == "" {
+		return fmt.Errorf("marker code is required")
+	}
 	marker.Lat = lat
 	marker.Lng = lng
 	_, err := r.db.NewUpdate().Model(marker).WherePK().Column("lat", "lng").Exec(ctx)

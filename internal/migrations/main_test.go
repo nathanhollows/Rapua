@@ -48,5 +48,4 @@ func TestFullMigration(t *testing.T) {
 	if err != nil {
 		assert.NoError(t, err)
 	}
-
 }

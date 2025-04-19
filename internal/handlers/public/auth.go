@@ -80,7 +80,6 @@ func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
 		h.Logger.Error("getting session for logout", "err", err)
-		flash.NewError("An error occurred while trying to log out. Please try again.").Save(w, r)
 		// Redirect to the login page
 		http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
 		return
@@ -291,7 +290,6 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 	// If the user is authenticated without error, we will redirect them to the admin page
 	user, err := h.AuthService.GetAuthenticatedUser(r)
 	if err == nil && user != nil && user.EmailVerified {
-		flash.NewInfo("Your email is already verified.").Save(w, r)
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}

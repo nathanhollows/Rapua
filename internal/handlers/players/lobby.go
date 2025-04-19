@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 )
 
@@ -11,14 +10,6 @@ import (
 func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		flash.NewError("Error loading team.").Save(w, r)
-		h.redirect(w, r, "/play")
-		return
-	}
-
-	err = h.TeamService.LoadRelation(r.Context(), team, "Instance")
-	if err != nil {
-		h.Logger.Error("loading instance", "error", err.Error())
 		h.redirect(w, r, "/play")
 		return
 	}
@@ -34,7 +25,6 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		flash.NewError("Error loading team.").Save(w, r)
 		h.redirect(w, r, "/play")
 		return
 	}
@@ -51,7 +41,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.TeamID(*team).Render(r.Context(), w)
+	err = templates.TeamID(*team, true).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("rendering team id", "error", err.Error())
 	}

@@ -7,7 +7,9 @@ import (
 )
 
 templ youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) {
-	@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
+	<div class="skeleton w-full aspect-square">
+		@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
+	</div>
 }
 
 templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {

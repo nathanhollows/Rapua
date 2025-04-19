@@ -228,7 +228,6 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 }
 
 func (s *gameplayService) CheckOut(ctx context.Context, team *models.Team, locationCode string) error {
-
 	location, err := s.LocationService.GetByInstanceAndCode(ctx, team.InstanceID, locationCode)
 	if err != nil {
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v3/db"
@@ -26,22 +27,24 @@ type UserService interface {
 
 	// UpdateUser updates a user
 	UpdateUser(ctx context.Context, user *models.User) error
+	// SwitchInstance switches the user's current instance
+	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
 
 	// DeleteUser deletes a user
 	DeleteUser(ctx context.Context, userID string) error
 }
 
 type userService struct {
-	transactor         db.Transactor
-	instanceRepository repositories.InstanceRepository
-	userRepository     repositories.UserRepository
+	transactor   db.Transactor
+	instanceRepo repositories.InstanceRepository
+	userRepo     repositories.UserRepository
 }
 
 func NewUserService(transactor db.Transactor, userRepository repositories.UserRepository, instanceRepository repositories.InstanceRepository) UserService {
 	return &userService{
-		transactor:         transactor,
-		instanceRepository: instanceRepository,
-		userRepository:     userRepository,
+		transactor:   transactor,
+		instanceRepo: instanceRepository,
+		userRepo:     userRepository,
 	}
 }
 
@@ -62,17 +65,17 @@ func (s *userService) CreateUser(ctx context.Context, user *models.User, passwor
 	// Generate UUID for user
 	user.ID = uuid.New().String()
 
-	return s.userRepository.Create(ctx, user)
+	return s.userRepo.Create(ctx, user)
 }
 
 // UpdateUser updates a user in the database.
 func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
-	return s.userRepository.Update(ctx, user)
+	return s.userRepo.Update(ctx, user)
 }
 
 // GetUserByEmail retrieves a user by their email address.
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return s.userRepository.GetByEmail(ctx, email)
+	return s.userRepo.GetByEmail(ctx, email)
 }
 
 // DeleteUser deletes a user from the database.
@@ -85,19 +88,22 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			err := tx.Rollback()
+			if err != nil {
+				fmt.Println("failed to rollback transaction:", err)
+			}
 			panic(p)
 		}
 	}()
 
-	err = s.userRepository.Delete(ctx, tx, userID)
+	err = s.userRepo.Delete(ctx, tx, userID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
 	}
 
-	err = s.instanceRepository.DeleteByUser(ctx, tx, userID)
+	err = s.instanceRepo.DeleteByUser(ctx, tx, userID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
@@ -105,4 +111,33 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	}
 
 	return tx.Commit()
+}
+
+// SwitchInstance implements InstanceService.
+func (s *userService) SwitchInstance(ctx context.Context, user *models.User, instanceID string) error {
+	if user == nil {
+		return ErrUserNotAuthenticated
+	}
+
+	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	if err != nil {
+		return errors.New("instance not found")
+	}
+
+	if instance.IsTemplate {
+		return errors.New("cannot switch to a template")
+	}
+
+	// Make sure the user has permission to switch to this instance
+	if instance.UserID != user.ID {
+		return ErrPermissionDenied
+	}
+
+	user.CurrentInstanceID = instance.ID
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		return fmt.Errorf("updating user: %w", err)
+	}
+
+	return nil
 }

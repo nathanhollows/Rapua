@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v3/helpers"
 	enclave "github.com/quail-ink/goldmark-enclave"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -28,7 +29,6 @@ func stringToMarkdown(s string) template.HTML {
 
 // MarkdownToHTML converts a string to markdown.
 func markdownToHTML(s string) (template.HTML, error) {
-
 	md := goldmark.New(
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
@@ -58,5 +58,7 @@ func markdownToHTML(s string) (template.HTML, error) {
 		return template.HTML("Error rendering markdown to HTML"), err
 	}
 
-	return template.HTML(buf.String()), nil
+	sanitizedMD := helpers.SanitizeHTML(buf.Bytes())
+
+	return template.HTML(sanitizedMD), nil
 }

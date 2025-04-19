@@ -56,7 +56,6 @@ func TestBlockService_NewBlock(t *testing.T) {
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			blk, err := svc.NewBlock(context.Background(), tc.locationID, tc.blockType)
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -101,7 +100,6 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			state, err := svc.NewBlockState(context.Background(), tc.blockID, tc.teamCode)
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -146,7 +144,6 @@ func TestBlockService_NewMockBlockState(t *testing.T) {
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			state, err := svc.NewMockBlockState(context.Background(), tc.blockID, tc.teamCode)
 			if tc.wantErr {
 				assert.Error(t, err)

@@ -5,10 +5,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
-	playerTemplates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
@@ -30,14 +28,13 @@ func (h *AdminHandler) Locations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("Locations: rendering template", "error", err)
 	}
-
 }
 
 // LocationNew shows the form to create a new location.
 func (h *AdminHandler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	instances, err := h.IntanceService.FindInstanceIDsForUser(r.Context(), user.ID)
+	instances, err := h.InstanceService.FindInstanceIDsForUser(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "LocationNew: getting instances", "Error getting instances", "error", err)
 		return
@@ -205,6 +202,7 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	markerID := location.MarkerID
 	err = h.LocationService.UpdateLocation(r.Context(), location, data)
 	if err != nil {
 		h.handleError(w, r, "LocationEditPost: updating location", "Error updating location", "error", err)
@@ -233,6 +231,11 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
+	if markerID != location.MarkerID {
+		h.redirect(w, r, "/admin/locations/"+location.MarkerID)
+		return
+	}
+
 	h.handleSuccess(w, r, "Location updated")
 }
 
@@ -259,41 +262,4 @@ func (h *AdminHandler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/locations")
-}
-
-// LocationPreview shows a player preview of the given location.
-func (h *AdminHandler) LocationPreview(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	locationCode := chi.URLParam(r, "id")
-
-	location, err := h.LocationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, locationCode)
-	if err != nil {
-		h.handleError(w, r, "LocationEditPost: finding location", "Error finding location", "error", err)
-		return
-	}
-
-	scan := models.CheckIn{
-		Location: *location,
-	}
-
-	contentBlocks, err := h.BlockService.FindByLocationID(r.Context(), location.ID)
-	if err != nil {
-		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
-		return
-	}
-
-	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
-	for _, block := range contentBlocks {
-		blockStates[block.GetID()], err = h.BlockService.NewMockBlockState(r.Context(), block.GetID(), "")
-		if err != nil {
-			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
-			return
-		}
-	}
-
-	err = playerTemplates.CheckInView(user.CurrentInstance.Settings, scan, contentBlocks, blockStates).Render(r.Context(), w)
-	if err != nil {
-		h.Logger.Error("LocationPreview: rendering template", "error", err)
-	}
-
 }

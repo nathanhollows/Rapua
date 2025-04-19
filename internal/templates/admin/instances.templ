@@ -5,122 +5,110 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
-templ Instances(instances []models.Instance, currentInstance models.Instance) {
+templ Instances(instances []models.Instance, currentInstance models.Instance, templates []models.Instance) {
 	<div class="flex flex-row justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">Instances</h1>
+		<h1 class="text-2xl font-bold">
+			Games
+			<div class="dropdown dropdown-hover">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></div>
+				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
+					<div tabindex="0" class="card-body">
+						<h2 class="card-title">Games</h2>
+						<p>Games are the core of your event. They contain all the locations, content, teams, and settings for your event.</p>
+						<p>Your active game is the one you are currently managing. You can switch between games at any time.</p>
+						<p>You can run multiple games at the same time, but only one can be active in the admin panel.</p>
+					</div>
+				</div>
+			</div>
+		</h1>
 		<button
 			class="btn btn-secondary"
 			onclick="new_modal.showModal()"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus w-5 h-5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-			Create a new instance
+			Create a new game
 		</button>
 	</div>
-	if len(instances) > 0 {
-		<div class=":">
-			<table class="table">
-				<thead>
-					<tr>
-						<th class="text-left">Name</th>
-						<th class="text-left">Actions</th>
-						<th class="text-left">Manage Instance</th>
-					</tr>
-				</thead>
-				<tbody>
-					for _, instance := range instances {
-						<tr class="hover">
-							<td class="font-bold">{ instance.Name }</td>
-							<td>
-								if instance.ID == currentInstance.ID {
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/new")) }
-										class="btn btn-sm btn-secondary"
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-4 h-4"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
-										Add Location
-									</a>
-								} else {
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch?redirect=/admin/locations/new")) }
-										class="btn btn-sm btn-secondary"
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-4 h-4"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
-										Add Location
-									</a>
-								}
-							</td>
-							<td>
-								if instance.ID == currentInstance.ID {
-									<span class="tooltip cursor-not-allowed" data-tip="Already active">
-										<a
-											href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
-											class="btn btn-sm"
-											disabled
-										>
-											Activate
-										</a>
-									</span>
-								} else {
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
-										class="btn btn-sm"
-									>
-										Activate
-									</a>
-								}
-								<button
-									class="btn btn-sm btn-secondary"
-									data-id={ fmt.Sprint(instance.ID) }
-									data-name={ instance.Name }
-									onclick="confirmDuplicate()"
-								>
-									Duplicate
-								</button>
-								if instance.ID == currentInstance.ID {
-									<span class="tooltip cursor-not-allowed" data-tip="Cannot delete current instance">
-										<button
-											class="btn btn-sm btn-error tooltip"
-											data-tip="Cannot delete current instance"
-											aria-disabled="true"
-											aria-label="Cannot delete current instance"
-											disabled
-										>
-											Delete
-										</button>
-									</span>
-								} else {
-									<button
-										class="btn btn-sm btn-error"
-										data-id={ fmt.Sprint(instance.ID) }
-										data-name={ instance.Name }
-										onclick="confirmDelete()"
-									>
-										Delete
-									</button>
-								}
-							</td>
-						</tr>
-					}
-				</tbody>
-			</table>
+	<div class="px-5">
+		<div id="instance-list" class="join join-vertical w-full rounded-lg border border-base-300">
+			<div class="flex flex-row items-center gap-3 bg-base-200/80 rounded p-3 py-4 join-item">
+				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
+					<span
+						id="instance-count"
+						_="on htmx:afterSettle from body or keyup from #search-instances
+						set my textContent to <.instance-item:not( [style*='display: none'] )/>'s length"
+					>
+						{ fmt.Sprint(len(instances)) }
+					</span> games
+				</span>
+				<span class="flex-grow"></span>
+				<div id="instance-filters" class="flex flex-row justify-between">
+					<div class="flex flex-row gap-2">
+						<!-- Search -->
+						<label class="input input-bordered input-sm flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+							<input
+								id="search-instances"
+								type="text"
+								class="grow"
+								placeholder="Search Games"
+								_="on input 
+								show .instance-item
+									when its textContent.toLowerCase().normalize('NFD')
+									contains my value.toLowerCase().normalize('NFD')"
+							/>
+						</label>
+					</div>
+				</div>
+			</div>
+			for _, instance := range instances {
+				@instanceItem(instance, instance.ID == currentInstance.ID)
+			}
+			<div
+				if len(instances) == 0 {
+					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
+				} else {
+					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden"
+				}
+				_="on htmx:afterSettle from body
+				if <.instance-item/>'s length == 0
+					remove .hidden from me
+				else
+					add .hidden to me
+				end
+				on htmx:afterRequest from body
+					wait 0.5s
+					if <.instance-item/>'s length == 0
+						remove .hidden from me
+					else
+						add .hidden to me
+					end
+				"
+			>
+				<div class="flex flex-row items-center gap-3 grow">
+					<p class="flex-grow text-center">
+						No teams to show yet. Do you want to <a href="#" class="link" onclick="add_teams_modal.showModal()">add some teams</a>?
+					</p>
+				</div>
+			</div>
 		</div>
-	} else {
-		<p class="py-4">No instances to show.</p>
-	}
-	<dialog id="confirm_duplicate_modal" class="modal">
+	</div>
+	<!-- Templates -->
+	@Templates(templates)
+	<!-- Modals -->
+	<dialog id="confirm_duplicate_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose">
-			<h3 class="text-lg font-bold">Duplicate an instance</h3>
-			<p class="pt-4">You are about to duplicate an instance including:</p>
+			<h3 class="text-lg font-bold">Duplicate a game</h3>
+			<p class="pt-4">You are about to duplicate a game including its:</p>
 			<ul class="mt-0">
-				<li>all associated locations</li>
-				<li>all associated events</li>
-				<li>instance settings</li>
+				<li>locations and content</li>
+				<li>settings</li>
 			</ul>
-			This will <strong>not</strong> duplicate any teams or activities/check-ins.
+			<p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p>
 			<form method="post" action="/admin/instances/duplicate">
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text">New instance name</span>
+						<span class="label-text">New game name</span>
 					</div>
 					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
 					<input type="hidden" name="id" value=""/>
@@ -130,24 +118,27 @@ templ Instances(instances []models.Instance, currentInstance models.Instance) {
 					<button type="submit" class="btn btn-primary">Duplicate</button>
 				</div>
 			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
 		</div>
 	</dialog>
-	<dialog id="confirm_delete_modal" class="modal">
+	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle p-1">
 		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
-			<h3 class="text-lg font-bold">Delete an instance</h3>
-			<p class="pt-4">You are about to delete an instance. Doing this will delete:</p>
+			<h3 class="text-lg font-bold">Delete a game</h3>
+			<p class="pt-4">You are about to delete a game. Doing this will delete its:</p>
 			<ul>
-				<li>all associated teams</li>
-				<li>all associated locations</li>
-				<li>all associated activities/scans</li>
+				<li>locations and content</li>
+				<li>teams and check-ins</li>
+				<li>settings</li>
 			</ul>
-			<p>To confirm, please type the name of the instance you want to delete: <code id="instance_name">instance</code></p>
+			<p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id="instance_name">instance</code></p>
 			<form hx-post="/admin/instances/delete" hx-swap="none">
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text">Instance name</span>
+						<span class="label-text">Game name</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="name" autocomplete="off" required/>
+					<input type="text" class="input input-bordered w-full" name="confirmname" autocomplete="off" required/>
 					<input type="hidden" name="id" value=""/>
 				</label>
 				<div class="modal-action">
@@ -155,15 +146,18 @@ templ Instances(instances []models.Instance, currentInstance models.Instance) {
 					<button type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
 				</div>
 			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
 		</div>
 	</dialog>
-	<dialog id="new_modal" class="modal">
+	<dialog id="new_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box">
 			<form hx-post="/admin/instances/new" hx-swap="none">
-				<h3 class="text-lg font-bold">Create a new instance</h3>
+				<h3 class="text-lg font-bold">Create a new game</h3>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text">What is the name of the new instance?</span>
+						<span class="label-text">What is the name of the new game?</span>
 					</div>
 					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
 				</label>
@@ -178,36 +172,193 @@ templ Instances(instances []models.Instance, currentInstance models.Instance) {
 					<button type="submit" class="btn btn-primary">Save</button>
 				</div>
 			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
 		</div>
 	</dialog>
 	<script>
-function confirmDelete() {
-  const id = event.target.dataset.id;
-  const name = event.target.dataset.name;
-  const instance_name = document.getElementById('instance_name');
-  const form = confirm_delete_modal.querySelector('form');
+function handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {
+	// Error checking
+	if (!modalId) {
+		console.error('Modal ID is required');
+		return;
+	}
+	if (showInstanceName && !nameFieldId) {
+		console.error('Name field ID is required when showing instance name');
+		return;
+	}
+	if (showInstanceName && !document.getElementById(nameFieldId)) {
+		console.error('Name field ID does not exist');
+		return;
+	}
+
+  const { id, name } = event.currentTarget.dataset;
+	if (!id) {
+		console.error('Instance ID is required');
+		return;
+	}
+  const modal = document.getElementById(modalId);
+  const form = modal.querySelector('form');
   const input = form.querySelector('input[name="name"]');
   const hidden = form.querySelector('input[name="id"]');
 
-  instance_name.textContent = name;
-  input.value = '';
+  if (showInstanceName) {
+    document.getElementById(nameFieldId).textContent = name;
+  }
+
+	if (input) {
+		input.value = defaultName ? `${name} ${defaultName}` : name || '';
+	}
   hidden.value = id;
 
-  confirm_delete_modal.showModal();
+  modal.showModal();
+}
+
+function confirmDeleteInstance() {
+  handleModalAction('confirm_delete_modal', 'instance_name', '', true);
+}
+
+function confirmDeleteTemplate() {
+  handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);
 }
 
 function confirmDuplicate() {
-  const id = event.target.dataset.id;
-  const name = event.target.dataset.name;
-  const form = document.getElementById('confirm_duplicate_modal').querySelector('form');
-  const input = form.querySelector('input[name="name"]');
-  const hidden = form.querySelector('input[name="id"]');
-
-  input.value = name + ' (copy)';
-  hidden.value = id;
-
-  confirm_duplicate_modal.showModal();
+  handleModalAction('confirm_duplicate_modal', '', '(copy)');
 }
 
+function createTemplate() {
+  handleModalAction('create_template_modal', 'template-modal-instance-name', '', true);
+}
+
+function shareTemplate() {
+	handleModalAction('share_template_modal');
+}
+
+function launchTemplate() {
+	handleModalAction('launch_template_modal', 'launch-template-name', '', true);
+}
 </script>
+}
+
+templ instanceItem(instance models.Instance, active bool) {
+	<div
+		class="instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
+	>
+		<div class="flex flex-row items-center gap-3 grow">
+			<!-- Play Status -->
+			switch instance.GetStatus() {
+				case models.Active:
+					<span class="tooltip" data-tip="Playing">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-play w-5 h-5 stroke-success"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+					</span>
+				case models.Scheduled:
+					<span class="tooltip" data-tip="Scheduled">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5 stroke-info"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
+					</span>
+				case models.Closed:
+					<span class="tooltip" data-tip="Closed">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-stop w-5 h-5 stroke-error"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>
+					</span>
+			}
+			<!-- Instance name -->
+			<span class="instance-name">
+				{ instance.Name }
+				if active {
+					<span class="badge badge-sm badge-info tooltip cursor-default ml-2" data-tip="Currently selected game">Active</span>
+				}
+			</span>
+			<span class="grow"></span>
+			<!-- Action buttons -->
+			if !active {
+				<span class="hidden sm:inline-block tooltip" data-tip="Make this your active game">
+					<a
+						href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
+						class="btn btn-sm inline-flex"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+						Switch
+					</a>
+				</span>
+			}
+			<!-- Actions Menu -->
+			<span class="tooltip" data-tip="More actions">
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" class="btn btn-sm m-1">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis w-5 h-5"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+					</div>
+					<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+						<!-- Switch -->
+						if !active {
+							<li class="inline-block sm:hidden">
+								<a
+									href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+									Switch to this game
+								</a>
+							</li>
+						} else {
+							<li class="inline-block sm:hidden disabled">
+								<a>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+									Switch to this game
+								</a>
+							</li>
+						}
+						<!-- Duplicate -->
+						<li>
+							<a
+								data-id={ fmt.Sprint(instance.ID) }
+								data-name={ instance.Name }
+								onclick="confirmDuplicate()"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-copy w-4 h-4"><path d="M2 16V4a2 2 0 0 1 2-2h11"></path><path d="M22 18H11a2 2 0 1 0 0 4h10.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5H11a2 2 0 0 0-2 2v12"></path><path d="M5 14H4a2 2 0 1 0 0 4h1"></path></svg>
+								Duplicate
+							</a>
+						</li>
+						<!-- Create new template -->
+						<li>
+							<a
+								data-id={ fmt.Sprint(instance.ID) }
+								data-name={ instance.Name }
+								onclick="createTemplate()"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-dashed w-4 h-4"><path d="M12 17h1.5"></path><path d="M12 22h1.5"></path><path d="M12 2h1.5"></path><path d="M17.5 22H19a1 1 0 0 0 1-1"></path><path d="M17.5 2H19a1 1 0 0 1 1 1v1.5"></path><path d="M20 14v3h-2.5"></path><path d="M20 8.5V10"></path><path d="M4 10V8.5"></path><path d="M4 19.5V14"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H8"></path><path d="M8 22H6.5a1 1 0 0 1 0-5H8"></path></svg>
+								Create template
+							</a>
+						</li>
+						<span class="divider my-0"></span>
+						<!-- Delete -->
+						if active {
+							<li class="disabled">
+								<a
+									class="tooltip cursor-not-allowed flex"
+									data-tip="Cannot delete current instance"
+									data-tip="Cannot delete current instance"
+									aria-disabled="true"
+									disabled
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									Delete
+								</a>
+							</li>
+						} else {
+							<li>
+								<a
+									class="text-error"
+									data-id={ fmt.Sprint(instance.ID) }
+									data-name={ instance.Name }
+									onclick="confirmDeleteInstance()"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									Delete
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+			</span>
+		</div>
+	</div>
 }

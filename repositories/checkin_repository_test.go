@@ -57,13 +57,19 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 	// Now delete the check-ins using the team codes and instance ID
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+		}
 		assert.NoError(t, err, "expected no error when starting transaction")
 	}
 
 	err = repo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			t.Fatalf("failed to rollback transaction: %v", rollbackErr)
+		}
 		assert.NoError(t, err, "expected no error when resetting team")
 	} else {
 		err = tx.Commit()

@@ -20,7 +20,7 @@ func createTempMarkdownFile(t *testing.T, dir, name, content string) string {
 		t.Fatalf("failed to create directory for temp markdown file: %v", err)
 	}
 
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	err := os.WriteFile(filePath, []byte(content), 0600)
 	if err != nil {
 		t.Fatalf("failed to create temp markdown file: %v", err)
 	}

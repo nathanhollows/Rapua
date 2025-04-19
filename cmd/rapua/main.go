@@ -41,7 +41,7 @@ func main() {
 		Name:        "Rapua",
 		Usage:       "rapua [global options] command [command options] [arguments...]",
 		Description: `An open-source platform for location-based games.`,
-		Version:     "3.4.0",
+		Version:     "3.5.0",
 		Commands: []*cli.Command{
 			newDBCommand(migrator),
 		},
@@ -55,7 +55,7 @@ func main() {
 	// Run CLI or app
 	if err := app.Run(os.Args); err != nil {
 		logger.Error("application error", "error", err)
-		os.Exit(1)
+		defer os.Exit(1)
 	}
 }
 
@@ -168,6 +168,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
+	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
@@ -194,7 +195,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	userService := services.NewUserService(transactor, userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
 		transactor,
-		locationService, userService, teamService, instanceRepo, instanceSettingsRepo,
+		locationService, teamService, instanceRepo, instanceSettingsRepo,
+	)
+	templateService := services.NewTemplateService(
+		transactor, locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 	gameplayService := services.NewGameplayService(
 		checkInService, locationService, teamService, blockService, navigationService, markerRepo,
@@ -223,6 +227,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		navigationService,
 		notificationService,
 		teamService,
+		templateService,
 		uploadService,
 		userService,
 	)

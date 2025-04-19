@@ -101,5 +101,4 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("ScheduleGame: rendering template", "error", err)
 	}
-
 }

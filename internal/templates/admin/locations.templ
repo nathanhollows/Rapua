@@ -637,17 +637,26 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							<div id="map" class="map w-full h-full rounded-lg"></div>
 							<!-- Overlay Button and Backdrop -->
 							<div id="map-lock-overlay" class="absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100" tabindex="0">
-								<button id="unlock-map-btn" class="btn btn-neutral" onclick="document.getElementById('map-lock-overlay').remove()">
+								<button
+									id="unlock-map-btn"
+									class="btn btn-neutral"
+									_="on click
+									remove #map-lock-overlay then
+									transition #map-note's opacity to 1
+									"
+								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock-keyhole w-5 h-5"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
 									Unlock to edit
 								</button>
 							</div>
 						</div>
-						<div class="form-control">
-							<label class="label cursor-pointer">
-								<span class="label-text">Save map location</span>
-								<input type="checkbox" name="location" form="edit-location" class="checkbox checkbox-sm" checked="checked"/>
-							</label>
+						<div id="map-note" class="label opacity-0">
+							<span class="label-text">
+								<strong>Note:</strong> Changing the map marker might change the location code.
+							</span>
+							<span class="label-text">
+								Autosave is disabled for map markers.
+							</span>
 						</div>
 						<!-- Hidden inputs for form handling -->
 						<input type="hidden" name="code" form="edit-location" value={ location.Marker.Code }/>
@@ -670,8 +679,9 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							<!-- Demo -->
 							<div
 								class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
-								hx-get={ fmt.Sprint("/admin/locations/", location.MarkerID, "/preview") }
+								hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
 								hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
+								hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
 								hx-swap="innerHTML"
 								hx-indicator=".htmx-indicator"
 							></div>

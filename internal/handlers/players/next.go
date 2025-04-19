@@ -4,19 +4,22 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 )
 
 func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
+	preview := r.Context().Value(contextkeys.PreviewKey) != nil
+
 	team, err := h.getTeamFromContext(r.Context())
-	if err != nil {
+	if err != nil && !preview {
 		h.redirect(w, r, "/play")
 		return
 	}
 
 	locations, err := h.GameplayService.SuggestNextLocations(r.Context(), team)
-	if err != nil {
+	if err != nil && !preview {
 		if errors.Is(err, services.ErrAllLocationsVisited) && team.MustCheckOut == "" {
 			h.redirect(w, r, "/finish")
 			return

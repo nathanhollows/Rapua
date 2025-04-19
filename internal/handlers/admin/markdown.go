@@ -28,5 +28,4 @@ func (h *AdminHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("markdown preview: rendering template", "error", err)
 	}
-
 }

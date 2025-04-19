@@ -3,6 +3,7 @@ package repositories_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -61,10 +62,16 @@ func TestBlockRepository(t *testing.T) {
 				assert.NoError(t, err)
 				err = repo.Delete(context.Background(), tx, block.GetID())
 				if err != nil {
-					tx.Rollback()
+					err2 := tx.Rollback()
+					if err2 != nil {
+						t.Error(err2)
+					}
 					t.Error(err)
 				} else {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						t.Error(err)
+					}
 				}
 			},
 		},
@@ -100,10 +107,16 @@ func TestBlockRepository(t *testing.T) {
 				assert.NoError(t, err)
 				err = repo.Delete(context.Background(), tx, block.GetID())
 				if err != nil {
-					tx.Rollback()
+					rollbackErr := tx.Rollback()
+					if rollbackErr != nil {
+						t.Error(rollbackErr)
+					}
 					t.Error(err)
 				} else {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						t.Error(err)
+					}
 				}
 			},
 		},
@@ -132,7 +145,10 @@ func TestBlockRepository(t *testing.T) {
 				// TODO: mock the block data
 				data := make(map[string][]string)
 				data["url"] = []string{"/updated-url"}
-				block.UpdateBlockData(data)
+				err := block.UpdateBlockData(data)
+				if err != nil {
+					return nil, err
+				}
 				return repo.Update(context.Background(), block)
 			},
 			assertion: func(result interface{}, err error) {
@@ -145,10 +161,16 @@ func TestBlockRepository(t *testing.T) {
 				assert.NoError(t, err)
 				err = repo.Delete(context.Background(), tx, block.GetID())
 				if err != nil {
-					tx.Rollback()
+					err2 := tx.Rollback()
+					if err2 != nil {
+						t.Error(err2)
+					}
 					t.Error(err)
 				} else {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						t.Error(err)
+					}
 				}
 			},
 		},
@@ -177,10 +199,16 @@ func TestBlockRepository(t *testing.T) {
 				assert.NoError(t, err)
 				err = repo.Delete(context.Background(), tx, block.GetID())
 				if err != nil {
-					tx.Rollback()
+					rollbackErr := tx.Rollback()
+					if rollbackErr != nil {
+						return nil, fmt.Errorf("rolling back transaction: %w", rollbackErr)
+					}
 					return nil, err
 				} else {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						return nil, fmt.Errorf("committing transaction: %w", err)
+					}
 					return nil, nil
 				}
 			},
@@ -246,10 +274,16 @@ func TestBlockRepository_Bulk(t *testing.T) {
 
 				err = repo.DeleteByLocationID(context.Background(), tx, block[0].GetLocationID())
 				if err != nil {
-					tx.Rollback()
+					rollbackErr := tx.Rollback()
+					if rollbackErr != nil {
+						return nil, rollbackErr
+					}
 					return nil, err
 				}
-				tx.Commit()
+				err = tx.Commit()
+				if err != nil {
+					return nil, err
+				}
 
 				for i, b := range block {
 					t.Logf("Checking block %d, ID: %s", i, b.GetID())
@@ -311,5 +345,4 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, newBlock)
 	assert.NotEqual(t, block.GetLocationID(), newBlock.GetLocationID())
-
 }

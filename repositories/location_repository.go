@@ -156,8 +156,6 @@ func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, i
 		Set("avg_duration = (?)", avgDurationSubquery).
 		Where("instance_id = ?", instanceID)
 
-	fmt.Println(query.String())
-
 	_, err := query.Exec(ctx)
 
 	return err

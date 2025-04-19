@@ -29,6 +29,7 @@ var (
 type AuthService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
+	IsUserAuthenticated(r *http.Request) bool
 	AllowGoogleLogin() bool
 	OAuthLogin(ctx context.Context, provider string, user goth.User) (*models.User, error)
 	CheckUserRegisteredWithOAuth(ctx context.Context, provider, userID string) (*models.User, error)
@@ -66,6 +67,17 @@ func (s *authService) AuthenticateUser(ctx context.Context, email, password stri
 	}
 
 	return user, nil
+}
+
+// IsUserAuthenticated checks if the user is authenticated.
+func (s *authService) IsUserAuthenticated(r *http.Request) bool {
+	session, err := sessions.Get(r, "admin")
+	if err != nil {
+		return false
+	}
+
+	_, ok := session.Values["user_id"].(string)
+	return ok
 }
 
 // GetAuthenticatedUser retrieves the authenticated user from the session.

@@ -26,6 +26,122 @@ func setupLocationService(t *testing.T) (services.LocationService, func()) {
 	return locationService, cleanup
 }
 
+func TestLocationService_CreateLocation(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	t.Run("Create location", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			context.Background(),
+			gofakeit.UUID(),
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			gofakeit.Number(0, 100))
+		assert.NoError(t, err)
+		assert.NotEmpty(t, location.ID)
+	})
+
+	t.Run("Create location with invalid instance ID", func(t *testing.T) {
+		_, err := service.CreateLocation(
+			context.Background(),
+			"",
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			gofakeit.Number(0, 100))
+		assert.Error(t, err)
+	})
+
+	t.Run("Create location with invalid name", func(t *testing.T) {
+		_, err := service.CreateLocation(
+			context.Background(),
+			gofakeit.UUID(),
+			"",
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			gofakeit.Number(0, 100))
+		assert.Error(t, err)
+	})
+}
+
+func TestLocationService_CreateMarker(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	t.Run("Create marker", func(t *testing.T) {
+		marker, err := service.CreateMarker(
+			context.Background(),
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude())
+		assert.NoError(t, err)
+		assert.NotEmpty(t, marker.Code)
+	})
+
+	t.Run("Create marker with invalid name", func(t *testing.T) {
+		_, err := service.CreateMarker(
+			context.Background(),
+			"",
+			gofakeit.Latitude(),
+			gofakeit.Longitude())
+		assert.Error(t, err)
+	})
+}
+
+func TestLocationService_CreateLocationFromMarker(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	marker, err := service.CreateMarker(
+		context.Background(),
+		gofakeit.Name(),
+		gofakeit.Latitude(),
+		gofakeit.Longitude())
+	assert.NoError(t, err)
+
+	t.Run("Create location from marker", func(t *testing.T) {
+		location, err := service.CreateLocationFromMarker(
+			context.Background(),
+			gofakeit.UUID(),
+			gofakeit.Name(),
+			gofakeit.Number(0, 100),
+			marker.Code)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, location.ID)
+	})
+
+	t.Run("Create location from marker with invalid instance ID", func(t *testing.T) {
+		_, err = service.CreateLocationFromMarker(
+			context.Background(),
+			"",
+			gofakeit.Name(),
+			gofakeit.Number(0, 100),
+			marker.Code)
+		assert.Error(t, err)
+	})
+
+	t.Run("Create location from marker with invalid name", func(t *testing.T) {
+		_, err = service.CreateLocationFromMarker(
+			context.Background(),
+			gofakeit.UUID(),
+			"",
+			gofakeit.Number(0, 100),
+			marker.Code)
+		assert.Error(t, err)
+	})
+
+	t.Run("Create location from marker with invalid marker code", func(t *testing.T) {
+		_, err := service.CreateLocationFromMarker(
+			context.Background(),
+			gofakeit.UUID(),
+			gofakeit.Name(),
+			gofakeit.Number(0, 100),
+			"")
+		assert.Error(t, err)
+	})
+}
+
 func TestLocationService_DuplicateLocation(t *testing.T) {
 	service, cleanup := setupLocationService(t)
 	defer cleanup()
@@ -62,6 +178,114 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		blocks, err := blockService.FindByLocationID(context.Background(), newLocation.ID)
 		assert.NoError(t, err)
 		assert.Len(t, blocks, 1)
-
 	})
 }
+
+func TestLocationService_GetByID(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	t.Run("Get location by ID", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			context.Background(),
+			gofakeit.UUID(),
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			gofakeit.Number(0, 100))
+		assert.NoError(t, err)
+
+		checkLocation, err := service.GetByID(context.Background(), location.ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, checkLocation)
+	})
+
+	t.Run("Get location by ID with invalid ID", func(t *testing.T) {
+		_, err := service.GetByID(context.Background(), "")
+		assert.Error(t, err)
+	})
+}
+
+func TestLocationService_GetByInstanceAndCode(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	t.Run("Get location by instance and code", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			context.Background(),
+			gofakeit.UUID(),
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			gofakeit.Number(0, 100))
+		assert.NoError(t, err)
+
+		checkLocation, err := service.GetByInstanceAndCode(context.Background(), location.InstanceID, location.MarkerID)
+		assert.NoError(t, err)
+		assert.NotNil(t, checkLocation)
+	})
+
+	t.Run("Get location by instance and code with invalid instance ID", func(t *testing.T) {
+		_, err := service.GetByInstanceAndCode(context.Background(), "", gofakeit.UUID())
+		assert.Error(t, err)
+	})
+}
+
+func TestLocationService_FindByInstance(t *testing.T) {
+	service, cleanup := setupLocationService(t)
+	defer cleanup()
+
+	t.Run("Find locations by instance", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		locations := make([]string, 5)
+		for i := 0; i < 5; i++ {
+			location, err := service.CreateLocation(
+				context.Background(),
+				instanceID,
+				gofakeit.Name(),
+				gofakeit.Latitude(),
+				gofakeit.Longitude(),
+				gofakeit.Number(0, 100))
+			assert.NoError(t, err)
+			locations[i] = location.ID
+		}
+
+		foundLocations, err := service.FindByInstance(context.Background(), instanceID)
+		assert.NoError(t, err)
+		assert.Len(t, foundLocations, 5)
+	})
+
+	t.Run("Find locations by instance with invalid instance ID", func(t *testing.T) {
+		locs, err := service.FindByInstance(context.Background(), "")
+		assert.NoError(t, err)
+		assert.Empty(t, locs)
+	})
+}
+
+// TODO: Test the following methods:
+// 	// FindMarkersNotInInstance finds all markers that are not in the given instance
+// 	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
+
+// TODO: Test the following methods:
+// 	// Update visitor stats for a location
+// 	IncrementVisitorStats(ctx context.Context, location *models.Location) error
+// 	// UpdateCoords updates the coordinates for a location
+// 	UpdateCoords(ctx context.Context, location *models.Location, lat, lng float64) error
+// 	// UpdateName updates the name of a location
+// 	UpdateName(ctx context.Context, location *models.Location, name string) error
+// 	// UpdateLocation updates a location
+// 	UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error
+// 	// ReorderLocations accepts IDs of locations and reorders them
+// 	ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error
+//
+// 	// DeleteLocation deletes a location
+// 	DeleteLocation(ctx context.Context, locationID string) error
+// 	// DeleteByInstanceID deletes all locations for an instance
+// 	DeleteLocations(ctx context.Context, tx *bun.Tx, locations []models.Location) error
+//
+// 	// LoadCluesForLocation loads the clues for a specific location if they are not already loaded
+// 	LoadCluesForLocation(ctx context.Context, location *models.Location) error
+// 	// LoadCluesForLocations loads the clues for all given locations if they are not already loaded
+// 	LoadCluesForLocations(ctx context.Context, locations *[]models.Location) error
+// 	// LoadRelations loads the related data for a location
+// 	LoadRelations(ctx context.Context, location *models.Location) error

@@ -43,11 +43,9 @@ func (h *AdminHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.handleSuccess(w, r, "File uploaded")
-
 }
 
 func (h *AdminHandler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
-
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "Couldn't search images", "Failed to parse form", "error", err)

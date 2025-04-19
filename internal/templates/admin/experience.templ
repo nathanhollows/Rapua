@@ -18,48 +18,10 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 				<!--  settings -->
 				<section id="movement-settings">
 					<div class="divider divider-accent font-bold pb-5">Navigation</div>
-					<!-- Navigation Method -->
-					<div class="mb-5">
-						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-							<strong>Navigation Method</strong>
-							<div class="dropdown dropdown-hover">
-								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-								</div>
-								<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
-									for _, v := range models.GetNavigationMethods() {
-										<div tabindex="0" class="card-body">
-											<h2 class="card-title">{ v.String() }</h2>
-											<p>{ v.Description() }</p>
-										</div>
-									}
-								</div>
-							</div>
-						</div>
-						<div class="">How should the players navigate the game?</div>
-						<div class="form-control lg:w-full py-3">
-							for i, v := range models.GetNavigationMethods() {
-								<label class="label cursor-pointer">
-									<span class="label-text">{ v.String() }</span>
-									<input
-										type="radio"
-										name="navigationMethod"
-										value={ v.String() }
-										data-index={ intToString(i) }
-										class="radio radio-primary"
-										onchange="updatePreview()"
-										if settings.NavigationMethod == v {
-											checked
-										}
-									/>
-								</label>
-							}
-						</div>
-					</div>
-					<!-- Navigation Mode -->
+					<!-- Pathfinding -->
 					<div class="my-5">
 						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-							<strong>Navigation Mode</strong>
+							<strong>Pathfinding</strong>
 							<div class="dropdown dropdown-hover">
 								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
@@ -78,7 +40,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 							</div>
 						</div>
 						<span class="">
-							How should the game decide which location(s) to show next?
+							How players move between locations.
 						</span>
 						<div class="form-control w-full py-3">
 							for i, v := range models.GetNavigationModes() {
@@ -94,6 +56,44 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 											checked
 										}
 										onchange="updatePreview()"
+									/>
+								</label>
+							}
+						</div>
+					</div>
+					<!-- Navigation Display -->
+					<div class="mb-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Navigation Display</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
+									for _, v := range models.GetNavigationMethods() {
+										<div tabindex="0" class="card-body">
+											<h2 class="card-title">{ v.String() }</h2>
+											<p>{ v.Description() }</p>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+						<div class="">How locations are revealed to players.</div>
+						<div class="form-control lg:w-full py-3">
+							for i, v := range models.GetNavigationMethods() {
+								<label class="label cursor-pointer">
+									<span class="label-text">{ v.String() }</span>
+									<input
+										type="radio"
+										name="navigationMethod"
+										value={ v.String() }
+										data-index={ intToString(i) }
+										class="radio radio-primary"
+										onchange="updatePreview()"
+										if settings.NavigationMethod == v {
+											checked
+										}
 									/>
 								</label>
 							}
@@ -328,7 +328,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 							<div
 								if locationCount > 2 {
 									hx-post="/admin/experience/preview"
-									hx-trigger="load, change delay:500ms from:(#movement-settings input), keyup change delay:500ms from:(#movement-settings input)"
+									hx-trigger="load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)"
 									hx-swap="innerHTML"
 									hx-include="#movement-settings"
 								}
@@ -371,6 +371,10 @@ function getCheckedData(name) {
 }
 
 function updatePreview() {
+  // If #locationList or #navigationView is not found, return
+  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {
+	return;
+  }
   const navigationMode = getCheckedData("navigationMode");
   const navigationMethod = getCheckedData("navigationMethod");
   let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;

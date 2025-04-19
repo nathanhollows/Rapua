@@ -156,9 +156,15 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 
 				err = repo.DeleteByBlockID(context.Background(), tx, state[0].GetBlockID())
 				if err == nil {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						return nil, err
+					}
 				} else {
-					tx.Rollback()
+					err2 := tx.Rollback()
+					if err2 != nil {
+						return nil, err2
+					}
 					return nil, err
 				}
 
@@ -171,7 +177,6 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 				}
 
 				return nil, nil
-
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)
@@ -229,10 +234,16 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 
 				err = repo.DeleteByTeamCodes(context.Background(), tx, teamCodes)
 				if err != nil {
-					tx.Rollback()
+					err2 := tx.Rollback()
+					if err2 != nil {
+						return nil, err2
+					}
 					return nil, err
 				} else {
-					tx.Commit()
+					err := tx.Commit()
+					if err != nil {
+						return nil, err
+					}
 				}
 
 				// Check that the states have been deleted

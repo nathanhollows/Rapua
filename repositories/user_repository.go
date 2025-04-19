@@ -90,7 +90,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 		Model(user).
 		Where("email = ?", email).
 		Relation("CurrentInstance").
-		Relation("Instances").
+		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.Where("is_template = ?", false)
+		}).
 		Scan(ctx)
 	return user, err
 }
@@ -119,7 +121,9 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*models.Us
 			return q.Order("order ASC")
 		}).
 		Relation("CurrentInstance.Locations.Marker").
-		Relation("Instances").
+		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.Where("is_template = ?", false)
+		}).
 		Scan(ctx)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -135,7 +139,9 @@ func (r *userRepository) GetByEmailAndProvider(ctx context.Context, email, provi
 		Where("email = ?", email).
 		Where("provider = ? OR provider = ''", provider).
 		Relation("CurrentInstance").
-		Relation("Instances").
+		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.Where("is_template = ?", false)
+		}).
 		Scan(ctx)
 	return user, err
 }

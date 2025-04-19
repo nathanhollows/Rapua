@@ -64,7 +64,10 @@ Nathan`
 	// Render the html email template
 	w := new(bytes.Buffer)
 	c := templates.VerifyEmail(url)
-	c.Render(ctx, w)
+	err := c.Render(ctx, w)
+	if err != nil {
+		return nil, fmt.Errorf("rendering email template: %w", err)
+	}
 
 	message := mail.NewSingleEmail(from, subject, to, plainTextContent, w.String())
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))

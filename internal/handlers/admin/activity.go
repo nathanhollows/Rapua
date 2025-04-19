@@ -79,5 +79,4 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("TeamActivity: rendering template", "error", err)
 	}
-
 }

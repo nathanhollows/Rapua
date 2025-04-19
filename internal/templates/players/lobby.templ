@@ -5,8 +5,14 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
-templ TeamID(team models.Team) {
-	<div id="team-id" class="flex gap-3 justify-center" hx-swap-oob="true">
+templ TeamID(team models.Team, oob bool) {
+	<div
+		id="team-id"
+		class="flex gap-3 justify-center not-prose"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
 		<p>Team code: <span class="font-mono font-bold">{ team.Code }</span></p>
 		<p>
 			Team name: 
@@ -80,7 +86,7 @@ templ Lobby(team models.Team) {
 			@instructions(team.Instance.Settings)
 		</div>
 		<div class="divider mb-5 prose">Team Info</div>
-		@TeamID(team)
+		@TeamID(team, false)
 		<div class="divider"></div>
 		<div class="text-center mt-12">
 			switch team.Instance.GetStatus() {
@@ -101,10 +107,15 @@ templ Lobby(team models.Team) {
 			</label>
 			<input form="team-name" type="hidden" name="team_id" value={ team.Code }/>
 			<div class="modal-action">
-				<form method="dialog">
+				<form method="dialog" id="team-name">
 					<!-- if there is a button in form, it will close the modal -->
-					<button class="btn">Nevermind</button>
 					<button
+						type="button"
+						class="btn"
+						onclick="my_modal_5.close()"
+					>Nevermind</button>
+					<button
+						type="submit"
 						class="btn btn-primary"
 						hx-post="/lobby/team-name"
 						hx-include="[form='team-name']"

@@ -12,8 +12,15 @@ import (
 func (h *AdminHandler) Instances(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	c := templates.Instances(user.Instances, user.CurrentInstance)
-	err := templates.Layout(c, *user, "Instances", "Instances").Render(r.Context(), w)
+	// We need to show both the instances and the templates
+	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	if err != nil {
+		h.handleError(w, r, "Instances: finding templates", "Error finding templates", "error", err, "instance_id", user.CurrentInstanceID)
+		return
+	}
+
+	c := templates.Instances(user.Instances, user.CurrentInstance, gameTemplates)
+	err = templates.Layout(c, *user, "Games and Templates", "Games and Templates").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)
 	}
@@ -29,14 +36,14 @@ func (h *AdminHandler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := r.FormValue("name")
-	instance, err := h.IntanceService.CreateInstance(r.Context(), name, user)
+	instance, err := h.InstanceService.CreateInstance(r.Context(), name, user)
 	if err != nil {
 		h.handleError(w, r, "InstancesCreate: creating instance", "Error creating instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
 	// Switch to the new instance
-	_, err = h.IntanceService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.UserService.SwitchInstance(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(w, r, "InstancesCreate: switching instance", "Error switching instance", "error", err)
 		return
@@ -58,13 +65,13 @@ func (h *AdminHandler) InstanceDuplicate(w http.ResponseWriter, r *http.Request)
 	id := r.Form.Get("id")
 	name := r.Form.Get("name")
 
-	instance, err := h.IntanceService.DuplicateInstance(r.Context(), user, id, name)
+	instance, err := h.InstanceService.DuplicateInstance(r.Context(), user, id, name)
 	if err != nil {
 		h.handleError(w, r, "InstanceDuplicate: duplicating instance", "Error duplicating instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
-	_, err = h.IntanceService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.UserService.SwitchInstance(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(w, r, "InstanceDuplicate: switching instance", "Error switching instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -83,7 +90,7 @@ func (h *AdminHandler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.IntanceService.SwitchInstance(r.Context(), user, instanceID)
+	err := h.UserService.SwitchInstance(r.Context(), user, instanceID)
 	if err != nil {
 		h.handleError(w, r, "InstanceSwitch: switching instance", "Error switching instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -107,7 +114,16 @@ func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.Form.Get("id")
-	confirmName := r.Form.Get("name")
+	if id == "" {
+		h.handleError(w, r, "InstanceDelete: missing instance ID", "Could not find the instance ID", "instance_id", user.CurrentInstanceID)
+		return
+	}
+
+	confirmName := r.Form.Get("confirmname")
+	if confirmName == "" {
+		h.handleError(w, r, "InstanceDelete: missing name", "Please type the game name to confirm", "instance_id", user.CurrentInstanceID)
+		return
+	}
 
 	if user.CurrentInstanceID == id {
 		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).Render(r.Context(), w)
@@ -117,7 +133,7 @@ func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.IntanceService.DeleteInstance(r.Context(), user, id, confirmName)
+	_, err := h.InstanceService.DeleteInstance(r.Context(), user, id, confirmName)
 	if err != nil {
 		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return

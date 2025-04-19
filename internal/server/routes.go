@@ -21,7 +21,6 @@ func setupRouter(
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.AdminHandler,
 ) *chi.Mux {
-
 	router := chi.NewRouter()
 
 	router.Use(middleware.Compress(5))
@@ -47,14 +46,21 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
-	router.Get("/play", playerHandler.Play)
-	router.Post("/play", playerHandler.PlayPost)
+	router.Route("/play", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+		})
+
+		r.Get("/", playerHandler.Play)
+		r.Post("/", playerHandler.PlayPost)
+	})
 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.Next)
 		r.Post("/", playerHandler.Next)
@@ -62,8 +68,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
@@ -71,7 +78,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.Lobby)
 		r.Post("/team-name", playerHandler.SetTeamName)
@@ -108,18 +117,22 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.MyCheckins)
 		r.Get("/{id}", playerHandler.CheckInView)
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
-
 }
 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
+	router.Use(func(next http.Handler) http.Handler {
+		return middlewares.AuthStatusMiddleware(publicHandler.AuthService, next)
+	})
+
 	router.Get("/", publicHandler.Index)
 	router.Get("/pricing", publicHandler.Pricing)
 	router.Get("/about", publicHandler.About)
@@ -155,8 +168,11 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 		r.Get("/*", publicHandler.Docs)
 	})
 
-	router.NotFound(publicHandler.NotFound)
+	router.Route("/templates", func(r chi.Router) {
+		r.Get("/{id}", publicHandler.TemplatesPreview)
+	})
 
+	router.NotFound(publicHandler.NotFound)
 }
 
 func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
@@ -186,7 +202,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Get("/{id}", adminHandler.LocationEdit)
 			r.Post("/{id}", adminHandler.LocationEditPost)
 			r.Delete("/{id}", adminHandler.LocationDelete)
-			r.Get("/{id}/preview", adminHandler.LocationPreview)
 			// Assets
 			r.Get("/qr/{action}/{id}.{extension}", adminHandler.QRCode)
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
@@ -245,6 +260,21 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 		r.Route("/facilitator", func(r chi.Router) {
 			r.Get("/create-link", adminHandler.FacilitatorShowModal)
 			r.Post("/create-link", adminHandler.FacilitatorCreateTokenLink)
+		})
+
+		r.Route("/templates", func(r chi.Router) {
+			r.Post("/create", adminHandler.TemplatesCreate)
+			r.Delete("/", adminHandler.TemplatesDelete)
+			// Launch
+			r.Post("/launch", adminHandler.TemplatesLaunch)
+			r.Post("/launch-from-link", adminHandler.TemplatesLaunchFromLink)
+			// Edit
+			r.Get("/{id}/name", adminHandler.TemplatesName)
+			r.Get("/{id}/edit/name", adminHandler.TemplatesNameEdit)
+			r.Post("/{id}/edit/name", adminHandler.TemplatesNameEditPost)
+			// Share
+			r.Get("/{id}/share", adminHandler.TemplatesShare)
+			r.Post("/{id}/share", adminHandler.TemplatesSharePost)
 		})
 
 		r.Route("/media", func(r chi.Router) {

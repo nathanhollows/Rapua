@@ -36,6 +36,7 @@ func Start(logger *slog.Logger,
 	navigationService services.NavigationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
+	templateService services.TemplateService,
 	uploadService services.UploadService,
 	userService services.UserService,
 ) {
@@ -44,6 +45,7 @@ func Start(logger *slog.Logger,
 		logger,
 		authService,
 		emailService,
+		&templateService,
 		userService,
 	)
 
@@ -70,6 +72,7 @@ func Start(logger *slog.Logger,
 		locationService,
 		notificationService,
 		teamService,
+		templateService,
 		uploadService,
 		userService,
 	)
@@ -80,8 +83,11 @@ func Start(logger *slog.Logger,
 	signal.Notify(killSig, os.Interrupt, syscall.SIGTERM)
 
 	server = &http.Server{
-		Addr:    os.Getenv("SERVER_ADDR"),
-		Handler: router,
+		Addr:              os.Getenv("SERVER_ADDR"),
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       1 * time.Minute,
+		WriteTimeout:      2 * time.Minute,
 	}
 
 	go func() {

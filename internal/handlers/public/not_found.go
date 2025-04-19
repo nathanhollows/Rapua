@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
 )
 
@@ -11,7 +12,8 @@ func (h *PublicHandler) NotFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
 	c := templates.NotFound()
-	err := templates.PublicLayout(c, "Not Found").Render(r.Context(), w)
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	err := templates.PublicLayout(c, "Not Found", authed).Render(r.Context(), w)
 
 	if err != nil {
 		h.Logger.Error("rendering NotFound page", "err", err)

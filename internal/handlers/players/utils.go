@@ -39,14 +39,6 @@ func NewPlayerHandler(
 	}
 }
 
-// getTeamIfExists retrieves a team by its code if present.
-func (h *PlayerHandler) getTeamIfExists(ctx context.Context, teamCode interface{}) (*models.Team, error) {
-	if teamCode == nil {
-		return nil, nil
-	}
-	return h.GameplayService.GetTeamByCode(ctx, teamCode.(string))
-}
-
 // GetTeamFromContext retrieves the team from the context.
 // Team will always be in the context because the middleware.
 // However the Team could be nil if the team was not found.
@@ -83,8 +75,8 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	if err != nil {
 		return fmt.Errorf("saving session: %w", err)
 	}
-	return nil
 
+	return nil
 }
 
 // invalidateSession invalidates the current session.

@@ -10,8 +10,8 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@header(title)
-		<body class="h-full">
-			<div id="app" class="m-auto" data-v-app="">
+		<body class="h-full flex flex-col">
+			<div id="app" data-v-app="">
 				@nav(user, section)
 				<div class="toast toast-center z-50" id="alerts"></div>
 				<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
@@ -187,7 +187,7 @@ templ nav(user models.User, section string) {
 				<div class="dropdown dropdown-end mr-2">
 					<button
 						tabindex="0"
-						if section == "Instances" {
+						if section == "Games and Templates" {
 							class="btn btn-ghost tooltip tooltip-bottom flex btn-active"
 						} else {
 							class="btn btn-ghost tooltip tooltip-bottom flex"
@@ -204,11 +204,11 @@ templ nav(user models.User, section string) {
 					</button>
 					<ul
 						tabindex="0"
-						class="menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl"
+						class="font-normal menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl"
 					>
 						if len(user.Instances) > 0 {
 							<li>
-								<h2 class="menu-title">Change instance</h2>
+								<h2 class="menu-title">Switch games</h2>
 								<ul>
 									for _, instance := range user.Instances {
 										<li>
@@ -232,7 +232,7 @@ templ nav(user models.User, section string) {
 						}
 						<li>
 							<a href="/admin/instances">
-								Manage instances
+								Manage games and templates
 							</a>
 						</li>
 					</ul>

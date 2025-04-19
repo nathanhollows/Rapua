@@ -18,6 +18,8 @@ type InstanceRepository interface {
 	GetByID(ctx context.Context, id string) (*models.Instance, error)
 	// FindByUserID finds all instances associated with a user ID
 	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
+	// FindTemplates finds all instances that are templates
+	FindTemplates(ctx context.Context, userID string) ([]models.Instance, error)
 
 	// Update updates an instance in the database
 	Update(ctx context.Context, instance *models.Instance) error
@@ -77,7 +79,10 @@ func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.In
 		Model(instance).
 		Where("id = ?", id).
 		Relation("Locations").
+		Relation("Locations.Blocks").
+		Relation("Locations.Clues").
 		Relation("Settings").
+		Relation("ShareLinks").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -89,7 +94,20 @@ func (r *instanceRepository) FindByUserID(ctx context.Context, userID string) ([
 	instances := []models.Instance{}
 	err := r.db.NewSelect().
 		Model(&instances).
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND is_template = ?", userID, false).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (r *instanceRepository) FindTemplates(ctx context.Context, userID string) ([]models.Instance, error) {
+	instances := []models.Instance{}
+	err := r.db.NewSelect().
+		Model(&instances).
+		Where("user_id = ? AND is_template = ?", userID, true).
+		Order("created_at DESC").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -118,6 +136,12 @@ func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) 
 
 	// Delete locations
 	_, err = tx.NewDelete().Model(&models.Location{}).Where("instance_id = ?", id).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Delete ShareLinks
+	_, err = tx.NewDelete().Model(&models.ShareLink{}).Where("template_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}

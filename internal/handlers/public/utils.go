@@ -1,32 +1,72 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	"github.com/markbates/goth"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type FindTemplateService interface {
+	GetByID(ctx context.Context, id string) (*models.Instance, error)
+	GetShareLink(ctx context.Context, id string) (*models.ShareLink, error)
+}
+
+// UserAuthenticator handles core authentication operations
+type UserAuthenticator interface {
+	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
+	GetAuthenticatedUser(r *http.Request) (*models.User, error)
+	IsUserAuthenticated(r *http.Request) bool
+}
+
+// OAuthService manages OAuth-specific authentication flows
+type OAuthService interface {
+	AllowGoogleLogin() bool
+	OAuthLogin(ctx context.Context, provider string, user goth.User) (*models.User, error)
+	CheckUserRegisteredWithOAuth(ctx context.Context, provider, userID string) (*models.User, error)
+	CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error)
+	CompleteUserAuth(w http.ResponseWriter, r *http.Request) (*models.User, error)
+}
+
+// EmailVerificationService handles email-related authentication tasks
+type EmailVerificationService interface {
+	VerifyEmail(ctx context.Context, token string) error
+	SendEmailVerification(ctx context.Context, user *models.User) error
+}
+
+// AuthService (optional) can compose the individual services if needed
+type AuthService interface {
+	UserAuthenticator
+	OAuthService
+	EmailVerificationService
+}
+
 type PublicHandler struct {
-	Logger       *slog.Logger
-	AuthService  services.AuthService
-	EmailService services.EmailService
-	UserService  services.UserService
+	Logger          *slog.Logger
+	AuthService     AuthService
+	EmailService    services.EmailService
+	TemplateService FindTemplateService
+	UserService     services.UserService
 }
 
 func NewPublicHandler(
 	logger *slog.Logger,
-	authService services.AuthService,
+	authService AuthService,
 	emailService services.EmailService,
+	templateService FindTemplateService,
 	userService services.UserService,
 ) *PublicHandler {
 	return &PublicHandler{
-		Logger:       logger,
-		AuthService:  authService,
-		EmailService: emailService,
-		UserService:  userService,
+		Logger:          logger,
+		AuthService:     authService,
+		EmailService:    emailService,
+		TemplateService: templateService,
+		UserService:     userService,
 	}
 }
 

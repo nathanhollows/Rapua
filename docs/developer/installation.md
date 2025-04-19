@@ -51,11 +51,17 @@ You will also need to have SQLite installed on your machine. If you don't have i
     ```sh
     ./rapua db migrate
     ```
-6. Run the project
+6. Set folder permissions (Unix only)
+    ```sh
+    mkdir -p ./static/uploads
+    chown -R $(whoami) ./static/uploads
+    ```
+    This is required for the application to be able to write files to the uploads directory. You can change this to a more secure setting later.
+7. Run the project
     ```sh
     ./rapua
     ```
-7. Open your browser and navigate to `http://localhost:8090`
+8. Open your browser and navigate to `http://localhost:8090`
     
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupUserService(t *testing.T) (services.UserService, func()) {
+func setupUserService(t *testing.T) (services.UserService, repositories.InstanceRepository, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
@@ -21,11 +21,11 @@ func setupUserService(t *testing.T) (services.UserService, func()) {
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	userService := services.NewUserService(transactor, userRepo, instanceRepo)
-	return userService, cleanup
+	return userService, instanceRepo, cleanup
 }
 
 func TestCreateUser(t *testing.T) {
-	service, cleanup := setupUserService(t)
+	service, _, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
@@ -43,7 +43,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateUser_PasswordsDoNotMatch(t *testing.T) {
-	service, cleanup := setupUserService(t)
+	service, _, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
@@ -59,7 +59,7 @@ func TestCreateUser_PasswordsDoNotMatch(t *testing.T) {
 }
 
 func TestGetUserByEmail(t *testing.T) {
-	service, cleanup := setupUserService(t)
+	service, _, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
@@ -80,7 +80,7 @@ func TestGetUserByEmail(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	service, cleanup := setupUserService(t)
+	service, _, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
@@ -105,7 +105,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	service, cleanup := setupUserService(t)
+	service, _, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
@@ -123,4 +123,41 @@ func TestDeleteUser(t *testing.T) {
 
 	_, err = service.GetUserByEmail(context.Background(), email)
 	assert.Error(t, err)
+}
+
+func TestUserService_SwitchInstance(t *testing.T) {
+	service, instanceRepo, cleanup := setupUserService(t)
+	defer cleanup()
+
+	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
+	err := service.CreateUser(context.Background(), user, "password")
+	assert.NoError(t, err)
+
+	err = instanceRepo.Create(context.Background(), &models.Instance{ID: "instance789", Name: "Game1", UserID: user.ID})
+	assert.NoError(t, err)
+
+	t.Run("SwitchInstance", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			instanceID string
+			user       *models.User
+			wantErr    bool
+		}{
+			{"Valid Instance", "instance789", user, false},
+			{"Empty ID", "", user, true},
+			{"Nil User", "instance789", nil, true},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				err := service.SwitchInstance(context.Background(), tc.user, tc.instanceID)
+				if tc.wantErr {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tc.instanceID, tc.user.CurrentInstanceID)
+				}
+			})
+		}
+	})
 }

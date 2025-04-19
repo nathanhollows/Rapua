@@ -6,13 +6,18 @@ import (
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 )
 
 // TeamMiddleware extracts the team code from the session and finds the matching instance.
-func TeamMiddleware(teamService services.TeamService, next http.Handler) http.Handler {
+func TeamMiddleware(teamService teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Preview requests should pass through
+		if r.Context().Value(contextkeys.PreviewKey) != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Extract the session
 		session, err := sessions.Get(r, "scanscout")
 		if err != nil {

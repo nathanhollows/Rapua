@@ -1,5 +1,5 @@
 <!doctype html><html lang=\"en\" class=\"h-full\">
-<body class=\"h-full\"><div id=\"app\" class=\"m-auto\" data-v-app=\"\">
+<body class=\"h-full flex flex-col\"><div id=\"app\" data-v-app=\"\">
 <div class=\"toast toast-center z-50\" id=\"alerts\"></div><span id=\"mapbox_key\" class=\"hidden\" data-key=\"
 \"></span><main class=\"max-w-7xl m-auto pb-8\">
 </main></div></body></html>
@@ -27,8 +27,8 @@
  data-tip=\"Change instance\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <polygon points=\"16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76\"></polygon></svg> 
  
 Select instance 
-<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-5 h-5 lucide lucide-chevron-down\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><ul tabindex=\"0\" class=\"menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl\">
-<li><h2 class=\"menu-title\">Change instance</h2><ul>
+<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-5 h-5 lucide lucide-chevron-down\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><ul tabindex=\"0\" class=\"font-normal menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl\">
+<li><h2 class=\"menu-title\">Switch games</h2><ul>
 <li>
 <a>
  <span class=\"badge badge-primary badge-sm\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1em\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\"><path d=\"M20 6 9 17l-5-5\"></path></svg></span></a>
@@ -37,4 +37,4 @@ Select instance
 </a>
 </li>
 </ul></li><div class=\"divider m-1\"></div>
-<li><a href=\"/admin/instances\">Manage instances</a></li></ul></div><div class=\"dropdown dropdown-end font-normal\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-ghost btn-circle avatar\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round w-7 h-7\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg></div><ul tabindex=\"0\" class=\"menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg\"><li><a href=\"/docs/user\">Read the docs</a></li><li><a href=\"/pricing\">Contribute</a></li><div class=\"divider my-0\"></div><li><a href=\"/logout\">Sign out</a></li></ul></div></div></div></div>
+<li><a href=\"/admin/instances\">Manage games and templates</a></li></ul></div><div class=\"dropdown dropdown-end font-normal\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-ghost btn-circle avatar\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round w-7 h-7\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg></div><ul tabindex=\"0\" class=\"menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg\"><li><a href=\"/docs/user\">Read the docs</a></li><li><a href=\"/pricing\">Contribute</a></li><div class=\"divider my-0\"></div><li><a href=\"/logout\">Sign out</a></li></ul></div></div></div></div>

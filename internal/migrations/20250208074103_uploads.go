@@ -29,7 +29,6 @@ func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		_, err := db.NewCreateTable().Model(&Upload{}).IfNotExists().Exec(context.Background())
 		return err
-
 	}, func(ctx context.Context, db *bun.DB) error {
 		_, err := db.NewDropTable().Model(&Upload{}).IfExists().Exec(context.Background())
 		return err

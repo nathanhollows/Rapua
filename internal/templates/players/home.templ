@@ -42,7 +42,7 @@ templ Home(team models.Team) {
 				>
 					Start
 				</button>
-				if team.Code != "" {
+				if team.Code != "" && team.Instance.GetStatus() != models.Closed {
 					<p class="mt-5 text-center">
 						<a
 							href="/checkins"

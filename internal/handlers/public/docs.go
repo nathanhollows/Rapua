@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
 	"github.com/nathanhollows/Rapua/v3/services"
 )
@@ -29,7 +30,8 @@ func (h *PublicHandler) Docs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Docs(page, docsService.Pages)
-	err = templates.PublicLayout(c, page.Title+" - Docs").Render(r.Context(), w)
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	err = templates.PublicLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("Contact: rendering template", "error", err)
 	}
