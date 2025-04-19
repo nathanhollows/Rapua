@@ -69,8 +69,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
