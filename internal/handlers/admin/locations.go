@@ -28,7 +28,6 @@ func (h *AdminHandler) Locations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("Locations: rendering template", "error", err)
 	}
-
 }
 
 // LocationNew shows the form to create a new location.

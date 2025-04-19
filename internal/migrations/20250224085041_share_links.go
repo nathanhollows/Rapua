@@ -26,7 +26,6 @@ func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		_, err := db.NewCreateTable().Model(&m20250224085041_ShareLink{}).IfNotExists().Exec(context.Background())
 		return err
-
 	}, func(ctx context.Context, db *bun.DB) error {
 		_, err := db.NewDropTable().Model(&m20250224085041_ShareLink{}).IfExists().Exec(context.Background())
 		return err

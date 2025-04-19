@@ -188,7 +188,6 @@ func (s *teamService) GetTeamActivityOverview(ctx context.Context, instanceID st
 			}
 
 			teamActivity.Locations[i] = locationActivity
-
 		}
 
 		activity = append(activity, teamActivity)

@@ -160,7 +160,6 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Could not create posters", http.StatusInternalServerError)
 					return
 				}
-
 			}
 
 			page := services.PDFPage{
@@ -239,7 +238,6 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Could not create posters", http.StatusInternalServerError)
 				return
 			}
-
 		}
 
 		page := services.PDFPage{

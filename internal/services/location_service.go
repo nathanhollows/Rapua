@@ -316,7 +316,6 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 	}
 
 	return nil
-
 }
 
 // ReorderLocations reorders locations.

@@ -53,7 +53,6 @@ func (s *checkInService) CompleteBlocks(ctx context.Context, teamCode string, lo
 	}
 
 	return nil
-
 }
 
 // CheckIn logs a check in for a team at a location.

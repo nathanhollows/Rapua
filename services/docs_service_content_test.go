@@ -35,7 +35,6 @@ func testDocs_MarkdownToAST(t *testing.T, markdown string) ast.Node {
 	// Get AST
 	node := gm.Parser().Parse(md)
 	return node
-
 }
 
 // Make sure that all internal links are valid and point to an existing page.

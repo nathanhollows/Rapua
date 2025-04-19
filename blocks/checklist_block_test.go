@@ -61,7 +61,6 @@ func TestChecklistBlock_UpdateBlockData(t *testing.T) {
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Content", block.Content)
-
 }
 
 func TestChecklistBlock_ValidatePlayerInput(t *testing.T) {

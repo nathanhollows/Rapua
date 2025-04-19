@@ -345,5 +345,4 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, newBlock)
 	assert.NotEqual(t, block.GetLocationID(), newBlock.GetLocationID())
-
 }

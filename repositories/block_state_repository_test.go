@@ -177,7 +177,6 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 				}
 
 				return nil, nil
-
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)

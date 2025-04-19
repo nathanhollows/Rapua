@@ -71,5 +71,4 @@ func (s *clueService) UpdateClues(ctx context.Context, location *models.Location
 	}
 
 	return nil
-
 }

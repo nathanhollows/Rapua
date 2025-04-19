@@ -383,7 +383,6 @@ func TestInstanceRepository_Delete(t *testing.T) {
 				assert.Error(t, findErr)
 				assert.Nil(t, found)
 			}
-
 		})
 	}
 }

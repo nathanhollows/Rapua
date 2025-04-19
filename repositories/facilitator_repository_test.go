@@ -44,5 +44,4 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 	assert.Equal(t, token.Token, retrieved.Token)
 	assert.Equal(t, token.InstanceID, retrieved.InstanceID)
 	assert.ElementsMatch(t, token.Locations, retrieved.Locations) // JSON-safe comparison
-
 }

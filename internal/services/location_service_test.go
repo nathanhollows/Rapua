@@ -178,7 +178,6 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		blocks, err := blockService.FindByLocationID(context.Background(), newLocation.ID)
 		assert.NoError(t, err)
 		assert.Len(t, blocks, 1)
-
 	})
 }
 

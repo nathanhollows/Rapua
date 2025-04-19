@@ -33,7 +33,6 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("BlockEdit: rendering template", "error", err)
 	}
-
 }
 
 // BlockEditPost updates the block.
@@ -107,7 +106,6 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("BlockNewPost: rendering template", "error", err)
 	}
-
 }
 
 // BlockDelete deletes a block.

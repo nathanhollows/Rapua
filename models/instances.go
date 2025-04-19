@@ -46,5 +46,4 @@ func (i *Instance) GetStatus() GameStatus {
 
 	// If the start time is in the past, the game is active
 	return Active
-
 }

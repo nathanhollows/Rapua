@@ -79,5 +79,4 @@ func TestInstance_GetStatus(t *testing.T) {
 			},
 		)
 	}
-
 }

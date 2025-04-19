@@ -131,7 +131,6 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("rendering checkin", "error", err.Error())
 	}
-
 }
 
 func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
@@ -266,7 +265,6 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("rendering checkin view", "error", err.Error())
 	}
-
 }
 
 // checkInPreview shows a player preview of the given location.
@@ -320,5 +318,4 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("LocationPreview: rendering template", "error", err)
 	}
-
 }

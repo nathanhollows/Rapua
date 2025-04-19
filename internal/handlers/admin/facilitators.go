@@ -60,7 +60,6 @@ func (h *AdminHandler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http
 	if err != nil {
 		h.handleError(w, r, "rendering template", "Error rendering template", "error", err)
 	}
-
 }
 
 const facilitatorSessionCookie = "rapua_facilitator"

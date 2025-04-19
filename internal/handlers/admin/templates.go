@@ -336,5 +336,4 @@ func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		h.Logger.Error("TemplateSharePost: rendering template", "Error", err, "user_id", user.ID)
 	}
-
 }

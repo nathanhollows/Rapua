@@ -21,7 +21,6 @@ func setupRouter(
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.AdminHandler,
 ) *chi.Mux {
-
 	router := chi.NewRouter()
 
 	router.Use(middleware.Compress(5))
@@ -127,7 +126,6 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
-
 }
 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
@@ -175,7 +173,6 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	})
 
 	router.NotFound(publicHandler.NotFound)
-
 }
 
 func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {

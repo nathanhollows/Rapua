@@ -28,7 +28,6 @@ func stringToMarkdown(s string) template.HTML {
 
 // MarkdownToHTML converts a string to markdown.
 func markdownToHTML(s string) (template.HTML, error) {
-
 	md := goldmark.New(
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
