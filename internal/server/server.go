@@ -83,8 +83,11 @@ func Start(logger *slog.Logger,
 	signal.Notify(killSig, os.Interrupt, syscall.SIGTERM)
 
 	server = &http.Server{
-		Addr:    os.Getenv("SERVER_ADDR"),
-		Handler: router,
+		Addr:              os.Getenv("SERVER_ADDR"),
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       1 * time.Minute,
+		WriteTimeout:      2 * time.Minute,
 	}
 
 	go func() {

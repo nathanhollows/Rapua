@@ -14,7 +14,7 @@ import (
 func TestOpenFile(t *testing.T) {
 	dir := "./" // Tests only have access to the folder they are in
 	filename := "test.txt"
-	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0644)
+	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0600)
 	if err != nil {
 		t.Fatalf("could not create test file: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestFileServer(t *testing.T) {
 	dir := "./" // Tests only have access to the folder they are in
 	filename := "test.txt"
 
-	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0644)
+	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0600)
 	if err != nil {
 		t.Fatalf("could not create test file: %v", err)
 	}

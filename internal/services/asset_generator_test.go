@@ -89,7 +89,7 @@ func createTestFile(path, content string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0600)
 }
 
 func cleanupTestFiles(files ...string) {
