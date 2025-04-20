@@ -45,7 +45,6 @@ func (r *ShareLinkRepository) Create(ctx context.Context, link *models.ShareLink
 			return fmt.Errorf("failed to check for existing link: %w", err)
 		}
 		if existingLink != nil && existingLink.ID != "" {
-			fmt.Println("Found existing link:", existingLink.ID)
 			link.ID = existingLink.ID
 			return nil
 		}
