@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v3/helpers"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 	public "github.com/nathanhollows/Rapua/v3/internal/templates/public"
 	"github.com/nathanhollows/Rapua/v3/models"
@@ -173,8 +174,9 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	c := templates.FacilitatorDashboard(locations, overview)
-	err = public.AuthLayout(c, "Facilitator Dashboard").Render(r.Context(), w)
+	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("Activity: rendering template", "error", err)
 	}

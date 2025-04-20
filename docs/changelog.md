@@ -6,6 +6,25 @@ order: 100
 
 # Changelog
 
+## 3.6.0 (2025-04-20)
+
+### Added
+
+- Satellite map style and switcher for easier editing and viewing, especially for location with unmapped landmarks. Closes [#39](https://github.com/nathanhollows/Rapua/issues/39).
+
+### Changed
+
+- Minor: Anchor links in [Docs](/docs/user/) now appear slightly different to the rest of the text for better visibility.
+
+### Fixed
+
+- Public auth template now requires `authed` var for correct rendering. Fixes issue with incorrect buttons on facilitator dashboard.
+- Admin alerts to players are now easier to dismiss and a little harder to ignore [#62](https://github.com/nathanhollows/Rapua/issues/62).
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.6.0)
+
+---
+
 ## 3.5.0 (2025-04-19)
 
 ### Added
@@ -51,6 +70,8 @@ order: 100
 - Cleaned up debug code, placeholders, and commented-out logic.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.5.0)
+
+---
 
 ## 3.4.0 (2025-02-11)
 

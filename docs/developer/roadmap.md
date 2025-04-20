@@ -41,8 +41,7 @@ I would quite like to have theme system. At first, it could offer pre-built them
 
 ## Public game repository
 
-I would like to have a public repository of games that users can play. Such a system would need to allow for time-based access to games, and would need to be able to track user progress. This was initially suggested in [this issue](https://github.com/nathanhollows/Rapua/issues/11).
-
+I would like to have a public repository of games that users can play. Such a system would need to allow for time-based access to games, and would need to be able to track user progress. This was initially suggested in [this issue](https://github.com/nathanhollows/Rapua/issues/11). This feature is closer to being implemented now that the [Templates](/docs/user/templates) feature is in place ([#50](https://github.com/nathanhollows/Rapua/issues/50)).
 ## Team accounts
 
 Rapua currently only supports anonymous users. I would like to add support for team accounts, where multiple users can be part of a team and share progress. This would also be useful for the public game repository.

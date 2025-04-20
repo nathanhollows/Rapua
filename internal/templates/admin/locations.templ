@@ -931,6 +931,12 @@ templ locationScript() {
       marker.setLngLat(center);
     });
 
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, null);
+
     // Handle select change event
     const locationSelect = document.getElementById('marker-code');
     if (locationSelect) {

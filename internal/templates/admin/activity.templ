@@ -50,7 +50,7 @@ templ ActivityTracker(instance models.Instance) {
 	</div>
 	<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
 		<div class="w-full md:w-5/12">
-			<div id="map-container" class="relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
+			<div id="map-container" class="group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
 				<div id="map-activity" class="map w-full h-full rounded-lg"></div>
 			</div>
 			<div class="join join-vertical w-full">
@@ -218,6 +218,12 @@ templ ActivityTracker(instance models.Instance) {
 
       map.fitBounds(bounds, { padding: 50 });
     }
+
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, markerArray);
   }
 
   // Initialize the map on page load
