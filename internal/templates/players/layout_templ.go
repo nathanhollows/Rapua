@@ -120,9 +120,9 @@ func Messages(messages []models.Notification) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var6 string
-					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(message.Content)
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("/dismiss/" + message.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 55, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 55, Col: 42}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -133,9 +133,9 @@ func Messages(messages []models.Notification) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var7 string
-					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/dismiss/" + message.ID)
+					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("#message-" + message.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 59, Col: 44}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 56, Col: 44}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -146,9 +146,9 @@ func Messages(messages []models.Notification) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("#message-" + message.ID)
+					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(message.Content)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 60, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 64, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {

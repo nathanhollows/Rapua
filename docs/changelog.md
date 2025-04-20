@@ -6,7 +6,7 @@ order: 100
 
 # Changelog
 
-## 3.5.1 (pending)
+## 3.6.0 (pending)
 
 ### Added
 
@@ -15,6 +15,7 @@ order: 100
 ### Fixed
 
 - Public auth template now requires `authed` var for correct rendering. Fixes issue with incorrect buttons on facilitator dashboard.
+- Admin alerts to players are now easier to dismiss and a little harder to ignore [#62](https://github.com/nathanhollows/Rapua/issues/62).
 
 ---
 

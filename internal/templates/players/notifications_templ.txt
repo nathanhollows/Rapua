@@ -1,7 +1,0 @@
-<div class=\"flex flex-col gap-3 my-5\">
-<div role=\"alert\" class=\"alert shadow-lg\" id=\"
-\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-megaphone\"><path d=\"m3 11 18-5v12L3 14v-3z\"></path><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"></path></svg><div><h3 class=\"font-bold text-sm\">Announcement!</h3><div>
-</div></div><button class=\"btn btn-sm\" hx-post=\"
-\" hx-target=\"
-\" hx-swap=\"outerHTML\">Dismiss</button></div>
-</div>
