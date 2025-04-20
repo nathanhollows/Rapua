@@ -6,11 +6,15 @@ order: 100
 
 # Changelog
 
-## 3.6.0 (pending)
+## 3.6.0 (2025-04-20)
 
 ### Added
 
 - Satellite map style and switcher for easier editing and viewing, especially for location with unmapped landmarks. Closes [#39](https://github.com/nathanhollows/Rapua/issues/39).
+
+### Changed
+
+- Minor: Anchor links in [Docs](/docs/user/) now appear slightly different to the rest of the text for better visibility.
 
 ### Fixed
 
