@@ -216,6 +216,12 @@ templ mapScript() {
 
 		map.fitBounds(bounds, { padding: 50 });
 	}
+
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, markerArray);
   }
 
   // Initialize the map on page load

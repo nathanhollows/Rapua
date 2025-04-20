@@ -8,6 +8,12 @@ order: 100
 
 ## 3.5.1 (pending)
 
+### Added
+
+- Satellite map style and switcher for easier editing and viewing, especially for location with unmapped landmarks. Closes [#39](https://github.com/nathanhollows/Rapua/issues/39).
+
+### Fixed
+
 - Public auth template now requires `authed` var for correct rendering. Fixes issue with incorrect buttons on facilitator dashboard.
 
 ---

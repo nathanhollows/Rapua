@@ -241,7 +241,7 @@ func nav(user models.User, section string) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.CurrentInstance.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 199, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 200, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -279,7 +279,7 @@ func nav(user models.User, section string) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 217, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 218, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -306,7 +306,7 @@ func nav(user models.User, section string) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 224, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 225, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
