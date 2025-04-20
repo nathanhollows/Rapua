@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/markbates/goth/gothic"
 	"github.com/nathanhollows/Rapua/v3/helpers"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/internal/sessions"
@@ -17,15 +18,15 @@ import (
 
 // LoginHandler is the handler for the admin login page.
 func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
-	if err == nil || user != nil {
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	if authed {
 		// User is already authenticated, redirect to the admin page
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
 
 	c := templates.Login(h.AuthService.AllowGoogleLogin())
-	err = templates.AuthLayout(c, "Login").Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
 
 	if err != nil {
 		h.Logger.Error("Error rendering login page", "err", err)
@@ -95,15 +96,15 @@ func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // RegisterHandler is the handler for the admin register page.
 func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
-	if err == nil || user != nil {
-		// User is already authenticated, redirect to the admin page
+	// User is already authenticated, redirect to the admin page
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	if authed {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
 
 	c := templates.Register(h.AuthService.AllowGoogleLogin())
-	err = templates.AuthLayout(c, "Register").Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
 
 	if err != nil {
 		h.Logger.Error("rendering register page", "err", err)
@@ -173,15 +174,15 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 
 // ForgotPasswordHandler is the handler for the forgot password page.
 func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
-	if err == nil || user != nil {
-		// User is already authenticated, redirect to the admin page
+	// User is already authenticated, redirect to the admin page
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
+	if authed {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
 
 	c := templates.ForgotPassword()
-	err = templates.AuthLayout(c, "Forgot Password").Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Forgot Password", false).Render(r.Context(), w)
 
 	if err != nil {
 		h.Logger.Error("rendering forgot password page", "err", err)
@@ -277,8 +278,9 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	c := templates.VerifyEmail(*user)
-	err = templates.AuthLayout(c, "Verify Email").Render(r.Context(), w)
+	err = templates.AuthLayout(c, "Verify Email", authed).Render(r.Context(), w)
 
 	if err != nil {
 		h.Logger.Error("rendering verify email page", "err", err)

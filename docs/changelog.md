@@ -6,6 +6,10 @@ order: 100
 
 # Changelog
 
+## 3.5.1 (pending)
+
+- Public auth template now requires `authed` var for correct rendering. Fixes issue with incorrect buttons on facilitator dashboard.
+
 ## 3.5.0 (2025-04-19)
 
 ### Added

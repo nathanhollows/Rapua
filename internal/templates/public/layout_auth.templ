@@ -1,12 +1,12 @@
 package templates
 
-templ AuthLayout(contents templ.Component, title string) {
+templ AuthLayout(contents templ.Component, title string, authed bool) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@publicHeader(title)
 		<body class="h-screen flex flex-col">
 			if title != "Verify Email" {
-				@authNav(title)
+				@authNav(title, authed)
 			}
 			<div id="alerts" class="toast toast-center"></div>
 			@contents
@@ -14,17 +14,24 @@ templ AuthLayout(contents templ.Component, title string) {
 	</html>
 }
 
-templ authNav(title string) {
+templ authNav(title string, authed bool) {
 	<div class="bg-base-100" hx-boost="true">
 		<div class="navbar max-w-7xl font-bold m-auto">
 			<div class="navbar-start">
 				<a href="/" class="btn btn-ghost text-xl">← Back to Rapua</a>
 			</div>
 			<div class="navbar-end">
-				if title == "Login" {
-					<a href="/register" class="btn btn-sm btn-neutral">Register</a>
+				if !authed {
+					if title == "Login" {
+						<a href="/register" class="btn btn-sm btn-neutral">Register</a>
+					} else {
+						<a href="/login" class="btn btn-sm btn-secondary">Login</a>
+					}
 				} else {
-					<a href="/login" class="btn btn-sm btn-secondary">Login</a>
+					<a href="/admin" class="btn btn-sm btn-primary group">
+						Admin
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings2-icon lucide-settings-2 w-4 h-4"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>
+					</a>
 				}
 			</div>
 		</div>
