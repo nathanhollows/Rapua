@@ -10,6 +10,8 @@ order: 100
 
 - Public auth template now requires `authed` var for correct rendering. Fixes issue with incorrect buttons on facilitator dashboard.
 
+---
+
 ## 3.5.0 (2025-04-19)
 
 ### Added
@@ -55,6 +57,8 @@ order: 100
 - Cleaned up debug code, placeholders, and commented-out logic.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.5.0)
+
+---
 
 ## 3.4.0 (2025-02-11)
 
