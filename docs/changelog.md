@@ -6,6 +6,16 @@ order: 100
 
 # Changelog
 
+## 3.6.1 (pending)
+
+### Changed
+
+- Minor: Admin menu on mobile now has a more consistent look and feel with the public facing menu.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.6.1)
+
+---
+
 ## 3.6.0 (2025-04-20)
 
 ### Added
