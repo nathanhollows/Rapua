@@ -8,9 +8,20 @@ order: 100
 
 ## 3.6.1 (pending)
 
+### Added
+
+- Comprehensive test suite for documentation content and structure, ensuring all links resolve to valid pages.
+- Enhanced documentation system with missing page tracking and redirect support.
+
 ### Changed
 
 - Minor: Admin menu on mobile now has a more consistent look and feel with the public facing menu.
+- Documentation system now tracks known pages and reports missing pages automatically.
+- Improved heading formatting validation in documentation pages.
+
+### Fixed
+
+- Documentation system now properly handles redirects to maintain links between pages.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.6.1)
 
