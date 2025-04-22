@@ -1,6 +1,7 @@
 - /docs/changelog
 - /docs/deprecations
 - /docs/developer/contributing
+- /docs/developer/implementing-blocks
 - /docs/developer/index
 - /docs/developer/installation
 - /docs/developer/middleware
@@ -14,6 +15,7 @@
 - /docs/user/blocks/index
 - /docs/user/blocks/password
 - /docs/user/blocks/pincode
+- /docs/user/blocks/sorting
 - /docs/user/blocks/text
 - /docs/user/blocks/youtube
 - /docs/user/facilitator-dashboard
