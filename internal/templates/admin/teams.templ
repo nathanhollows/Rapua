@@ -368,9 +368,26 @@ templ teamItem(team models.Team, classes string) {
 
 templ Teams(teams []models.Team) {
 	<span class="hidden bg-danger text-danger-content border-error border-warning"></span>
-	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
+	<div class="flex gap-3 flex-row justify-between w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Teams
+			<div class="dropdown dropdown-hover">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="m12 16v-4"></path><path d="m12 8h.01"></path></svg></div>
+				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
+					<div tabindex="0" class="card-body">
+						<h2 class="card-title">Teams</h2>
+						<p>
+							Teams can play individually or as a group sharing a single device with a unique team code.
+						</p>
+						<p>
+							Progress is tracked collectively for each team, whether played by an individual or a group.
+						</p>
+						<p>
+							Team codes are randomly generated. Players can set their own team names when they start playing.
+						</p>
+					</div>
+				</div>
+			</div>
 		</h1>
 		<div class="flex gap-3">
 			<button
