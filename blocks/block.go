@@ -57,6 +57,7 @@ var registeredBlocks = Blocks{
 	&AnswerBlock{},
 	&PincodeBlock{},
 	&ChecklistBlock{},
+	&SortingBlock{},
 	// &PhotoBlock{},
 }
 
@@ -82,6 +83,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewYoutubeBlock(baseBlock), nil
 	case "image":
 		return NewImageBlock(baseBlock), nil
+	case "sorting":
+		return NewSortingBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
@@ -134,6 +137,12 @@ func NewYoutubeBlock(base BaseBlock) *YoutubeBlock {
 
 func NewImageBlock(base BaseBlock) *ImageBlock {
 	return &ImageBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewSortingBlock(base BaseBlock) *SortingBlock {
+	return &SortingBlock{
 		BaseBlock: base,
 	}
 }
