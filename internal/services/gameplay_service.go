@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -301,9 +302,13 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 		return nil, nil, errors.New("block state not found")
 	}
 
+	// Check if we're in preview mode - preview mode should allow resubmission for testing
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+	
 	// Returning early here prevents the block from being updated
 	// And points from being added to the team multiple times
-	if state.IsComplete() {
+	// But in preview mode, we want to allow resubmission for testing
+	if state.IsComplete() && !isPreview {
 		return state, block, nil
 	}
 
