@@ -21,8 +21,7 @@ The sorting block offers four different scoring schemes:
 
 1. **All or Nothing**: Players get one attempt. Full points are awarded only if all items are in the correct order.
 2. **Correct Item, Correct Place**: Points are awarded for each item in the correct position.
-3. **Consecutive Runs**: Points are awarded based on the number of items in consecutive correct sequences.
-4. **Retry Until Correct**: Players can try multiple times until they get the order completely correct.
+3. **Retry Until Correct**: Players can try multiple times until they get the order completely correct.
 
 ## Example
 
@@ -52,7 +51,6 @@ The sorting block offers four different scoring schemes:
 - **Consider your scoring scheme**: 
   - Use "All or Nothing" for critical sequence knowledge
   - Use "Correct Item, Correct Place" for partial credit
-  - Use "Consecutive Runs" for rewarding sequence understanding
   - Use "Retry Until Correct" for practice exercises
 
 ## Technical Details

@@ -35,10 +35,10 @@ const (
 
 // SortingPlayerData stores player progress
 type SortingPlayerData struct {
-	PlayerOrder []string `json:"player_order"` // List of item IDs in player's submitted order
+	PlayerOrder  []string `json:"player_order"`  // List of item IDs in player's submitted order
 	ShuffleOrder []string `json:"shuffle_order"` // Shuffled order shown to player initially
-	Attempts    int      `json:"attempts"`     // Number of attempts made so far
-	IsCorrect   bool     `json:"is_correct"`   // Whether the current order is correct
+	Attempts     int      `json:"attempts"`      // Number of attempts made so far
+	IsCorrect    bool     `json:"is_correct"`    // Whether the current order is correct
 }
 
 // Basic Attributes Getters
@@ -49,7 +49,7 @@ func (b *SortingBlock) GetDescription() string {
 }
 
 func (b *SortingBlock) GetIconSVG() string {
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-wide-narrow-icon lucide-arrow-down-wide-narrow"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/></svg>`
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-wide-narrow"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/></svg>`
 }
 
 func (b *SortingBlock) GetType() string { return "sorting" }
@@ -145,7 +145,7 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	}
 
 	// If the player already has a correct solution in RetryUntilCorrect mode, don't process further
-	if b.ScoringScheme == RetryUntilCorrect && playerData.IsCorrect && state.IsComplete() {
+	if b.ScoringScheme == RetryUntilCorrect && playerData.IsCorrect {
 		return state, nil
 	}
 
@@ -155,11 +155,8 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		return state, errors.New("sorting order is required")
 	}
 
-	// Always generate a consistent shuffle order for the player
-	// Create a deterministic shuffled order based on the blockID and playerID
-	// This ensures the same player always sees the same shuffle for a given block
+	// Initialize shuffle order if it doesn't exist
 	if len(playerData.ShuffleOrder) == 0 {
-		// Generate an array of all item IDs for first-time shuffling
 		allItemIDs := make([]string, len(b.Items))
 		for i, item := range b.Items {
 			allItemIDs[i] = item.ID
@@ -167,29 +164,26 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		playerData.ShuffleOrder = deterministicShuffle(allItemIDs, state.GetBlockID()+state.GetPlayerID())
 	}
 
-	// Update player data with new ordering
+	// Update player data with new ordering and increment attempts
 	playerData.PlayerOrder = itemOrder
 	playerData.Attempts++
 
-	// Calculate points based on scoring scheme
-	points := b.calculatePoints(playerData.PlayerOrder)
+	// Check if the order is correct
+	isCorrect := b.orderIsCorrect(itemOrder)
+	playerData.IsCorrect = isCorrect
 
-	// Check if order is completely correct
-	perfectOrder := b.calculateAllOrNothingPoints(playerData.PlayerOrder) > 0
-	playerData.IsCorrect = perfectOrder
-
-	// Marshal the updated player data
+	// Marshal updated player data
 	newPlayerData, err := json.Marshal(playerData)
 	if err != nil {
 		return state, fmt.Errorf("failed to save player data: %w", err)
 	}
 	newState.SetPlayerData(newPlayerData)
 
-	// Handle different scoring schemes for completion status
+	// Handle different scoring schemes
 	switch b.ScoringScheme {
 	case RetryUntilCorrect:
 		// For RetryUntilCorrect, only mark as complete when correct
-		if perfectOrder {
+		if isCorrect {
 			newState.SetComplete(true)
 			newState.SetPointsAwarded(b.Points) // Award full points
 		} else {
@@ -197,42 +191,35 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 			newState.SetPointsAwarded(0)
 		}
 	case AllOrNothing:
-		// For AllOrNothing, mark as complete only if perfect
-		if perfectOrder {
-			newState.SetComplete(true)
-			newState.SetPointsAwarded(b.Points) // Award full points
-		} else {
-			newState.SetComplete(true) // Still mark as complete (one shot)
-			newState.SetPointsAwarded(0) // But award no points
-		}
-	default:
-		// For other scoring schemes (CorrectItemCorrectPlace, ConsecutiveRuns)
-		// Mark as complete and award proportional points
+		// For AllOrNothing, mark as complete regardless, but only award points if correct
 		newState.SetComplete(true)
-		newState.SetPointsAwarded(points)
+		if isCorrect {
+			newState.SetPointsAwarded(b.Points)
+		} else {
+			newState.SetPointsAwarded(0)
+		}
+	case CorrectItemCorrectPlace:
+		// For CorrectItemCorrectPlace, award partial points
+		newState.SetComplete(true)
+		newState.SetPointsAwarded(b.calculateCorrectItemCorrectPlacePoints(itemOrder))
+	default:
+		// Default to all-or-nothing behavior
+		newState.SetComplete(true)
+		if isCorrect {
+			newState.SetPointsAwarded(b.Points)
+		} else {
+			newState.SetPointsAwarded(0)
+		}
 	}
 
 	return newState, nil
 }
 
-// calculatePoints determines how many points to award based on the scoring scheme
-func (b *SortingBlock) calculatePoints(playerOrder []string) int {
-	switch b.ScoringScheme {
-	case AllOrNothing:
-		return b.calculateAllOrNothingPoints(playerOrder)
-	case CorrectItemCorrectPlace:
-		return b.calculateCorrectItemCorrectPlacePoints(playerOrder)
-	case RetryUntilCorrect:
-		return b.calculateRetryUntilCorrectPoints(playerOrder)
-	default:
-		return b.calculateAllOrNothingPoints(playerOrder)
-	}
-}
 
-// calculateAllOrNothingPoints awards full points only if entire sequence is correct
-func (b *SortingBlock) calculateAllOrNothingPoints(playerOrder []string) int {
+// orderIsCorrect checks if the submitted order perfectly matches the expected order
+func (b *SortingBlock) orderIsCorrect(playerOrder []string) bool {
 	if len(playerOrder) != len(b.Items) {
-		return 0
+		return false
 	}
 
 	// Create a map for quick lookup of correct positions
@@ -245,11 +232,19 @@ func (b *SortingBlock) calculateAllOrNothingPoints(playerOrder []string) int {
 	for i, itemID := range playerOrder {
 		correctPos, exists := itemPositions[itemID]
 		if !exists || correctPos != i+1 {
-			return 0
+			return false
 		}
 	}
 
-	return b.Points
+	return true
+}
+
+// calculateAllOrNothingPoints awards full points only if entire sequence is correct
+func (b *SortingBlock) calculateAllOrNothingPoints(playerOrder []string) int {
+	if b.orderIsCorrect(playerOrder) {
+		return b.Points
+	}
+	return 0
 }
 
 // calculateCorrectItemCorrectPlacePoints awards points for each correctly placed item
@@ -283,31 +278,14 @@ func (b *SortingBlock) calculateCorrectItemCorrectPlacePoints(playerOrder []stri
 	return int(float64(b.Points) * pointsPercentage)
 }
 
-
 // calculateRetryUntilCorrectPoints checks if the order is correct and returns points only if it is
 // This function is meant to be used with the retry until correct scoring scheme
 // It returns 0 for incorrect answers, allowing multiple attempts
 func (b *SortingBlock) calculateRetryUntilCorrectPoints(playerOrder []string) int {
-	if len(playerOrder) != len(b.Items) {
-		return 0
+	if b.orderIsCorrect(playerOrder) {
+		return b.Points
 	}
-
-	// Create a map for quick lookup of correct positions
-	itemPositions := make(map[string]int)
-	for _, item := range b.Items {
-		itemPositions[item.ID] = item.Position
-	}
-
-	// Check if player order matches correct positions
-	for i, itemID := range playerOrder {
-		correctPos, exists := itemPositions[itemID]
-		if !exists || correctPos != i+1 {
-			return 0 // Order is incorrect, return 0 points
-		}
-	}
-
-	// Order is correct, award full points
-	return b.Points
+	return 0
 }
 
 // deterministicShuffle creates a consistent shuffle of items based on a seed string
@@ -316,17 +294,18 @@ func deterministicShuffle(items []string, seed string) []string {
 	// Create a copy of the original items
 	result := make([]string, len(items))
 	copy(result, items)
-	
+
 	// Create a deterministic random number generator
 	h := fnv.New32a()
 	h.Write([]byte(seed))
 	r := rand.New(rand.NewSource(int64(h.Sum32())))
-	
+
 	// Shuffle the items using Fisher-Yates algorithm
 	for i := len(result) - 1; i > 0; i-- {
 		j := r.Intn(i + 1)
 		result[i], result[j] = result[j], result[i]
 	}
-	
+
 	return result
 }
+
