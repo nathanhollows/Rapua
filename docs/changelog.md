@@ -6,24 +6,24 @@ order: 100
 
 # Changelog
 
-## 3.6.1 (pending)
+## 3.7.0
 
 ### Added
 
-- Comprehensive test suite for documentation content and structure, ensuring all links resolve to valid pages.
+- New [Sorting Block](/docs/user/blocks/sorting), a quiz-type block that requires players to sort items in a specific order.
 - Enhanced documentation system with missing page tracking and redirect support.
 
 ### Changed
 
 - Minor: Admin menu on mobile now has a more consistent look and feel with the public facing menu.
-- Documentation system now tracks known pages and reports missing pages automatically.
 - Improved heading formatting validation in documentation pages.
+- Block system respects Preview mode, enabling a completed block to be recompleted in preview mode.
 
 ### Fixed
 
 - Documentation system now properly handles redirects to maintain links between pages.
 
-[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.6.1)
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.7.0)
 
 ---
 
