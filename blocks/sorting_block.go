@@ -238,14 +238,6 @@ func (b *SortingBlock) orderIsCorrect(playerOrder []string) bool {
 	return true
 }
 
-// calculateAllOrNothingPoints awards full points only if entire sequence is correct
-func (b *SortingBlock) calculateAllOrNothingPoints(playerOrder []string) int {
-	if b.orderIsCorrect(playerOrder) {
-		return b.Points
-	}
-	return 0
-}
-
 // calculateCorrectItemCorrectPlacePoints awards points for each correctly placed item
 func (b *SortingBlock) calculateCorrectItemCorrectPlacePoints(playerOrder []string) int {
 	if len(playerOrder) != len(b.Items) {
@@ -275,16 +267,6 @@ func (b *SortingBlock) calculateCorrectItemCorrectPlacePoints(playerOrder []stri
 	// Award points proportionally to the number of correct placements
 	pointsPercentage := float64(correctPlacements) / float64(len(b.Items))
 	return int(float64(b.Points) * pointsPercentage)
-}
-
-// calculateRetryUntilCorrectPoints checks if the order is correct and returns points only if it is
-// This function is meant to be used with the retry until correct scoring scheme
-// It returns 0 for incorrect answers, allowing multiple attempts
-func (b *SortingBlock) calculateRetryUntilCorrectPoints(playerOrder []string) int {
-	if b.orderIsCorrect(playerOrder) {
-		return b.Points
-	}
-	return 0
 }
 
 // deterministicShuffle creates a consistent shuffle of items based on a seed string
