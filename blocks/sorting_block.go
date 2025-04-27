@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// SortingBlock allows players to sort items in the correct order
+// SortingBlock is a quiz-type blcok that requires players to sort items in a specific order
 type SortingBlock struct {
 	BaseBlock
 	Content       string        `json:"content"`
@@ -215,7 +215,6 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	return newState, nil
 }
 
-
 // orderIsCorrect checks if the submitted order perfectly matches the expected order
 func (b *SortingBlock) orderIsCorrect(playerOrder []string) bool {
 	if len(playerOrder) != len(b.Items) {
@@ -308,4 +307,3 @@ func deterministicShuffle(items []string, seed string) []string {
 
 	return result
 }
-
