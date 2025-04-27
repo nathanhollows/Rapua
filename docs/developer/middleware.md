@@ -1,7 +1,7 @@
 ---
 title: "Middleware"
 sidebar: true
-order: 5
+order: 6
 ---
 
 # Middleware in the Application

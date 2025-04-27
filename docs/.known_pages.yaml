@@ -1,6 +1,8 @@
 - /docs/changelog
 - /docs/deprecations
 - /docs/developer/contributing
+- /docs/developer/data-flow
+- /docs/developer/database-schema
 - /docs/developer/implementing-blocks
 - /docs/developer/index
 - /docs/developer/installation
