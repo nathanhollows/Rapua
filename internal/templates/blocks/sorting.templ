@@ -47,24 +47,6 @@ func isItemInCorrectPosition(itemID string, position int, positions map[string]i
 	return exists && correctPos == position
 }
 
-// Helper function to render warning for retry attempts
-func renderRetryWarning(block blocks.SortingBlock, data blocks.PlayerState) templ.Component {
-	playerData, err := getPlayerData(data.GetPlayerData())
-	if err != nil || block.ScoringScheme != "retry_until_correct" || data.IsComplete() || !hasAttempts(playerData) {
-		return templ.NopComponent
-	}
-
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		_, err := fmt.Fprintf(w, `<div class="alert alert-warning mb-4">
-			<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-			</svg>
-			<span>Not quite right. Try again! Attempts: %d</span>
-		</div>`, playerData.Attempts)
-		return err
-	})
-}
-
 // Helper function to render sorting items
 func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
@@ -133,6 +115,7 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 
 				// Use deterministic shuffle based on blockID and playerID
 				shuffledIDs := deterministicShuffle(itemIDs, block.GetID()+data.GetPlayerID())
+				fmt.Printf("Shuffled IDs for first display: %v\n", shuffledIDs)
 
 				for _, id := range shuffledIDs {
 					if item, ok := itemMap[id]; ok {
@@ -175,41 +158,6 @@ func deterministicShuffle(items []string, seed string) []string {
 	return result
 }
 
-// Template for an item with position indicators for completed blocks
-templ sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrect bool) {
-	if isCorrect {
-		<div
-			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2 text-success"
-			data-id={ item.ID }
-		>
-			<div class="flex-grow">
-				@templ.Raw(stringToMarkdown(item.Description))
-			</div>
-			<div class="flex flex-shrink-0 ml-2 items-center gap-2">
-				<span class="badge badge-sm badge-success">
-					{ fmt.Sprint(item.Position) }
-				</span>
-			</div>
-		</div>
-	} else {
-		<div
-			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2 text-error"
-			data-id={ item.ID }
-		>
-			<div class="flex-grow">
-				@templ.Raw(stringToMarkdown(item.Description))
-			</div>
-			<div class="flex flex-shrink-0 ml-2 items-center gap-2">
-				<span class="badge badge-sm badge-error">
-					{ fmt.Sprint("#", item.Position) }
-				</span>
-			</div>
-		</div>
-	}
-}
-
 templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
@@ -220,14 +168,19 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 		}
 		@completionBadge(data)
 		<div class="card bg-base-200 shadow-lg w-full">
-			<div class="prose p-5">
-				@templ.Raw(stringToMarkdown(block.Content))
-				@renderRetryWarning(block, data)
+			<div class="prose p-5 pb-3">
+				if block.Content == "" {
+					<h2>Sortable</h2>
+					<p>Sort the items below in the correct order.</p>
+				} else {
+					@templ.Raw(stringToMarkdown(block.Content))
+				}
 			</div>
 			<form
 				id={ fmt.Sprintf("sorting-form-%s", block.ID) }
 				hx-post={ fmt.Sprint("/blocks/validate") }
 				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+				class="pb-4"
 			>
 				<input type="hidden" name="block" value={ block.ID }/>
 				<div
@@ -236,19 +189,22 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 				>
 					@renderItems(block, data)
 				</div>
+				if block.ScoringScheme == blocks.RetryUntilCorrect {
+					// Get player data to check attempts
+					if playerData, err := getPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 && !playerData.IsCorrect {
+						<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
+					}
+				}
 				if !data.IsComplete() {
-					<div class="flex justify-center my-4">
+					<div class="flex justify-center mt-4">
 						<button class="btn btn-primary btn-wide">
-							Check
+							if block.ScoringScheme == blocks.RetryUntilCorrect {
+								Check
+							} else {
+								Submit
+							}
 							<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal-icon lucide-send-horizontal w-5 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
 						</button>
-					</div>
-				} else if block.ScoringScheme == "retry_until_correct" {
-					<div class="p-4">
-						<div class="alert alert-success">
-							<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-							<span>Correct! Your order is perfect.</span>
-						</div>
 					</div>
 				}
 			</form>
@@ -306,31 +262,29 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 		
 		// Function to update the sorting-item-order hidden inputs
 		function updateSortingOrder(container, form) {
-			// Clear any existing inputs
-			const oldInputs = form.querySelectorAll('input[name="sorting-item-order"]');
-			oldInputs.forEach(input => {
-				if (input.parentNode !== container.querySelector('.sorting-item')) {
-					input.remove();
-				}
-			});
+			console.log("Updating sort order...");
 			
 			// Get current order of items
 			const items = container.querySelectorAll('.sorting-item');
+			console.log("Found " + items.length + " items");
+			
+			// First remove all existing order inputs to avoid duplicates
+			form.querySelectorAll('input[name="sorting-item-order"]').forEach(input => {
+				console.log("Removing existing input: " + input.value);
+				input.remove();
+			});
 			
 			// Add fresh inputs in the current order
-			items.forEach(item => {
+			items.forEach((item, index) => {
 				const itemId = item.getAttribute('data-id');
+				console.log("Item " + (index+1) + ": " + itemId);
 				
-				// Check if this item already has the input inside it
-				let input = item.querySelector('input[name="sorting-item-order"]');
-				if (!input) {
-					// If not found inside, create a new one
-					input = document.createElement('input');
-					input.type = 'hidden';
-					input.name = 'sorting-item-order';
-					input.value = itemId;
-					form.appendChild(input);
-				}
+				// Always create a new input
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'sorting-item-order';
+				input.value = itemId;
+				form.appendChild(input);
 			});
 		}
 	</script>
@@ -367,8 +321,78 @@ templ sortItem(item blocks.SortingItem) {
 				</button>
 			</span>
 		</div>
-		<!-- Hidden inputs will be generated by the updateOrderBeforeSubmit function -->
 	</div>
+}
+
+// Template for an item with position indicators for completed blocks
+templ sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrect bool) {
+	if isCorrect {
+		<div
+			id={ fmt.Sprintf("sort-item-%s", item.ID) }
+			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2"
+			data-id={ item.ID }
+		>
+			<div class="flex flex-grow gap-2">
+				<span class="badge badge-lg badge-success rounded-full">
+					{ fmt.Sprint(item.Position) }
+				</span>
+				@templ.Raw(stringToMarkdown(item.Description))
+			</div>
+			<div class="flex flex-shrink-0 ml-2 invisible">
+				<span class="join join-vertical">
+					<button
+						type="button"
+						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+						data-tip="Move up"
+						onclick="moveSortingItemUp(event)"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+					</button>
+					<button
+						type="button"
+						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+						data-tip="Move down"
+						onclick="moveSortingItemDown(event)"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+					</button>
+				</span>
+			</div>
+		</div>
+	} else {
+		<div
+			id={ fmt.Sprintf("sort-item-%s", item.ID) }
+			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2"
+			data-id={ item.ID }
+		>
+			<div class="flex flex-grow gap-2">
+				<span class="badge badge-lg badge-error rounded-full">
+					{ fmt.Sprint(item.Position) }
+				</span>
+				@templ.Raw(stringToMarkdown(item.Description))
+			</div>
+			<div class="flex flex-shrink-0 ml-2 invisible">
+				<span class="join join-vertical">
+					<button
+						type="button"
+						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+						data-tip="Move up"
+						onclick="moveSortingItemUp(event)"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+					</button>
+					<button
+						type="button"
+						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+						data-tip="Move down"
+						onclick="moveSortingItemDown(event)"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+					</button>
+				</span>
+			</div>
+		</div>
+	}
 }
 
 templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) {
@@ -423,8 +447,9 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 				rows="2"
 				class="markdown-textarea textarea textarea-bordered w-full font-mono pt-3"
 				style="field-sizing: content;"
-				placeholder="Markdown content here..."
-			>{ block.Content }</textarea>
+				placeholder="## Sortable
+Sort the items below in the correct order."
+			></textarea>
 		</label>
 		<div class="form-control w-full">
 			<div class="label font-bold flex justify-between">
