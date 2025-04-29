@@ -6,12 +6,14 @@ order: 100
 
 # Changelog
 
-## 3.7.0
+## 3.7.0 (29-04-2025)
 
 ### Added
 
 - New [Sorting Block](/docs/user/blocks/sorting), a quiz-type block that requires players to sort items in a specific order.
 - Enhanced documentation system with missing page tracking and redirect support.
+- Developer docs for [Database Schema](/docs/developer/database-schema) to provide a visual representation of the database structure.
+- Developer docs for [Data Flow](/docs/developer/data-flow) to illustrate how data moves through the system.
 
 ### Changed
 
