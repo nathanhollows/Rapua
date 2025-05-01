@@ -32,6 +32,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "alert":
 		b := block.(*blocks.AlertBlock)
 		return alertAdmin(settings, *b)
+	case "sorting":
+		b := block.(*blocks.SortingBlock)
+		return sortingAdmin(settings, *b)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
@@ -65,6 +68,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "alert":
 		b := block.(*blocks.AlertBlock)
 		return alertPlayer(settings, *b)
+	case "sorting":
+		b := block.(*blocks.SortingBlock)
+		return sortingPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
@@ -98,6 +104,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "alert":
 		b := block.(*blocks.AlertBlock)
 		return alertPlayer(settings, *b)
+	case "sorting":
+		b := block.(*blocks.SortingBlock)
+		return sortingPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)

@@ -32,7 +32,8 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if !(strings.Contains(page.Path, "index.md") && page.Order != 1) {
+		if strings.Contains(page.Path, "deprecations.md") {
+		} else if !(strings.Contains(page.Path, "index.md") && page.Order != 1) {
 			if len(page.Children) == 0 {
 				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 				if templ_7745c5c3_Err != nil {
@@ -72,7 +73,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 25, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 26, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -117,7 +118,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 43, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 44, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -131,7 +132,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 45, Col: 19}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 46, Col: 19}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -223,7 +224,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Text)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 95, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 96, Col: 64}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {

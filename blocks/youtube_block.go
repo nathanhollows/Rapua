@@ -50,10 +50,10 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 		// Confirm URL is valid
 		checkURL := "https://www.youtube.com/oembed?format=json&url=" + u[0]
 		resp, err := http.Get(checkURL)
-		defer resp.Body.Close()
 		if err != nil {
 			return errors.New("URL is not valid")
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			return errors.New("URL is not valid")
 		}

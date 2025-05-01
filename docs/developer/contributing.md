@@ -1,7 +1,7 @@
 ---
 title: "Contributing"
 sidebar: true
-order: 4
+order: 10 
 ---
 
 # Contributing

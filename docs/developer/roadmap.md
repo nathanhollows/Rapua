@@ -1,33 +1,26 @@
 ---
 title: "Roadmap"
 sidebar: true
-order: 6
+order: 9
 ---
 
 # Roadmap and wishlist
 
+The following is a list of features that I would like to add to Rapua. Some of these features are already in progress, while others are just ideas. They are not in any particular order.
+
 If you want to [request a feature](https://github.com/nathanhollows/Rapua/issues/new?assignees=&labels=&projects=&template=feature_request.md) or want to check the progress of a feature, please check out the project on [GitHub](https://github.com/nathanhollows/Rapua/issues).
 
-## New content blocks
+## Content blocks
 
-I have the following content blocks in mind:
-
-- **Photo challenge**: A block that allows users to take a photo and submit it.
+- **Photo challenge**: A block that allows users to take a photo and submit it ([#49](https://github.com/nathanhollows/Rapua/issues/49)).
 - **Video challenge**: A block that allows users to record a video and submit it.
-- **Sort list**: A block that allows users to sort a list of items.
 - **Survey**: A block that allows users to answer a survey.
 - **Quiz**: A block that allows users to answer a quiz.
 - **API**: A block that only can only be completed by calling an API. This would enable facilitators to integrate with other systems, e.g., a student sends an email to a specific address, which triggers the API to mark the block as complete ([#41](https://github.com/nathanhollows/Rapua/issues/41)).
 
-Updates to existing blocks:
-
-- **Image Block**: Add support for image uploads ([#21](https://github.com/nathanhollows/Rapua/issues/21)).
-
 ## Admin tools to help users
 
-Admins should be able to help players who are stuck. This could include marking a block as complete or fast-tracking a team by awarding points.
-
-Track progress: https://github.com/nathanhollows/Rapua/issues/21
+Admins should be able to help players who are stuck. This could include marking a block as complete or fast-tracking a team by awarding points ([#32](https://github.com/nathanhollows/Rapua/issues/32)).
 
 ## User account settings
 

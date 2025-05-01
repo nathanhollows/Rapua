@@ -7,7 +7,8 @@ import (
 )
 
 templ recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar []*services.DocPage, isChild bool) {
-	if !(strings.Contains(page.Path, "index.md") && page.Order != 1) {
+	if (strings.Contains(page.Path, "deprecations.md")) {
+	} else if !(strings.Contains(page.Path, "index.md") && page.Order != 1) {
 		if len(page.Children) == 0 {
 			<li>
 				<a

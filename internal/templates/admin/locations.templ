@@ -588,29 +588,47 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								</div>
 							</div>
 							<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 -ml-24 mt-3 z-50">
-								<div class="card-body">
-									<h2 class="card-title mb-3">Add content</h2>
+								<div class="card-body pt-3">
+									<div class="divider">
+										<span class="badge badge-neutral">Static content</span>
+									</div>
 									<div class="grid grid-cols-3 grid-flow-row gap-5">
 										for _, block := range blocks.GetRegisteredBlocks() {
-											<div class="indicator w-full">
-												if   block.RequiresValidation() {
-													<span
-														class="indicator-item indicator-top indicator-center badge badge-outline border-base-content/30 bg-base-100"
+											if !block.RequiresValidation() {
+												<div class="indicator w-full">
+													<div
+														class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+														data-tip={ block.GetDescription() }
+														hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
+														hx-target="#blocks"
+														hx-swap="beforeend"
 													>
-														Interactive
-													</span>
-												}
-												<div
-													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-													data-tip={ block.GetDescription() }
-													hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
-													hx-target="#blocks"
-													hx-swap="beforeend"
-												>
-													@templ.Raw(block.GetIconSVG())
-													{ block.GetName() }
+														@templ.Raw(block.GetIconSVG())
+														{ block.GetName() }
+													</div>
 												</div>
-											</div>
+											}
+										}
+									</div>
+									<div class="divider">
+										<span class="badge badge-neutral">Interactive</span>
+									</div>
+									<div class="grid grid-cols-3 grid-flow-row gap-5">
+										for _, block := range blocks.GetRegisteredBlocks() {
+											if block.RequiresValidation() {
+												<div class="indicator w-full">
+													<div
+														class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+														data-tip={ block.GetDescription() }
+														hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
+														hx-target="#blocks"
+														hx-swap="beforeend"
+													>
+														@templ.Raw(block.GetIconSVG())
+														{ block.GetName() }
+													</div>
+												</div>
+											}
 										}
 									</div>
 								</div>
