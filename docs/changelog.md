@@ -24,6 +24,7 @@ order: 100
 ### Fixed
 
 - Documentation system now properly handles redirects to maintain links between pages.
+- Tailwind now scans docs for classes to ensure all styles are applied correctly.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.7.0)
 
