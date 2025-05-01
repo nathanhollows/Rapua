@@ -25,13 +25,7 @@ The sorting block offers four different scoring schemes:
 
 ## Example
 
-**Admin Configuration:**
-
-![Admin view of the sorting block configuration - PLACEHOLDER FOR IMAGE]()
-
-**Player Perspective:**
-
-![Player view of the sorting block - PLACEHOLDER FOR VIDEO]()
+<iframe class="w-full aspect-video" src="/static/images/docs/user/blocks/block-sorting-preview.mp4" frameborder="0" allowfullscreen></iframe>
 
 ## Creating a Sorting Block
 
