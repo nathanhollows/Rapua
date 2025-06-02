@@ -6799,10 +6799,6 @@ html:has(.drawer-toggle:checked) {
   width: 20rem;
 }
 
-.w-9\/12 {
-  width: 75%;
-}
-
 .w-96 {
   width: 24rem;
 }
@@ -9575,6 +9571,16 @@ html:has(.drawer-toggle:checked) {
 .after\:content-\[\'\/\'\]::after {
   --tw-content: '/';
   content: var(--tw-content);
+}
+
+.checked\:bg-accent:checked {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-a,oklch(var(--a)/var(--tw-bg-opacity)));
+}
+
+.checked\:bg-primary:checked {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-p,oklch(var(--p)/var(--tw-bg-opacity)));
 }
 
 .invalid\:border-error:invalid {
