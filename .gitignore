@@ -7,9 +7,10 @@
 *.dll
 *.so
 *.dylib
-ScanScout
-Rapua
-main
+./ScanScout
+./Rapua
+./rapua
+./main
 
 # Test binary, built with `go test -c`
 *.test
@@ -26,6 +27,7 @@ go.work
 
 # Database 
 *.db
+*.db*
 
 # Environment variables file
 .env
@@ -34,3 +36,4 @@ go.work
 assets/posters/*
 assets/codes/*
 tmp/*
+static/uploads/*

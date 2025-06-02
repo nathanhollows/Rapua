@@ -3,7 +3,8 @@ package models
 type Team struct {
 	baseModel
 
-	Code         string `bun:"code,unique,pk"`
+	ID           string `bun:"id,pk"`
+	Code         string `bun:"code,unique"`
 	Name         string `bun:"name,"`
 	InstanceID   string `bun:"instance_id,notnull"`
 	HasStarted   bool   `bun:"has_started,default:false"`

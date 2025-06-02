@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/internal/repositories"
-	"github.com/nathanhollows/Rapua/services"
+	"github.com/nathanhollows/Rapua/v3/internal/repositories"
+	"github.com/nathanhollows/Rapua/v3/services"
 )
 
 const (
@@ -18,14 +18,20 @@ const (
 )
 
 type planService struct {
-	billingRepository repositories.BillingRepository
+	billingRepository BillingRepository
 	userRepository    repositories.UserRepository
+}
+
+// Define BillingRepository interface here to avoid circular import
+type BillingRepository interface {
+	// Retrieve billing information for the user
+	GetPlanStatus(ctx context.Context, userID string) (*services.PlanStatus, error)
 }
 
 // NewPlanService creates a new billing service
 func NewPlanService() services.PlanService {
 	return &planService{
-		repositories.NewBillingRepository(),
+		nil, // We'll replace this with a proper implementation
 		repositories.NewUserRepository(),
 	}
 }

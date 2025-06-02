@@ -19,8 +19,6 @@ func TestMarkdownBlock_Getters(t *testing.T) {
 		Content: "Test Content",
 	}
 
-	assert.Equal(t, "Markdown", block.GetName())
-	assert.Equal(t, "Text written in Markdown.", block.GetDescription())
 	assert.Equal(t, "markdown", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
 	assert.Equal(t, "location-123", block.GetLocationID())
@@ -68,18 +66,4 @@ func TestMarkdownBlock_ValidatePlayerInput(t *testing.T) {
 	// Assert that state is marked as complete
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
-}
-
-func TestMarkdownBlock_CalculatePoints(t *testing.T) {
-	block := MarkdownBlock{
-		BaseBlock: BaseBlock{
-			Points: 5,
-		},
-		Content: "Test Content",
-	}
-
-	input := map[string][]string{}
-	points, err := block.CalculatePoints(input)
-	require.NoError(t, err)
-	assert.Equal(t, 0, points) // MarkdownBlock has no points to calculate
 }

@@ -3,15 +3,16 @@ package services
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-pdf/fpdf"
-	"github.com/nathanhollows/Rapua/helpers"
+	"github.com/nathanhollows/Rapua/v3/helpers"
 	go_qr "github.com/piglig/go-qr"
 )
 
@@ -81,6 +82,8 @@ type AssetGenerator interface {
 	// CreatePDF creates a PDF document from the given data
 	// Returns the path to the PDF
 	CreatePDF(ctx context.Context, data PDFData) (string, error)
+	// GetQRCodePathAndContent returns the path and content for a QR code
+	GetQRCodePathAndContent(action, id, name, extension string) (string, string)
 }
 
 type assetGenerator struct{}
@@ -104,11 +107,13 @@ func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, con
 
 	// Validate the options
 	if defaultOptions.format != "png" && defaultOptions.format != "svg" {
-		return errors.New(fmt.Sprintf("unsupported format: %s", defaultOptions.format))
+		return fmt.Errorf("unsupported format: %s", defaultOptions.format)
 	}
 
 	qr, err := go_qr.EncodeText(content, go_qr.Medium)
-	go_qr.MakeSegmentsOptimally(content, go_qr.Medium, 10, 27)
+	if err != nil {
+		return fmt.Errorf("encoding text: %w", err)
+	}
 	config := go_qr.NewQrCodeImgConfig(20, 2)
 
 	if defaultOptions.format == "png" {
@@ -128,7 +133,7 @@ func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, con
 
 func (s *assetGenerator) CreateArchive(ctx context.Context, paths []string) (path string, err error) {
 	// Create the file
-	path = "assets/codes/" + helpers.NewCode(10) + "-" + fmt.Sprint(time.Now().UnixNano()) + ".zip"
+	path = "assets/codes/" + helpers.NewCode(10) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".zip"
 	archive, err := os.Create(path)
 	if err != nil {
 		return "", fmt.Errorf("could not create archive: %w", err)
@@ -185,7 +190,7 @@ func (s *assetGenerator) CreatePDF(ctx context.Context, data PDFData) (path stri
 		}
 	}
 
-	path = "assets/codes/" + helpers.NewCode(10) + "-" + fmt.Sprint(time.Now().UnixNano()) + ".pdf"
+	path = "assets/codes/" + helpers.NewCode(10) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".pdf"
 	err = pdf.OutputFileAndClose(path)
 	if err != nil {
 		return "", err
@@ -222,12 +227,28 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 
 	// Render the URL
 	scanText := page.URL
-	scanText = strings.Replace(scanText, "https://", "", -1)
-	scanText = strings.Replace(scanText, "http://", "", -1)
-	scanText = strings.Replace(scanText, "www.", "", -1)
+	scanText = strings.ReplaceAll(scanText, "https://", "")
+	scanText = strings.ReplaceAll(scanText, "http://", "")
+	scanText = strings.ReplaceAll(scanText, "www.", "")
 	pdf.SetY(180)
 	pdf.SetX((210 - pdf.GetStringWidth(scanText)) / 2)
 	pdf.Cell(40, 70, scanText)
 
 	return nil
+}
+
+func (s *assetGenerator) GetQRCodePathAndContent(action, id, name, extension string) (string, string) {
+	content := os.Getenv("SITE_URL")
+	path := "assets/codes/"
+	name = strings.Trim(name, " ")
+	re := regexp.MustCompile(`[^\d\p{Latin} -]`)
+	name = re.ReplaceAllString(name, "")
+	if action == "in" {
+		content = content + "/s/" + id
+		path = path + extension + "/" + id + " " + name + "." + extension
+	} else {
+		content = content + "/o/" + id
+		path = path + extension + "/" + id + " " + name + " Check Out." + extension
+	}
+	return path, content
 }

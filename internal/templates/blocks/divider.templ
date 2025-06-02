@@ -1,0 +1,36 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
+)
+
+templ dividerPlayer(_ models.InstanceSettings, block blocks.DividerBlock) {
+	<div class="divider">{ block.Title }</div>
+}
+
+templ dividerAdmin(_ models.InstanceSettings, block blocks.DividerBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms", block.ID) }
+		hx-swap="none"
+		hx-indicator={ fmt.Sprintf("#block-%s .loading", block.ID) }
+	>
+		<label
+			for={ fmt.Sprintf("md-%s", block.ID) }
+			class="input input-bordered flex items-center gap-2"
+		>
+			<input
+				id={ fmt.Sprintf("md-%s", block.ID) }
+				name="title"
+				type="text"
+				class="grow"
+				placeholder="Title"
+				value={ block.Title }
+			/>
+			<span class="badge badge-info">Optional</span>
+		</label>
+	</form>
+}

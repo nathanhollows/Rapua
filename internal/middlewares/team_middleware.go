@@ -5,14 +5,19 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/internal/repositories"
-	"github.com/nathanhollows/Rapua/internal/sessions"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 )
 
 // TeamMiddleware extracts the team code from the session and finds the matching instance.
-func TeamMiddleware(teamRepo repositories.TeamRepository, next http.Handler) http.Handler {
+func TeamMiddleware(teamService teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Preview requests should pass through
+		if r.Context().Value(contextkeys.PreviewKey) != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Extract the session
 		session, err := sessions.Get(r, "scanscout")
 		if err != nil {
@@ -29,9 +34,16 @@ func TeamMiddleware(teamRepo repositories.TeamRepository, next http.Handler) htt
 		}
 
 		// Find the matching team instance
-		team, err := teamRepo.FindTeamByCode(r.Context(), teamCode)
+		team, err := teamService.FindTeamByCode(r.Context(), teamCode)
 		if err != nil {
 			slog.Error("finding team by code: ", "err", err, "teamCode", teamCode)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		err = teamService.LoadRelation(r.Context(), team, "Instance")
+		if err != nil {
+			slog.Error("loading relations: ", "err", err)
 			next.ServeHTTP(w, r)
 			return
 		}

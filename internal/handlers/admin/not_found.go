@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	templates "github.com/nathanhollows/Rapua/internal/templates/admin"
+	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 )
 
-// NotFound shows the not found page
+// NotFound shows the not found page.
 func (h *AdminHandler) NotFound(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 

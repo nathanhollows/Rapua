@@ -2,75 +2,39 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/blocks"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
-templ markdownPlayer(settings models.InstanceSettings, block blocks.MarkdownBlock) {
+templ markdownPlayer(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 	<div class="card prose">
 		@templ.Raw(stringToMarkdown(block.Content))
 	</div>
 }
 
-templ markdownAdmin(settings models.InstanceSettings, block blocks.MarkdownBlock) {
+templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
-		hx-trigger="submit"
-		class="modal-box md:w-11/12 max-w-5xl"
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea) delay:1000ms", block.ID) }
+		hx-swap="none"
+		hx-indicator={ fmt.Sprintf("#block-%s .loading", block.ID) }
 	>
-		<h3 class="text-lg font-bold flex flex-row gap-3">
-			@templ.Raw(block.GetIconSVG())
-			{ block.GetName() } block
-		</h3>
 		<label
 			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full my-5"
+			class="form-control w-full mt-5"
 		>
-			<div class="label">
-				<span class="label-text font-bold">Markdown Block</span>
-				<label class="label-text-alt flex flex-row gap-3">
-					Preview
-					<input
-						type="checkbox"
-						class="toggle toggle-sm md-toggle"
-						name="preview"
-						class="checkbox"
-						data-block={ block.ID }
-						onclick="previewMD(event)"
-					/>
-				</label>
-			</div>
 			<textarea
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="content"
 				rows="7"
-				class="textarea textarea-bordered w-full font-mono"
-				placeholder="Markdown content here..."
+				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				style="field-sizing: content;"
+				placeholder="Markdown content here"
 			>{ block.Content }</textarea>
-			<div
-				id={ fmt.Sprintf("preview-md-%s", block.ID) }
-				class="flex items-center justify-center min-h-48 border border-base-300 hidden card w-full bg-base-200 rounded-[var(--rounded-btn)] p-5"
-			></div>
 			<div class="label">
-				<span class="label-text-alt flex flex-row content-center gap-1">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-					<span class="self-center">
-						This block uses Markdown for formatting content. <a class="link" href="/admin/markdown" target="blank">Here's a quick guide</a>.
-					</span>
-				</span>
+				@markdownHint()
 			</div>
 		</label>
-		<div class="modal-action">
-			<button
-				type="button"
-				class="btn"
-				onclick="block_edit_modal.close()"
-			>Nevermind</button>
-			<button
-				type="submit"
-				class="btn btn-primary"
-				onclick="block_edit_modal.close()"
-			>Save</button>
-		</div>
 	</form>
 }

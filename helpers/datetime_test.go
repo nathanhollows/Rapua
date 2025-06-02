@@ -40,7 +40,7 @@ func TestParseDate(t *testing.T) {
 	}
 }
 
-// TestHelpers_ParseTime tests the ParseTime function
+// TestHelpers_ParseTime tests the ParseTime function.
 func TestParseTime(t *testing.T) {
 	tests := []struct {
 		name string
@@ -86,7 +86,7 @@ func TestParseTime(t *testing.T) {
 	}
 }
 
-// TestHelpers_ParseDateTime tests the ParseDateTime function
+// TestHelpers_ParseDateTime tests the ParseDateTime function.
 func TestParseDateTime(t *testing.T) {
 	tests := []struct {
 		name string

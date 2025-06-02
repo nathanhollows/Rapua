@@ -8,22 +8,20 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/nathanhollows/Rapua/filesystem"
-	admin "github.com/nathanhollows/Rapua/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/internal/middlewares"
-	"github.com/nathanhollows/Rapua/internal/repositories"
-	"github.com/nathanhollows/Rapua/internal/services"
+	"github.com/nathanhollows/Rapua/v3/filesystem"
+	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v3/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 )
 
 func setupRouter(
 	logger *slog.Logger,
-	gameplayService services.GameplayService,
-	gameManagerService services.GameManagerService,
-	notificationService services.NotificationService,
+	publicHandler *public.PublicHandler,
+	playerHandler *players.PlayerHandler,
+	adminHandler *admin.AdminHandler,
 ) *chi.Mux {
-
 	router := chi.NewRouter()
 
 	router.Use(middleware.Compress(5))
@@ -31,24 +29,10 @@ func setupRouter(
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
 
-	// Create userServices for authentication
-	userServices := services.NewUserServices(repositories.NewUserRepository())
-
-	// Public routes
-	publicHandler := public.NewPublicHandler(logger, *userServices)
 	setupPublicRoutes(router, publicHandler)
-
-	// Player routes
-	playerHandler := players.NewPlayerHandler(logger, gameplayService, notificationService)
 	setupPlayerRoutes(router, playerHandler)
-
-	// Admin routes
-	adminHandler := admin.NewAdminHandler(
-		logger,
-		gameManagerService,
-		notificationService,
-		*userServices)
 	setupAdminRoutes(router, adminHandler)
+	setupFacilitatorRoutes(router, adminHandler)
 
 	// Static files
 	workDir, _ := os.Getwd()
@@ -58,20 +42,26 @@ func setupRouter(
 	return router
 }
 
-// Setup the player routes
+// Setup the player routes.
 func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) {
-	teamRepo := repositories.NewTeamRepository()
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
-	router.Get("/play", playerHandler.Play)
-	router.Post("/play", playerHandler.PlayPost)
+	router.Route("/play", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+		})
+
+		r.Get("/", playerHandler.Play)
+		r.Post("/", playerHandler.PlayPost)
+	})
 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo,
-				middlewares.LobbyMiddleware(teamRepo, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.Next)
 		r.Post("/", playerHandler.Next)
@@ -79,8 +69,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo,
-				middlewares.LobbyMiddleware(teamRepo, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
@@ -88,16 +79,27 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo, next)
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.Lobby)
+		r.Post("/team-name", playerHandler.SetTeamName)
+	})
+
+	// Ending the game
+	router.Route("/finish", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+		})
+		r.Get("/", playerHandler.Finish)
 	})
 
 	// Check in to a location
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo,
-				middlewares.LobbyMiddleware(teamRepo, next))
+			return middlewares.TeamMiddleware(playerHandler.TeamService,
+				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
 		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)
@@ -106,8 +108,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Check out of a location
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo,
-				middlewares.LobbyMiddleware(teamRepo, next))
+			return middlewares.TeamMiddleware(playerHandler.TeamService,
+				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
 		})
 		r.Get("/", playerHandler.CheckOut)
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)
@@ -116,22 +118,27 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(teamRepo,
-				middlewares.LobbyMiddleware(teamRepo, next))
+			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+				middlewares.TeamMiddleware(playerHandler.TeamService,
+					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
 		r.Get("/", playerHandler.MyCheckins)
 		r.Get("/{id}", playerHandler.CheckInView)
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
-
 }
 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
+	router.Use(func(next http.Handler) http.Handler {
+		return middlewares.AuthStatusMiddleware(publicHandler.AuthService, next)
+	})
+
 	router.Get("/", publicHandler.Index)
 	router.Get("/pricing", publicHandler.Pricing)
 	router.Get("/about", publicHandler.About)
 	router.Get("/contact", publicHandler.Contact)
+	router.Post("/contact", publicHandler.ContactPost)
 	router.Get("/privacy", publicHandler.Privacy)
 
 	router.Route("/login", func(r chi.Router) {
@@ -158,15 +165,22 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 		r.Post("/resend", publicHandler.ResendEmailVerification)
 	})
 
-	router.NotFound(publicHandler.NotFound)
+	router.Route("/docs", func(r chi.Router) {
+		r.Get("/*", publicHandler.Docs)
+	})
 
+	router.Route("/templates", func(r chi.Router) {
+		r.Get("/{id}", publicHandler.TemplatesPreview)
+	})
+
+	router.NotFound(publicHandler.NotFound)
 }
 
 func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 	router.Route("/admin", func(r chi.Router) {
 		billingService := services.NewPlanService()
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.AdminAuthMiddleware(adminHandler.UserServices.AuthService, next)
+			return middlewares.AdminAuthMiddleware(adminHandler.AuthService, next)
 		})
 		r.Use(middlewares.AdminCheckInstanceMiddleware)
 		r.Use(func(next http.Handler) http.Handler {
@@ -176,6 +190,11 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 		r.Route("/plan", func(r chi.Router) {
 			r.Get("/", adminHandler.Plan)
 			r.Post("/", adminHandler.PlanPost)
+		})
+
+		r.Route("/quickstart", func(r chi.Router) {
+			r.Get("/", adminHandler.Quickstart)
+			r.Post("/dismiss", adminHandler.DismissQuickstart)
 		})
 
 		r.Get("/", adminHandler.Activity)
@@ -213,11 +232,14 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 		r.Route("/teams", func(r chi.Router) {
 			r.Get("/", adminHandler.Teams)
 			r.Post("/add", adminHandler.TeamsAdd)
+			r.Delete("/delete", adminHandler.TeamsDelete)
+			r.Post("/reset", adminHandler.TeamsReset)
 		})
 
 		r.Route("/experience", func(r chi.Router) {
 			r.Get("/", adminHandler.Experience)
 			r.Post("/", adminHandler.ExperiencePost)
+			r.Post("/preview", adminHandler.ExperiencePreview)
 		})
 
 		r.Route("/instances", func(r chi.Router) {
@@ -231,7 +253,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 		})
 
 		r.Route("/markdown", func(r chi.Router) {
-			r.Get("/", adminHandler.MarkdownGuide)
 			r.Post("/preview", adminHandler.PreviewMarkdown)
 		})
 
@@ -246,6 +267,37 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Post("/team", adminHandler.NotifyTeamPost)
 		})
 
+		r.Route("/facilitator", func(r chi.Router) {
+			r.Get("/create-link", adminHandler.FacilitatorShowModal)
+			r.Post("/create-link", adminHandler.FacilitatorCreateTokenLink)
+		})
+
+		r.Route("/templates", func(r chi.Router) {
+			r.Post("/create", adminHandler.TemplatesCreate)
+			r.Delete("/", adminHandler.TemplatesDelete)
+			// Launch
+			r.Post("/launch", adminHandler.TemplatesLaunch)
+			r.Post("/launch-from-link", adminHandler.TemplatesLaunchFromLink)
+			// Edit
+			r.Get("/{id}/name", adminHandler.TemplatesName)
+			r.Get("/{id}/edit/name", adminHandler.TemplatesNameEdit)
+			r.Post("/{id}/edit/name", adminHandler.TemplatesNameEditPost)
+			// Share
+			r.Get("/{id}/share", adminHandler.TemplatesShare)
+			r.Post("/{id}/share", adminHandler.TemplatesSharePost)
+		})
+
+		r.Route("/media", func(r chi.Router) {
+			r.Post("/upload", adminHandler.UploadMedia)
+		})
+
 		r.NotFound(adminHandler.NotFound)
+	})
+}
+
+func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
+	router.Route("/facilitator", func(r chi.Router) {
+		r.Get("/login/{token}", adminHandler.FacilitatorLogin)
+		r.Get("/dashboard", adminHandler.FacilitatorDashboard)
 	})
 }

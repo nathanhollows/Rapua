@@ -4,21 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/blocks"
-	"github.com/nathanhollows/Rapua/internal/flash"
-	"github.com/nathanhollows/Rapua/internal/repositories"
-	"github.com/nathanhollows/Rapua/models"
-	"golang.org/x/exp/rand"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v3/internal/flash"
+	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-// Define errors
+// Define errors.
 var (
 	ErrTeamNotFound             = errors.New("team not found")
 	ErrLocationNotFound         = errors.New("location not found")
-	ErrTeamNotAllowedToCheckOut = errors.New("team not allowed to check out")
+	ErrCheckOutAtWrongLocation  = errors.New("team is not at the correct location to check out")
 	ErrUnfinishedCheckIn        = errors.New("unfinished check in")
 	ErrAlreadyCheckedIn         = errors.New("player has already scanned in")
 	ErrUnecessaryCheckOut       = errors.New("player does not need to scan out")
@@ -30,11 +29,11 @@ type GameplayService interface {
 	GetTeamByCode(ctx context.Context, teamCode string) (*models.Team, error)
 	GetMarkerByCode(ctx context.Context, locationCode string) *ServiceResponse
 	StartPlaying(ctx context.Context, teamCode, customTeamName string) *ServiceResponse
-	SuggestNextLocations(ctx context.Context, team *models.Team, limit int) ([]models.Location, error)
+	SuggestNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
 	// CheckIn checks a team in at a location
 	// It also manages the points and mustScanOut fields
 	// As well as checking if any blocks must be completed
-	CheckIn(ctx context.Context, team *models.Team, locationCode string) ServiceResponse
+	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
 	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
 	CheckValidLocation(ctx context.Context, team *models.Team, locationCode string) (bool, error)
 	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
@@ -49,21 +48,25 @@ type gameplayService struct {
 	MarkerRepository  repositories.MarkerRepository
 }
 
-func NewGameplayService() GameplayService {
+func NewGameplayService(
+	checkInService CheckInService,
+	locationService LocationService,
+	teamService TeamService,
+	blockService BlockService,
+	navigationService NavigationService,
+	markerRepository repositories.MarkerRepository,
+) GameplayService {
 	return &gameplayService{
-		CheckInService:  NewCheckInService(),
-		LocationService: NewLocationService(repositories.NewClueRepository()),
-		TeamService:     NewTeamService(repositories.NewTeamRepository()),
-		BlockService: NewBlockService(
-			repositories.NewBlockRepository(),
-			repositories.NewBlockStateRepository(),
-		),
-		NavigationService: NewNavigationService(),
-		MarkerRepository:  repositories.NewMarkerRepository(),
+		CheckInService:    checkInService,
+		LocationService:   locationService,
+		TeamService:       teamService,
+		BlockService:      blockService,
+		NavigationService: navigationService,
+		MarkerRepository:  markerRepository,
 	}
 }
 
-// GetGameStatus returns the current status of the game
+// GetGameStatus returns the current status of the game.
 func (s *gameplayService) CheckGameStatus(ctx context.Context, team *models.Team) (response *ServiceResponse) {
 	response = &ServiceResponse{}
 	response.Data = make(map[string]interface{})
@@ -94,7 +97,7 @@ func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode stri
 	response.Data = make(map[string]interface{})
 
 	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
-	marker, err := s.MarkerRepository.FindByCode(ctx, locationCode)
+	marker, err := s.MarkerRepository.GetByCode(ctx, locationCode)
 	if err != nil {
 		response.Error = fmt.Errorf("GetLocationByCode finding marker: %w", err)
 		return response
@@ -131,7 +134,7 @@ func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeam
 	return response
 }
 
-func (s *gameplayService) SuggestNextLocations(ctx context.Context, team *models.Team, limit int) ([]models.Location, error) {
+func (s *gameplayService) SuggestNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
 	// Populate the team with the necessary data
 	err := s.TeamService.LoadRelations(ctx, team)
 	if err != nil {
@@ -144,32 +147,32 @@ func (s *gameplayService) SuggestNextLocations(ctx context.Context, team *models
 		return nil, fmt.Errorf("determining next locations: %w", err)
 	}
 
+	for i := range locations {
+		err := s.LocationService.LoadRelations(ctx, &locations[i])
+		if err != nil {
+			return nil, fmt.Errorf("loading relations for location: %w", err)
+		}
+	}
+
 	return locations, nil
 }
 
-func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locationCode string) (response ServiceResponse) {
-	response = ServiceResponse{}
-
+func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error {
 	// Load team relations
 	err := s.TeamService.LoadRelations(ctx, team)
 	if err != nil {
-		response.Error = fmt.Errorf("loading relations: %w", err)
-		return response
+		return fmt.Errorf("loading relations: %w", err)
 	}
 
 	// A team may not check in if they must check out at a different location
 	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		response.Error = ErrAlreadyCheckedIn
-		return response
+		return ErrAlreadyCheckedIn
 	}
 
 	// Find the location
-	location, err := s.LocationService.FindByInstanceAndCode(ctx, team.InstanceID, locationCode)
+	location, err := s.LocationService.GetByInstanceAndCode(ctx, team.InstanceID, locationCode)
 	if err != nil {
-		msg := flash.NewWarning("Please double check the code and try again.").SetTitle("Location code not found")
-		response.AddFlashMessage(msg)
-		response.Error = fmt.Errorf("finding location: %w", err)
-		return response
+		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
 
 	// A team may not check in if they have previously checked in at this location
@@ -181,50 +184,33 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 		}
 	}
 	if scanned {
-		response.Error = ErrAlreadyCheckedIn
-		return response
+		return ErrAlreadyCheckedIn
 	}
 
-	// The location must be valid for the team to check in
-	valid, err := s.CheckValidLocation(ctx, team, locationCode)
+	valid, err := s.NavigationService.CheckValidLocation(ctx, team, &team.Instance.Settings, locationCode)
 	if err != nil {
-		response.Error = fmt.Errorf("check valid location: %w", err)
-		return response
+		return fmt.Errorf("checking if location is valid: %w", err)
 	}
 	if !valid {
-		msg := flash.NewWarning("Please double check the code and try again.").SetTitle("Location code not found")
-		response.AddFlashMessage(msg)
-		response.Error = fmt.Errorf("location not valid for team")
-		return response
+		return errors.New("location not valid for team")
 	}
 
 	// Check if any blocks require validation (e.g. a checklist)
 	validationRequired, err := s.BlockService.CheckValidationRequiredForLocation(ctx, location.ID)
 	if err != nil {
-		msg := flash.NewError("Something went wrong. Please try again.")
-		response.AddFlashMessage(*msg)
-		err := fmt.Errorf("checking if validation is required: %w", err)
-		response.Error = fmt.Errorf("checking if validation is required: %w", err)
-		return response
+		return fmt.Errorf("checking if validation is required: %w", err)
 	}
 
 	// Log the check in
 	mustCheckOut := team.Instance.Settings.CompletionMethod == models.CheckInAndOut
 	_, err = s.CheckInService.CheckIn(ctx, *team, *location, mustCheckOut, validationRequired)
 	if err != nil {
-		msg := flash.NewWarning("Please double check the code and try again.").SetTitle("Couldn't scan in.")
-		response.AddFlashMessage(msg)
-		err := fmt.Errorf("logging scan: %w", err)
-		response.Error = fmt.Errorf("logging scan: %w", err)
-		return response
+		return fmt.Errorf("logging scan: %w", err)
 	}
 
 	err = s.LocationService.IncrementVisitorStats(ctx, location)
 	if err != nil {
-		msg := flash.NewError("Something went wrong. Please try again.")
-		response.AddFlashMessage(*msg)
-		response.Error = fmt.Errorf("incrementing visitor stats: %w", err)
-		return response
+		return fmt.Errorf("incrementing visitor stats: %w", err)
 	}
 
 	// Points are only added if the team does not need to scan out
@@ -236,21 +222,14 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 	}
 	err = s.TeamService.Update(ctx, team)
 	if err != nil {
-		msg := flash.NewError("Something went wrong. Please try again.")
-		response.AddFlashMessage(*msg)
-		response.Error = fmt.Errorf("updating team: %w", err)
-		return response
+		return fmt.Errorf("updating team: %w", err)
 	}
 
-	response.Data = make(map[string]interface{})
-	response.Data["location"] = location
-
-	return response
+	return nil
 }
 
 func (s *gameplayService) CheckOut(ctx context.Context, team *models.Team, locationCode string) error {
-
-	location, err := s.LocationService.FindByInstanceAndCode(ctx, team.InstanceID, locationCode)
+	location, err := s.LocationService.GetByInstanceAndCode(ctx, team.InstanceID, locationCode)
 	if err != nil {
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
@@ -264,7 +243,7 @@ func (s *gameplayService) CheckOut(ctx context.Context, team *models.Team, locat
 	if team.MustCheckOut == "" {
 		return ErrUnecessaryCheckOut
 	} else if team.MustCheckOut != location.ID {
-		return ErrTeamNotAllowedToCheckOut
+		return ErrCheckOutAtWrongLocation
 	}
 
 	// Check if all blocks are completed
@@ -286,7 +265,7 @@ func (s *gameplayService) CheckOut(ctx context.Context, team *models.Team, locat
 	return nil
 }
 
-// CheckLocation checks if the location is valid for the team to check in
+// CheckLocation checks if the location is valid for the team to check in.
 func (s *gameplayService) CheckValidLocation(ctx context.Context, team *models.Team, locationCode string) (bool, error) {
 	if team.Instance.ID == "" {
 		return false, ErrInstanceNotFound
@@ -308,49 +287,10 @@ func (s *gameplayService) CheckValidLocation(ctx context.Context, team *models.T
 	return valid, nil
 }
 
-// loadClues loads the clues for the current location
-// By default, it will only show one clue per location
-func (s *gameplayService) loadClues(ctx context.Context, team *models.Team, locations []models.Location) (response ServiceResponse) {
-	response = ServiceResponse{}
-	response.Data = make(map[string]interface{})
-
-	err := s.LocationService.LoadCluesForLocations(ctx, &locations)
-	if err != nil {
-		response.Error = fmt.Errorf("loading clues for locations: %w", err)
-		return response
-	}
-
-	// Create a seed for the random clue
-	seed := team.Code
-	h := fnv.New64a()
-	_, err = h.Write([]byte(seed))
-	if err != nil {
-		response.Error = fmt.Errorf("creating seed for random clue: %w", err)
-		return response
-	}
-	r := rand.New(rand.NewSource(uint64(h.Sum64())))
-
-	// Randomly select a clue for each location
-	// If the location has no clues, it will be skipped
-	for i, location := range locations {
-		if len(location.Clues) == 0 {
-			continue
-		} else if len(location.Clues) == 1 {
-			continue
-		}
-
-		n := r.Intn(len(location.Clues))
-		(locations)[i].Clues = location.Clues[n : n+1]
-	}
-
-	response.Data["nextLocations"] = locations
-	return response
-}
-
 func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error) {
 	blockID := data["block"][0]
 	if blockID == "" {
-		return nil, nil, fmt.Errorf("blockID must be set")
+		return nil, nil, errors.New("blockID must be set")
 	}
 
 	block, state, err := s.BlockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
@@ -359,12 +299,16 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 	}
 
 	if state == nil {
-		return nil, nil, fmt.Errorf("block state not found")
+		return nil, nil, errors.New("block state not found")
 	}
 
+	// Check if we're in preview mode - preview mode should allow resubmission for testing
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+	
 	// Returning early here prevents the block from being updated
 	// And points from being added to the team multiple times
-	if state.IsComplete() {
+	// But in preview mode, we want to allow resubmission for testing
+	if state.IsComplete() && !isPreview {
 		return state, block, nil
 	}
 

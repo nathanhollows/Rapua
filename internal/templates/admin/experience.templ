@@ -1,8 +1,8 @@
 package templates
 
-import "github.com/nathanhollows/Rapua/models"
+import "github.com/nathanhollows/Rapua/v3/models"
 
-templ Experience(settings models.InstanceSettings) {
+templ Experience(settings models.InstanceSettings, locationCount int) {
 	<form
 		hx-post="/admin/experience"
 		hx-trigger="submit"
@@ -16,208 +16,210 @@ templ Experience(settings models.InstanceSettings) {
 		<div class="flex w-full gap-5 lg:flex-row flex-col">
 			<div class="grid h-fit px-5 flex-grow">
 				<!--  settings -->
-				<div class="divider divider-accent font-bold pb-5">Navigation</div>
-				<!-- Navigation Method -->
-				<div class="mb-5">
-					<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-						<strong>Navigation Method</strong>
-						<div class="dropdown dropdown-hover">
-							<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
-								for _, v := range models.GetNavigationMethods() {
-									<div tabindex="0" class="card-body">
-										<h2 class="card-title">{ v.String() }</h2>
-										<p>{ v.Description() }</p>
-									</div>
-								}
-							</div>
-						</div>
-					</div>
-					<div class="">How should the players navigate the game?</div>
-					<div class="form-control lg:w-full py-3">
-						for i, v := range models.GetNavigationMethods() {
-							<label class="label cursor-pointer">
-								<span class="label-text">{ v.String() }</span>
-								<input
-									type="radio"
-									name="navigationMethod"
-									value={ v.String() }
-									data-index={ intToString(i) }
-									class="radio radio-primary"
-									onchange="updatePreview()"
-									if settings.NavigationMethod == v {
-										checked
+				<section id="movement-settings">
+					<div class="divider divider-accent font-bold pb-5">Navigation</div>
+					<!-- Pathfinding -->
+					<div class="my-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Pathfinding</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div
+									tabindex="0"
+									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
+								>
+									for _, v := range models.GetNavigationModes() {
+										<div tabindex="0" class="card-body">
+											<h2 class="card-title">{ v.String() }</h2>
+											<p>{ v.Description() }</p>
+										</div>
 									}
-								/>
-							</label>
-						}
-					</div>
-				</div>
-				<!-- Navigation Mode -->
-				<div class="my-5">
-					<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-						<strong>Navigation Mode</strong>
-						<div class="dropdown dropdown-hover">
-							<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div
-								tabindex="0"
-								class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
-							>
-								for _, v := range models.GetNavigationModes() {
-									<div tabindex="0" class="card-body">
-										<h2 class="card-title">{ v.String() }</h2>
-										<p>{ v.Description() }</p>
-									</div>
-								}
-							</div>
-						</div>
-					</div>
-					<span class="">
-						How should the game decide which location(s) to show next?
-					</span>
-					<div class="form-control w-full py-3">
-						for i, v := range models.GetNavigationModes() {
-							<label class="label cursor-pointer">
-								<span class="label-text">{ v.String() }</span>
-								<input
-									type="radio"
-									name="navigationMode"
-									value={ v.String() }
-									data-index={ intToString(i) }
-									class="radio radio-primary"
-									if settings.NavigationMode == v {
-										checked
-									}
-									onchange="updatePreview()"
-								/>
-							</label>
-						}
-					</div>
-				</div>
-				<!-- Maximum locations to show -->
-				<div class="my-5">
-					<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-						<strong>Maximum number of locations to show</strong>
-						<div class="dropdown dropdown-hover">
-							<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div
-								tabindex="0"
-								class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl"
-							>
-								<div tabindex="0" class="card-body">
-									<h2 class="card-title">Maximum number of locations</h2>
-									<p>This settings limits how many locations or clues are visible or valid for a team. This is useful for dispersing learners.</p>
-									<p>This setting is only enabled for Random mode. All locations are visible in Free Roam mode, and only the next is visible for Ordered.</p>
 								</div>
 							</div>
 						</div>
+						<span class="">
+							How players move between locations.
+						</span>
+						<div class="form-control w-full py-3">
+							for i, v := range models.GetNavigationModes() {
+								<label class="label cursor-pointer">
+									<span class="label-text">{ v.String() }</span>
+									<input
+										type="radio"
+										name="navigationMode"
+										value={ v.String() }
+										data-index={ intToString(i) }
+										class="radio radio-primary"
+										if settings.NavigationMode == v {
+											checked
+										}
+										onchange="updatePreview()"
+									/>
+								</label>
+							}
+						</div>
 					</div>
-					<label class="form-control w-full py-3">
-						<div class="label">
-							<span class="label-text">How many locations should the team be presented with?</span>
-							<span class="label-text-alt text-error font-bold hidden">Disabled in <span id="mode-name"></span> mode</span>
-						</div>
-						<input
-							type="number"
-							name="maxLocations"
-							min="0"
-							step="1"
-							placeholder="3"
-							value={ intToString(settings.MaxNextLocations) }
-							class="input input-bordered w-full"
-							onkeyup="updatePreview()"
-							id="maxLocations"
-						/>
-						<div class="label">
-							<span class="label-text-alt">Set to 0 to show all</span>
-						</div>
-					</label>
-				</div>
-				<!-- End Maximum locations to show -->
-				<!-- Show visiting count -->
-				<div class="my-5">
-					<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-						<strong>Show team count</strong>
-						<div class="dropdown dropdown-hover">
-							<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div
-								tabindex="0"
-								class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl"
-							>
-								<div tabindex="0" class="card-body">
-									<h2 class="card-title text-center">Show visiting count</h2>
-									<p>This setting allows you to show how many teams are visiting a location. This can be useful for collaborative activities or minimising congestion.</p>
+					<!-- Navigation Display -->
+					<div class="mb-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Navigation Display</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
+									for _, v := range models.GetNavigationMethods() {
+										<div tabindex="0" class="card-body">
+											<h2 class="card-title">{ v.String() }</h2>
+											<p>{ v.Description() }</p>
+										</div>
+									}
 								</div>
 							</div>
 						</div>
+						<div class="">How locations are revealed to players.</div>
+						<div class="form-control lg:w-full py-3">
+							for i, v := range models.GetNavigationMethods() {
+								<label class="label cursor-pointer">
+									<span class="label-text">{ v.String() }</span>
+									<input
+										type="radio"
+										name="navigationMethod"
+										value={ v.String() }
+										data-index={ intToString(i) }
+										class="radio radio-primary"
+										onchange="updatePreview()"
+										if settings.NavigationMethod == v {
+											checked
+										}
+									/>
+								</label>
+							}
+						</div>
 					</div>
-					<div class="form-control w-full py-3">
-						<p class="label-text-alt text-error font-bold invisible text-right" id="teamCountDisabledMessage">Disabled when Show Clues is selected</p>
-						<label class="label cursor-pointer">
-							<span class="label-text">Show the number of teams at each location?</span>
+					<!-- Maximum locations to show -->
+					<div class="my-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Maximum number of locations to show</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div
+									tabindex="0"
+									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl"
+								>
+									<div tabindex="0" class="card-body">
+										<h2 class="card-title">Maximum number of locations</h2>
+										<p>This settings limits how many locations or clues are visible or valid for a team. This is useful for dispersing learners.</p>
+										<p>This setting is only enabled for Random mode. All locations are visible in Free Roam mode, and only the next is visible for Ordered.</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<label class="form-control w-full py-3">
+							<div class="label">
+								<span class="label-text">How many locations should the team be presented with?</span>
+								<span class="label-text-alt text-error font-bold hidden">Disabled in <span id="mode-name"></span> mode</span>
+							</div>
 							<input
-								type="checkbox"
-								id="showTeamCount"
-								name="showTeamCount"
-								class="toggle toggle-primary"
-								onchange="updatePreview()"
-								if settings.ShowTeamCount {
-									checked
-								}
+								type="number"
+								name="maxLocations"
+								min="0"
+								step="1"
+								placeholder="3"
+								value={ intToString(settings.MaxNextLocations) }
+								class="input input-bordered w-full"
+								onkeyup="updatePreview()"
+								id="maxLocations"
 							/>
+							<div class="label">
+								<span class="label-text-alt">Set to 0 to show all</span>
+							</div>
 						</label>
 					</div>
-				</div>
-				<!-- End Show visiting count -->
-				<!-- Completion Method -->
-				<div class="my-5">
-					<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-						<strong>Default Completion Method</strong>
-						<div class="dropdown dropdown-hover">
-							<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div
-								tabindex="0"
-								class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
-							>
-								for _, v := range models.GetCompletionMethods() {
+					<!-- End Maximum locations to show -->
+					<!-- Show visiting count -->
+					<div class="my-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Show team count</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div
+									tabindex="0"
+									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl"
+								>
 									<div tabindex="0" class="card-body">
-										<h2 class="card-title">{ v.String() }</h2>
-										<p>{ v.Description() }</p>
+										<h2 class="card-title text-center">Show visiting count</h2>
+										<p>This setting allows you to show how many teams are visiting a location. This can be useful for collaborative activities or minimising congestion.</p>
 									</div>
-								}
+								</div>
 							</div>
 						</div>
-					</div>
-					<div class="">How should players complete a location? This option sets the <em>default</em> mode for new locations.</div>
-					<div class="form-control w-full py-3">
-						for i, v := range models.GetCompletionMethods() {
+						<div class="form-control w-full py-3">
+							<p class="label-text-alt text-error font-bold invisible text-right" id="teamCountDisabledMessage">Disabled when Show Clues is selected</p>
 							<label class="label cursor-pointer">
-								<span class="label-text">{ v.String() }</span>
+								<span class="label-text">Show the number of teams at each location?</span>
 								<input
-									type="radio"
-									name="completionMethod"
-									value={ v.String() }
-									data-index={ intToString(i) }
-									class="radio radio-primary"
-									if settings.CompletionMethod == v {
+									type="checkbox"
+									id="showTeamCount"
+									name="showTeamCount"
+									class="toggle toggle-primary"
+									onchange="updatePreview()"
+									if settings.ShowTeamCount {
 										checked
 									}
 								/>
 							</label>
-						}
+						</div>
 					</div>
-				</div>
-				<!-- End Completion Method -->
+					<!-- End Show visiting count -->
+					<!-- Completion Method -->
+					<div class="my-5">
+						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+							<strong>Default Completion Method</strong>
+							<div class="dropdown dropdown-hover">
+								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+								</div>
+								<div
+									tabindex="0"
+									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
+								>
+									for _, v := range models.GetCompletionMethods() {
+										<div tabindex="0" class="card-body">
+											<h2 class="card-title">{ v.String() }</h2>
+											<p>{ v.Description() }</p>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+						<div class="">How should players complete a location? This option sets the <em>default</em> mode for new locations.</div>
+						<div class="form-control w-full py-3">
+							for i, v := range models.GetCompletionMethods() {
+								<label class="label cursor-pointer">
+									<span class="label-text">{ v.String() }</span>
+									<input
+										type="radio"
+										name="completionMethod"
+										value={ v.String() }
+										data-index={ intToString(i) }
+										class="radio radio-primary"
+										if settings.CompletionMethod == v {
+											checked
+										}
+									/>
+								</label>
+							}
+						</div>
+					</div>
+					<!-- End Completion Method -->
+				</section>
 				<div class="divider divider-accent font-bold">Competition</div>
 				<!-- Enable Points -->
 				<div class="my-5">
@@ -323,7 +325,15 @@ templ Experience(settings models.InstanceSettings) {
 					<div class="display">
 						<div class="artboard artboard-demo phone lg:phone-2" data-theme="cupcake">
 							<!-- Demo -->
-							<div class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12">
+							<div
+								if locationCount > 2 {
+									hx-post="/admin/experience/preview"
+									hx-trigger="load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)"
+									hx-swap="innerHTML"
+									hx-include="#movement-settings"
+								}
+								class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
+							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-16 h-16 mx-auto"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
 								<h2 class="mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight">
 									Next location
@@ -361,6 +371,10 @@ function getCheckedData(name) {
 }
 
 function updatePreview() {
+  // If #locationList or #navigationView is not found, return
+  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {
+	return;
+  }
   const navigationMode = getCheckedData("navigationMode");
   const navigationMethod = getCheckedData("navigationMethod");
   let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;

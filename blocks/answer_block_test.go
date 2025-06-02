@@ -21,7 +21,7 @@ func TestAnswerBlock_Getters(t *testing.T) {
 		Fuzzy:  true,
 	}
 
-	assert.Equal(t, "Answer", block.GetName())
+	assert.Equal(t, "Password", block.GetName())
 	assert.Equal(t, "answer", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
 	assert.Equal(t, "location-456", block.GetLocationID())
@@ -94,17 +94,4 @@ func TestAnswerBlock_ValidatePlayerInput(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 10, newState.GetPointsAwarded())
-}
-
-func TestAnswerBlock_CalculatePoints(t *testing.T) {
-	block := AnswerBlock{
-		BaseBlock: BaseBlock{
-			Points: 10,
-		},
-	}
-
-	input := map[string][]string{"answer": {"any"}}
-	points, err := block.CalculatePoints(input)
-	require.NoError(t, err)
-	assert.Equal(t, 10, points)
 }

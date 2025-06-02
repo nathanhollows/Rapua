@@ -13,7 +13,6 @@ import (
 
 // MarkdownToHTML converts a string to markdown.
 func MarkdownToHTML(s string) (template.HTML, error) {
-
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.Strikethrough,

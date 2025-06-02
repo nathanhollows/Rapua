@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/nathanhollows/Rapua/helpers"
+import "github.com/nathanhollows/Rapua/v3/helpers"
 
 func Plan(email string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -28,27 +28,27 @@ func Plan(email string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-4 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Choose a plan</h1><div id=\"plan-error\"></div><form class=\"space-y-3\" hx-post=\"/plan\" hx-trigger=\"submit\" hx-target-401=\"#plan-error\"><span class=\"text-sm font-bold\">Select a plan:</span><div class=\"form-control mb-3\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Free trial<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-3 h-3\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Free Trial</h2><p>This is a great option for testing out Rapua. </p><p>This is also a great option if you just want to run a single event. Design your game, test it, then buy a one-off <a class=\"link\" href=\"/pricing\">Event Boost</a> to unlock unlimited games and participants for a month.</p></div></div></div></span> <input id=\"free\" type=\"radio\" name=\"plan\" value=\"free\" class=\"radio checked:bg-accent\" onchange=\"updateSection(&#39;freeSection&#39;)\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !helpers.IsEducationalEmailHeuristic(email) {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("></label> <label class=\"label cursor-pointer\"><span class=\"label-text\">Basic</span> <input id=\"basic\" type=\"radio\" name=\"plan\" value=\"basic\" class=\"radio checked:bg-primary\" onchange=\"updateSection(&#39;basicSection&#39;)\"></label> <label class=\"label cursor-pointer\"><span class=\"label-text\">Pro</span> <input id=\"pro\" type=\"radio\" name=\"plan\" value=\"pro\" class=\"radio checked:bg-primary\" onchange=\"updateSection(&#39;proSection&#39;)\"></label> <label class=\"label cursor-pointer\"><span class=\"label-text\">Educator<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-3 h-3\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Educator pricing</h2><p>For educators and science communicators (e.g., teachers, museum professionals, librarians).</p></div></div></div></span> <input id=\"educator\" type=\"radio\" name=\"plan\" value=\"educator\" class=\"radio checked:bg-primary\" onchange=\"updateSection(&#39;pwywSection&#39;)\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if helpers.IsEducationalEmailHeuristic(email) {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("></label></div><div id=\"freeSection\" class=\"form-control prose plan-section\"><div class=\"flex justify-between\"><strong>Free trial</strong> <strong>Free!</strong></div><p>Up to 3 games/month, 3 participants per game. <br>No time limit.</p><button class=\"btn btn-accent w-full\">Use Rapua for Free</button></div><div id=\"basicSection\" class=\"form-control prose plan-section\" style=\"display: none;\"><div class=\"flex justify-between\"><strong>Basic plan</strong> <strong>$25/month</strong></div><p>Up to 10 games/month, 30 participants per game.</p><button class=\"btn btn-primary w-full\">Proceed to Payment (via Stripe)</button></div><div id=\"proSection\" class=\"form-control prose plan-section\" style=\"display: none;\"><div class=\"flex justify-between\"><strong>Pro plan</strong> <strong>$45/month</strong></div><p>Up to 20 games/month, 60 participants per game.</p><button class=\"btn btn-primary w-full\">Proceed to Payment (via Stripe)</button></div><div id=\"educatorSection\" class=\"prose plan-section\" style=\"display: none;\"><div class=\"flex justify-between\"><strong>Educator</strong> <span><strong>Pay What You Want</strong></span></div><p>Up to 20 games/month, 60 participants per game.</p><p class=\"text-sm pb-3\">You must use an email address associated with your organisation. Current email: <code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -61,7 +61,7 @@ func Plan(email string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code></p><button name=\"paymentType\" value=\"pwyw\" class=\"btn btn-primary w-full\">Pay What You Want (via Stripe)</button><div class=\"divider py-3\">OR</div><button name=\"paymentType\" value=\"free\" class=\"btn btn-accent w-full\">Use Rapua for Free</button></div></form></div></div></div><script>\n  (function() {\n    function updateSection() {\n      const selectedPlan = document.querySelector('input[name=\"plan\"]:checked').id;\n      const sections = document.querySelectorAll('.plan-section');\n      \n      sections.forEach(section => {\n        section.style.display = 'none';\n      });\n\n      const sectionId = selectedPlan + 'Section';\n      document.getElementById(sectionId).style.display = 'block';\n    }\n\n\t\tupdateSection(); // Set initial visibility\n\t\tconst planInputs = document.querySelectorAll('input[name=\"plan\"]');\n\t\tplanInputs.forEach(input => {\n\t\t\tinput.addEventListener('change', updateSection); // Listen for plan selection changes\n\t\t});\n  })();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

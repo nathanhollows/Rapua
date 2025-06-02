@@ -2,54 +2,37 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/blocks"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
-templ youtubePlayer(settings models.InstanceSettings, block blocks.YoutubeBlock) {
-	@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
+templ youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) {
+	<div class="skeleton w-full aspect-square">
+		@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
+	</div>
 }
 
-templ youtubeAdmin(settings models.InstanceSettings, block blocks.YoutubeBlock) {
+templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {
 	<form
 		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
-		hx-trigger="submit"
-		class="modal-box md:w-11/12 max-w-5xl"
+		hx-trigger={ fmt.Sprintf("submit, keyup change from:#url-%s delay:500ms", block.ID) }
+		hx-swap="none"
 	>
-		<h3 class="text-lg font-bold flex flex-row gap-3">
-			@templ.Raw(block.GetIconSVG())
-			{ block.GetName() } block
-		</h3>
 		<label
-			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full my-5"
+			for={ fmt.Sprintf("url-%s", block.ID) }
+			class="form-control w-full mt-5"
 		>
 			<div class="label">
-				<span class="label-text font-bold">Youtube Block</span>
+				<span class="label-text font-bold">Video URL</span>
 			</div>
 			<input
-				id={ fmt.Sprintf("md-%s", block.ID) }
+				id={ fmt.Sprintf("url-%s", block.ID) }
 				name="URL"
-				type="text"
+				type="url"
 				class="input input-bordered w-full"
 				placeholder="Youtube URL"
 				value={ block.URL }
 			/>
-			<div class="label">
-				<span class="label-text text-sm text-base-content/70">Note: Youtube Shorts cannot be embedded.</span>
-			</div>
 		</label>
-		<div class="modal-action">
-			<button
-				type="button"
-				class="btn"
-				onclick="block_edit_modal.close()"
-			>Nevermind</button>
-			<button
-				type="submit"
-				class="btn btn-primary"
-				onclick="block_edit_modal.close()"
-			>Save</button>
-		</div>
 	</form>
 }

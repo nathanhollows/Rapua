@@ -2,8 +2,7 @@ package helpers
 
 import "time"
 
-// ParseDateTime parses a date and a time from a string
-// Returns time.Time and error
+// ParseDateTime parses a date and a time from a string.
 func ParseDateTime(dateString, timeString string) (time.Time, error) {
 	// Parse date
 	d, err := ParseDate(dateString)
@@ -21,8 +20,7 @@ func ParseDateTime(dateString, timeString string) (time.Time, error) {
 	return time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.UTC().Location()), nil
 }
 
-// ParseDate parses a date from a string
-// Returns time.Time and error
+// ParseDate parses a date from a string.
 func ParseDate(date string) (time.Time, error) {
 	// Parse date
 	d, err := time.Parse("2006-01-02", date)
@@ -33,8 +31,7 @@ func ParseDate(date string) (time.Time, error) {
 	return d, nil
 }
 
-// ParseTime parses a time from a string
-// Returns time.Time and error
+// ParseTime parses a time from a string.
 func ParseTime(timeString string) (time.Time, error) {
 	switch len(timeString) {
 	case 5:

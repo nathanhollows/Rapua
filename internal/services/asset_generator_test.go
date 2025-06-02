@@ -5,6 +5,8 @@ import (
 	"context"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateQRCodeImage(t *testing.T) {
@@ -87,7 +89,7 @@ func createTestFile(path, content string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0600)
 }
 
 func cleanupTestFiles(files ...string) {
@@ -141,7 +143,8 @@ func TestCreateArchive(t *testing.T) {
 			}
 
 			// Execute
-			os.MkdirAll("assets/codes", 0755)
+			err := os.MkdirAll("assets/codes", 0755)
+			assert.NoError(t, err)
 			archivePath, err := assetGen.CreateArchive(context.Background(), tt.files)
 
 			// Check expectation

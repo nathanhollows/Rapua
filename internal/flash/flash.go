@@ -4,14 +4,14 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/internal/sessions"
+	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 )
 
 func init() {
 	gob.Register(Message{})
 }
 
-// Message is a struct containing each flashed message
+// Message is a struct containing each flashed message.
 type Message struct {
 	Title   string
 	Message string
@@ -29,24 +29,19 @@ const (
 )
 
 // New adds a new message into the cookie storage.
-func New(w http.ResponseWriter, r *http.Request, title string, message string, style FlashStyle) {
+func New(w http.ResponseWriter, r *http.Request, title string, message string, style FlashStyle) error {
 	flash := Message{Title: title, Message: message, Style: style}
-	session, _ := sessions.Get(r, "scanscout")
-	session.Options.HttpOnly = true
-	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
-	session.AddFlash(flash)
-	session.Save(r, w)
+	return flash.Save(w, r)
 }
 
 // Save adds a new message into the cookie storage.
-func (m Message) Save(w http.ResponseWriter, r *http.Request) {
+func (m Message) Save(w http.ResponseWriter, r *http.Request) error {
 	session, _ := sessions.Get(r, "scanscout")
 	session.Options.HttpOnly = true
 	session.Options.Secure = true
 	session.Options.SameSite = http.SameSiteStrictMode
 	session.AddFlash(m)
-	session.Save(r, w)
+	return session.Save(r, w)
 }
 
 // Set the title of the message.
@@ -67,7 +62,10 @@ func Get(w http.ResponseWriter, r *http.Request) []interface{} {
 	if err == nil {
 		messages := session.Flashes()
 		if len(messages) > 0 {
-			session.Save(r, w)
+			err := session.Save(r, w)
+			if err != nil {
+				return nil
+			}
 		}
 		return messages
 	}

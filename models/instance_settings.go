@@ -1,6 +1,8 @@
 package models
 
 type InstanceSettings struct {
+	baseModel
+
 	InstanceID        string           `bun:"instance_id,pk,type:varchar(36)"`
 	NavigationMode    NavigationMode   `bun:"navigation_mode,type:int"`
 	NavigationMethod  NavigationMethod `bun:"navigation_method,type:int"`

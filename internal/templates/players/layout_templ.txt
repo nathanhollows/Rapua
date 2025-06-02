@@ -1,7 +1,0 @@
-<!doctype html><html lang=\"en\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>
- | Rapua</title><link rel=\"stylesheet\" href=\"/static/css/tailwind.css\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/static/images/favicon.svg\"><link rel=\"icon\" type=\"image/png\" href=\"/static/images/favicon.png\"><link rel=\"icon\" type=\"image/x-icon\" href=\"/static/images/favicon.ico\"><link href=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css\" rel=\"stylesheet\"><script src=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js\"></script><script src=\"https://unpkg.com/htmx.org@1.8.5\" integrity=\"sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w\" crossorigin=\"anonymous\" defer></script></head><body class=\"h-full\"><span id=\"mapbox_key\" class=\"hidden\" data-key=\"
-\"></span><div class=\"toast toast-center z-50\" id=\"alerts\"></div><div class=\"flex min-h-full flex-col justify-center px-6 py-12 lg:px-8\">
-</div></body></html>
-<footer class=\"text-center text-sm text-gray-500 mt-8\"><div class=\"mt-4\"><p>
-</p><p>&copy; 
- Rapua</p></div></footer>

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// NotifyAllPost sends a notification to all teams
+// NotifyAllPost sends a notification to all teams.
 func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -25,7 +25,7 @@ func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Notification sent")
 }
 
-// NotifyTeamPost sends a notification to a specific team
+// NotifyTeamPost sends a notification to a specific team.
 func (h *AdminHandler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 

@@ -4,72 +4,69 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/blocks"
+	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/stretchr/testify/assert"
 )
 
+// Test that each registered block can be created from a base block.
 func TestCreateFromBaseBlock(t *testing.T) {
-	t.Run("creates MarkdownBlock from base block", func(t *testing.T) {
-		baseBlock := blocks.BaseBlock{
-			ID:         "1",
-			LocationID: "loc1",
-			Type:       "markdown",
-			Data:       json.RawMessage(`{"content": "Hello World"}`),
-			Order:      1,
-			Points:     10,
-		}
+	for _, block := range blocks.GetRegisteredBlocks() {
+		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
+			baseBlock := blocks.BaseBlock{
+				ID:         "1",
+				LocationID: "loc1",
+				Type:       block.GetType(),
+				Data:       json.RawMessage(`{}`),
+				Order:      1,
+				Points:     10,
+			}
 
-		block, err := blocks.CreateFromBaseBlock(baseBlock)
-		assert.NoError(t, err)
-		assert.IsType(t, &blocks.MarkdownBlock{}, block)
-		assert.Equal(t, "markdown", block.GetType())
-		assert.Equal(t, "1", block.GetID())
-		assert.Equal(t, 10, block.GetPoints())
-	})
-
-	t.Run("creates AnswerBlock from base block", func(t *testing.T) {
-		baseBlock := blocks.BaseBlock{
-			ID:         "2",
-			LocationID: "loc2",
-			Type:       "answer",
-			Data:       json.RawMessage(`{"answer": "secret"}`),
-			Order:      2,
-			Points:     20,
-		}
-
-		block, err := blocks.CreateFromBaseBlock(baseBlock)
-		assert.NoError(t, err)
-		assert.IsType(t, &blocks.AnswerBlock{}, block)
-		assert.Equal(t, "answer", block.GetType())
-		assert.Equal(t, "2", block.GetID())
-		assert.Equal(t, 20, block.GetPoints())
-	})
-
-	t.Run("returns error for unregistered block type", func(t *testing.T) {
-		baseBlock := blocks.BaseBlock{
-			ID:         "3",
-			LocationID: "loc3",
-			Type:       "unknown",
-			Data:       json.RawMessage(`{}`),
-			Order:      3,
-			Points:     30,
-		}
-
-		block, err := blocks.CreateFromBaseBlock(baseBlock)
-		assert.Error(t, err)
-		assert.Nil(t, block)
-		assert.EqualError(t, err, "block type unknown not found")
-	})
+			newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
+			assert.NoError(t, err)
+			assert.IsType(t, block, newBlock)
+			assert.Equal(t, block.GetType(), newBlock.GetType())
+			assert.Equal(t, "1", newBlock.GetID())
+			assert.Equal(t, 10, newBlock.GetPoints())
+		})
+	}
 }
 
-func TestGetRegisteredBlocks(t *testing.T) {
-	t.Run("returns registered blocks", func(t *testing.T) {
-		blocklist := blocks.GetRegisteredBlocks()
-		assert.Len(t, blocklist, 5)
-		assert.IsType(t, &blocks.MarkdownBlock{}, blocklist[0])
-		assert.IsType(t, &blocks.AnswerBlock{}, blocklist[1])
-		assert.IsType(t, &blocks.PincodeBlock{}, blocklist[2])
-		assert.IsType(t, &blocks.ChecklistBlock{}, blocklist[3])
-		assert.IsType(t, &blocks.YoutubeBlock{}, blocklist[4])
-	})
+// Test that an error is returned when trying to create a block with an unknown type.
+func TestCreateFromBaseBlockUnknownType(t *testing.T) {
+	baseBlock := blocks.BaseBlock{
+		ID:         "1",
+		LocationID: "loc1",
+		Type:       "unknown",
+		Data:       json.RawMessage(`{}`),
+		Order:      1,
+		Points:     10,
+	}
+
+	newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
+	assert.Error(t, err)
+	assert.Nil(t, newBlock)
+}
+
+// Ensure that blocks have unique types, names, icons, and descriptions.
+func TestBlockUniqueness(t *testing.T) {
+	types := make(map[string]bool)
+	names := make(map[string]bool)
+	icons := make(map[string]bool)
+	descriptions := make(map[string]bool)
+
+	for _, block := range blocks.GetRegisteredBlocks() {
+		t.Run("block uniqueness", func(t *testing.T) {
+			assert.False(t, types[block.GetType()], "duplicate type: "+block.GetType())
+			types[block.GetType()] = true
+
+			assert.False(t, names[block.GetName()], "duplicate name: "+block.GetName())
+			names[block.GetName()] = true
+
+			assert.False(t, icons[block.GetIconSVG()], "duplicate icon: "+block.GetIconSVG())
+			icons[block.GetIconSVG()] = true
+
+			assert.False(t, descriptions[block.GetDescription()], "duplicate description: "+block.GetDescription())
+			descriptions[block.GetDescription()] = true
+		})
+	}
 }

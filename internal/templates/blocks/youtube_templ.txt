@@ -1,6 +1,0 @@
-<form hx-post=\"
-\" hx-trigger=\"submit\" class=\"modal-box md:w-11/12 max-w-5xl\"><h3 class=\"text-lg font-bold flex flex-row gap-3\">
- block</h3><label for=\"
-\" class=\"form-control w-full my-5\"><div class=\"label\"><span class=\"label-text font-bold\">Youtube Block</span></div><input id=\"
-\" name=\"URL\" type=\"text\" class=\"input input-bordered w-full\" placeholder=\"Youtube URL\" value=\"
-\"><div class=\"label\"><span class=\"label-text text-sm text-base-content/70\">Note: Youtube Shorts cannot be embedded.</span></div></label><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"block_edit_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" onclick=\"block_edit_modal.close()\">Save</button></div></form>

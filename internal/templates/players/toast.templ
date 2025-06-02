@@ -2,15 +2,15 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/internal/flash"
+	"github.com/nathanhollows/Rapua/v3/internal/flash"
 )
 
 templ Toast(messages ...flash.Message) {
-	<div class="toast toast-center z-50" id="alerts" hx-swap-oob="true" hx-swap="beforeend">
+	<div class="toast toast-center z-50 w-full text-wrap" id="alerts" hx-swap-oob="true" hx-swap="beforeend">
 		for _, message := range messages {
 			<div
 				role="alert"
-				class={ fmt.Sprintf("alert alert-%s mb-5", message.Style) }
+				class={ fmt.Sprintf("alert alert-%s mb-5 grid-flow-col", message.Style) }
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

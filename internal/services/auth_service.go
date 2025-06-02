@@ -11,10 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
-	"github.com/nathanhollows/Rapua/internal/repositories"
-	"github.com/nathanhollows/Rapua/internal/sessions"
-	"github.com/nathanhollows/Rapua/models"
-	"github.com/nathanhollows/Rapua/security"
+	"github.com/nathanhollows/Rapua/v3/internal/sessions"
+	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v3/security"
 )
 
 var (
@@ -29,12 +29,13 @@ var (
 type AuthService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
+	IsUserAuthenticated(r *http.Request) bool
 	AllowGoogleLogin() bool
 	OAuthLogin(ctx context.Context, provider string, user goth.User) (*models.User, error)
 	CheckUserRegisteredWithOAuth(ctx context.Context, provider, userID string) (*models.User, error)
 	CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error)
 	CompleteUserAuth(w http.ResponseWriter, r *http.Request) (*models.User, error)
-	VerifyEmail(ctx context.Context, user *models.User, token string) error
+	VerifyEmail(ctx context.Context, token string) error
 	SendEmailVerification(ctx context.Context, user *models.User) error
 }
 
@@ -56,7 +57,7 @@ func (s *authService) AuthenticateUser(ctx context.Context, email, password stri
 		return nil, errors.New("email and password are required")
 	}
 
-	user, err := s.userRepository.FindByEmail(ctx, email)
+	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by email: %w", err)
 	}
@@ -66,6 +67,17 @@ func (s *authService) AuthenticateUser(ctx context.Context, email, password stri
 	}
 
 	return user, nil
+}
+
+// IsUserAuthenticated checks if the user is authenticated.
+func (s *authService) IsUserAuthenticated(r *http.Request) bool {
+	session, err := sessions.Get(r, "admin")
+	if err != nil {
+		return false
+	}
+
+	_, ok := session.Values["user_id"].(string)
+	return ok
 }
 
 // GetAuthenticatedUser retrieves the authenticated user from the session.
@@ -80,7 +92,7 @@ func (s *authService) GetAuthenticatedUser(r *http.Request) (*models.User, error
 		return nil, errors.New("user not authenticated")
 	}
 
-	user, err := s.userRepository.FindByID(r.Context(), userID)
+	user, err := s.userRepository.GetByID(r.Context(), userID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +100,15 @@ func (s *authService) GetAuthenticatedUser(r *http.Request) (*models.User, error
 	return user, nil
 }
 
-// Check if the system allows google login (env var set)
+// Check if the system allows google login (env var set).
 func (s *authService) AllowGoogleLogin() bool {
 	provider, err := goth.GetProvider("google")
 	return err == nil && provider != nil
 }
 
-// OAuthLogin handles User Login via OAuth
+// OAuthLogin handles User Login via OAuth.
 func (s *authService) OAuthLogin(ctx context.Context, provider string, oauthUser goth.User) (*models.User, error) {
-	existingUser, err := s.userRepository.FindByEmail(ctx, oauthUser.Email)
+	existingUser, err := s.userRepository.GetByEmail(ctx, oauthUser.Email)
 	if err != nil {
 		// User doesn't exist, create a new one
 		newUser, err := s.CreateUserWithOAuth(ctx, oauthUser)
@@ -109,9 +121,9 @@ func (s *authService) OAuthLogin(ctx context.Context, provider string, oauthUser
 	return existingUser, nil
 }
 
-// CheckUserRegisteredWithOAuth looks for user already registered with OAuth
+// CheckUserRegisteredWithOAuth looks for user already registered with OAuth.
 func (s *authService) CheckUserRegisteredWithOAuth(ctx context.Context, provider, email string) (*models.User, error) {
-	user, err := s.userRepository.FindByEmailAndProvider(ctx, email, provider)
+	user, err := s.userRepository.GetByEmailAndProvider(ctx, email, provider)
 	if err != nil {
 		return nil, fmt.Errorf("getting user by email and provider: %w", err)
 	}
@@ -119,7 +131,7 @@ func (s *authService) CheckUserRegisteredWithOAuth(ctx context.Context, provider
 	return user, nil
 }
 
-// CreateUserWithOAuth creates a new user if logging in with OAuth for the first time
+// CreateUserWithOAuth creates a new user if logging in with OAuth for the first time.
 func (s *authService) CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error) {
 	uuid := uuid.New()
 	newUser := models.User{
@@ -138,7 +150,7 @@ func (s *authService) CreateUserWithOAuth(ctx context.Context, user goth.User) (
 	return &newUser, nil
 }
 
-// CompleteUserAuth completes the user authentication process
+// CompleteUserAuth completes the user authentication process.
 func (s *authService) CompleteUserAuth(w http.ResponseWriter, r *http.Request) (*models.User, error) {
 	gothUser, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
@@ -153,8 +165,13 @@ func (s *authService) CompleteUserAuth(w http.ResponseWriter, r *http.Request) (
 	return user, nil
 }
 
-// VerifyEmail verifies the user's email address
-func (s *authService) VerifyEmail(ctx context.Context, user *models.User, token string) error {
+// VerifyEmail verifies the user's email address.
+func (s *authService) VerifyEmail(ctx context.Context, token string) error {
+	user, err := s.userRepository.GetByEmailToken(ctx, token)
+	if err != nil {
+		return ErrInvalidToken
+	}
+
 	if user.EmailToken != token {
 		return ErrInvalidToken
 	}
@@ -167,7 +184,7 @@ func (s *authService) VerifyEmail(ctx context.Context, user *models.User, token 
 	user.EmailToken = ""
 	user.EmailTokenExpiry = sql.NullTime{}
 
-	err := s.userRepository.Update(ctx, user)
+	err = s.userRepository.Update(ctx, user)
 	if err != nil {
 		return fmt.Errorf("updating user: %w", err)
 	}
@@ -175,7 +192,7 @@ func (s *authService) VerifyEmail(ctx context.Context, user *models.User, token 
 	return nil
 }
 
-// SendVerificationEmail sends a verification email to the user
+// SendVerificationEmail sends a verification email to the user.
 func (s *authService) SendEmailVerification(ctx context.Context, user *models.User) error {
 	// If the user is already verified, return an error
 	if user.EmailVerified {

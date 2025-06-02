@@ -29,19 +29,25 @@ func TestYoutubeBlock_Getters(t *testing.T) {
 func TestYoutubeBlock_UpdateBlockData(t *testing.T) {
 	block := YoutubeBlock{}
 	data := map[string][]string{
-		"URL": {"https://www.youtube.com/watch?v=54321"},
+		"URL": {"https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
 	}
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "https://www.youtube.com/watch?v=54321", block.URL)
+	assert.Equal(t, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", block.URL)
+
+	// Invalid URL
+	err = block.UpdateBlockData(map[string][]string{"URL": {"invalid"}})
+	require.Error(t, err)
 }
 
 func TestYoutubeBlock_ValidatePlayerInput(t *testing.T) {
+	// Test: invalid URL
+
 	block := YoutubeBlock{
 		BaseBlock: BaseBlock{
 			Points: 5,
 		},
-		URL: "https://www.youtube.com/watch?v=12345",
+		URL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 	}
 
 	state := &mockPlayerState{}
@@ -53,18 +59,4 @@ func TestYoutubeBlock_ValidatePlayerInput(t *testing.T) {
 	// Assert that state is marked as complete
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
-}
-
-func TestYoutubeBlock_CalculatePoints(t *testing.T) {
-	block := YoutubeBlock{
-		BaseBlock: BaseBlock{
-			Points: 5,
-		},
-		URL: "https://www.youtube.com/watch?v=12345",
-	}
-
-	input := map[string][]string{}
-	points, err := block.CalculatePoints(input)
-	require.NoError(t, err)
-	assert.Equal(t, 0, points) // YoutubeBlock has no points to calculate
 }

@@ -2,7 +2,7 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 templ Next(team models.Team, locations []models.Location) {
@@ -13,17 +13,30 @@ templ Next(team models.Team, locations []models.Location) {
 		>
 			Next location
 		</h2>
-		switch team.Instance.Settings.NavigationMethod {
-			case 0:
-				@showMap(locations)
-			case 1:
-				@showMapAndNames(team, locations)
-			case 2:
-				@showNames(team, locations)
-			case 3:
-				@showClues(locations)
+		if team.Instance.Settings.CompletionMethod == models.CheckInAndOut && team.MustCheckOut != "" {
+			<div role="alert" class="alert alert-info mt-8">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
+				<span>
+					You must check out of your 
+					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", team.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
+						current location
+					</a>
+					before you can check in to the next one.
+				</span>
+			</div>
+		} else {
+			switch team.Instance.Settings.NavigationMethod {
+				case 0:
+					@showMap(locations)
+				case 1:
+					@showMapAndNames(team, locations)
+				case 2:
+					@showNames(team, locations)
+				case 3:
+					@showClues(locations)
+			}
 		}
-		<div class="flex flex-row justify-center mt-12">
+		<div id="player-nav" class="flex flex-row justify-center mt-12">
 			<a href="/checkins" hx-boost="true" class="btn btn-ghost btn-outline">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
 				My Check-ins
@@ -38,12 +51,16 @@ templ showMap(locations []models.Location) {
 		You may choose any of the following locations. Use the map below to help
 		find where you want to go.
 	</p>
-	<div
-		id="map-next"
-		class="w-full h-96 rounded-lg shadow-lg mt-5"
-	></div>
+	<div id="map-container" class="relative w-full aspect-square h-96 rounded-lg shadow-lg my-5 overflow-hidden">
+		<div id="map-next" class="map w-full h-full rounded-lg"></div>
+	</div>
 	for _, location := range locations {
-		<span class="location-name" data-lat={ fmt.Sprint(location.Marker.Lat) } data-lng={ fmt.Sprint(location.Marker.Lng) }></span>
+		<span
+			class="location-name"
+			data-lat={ fmt.Sprint(location.Marker.Lat) }
+			data-lng={ fmt.Sprint(location.Marker.Lng) }
+			data-code={ location.MarkerID }
+		></span>
 	}
 	@mapScript()
 }
@@ -58,6 +75,8 @@ templ showMapAndNames(team models.Team, locations []models.Location) {
 				class="location-name"
 				data-lat={ fmt.Sprint(location.Marker.Lat) }
 				data-lng={ fmt.Sprint(location.Marker.Lng) }
+				data-name={ location.Name }
+				data-code={ location.MarkerID }
 			>{ location.Name }</em>
 			<!-- Show the number of teams visiting this location -->
 			if team.Instance.Settings.ShowTeamCount {
@@ -68,10 +87,9 @@ templ showMapAndNames(team models.Team, locations []models.Location) {
 			}
 		</p>
 	}
-	<div
-		id="map-next"
-		class="w-full h-96 rounded-lg shadow-lg mt-5"
-	></div>
+	<div id="map-container" class="relative w-full aspect-square h-96 rounded-lg shadow-lg my-5 overflow-hidden">
+		<div id="map-next" class="map w-full h-full rounded-lg"></div>
+	</div>
 	@mapScript()
 }
 
@@ -170,7 +188,11 @@ templ mapScript() {
     // Find and loop through .location-name elements to create markers
     document.querySelectorAll('.location-name').forEach(function(location) {
       const marker = new mapboxgl.Marker()
-        .setLngLat([location.dataset.lng, location.dataset.lat]);
+        .setLngLat([location.dataset.lng, location.dataset.lat])
+	  if (location.dataset.name) marker
+        .setPopup(new mapboxgl.Popup() // Add popups
+	    .setHTML('<h3>' + location.dataset.name + '</h3>'));
+	  marker._element.id = "marker-"+location.dataset.code;
       markerArray.push(marker);
     });
 
@@ -194,10 +216,31 @@ templ mapScript() {
 
 		map.fitBounds(bounds, { padding: 50 });
 	}
+
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, markerArray);
   }
 
   // Initialize the map on page load
   initializeMap();
+
+	// Event listener for span click/tap
+	document.querySelectorAll('.location-name').forEach(function(span) {
+	  span.addEventListener('click', function() {
+		const id = "marker-"+span.dataset.code; // Get the id from the clicked span
+		const marker = document.getElementById(id); // Find the marker by id
+
+		if (marker) {
+		  // Open the popup for the marker
+		  marker.click();
+		} else {
+		  console.error('Marker not found for id:', id);
+		}
+	  });
+	});
 
 })();
 </script>

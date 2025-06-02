@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 var store sessions.Store
@@ -32,30 +31,29 @@ func Start() {
 		google.New(
 			os.Getenv("GOOGLE_CLIENT_ID"),
 			os.Getenv("GOOGLE_SECRET_ID"),
-			fmt.Sprintf("%s/auth/google/callback", os.Getenv("SITE_URL")),
+			os.Getenv("SITE_URL")+"/auth/google/callback",
 			"email",
 			"profile",
 		),
 	)
-
 }
 
-// Get returns a session for the given request
+// Get returns a session for the given request.
 func GetAdmin(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, adminSession)
 }
 
-// Get returns a session for the given request
+// Get returns a session for the given request.
 func GetPlayer(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, playerSession)
 }
 
-// Get returns a session for the given request
+// Get returns a session for the given request.
 func Get(r *http.Request, name string) (*sessions.Session, error) {
 	return store.Get(r, name)
 }
 
-// NewFromTeam session for the given request and team
+// NewFromTeam session for the given request and team.
 func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
 	session, err := store.Get(r, playerSession)
 	if err != nil {
@@ -69,7 +67,7 @@ func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
 	return session, nil
 }
 
-// NewFromUser session for the given request and user
+// NewFromUser session for the given request and user.
 func NewFromUser(r *http.Request, user models.User) (*sessions.Session, error) {
 	session, err := store.Get(r, adminSession)
 	if err != nil {

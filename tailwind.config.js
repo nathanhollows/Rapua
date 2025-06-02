@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export const content = [
+  "./docs/**/*.md",
   "./web/templates/**/*.html",
   "./internal/templates/**/*.templ",
   "./internal/blocks/templates/**/*.templ"

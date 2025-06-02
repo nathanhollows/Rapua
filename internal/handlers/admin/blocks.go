@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	templates "github.com/nathanhollows/Rapua/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v3/internal/templates/blocks"
 )
 
-// BlockEdit shows the form to edit a block
+// BlockEdit shows the form to edit a block.
 func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	location := chi.URLParam(r, "location")
@@ -33,10 +33,9 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("BlockEdit: rendering template", "error", err)
 	}
-
 }
 
-// BlockEditPost updates the block
+// BlockEditPost updates the block.
 func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -85,42 +84,55 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 
 	blockType := chi.URLParam(r, "type")
 
-	location := chi.URLParam(r, "location")
-	if !h.GameManagerService.ValidateLocationID(user, location) {
-		h.handleError(w, r, "BlockNewPost: invalid location", "Could not create block. Invalid location", "location", location)
+	locationID := chi.URLParam(r, "location")
+	if !h.GameManagerService.ValidateLocationID(user, locationID) {
+		h.handleError(w, r, "BlockNewPost: invalid location", "Could not create block. Invalid location", "location", locationID)
 		return
 	}
 
-	block, err := h.BlockService.NewBlock(r.Context(), location, blockType)
+	location, err := h.LocationService.GetByID(r.Context(), locationID)
+	if err != nil {
+		h.handleError(w, r, "BlockNewPost: finding location", "Could not create block", "error", err)
+		return
+	}
+
+	block, err := h.BlockService.NewBlock(r.Context(), location.ID, blockType)
 	if err != nil {
 		h.handleError(w, r, "BlockNewPost: creating block", "Could not create block", "error", err)
 		return
 	}
 
-	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block).Render(r.Context(), w)
+	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("BlockNewPost: rendering template", "error", err)
 	}
-
 }
 
-// BlockDelete deletes a block
+// BlockDelete deletes a block.
 func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	location := chi.URLParam(r, "location")
+	blockID := chi.URLParam(r, "blockID")
+
+	if location == "" || blockID == "" {
+		h.handleError(w, r, "BlockDelete: missing parameters", "Could not delete block. Missing parameters")
+		return
+	}
+
+	// Check if the user has access to the location
 	if !h.GameManagerService.ValidateLocationID(user, location) {
 		h.handleError(w, r, "BlockDelete: invalid location", "Could not delete block. Invalid location", "location", location)
 		return
 	}
 
-	blockID := chi.URLParam(r, "blockID")
 	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: getting block", "Could not delete block", "error", err)
 		return
 	}
 
+	// Sanity check, but should never happen
 	if block.GetLocationID() != location {
 		h.handleError(w, r, "BlockDelete: block does not belong to location", "Could not delete block", "blockID", blockID, "location", location)
 		return
@@ -135,7 +147,7 @@ func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Block deleted")
 }
 
-// ReorderBlocks reorders the blocks
+// ReorderBlocks reorders the blocks.
 func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 

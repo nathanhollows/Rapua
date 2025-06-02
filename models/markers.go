@@ -13,3 +13,7 @@ type Marker struct {
 
 	Locations []Location `bun:"rel:has-many,join:code=marker_id"`
 }
+
+func (m Marker) IsMapped() bool {
+	return m.Lat != 0 && m.Lng != 0
+}

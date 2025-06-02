@@ -2,13 +2,13 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 templ CheckIn(marker models.Marker, teamCode string, blocking models.Location) {
 	<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
 		<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide w-16 h-16 lucide-qr-code m-auto"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>
+			<svg class="w-16 h-16 m-auto stroke-base-content fill-base-content mb-3" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 			<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
 				Check In
 			</h2>
@@ -47,8 +47,11 @@ templ CheckIn(marker models.Marker, teamCode string, blocking models.Location) {
 							}
 							if teamCode != "" {
 								value={ teamCode }
+							} else {
+								autofocus
 							}
 							class="input input-bordered input-lg w-full text-2xl font-mono text-center uppercase tracking-widest"
+							required
 						/>
 					</label>
 				</div>
@@ -82,7 +85,7 @@ templ CheckIn(marker models.Marker, teamCode string, blocking models.Location) {
 templ CheckOut(marker models.Marker, teamCode string, blocking models.Location) {
 	<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
 		<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide w-16 h-16 lucide-qr-code m-auto"><rect width="5" height="5" x="3" y="3" rx="1"></rect> <rect width="5" height="5" x="16" y="3" rx="1"></rect> <rect width="5" height="5" x="3" y="16" rx="1"></rect> <path d="M21 16h-3a2 2 0 0 0-2 2v3"></path> <path d="M21 21v.01"></path> <path d="M12 7v3a2 2 0 0 1-2 2H7"></path> <path d="M3 12h.01"></path> <path d="M12 3h.01"></path> <path d="M12 16v.01"></path> <path d="M16 12h1"></path> <path d="M21 12v.01"></path> <path d="M12 21v-1"></path> </svg>
+			<svg class="w-16 h-16 m-auto stroke-base-content fill-base-content mb-3" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 			<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
 				Check Out
 			</h2>
@@ -97,6 +100,16 @@ templ CheckOut(marker models.Marker, teamCode string, blocking models.Location) 
 					<p class="text-center text-3xl pb-3">{ marker.Name }</p>
 				</div>
 				<div>
+					if teamCode != "" && blocking.ID == "" {
+						<div role="alert" class="alert alert-info mb-5 border-2">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span>
+								You are not checked in anywhere.
+							</span>
+						</div>
+					}
 					if blocking.ID != "" && blocking.MarkerID != marker.Code {
 						<div role="alert" class="alert alert- mb-5 border-2">
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
@@ -115,11 +128,13 @@ templ CheckOut(marker models.Marker, teamCode string, blocking models.Location) 
 							id="team"
 							name="team"
 							type="text"
-							if blocking.MarkerID != marker.Code {
+							if teamCode != "" && blocking.MarkerID != marker.Code {
 								disabled
 							}
 							if teamCode != "" {
 								value={ teamCode }
+							} else {
+								autofocus
 							}
 							class="input input-bordered input-lg w-full text-2xl font-mono text-center uppercase tracking-widest"
 						/>
@@ -129,13 +144,21 @@ templ CheckOut(marker models.Marker, teamCode string, blocking models.Location) 
 					<button
 						type="submit"
 						class="btn btn-neutral w-full"
-						if blocking.MarkerID != marker.Code {
+						if teamCode != "" && blocking.MarkerID != marker.Code {
 							disabled
 						}
 					>
 						Check Out
 					</button>
 				</div>
+				if teamCode != "" {
+					<div id="player-nav" class="flex flex-row justify-center pt-8">
+						<a href="/checkins" class="btn btn-ghost btn-outline join-item">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle></svg>
+							My Check-ins
+						</a>
+					</div>
+				}
 			</form>
 		</div>
 	</div>

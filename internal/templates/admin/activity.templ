@@ -2,8 +2,8 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/internal/flash"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/internal/flash"
+	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/uptrace/bun/schema"
 	"sort"
 )
@@ -27,6 +27,19 @@ templ ActivityTracker(instance models.Instance) {
 					</span>
 			}
 		</h1>
+		<button
+			hx-get="/admin/facilitator/create-link"
+			hx-target="#facilitator_link_modal"
+			hx-swap="innerHTML"
+			class="btn btn-sm btn-circle tooltip md:tooltip-right md:mr-auto md:ml-0 md:mt-1"
+			data-tip="Share activity overview with Facilitators"
+			_="on click facilitator_link_modal.showModal()"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2 w-4 h-4 mx-auto"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
+		</button>
+		<dialog id="facilitator_link_modal" class="modal">
+			@FacilitatorLinkModal()
+		</dialog>
 		<div class="flex gap-3">
 			@GameScheduleStatus(instance)
 			<button class="btn btn-secondary" onclick="announcement_modal.showModal()">
@@ -37,7 +50,7 @@ templ ActivityTracker(instance models.Instance) {
 	</div>
 	<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
 		<div class="w-full md:w-5/12">
-			<div id="map-container" class="relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
+			<div id="map-container" class="group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
 				<div id="map-activity" class="map w-full h-full rounded-lg"></div>
 			</div>
 			<div class="join join-vertical w-full">
@@ -65,7 +78,7 @@ templ ActivityTracker(instance models.Instance) {
 				if len(instance.Locations) > 0 {
 					for i, location := range instance.Locations {
 						<div
-							class="flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 border-base-300 rounded-lg p-4 join-item"
+							class="location-item flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 border-base-300 rounded-lg p-4 join-item"
 						>
 							<div class="flex flex-row items-center space-x-3 grow">
 								<strong>{ intToString(i + 1) }</strong>
@@ -73,33 +86,11 @@ templ ActivityTracker(instance models.Instance) {
 									href={ templ.URL(fmt.Sprintf("/admin/locations/%s", location.Marker.Code)) }
 									hx-boost="true"
 									class="link flex-grow location-name"
-									data-lat={ fmt.Sprint(location.Marker.Lat) }
-									data-lng={ fmt.Sprint(location.Marker.Lng) }
-								>{ location.Marker.Name }</a>
-								<span
-									if location.TotalVisits - location.CurrentCount > 0 {
-										class="tooltip flex space-x-2 tooltip-left text-sm md:tooltip-top"
-									} else {
-										class="tooltip flex space-x-2 tooltip-left text-sm md:tooltip-top opacity-50"
+									if location.Marker.IsMapped() {
+										data-lat={ fmt.Sprint(location.Marker.Lat) }
+										data-lng={ fmt.Sprint(location.Marker.Lng) }
 									}
-									data-tip="Completed check-ins"
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside w-5 h-5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
-									<strong>{ fmt.Sprint(location.TotalVisits - location.CurrentCount) }</strong>
-								</span>
-								if instance.Settings.CompletionMethod == models.CheckInAndOut {
-									<span
-										if location.CurrentCount > 0 {
-											class="tooltip flex space-x-2 tooltip-left text-sm md:tooltip-top"
-										} else {
-											class="tooltip flex space-x-2 tooltip-left text-sm md:tooltip-top opacity-50"
-										}
-										data-tip="Current check-ins"
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin w-5 h-5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-										<strong>{ fmt.Sprint(location.CurrentCount) }</strong>
-									</span>
-								}
+								>{ location.Marker.Name }</a>
 							</div>
 						</div>
 					}
@@ -114,14 +105,23 @@ templ ActivityTracker(instance models.Instance) {
 	@announcementModal()
 	@teamModal()
 	<script>
-
 (function () {
   let map; // Store the map instance globally within the IIFE
   let markerArray = []; // Store the markers array globally within the IIFE
 
   function initializeMap() {
-    const coords = [170.5111643, -45.8650509];
-    const zoom = 17;
+    const locations = document.querySelectorAll('.location-name');
+    // Calculate the center and zoom level based on the locations
+    let coords = [170.5111643, -45.8650509];
+    let zoom = 17;
+    for (let i = 0; i < locations.length; i++) {
+      const lat = parseFloat(locations[i].dataset.lat);
+      const lng = parseFloat(locations[i].dataset.lng);
+      if (lat !== 0 && lng !== 0) {
+        coords = [lng, lat];
+        break;
+      }
+    }
 
     // Clear any existing markers
     markerArray.forEach(marker => marker.remove());
@@ -147,35 +147,83 @@ templ ActivityTracker(instance models.Instance) {
       style: style,
       center: coords,
       zoom: zoom,
-	  cooperativeGestures: true,
+      cooperativeGestures: true,
     });
 
-    // Find and loop through .location-name elements to create markers
-    document.querySelectorAll('.location-name').forEach(function(location) {
-      const marker = new mapboxgl.Marker()
-        .setLngLat([location.dataset.lng, location.dataset.lat]);
+    map.on('load', function () {
+      map.resize();
+    });
+
+    // Find and loop through .location-name elements to create markers with original numbers
+    locations.forEach(function (location, index) {
+	  if (!location.dataset.lat || !location.dataset.lng) {
+		return;
+		}
+      // Create a HTML element for each marker
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.innerHTML = '<span><b>' + (index + 1) + '</b></span>';
+
+      // Create the marker
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([location.dataset.lng, location.dataset.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
+          .setHTML('<h3>' + location.textContent + '</h3>'));
+
+				marker.getElement().addEventListener('mouseenter', function () {
+				  popup = marker.getPopup();
+					if (!popup.isOpen()) {
+						marker.togglePopup();
+					}
+				});
+
+				marker.getElement().addEventListener('mouseleave', function () {
+					marker.togglePopup();	
+				});
+
       markerArray.push(marker);
+
+			let locationContainer = location.parentElement.parentElement;
+
+      // Add hover event listener to open the marker popup when hovering over the list item
+      locationContainer.addEventListener('mouseenter', () => {
+				if (!marker.getPopup().isOpen()) {
+							marker.togglePopup();
+						}
+      });
+
+      locationContainer.addEventListener('mouseleave', () => {
+				if (marker.getPopup().isOpen()) {
+							marker.togglePopup();
+						}
+      });
     });
 
     // Sort markers by latitude
-    markerArray.sort(function(a, b) {
-      // If northern hemisphere, sort by descending latitude
-      return a.getLngLat().lat < 0
-        ? b.getLngLat().lat - a.getLngLat().lat
-        : a.getLngLat().lat - b.getLngLat().lat;
+    markerArray.sort(function (a, b) {
+      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);
     });
 
-    // Add markers to the map
-    markerArray.forEach(marker => marker.addTo(map));
+    // Add markers to the map in the sorted order without changing their displayed numbers
+    markerArray.forEach(marker => {
+      marker.addTo(map);
+    });
 
     // Fit the map to the bounds of the markers
-    const bounds = new mapboxgl.LngLatBounds();
-    markerArray.forEach(marker => {
-      bounds.extend(marker.getLngLat());
-    });
+    if (markerArray.length > 1) {
+      const bounds = new mapboxgl.LngLatBounds();
+      markerArray.forEach(marker => {
+        bounds.extend(marker.getLngLat());
+      });
 
-	// Disable animation easing for smoother fitBounds
-	map.fitBounds(bounds, { padding: 50, duration: 0 });
+      map.fitBounds(bounds, { padding: 50 });
+    }
+
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, markerArray);
   }
 
   // Initialize the map on page load
@@ -229,7 +277,7 @@ templ ActivityTeamsTable(locations []models.Location, teams []models.Team) {
 						if i == 0 {
 							<th scope="row">
 								<button
-									class="btn btn-xs btn-ghost"
+									class="link"
 									hx-get={ fmt.Sprintf("/admin/activity/team/%s", location) }
 									hx-target="#team_modal .modal-box"
 									hx-trigger="click"
@@ -253,7 +301,7 @@ templ ActivityTeamsTable(locations []models.Location, teams []models.Team) {
 						colspan="100%"
 						class="text-center"
 					>
-						No <a href="/admin/teams" hx-boost="true" class="link" hx-target="body">teams</a> to show yet 😢
+						<a href="/admin/teams" hx-boost="true" class="link" hx-target="body">Teams</a> will appear here once they start checking in.
 					</th>
 				</tr>
 			}
@@ -450,18 +498,28 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 	<h3 class="text-lg font-bold">
 		{ team.Code }
 		if team.Name != "" {
-			| { team.Name }
+			<span class="opacity-50">∕</span> { team.Name }
+		}
+		if settings.EnablePoints {
+			<span class="badge badge-info badge-sm">{ fmt.Sprint(team.Points) } pts</span>
 		}
 	</h3>
+	<!-- Current Location -->
+	if team.MustCheckOut != "" {
+		<div class="w-full">
+			<p class="py-3 font-bold divider divider-start">Current Location</p>
+			{ team.BlockingLocation.Name }
+		</div>
+	}
 	<!-- Next Locations -->
 	<div class="w-full">
-		<p class="py-3 font-bold">Next Locations</p>
+		<p class="py-3 font-bold divider divider-start">Next Locations</p>
 		if len(nextLocations) > 0 {
 			<div class="prose">
 				<ul>
 					for _, location := range nextLocations {
 						<li>
-							{ location.Marker.Name }
+							{ location.Name }
 							if settings.NavigationMethod.String() == "Show Clues" {
 								for _, clue := range location.Clues {
 									<blockquote class="text-sm"><p>{ clue.Content }</p></blockquote>
@@ -472,47 +530,50 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 				</ul>
 			</div>
 		} else {
-			<p>No activity</p>
+			<p>All done!</p>
 		}
 	</div>
-	<!-- Check-ins -->
-	<div class="w-full">
-		<p class="py-3 font-bold">Check-ins</p>
-		if len(team.CheckIns) > 0 {
-			<div class="prose">
-				<ul>
-					for _, scan := range team.CheckIns {
+	<!-- Previous Locations -->
+	if len(team.CheckIns) > 0 {
+		<div class="py-3 font-bold divider divider-start">
+			Previous Locations
+		</div>
+		for _, scan := range team.CheckIns {
+			if !scan.MustCheckOut {
+				<div class="prose">
+					<ul>
 						<li>
-							if scan.MustCheckOut {
-								<span class="badge badge-info">Current</span>
-							}
-							<span>
-								{ scan.Location.Name }
-							</span>
+							{ scan.Location.Name }
 							<span class="convert-time badge badge-sm badge-ghost" data-datetime={ fmt.Sprint(scan.CreatedAt.UTC()) }></span>
+							if settings.EnablePoints && scan.Points > 0 {
+								<span class="badge badge-sm badge-info">+{ fmt.Sprint(scan.Points) } pts</span>
+							}
 						</li>
-					}
-				</ul>
-			</div>
-		} else {
-			<p>No activity</p>
-		}
-	</div>
-	if len(notifications) > 0 {
-		<p class="py-3 font-bold">Unread Notifications</p>
-		for _, notification := range notifications {
-			<div role="alert" class="alert mb-3" id="alert-{{ .ID }}">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-megaphone"><path d="m3 11 18-5v12L3 14v-3z"></path><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path></svg>
-				<div>
-					<div class="">{ notification.Content }</div>
+					</ul>
 				</div>
-				<div class="badge">Sent { fmt.Sprint(notification.CreatedAt) }</div>
+			}
+		}
+	}
+	<p class="py-3 font-bold divider divider-start">
+		Alerts
+	</p>
+	if len(notifications) > 0 {
+		for _, notification := range notifications {
+			<div class="chat chat-start">
+				<div class="chat-bubble">{ notification.Content }</div>
+				<div class="chat-footer text-xs opacity-50 flex items-center gap-2">
+					if notification.Dismissed {
+						Read
+					} else {
+						Unread
+					}
+					·
+					<time>{ fmt.Sprint("Sent ", notification.CreatedAt.Local().Format("02 Jan 03:04 PM")) }</time>
+				</div>
 			</div>
 		}
 	}
-	<p class="py-3 font-bold">Send an alert</p>
-	<!-- Send an alert -->
-	<label class="form-control w-full">
+	<label class="form-control w-full mt-3">
 		<form hx-post="/admin/notify/team/" hx-swap="none">
 			<input type="hidden" name="teamCode" value={ team.Code }/>
 			<div class="join w-full">

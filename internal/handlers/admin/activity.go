@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/internal/services"
-	templates "github.com/nathanhollows/Rapua/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
+	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 )
 
-// Activity displays the activity tracker page
+// Activity displays the activity tracker page.
 func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -25,7 +26,7 @@ func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ActivityTeamsOverview displays the activity tracker page
+// ActivityTeamsOverview displays the activity tracker page.
 func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -41,15 +42,14 @@ func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// TeamActivity displays the activity tracker page
-// It accepts HTMX requests to update the team activity
+// TeamActivity displays the activity tracker page.
+// It accepts HTMX requests to update the team activity.
 func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	teamCode := chi.URLParam(r, "teamCode")
 
-	gameplayService := services.NewGameplayService()
-	team, err := gameplayService.GetTeamByCode(r.Context(), teamCode)
+	team, err := h.GameplayService.GetTeamByCode(r.Context(), teamCode)
 	if err != nil || team.InstanceID != user.CurrentInstanceID {
 		h.handleError(w, r, "TeamActivity: getting team", "Error getting team", "Could not load data", err)
 		return
@@ -61,10 +61,12 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := gameplayService.SuggestNextLocations(r.Context(), team, user.CurrentInstance.Settings.MaxNextLocations)
+	locations, err := h.GameplayService.SuggestNextLocations(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "TeamActivity: getting next locations", "Error getting next locations", "Could not load data", err)
-		return
+		if !errors.Is(err, services.ErrAllLocationsVisited) {
+			h.handleError(w, r, "TeamActivity: getting next locations", "Error getting next locations", "Could not load data", err)
+			return
+		}
 	}
 
 	notifications, err := h.NotificationService.GetNotifications(r.Context(), team.Code)
@@ -77,5 +79,4 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("TeamActivity: rendering template", "error", err)
 	}
-
 }

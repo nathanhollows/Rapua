@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/services"
+	"github.com/nathanhollows/Rapua/v3/services"
 	"github.com/stretchr/testify/assert"
 )
 

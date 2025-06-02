@@ -4,22 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/helpers"
-	templates "github.com/nathanhollows/Rapua/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v3/helpers"
+	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 )
 
-// Instances shows admin the instances
-func (h *AdminHandler) MarkdownGuide(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	c := templates.MarkdownGuide()
-	err := templates.Layout(c, *user, "Markdown", "Markdown Guide").Render(r.Context(), w)
-	if err != nil {
-		h.Logger.Error("MarkdownGuide: rendering template", "error", err)
-	}
-}
-
-// PreviewMarkdown takes markdown from a form and renders it for htmx
+// PreviewMarkdown takes markdown from a form and renders it for htmx.
 func (h *AdminHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var m map[string]string
@@ -39,5 +28,4 @@ func (h *AdminHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("markdown preview: rendering template", "error", err)
 	}
-
 }

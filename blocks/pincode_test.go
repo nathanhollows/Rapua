@@ -116,5 +116,4 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 3, newPlayerData.Attempts)
 	assert.Equal(t, 3, len(newPlayerData.Guesses))
-
 }

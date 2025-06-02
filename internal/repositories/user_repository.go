@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/db"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/db"
+	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/uptrace/bun"
 )
 

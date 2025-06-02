@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/helpers"
-	"github.com/nathanhollows/Rapua/internal/flash"
-	templates "github.com/nathanhollows/Rapua/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v3/helpers"
+	"github.com/nathanhollows/Rapua/v3/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 )
 
-// StartGame starts the game immediately
+// StartGame starts the game immediately.
 func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -26,7 +26,7 @@ func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// StopGame stops the game immediately
+// StopGame stops the game immediately.
 func (h *AdminHandler) StopGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -43,14 +43,17 @@ func (h *AdminHandler) StopGame(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ScheduleGame schedules the game to start and/or end at a specific time
+// ScheduleGame schedules the game to start and/or end at a specific time.
 func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
+		return
+	}
 
 	var sTime, eTime time.Time
-	var err error
 	if r.Form.Get("set_start") != "" {
 		startDate := r.Form.Get("utc_start_date")
 		startTime := r.Form.Get("utc_start_time")
@@ -81,11 +84,15 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 		err := templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
 		if err != nil {
 			h.Logger.Error("ScheduleGame: rendering template", "error", err)
+			return
 		}
-		return
 	}
 	if response.Error != nil {
-		templates.Toast(*flash.NewError("Error scheduling game")).Render(r.Context(), w)
+		err := templates.Toast(*flash.NewError("Error scheduling game")).Render(r.Context(), w)
+		if err != nil {
+			h.handleError(w, r, "ScheduleGame: rendering template", "Error rendering template", "error", err)
+			return
+		}
 		h.Logger.Error("scheduling game", "err", response.Error)
 		return
 	}
@@ -94,5 +101,4 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("ScheduleGame: rendering template", "error", err)
 	}
-
 }

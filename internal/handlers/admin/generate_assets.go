@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/internal/services"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 // QRCode handles the generation of QR codes for the current instance.
@@ -43,7 +43,7 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the path and content for the QR code
-	path, content := h.GameManagerService.GetQRCodePathAndContent(action, id, "", extension)
+	path, content := h.AssetGenerator.GetQRCodePathAndContent(action, id, "", extension)
 
 	// Check if the file already exists, if so serve it
 	if _, err := os.Stat(path); err == nil {
@@ -94,7 +94,7 @@ func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Requ
 	for _, location := range user.CurrentInstance.Locations {
 		for _, extension := range []string{"png", "svg"} {
 			for _, action := range actions {
-				path, content := h.GameManagerService.GetQRCodePathAndContent(action, location.MarkerID, location.Name, extension)
+				path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, extension)
 				paths = append(paths, path)
 
 				// Check if the file already exists, otherwise generate it
@@ -144,7 +144,7 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, location := range user.CurrentInstance.Locations {
 		for _, action := range actions {
-			path, content := h.GameManagerService.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+			path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
 
 			// Check if the file already exists, otherwise generate it
 			if _, err := os.Stat(path); err != nil {
@@ -160,7 +160,6 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Could not create posters", http.StatusInternalServerError)
 					return
 				}
-
 			}
 
 			page := services.PDFPage{
@@ -181,7 +180,7 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename="+user.CurrentInstance.Name+" posters.pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+user.CurrentInstance.Name+" posters.pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
 	http.ServeFile(w, r, path)
 	os.Remove(path)
@@ -223,7 +222,7 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		actions = []string{"in", "out"}
 	}
 	for _, action := range actions {
-		path, content := h.GameManagerService.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+		path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
 
 		// Check if the file already exists, otherwise generate it
 		if _, err := os.Stat(path); err != nil {
@@ -239,7 +238,6 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Could not create posters", http.StatusInternalServerError)
 				return
 			}
-
 		}
 
 		page := services.PDFPage{
@@ -259,7 +257,7 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename="+user.CurrentInstance.Name+" - "+location.Name+" poster.pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+user.CurrentInstance.Name+" - "+location.Name+" poster.pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
 	http.ServeFile(w, r, path)
 	os.Remove(path)

@@ -2,8 +2,9 @@ package blocks
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/url"
+	"errors"
+	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -39,15 +40,28 @@ func (b *YoutubeBlock) ParseData() error {
 
 func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 	if u, exists := input["URL"]; exists && len(u) > 0 {
-		u := strings.TrimSpace(u[0])
-		if !strings.HasPrefix(u, "https://www.youtube.com/watch?v=") {
-			return fmt.Errorf("URL must be a valid Youtube video URL")
-		}
-		_, err := url.ParseRequestURI(u)
+		u[0] = strings.TrimSpace(u[0])
+		// Regex: https://stackoverflow.com/a/6904504
+		_, err := regexp.MatchString(`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})`, u[0])
 		if err != nil {
-			return fmt.Errorf("URL is not valid")
+			return errors.New("URL is not valid")
 		}
-		b.URL = u
+
+		// Confirm URL is valid
+		checkURL := "https://www.youtube.com/oembed?format=json&url=" + u[0]
+		resp, err := http.Get(checkURL)
+		if err != nil {
+			return errors.New("URL is not valid")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return errors.New("URL is not valid")
+		}
+
+		// Convert shorts URL to watch URL
+		u[0] = strings.Replace(u[0], "/shorts/", "/watch?v=", 1)
+
+		b.URL = u[0]
 	}
 	return nil
 }
@@ -62,9 +76,4 @@ func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	// No validation required for YoutubeBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil
-}
-
-func (b *YoutubeBlock) CalculatePoints(input map[string][]string) (int, error) {
-	// YoutubeBlock has no points to calculate
-	return 0, nil
 }

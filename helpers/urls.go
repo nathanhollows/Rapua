@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// URL constructs a URL specific to the application
+// URL constructs a URL specific to the application.
 func URL(patterns ...string) string {
 	u := &url.URL{}
 	if site, ok := os.LookupEnv("SITE_URL"); ok {

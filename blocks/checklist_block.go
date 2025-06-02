@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -35,14 +36,14 @@ func (c ChecklistItem) IsChecked(playerData json.RawMessage) bool {
 	return false
 }
 
-// Unexported struct for storing player progress data in a block
+// Unexported struct for storing player progress data in a block.
 type checklistPlayerData struct {
 	CheckedItems []string `json:"checked_items"`
 }
 
 // Ensure ChecklistBlock implements the Block interface
 
-// Basic Attributes Getters
+// Basic Attributes Getters.
 func (b *ChecklistBlock) GetName() string { return "Checklist" }
 
 func (b *ChecklistBlock) GetDescription() string {
@@ -68,20 +69,24 @@ func (b *ChecklistBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data Operations
+// Data Operations.
 func (b *ChecklistBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
 
 func (b *ChecklistBlock) UpdateBlockData(input map[string][]string) error {
-	// Points
-	if input["points"] != nil {
-		points, err := strconv.Atoi(input["points"][0])
+	// Parse points
+	pointsInput, ok := input["points"]
+	if ok && len(pointsInput[0]) > 0 {
+		points, err := strconv.Atoi(pointsInput[0])
 		if err != nil {
-			return fmt.Errorf("points must be an integer")
+			return errors.New("points must be an integer")
 		}
 		b.Points = points
+	} else {
+		b.Points = 0
 	}
+
 	// Update content
 	if content, exists := input["content"]; exists && len(content) > 0 {
 		b.Content = content[0]
@@ -115,7 +120,7 @@ func (b *ChecklistBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// Validation and Points Calculation
+// Validation and Points Calculation.
 func (b *ChecklistBlock) RequiresValidation() bool { return true }
 
 func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
@@ -158,19 +163,4 @@ func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string
 	}
 
 	return newState, nil
-}
-
-func (b *ChecklistBlock) CalculatePoints(input map[string][]string) (int, error) {
-	// For ChecklistBlock, return full points if all items are checked, otherwise 0 points
-	allChecked := true
-	for _, item := range b.List {
-		if _, exists := input[item.ID]; !exists {
-			allChecked = false
-			break
-		}
-	}
-	if allChecked {
-		return b.Points, nil
-	}
-	return 0, nil
 }

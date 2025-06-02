@@ -35,7 +35,6 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
-	CalculatePoints(input map[string][]string) (int, error)
 }
 
 type Blocks []Block
@@ -51,11 +50,15 @@ type BaseBlock struct {
 
 var registeredBlocks = Blocks{
 	&MarkdownBlock{},
+	&DividerBlock{},
+	&ImageBlock{},
+	&YoutubeBlock{},
+	&AlertBlock{},
 	&AnswerBlock{},
 	&PincodeBlock{},
 	&ChecklistBlock{},
-	&YoutubeBlock{},
-	// &APIBlock{},
+	&SortingBlock{},
+	// &PhotoBlock{},
 }
 
 func GetRegisteredBlocks() Blocks {
@@ -66,6 +69,10 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 	switch baseBlock.Type {
 	case "markdown":
 		return NewMarkdownBlock(baseBlock), nil
+	case "divider":
+		return NewDividerBlock(baseBlock), nil
+	case "alert":
+		return NewAlertBlock(baseBlock), nil
 	case "answer":
 		return NewAnswerBlock(baseBlock), nil
 	case "pincode":
@@ -74,14 +81,32 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewChecklistBlock(baseBlock), nil
 	case "youtube":
 		return NewYoutubeBlock(baseBlock), nil
+	case "image":
+		return NewImageBlock(baseBlock), nil
+	case "sorting":
+		return NewSortingBlock(baseBlock), nil
+	// case "photo":
+	// 	return NewPhotoBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
 }
 
-// Example constructor functions
+// Example constructor functions.
 func NewMarkdownBlock(base BaseBlock) *MarkdownBlock {
 	return &MarkdownBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewDividerBlock(base BaseBlock) *DividerBlock {
+	return &DividerBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewAlertBlock(base BaseBlock) *AlertBlock {
+	return &AlertBlock{
 		BaseBlock: base,
 	}
 }
@@ -109,3 +134,22 @@ func NewYoutubeBlock(base BaseBlock) *YoutubeBlock {
 		BaseBlock: base,
 	}
 }
+
+func NewImageBlock(base BaseBlock) *ImageBlock {
+	return &ImageBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewSortingBlock(base BaseBlock) *SortingBlock {
+	return &SortingBlock{
+		BaseBlock: base,
+	}
+}
+
+//
+// func NewPhotoBlock(base BaseBlock) *PhotoBlock {
+// 	return &PhotoBlock{
+// 		BaseBlock: base,
+// 	}
+// }

@@ -2,9 +2,9 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/blocks"
-	bTemplates "github.com/nathanhollows/Rapua/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	bTemplates "github.com/nathanhollows/Rapua/v3/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
 )
 
 templ LocationsIndex(settings models.InstanceSettings, locations []models.Location) {
@@ -50,7 +50,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			if settings.NavigationMode == models.OrderedNav {
 				class="join join-vertical w-full shadow sortable"
 			} else {
-				class="join join-vertical w-full shadow"
+				class="join join-vertical w-full"
 			}
 			hx-post="/admin/locations/reorder"
 			hx-trigger="end"
@@ -76,15 +76,15 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 						<!-- Marker icon -->
 						if location.Marker.Lat != 0 {
 							<span
-								class="tooltip cursor-help"
+								class="tooltip tooltip-right @7xl:tooltip-top cursor-help"
 								data-tip="Has coordinates"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle> </svg>
 							</span>
 						} else {
 							<span
-								class="tooltip cursor-help"
-								data-tip="No coordinates set"
+								class="tooltip tooltip-right @7xl:tooltip-top cursor-help"
+								data-tip="Unmapped location"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-off tooltip" data-tip="Location has no coordinates set"><path d="M5.43 5.43A8.06 8.06 0 0 0 4 10c0 6 8 12 8 12a29.94 29.94 0 0 0 5-5"></path> <path d="M19.18 13.52A8.66 8.66 0 0 0 20 10a8 8 0 0 0-8-8 7.88 7.88 0 0 0-3.52.82"></path> <path d="M9.13 9.13A2.78 2.78 0 0 0 9 10a3 3 0 0 0 3 3 2.78 2.78 0 0 0 .87-.13"></path> <path d="M14.9 9.25a3 3 0 0 0-2.15-2.16"></path> <line x1="2" x2="22" y1="2" y2="22"></line> </svg>
 							</span>
@@ -160,7 +160,7 @@ htmx.onLoad(function(content) {
 </script>
 }
 
-templ AddLocation(settings models.InstanceSettings) {
+templ AddLocation(settings models.InstanceSettings, neighbouring []models.Location, duplicatable []models.Marker) {
 	<form
 		class="flex flex-col gap-5 w-full p-5 max-w-2xl mx-auto"
 		method="post"
@@ -171,22 +171,25 @@ templ AddLocation(settings models.InstanceSettings) {
 			<h1 class="text-2xl font-bold">
 				Add a location
 			</h1>
-			<button type="submit" class="btn btn-primary">Save</button>
+			<button type="submit" class="btn btn-primary hidden md:inline-flex">Save</button>
 		</div>
 		<div class="flex flex-col md:flex-row gap-3">
 			<label class="form-control w-full">
 				<div class="label">
 					<span class="label-text font-bold">Location name</span>
 				</div>
-				<input
-					id="name"
-					name="name"
-					type="text"
-					placeholder="Location name"
-					class="input input-bordered w-full"
-					autocomplete="off"
-					required
-				/>
+				<div class="input input-bordered flex items-center gap-2">
+					<input
+						id="name"
+						name="name"
+						type="text"
+						placeholder="Location name"
+						class="grow text-ellipsis"
+						autocomplete="off"
+						required
+					/>
+					<span id="marker-badge" class="badge badge-neutral hidden"></span>
+				</div>
 			</label>
 			if settings.EnablePoints {
 				<label for="points" class="form-control w-full">
@@ -205,239 +208,394 @@ templ AddLocation(settings models.InstanceSettings) {
 				</label>
 			}
 		</div>
-		<!-- Map -->
-		<div class="form-control">
-			<label class="">
-				<span class="label-text font-bold p-2 mb-2">Map marker</span>
-				<div id="geocoder" class="geocoder mt-2"></div>
-			</label>
+		if len(duplicatable) > 0 {
+			<div role="tablist" class="tabs tabs-boxed font-bold">
+				<a
+					id="new-marker-tab"
+					role="tab"
+					if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+						class="tab transition-colors"
+					} else {
+						class="tab transition-colors tab-active"
+					}
+					_="on click 
+				if I do not match .tab-active
+					remove .tab-active from .tab-active
+					toggle .tab-active
+					remove .hidden from #new-marker
+					add .hidden to #shared-marker
+					remove .hidden from #marker-controls
+					set <input[name=marker]/>'s disabled to true
+					set <input[name=name]/>'s value to ''
+					add .hidden to #marker-badge
+					set <input[name=latitude]/>'s disabled to false
+					set <input[name=longitude]/>'s disabled to false
+			"
+				>New map marker</a>
+				<a
+					role="tab"
+					class="tab transition-colors group"
+					_="on click 
+				if I do not match .tab-active
+					remove .tab-active from .tab-active
+					toggle .tab-active
+					remove .hidden from #shared-marker
+					remove .hidden from #marker-controls
+					add .hidden to #new-marker
+					set <input[name=marker]/>'s disabled to false
+					trigger change on #marker-code
+					set <input[name=latitude]/>'s disabled to false
+					set <input[name=longitude]/>'s disabled to false
+			"
+				>
+					Shared map marker
+					<div class="dropdown dropdown-end dropdown-hover">
+						<div tabindex="0" role="button" class="text-info">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+						</div>
+						<div
+							tabindex="0"
+							class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+						>
+							<div tabindex="0" class="card-body">
+								<h2 class="card-title">Shared markers</h2>
+								<p>Shared markers enable multiple games to use the same posters while showing different content.</p>
+								<p>This makes it possible to play overlapping games at the same time with different content and rules.</p>
+							</div>
+						</div>
+					</div>
+				</a>
+				if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+					<a
+						role="tab"
+						class="tab transition-colors tab-active group"
+						_="on click
+							if I do not match .tab-active
+								remove .tab-active from .tab-active
+								toggle .tab-active
+								add .hidden to #new-marker
+								add .hidden to #shared-marker
+								add .hidden to #marker-controls
+								set <input[name=marker]/>'s disabled to true
+								set <input[name=name]/>'s value to ''
+								add .hidden to #marker-badge
+								set <input[name=latitude]/>'s disabled to true
+								set <input[name=longitude]/>'s disabled to true
+							end
+						end
+						on load if I match .tab-active
+							add .hidden to #new-marker
+							add .hidden to #shared-marker
+							add .hidden to #marker-controls
+							set <input[name=marker]/>'s disabled to true
+							set <input[name=name]/>'s value to ''
+							add .hidden to #marker-badge
+							set <input[name=latitude]/>'s disabled to true
+							set <input[name=longitude]/>'s disabled to true
+						end
+						end
+						"
+					>
+						No map marker
+						<div class="dropdown dropdown-end dropdown-hover">
+							<div tabindex="0" role="button" class="text-info">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+							</div>
+							<div
+								tabindex="0"
+								class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+							>
+								<div tabindex="0" class="card-body">
+									<h2 class="card-title">No map marker</h2>
+									<p>
+										Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
+									</p>
+								</div>
+							</div>
+						</div>
+					</a>
+				}
+			</div>
+		}
+		if len(neighbouring) > 0 {
+			for _, location := range neighbouring {
+				if location.Marker.IsMapped() {
+					<span
+						class="neighbour-marker hidden"
+						data-location={ fmt.Sprint(location.Name) }
+						data-lat={ fmt.Sprint(location.Marker.Lat) }
+						data-lng={ fmt.Sprint(location.Marker.Lng) }
+					></span>
+				}
+			}
+		}
+		<div id="marker-controls">
+			<div id="new-marker" class="flex flex-col gap-3">
+				<!-- Map -->
+				<div class="form-control">
+					<label class="">
+						<span class="label-text font-bold p-2 mb-2">
+							Add a new map marker
+						</span>
+						<div id="geocoder" class="geocoder mt-2"></div>
+					</label>
+				</div>
+			</div>
+			<div id="shared-marker" class="hidden flex flex-row gap-3">
+				<input type="hidden" name="marker" disabled/>
+				<div class="form-control w-full">
+					<label class="">
+						<span class="label-text font-bold p-2 mb-2">
+							Share a location with another game
+						</span>
+					</label>
+					<select
+						id="marker-code"
+						class="select select-bordered w-full mt-2"
+						_="on change
+					set val to my value
+					set <input[name=name]/>'s value to <option[value=${val}]/>'s text
+					set <input[name=marker]/>'s value to my value
+					remove .hidden from #marker-badge
+					set #marker-badge's textContent to my value
+					"
+					>
+						<option disabled selected>Select a location</option>
+						for _, marker := range duplicatable {
+							if marker.IsMapped() {
+								<option
+									value={ fmt.Sprint(marker.Code) }
+									data-code={ marker.Code }
+									data-lat={ fmt.Sprint(marker.Lat) }
+									data-lng={ fmt.Sprint(marker.Lng) }
+									data-name={ marker.Name }
+								>{ marker.Name }</option>
+							}
+						}
+					</select>
+				</div>
+			</div>
+			<div id="map-container" class="relative w-full aspect-square h-96 rounded-lg shadow-lg">
+				<div id="map" class="map w-full h-full rounded-lg"></div>
+			</div>
+			<input
+				type="hidden"
+				name="latitude"
+			/>
+			<input
+				type="hidden"
+				name="longitude"
+			/>
 		</div>
-		<div id="map" class="w-full h-96 rounded-lg shadow-lg"></div>
-		<div class="form-control">
-			<label class="label cursor-pointer font-bold">
-				<span class="label-text">Physical location</span>
-				<input
-					type="checkbox"
-					name="location"
-					class="toggle toggle-primary"
-				/>
-			</label>
-		</div>
-		<input
-			type="hidden"
-			name="latitude"
-		/>
-		<input
-			type="hidden"
-			name="longitude"
-		/>
+		<button type="submit" class="btn btn-primary">Save</button>
 	</form>
 	@locationScript()
 }
 
 templ EditLocation(location models.Location, settings models.InstanceSettings, contentBlocks blocks.Blocks) {
-	<form
-		hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
-		hx-trigger="submit"
-		hx-swap="none"
-	>
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-			<h1 class="text-2xl font-bold">Editing <em>{ location.Name }</em></h1>
-			<div class="flex gap-3">
-				<div class="dropdown">
-					<div tabindex="0" role="button" class="btn btn-outline">
-						Downloads
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
-					</div>
-					<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
-						<h2 class="menu-title">Pre-made</h2>
+	<!-- Header -->
+	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
+		<h1 class="text-2xl font-bold">Editing <em>{ location.Name }</em></h1>
+		<div class="flex gap-3">
+			<div class="dropdown">
+				<div tabindex="0" role="button" class="btn btn-outline">
+					Download
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+				</div>
+				<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+					<h2 class="menu-title">Pre-made</h2>
+					<li>
+						<ul>
+							<li>
+								<a
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", location.MarkerID, ".pdf")) }
+								>
+									if settings.CompletionMethod == models.CheckInAndOut {
+										Posters (PDF)
+									} else {
+										Poster (PDF)
+									}
+								</a>
+							</li>
+						</ul>
+					</li>
+					<h2 class="menu-title">Check-In</h2>
+					<li>
+						<ul>
+							<li>
+								<a
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".png")) }
+									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".png") }
+								>QR Code (PNG)</a>
+							</li>
+							<li>
+								<a
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".svg")) }
+									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".svg") }
+								>QR Code (SVG)</a>
+							</li>
+						</ul>
+					</li>
+					if settings.CompletionMethod == models.CheckInAndOut {
+						<h2 class="menu-title">Check-Out</h2>
 						<li>
 							<ul>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", location.MarkerID, ".pdf")) }
-									>
-										if settings.CompletionMethod == models.CheckInAndOut {
-											Posters (PDF)
-										} else {
-											Poster (PDF)
-										}
-									</a>
-								</li>
-							</ul>
-						</li>
-						<h2 class="menu-title">Check-In</h2>
-						<li>
-							<ul>
-								<li>
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".png")) }
-										download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".png") }
+										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".png")) }
+										download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".png") }
 									>QR Code (PNG)</a>
 								</li>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".svg")) }
-										download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".svg") }
+										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".svg")) }
+										download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".svg") }
 									>QR Code (SVG)</a>
 								</li>
 							</ul>
 						</li>
-						if settings.CompletionMethod == models.CheckInAndOut {
-							<h2 class="menu-title">Check-Out</h2>
-							<li>
-								<ul>
-									<li>
-										<a
-											href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".png")) }
-											download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".png") }
-										>QR Code (PNG)</a>
-									</li>
-									<li>
-										<a
-											href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".svg")) }
-											download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".svg") }
-										>QR Code (SVG)</a>
-									</li>
-								</ul>
-							</li>
-						}
-					</ul>
-				</div>
-				<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
-				<button type="submit" class="btn btn-primary">Save</button>
+					}
+				</ul>
 			</div>
+			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
+			<button
+				id="edit-location-btn"
+				class="btn btn-primary"
+				hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
+				hx-swap="none"
+				hx-include="[form=edit-location]"
+				hx-trigger="click, keyup changed from:[form=edit-location] delay:500ms"
+			>Save</button>
 		</div>
-		<div class="flex-grow mx-auto">
-			<div class="flex flex-col md:flex-row p-5 pt-0 gap-5 lg:gap-20">
-				<div class="flex flex-col flex-grow">
-					<div class="flex flex-col sm:flex-row gap-5 mb-5">
-						<!-- Location Title -->
-						<label for="name" class="form-control w-full md:w-1/2">
+	</div>
+	<div class="flex-grow mx-auto">
+		<div class="flex flex-col md:flex-row p-5 pt-0 gap-5">
+			<div class="flex flex-col flex-grow">
+				<div class="flex flex-col sm:flex-row gap-5 mb-5">
+					<!-- Location Title -->
+					<label for="name" class="form-control w-full md:w-1/2">
+						<div class="label">
+							<span class="label-text font-bold">Location name</span>
+						</div>
+						<input
+							type="text"
+							id="name"
+							name="name"
+							form="edit-location"
+							class="input input-bordered w-full"
+							value={ location.Marker.Name }
+							placeholder="Location name"
+						/>
+					</label>
+					if settings.EnablePoints {
+						<!-- Location Points -->
+						<label for="points" class="form-control w-full md:w-1/2">
 							<div class="label">
-								<span class="label-text font-bold">Location name</span>
+								<span class="label-text font-bold">Points</span>
+								if !settings.EnablePoints {
+									<span class="label-text-alt">
+										<span class="flex gap-1 badge badge-outline badge-sm tooltip cursor-help" data-tip="Points are currently disabled">
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-3 h-3"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+											Disabled
+										</span>
+									</span>
+								}
 							</div>
 							<input
-								type="text"
-								id="name"
-								name="name"
+								type="number"
+								id="points"
+								name="points"
+								form="edit-location"
 								class="input input-bordered w-full"
-								value={ location.Marker.Name }
-								placeholder="Location name"
+								value={ fmt.Sprint(location.Points) }
+								placeholder="Enter points"
 							/>
 						</label>
-						if settings.EnablePoints {
-							<!-- Location Points -->
-							<label for="points" class="form-control w-full md:w-1/2">
-								<div class="label">
-									<span class="label-text font-bold">Points</span>
-									if !settings.EnablePoints {
-										<span class="label-text-alt">
-											<span class="flex gap-1 badge badge-outline badge-sm tooltip cursor-help" data-tip="Points are currently disabled">
-												<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-3 h-3"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-												Disabled
-											</span>
-										</span>
-									}
-								</div>
-								<input
-									type="number"
-									id="points"
-									name="points"
-									class="input input-bordered w-full"
-									value={ fmt.Sprint(location.Points) }
-									placeholder="Enter points"
-								/>
-							</label>
-						} else {
-							<input type="hidden" name="points" value={ fmt.Sprint(location.Points) }/>
-						}
-					</div>
-					<!-- Clues -->
-					if settings.NavigationMethod == models.ShowClues {
-						<section class="mb-8">
-							<div class="label flex justify-between">
-								<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
-									<strong>Clues</strong>
-									<div class="dropdown dropdown-hover">
-										<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-4 h-4 text-info"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
-										</div>
-										<div
-											tabindex="0"
-											class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow"
-										>
-											<div tabindex="0" class="card-body">
-												<h2 class="card-title">Clues</h2>
-												<p class="text-wrap">Each team is shown one randomly selected clue.</p>
-												<p class="text-wrap">If no clues are available then the player is told the name of the location as a freebie.</p>
-												<p class="text-wrap">Clues may contain <a class="link" href="/admin/markdown" target="blank">Markdown</a> formatting.</p>
-											</div>
-										</div>
-									</div>
-								</div>
-								<button class="add-clue-btn btn btn-sm btn-neutral my-2" type="button">
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus w-5 h-5"><path d="M11 12H3"></path><path d="M16 6H3"></path><path d="M16 18H3"></path><path d="M18 9v6"></path><path d="M21 12h-6"></path></svg>
-									Add a clue
-								</button>
-							</div>
-							<div id="clue-list" class="flex flex-col join join-vertical">
-								if len(location.Clues) == 0 {
-									<div class="alert">
-										<span>
-											There are no clues to show. Do you want to <a class="link add-clue-btn">add a clue</a>? 
-										</span>
-									</div>
-								}
-								for _, clue := range location.Clues {
-									<label class="clue-line input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ clue.ID }>
-										<input
-											type="text"
-											name="clues"
-											class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
-											value={ clue.Content }
-											placeholder="Add a clue"
-											autoComplete="off"
-										/>
-										<input type="hidden" name="clue-ids" value={ clue.ID }/>
-										<button
-											type="button"
-											class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
-											data-tip="Delete"
-											onclick="this.closest('.clue-line').remove()"
-											tabindex="-1"
-										>
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-										</button>
-									</label>
-								}
-							</div>
-						</section>
+					} else {
+						<input type="hidden" name="points" value={ fmt.Sprint(location.Points) }/>
 					}
-					<!-- Blocks -->
-					<section>
-						<div class="divider mt-5 mb-10">
-							<div class="dropdown">
-								<div class="block">
-									<div tabindex="0" role="button" class="btn btn-sm btn-neutral w-32 flex flex-col">
-										<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-										Add a Block
+				</div>
+				<!-- Clues -->
+				if settings.NavigationMethod == models.ShowClues {
+					<section class="mb-8">
+						<div class="label flex justify-between">
+							<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">
+								<strong>Clues</strong>
+								<div class="dropdown dropdown-hover">
+									<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-4 h-4 text-info"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
+									</div>
+									<div
+										tabindex="0"
+										class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow"
+									>
+										<div tabindex="0" class="card-body">
+											<h2 class="card-title">Clues</h2>
+											<p class="text-wrap">Each team is shown one randomly selected clue.</p>
+											<p class="text-wrap">If no clues are available then the player is told the name of the location as a freebie.</p>
+											<p class="text-wrap">Clues may contain <a class="link" href="/docs/user/markdown-guide" target="blank">Markdown</a> formatting.</p>
+										</div>
 									</div>
 								</div>
-								<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-80 -ml-24 mt-3 z-50">
-									<div class="card-body">
-										<h2 class="card-title mb-3">Add a Block</h2>
-										<div class="grid grid-cols-2 grid-flow-row gap-5">
-											for _, block := range blocks.GetRegisteredBlocks() {
+							</div>
+							<button class="add-clue-btn btn btn-sm btn-neutral my-2" type="button">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus w-5 h-5"><path d="M11 12H3"></path><path d="M16 6H3"></path><path d="M16 18H3"></path><path d="M18 9v6"></path><path d="M21 12h-6"></path></svg>
+								Add a clue
+							</button>
+						</div>
+						<div id="clue-list" class="flex flex-col join join-vertical">
+							if len(location.Clues) == 0 {
+								<div class="alert">
+									<span>
+										There are no clues to show. Do you want to <a class="link add-clue-btn">add a clue</a>? 
+									</span>
+								</div>
+							}
+							for _, clue := range location.Clues {
+								<label class="clue-line input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ clue.ID }>
+									<input
+										type="text"
+										name="clues"
+										form="edit-location"
+										class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
+										value={ clue.Content }
+										placeholder="Add a clue"
+										autoComplete="off"
+									/>
+									<input type="hidden" name="clue-ids" value={ clue.ID }/>
+									<button
+										type="button"
+										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
+										data-tip="Delete"
+										onclick="this.closest('.clue-line').remove()"
+										tabindex="-1"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									</button>
+								</label>
+							}
+						</div>
+					</section>
+				}
+				<!-- Blocks -->
+				<section>
+					<div class="divider mt-5 mb-10">
+						<div class="dropdown">
+							<div class="block">
+								<div tabindex="0" role="button" class="btn btn-sm btn-neutral w-32 flex flex-col">
+									<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+									Add content
+								</div>
+							</div>
+							<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 -ml-24 mt-3 z-50">
+								<div class="card-body pt-3">
+									<div class="divider">
+										<span class="badge badge-neutral">Static content</span>
+									</div>
+									<div class="grid grid-cols-3 grid-flow-row gap-5">
+										for _, block := range blocks.GetRegisteredBlocks() {
+											if !block.RequiresValidation() {
 												<div class="indicator w-full">
-													if   block.RequiresValidation() {
-														<span
-															class="indicator-item indicator-top indicator-center badge badge-outline border-base-content/30 bg-base-100"
-														>
-															Interactive
-														</span>
-													}
 													<div
 														class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
 														data-tip={ block.GetDescription() }
@@ -450,56 +608,108 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 													</div>
 												</div>
 											}
-										</div>
+										}
+									</div>
+									<div class="divider">
+										<span class="badge badge-neutral">Interactive</span>
+									</div>
+									<div class="grid grid-cols-3 grid-flow-row gap-5">
+										for _, block := range blocks.GetRegisteredBlocks() {
+											if block.RequiresValidation() {
+												<div class="indicator w-full">
+													<div
+														class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+														data-tip={ block.GetDescription() }
+														hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
+														hx-target="#blocks"
+														hx-swap="beforeend"
+													>
+														@templ.Raw(block.GetIconSVG())
+														{ block.GetName() }
+													</div>
+												</div>
+											}
+										}
 									</div>
 								</div>
 							</div>
 						</div>
-						<div
-							id="blocks"
-							class="sortable"
-							hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/reorder") }
-							hx-trigger="end"
-						>
-							for _, block := range contentBlocks {
-								@bTemplates.RenderAdminBlock(settings, block)
-							}
+					</div>
+					<div
+						id="blocks"
+						class="flex flex-col gap-5"
+					>
+						for _, block := range contentBlocks {
+							@bTemplates.RenderAdminBlock(settings, block, len(contentBlocks) < 4)
+						}
+					</div>
+				</section>
+				<!-- Map -->
+				if location.Marker.IsMapped() {
+					<section>
+						<div class="divider mt-5 mb-10"></div>
+						<div class="label">
+							<span class="label-text font-bold">Map marker</span>
 						</div>
+						<div id="map-container" class="relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg">
+							<div id="map" class="map w-full h-full rounded-lg"></div>
+							<!-- Overlay Button and Backdrop -->
+							<div id="map-lock-overlay" class="absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100" tabindex="0">
+								<button
+									id="unlock-map-btn"
+									class="btn btn-neutral"
+									_="on click
+									remove #map-lock-overlay then
+									transition #map-note's opacity to 1
+									"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock-keyhole w-5 h-5"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
+									Unlock to edit
+								</button>
+							</div>
+						</div>
+						<div id="map-note" class="label opacity-0">
+							<span class="label-text">
+								<strong>Note:</strong> Changing the map marker might change the location code.
+							</span>
+							<span class="label-text">
+								Autosave is disabled for map markers.
+							</span>
+						</div>
+						<!-- Hidden inputs for form handling -->
+						<input type="hidden" name="code" form="edit-location" value={ location.Marker.Code }/>
+						<input type="hidden" name="latitude" form="edit-location" value={ floatToString(location.Marker.Lat) }/>
+						<input type="hidden" name="longitude" form="edit-location" value={ floatToString(location.Marker.Lng) }/>
 					</section>
-				</div>
-				<!-- Sidebar -->
-				<aside class="flex flex-col">
-					<!-- Map -->
-					<div id="map-container" class="relative w-full aspect-square md:w-[35vw] lg:w-96 rounded-lg shadow-lg mt-5">
-						<div id="map" class="map w-full h-full rounded-lg"></div>
-						<!-- Overlay Button and Backdrop -->
-						<div id="map-lock-overlay" class="absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100" tabindex="0">
-							<button id="unlock-map-btn" class="btn btn-neutral" onclick="document.getElementById('map-lock-overlay').remove()">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock-keyhole w-5 h-5"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
-								Unlock to edit
-							</button>
+				}
+			</div>
+			<!-- Sidebar -->
+			<!-- Preview Divider -->
+			<div class="divider lg:divider-horizontal px-5">
+				<div class="divider-text">Preview</div>
+			</div>
+			<!-- Preview -->
+			<div class="flex h-min-content flex-col">
+				<div class="mockup-phone h-min sticky top-8">
+					<div class="camera"></div>
+					<div class="display">
+						<div class="artboard artboard-demo phone lg:phone-2" data-theme="cupcake">
+							<!-- Demo -->
+							<div
+								class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
+								hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
+								hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
+								hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
+								hx-swap="innerHTML"
+								hx-indicator=".htmx-indicator"
+							></div>
+							<!-- /Demo -->
 						</div>
 					</div>
-					<div class="form-control">
-						<label class="label cursor-pointer">
-							<span class="label-text">Save map location</span>
-							<input
-								type="checkbox"
-								name="location"
-								class="checkbox checkbox-sm"
-								checked="checked"
-							/>
-						</label>
-					</div>
-					<!-- Hidden inputs for form handling -->
-					<input type="hidden" name="code" value={ location.Marker.Code }/>
-					<input type="hidden" name="latitude" value={ floatToString(location.Marker.Lat) }/>
-					<input type="hidden" name="longitude" value={ floatToString(location.Marker.Lng) }/>
-				</aside>
+				</div>
 			</div>
 		</div>
-	</form>
-	<dialog id="block_edit_modal" class="modal modal-bottom md:modal-middle"></dialog>
+	</div>
 	<dialog id="confirm_delete_block" class="modal">
 		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
 			<h3 class="text-lg font-bold">Delete this block?</h3>
@@ -511,6 +721,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 					onclick="confirm_delete_block.close()"
 				>Nevermind</button>
 				<button
+					id="delete-block-btn"
 					type="button"
 					class="btn btn-error"
 					onclick="confirm_delete_block.close()"
@@ -538,6 +749,66 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 			</div>
 		</div>
 	</dialog>
+	<script>
+    function moveblock(event, direction) {
+        event.preventDefault();
+        const block = event.target.closest('.content-block');
+        if (block) {
+            let sibling;
+            if (direction === 'up') {
+                sibling = block.previousElementSibling;
+            } else if (direction === 'down') {
+                sibling = block.nextElementSibling;
+            }
+
+            if (sibling && sibling.classList.contains('content-block')) {
+                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)
+                const blockHeight = block.offsetHeight;
+                const siblingHeight = sibling.offsetHeight;
+                const gap = 20; // gap-5 in pixels
+
+                // Apply a relative position and initial offset for a smooth transition
+                block.style.position = 'relative';
+                sibling.style.position = 'relative';
+                
+                if (direction === 'up') {
+                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;
+                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;
+                } else {
+                    block.style.transform = `translateY(${siblingHeight + gap}px)`;
+                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;
+                }
+
+                // Trigger reflow to apply the animation
+                requestAnimationFrame(() => {
+                    block.classList.add('transitioning');
+                    sibling.classList.add('transitioning');
+
+                    // Reset transforms and swap elements after animation duration
+                    setTimeout(() => {
+                        block.style.transform = '';
+                        sibling.style.transform = '';
+                        block.classList.remove('transitioning');
+                        sibling.classList.remove('transitioning');
+                        
+                        block.style.position = '';
+                        sibling.style.position = '';
+                        
+                        block.parentNode.insertBefore(
+                            direction === 'up' ? block : sibling,
+                            direction === 'up' ? sibling : block
+                        );
+                    }, 300);
+                });
+            }
+        }
+    }
+</script>
+	<style>
+    .transitioning {
+        transition: transform 0.3s ease;
+    }
+</style>
 	<script>
 (() => {
   const addClueBtns = document.querySelectorAll(".add-clue-btn");
@@ -613,74 +884,6 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
     }
   };
 })();
-document.querySelector("#blocks").addEventListener("htmx:afterSettle", (event) => {
-    // Select the last .block-edit-btn inside #blocks
-    const blocks = document.querySelectorAll("#blocks .block-edit-btn");
-    const lastBlockEditBtn = blocks[blocks.length - 1];
-
-    // Check if the element exists
-    if (lastBlockEditBtn) {
-        // Trigger a click event on the last .block-edit-btn
-        htmx.trigger(lastBlockEditBtn, "click");
-    }
-    
-});
-  function previewMD(e) {
-	var checkBox = e.target;
-	var id = e.target.dataset.block;
-    var textarea = document.getElementById("md-" + id);
-    var preview = document.getElementById("preview-md-" + id);
-
-    if (checkBox.checked == true){
-      textarea.classList.add("hidden");
-      preview.classList.remove("hidden");
-      preview.setAttribute("aria-busy", true)
-      preview.innerHTML = "<span class='loading loading-ring loading-lg'></span>"
-
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", '/admin/markdown/preview', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.send(JSON.stringify({
-        markdown: textarea.value
-      }));
-
-      xhr.onreadystatechange = (e) => {
-        preview.innerHTML = xhr.response
-      }
-    } else {
-      textarea.classList.remove("hidden");
-      preview.classList.add("hidden");
-      preview.innerHTML = null
-    }
-  }
-
-function sortables() {
-    var sortables = document.querySelectorAll(".sortable");
-    for (var i = 0; i < sortables.length; i++) {
-      var sortable = sortables[i];
-      var sortableInstance = new Sortable(sortable, {
-          animation: 150,
-          handle: ".cursor-move",
-
-          // Make the `.htmx-indicator` unsortable
-          filter: ".htmx-indicator",
-          onMove: function (evt) {
-            return evt.related.className.indexOf('htmx-indicator') === -1;
-          },
-
-          // Disable sorting on the `end` event
-          onEnd: function (evt) {
-            this.option("disabled", true);
-          }
-      });
-
-      // Re-enable sorting on the `htmx:afterSwap` event
-      sortable.addEventListener("htmx:afterSwap", function() {
-        sortableInstance.option("disabled", false);
-      });
-    }
-}
-sortables();
 </script>
 	@locationScript()
 }
@@ -688,15 +891,16 @@ sortables();
 templ locationScript() {
 	<script>
 (function () {
-  let map; // Store the map instance globally within the IIFE
-  let marker; // Store the marker instance globally within the IIFE
+  let map; 
+  let marker;
 
   function initializeMap() {
-    let coords = [170.5111643, -45.8650509];
-    let zoom = 14;
+    let coords = [174.0710596, -40.9664536];
+    let zoom = 4;
 
     // Check if longitude and latitude fields are set
-    if (document.querySelector('input[name="longitude"]').value != "" && document.querySelector('input[name="latitude"]').value != "") {
+    if (document.querySelector('input[name="longitude"]').value !== "" &&
+        document.querySelector('input[name="latitude"]').value !== "") {
       coords = [
         parseFloat(document.querySelector('input[name="longitude"]').value),
         parseFloat(document.querySelector('input[name="latitude"]').value)
@@ -726,7 +930,7 @@ templ locationScript() {
       zoom: zoom
     });
 
-    // Create and place marker
+    // Create and place the main marker
     marker = new mapboxgl.Marker()
       .setLngLat(coords)
       .addTo(map);
@@ -737,16 +941,6 @@ templ locationScript() {
       marker.setLngLat(center);
       document.querySelector('input[name="latitude"]').value = center.lat;
       document.querySelector('input[name="longitude"]').value = center.lng;
-      document.querySelector('input[name="location"]').checked = true;
-    });
-
-    // Update marker position on map drag
-    map.on('drag', function() {
-      const center = map.getCenter();
-      marker.setLngLat(center);
-      document.querySelector('input[name="latitude"]').value = center.lat;
-      document.querySelector('input[name="longitude"]').value = center.lng;
-      document.querySelector('input[name="location"]').checked = true;
     });
 
     // Update marker position on map zoom
@@ -755,59 +949,98 @@ templ locationScript() {
       marker.setLngLat(center);
     });
 
+    MapboxStyleSwitcher.extend(map, {
+      // Optional: Override default options
+      controlPosition: 'top-left', // Position on the map
+      // satelliteStyle: 'custom-satellite-style-if-needed'
+    }, null);
 
-		var geocoderEl = document.getElementById('geocoder');
-		if (geocoderEl) {
-			var geocoder = new MapboxGeocoder({
-				accessToken: mapboxgl.accessToken,
-				mapboxgl: mapboxgl,
-				marker: false,
-				placeholder: 'Search for an address or use the map',
+    // Handle select change event
+    const locationSelect = document.getElementById('marker-code');
+    if (locationSelect) {
+      locationSelect.addEventListener('change', function (event) {
+        const selectedOption = event.target.options[event.target.selectedIndex];
+        const lat = parseFloat(selectedOption.dataset.lat);
+        const lng = parseFloat(selectedOption.dataset.lng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          // Update the map center and marker position
+          map.flyTo({ center: [lng, lat], zoom: 16 });
+          marker.setLngLat([lng, lat]);
+
+          // Disable dragging on the map
+          map.dragPan.disable();
+          map.scrollZoom.disable();
+
+          // Update latitude and longitude fields
+          document.querySelector('input[name="latitude"]').value = lat;
+          document.querySelector('input[name="longitude"]').value = lng;
+        }
+      });
+    }
+
+    // Re-enable map dragging when new marker tab is clicked
+    const newMarkerTab = document.getElementById('new-marker-tab');
+    if (newMarkerTab) {
+      newMarkerTab.addEventListener('click', function () {
+        map.dragPan.enable();
+        map.scrollZoom.enable();
+      });
+    }
+
+		// Check for .neighbour-marker elements
+		const neighborMarkers = document.querySelectorAll('.neighbour-marker');
+		if (neighborMarkers.length > 0) {
+			// Fit to bounding box of all neighbor markers with a max zoom of 14
+			let bounds = new mapboxgl.LngLatBounds();
+			neighborMarkers.forEach(elem => {
+				const lat = parseFloat(elem.dataset.lat);
+				const lng = parseFloat(elem.dataset.lng);
+				if (!isNaN(lat) && !isNaN(lng)) {
+					bounds.extend([lng, lat]);
+				}
 			});
-			geocoderEl.appendChild(geocoder.onAdd(map));
+			map.fitBounds(bounds, { padding: 14, duration: 0 });
 		}
 
-    // Add event listener for location saving switch
-    document.querySelector('input[name="location"]').addEventListener('change', function(e) {
-      if (e.target.checked) {
-        const center = map.getCenter();
-        marker.setLngLat(center);
-        document.querySelector('input[name="latitude"]').value = center.lat;
-        document.querySelector('input[name="longitude"]').value = center.lng;
-      } else {
-        document.querySelector('input[name="latitude"]').value = "";
-        document.querySelector('input[name="longitude"]').value = "";
-      }
-    });
+    var geocoderEl = document.getElementById('geocoder');
+    if (geocoderEl) {
+      var geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        marker: false,
+        placeholder: 'Search for an address or use the map',
+      });
+      geocoderEl.appendChild(geocoder.onAdd(map));
+    }
   }
 
   // Delete block confirmation dialog
   function confirmDeleteBlock(event) {
-	modal = document.getElementById("confirm_delete_block");
-	url = "/admin/locations/" + event.target.dataset.location + "/blocks/" + event.target.dataset.block + "/delete";
-	btn = modal.querySelector("button.btn-error")
-	btn.setAttribute("hx-delete", url);
-	btn.setAttribute("hx-swap", "outerHTML");
-	btn.setAttribute("hx-target", "#" + event.target.closest(".collapse").id);
-	modal.showModal();
-	htmx.process(modal);
+    modal = document.getElementById("confirm_delete_block");
+    url = "/admin/locations/" + event.currentTarget.dataset.location + "/blocks/" + event.currentTarget.dataset.block + "/delete";
+    btn = modal.querySelector("button.btn-error")
+    btn.setAttribute("hx-delete", url);
+    btn.setAttribute("hx-swap", "outerHTML");
+    btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
+    modal.showModal();
+    htmx.process(modal);
   }
 
   for (const element of document.querySelectorAll('.block-delete')) {
-	element.addEventListener('click', confirmDeleteBlock);
+    element.addEventListener('click', confirmDeleteBlock);
   }
 
   // Add listener to #blocks for new blocks
   if (document.getElementById("blocks")) {
-  document.getElementById("blocks").addEventListener("htmx:afterSwap", function(event) {
-	  for (const element of document.querySelectorAll('.block-delete')) {
-		element.addEventListener('click', confirmDeleteBlock);
-	  }
-  });
+    document.getElementById("blocks").addEventListener("htmx:afterSwap", function (event) {
+      for (const element of document.querySelectorAll('.block-delete')) {
+        element.addEventListener('click', confirmDeleteBlock);
+      }
+    });
   }
 
   initializeMap();
-
 })();
 </script>
 }

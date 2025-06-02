@@ -12,26 +12,82 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/internal/services"
+	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 )
 
 var router *chi.Mux
 var server *http.Server
 
-func Start(logger *slog.Logger) {
-	gameplayService := services.NewGameplayService()
-	gameManagerService := services.NewGameManagerService()
-	notificationService := services.NewNotificationService()
+func Start(logger *slog.Logger,
+	assetGenerator services.AssetGenerator,
+	authService services.AuthService,
+	blockService services.BlockService,
+	checkInService services.CheckInService,
+	clueService services.ClueService,
+	emailService services.EmailService,
+	facilitatorService services.FacilitatorService,
+	gameManagerService services.GameManagerService,
+	gameplayService services.GameplayService,
+	instanceService services.InstanceService,
+	locationService services.LocationService,
+	navigationService services.NavigationService,
+	notificationService services.NotificationService,
+	teamService services.TeamService,
+	templateService services.TemplateService,
+	uploadService services.UploadService,
+	userService services.UserService,
+) {
+	// Public routes
+	publicHandler := public.NewPublicHandler(
+		logger,
+		authService,
+		emailService,
+		&templateService,
+		userService,
+	)
 
-	router = setupRouter(logger, gameplayService, gameManagerService, notificationService)
+	// Player routes
+	playerHandler := players.NewPlayerHandler(
+		logger,
+		blockService,
+		gameplayService,
+		notificationService,
+		teamService,
+	)
+
+	// Admin routes
+	adminHandler := admin.NewAdminHandler(
+		logger,
+		assetGenerator,
+		authService,
+		blockService,
+		clueService,
+		facilitatorService,
+		gameManagerService,
+		gameplayService,
+		instanceService,
+		locationService,
+		notificationService,
+		teamService,
+		templateService,
+		uploadService,
+		userService,
+	)
+	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 
 	killSig := make(chan os.Signal, 1)
 
 	signal.Notify(killSig, os.Interrupt, syscall.SIGTERM)
 
 	server = &http.Server{
-		Addr:    os.Getenv("SERVER_ADDR"),
-		Handler: router,
+		Addr:              os.Getenv("SERVER_ADDR"),
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       1 * time.Minute,
+		WriteTimeout:      2 * time.Minute,
 	}
 
 	go func() {

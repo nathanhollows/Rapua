@@ -6,25 +6,35 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/models"
+	"github.com/nathanhollows/Rapua/v3/models"
 	"golang.org/x/exp/rand"
 )
 
 var (
-	ErrorAllLocationsVisited = errors.New("all locations visited")
-	ErrInstanceNotFound      = errors.New("instance not found")
+	ErrAllLocationsVisited = errors.New("all locations visited")
+	ErrInstanceNotFound    = errors.New("instance not found")
 )
 
-type NavigationService struct{}
-
-func NewNavigationService() NavigationService {
-	return NavigationService{}
+type NavigationService interface {
+	// CheckValidLocation checks if the location code is valid for the team to check in to
+	// This function returns an error if the location code is invalid
+	CheckValidLocation(ctx context.Context, team *models.Team, settings *models.InstanceSettings, markerID string) (bool, error)
+	// DetermineNextLocations returns the next locations for the team to visit
+	// Team.Instance.Settings must be loaded before calling this function
+	DetermineNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	// HasVisited returns true if the team has visited the location
+	HasVisited(checkins []models.CheckIn, locationID string) bool
 }
 
-// CheckValidLocation checks if the location code is valid for the team to scan in to
-// This function returns an error if the location code is invalid
-func (s NavigationService) CheckValidLocation(ctx context.Context, team *models.Team, settings *models.InstanceSettings, locationCode string) (bool, error) {
+type navigationService struct{}
 
+func NewNavigationService() NavigationService {
+	return &navigationService{}
+}
+
+// CheckValidLocation checks if the location code is valid for the team to
+// check in to. This function returns an error if the location code is invalid.
+func (s *navigationService) CheckValidLocation(ctx context.Context, team *models.Team, settings *models.InstanceSettings, markerID string) (bool, error) {
 	// Find valid locations
 	locations, err := s.DetermineNextLocations(ctx, team)
 	if err != nil {
@@ -32,19 +42,20 @@ func (s NavigationService) CheckValidLocation(ctx context.Context, team *models.
 	}
 
 	// Check if the location code is valid
-	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
+	markerID = strings.TrimSpace(strings.ToUpper(markerID))
 	for _, loc := range locations {
-		if loc.Marker.Code == locationCode {
+		if loc.MarkerID == markerID {
 			return true, nil
 		}
 	}
-	return false, nil
+	return false, fmt.Errorf("code %s is not a valid next location", markerID)
 }
 
-func (s NavigationService) DetermineNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+// DetermineNextLocations returns the next locations for the team to visit.
+func (s *navigationService) DetermineNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
 	// Check if the team has visited all locations
 	if len(team.CheckIns) == len(team.Instance.Locations) {
-		return nil, ErrorAllLocationsVisited
+		return nil, ErrAllLocationsVisited
 	}
 
 	if team.Instance.ID == "" || team.Instance.Settings.InstanceID == "" {
@@ -64,8 +75,8 @@ func (s NavigationService) DetermineNextLocations(ctx context.Context, team *mod
 	return nil, errors.New("invalid navigation mode")
 }
 
-// getUnvisitedLocations returns a list of locations that the team has not visited
-func (s NavigationService) getUnvisitedLocations(_ context.Context, team *models.Team) []models.Location {
+// getUnvisitedLocations returns a list of locations that the team has not visited.
+func (s *navigationService) getUnvisitedLocations(_ context.Context, team *models.Team) []models.Location {
 	unvisited := []models.Location{}
 
 	// Find the next location
@@ -86,12 +97,12 @@ func (s NavigationService) getUnvisitedLocations(_ context.Context, team *models
 	return unvisited
 }
 
-// getOrderedLocations returns locations in the order defined by the admin
-// This function returns the next location for the team to visit
-func (s NavigationService) getOrderedLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+// getOrderedLocations returns locations in the order defined by the admin. This
+// function returns the next location for the team to visit.
+func (s *navigationService) getOrderedLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
 	unvisited := s.getUnvisitedLocations(ctx, team)
 	if len(unvisited) == 0 {
-		return nil, ErrorAllLocationsVisited
+		return nil, ErrAllLocationsVisited
 	}
 
 	// Reorder based on .Order
@@ -106,13 +117,14 @@ func (s NavigationService) getOrderedLocations(ctx context.Context, team *models
 	return unvisited[:1], nil
 }
 
-// getRandomLocations returns random locations for the team to visit
-// This function uses the team code as a seed for the random number generator
+// getRandomLocations returns random locations for the team to visit.
+// This function uses the team code as a seed for the random number generator.
 // Process:
-// 1. Shuffle the list of all locations deterministically based on team code
-// 2. Select the first n unvisited locations from the shuffled list
-// 3. Return these locations ensuring the order is consistent across refreshes
-func (s NavigationService) getRandomLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+// 1. Shuffle the list of all locations deterministically based on team code,
+// 2. Select the first n unvisited locations from the shuffled list,
+// 3. Return these locations ensuring the order is consistent across refreshes,
+// 3. Return these locations ensuring the order is consistent across refreshes.
+func (s *navigationService) getRandomLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
 	allLocations := team.Instance.Locations
 	if len(allLocations) == 0 {
 		return nil, errors.New("no locations found")
@@ -120,7 +132,7 @@ func (s NavigationService) getRandomLocations(ctx context.Context, team *models.
 
 	unvisited := s.getUnvisitedLocations(ctx, team)
 	if len(unvisited) == 0 {
-		return nil, fmt.Errorf("all locations visited")
+		return []models.Location{}, ErrAllLocationsVisited
 	}
 
 	// Seed the random number generator with the team code to ensure deterministic shuffling
@@ -151,26 +163,26 @@ func (s NavigationService) getRandomLocations(ctx context.Context, team *models.
 	}
 
 	if len(selectedLocations) == 0 {
-		return nil, ErrorAllLocationsVisited
+		return nil, ErrAllLocationsVisited
 	}
 
 	return selectedLocations, nil
 }
 
-// getFreeRoamLocations returns a list of locations for free roam mode
-// This function returns all locations in the instance for the team to visit
-func (s NavigationService) getFreeRoamLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+// getFreeRoamLocations returns a list of locations for free roam mode. This
+// function returns all locations in the instance for the team to visit.
+func (s *navigationService) getFreeRoamLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
 	unvisited := s.getUnvisitedLocations(ctx, team)
 
 	if len(unvisited) == 0 {
-		return nil, ErrorAllLocationsVisited
+		return nil, ErrAllLocationsVisited
 	}
 
 	return unvisited, nil
 }
 
-// HasVisited returns true if the team has visited the location
-func (s NavigationService) HasVisited(checkins []models.CheckIn, locationID string) bool {
+// HasVisited returns true if the team has visited the location.
+func (s *navigationService) HasVisited(checkins []models.CheckIn, locationID string) bool {
 	for _, checkin := range checkins {
 		if checkin.LocationID == locationID {
 			return true
