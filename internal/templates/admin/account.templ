@@ -43,14 +43,14 @@ templ Account(user models.User) {
 				</li>
 				<li>
 					<a
-						hx-get="/admin/account/notifications"
+						hx-get="/admin/account/security"
 						_="on click
                         remove .active from <li a />
                     add .active to me
                 "
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-lock-icon lucide-user-lock"><circle cx="10" cy="7" r="4"></circle><path d="M10.3 15H7a4 4 0 0 0-4 4v2"></path><path d="M15 15.5V14a2 2 0 0 1 4 0v1.5"></path><rect width="8" height="5" x="13" y="16" rx=".899"></rect></svg>
-						Account
+						Security
 					</a>
 				</li>
 				<li>
@@ -138,5 +138,35 @@ templ AccountProfile(user models.User) {
 				</section>
 			</div>
 		</div>
+	</form>
+}
+
+templ AccountAppearance(user models.User) {
+	<form
+		hx-post="/admin/account/profile"
+		hx-trigger="submit"
+		hx-swap="none"
+	>
+		Placeholder
+	</form>
+}
+
+templ AccountSecurity(user models.User) {
+	<form
+		hx-post="/admin/account/profile"
+		hx-trigger="submit"
+		hx-swap="none"
+	>
+		Placeholder
+	</form>
+}
+
+templ AccountBilling(user models.User) {
+	<form
+		hx-post="/admin/account/profile"
+		hx-trigger="submit"
+		hx-swap="none"
+	>
+		Placeholder
 	</form>
 }
