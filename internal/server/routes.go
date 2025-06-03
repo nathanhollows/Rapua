@@ -281,6 +281,10 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Post("/upload", adminHandler.UploadMedia)
 		})
 
+		r.Route("/account", func(r chi.Router) {
+			r.Get("/", adminHandler.Account)
+		})
+
 		r.NotFound(adminHandler.NotFound)
 	})
 }
