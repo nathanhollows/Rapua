@@ -6517,6 +6517,10 @@ html:has(.drawer-toggle:checked) {
   margin-bottom: 0.75rem;
 }
 
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
 .mb-5 {
   margin-bottom: 1.25rem;
 }
@@ -6816,6 +6820,18 @@ html:has(.drawer-toggle:checked) {
   width: min-content;
 }
 
+.w-60 {
+  width: 15rem;
+}
+
+.w-8\/12 {
+  width: 66.666667%;
+}
+
+.w-7\/12 {
+  width: 58.333333%;
+}
+
 .min-w-80 {
   min-width: 20rem;
 }
@@ -6854,6 +6870,14 @@ html:has(.drawer-toggle:checked) {
 
 .max-w-xs {
   max-width: 20rem;
+}
+
+.max-w-80 {
+  max-width: 20rem;
+}
+
+.max-w-60 {
+  max-width: 15rem;
 }
 
 .flex-1 {
@@ -7305,6 +7329,23 @@ html:has(.drawer-toggle:checked) {
   border-color: var(--fallback-wa,oklch(var(--wa)/var(--tw-border-opacity)));
 }
 
+.border-base-200 {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-b2,oklch(var(--b2)/var(--tw-border-opacity)));
+}
+
+.border-base-content\/50 {
+  border-color: var(--fallback-bc,oklch(var(--bc)/0.5));
+}
+
+.border-base-content\/10 {
+  border-color: var(--fallback-bc,oklch(var(--bc)/0.1));
+}
+
+.border-base-content\/20 {
+  border-color: var(--fallback-bc,oklch(var(--bc)/0.2));
+}
+
 .border-t-primary {
   --tw-border-opacity: 1;
   border-top-color: var(--fallback-p,oklch(var(--p)/var(--tw-border-opacity)));
@@ -7350,6 +7391,14 @@ html:has(.drawer-toggle:checked) {
 
 .bg-transparent {
   background-color: transparent;
+}
+
+.bg-base-200\/20 {
+  background-color: var(--fallback-b2,oklch(var(--b2)/0.2));
+}
+
+.bg-base-200\/50 {
+  background-color: var(--fallback-b2,oklch(var(--b2)/0.5));
 }
 
 .bg-opacity-70 {
