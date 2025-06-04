@@ -14,7 +14,7 @@ type User struct {
 	EmailToken       string       `bun:"email_token,type:varchar(36)"`
 	EmailTokenExpiry sql.NullTime `bun:"email_token_expiry,nullzero"`
 	Password         string       `bun:"password,type:varchar(255)"`
-	Provider         string       `bun:"provider,type:varchar(255)"`
+	Provider         Provider     `bun:"provider,type:varchar(255)"`
 
 	Instances         []Instance `bun:"rel:has-many,join:id=user_id"`
 	CurrentInstanceID string     `bun:"current_instance_id,type:varchar(36)"`

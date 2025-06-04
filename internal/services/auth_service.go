@@ -133,13 +133,23 @@ func (s *authService) CheckUserRegisteredWithOAuth(ctx context.Context, provider
 
 // CreateUserWithOAuth creates a new user if logging in with OAuth for the first time.
 func (s *authService) CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error) {
+	var provider models.Provider
+	switch user.Provider {
+	case "google":
+		provider = models.ProviderGoogle
+	case "email":
+		provider = models.ProviderEmail
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", user.Provider)
+	}
+
 	uuid := uuid.New()
 	newUser := models.User{
 		ID:       uuid.String(),
 		Name:     user.Name,
 		Email:    user.Email,
 		Password: "",
-		Provider: user.Provider,
+		Provider: provider,
 	}
 
 	err := s.userRepository.Create(ctx, &newUser)
