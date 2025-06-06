@@ -281,20 +281,12 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Post("/upload", adminHandler.UploadMedia)
 		})
 
-		r.Route("/account", func(r chi.Router) {
-			r.Get("/", adminHandler.Account)
-			r.With(func(next http.Handler) http.Handler {
-					return middlewares.HtmxOnlyMiddleware(adminHandler.Logger, "/admin/account/", next)
-				}).Get("/profile", adminHandler.AccountProfile)
-			r.With(func(next http.Handler) http.Handler {
-					return middlewares.HtmxOnlyMiddleware(adminHandler.Logger, "/admin/account/", next)
-				}).Get("/appearance", adminHandler.AccountAppearance)
-			r.With(func(next http.Handler) http.Handler {
-					return middlewares.HtmxOnlyMiddleware(adminHandler.Logger, "/admin/account/", next)
-				}).Get("/security", adminHandler.AccountSecurity)
-			r.With(func(next http.Handler) http.Handler {
-					return middlewares.HtmxOnlyMiddleware(adminHandler.Logger, "/admin/account/", next)
-				}).Get("/billing", adminHandler.AccountBilling)
+		r.Route("/settings", func(r chi.Router) {
+			r.Get("/", adminHandler.Settings)
+			r.Get("/profile", adminHandler.SettingsProfile)
+			r.Get("/appearance", adminHandler.SettingsAppearance)
+			r.Get("/security", adminHandler.SettingsSecurity)
+			r.Get("/billing", adminHandler.SettingsBilling)
 		})
 
 		r.NotFound(adminHandler.NotFound)
