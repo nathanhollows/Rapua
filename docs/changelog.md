@@ -6,6 +6,21 @@ order: 100
 
 # Changelog
 
+## 3.8.0 (06-06-2025)
+
+### Added
+
+- User preferences system with customizable display name, theme selection, and email sharing controls.
+- Settings page for users to manage their profile and preferences.
+
+### Fixed
+
+- An issue preventing new users from creating markerless locations has been resolved.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.8.0)
+
+---
+
 ## 3.7.0 (29-04-2025)
 
 ### Added
