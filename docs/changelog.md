@@ -10,7 +10,7 @@ order: 100
 
 ### Added
 
-- User preferences system with customizable display name, theme selection, and email sharing controls.
+- User preferences system with customizable display name, theme selection, work type field, and email sharing controls.
 - Settings page for users to manage their profile and preferences.
 
 ### Fixed

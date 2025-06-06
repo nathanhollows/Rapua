@@ -18,6 +18,7 @@ type User struct {
 	Provider         Provider     `bun:"provider,type:varchar(255)"`
 	Theme            string       `bun:"theme,type:varchar(50),notnull,default:'system'"`
 	ShareEmail       bool         `bun:"share_email,type:boolean,notnull,default:false"`
+	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
 
 	Instances         []Instance `bun:"rel:has-many,join:id=user_id"`
 	CurrentInstanceID string     `bun:"current_instance_id,type:varchar(36)"`

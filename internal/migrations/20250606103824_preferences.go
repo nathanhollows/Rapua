@@ -26,6 +26,7 @@ type m20250606103824_User struct {
 	Provider         string         `bun:"provider,type:varchar(255)"`
 	Theme            string         `bun:"theme,type:varchar(50),notnull,default:'system'"`
 	ShareEmail       bool           `bun:"share_email,type:boolean,notnull,default:false"`
+	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
 
 	Instances         []m20241209083639_Instance `bun:"rel:has-many,join:id=user_id"`
 	CurrentInstanceID string                     `bun:"current_instance_id,type:varchar(36)"`
@@ -52,11 +53,17 @@ func init() {
 		if err != nil {
 			return fmt.Errorf("add column share_email: %w", err)
 		}
+		
+		// Add work_type column
+		_, err = db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("work_type varchar(100)").Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("add column work_type: %w", err)
+		}
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
 		// Down migration.
-		columns := []string{"display_name", "theme", "share_email"}
+		columns := []string{"display_name", "theme", "share_email", "work_type"}
 
 		for _, column := range columns {
 			_, err := db.NewDropColumn().Model((*m20250606103824_User)(nil)).Column(column).Exec(ctx)
