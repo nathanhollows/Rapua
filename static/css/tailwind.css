@@ -6434,6 +6434,18 @@ html:has(.drawer-toggle:checked) {
   order: 3;
 }
 
+.col-span-5 {
+  grid-column: span 5 / span 5;
+}
+
+.row-span-3 {
+  grid-row: span 3 / span 3;
+}
+
+.row-start-1 {
+  grid-row-start: 1;
+}
+
 .m-1 {
   margin: 0.25rem;
 }
@@ -6479,6 +6491,11 @@ html:has(.drawer-toggle:checked) {
 .my-8 {
   margin-top: 2rem;
   margin-bottom: 2rem;
+}
+
+.my-12 {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
 }
 
 .-mb-3 {
@@ -6725,6 +6742,10 @@ html:has(.drawer-toggle:checked) {
 
 .h-screen {
   height: 100vh;
+}
+
+.h-1 {
+  height: 0.25rem;
 }
 
 .min-h-80 {
@@ -7018,6 +7039,14 @@ html:has(.drawer-toggle:checked) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.grid-rows-3 {
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
 .flex-row {
   flex-direction: row;
 }
@@ -7246,6 +7275,14 @@ html:has(.drawer-toggle:checked) {
   border-radius: 0px;
 }
 
+.rounded-badge {
+  border-radius: var(--rounded-badge, 1.9rem);
+}
+
+.rounded-btn {
+  border-radius: var(--rounded-btn, 0.5rem);
+}
+
 .rounded-b-3xl {
   border-bottom-right-radius: 1.5rem;
   border-bottom-left-radius: 1.5rem;
@@ -7399,6 +7436,21 @@ html:has(.drawer-toggle:checked) {
 
 .bg-base-200\/50 {
   background-color: var(--fallback-b2,oklch(var(--b2)/0.5));
+}
+
+.bg-neutral {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-n,oklch(var(--n)/var(--tw-bg-opacity)));
+}
+
+.bg-primary {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-p,oklch(var(--p)/var(--tw-bg-opacity)));
+}
+
+.bg-secondary {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-s,oklch(var(--s)/var(--tw-bg-opacity)));
 }
 
 .bg-opacity-70 {
@@ -7671,6 +7723,10 @@ html:has(.drawer-toggle:checked) {
 
 .pt-8 {
   padding-top: 2rem;
+}
+
+.pb-10 {
+  padding-bottom: 2.5rem;
 }
 
 .text-center {
@@ -7952,6 +8008,10 @@ html:has(.drawer-toggle:checked) {
   outline-offset: 1px;
 }
 
+.outline-offset-4 {
+  outline-offset: 4px;
+}
+
 .outline-accent {
   outline-color: var(--fallback-a,oklch(var(--a)/1));
 }
@@ -7966,6 +8026,14 @@ html:has(.drawer-toggle:checked) {
 
 .outline-warning {
   outline-color: var(--fallback-wa,oklch(var(--wa)/1));
+}
+
+.outline-base-content {
+  outline-color: var(--fallback-bc,oklch(var(--bc)/1));
+}
+
+.outline-primary {
+  outline-color: var(--fallback-p,oklch(var(--p)/1));
 }
 
 .contrast-150 {
@@ -9950,4 +10018,8 @@ html:has(.drawer-toggle:checked) {
   .dark\:outline-base-200 {
     outline-color: var(--fallback-b2,oklch(var(--b2)/1));
   }
+}
+
+.\[\&_svg\]\:visible svg {
+  visibility: visible;
 }
