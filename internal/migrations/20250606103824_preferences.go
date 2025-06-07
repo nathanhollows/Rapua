@@ -24,7 +24,6 @@ type m20250606103824_User struct {
 	EmailTokenExpiry sql.NullTime   `bun:"email_token_expiry,nullzero"`
 	Password         string         `bun:"password,type:varchar(255)"`
 	Provider         string         `bun:"provider,type:varchar(255)"`
-	Theme            string         `bun:"theme,type:varchar(50),notnull,default:'system'"`
 	ShareEmail       bool           `bun:"share_email,type:boolean,notnull,default:false"`
 	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
 
@@ -42,11 +41,7 @@ func init() {
 			return fmt.Errorf("add column display_name: %w", err)
 		}
 
-		// Add theme column
-		_, err = db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("theme varchar(50) NOT NULL DEFAULT 'system'").Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("add column theme: %w", err)
-		}
+		// Theme is now handled client-side with localStorage
 
 		// Add share_email column
 		_, err = db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("share_email boolean NOT NULL DEFAULT false").Exec(ctx)
@@ -63,7 +58,7 @@ func init() {
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
 		// Down migration.
-		columns := []string{"display_name", "theme", "share_email", "work_type"}
+		columns := []string{"display_name", "share_email", "work_type"}
 
 		for _, column := range columns {
 			_, err := db.NewDropColumn().Model((*m20250606103824_User)(nil)).Column(column).Exec(ctx)
