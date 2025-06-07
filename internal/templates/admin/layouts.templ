@@ -32,12 +32,38 @@ templ header(title string) {
 			content="width=device-width, initial-scale=1.0"
 		/>
 		<title>{ title } | Rapua</title>
+		
+		<!-- Theme initialization - must be before any CSS to prevent flashing -->
+		<script>
+			// Apply theme from localStorage immediately to prevent flashing
+			(function() {
+				const theme = localStorage.getItem('theme') || 'system';
+				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				
+				if (theme === 'system') {
+					document.documentElement.setAttribute('data-theme', prefersDark ? 'dracula' : 'cupcake');
+				} else {
+					document.documentElement.setAttribute('data-theme', theme);
+				}
+				
+				// Listen for system preference changes if using system theme
+				if (theme === 'system') {
+					window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+						if (localStorage.getItem('theme') === 'system') {
+							document.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');
+						}
+					});
+				}
+			})();
+		</script>
+		
 		<!-- CSS -->
 		<link rel="stylesheet" href="/static/css/tailwind.css"/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
+		
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
 		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js" defer></script>
