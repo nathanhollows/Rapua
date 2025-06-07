@@ -76,7 +76,7 @@ templ Settings(user models.User) {
 templ SettingsProfile(user models.User) {
 	<form
 		hx-post="/admin/settings/profile"
-		hx-trigger="keyup delay:500ms"
+		hx-trigger="keyup delay:500ms, change delay:500ms"
 		hx-swap="none"
 	>
 		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
@@ -105,6 +105,9 @@ templ SettingsProfile(user models.User) {
 						<input
 							name="display_name"
 							type="text"
+							if user.DisplayName.Valid {
+								value={ user.DisplayName.String }
+							}
 							if user.Name == "" {
 								placeholder="Jane"
 							}
@@ -128,19 +131,33 @@ templ SettingsProfile(user models.User) {
 				add .hidden to #other-type
 				"
 						>
-							<option value="formal_education">Formal education</option>
-							<option value="informal_education">Informal education</option>
-							<option value="event_organiser">Event organiser</option>
-							<option value="experience_designer">Experience designer</option>
-							<option value="corporate_training">Corporate training</option>
-							<option value="other">Other</option>
+							<option value="formal_education" if user.WorkType.String == "formal_education" {
+	selected
+}>Formal education</option>
+							<option value="informal_education" if user.WorkType.String == "informal_education" {
+	selected
+}>Informal education</option>
+							<option value="event_organiser" if user.WorkType.String == "event_organiser" {
+	selected
+}>Event organiser</option>
+							<option value="experience_designer" if user.WorkType.String == "experience_designer" {
+	selected
+}>Experience designer</option>
+							<option value="corporate_training" if user.WorkType.String == "corporate_training" {
+	selected
+}>Corporate training</option>
+							<option value="other" if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+	selected
+}>Other</option>
 						</select>
 					</label>
 				</div>
 				<!-- Other Work Type -->
 				<div
 					id="other-type"
-					if user.WorkType.String != "other" {
+					if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+						class=""
+					} else {
 						class="hidden"
 					}
 				>
@@ -152,6 +169,9 @@ templ SettingsProfile(user models.User) {
 							name="other_work_type"
 							type="text"
 							placeholder="Your work type"
+							if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+								value={ user.WorkType.String }
+							}
 							class="input input-bordered bg-base-200 w-full"
 						/>
 						<div class="label">
@@ -168,7 +188,10 @@ templ SettingsProfile(user models.User) {
 								<input
 									name="show_email"
 									type="checkbox"
-									class="toggle"
+									class="toggle toggle-primary"
+									if user.ShareEmail {
+										checked
+									}
 								/>
 							</label>
 						</div>
@@ -180,74 +203,143 @@ templ SettingsProfile(user models.User) {
 }
 
 templ SettingsAppearance(user models.User) {
-	<form
-		hx-post="/admin/settings/profile"
-		hx-trigger="submit"
-		hx-swap="none"
-	>
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="grid h-fit px-5 flex-grow">
-				<!-- Preferences -->
-				<div class="my-5">
-					<h2 class="font-bold pb-5">Change your theme</h2>
-					<button class="outline-base-content text-start outline-offset-4" data-act-class="[&_svg]:visible" data-set-theme="cupcake">
+	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+		<div class="grid h-fit px-5 flex-grow">
+			<div class="my-5">
+				<h2 class="font-bold pb-5">Change your theme</h2>
+				<p class="text-sm mb-4">Theme preferences are stored in your browser and not tied to your account.</p>
+				<div id="theme-buttons" class="space-y-2">
+					<button
+						type="button"
+						class="theme-button outline-base-content text-start outline-offset-4 w-full"
+						data-theme-value="cupcake"
+						_="on click 
+							remove .active from .theme-button
+							add .active to me
+							set localStorage.theme to 'cupcake'
+							call updateThemeUI()
+						"
+					>
 						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="cupcake">
 							<span class="grid grid-cols-5 grid-rows-3">
 								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">
-										Cupcake
-									</span> <span class="flex h-full shrink-0 flex-wrap gap-1"><span class="bg-primary rounded-badge w-2"></span> <span class="bg-secondary rounded-badge w-2"></span> <span class="bg-accent rounded-badge w-2"></span> <span class="bg-neutral rounded-badge w-2"></span></span>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+									<span class="flex-grow text-sm">Cupcake</span>
+									<span class="flex h-full shrink-0 flex-wrap gap-1">
+										<span class="bg-primary rounded-badge w-2"></span>
+										<span class="bg-secondary rounded-badge w-2"></span>
+										<span class="bg-accent rounded-badge w-2"></span>
+										<span class="bg-neutral rounded-badge w-2"></span>
+									</span>
 								</span>
 							</span>
 						</span>
 					</button>
-					<button class="outline-base-content text-start outline-offset-4" data-act-class="[&_svg]:visible" data-set-theme="dracula">
+					<button
+						type="button"
+						class="theme-button outline-base-content text-start outline-offset-4 w-full"
+						data-theme-value="dracula"
+						_="on click 
+							remove .active from .theme-button
+							add .active to me
+							set localStorage.theme to 'dracula'
+							call updateThemeUI()
+						"
+					>
 						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="dracula">
 							<span class="grid grid-cols-5 grid-rows-3">
 								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">
-										Dracula
-									</span> <span class="flex h-full shrink-0 flex-wrap gap-1"><span class="bg-primary rounded-badge w-2"></span> <span class="bg-secondary rounded-badge w-2"></span> <span class="bg-accent rounded-badge w-2"></span> <span class="bg-neutral rounded-badge w-2"></span></span>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+									<span class="flex-grow text-sm">Dracula</span>
+									<span class="flex h-full shrink-0 flex-wrap gap-1">
+										<span class="bg-primary rounded-badge w-2"></span>
+										<span class="bg-secondary rounded-badge w-2"></span>
+										<span class="bg-accent rounded-badge w-2"></span>
+										<span class="bg-neutral rounded-badge w-2"></span>
+									</span>
 								</span>
 							</span>
 						</span>
 					</button>
-					<button class="outline-base-content text-start outline-offset-4" data-act-class="[&_svg]:visible" data-set-theme="dracula">
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="dracula">
+					<button
+						type="button"
+						class="theme-button outline-base-content text-start outline-offset-4 w-full"
+						data-theme-value="system"
+						_="on click 
+							remove .active from .theme-button
+							add .active to me
+							set localStorage.theme to 'system'
+							call updateThemeUI()
+						"
+					>
+						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="system">
 							<span class="grid grid-cols-5 grid-rows-3">
 								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">
-										System
-									</span> <span class="flex h-full shrink-0 flex-wrap gap-1"><span class="bg-primary rounded-badge w-2"></span> <span class="bg-secondary rounded-badge w-2"></span> <span class="bg-accent rounded-badge w-2"></span> <span class="bg-neutral rounded-badge w-2"></span></span>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+									<span class="flex-grow text-sm">System</span>
+									<span class="flex h-full shrink-0 flex-wrap gap-1">
+										<span class="bg-primary rounded-badge w-2"></span>
+										<span class="bg-secondary rounded-badge w-2"></span>
+										<span class="bg-accent rounded-badge w-2"></span>
+										<span class="bg-neutral rounded-badge w-2"></span>
+									</span>
 								</span>
 							</span>
 						</span>
 					</button>
 				</div>
+				<!-- Theme initialization script -->
+				<script>
+					// Initialize theme UI
+					function updateThemeUI() {
+						// Get current theme from localStorage
+						const currentTheme = localStorage.getItem('theme') || 'system';
+						
+						// Update document attribute
+						document.documentElement.setAttribute('data-theme', currentTheme);
+						
+						// Hide all checkmarks first
+						document.querySelectorAll('.theme-check').forEach(el => {
+							el.classList.add('invisible');
+						});
+						
+						// Show checkmark for current theme
+						const activeButton = document.querySelector(`[data-theme-value="${currentTheme}"]`);
+						if (activeButton) {
+							activeButton.classList.add('active');
+							activeButton.querySelector('.theme-check').classList.remove('invisible');
+							activeButton.querySelector('.theme-check').classList.add('visible');
+						}
+					}
+					
+					// Run on page load
+					document.addEventListener('DOMContentLoaded', updateThemeUI);
+					
+					// Also run now in case the script loads after DOMContentLoaded
+					updateThemeUI();
+				</script>
 			</div>
 		</div>
-	</form>
+	</div>
 }
 
 templ SettingsSecurity(user models.User) {
-	<form
-		hx-post="/admin/settings/profile"
-		hx-trigger="submit"
-		hx-swap="none"
-	>
-		if user.Provider == models.ProviderEmail {
-			<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-				<div class="grid h-fit px-5 flex-grow">
-					<h2 class="font-bold py-5">Change your password</h2>
+	if user.Provider == models.ProviderEmail {
+		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+			<div class="grid h-fit px-5 flex-grow">
+				<h2 class="font-bold py-5">Change your password</h2>
+				<form
+					id="password-form"
+					hx-post="/admin/settings/security"
+					hx-swap="none"
+				>
 					<!-- Old password -->
 					<label class="form-control w-7/12">
 						<div class="label">
 							<span class="label-text">Old password</span>
 						</div>
 						<input
+							name="old_password"
 							type="password"
 							class="input input-bordered bg-base-200 w-full"
 						/>
@@ -258,6 +350,7 @@ templ SettingsSecurity(user models.User) {
 							<span class="label-text">New password</span>
 						</div>
 						<input
+							name="new_password"
 							type="password"
 							class="input input-bordered bg-base-200 w-full"
 						/>
@@ -272,87 +365,92 @@ templ SettingsSecurity(user models.User) {
 							<span class="label-text">Confirm password</span>
 						</div>
 						<input
+							name="confirm_password"
 							type="password"
 							class="input input-bordered bg-base-200 w-full"
 						/>
 					</label>
-				</div>
-			</div>
-		}
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="grid h-fit px-5 flex-grow">
-				<!-- Preferences -->
-				<div class="my-5">
-					<h2 class="font-bold pb-5">Delete your account</h2>
-					<div class="prose">
-						<p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p>
-						<p>This is an irreversible process.</p>
-						<button type="button" class="btn btn-error">Delete my account</button>
+					<div class="mt-4">
+						<button type="submit" class="btn btn-primary">Change Password</button>
 					</div>
+				</form>
+			</div>
+		</div>
+	}
+	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+		<div class="grid h-fit px-5 flex-grow">
+			<!-- Delete Account Section -->
+			<div class="my-5">
+				<h2 class="font-bold pb-5">Delete your account</h2>
+				<div class="prose">
+					<p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p>
+					<p>This is an irreversible process.</p>
+					<button
+						type="button"
+						class="btn btn-error"
+						_="on click
+							if confirm('Are you sure you want to delete your account? This cannot be undone.')
+								fetch '/admin/settings/delete-account' {method: 'POST'}
+									then call location.href = '/logout'
+							end
+						"
+					>Delete my account</button>
 				</div>
 			</div>
 		</div>
-	</form>
+	</div>
 }
 
 templ SettingsBilling(user models.User) {
-	<form
-		hx-post="/admin/settings/profile"
-		hx-trigger="submit"
-		hx-swap="none"
-	>
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="grid h-fit px-5 flex-grow">
-				<!-- Preferences -->
-				<div class="my-5">
-					<h2 class="font-bold pb-5">Your plan</h2>
-					<div class="prose">
-						<p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p>
-						<p>This is an irreversible process.</p>
-						<button type="button" class="btn btn-warning">Cancel my subscription</button>
-					</div>
+	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+		<div class="grid h-fit px-5 flex-grow">
+			<div class="my-5">
+				<h2 class="font-bold pb-5">Your plan</h2>
+				<div class="prose">
+					<p>You are currently on the <strong>Free Plan</strong>.</p>
+					<p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p>
+					<button
+						type="button"
+						class="btn btn-primary"
+						_="on click
+							fetch '/admin/settings/billing/upgrade' {method: 'POST'}
+								then if(it.ok) call window.location.href = '/admin/settings/billing/checkout'
+						"
+					>Upgrade to Pro</button>
 				</div>
 			</div>
 		</div>
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="grid h-fit px-5 flex-grow">
-				<!-- Preferences -->
-				<div class="my-5">
-					<h2 class="font-bold pb-5">Order history</h2>
-					<table class="table w-full">
-						<thead>
-							<tr>
-								<th>Date</th>
-								<th>Amount</th>
-								<th>Plan</th>
-								<th>Receipt</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>2023-10-01</td>
-								<td>$10.00</td>
-								<td>Pro Plan</td>
-								<td>
-									<a href="/receipts/12345" class="btn btn-sm btn-outline">Download</a>
-								</td>
-							</tr>
-							<!-- More rows can be added here -->
-						</tbody>
-					</table>
+	</div>
+	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+		<div class="grid h-fit px-5 flex-grow">
+			<div class="my-5">
+				<h2 class="font-bold pb-5">Order history</h2>
+				<table class="table w-full">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Amount</th>
+							<th>Plan</th>
+							<th>Receipt</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td colspan="4" class="text-center py-4">No orders yet</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
+		<div class="grid h-fit px-5 flex-grow">
+			<div class="my-5">
+				<h2 class="font-bold pb-5">Payment method</h2>
+				<div class="prose">
+					<p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p>
 				</div>
 			</div>
 		</div>
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="grid h-fit px-5 flex-grow">
-				<!-- Preferences -->
-				<div class="my-5">
-					<h2 class="font-bold pb-5">Payment method</h2>
-					<div class="prose">
-						<p>All payments are handled securely via stripe. Rapua does not store any payment information.</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</form>
+	</div>
 }
