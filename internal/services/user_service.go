@@ -27,6 +27,10 @@ type UserService interface {
 
 	// UpdateUser updates a user
 	UpdateUser(ctx context.Context, user *models.User) error
+	
+	// UpdateUserProfile updates a user's profile with form data
+	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
+	
 	// SwitchInstance switches the user's current instance
 	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
 
@@ -70,6 +74,52 @@ func (s *userService) CreateUser(ctx context.Context, user *models.User, passwor
 
 // UpdateUser updates a user in the database.
 func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
+	return s.userRepo.Update(ctx, user)
+}
+
+// UpdateUserProfile updates a user's profile information
+// Only updates the fields that are present in the profile map
+func (s *userService) UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error {
+	// Update basic fields only if provided
+	if name, exists := profile["name"]; exists {
+		user.Name = name
+	}
+	
+	// Handle nullable display name field if provided
+	if displayName, exists := profile["display_name"]; exists {
+		if displayName != "" {
+			user.DisplayName.String = displayName
+			user.DisplayName.Valid = true
+		} else {
+			user.DisplayName.Valid = false
+		}
+	}
+	
+	// Handle work type if provided
+	if workType, exists := profile["work_type"]; exists {
+		if workType == "other" {
+			otherWorkType, hasOther := profile["other_work_type"]
+			if hasOther && otherWorkType != "" {
+				user.WorkType.String = otherWorkType
+				user.WorkType.Valid = true
+			} else {
+				user.WorkType.Valid = false
+			}
+		} else if workType != "" {
+			user.WorkType.String = workType
+			user.WorkType.Valid = true
+		} else {
+			user.WorkType.Valid = false
+		}
+	}
+	
+	// Theme is handled client-side with localStorage
+	
+	// Handle share email checkbox only if provided
+	if _, exists := profile["show_email"]; exists {
+		user.ShareEmail = profile["show_email"] == "on"
+	}
+	
 	return s.userRepo.Update(ctx, user)
 }
 

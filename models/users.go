@@ -16,7 +16,6 @@ type User struct {
 	EmailTokenExpiry sql.NullTime `bun:"email_token_expiry,nullzero"`
 	Password         string       `bun:"password,type:varchar(255)"`
 	Provider         Provider     `bun:"provider,type:varchar(255)"`
-	Theme            string       `bun:"theme,type:varchar(50),notnull,default:'system'"`
 	ShareEmail       bool         `bun:"share_email,type:boolean,notnull,default:false"`
 	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
 
