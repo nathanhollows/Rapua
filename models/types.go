@@ -49,7 +49,7 @@ const (
 
 const (
 	ProviderGoogle Provider = "google"
-	ProviderEmail  Provider = "email"
+	ProviderEmail  Provider = ""
 )
 
 // Value converts StrArray to a JSON string for database storage.
