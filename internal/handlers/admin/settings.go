@@ -46,7 +46,7 @@ func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Reques
 		"theme":           r.FormValue("theme"),
 		"show_email":      r.FormValue("show_email"),
 	}
-	
+
 	// Update the user in the database using the service
 	err = h.UserService.UpdateUserProfile(r.Context(), user, profileData)
 	if err != nil {
@@ -120,3 +120,27 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 	h.handleSuccess(w, r, "Security settings updated!")
 }
 
+// DeleteAccount handles account deletion
+func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "DeleteAccount: parse form", "Failed to parse form data", err)
+		return
+	}
+	// Confirm deletion
+	confirm := r.FormValue("confirm-email")
+	if confirm != user.Email {
+		h.handleError(w, r, "DeleteAccount", "Email confirmation does not match", nil)
+		return
+	}
+
+	err = h.UserService.DeleteUser(r.Context(), user.ID)
+	if err != nil {
+		h.handleError(w, r, "DeleteAccount", "Failed to delete account", err)
+		return
+	}
+
+	h.redirect(w, r, "/logout")
+}

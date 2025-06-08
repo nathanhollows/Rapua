@@ -420,16 +420,40 @@ templ SettingsSecurity(user models.User) {
 						type="button"
 						class="btn btn-error"
 						_="on click
-							if confirm('Are you sure you want to delete your account? This cannot be undone.')
-								fetch '/admin/settings/delete-account' {method: 'POST'}
-									then call location.href = '/logout'
-							end
+							confirm_delete_modal.showModal()
+						end
 						"
 					>Delete my account</button>
 				</div>
 			</div>
 		</div>
 	</div>
+	<dialog id="confirm_delete_modal" class="modal">
+		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete your account</h3>
+			<p class="pt-4">
+				You are about to delete your account. Doing this will wipe all data including:
+			</p>
+			<ul>
+				<li>games</li>
+				<li>historical play data</li>
+				<li>any uploaded media</li>
+				<li>templates</li>
+			</ul>
+			<p>This action cannot be undone. If you choose to register again, you will start with a clean slate.</p>
+			<p>Please enter your email address to confirm:</p>
+			<form
+				hx-delete="/admin/settings/delete-account"
+				hx-swap="none"
+			>
+				<input type="email" name="confirm-email" class="input input-bordered w-full"/>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
+					<button type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
 }
 
 templ SettingsBilling(user models.User) {
