@@ -289,7 +289,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Get("/security", adminHandler.SettingsSecurity)
 			r.Post("/security", adminHandler.SettingsSecurityPost)
 			r.Delete("/delete-account", adminHandler.DeleteAccount)
-			r.Get("/billing", adminHandler.SettingsBilling)
+			// r.Get("/billing", adminHandler.SettingsBilling)
 		})
 
 		r.NotFound(adminHandler.NotFound)
