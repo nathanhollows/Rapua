@@ -15,11 +15,6 @@ order: 100
 - Password change functionality for email-authenticated users with robust validation.
 - Client-side theme management using localStorage for persistent theme preferences across sessions.
 
-### Changed
-
-- Google-authenticated users now see a clear message explaining why password settings are unavailable.
-- Account deletion now requires email confirmation for additional security.
-
 ### Fixed
 
 - An issue preventing new users from creating markerless locations has been resolved.
