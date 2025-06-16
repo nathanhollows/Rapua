@@ -12,10 +12,18 @@ order: 100
 
 - User preferences system with customizable display name, theme selection, work type field, and email sharing controls.
 - Settings page for users to manage their profile and preferences.
+- Password change functionality for email-authenticated users with robust validation.
+- Client-side theme management using localStorage for persistent theme preferences across sessions.
+
+### Changed
+
+- Google-authenticated users now see a clear message explaining why password settings are unavailable.
+- Account deletion now requires email confirmation for additional security.
 
 ### Fixed
 
 - An issue preventing new users from creating markerless locations has been resolved.
+- Fixed theme flashing on page load by applying theme settings immediately in page header.
 - Locations now save clues correctly.
 - Locations now accept updates without coordinates, allowing for markerless locations.
 

@@ -13,9 +13,12 @@ import (
 	"github.com/nathanhollows/Rapua/v3/security"
 )
 
-// ErrPasswordsDoNotMatch is returned when the passwords do not match.
+// Password-related errors
 var (
-	ErrPasswordsDoNotMatch = errors.New("passwords do not match")
+	ErrPasswordsDoNotMatch    = errors.New("passwords do not match")
+	ErrIncorrectOldPassword   = errors.New("current password is incorrect")
+	ErrEmptyPassword          = errors.New("password cannot be empty")
+	ErrPasswordUpdateFailed   = errors.New("failed to update password")
 )
 
 type UserService interface {
@@ -30,6 +33,9 @@ type UserService interface {
 	
 	// UpdateUserProfile updates a user's profile with form data
 	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
+	
+	// ChangePassword changes a user's password
+	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
 	
 	// SwitchInstance switches the user's current instance
 	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
@@ -161,6 +167,44 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	}
 
 	return tx.Commit()
+}
+
+// ChangePassword changes a user's password
+func (s *userService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error {
+	// Make sure the user is using email/password authentication
+	if user.Provider != models.ProviderEmail {
+		return errors.New("cannot change password for SSO accounts")
+	}
+
+	// Check that new password is not empty first
+	if newPassword == "" {
+		return ErrEmptyPassword
+	}
+
+	// Check that new passwords match before verifying old password
+	if newPassword != confirmPassword {
+		return ErrPasswordsDoNotMatch
+	}
+
+	// Verify the old password
+	if !security.CheckPasswordHash(oldPassword, user.Password) {
+		return ErrIncorrectOldPassword
+	}
+
+	// Hash the new password
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("hashing password: %w", err)
+	}
+
+	// Update the user's password
+	user.Password = hashedPassword
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		return ErrPasswordUpdateFailed
+	}
+
+	return nil
 }
 
 // SwitchInstance implements InstanceService.

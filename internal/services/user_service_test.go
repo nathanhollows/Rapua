@@ -222,6 +222,73 @@ func TestUpdateUserProfile(t *testing.T) {
 	}
 }
 
+func TestChangePassword(t *testing.T) {
+	service, _, cleanup := setupUserService(t)
+	defer cleanup()
+
+	email := gofakeit.Email()
+	oldPassword := gofakeit.Password(true, true, true, true, false, 12)
+	newPassword := gofakeit.Password(true, true, true, true, false, 12)
+
+	// Create a user with email provider
+	user := &models.User{
+		Email:    email,
+		Password: oldPassword,
+		Provider: models.ProviderEmail,
+	}
+	err := service.CreateUser(context.Background(), user, oldPassword)
+	assert.NoError(t, err)
+
+	// Retrieve user to get the hashed password
+	retrievedUser, err := service.GetUserByEmail(context.Background(), email)
+	assert.NoError(t, err)
+	oldHashedPassword := retrievedUser.Password
+
+	// Test cases
+	t.Run("Successful password change", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, newPassword)
+		assert.NoError(t, err)
+
+		// Verify the password was changed in the database
+		updatedUser, err := service.GetUserByEmail(context.Background(), email)
+		assert.NoError(t, err)
+		assert.NotEqual(t, oldHashedPassword, updatedUser.Password)
+	})
+
+	t.Run("Incorrect old password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, "wrongPassword", newPassword, newPassword)
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrIncorrectOldPassword, err)
+	})
+
+	t.Run("Passwords don't match", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, "differentPassword")
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrPasswordsDoNotMatch, err)
+	})
+
+	t.Run("Empty new password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, "", "")
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrEmptyPassword, err)
+	})
+
+	// Create a user with Google provider
+	googleUser := &models.User{
+		Email:    gofakeit.Email(),
+		Password: "not-used-for-google",
+		Provider: models.ProviderGoogle,
+	}
+	err = service.CreateUser(context.Background(), googleUser, "not-used-for-google")
+	assert.NoError(t, err)
+
+	t.Run("Google user cannot change password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), googleUser, "any-password", newPassword, newPassword)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot change password for SSO accounts")
+	})
+}
+
 func TestDeleteUser(t *testing.T) {
 	service, _, cleanup := setupUserService(t)
 	defer cleanup()

@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 )
 
@@ -89,8 +90,7 @@ func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 
 // SettingsSecurityPost handles updating security settings like password
 func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
-	// Unused for now, but will be used for password verification
-	// user := h.UserFromContext(r.Context())
+	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
 	if err != nil {
@@ -103,15 +103,32 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 	newPassword := r.FormValue("new_password")
 	confirmPassword := r.FormValue("confirm_password")
 
-	if oldPassword != "" && newPassword != "" && confirmPassword != "" {
-		// Password handling logic would go here
-		// This is a placeholder for the actual implementation
-		if newPassword != confirmPassword {
-			h.handleError(w, r, "SettingsSecurityPost", "New passwords do not match", nil)
+	if oldPassword != "" || newPassword != "" || confirmPassword != "" {
+		// Check if all password fields are provided
+		if oldPassword == "" || newPassword == "" || confirmPassword == "" {
+			h.handleError(w, r, "SettingsSecurityPost", "All password fields are required", nil)
 			return
 		}
 
-		// You would add password verification and update logic here
+		// Call the service to change the password
+		err := h.UserService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
+		if err != nil {
+			var errorMessage string
+			switch err {
+			case services.ErrIncorrectOldPassword:
+				errorMessage = "Current password is incorrect"
+			case services.ErrPasswordsDoNotMatch:
+				errorMessage = "New passwords do not match"
+			case services.ErrEmptyPassword:
+				errorMessage = "Password cannot be empty"
+			default:
+				errorMessage = "Failed to update password"
+				h.Logger.Error("change password", "error", err.Error())
+			}
+			
+			h.handleError(w, r, "SettingsSecurityPost", errorMessage, err)
+			return
+		}
 
 		h.handleSuccess(w, r, "Password updated successfully!")
 		return
