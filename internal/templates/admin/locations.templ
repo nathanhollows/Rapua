@@ -458,14 +458,18 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				</ul>
 			</div>
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
-			<button
-				id="edit-location-btn"
-				class="btn btn-primary"
+			<form
+				id="edit-location"
 				hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
-				hx-swap="none"
-				hx-include="[form=edit-location]"
 				hx-trigger="click, keyup changed from:[form=edit-location] delay:500ms"
-			>Save</button>
+				hx-swap="none"
+			>
+				<button
+					id="edit-location-btn"
+					class="btn btn-primary"
+					type="submit"
+				>Save</button>
+			</form>
 		</div>
 	</div>
 	<div class="flex-grow mx-auto">
@@ -701,7 +705,6 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 								hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
 								hx-swap="innerHTML"
-								hx-indicator=".htmx-indicator"
 							></div>
 							<!-- /Demo -->
 						</div>
@@ -843,6 +846,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
         type="text"
         name="clues"
         class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
+		form="edit-location"
         placeholder="Add a clue"
         autoComplete="off"
         value="${value}"

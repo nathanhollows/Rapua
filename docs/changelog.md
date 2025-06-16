@@ -16,6 +16,8 @@ order: 100
 ### Fixed
 
 - An issue preventing new users from creating markerless locations has been resolved.
+- Locations now save clues correctly.
+- Locations now accept updates without coordinates, allowing for markerless locations.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.8.0)
 
