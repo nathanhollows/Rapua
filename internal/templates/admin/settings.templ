@@ -399,12 +399,12 @@ templ SettingsSecurity(user models.User) {
 							required
 							id="confirm_password"
 							_="on input 
-								if my value != document.getElementById('new_password').value then
+								if my value is not document.getElementById('new_password').value then
 									add .input-error to me
-									set #password-mismatch.classList.remove('hidden')
+									remove .hidden from #password-mismatch
 								else
 									remove .input-error from me
-									set #password-mismatch.classList.add('hidden')
+									add .hidden to #password-mismatch
 								end"
 						/>
 						<div class="label">
@@ -421,7 +421,7 @@ templ SettingsSecurity(user models.User) {
 								if #new_password.value != #confirm_password.value then
 									halt the event
 									add .input-error to #confirm_password
-									set #password-mismatch.classList.remove('hidden')
+									remove .hidden from #password-mismatch
 								end"
 						>Change Password</button>
 					</div>
