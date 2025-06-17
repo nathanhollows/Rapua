@@ -22,6 +22,28 @@ templ publicHeader(title string) {
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<!-- Apply theme from localStorage immediately to prevent flashing -->
+		<script>
+			(function() {
+				const theme = localStorage.getItem('theme') || 'system';
+				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				
+				if (theme === 'system') {
+					document.documentElement.setAttribute('data-theme', prefersDark ? 'dracula' : 'cupcake');
+				} else {
+					document.documentElement.setAttribute('data-theme', theme);
+				}
+				
+				// Listen for system preference changes if using system theme
+				if (theme === 'system') {
+					window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+						if (localStorage.getItem('theme') === 'system') {
+							document.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');
+						}
+					});
+				}
+			})();
+		</script>
 		<link rel="stylesheet" href="/static/css/tailwind.css"/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>

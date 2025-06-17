@@ -166,8 +166,7 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// These are out of range values that will be ignored
-	lat, lng := 200.0, 200.0
+	var lat, lng float64
 	if r.FormValue("latitude") != "" {
 		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
 		if err != nil {
@@ -182,11 +181,6 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 			h.handleError(w, r, "LocationEditPost: converting longitude", "Error converting longitude", "error", err)
 			return
 		}
-	}
-
-	if lat > 90 || lat < -90 || lng > 180 || lng < -180 && (lat != 200.0 && lng != 200.0) {
-		h.handleError(w, r, "LocationEditPost: invalid coordinates", "Invalid coordinates", "error", nil)
-		return
 	}
 
 	data := services.LocationUpdateData{

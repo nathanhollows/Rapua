@@ -281,6 +281,17 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Post("/upload", adminHandler.UploadMedia)
 		})
 
+		r.Route("/settings", func(r chi.Router) {
+			r.Get("/", adminHandler.Settings)
+			r.Get("/profile", adminHandler.SettingsProfile)
+			r.Post("/profile", adminHandler.SettingsProfilePost)
+			r.Get("/appearance", adminHandler.SettingsAppearance)
+			r.Get("/security", adminHandler.SettingsSecurity)
+			r.Post("/security", adminHandler.SettingsSecurityPost)
+			r.Delete("/delete-account", adminHandler.DeleteAccount)
+			// r.Get("/billing", adminHandler.SettingsBilling)
+		})
+
 		r.NotFound(adminHandler.NotFound)
 	})
 }

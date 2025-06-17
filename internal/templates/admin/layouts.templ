@@ -32,12 +32,38 @@ templ header(title string) {
 			content="width=device-width, initial-scale=1.0"
 		/>
 		<title>{ title } | Rapua</title>
+		
+		<!-- Theme initialization - must be before any CSS to prevent flashing -->
+		<script>
+			// Apply theme from localStorage immediately to prevent flashing
+			(function() {
+				const theme = localStorage.getItem('theme') || 'system';
+				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				
+				if (theme === 'system') {
+					document.documentElement.setAttribute('data-theme', prefersDark ? 'dracula' : 'cupcake');
+				} else {
+					document.documentElement.setAttribute('data-theme', theme);
+				}
+				
+				// Listen for system preference changes if using system theme
+				if (theme === 'system') {
+					window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+						if (localStorage.getItem('theme') === 'system') {
+							document.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');
+						}
+					});
+				}
+			})();
+		</script>
+		
 		<!-- CSS -->
 		<link rel="stylesheet" href="/static/css/tailwind.css"/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
+		
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
 		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js" defer></script>
@@ -142,6 +168,13 @@ templ nav(user models.User, section string) {
 									<a href="/pricing">
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign-icon lucide-dollar-sign w-6 h-6"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 										Contribute
+									</a>
+								</li>
+								<div class="divider my-0"></div>
+								<li>
+									<a href="/admin/settings">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings w-6 h-6"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+										Settings
 									</a>
 								</li>
 								<div class="divider my-0"></div>
@@ -274,6 +307,10 @@ templ nav(user models.User, section string) {
 					>
 						<li><a href="/docs/user">Read the docs</a></li>
 						<li><a href="/pricing">Contribute</a></li>
+						<div class="divider my-0"></div>
+						<li>
+							<a href="/admin/settings">Settings </a>
+						</li>
 						<div class="divider my-0"></div>
 						<li><a href="/logout">Sign out</a></li>
 					</ul>

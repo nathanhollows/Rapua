@@ -6,6 +6,26 @@ order: 100
 
 # Changelog
 
+## 3.8.0 (2025-06-16)
+
+### Added
+
+- User preferences system with customizable display name, theme selection, work type field, and email sharing controls.
+- Settings page for users to manage their profile and preferences.
+- Password change functionality for email-authenticated users with robust validation.
+- Client-side theme management using localStorage for persistent theme preferences across sessions.
+
+### Fixed
+
+- An issue preventing new users from creating markerless locations has been resolved.
+- Fixed theme flashing on page load by applying theme settings immediately in page header.
+- Locations now save clues correctly.
+- Locations now accept updates without coordinates, allowing for markerless locations.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.8.0)
+
+---
+
 ## 3.7.0 (29-04-2025)
 
 ### Added

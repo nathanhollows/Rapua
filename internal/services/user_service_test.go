@@ -104,6 +104,191 @@ func TestUpdateUser(t *testing.T) {
 	assert.Equal(t, newName, retrievedUser.Name)
 }
 
+func TestUpdateUserProfile(t *testing.T) {
+	service, _, cleanup := setupUserService(t)
+	defer cleanup()
+
+	email := gofakeit.Email()
+	password := gofakeit.Password(true, true, true, true, false, 12)
+
+	// Create initial user with some data
+	user := &models.User{
+		Email:    email,
+		Password: password,
+		Name:     "Initial Name",
+	}
+	user.DisplayName.String = "Initial Display"
+	user.DisplayName.Valid = true
+	user.WorkType.String = "formal_education"
+	user.WorkType.Valid = true
+	
+	err := service.CreateUser(context.Background(), user, password)
+	assert.NoError(t, err)
+
+	// Test cases
+	testCases := []struct {
+		name     string
+		profile  map[string]string
+		validate func(t *testing.T, user *models.User)
+	}{
+		{
+			name: "Full profile update",
+			profile: map[string]string{
+				"name":         "John Doe",
+				"display_name": "JD",
+				"show_email":   "on",
+				"work_type":    "corporate_training",
+			},
+			validate: func(t *testing.T, user *models.User) {
+				assert.Equal(t, "John Doe", user.Name)
+				assert.True(t, user.DisplayName.Valid)
+				assert.Equal(t, "JD", user.DisplayName.String)
+				assert.True(t, user.ShareEmail)
+				assert.True(t, user.WorkType.Valid)
+				assert.Equal(t, "corporate_training", user.WorkType.String)
+			},
+		},
+		{
+			name: "Only name and email setting update - preserves other fields",
+			profile: map[string]string{
+				"name":       "Jane Smith",
+				"show_email": "",  // Empty means unchecked
+			},
+			validate: func(t *testing.T, user *models.User) {
+				// Name and ShareEmail should change
+				assert.Equal(t, "Jane Smith", user.Name)
+				assert.False(t, user.ShareEmail)
+				
+				// Other fields should be preserved
+				assert.True(t, user.DisplayName.Valid)
+				assert.Equal(t, "JD", user.DisplayName.String)
+				assert.True(t, user.WorkType.Valid)
+				assert.Equal(t, "corporate_training", user.WorkType.String)
+			},
+		},
+		{
+			name: "Only work type update - preserves other fields",
+			profile: map[string]string{
+				"work_type":       "other",
+				"other_work_type": "Museum Curator",
+			},
+			validate: func(t *testing.T, user *models.User) {
+				// Work type should change
+				assert.True(t, user.WorkType.Valid)
+				assert.Equal(t, "Museum Curator", user.WorkType.String)
+				
+				// Other fields should be preserved
+				assert.Equal(t, "Jane Smith", user.Name)
+				assert.True(t, user.DisplayName.Valid)
+				assert.Equal(t, "JD", user.DisplayName.String)
+				assert.False(t, user.ShareEmail)
+			},
+		},
+		{
+			name: "Empty display name - only affects that field",
+			profile: map[string]string{
+				"display_name": "",
+			},
+			validate: func(t *testing.T, user *models.User) {
+				// Display name should be cleared
+				assert.False(t, user.DisplayName.Valid)
+				
+				// Other fields should be preserved
+				assert.Equal(t, "Jane Smith", user.Name)
+				assert.False(t, user.ShareEmail)
+				assert.True(t, user.WorkType.Valid)
+				assert.Equal(t, "Museum Curator", user.WorkType.String)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Get a fresh copy of the user for each test
+			currentUser, err := service.GetUserByEmail(context.Background(), email)
+			assert.NoError(t, err)
+			
+			// Update the profile
+			err = service.UpdateUserProfile(context.Background(), currentUser, tc.profile)
+			assert.NoError(t, err)
+			
+			// Retrieve the updated user
+			updatedUser, err := service.GetUserByEmail(context.Background(), email)
+			assert.NoError(t, err)
+			
+			// Validate fields
+			tc.validate(t, updatedUser)
+		})
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	service, _, cleanup := setupUserService(t)
+	defer cleanup()
+
+	email := gofakeit.Email()
+	oldPassword := gofakeit.Password(true, true, true, true, false, 12)
+	newPassword := gofakeit.Password(true, true, true, true, false, 12)
+
+	// Create a user with email provider
+	user := &models.User{
+		Email:    email,
+		Password: oldPassword,
+		Provider: models.ProviderEmail,
+	}
+	err := service.CreateUser(context.Background(), user, oldPassword)
+	assert.NoError(t, err)
+
+	// Retrieve user to get the hashed password
+	retrievedUser, err := service.GetUserByEmail(context.Background(), email)
+	assert.NoError(t, err)
+	oldHashedPassword := retrievedUser.Password
+
+	// Test cases
+	t.Run("Successful password change", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, newPassword)
+		assert.NoError(t, err)
+
+		// Verify the password was changed in the database
+		updatedUser, err := service.GetUserByEmail(context.Background(), email)
+		assert.NoError(t, err)
+		assert.NotEqual(t, oldHashedPassword, updatedUser.Password)
+	})
+
+	t.Run("Incorrect old password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, "wrongPassword", newPassword, newPassword)
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrIncorrectOldPassword, err)
+	})
+
+	t.Run("Passwords don't match", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, "differentPassword")
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrPasswordsDoNotMatch, err)
+	})
+
+	t.Run("Empty new password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, "", "")
+		assert.Error(t, err)
+		assert.Equal(t, services.ErrEmptyPassword, err)
+	})
+
+	// Create a user with Google provider
+	googleUser := &models.User{
+		Email:    gofakeit.Email(),
+		Password: "not-used-for-google",
+		Provider: models.ProviderGoogle,
+	}
+	err = service.CreateUser(context.Background(), googleUser, "not-used-for-google")
+	assert.NoError(t, err)
+
+	t.Run("Google user cannot change password", func(t *testing.T) {
+		err = service.ChangePassword(context.Background(), googleUser, "any-password", newPassword, newPassword)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot change password for SSO accounts")
+	})
+}
+
 func TestDeleteUser(t *testing.T) {
 	service, _, cleanup := setupUserService(t)
 	defer cleanup()

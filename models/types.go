@@ -13,6 +13,7 @@ type NavigationMode int
 type NavigationMethod int
 type CompletionMethod int
 type GameStatus int
+type Provider string
 
 type NavigationModes []NavigationMode
 type NavigationMethods []NavigationMethod
@@ -44,6 +45,11 @@ const (
 	Scheduled GameStatus = iota
 	Active
 	Closed
+)
+
+const (
+	ProviderGoogle Provider = "google"
+	ProviderEmail  Provider = ""
 )
 
 // Value converts StrArray to a JSON string for database storage.

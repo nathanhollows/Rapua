@@ -269,11 +269,15 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 	if data.Latitude >= -90 && data.Latitude <= 90 && data.Latitude != location.Marker.Lat {
 		location.Marker.Lat = data.Latitude
 		update = true
+	} else if data.Latitude < -90 || data.Latitude > 90 {
+		return fmt.Errorf("latitude must be between -90 and 90, got: %f", data.Latitude)
 	}
 
 	if data.Longitude >= -180 && data.Longitude <= 180 && data.Longitude != location.Marker.Lng {
 		location.Marker.Lng = data.Longitude
 		update = true
+	} else if data.Longitude < -180 || data.Longitude > 180 {
+		return fmt.Errorf("longitude must be between -180 and 180, got: %f", data.Longitude)
 	}
 
 	// To avoid updating markers that other games are using, we need to check if the marker is shared

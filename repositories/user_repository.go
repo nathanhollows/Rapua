@@ -54,11 +54,14 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 			// ID is immutable
 			// Provider is immutable
 			"name",
+			"display_name",
 			"email_token",
 			"email_token_expiry",
 			"email_verified",
 			"password",
 			"current_instance_id",
+			"share_email",
+			"work_type",
 			"updated_at").
 		WherePK().
 		Exec(ctx)

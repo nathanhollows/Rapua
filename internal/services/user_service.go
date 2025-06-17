@@ -13,9 +13,12 @@ import (
 	"github.com/nathanhollows/Rapua/v3/security"
 )
 
-// ErrPasswordsDoNotMatch is returned when the passwords do not match.
+// Password-related errors
 var (
-	ErrPasswordsDoNotMatch = errors.New("passwords do not match")
+	ErrPasswordsDoNotMatch    = errors.New("passwords do not match")
+	ErrIncorrectOldPassword   = errors.New("current password is incorrect")
+	ErrEmptyPassword          = errors.New("password cannot be empty")
+	ErrPasswordUpdateFailed   = errors.New("failed to update password")
 )
 
 type UserService interface {
@@ -27,6 +30,13 @@ type UserService interface {
 
 	// UpdateUser updates a user
 	UpdateUser(ctx context.Context, user *models.User) error
+	
+	// UpdateUserProfile updates a user's profile with form data
+	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
+	
+	// ChangePassword changes a user's password
+	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
+	
 	// SwitchInstance switches the user's current instance
 	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
 
@@ -73,6 +83,52 @@ func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Update(ctx, user)
 }
 
+// UpdateUserProfile updates a user's profile information
+// Only updates the fields that are present in the profile map
+func (s *userService) UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error {
+	// Update basic fields only if provided
+	if name, exists := profile["name"]; exists {
+		user.Name = name
+	}
+	
+	// Handle nullable display name field if provided
+	if displayName, exists := profile["display_name"]; exists {
+		if displayName != "" {
+			user.DisplayName.String = displayName
+			user.DisplayName.Valid = true
+		} else {
+			user.DisplayName.Valid = false
+		}
+	}
+	
+	// Handle work type if provided
+	if workType, exists := profile["work_type"]; exists {
+		if workType == "other" {
+			otherWorkType, hasOther := profile["other_work_type"]
+			if hasOther && otherWorkType != "" {
+				user.WorkType.String = otherWorkType
+				user.WorkType.Valid = true
+			} else {
+				user.WorkType.Valid = false
+			}
+		} else if workType != "" {
+			user.WorkType.String = workType
+			user.WorkType.Valid = true
+		} else {
+			user.WorkType.Valid = false
+		}
+	}
+	
+	// Theme is handled client-side with localStorage
+	
+	// Handle share email checkbox only if provided
+	if _, exists := profile["show_email"]; exists {
+		user.ShareEmail = profile["show_email"] == "on"
+	}
+	
+	return s.userRepo.Update(ctx, user)
+}
+
 // GetUserByEmail retrieves a user by their email address.
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return s.userRepo.GetByEmail(ctx, email)
@@ -111,6 +167,44 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	}
 
 	return tx.Commit()
+}
+
+// ChangePassword changes a user's password
+func (s *userService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error {
+	// Make sure the user is using email/password authentication
+	if user.Provider != models.ProviderEmail {
+		return errors.New("cannot change password for SSO accounts")
+	}
+
+	// Check that new password is not empty first
+	if newPassword == "" {
+		return ErrEmptyPassword
+	}
+
+	// Check that new passwords match before verifying old password
+	if newPassword != confirmPassword {
+		return ErrPasswordsDoNotMatch
+	}
+
+	// Verify the old password
+	if !security.CheckPasswordHash(oldPassword, user.Password) {
+		return ErrIncorrectOldPassword
+	}
+
+	// Hash the new password
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("hashing password: %w", err)
+	}
+
+	// Update the user's password
+	user.Password = hashedPassword
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		return ErrPasswordUpdateFailed
+	}
+
+	return nil
 }
 
 // SwitchInstance implements InstanceService.

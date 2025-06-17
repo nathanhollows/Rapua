@@ -208,17 +208,16 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 				</label>
 			}
 		</div>
-		if len(duplicatable) > 0 {
-			<div role="tablist" class="tabs tabs-boxed font-bold">
-				<a
-					id="new-marker-tab"
-					role="tab"
-					if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
-						class="tab transition-colors"
-					} else {
-						class="tab transition-colors tab-active"
-					}
-					_="on click 
+		<div role="tablist" class="tabs tabs-boxed font-bold">
+			<a
+				id="new-marker-tab"
+				role="tab"
+				if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+					class="tab transition-colors"
+				} else {
+					class="tab transition-colors tab-active"
+				}
+				_="on click 
 				if I do not match .tab-active
 					remove .tab-active from .tab-active
 					toggle .tab-active
@@ -231,7 +230,8 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					set <input[name=latitude]/>'s disabled to false
 					set <input[name=longitude]/>'s disabled to false
 			"
-				>New map marker</a>
+			>New map marker</a>
+			if len(duplicatable) > 0 {
 				<a
 					role="tab"
 					class="tab transition-colors group"
@@ -265,11 +265,12 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 						</div>
 					</div>
 				</a>
-				if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
-					<a
-						role="tab"
-						class="tab transition-colors tab-active group"
-						_="on click
+			}
+			if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+				<a
+					role="tab"
+					class="tab transition-colors tab-active group"
+					_="on click
 							if I do not match .tab-active
 								remove .tab-active from .tab-active
 								toggle .tab-active
@@ -295,28 +296,27 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 						end
 						end
 						"
-					>
-						No map marker
-						<div class="dropdown dropdown-end dropdown-hover">
-							<div tabindex="0" role="button" class="text-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-							</div>
-							<div
-								tabindex="0"
-								class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
-							>
-								<div tabindex="0" class="card-body">
-									<h2 class="card-title">No map marker</h2>
-									<p>
-										Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
-									</p>
-								</div>
+				>
+					No map marker
+					<div class="dropdown dropdown-end dropdown-hover">
+						<div tabindex="0" role="button" class="text-info">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+						</div>
+						<div
+							tabindex="0"
+							class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+						>
+							<div tabindex="0" class="card-body">
+								<h2 class="card-title">No map marker</h2>
+								<p>
+									Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
+								</p>
 							</div>
 						</div>
-					</a>
-				}
-			</div>
-		}
+					</div>
+				</a>
+			}
+		</div>
 		if len(neighbouring) > 0 {
 			for _, location := range neighbouring {
 				if location.Marker.IsMapped() {
@@ -458,14 +458,18 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				</ul>
 			</div>
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
-			<button
-				id="edit-location-btn"
-				class="btn btn-primary"
+			<form
+				id="edit-location"
 				hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
-				hx-swap="none"
-				hx-include="[form=edit-location]"
 				hx-trigger="click, keyup changed from:[form=edit-location] delay:500ms"
-			>Save</button>
+				hx-swap="none"
+			>
+				<button
+					id="edit-location-btn"
+					class="btn btn-primary"
+					type="submit"
+				>Save</button>
+			</form>
 		</div>
 	</div>
 	<div class="flex-grow mx-auto">
@@ -701,7 +705,6 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 								hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
 								hx-swap="innerHTML"
-								hx-indicator=".htmx-indicator"
 							></div>
 							<!-- /Demo -->
 						</div>
@@ -843,6 +846,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
         type="text"
         name="clues"
         class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
+		form="edit-location"
         placeholder="Add a clue"
         autoComplete="off"
         value="${value}"

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -45,9 +46,10 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	// Try to authenticate the user
 	user, err := h.AuthService.AuthenticateUser(r.Context(), email, password)
-
 	if err != nil {
-		h.Logger.Error("authenticating user", "err", err)
+		if !errors.Is(err, sql.ErrNoRows) {
+			h.Logger.Error("authenticating user", "err", err)
+		}
 		w.WriteHeader(http.StatusUnauthorized)
 		c := templates.LoginError("Invalid email or password.")
 		err = c.Render(r.Context(), w)
