@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 3.8.1 (2025-06-18)
+
+### Fixed
+
+- Fixed an issue where every clue was shown to every player [#66](https://github.com/nathanhollows/Rapua/issues/66).
+
 ## 3.8.0 (2025-06-16)
 
 ### Added
@@ -26,7 +32,7 @@ order: 100
 
 ---
 
-## 3.7.0 (29-04-2025)
+## 3.7.0 (2025-04-29)
 
 ### Added
 

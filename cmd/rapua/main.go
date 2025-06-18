@@ -41,7 +41,7 @@ func main() {
 		Name:        "Rapua",
 		Usage:       "rapua [global options] command [command options] [arguments...]",
 		Description: `An open-source platform for location-based games.`,
-		Version:     "3.7.0",
+		Version:     "3.8.1",
 		Commands: []*cli.Command{
 			newDBCommand(migrator),
 		},

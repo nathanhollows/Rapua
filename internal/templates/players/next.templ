@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v3/models"
+	"hash/fnv"
 )
 
 templ Next(team models.Team, locations []models.Location) {
@@ -33,7 +34,7 @@ templ Next(team models.Team, locations []models.Location) {
 				case 2:
 					@showNames(team, locations)
 				case 3:
-					@showClues(locations)
+					@showClues(team.Code, locations)
 			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center mt-12">
@@ -112,7 +113,7 @@ templ showNames(team models.Team, locations []models.Location) {
 	}
 }
 
-templ showClues(locations []models.Location) {
+templ showClues(seed string, locations []models.Location) {
 	<p class="text-center pb-5">
 		Solve a clue to find the next location. 
 		<br/>
@@ -127,15 +128,24 @@ templ showClues(locations []models.Location) {
 					</span>
 				</div>
 			</div>
-		}
-		for _, clue := range location.Clues {
+		} else {
 			<div class="prose">
 				<blockquote class="m-1">
-					<p>{ clue.Content }</p>
+					<p>{ chooseClue(seed, location.Clues).Content }</p>
 				</blockquote>
 			</div>
 		}
 	}
+}
+
+func chooseClue(seed string, clues []models.Clue) models.Clue {
+	if len(clues) == 0 {
+		return models.Clue{Content: "No clues available."}
+	}
+	h := fnv.New32a()
+	h.Write([]byte(seed))
+	index := h.Sum32() % uint32(len(clues))
+	return clues[index]
 }
 
 templ mapScript() {
