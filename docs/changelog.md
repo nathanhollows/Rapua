@@ -11,6 +11,8 @@ order: 100
 ### Fixed
 
 - Fixed an issue where every clue was shown to every player [#66](https://github.com/nathanhollows/Rapua/issues/66).
+- Blocks now keep their order when replicated for templates [#68](https://github.com/nathanhollows/Rapua/issues/68).
+
 
 ## 3.8.0 (2025-06-16)
 
