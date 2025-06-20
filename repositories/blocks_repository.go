@@ -83,7 +83,7 @@ func (r *blockRepository) Create(ctx context.Context, block blocks.Block, locati
 		LocationID:         locationID,
 		Type:               block.GetType(),
 		Data:               block.GetData(),
-		Ordering:           1e4,
+		Ordering:           block.GetOrder(),
 		Points:             block.GetPoints(),
 		ValidationRequired: block.RequiresValidation(),
 	}

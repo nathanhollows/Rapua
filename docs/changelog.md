@@ -6,6 +6,17 @@ order: 100
 
 # Changelog
 
+## 3.8.1 (2025-06-18)
+
+### Fixed
+
+- Fixed an issue where every clue was shown to every player [#66](https://github.com/nathanhollows/Rapua/issues/66).
+- Blocks now keep their order when replicated for templates [#68](https://github.com/nathanhollows/Rapua/issues/68).
+- Dependent/blocking settings were not being honoured or enforced [#70](https://github.com/nathanhollows/Rapua/issues/68).
+- Minor bugs in template preview rendering
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.8.1)
+
 ## 3.8.0 (2025-06-16)
 
 ### Added
@@ -26,7 +37,7 @@ order: 100
 
 ---
 
-## 3.7.0 (29-04-2025)
+## 3.7.0 (2025-04-29)
 
 ### Added
 

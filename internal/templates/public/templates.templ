@@ -3,7 +3,6 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v3/models"
-	"time"
 )
 
 templ TemplatePeview(link models.ShareLink, authed bool) {
@@ -178,7 +177,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								Created { link.CreatedAt.Format("2 Jan 2006") }
 							</li>
 							<li>
-								if !link.ExpiresAt.After(link.CreatedAt.Add(100 * 365 * 24 * time.Hour)) {
+								if !link.ExpiresAt.IsZero() {
 									<span
 										class="tooltip cursor-help underline decoration-dashed"
 										data-tip="This link is temporary and will expire."
@@ -246,7 +245,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 							</li>
 							<li>
 								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.NavigationMethod.Description() }>
-									Showing { link.Template.Settings.NavigationMethod.String() }
+									{ link.Template.Settings.NavigationMethod.String() }
 								</span>
 							</li>
 							if link.Template.Settings.EnablePoints {
@@ -368,6 +367,9 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
     let coords = [170.5111643, -45.8650509];
     let zoom = 17;
     for (let i = 0; i < locations.length; i++) {
+		if (!locations[i].dataset.lat || !locations[i].dataset.lng) {
+			continue; // Skip if lat or lng is not set
+		}
       const lat = parseFloat(locations[i].dataset.lat);
       const lng = parseFloat(locations[i].dataset.lng);
       if (lat !== 0 && lng !== 0) {
@@ -375,6 +377,12 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
         break;
       }
     }
+	// If coords are the same, hide the map container and return early
+	if (coords[0] === 170.5111643 && coords[1] === -45.8650509) {
+	  document.getElementById('map-container').style.display = 'none';
+	  return;
+	}
+	
 
     // Clear any existing markers
     markerArray.forEach(marker => marker.remove());
