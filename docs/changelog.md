@@ -15,6 +15,7 @@ order: 100
 - Dependent/blocking settings were not being honoured or enforced [#70](https://github.com/nathanhollows/Rapua/issues/68).
 - Minor bugs in template preview rendering
 
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.8.1)
 
 ## 3.8.0 (2025-06-16)
 
