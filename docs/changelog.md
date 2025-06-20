@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 3.9.0
+
+### Fixed
+
+- Roadmap no longer shows completed items.
+
 ## 3.8.1 (2025-06-18)
 
 ### Fixed
