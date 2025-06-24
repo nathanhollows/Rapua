@@ -58,6 +58,7 @@ var registeredBlocks = Blocks{
 	&PincodeBlock{},
 	&ChecklistBlock{},
 	&SortingBlock{},
+	&QuizBlock{},
 	// &PhotoBlock{},
 }
 
@@ -85,6 +86,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewImageBlock(baseBlock), nil
 	case "sorting":
 		return NewSortingBlock(baseBlock), nil
+	case "quiz_block":
+		return NewQuizBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
