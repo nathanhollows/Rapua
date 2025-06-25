@@ -27,7 +27,11 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 
 	state, block, err := h.GameplayService.ValidateAndUpdateBlockState(r.Context(), *team, data)
 	if err != nil {
-		h.Logger.Error("validateBlock: validating and updating block state", "Something went wrong. Please try again.", err, "block", block.GetID(), "team", team.Code)
+		blockID := "unknown"
+		if block != nil {
+			blockID = block.GetID()
+		}
+		h.Logger.Error("validateBlock: validating and updating block state", "Something went wrong. Please try again.", err, "block", blockID, "team", team.Code)
 		return
 	}
 
