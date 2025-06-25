@@ -210,6 +210,7 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 			</form>
 		</div>
 	</div>
+	@SortingJS()
 	<script>
 		// Initialize sortable functionality on the sort container
 		document.addEventListener('DOMContentLoaded', function() {
@@ -472,6 +473,10 @@ Sort the items below in the correct order."
 			</div>
 		</div>
 	</form>
+	@SortingJS()
+}
+
+templ SortingJS() {
 	<script>
 	function addSortingItem(event) {
 		event.preventDefault();
