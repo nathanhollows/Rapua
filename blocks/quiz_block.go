@@ -130,6 +130,18 @@ func (b *QuizBlock) UpdateBlockData(input map[string][]string) error {
 		b.Options = append(b.Options, option)
 	}
 
+	// Validate that at least one option is marked as correct
+	hasCorrectOption := false
+	for _, option := range b.Options {
+		if option.IsCorrect {
+			hasCorrectOption = true
+			break
+		}
+	}
+	if len(b.Options) > 0 && !hasCorrectOption {
+		return errors.New("at least one option must be marked as correct")
+	}
+
 	return nil
 }
 
@@ -152,7 +164,25 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	// Get player's selected options from input
 	selectedOptions, exists := input["quiz_option"]
 	if !exists || len(selectedOptions) == 0 {
-		return state, errors.New("at least one option must be selected")
+		// For no selection, return the current state without changes but mark as having an attempt
+		var playerData QuizPlayerData
+		if state.GetPlayerData() != nil {
+			if err := json.Unmarshal(state.GetPlayerData(), &playerData); err != nil {
+				return state, fmt.Errorf("failed to parse player data: %w", err)
+			}
+		}
+		playerData.Attempts++
+		playerData.SelectedOptions = []string{}
+		playerData.IsCorrect = false
+		
+		newPlayerData, err := json.Marshal(playerData)
+		if err != nil {
+			return state, fmt.Errorf("failed to save player data: %w", err)
+		}
+		newState.SetPlayerData(newPlayerData)
+		newState.SetComplete(false)
+		newState.SetPointsAwarded(0)
+		return newState, nil
 	}
 
 	// Store the player's selections and increment attempts

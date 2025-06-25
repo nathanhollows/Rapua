@@ -153,21 +153,30 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 
 	state := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
 
-	// Test no selection
+	// Test no selection - should not error but mark as incomplete with 1 attempt
 	input := map[string][]string{}
-	_, err := block.ValidatePlayerInput(state, input)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "at least one option must be selected")
-
-	// Test correct answer
-	input = map[string][]string{"quiz_option": {"option_1"}}
 	newState, err := block.ValidatePlayerInput(state, input)
+	assert.NoError(t, err)
+	assert.False(t, newState.IsComplete())
+	assert.Equal(t, 0, newState.GetPointsAwarded())
+	
+	// Verify player data shows 1 attempt with no selections
+	var playerData QuizPlayerData
+	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 1, playerData.Attempts)
+	assert.Empty(t, playerData.SelectedOptions)
+	assert.False(t, playerData.IsCorrect)
+
+	// Test correct answer (use fresh state)
+	freshState := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	input = map[string][]string{"quiz_option": {"option_1"}}
+	newState, err = block.ValidatePlayerInput(freshState, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 
 	// Verify player data
-	var playerData QuizPlayerData
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"option_1"}, playerData.SelectedOptions)
