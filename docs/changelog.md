@@ -8,6 +8,10 @@ order: 100
 
 ## 3.9.0
 
+### Added
+
+- [Template](/docs/user/templates) links can now include hashes to specific locations, allowing admins to share direct links to specific parts of a game.
+
 ### Fixed
 
 - Roadmap no longer shows completed items.
