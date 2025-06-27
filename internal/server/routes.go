@@ -58,7 +58,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceService,
 				middlewares.TeamMiddleware(playerHandler.TeamService,
 					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
@@ -68,7 +68,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceService,
 				middlewares.TeamMiddleware(playerHandler.TeamService,
 					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
@@ -78,7 +78,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceService,
 				middlewares.TeamMiddleware(playerHandler.TeamService,
 					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})
@@ -117,7 +117,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService,
+			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceService,
 				middlewares.TeamMiddleware(playerHandler.TeamService,
 					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
 		})

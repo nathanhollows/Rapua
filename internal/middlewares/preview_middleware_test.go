@@ -24,6 +24,16 @@ func (d *dummyTeamService) FindTeamByCode(ctx context.Context, code string) (*mo
 	return nil, nil
 }
 
+// dummyInstanceService is a stub implementation of instanceService.
+type dummyInstanceService struct{}
+
+func (d *dummyInstanceService) GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
+	return &models.InstanceSettings{
+		InstanceID:   instanceID,
+		EnablePoints: true,
+	}, nil
+}
+
 // TestPreviewMiddleware_NonPreview ensures that when the request is not a preview, the middleware simply passes the request along.
 func TestPreviewMiddleware_NonPreview(t *testing.T) {
 	nextCalled := false
@@ -35,8 +45,9 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	dummyService := &dummyTeamService{}
-	middleware := PreviewMiddleware(dummyService, nextHandler)
+	dummyTeamService := &dummyTeamService{}
+	dummyInstanceService := &dummyInstanceService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
 
 	// Create a request without preview headers.
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/", nil)
@@ -67,8 +78,9 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	dummyService := &dummyTeamService{}
-	middleware := PreviewMiddleware(dummyService, nextHandler)
+	dummyTeamService := &dummyTeamService{}
+	dummyInstanceService := &dummyInstanceService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
 
 	// Create a preview request (HX-Request header is "true" and referer starts with "/templates")
 	// but without an "instanceID" form value.
@@ -103,8 +115,9 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	dummyService := &dummyTeamService{}
-	middleware := PreviewMiddleware(dummyService, nextHandler)
+	dummyTeamService := &dummyTeamService{}
+	dummyInstanceService := &dummyInstanceService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
 
 	// Create a preview request with a valid instanceID.
 	form := url.Values{}

@@ -18,8 +18,12 @@ type teamService interface {
 	FindTeamByCode(context.Context, string) (*models.Team, error)
 }
 
+type instanceService interface {
+	GetInstanceSettings(context.Context, string) (*models.InstanceSettings, error)
+}
+
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
-func PreviewMiddleware(teamService teamService, next http.Handler) http.Handler {
+func PreviewMiddleware(teamService teamService, instanceService instanceService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isPreviewRequest(r) {
 			next.ServeHTTP(w, r)
@@ -43,10 +47,22 @@ func PreviewMiddleware(teamService teamService, next http.Handler) http.Handler 
 			return
 		}
 
+		// Load the instance settings separately to avoid team-related queries
+		settings, err := instanceService.GetInstanceSettings(r.Context(), team.InstanceID)
+		if err != nil {
+			slog.Error("preview middleware: failed to load instance settings", "err", err, "instanceID", team.InstanceID)
+			// Fall back to default settings if loading fails
+			settings = &models.InstanceSettings{
+				InstanceID:   team.InstanceID,
+				EnablePoints: true, // Default to enabled for preview
+			}
+		}
+
 		team.Instance = models.Instance{
 			ID:        team.InstanceID,
 			StartTime: schema.NullTime{Time: time.Now()},
 			EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
+			Settings:  *settings,
 		}
 
 		ctx := context.WithValue(r.Context(), contextkeys.TeamKey, &team)
