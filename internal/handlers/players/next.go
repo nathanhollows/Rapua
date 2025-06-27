@@ -28,9 +28,12 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
-	c := templates.Next(*team, locations)
-	err = templates.Layout(c, "Next stops", team.Messages).Render(r.Context(), w)
+	// If the user is in preview mode, only render the template, not the full layout.
+	template := templates.Next(*team, locations)
+	if r.Context().Value(contextkeys.PreviewKey) == nil {
+		template = templates.Layout(template, "Next stops", team.Messages)
+	}
+	err = template.Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "Next: rendering template", "Error rendering template", "Could not render template", err)
 	}
