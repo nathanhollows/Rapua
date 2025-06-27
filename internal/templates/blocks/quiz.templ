@@ -93,21 +93,6 @@ templ quizResults(block blocks.QuizBlock, data blocks.PlayerState) {
 				</label>
 			}
 		</div>
-		if playerData.IsCorrect {
-			<div class="alert alert-success">
-				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-				<span>Correct!</span>
-			</div>
-		} else {
-			<div class="alert alert-warning">
-				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path></svg>
-				if data.GetPointsAwarded() > 0 {
-					<span>Partially correct.</span>
-				} else {
-					<span>Incorrect answer.</span>
-				}
-			</div>
-		}
 	}
 }
 
@@ -156,6 +141,16 @@ templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data 
 							</label>
 						}
 					</div>
+					if block.RetryEnabled {
+						// Get player data to check attempts and show feedback
+						if playerData, err := getQuizPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 {
+							if len(playerData.SelectedOptions) == 0 {
+								<p class="p-4 pb-0 text-primary font-bold text-center">Please select an option to continue (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
+							} else if !playerData.IsCorrect {
+								<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
+							}
+						}
+					}
 					<div class="flex justify-center mt-4">
 						<button
 							type="submit"
@@ -184,7 +179,6 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
-		hx-swap-oob="true"
 	>
 		if settings.EnablePoints && block.Points > 0 {
 			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
@@ -193,7 +187,7 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			// Render question
 			@templ.Raw(stringToMarkdown(block.Question))
-			if !data.IsComplete() || (block.RetryEnabled && data.IsComplete()) {
+			if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
 				<form
 					id={ fmt.Sprintf("quiz-form-%s", block.ID) }
 					hx-post="/blocks/validate"
@@ -226,13 +220,27 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 							</label>
 						}
 					</div>
+					if block.RetryEnabled {
+						// Get player data to check attempts and show feedback
+						if playerData, err := getQuizPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 {
+							if len(playerData.SelectedOptions) == 0 {
+								<p class="p-4 pb-0 text-primary font-bold text-center">Please select an option to continue (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
+							} else if !playerData.IsCorrect {
+								<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
+							}
+						}
+					}
 					<div class="flex justify-center mt-4">
 						<button
 							type="submit"
 							class="btn btn-primary"
 							id={ fmt.Sprintf("submit-btn-%s", block.ID) }
 						>
-							Check
+							if block.RetryEnabled {
+								Check
+							} else {
+								Submit
+							}
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
 						</button>
 					</div>
@@ -326,7 +334,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 					type="checkbox"
 					name="randomize_order"
 					class="toggle"
-					checked?={ block.MultipleChoice }
+					checked?={ block.RandomizeOrder }
 				/>
 			</label>
 		</div>
@@ -375,7 +383,12 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				}
 				// Empty slots for new options (minimum 2 total)
 				for i := len(block.Options); i < 2; i++ {
-					@quizOptionAdmin(i, blocks.QuizOption{}, block.MultipleChoice)
+					// For the first option when creating a new quiz, set it as correct by default
+					if len(block.Options) == 0 && i == 0 {
+						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: true}, block.MultipleChoice)
+					} else {
+						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: false}, block.MultipleChoice)
+					}
 				}
 			</div>
 			<span
