@@ -259,7 +259,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
-		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, change from:(#form-%s input, #form-%s select) delay:100ms, click from:(#form-%s button) delay:100ms", block.ID, block.ID, block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, change from:(#form-%s input, #form-%s select) delay:100ms, click from:(#form-%s button) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
 		// Points setting
@@ -354,14 +354,18 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 			<div class="label font-bold flex justify-between">
 				<span class="label-text">Answer Options</span>
 				<button
-					class="add-btn btn btn-outline btn-xs"
+					class="btn btn-outline btn-xs"
 					type="button"
 					_="
 						on click
-						set :group to closest <form />
-						set :el to next <label />
-						put :el's outerHTML at the end of :group.querySelector('.quiz-options')
-						send triggerUpdate to :group.querySelector('.quiz-options')
+							set :group to closest <form />
+							put #quiz-option-template's innerHTML after last .quiz-option in :group.querySelector('.quiz-options')
+							if :group.querySelectorAll('input[name=multiple_choice]:checked').length then
+								remove <input[type=radio] /> from last <label /> in :group
+							else
+								remove <input[type=checkbox] /> from last <label /> in :group
+							end
+							set @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )
 						"
 				>
 					Add Option
@@ -407,11 +411,47 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				At least one option must be correct.
 			</span>
 		</div>
+		<template id="quiz-option-template">
+			<label class="quiz-option join-item input input-bordered flex flex-row items-top gap-2 h-auto w-full">
+				<input
+					type="checkbox"
+					name="option_correct"
+					class="checkbox checkbox-sm checkbox-success mt-3"
+					_="on change send save to (closest <form/>)"
+				/>
+				<input
+					type="radio"
+					name="option_correct"
+					class="radio radio-sm radio-success mt-3"
+					_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
+				/>
+				<input
+					name="option_text"
+					class={ fmt.Sprintf("w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent item-%s", "") }
+					style="field-sizing: content;"
+					placeholder="Answer option..."
+					autoComplete="off"
+					_="on keyup send save to (closest <form/>)"
+				/>
+				<button
+					type="button"
+					class="btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible"
+					data-tip="Delete"
+					_="on click
+				set :group to closest <form />
+				remove closest parent <label />
+				send triggerUpdate to :group.querySelector('.quiz-options')
+				"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+				</button>
+			</label>
+		</template>
 	</form>
 }
 
 templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool) {
-	<label class="join-item input input-bordered flex flex-row items-top gap-2 h-auto w-full">
+	<label class="quiz-option join-item input input-bordered flex flex-row items-top gap-2 h-auto w-full">
 		if isMultipleChoice {
 			<input
 				type="checkbox"
@@ -419,6 +459,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 				value={ fmt.Sprintf("option_%d", index) }
 				class="checkbox checkbox-sm checkbox-success mt-3"
 				checked?={ option.IsCorrect }
+				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 			/>
 		} else {
 			<input
@@ -427,6 +468,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 				value={ fmt.Sprintf("option_%d", index) }
 				class="radio radio-sm radio-success mt-3"
 				checked?={ option.IsCorrect }
+				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 			/>
 		}
 		<input
@@ -436,6 +478,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 			placeholder="Answer option..."
 			value={ option.Text }
 			autoComplete="off"
+			_="on keyup send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 		/>
 		<button
 			type="button"
