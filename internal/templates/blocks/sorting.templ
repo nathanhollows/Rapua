@@ -115,7 +115,6 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 
 				// Use deterministic shuffle based on blockID and playerID
 				shuffledIDs := deterministicShuffle(itemIDs, block.GetID()+data.GetPlayerID())
-				fmt.Printf("Shuffled IDs for first display: %v\n", shuffledIDs)
 
 				for _, id := range shuffledIDs {
 					if item, ok := itemMap[id]; ok {
