@@ -201,11 +201,22 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	newState.SetPlayerData(newPlayerData)
 
 	// Mark as complete and award points
-	// For retry-enabled blocks, only mark complete if correct or retry is disabled
-	if b.RetryEnabled && !isCorrect {
-		newState.SetComplete(false)
-		newState.SetPointsAwarded(0)
+	if b.RetryEnabled {
+		// For retry-enabled blocks, only mark complete if perfect score
+		if isCorrect {
+			newState.SetComplete(true)
+			newState.SetPointsAwarded(points)
+		} else {
+			newState.SetComplete(false)
+			// Award partial points for multiple choice even when not complete
+			if b.MultipleChoice {
+				newState.SetPointsAwarded(points)
+			} else {
+				newState.SetPointsAwarded(0)
+			}
+		}
 	} else {
+		// For non-retry blocks, always complete and award calculated points
 		newState.SetComplete(true)
 		newState.SetPointsAwarded(points)
 	}
@@ -233,36 +244,30 @@ func (b *QuizBlock) calculatePoints(selectedOptions []string) (int, bool) {
 	}
 
 	if b.MultipleChoice {
-		// Multiple choice: partial points for correct selections
-		correctSelections := 0
-		incorrectSelections := 0
-
+		// Multiple choice: proportional scoring based on correct/incorrect answers
+		correctAnswers := 0
+		
+		// Count how many options are answered correctly (checked if should be checked, unchecked if should be unchecked)
+		selectedSet := make(map[string]bool)
 		for _, selectedID := range selectedOptions {
-			if correctOptions[selectedID] {
-				correctSelections++
-			} else {
-				incorrectSelections++
+			selectedSet[selectedID] = true
+		}
+		
+		for _, option := range b.Options {
+			// Correct if: (option is correct AND selected) OR (option is incorrect AND not selected)
+			if (option.IsCorrect && selectedSet[option.ID]) || (!option.IsCorrect && !selectedSet[option.ID]) {
+				correctAnswers++
 			}
 		}
-
-		// Perfect match gets full points
-		if correctSelections == totalCorrect && incorrectSelections == 0 {
-			return b.Points, true
-		}
-
-		// Partial points: (correct selections / total correct) * points - penalty for incorrect
-		if correctSelections > 0 {
-			ratio := float64(correctSelections) / float64(totalCorrect)
-			penalty := float64(incorrectSelections) / float64(len(b.Options))
-			finalRatio := ratio - penalty
-			if finalRatio < 0 {
-				finalRatio = 0
-			}
-			partialPoints := int(finalRatio * float64(b.Points))
-			return partialPoints, false
-		}
-
-		return 0, false
+		
+		// Calculate proportional points: round(points * (correct/total))
+		ratio := float64(correctAnswers) / float64(len(b.Options))
+		points := int(float64(b.Points)*ratio + 0.5) // +0.5 for rounding
+		
+		// Perfect score means all correct
+		isCorrect := correctAnswers == len(b.Options)
+		
+		return points, isCorrect
 	} else {
 		// Single choice: all or nothing
 		if len(selectedOptions) == 1 && correctOptions[selectedOptions[0]] {

@@ -234,9 +234,9 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	
-	// Should get partial points: (1 correct / 2 total correct) * 100 - (1 incorrect / 4 total) * 100
-	// = 0.5 * 100 - 0.25 * 100 = 50 - 25 = 25
-	assert.Equal(t, 25, newState.GetPointsAwarded())
+	// Should get partial points: 2 out of 4 correct = round(100 * 0.50) = 50
+	// Python selected (correct), HTML selected (incorrect), JavaScript not selected (incorrect), CSS not selected (correct)
+	assert.Equal(t, 50, newState.GetPointsAwarded())
 
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 	require.NoError(t, err)
@@ -249,19 +249,23 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	
-	// Should get partial points: (1 correct / 2 total correct) * 100 = 50
-	assert.Equal(t, 50, newState.GetPointsAwarded())
+	// Should get partial points: 3 out of 4 correct = round(100 * 0.75) = 75
+	// Python selected (correct), HTML not selected (correct), JavaScript not selected (incorrect), CSS not selected (correct)
+	assert.Equal(t, 75, newState.GetPointsAwarded())
 
-	// Test all incorrect
+	// Test all incorrect selections
 	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
-	input = map[string][]string{"quiz_option": {"option_1", "option_3"}}
+	input = map[string][]string{"quiz_option": {"option_1", "option_3"}} // HTML and CSS (both incorrect)
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
+	// Should get 0 points: 0 out of 4 correct = round(100 * 0.0) = 0
+	// Python not selected (incorrect), HTML selected (incorrect), JavaScript not selected (incorrect), CSS selected (incorrect)
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 }
 
 func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
+	// Test single choice with retry
 	block := QuizBlock{
 		BaseBlock: BaseBlock{
 			Points: 100,
@@ -277,18 +281,51 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 
 	state := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
 
-	// Test incorrect answer with retry enabled
+	// Test incorrect answer with retry enabled (single choice)
 	input := map[string][]string{"quiz_option": {"option_0"}}
 	newState, err := block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
 	assert.False(t, newState.IsComplete()) // Should remain incomplete for retry
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
-	// Test correct answer with retry enabled
+	// Test correct answer with retry enabled (single choice)
+	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_1"}}
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
+	assert.Equal(t, 100, newState.GetPointsAwarded())
+
+	// Test multiple choice with retry
+	multiBlock := QuizBlock{
+		BaseBlock: BaseBlock{
+			Points: 100,
+		},
+		Question:       "Select programming languages:",
+		MultipleChoice: true,
+		RetryEnabled:   true,
+		Options: []QuizOption{
+			{ID: "option_0", Text: "Python", IsCorrect: true},
+			{ID: "option_1", Text: "HTML", IsCorrect: false},
+			{ID: "option_2", Text: "JavaScript", IsCorrect: true},
+			{ID: "option_3", Text: "CSS", IsCorrect: false},
+		},
+	}
+
+	// Test partial answer with multiple choice retry - should get partial points but remain incomplete
+	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	input = map[string][]string{"quiz_option": {"option_0"}} // Only Python (partial answer)
+	newState, err = multiBlock.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.False(t, newState.IsComplete()) // Should remain incomplete for retry
+	assert.Equal(t, 75, newState.GetPointsAwarded()) // 3 out of 4 correct = 75 points
+
+	// Test perfect answer with multiple choice retry - should complete
+	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	input = map[string][]string{"quiz_option": {"option_0", "option_2"}} // Perfect answer
+	newState, err = multiBlock.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.True(t, newState.IsComplete()) // Should complete
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 }
 
