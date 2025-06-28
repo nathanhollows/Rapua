@@ -461,7 +461,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 			<form
 				id="edit-location"
 				hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
-				hx-trigger="click, keyup changed from:[form=edit-location] delay:500ms"
+				hx-trigger="click, savelocation delay:500ms, keyup changed from:[form=edit-location] delay:500ms"
 				hx-swap="none"
 			>
 				<button
@@ -542,16 +542,87 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									</div>
 								</div>
 							</div>
-							<button class="add-clue-btn btn btn-sm btn-neutral my-2" type="button">
+							<button
+								class="btn btn-sm btn-neutral my-2"
+								type="button"
+								_="on click
+									if <#clue-list .clue-line/>'s length > 0
+										put #clue-template's innerHTML after last .clue-line in #clue-list
+									else 
+										put #clue-template's innerHTML into #clue-list
+									end
+								end
+								"
+							>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus w-5 h-5"><path d="M11 12H3"></path><path d="M16 6H3"></path><path d="M16 18H3"></path><path d="M18 9v6"></path><path d="M21 12h-6"></path></svg>
 								Add a clue
 							</button>
+							<template id="clue-template">
+								<label
+									class="clue-line input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item"
+								>
+									<input
+										type="text"
+										name="clues"
+										form="edit-location"
+										class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
+										placeholder="Add a clue"
+										autoComplete="off"
+										_="on keyup send savelocation to #edit-location end
+											on paste
+											  halt the event
+											  set pasteData to event.clipboardData.getData('text/plain')
+											  set allLines to pasteData.split('\n')
+											  set lines to []
+											  for line in allLines
+												if line.trim() is not ''
+												  append line.trim() to lines
+												end
+											  end
+											  if lines.length is 1
+												set my value to lines[0]
+											  else
+												set my value to lines[0]
+												repeat (lines.length - 1) times index i
+												  put #clue-template's innerHTML after last .clue-line in #clue-list
+												  set :el to first <input /> in (last .clue-line in #clue-list)
+												  set :el's value to lines[i + 1]
+												end
+											  end
+											  send savelocation to #edit-location
+											end"
+									/>
+									<button
+										type="button"
+										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
+										data-tip="Delete"
+										_="on click
+											remove closest .clue-line to me
+											send savelocation to #edit-location
+											end
+										"
+										tabindex="-1"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									</button>
+								</label>
+							</template>
 						</div>
 						<div id="clue-list" class="flex flex-col join join-vertical">
 							if len(location.Clues) == 0 {
 								<div class="alert">
 									<span>
-										There are no clues to show. Do you want to <a class="link add-clue-btn">add a clue</a>? 
+										There are no clues to show. Do you want to 
+										<a
+											class="link add-clue-btn"
+											_="on click
+									get #clue-template
+									put its innerHTML into #clue-list
+									htmx.process(document.body)
+									remove #clue-list.alert
+									end
+								"
+										>add a clue</a>? 
 									</span>
 								</div>
 							}
@@ -565,13 +636,40 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 										value={ clue.Content }
 										placeholder="Add a clue"
 										autoComplete="off"
+										_="on keyup send savelocation to #edit-location end
+											on paste
+											  halt the event
+											  set pasteData to event.clipboardData.getData('text/plain')
+											  set allLines to pasteData.split('\n')
+											  set lines to []
+											  for line in allLines
+												if line.trim() is not ''
+												  append line.trim() to lines
+												end
+											  end
+											  if lines.length is 1
+												set my value to lines[0]
+											  else
+												set my value to lines[0]
+												repeat (lines.length - 1) times index i
+												  put #clue-template's innerHTML after last .clue-line in #clue-list
+												  set :el to first <input /> in (last .clue-line in #clue-list)
+												  set :el's value to lines[i + 1]
+												end
+											  end
+											  send savelocation to #edit-location
+											end"
 									/>
 									<input type="hidden" name="clue-ids" value={ clue.ID }/>
 									<button
 										type="button"
 										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
 										data-tip="Delete"
-										onclick="this.closest('.clue-line').remove()"
+										_="on click
+											remove closest .clue-line to me
+											send savelocation to #edit-location
+											end
+										"
 										tabindex="-1"
 									>
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
@@ -811,84 +909,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
     .transitioning {
         transition: transform 0.3s ease;
     }
-</style>
-	<script>
-(() => {
-  const addClueBtns = document.querySelectorAll(".add-clue-btn");
-  const clueList = document.getElementById("clue-list");
-  let alertRemoved = false; // Tracks if the alert has been removed
-
-  addClueBtns.forEach((btn) => {
-    btn.addEventListener("click", function () {
-      // Remove the alert if present and not already removed
-      if (!alertRemoved) {
-        const existingAlert = clueList.querySelector(".alert");
-        if (existingAlert) {
-          existingAlert.remove();
-        }
-        alertRemoved = true; // Mark that alert has been removed
-      }
-
-      // Create the new clue input element based on the provided template
-      addNewClueField();
-    });
-  });
-
-  // Function to create and add a new clue field to the list
-  const addNewClueField = (value = "") => {
-    const newClueLine = document.createElement("label");
-    newClueLine.classList.add(
-      "clue-line", "input", "input-bordered", "bg-transparent", "flex", "flex-row", "items-top", "gap-2", "h-auto", "join-item"
-    );
-
-    newClueLine.innerHTML = `
-      <input
-        type="text"
-        name="clues"
-        class="w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis"
-		form="edit-location"
-        placeholder="Add a clue"
-        autoComplete="off"
-        value="${value}"
-      />
-      <button
-        type="button"
-        class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
-        data-tip="Delete"
-        onclick="this.closest('.clue-line').remove()"
-        tabindex="-1"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-      </button>
-    `;
-
-    // Add paste event to handle multi-line input
-    const inputField = newClueLine.querySelector('input[type="text"]');
-    inputField.addEventListener("paste", handlePasteEvent);
-
-    // Append the new clue line to the clue list
-    clueList.appendChild(newClueLine);
-  };
-
-  // Event handler for paste event
-  const handlePasteEvent = (event) => {
-    event.preventDefault(); // Prevent default paste behavior
-    const pasteData = (event.clipboardData || window.clipboardData).getData("text");
-    const lines = pasteData.split("\n").filter(line => line.trim() !== ""); // Split and remove empty lines
-
-    // If only one line, just paste into the current field
-    if (lines.length === 1) {
-      event.target.value = lines[0];
-    } else {
-      // Otherwise, split lines into separate clue fields
-      event.target.value = lines[0]; // Set the first line to the current input
-      for (let i = 1; i < lines.length; i++) {
-        addNewClueField(lines[i]); // Create a new clue input for each additional line
-      }
-    }
-  };
-})();
-</script>
+		</style>
 	@locationScript()
 }
 
