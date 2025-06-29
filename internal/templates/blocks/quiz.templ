@@ -440,6 +440,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 					_="on click
 				set :group to closest <form />
 				remove closest parent <label />
+				send save to :group
 				send triggerUpdate to :group.querySelector('.quiz-options')
 				"
 				>
