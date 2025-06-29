@@ -54,6 +54,7 @@ func Start(logger *slog.Logger,
 		logger,
 		blockService,
 		gameplayService,
+		instanceService,
 		notificationService,
 		teamService,
 	)

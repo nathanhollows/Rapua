@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupInstanceSettingsRepo(t *testing.T) (repositories.InstanceSettingsRepository, db.Transactor, func()) {
@@ -134,6 +135,89 @@ func TestInstanceSettingsRepository(t *testing.T) {
 
 			// Assert
 			tt.verify(ctx, t, settings, err)
+		})
+	}
+}
+
+func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
+	// Setup test database
+	repo, _, cleanup := setupInstanceSettingsRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	var randomNavMode = func() models.NavigationMode {
+		return models.NavigationMode(gofakeit.Number(0, 2))
+	}
+
+	var randomNavMethod = func() models.NavigationMethod {
+		return models.NavigationMethod(gofakeit.Number(0, 3))
+	}
+
+	var randomCompletionMethod = func() models.CompletionMethod {
+		return models.CompletionMethod(gofakeit.Number(0, 1))
+	}
+
+	// Create test settings
+	settings := &models.InstanceSettings{
+		InstanceID:        gofakeit.UUID(),
+		NavigationMode:    randomNavMode(),
+		NavigationMethod:  randomNavMethod(),
+		MaxNextLocations:  gofakeit.Number(1, 10),
+		CompletionMethod:  randomCompletionMethod(),
+		ShowTeamCount:     gofakeit.Bool(),
+		EnablePoints:      true,
+		EnableBonusPoints: gofakeit.Bool(),
+		ShowLeaderboard:   gofakeit.Bool(),
+	}
+
+	// Create the settings first
+	err := repo.Create(ctx, settings)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		instanceID   string
+		expectError  bool
+		expectNil    bool
+	}{
+		{
+			name:       "Get existing settings",
+			instanceID: settings.InstanceID,
+			expectError: false,
+			expectNil:   false,
+		},
+		{
+			name:        "Get non-existent settings",
+			instanceID:  gofakeit.UUID(),
+			expectError: true,
+			expectNil:   true,
+		},
+		{
+			name:        "Empty instance ID",
+			instanceID:  "",
+			expectError: true,
+			expectNil:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := repo.GetByInstanceID(ctx, tt.instanceID)
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if tt.expectNil {
+				assert.Nil(t, result)
+			} else {
+				assert.NotNil(t, result)
+				assert.Equal(t, settings.InstanceID, result.InstanceID)
+				assert.Equal(t, settings.EnablePoints, result.EnablePoints)
+			}
 		})
 	}
 }

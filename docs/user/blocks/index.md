@@ -4,11 +4,9 @@ sidebar: true
 order: 20
 ---
 
-JTGC
-Testing
 # Content blocks
 
-Rapua has six content blocks that you can use to create interactive learning experiences.
+Rapua has ten content blocks that you can use to create interactive learning experiences.
 
 ![Iterative blocks are marked with an `Interative` badge.](/static/images/docs/user/blocks/block-picker.webp)
 
@@ -26,6 +24,8 @@ These blocks are the foundation of your game and are used to provide information
 
 These blocks allow you to create interactive elements in your game that require participants to complete a task or answer a question. They can be used to test knowledge, provide feedback, or guide participants through the game.
 
+- [Quiz Block](/docs/user/blocks/quiz)
+- [Sorting Block](/docs/user/blocks/sorting)
 - [Checklist Block](/docs/user/blocks/checklist)
 - [Password Block](/docs/user/blocks/password)
 - [Pincode Block](/docs/user/blocks/pincode)

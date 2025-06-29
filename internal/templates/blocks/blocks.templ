@@ -35,6 +35,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingAdmin(settings, *b)
+	case "quiz_block":
+		b := block.(*blocks.QuizBlock)
+		return quizAdmin(settings, *b)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
@@ -71,6 +74,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
+	case "quiz_block":
+		b := block.(*blocks.QuizBlock)
+		return quizPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
@@ -107,6 +113,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
+	case "quiz_block":
+		b := block.(*blocks.QuizBlock)
+		return quizPlayerUpdate(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)
@@ -138,7 +147,16 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 					</span>
 					{ block.GetName() }
 					if settings.EnablePoints && block.RequiresValidation() {
-						<span class="badge badge-sm">{ fmt.Sprint(block.GetPoints()) } pts</span>
+						<span
+							class="badge badge-sm"
+							_="on keyup from next <input[name=points] /> 
+							set :el to next <input[name=points] />
+							if :el's value == '' 
+								then set my innerHTML to '0 pts'
+							else
+								set my innerHTML to (next <input[name=points] />)'s value + ' pts'
+							end"
+						>{ fmt.Sprint(block.GetPoints()) } pts</span>
 					}
 					<span class="loading loading-dots loading-md htmx-indicator"></span>
 				</h3>

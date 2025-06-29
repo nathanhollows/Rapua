@@ -27,17 +27,6 @@ The sorting block offers four different scoring schemes:
 
 <iframe class="w-full aspect-video" src="/static/images/docs/user/blocks/block-sorting-preview.mp4" frameborder="0" allowfullscreen></iframe>
 
-## Creating a Sorting Block
-
-1. Navigate to the location where you want to add the sorting block
-2. Click the "Add Block" button and select "Sorting" from the list
-3. Enter instructions for your participants in the "Content" field
-4. Add your items to be sorted in the correct order
-5. Select your preferred scoring scheme
-6. If using "Percentage of Correct Items," set the scoring percentage
-7. Set the points value if points are enabled
-8. Save your changes
-
 ## Best Practices
 
 - **Keep instructions clear**: Explain exactly what order you want items to be sorted in (chronological, priority, etc.)

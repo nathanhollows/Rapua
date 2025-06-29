@@ -33,7 +33,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								id="back"
 								class="btn btn-sm btn-circle btn-ghost btn-disabled"
 								_="
-									on change from <select />
+									on change from <select /> or load
 										if its value is not 'lobby' then remove .btn-disabled from me
 										else add .btn-disabled to me 
 									end
@@ -60,7 +60,13 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<select
 									id="pages"
 									class="select select-sm select-bordered w-56 md:w-96 mx-auto text-ellipsis"
-									_="on load trigger change on me"
+									_="
+										on load
+										set :hash to window.location.hash
+										if :hash == '' then
+											trigger change on me
+										end
+									"
 									name="page"
 								>
 									<option disabled class="font-bold">Pages</option>
@@ -73,6 +79,13 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 											on change from #pages
 												if #pages.options[#pages.selectedIndex].value == me.value then
 													send chosen to me	
+													call window.history.replaceState(null, '', '#' + me.value)
+												end
+											end
+											on load
+												if window.location.hash == '#lobby' then
+													send chosen to me
+													set #pages's value to my.value
 												end
 											end
 											"
@@ -87,6 +100,13 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 											on change from #pages
 												if #pages.options[#pages.selectedIndex].value == me.value then
 													send chosen to me	
+													call window.history.replaceState(null, '', '#' + me.value)
+												end
+											end
+											on load
+												if window.location.hash == '#next' then
+													send chosen to me
+													set #pages's value to my.value
 												end
 											end
 											"
@@ -104,6 +124,13 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 											on change from #pages
 												if #pages.options[#pages.selectedIndex].value == me.value then
 													send chosen to me	
+													call window.history.replaceState(null, '', '#' + me.value)
+												end
+											end
+											on load
+												if window.location.hash == '#' + me.value then
+													send chosen to me
+													set #pages's value to my.value
 												end
 											end
 											"
@@ -119,7 +146,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								id="forward"
 								class="btn btn-sm btn-circle btn-ghost"
 								_="
-								on change from <select />
+								on change from <select /> or load
 									set sel to #pages 
 									if sel.selectedIndex == sel.length - 1 then add .btn-disabled to me
 									else remove .btn-disabled from me
@@ -141,7 +168,11 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 					<div
 						class=" border-t border-base-300 overflow-scroll"
 					>
-						<div id="preview" class="overflow-scroll py-12 px-4" hx-disable>
+						<div
+							id="preview"
+							class="overflow-scroll py-12 px-4"
+							hx-vals={ fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`) }
+						>
 							<span class="loading loading-spinner loading-lg"></span>
 						</div>
 					</div>

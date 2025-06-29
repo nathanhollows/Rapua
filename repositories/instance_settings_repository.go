@@ -18,6 +18,9 @@ type InstanceSettingsRepository interface {
 
 	// Delete removes and instance from the database given the instanceID
 	Delete(ctx context.Context, tx *bun.Tx, instanceID string) error
+
+	// GetByInstanceID retrieves instance settings by instance ID
+	GetByInstanceID(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
 type instanceSettingsRepository struct {
@@ -64,4 +67,22 @@ func (r *instanceSettingsRepository) Delete(ctx context.Context, tx *bun.Tx, ins
 		return err
 	}
 	return nil
+}
+
+// GetByInstanceID retrieves instance settings by instance ID.
+func (r *instanceSettingsRepository) GetByInstanceID(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
+	if instanceID == "" {
+		return nil, errors.New("instance ID is required")
+	}
+
+	var settings models.InstanceSettings
+	err := r.db.NewSelect().
+		Model(&settings).
+		Where("instance_id = ?", instanceID).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &settings, nil
 }

@@ -5,7 +5,7 @@
 ><div class=\"flex flex-row collapse-title\"><div class=\"flex flex-1 flex-row gap-5\"><h3 class=\"text-lg font-bold flex flex-row gap-3 items-center\"><span class=\"\">
 </span> 
  
-<span class=\"badge badge-sm\">
+<span class=\"badge badge-sm\" _=\"on keyup from next &lt;input[name=points] /&gt; \n\t\t\t\t\t\t\tset :el to next &lt;input[name=points] /&gt;\n\t\t\t\t\t\t\tif :el&#39;s value == &#39;&#39; \n\t\t\t\t\t\t\t\tthen set my innerHTML to &#39;0 pts&#39;\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tset my innerHTML to (next &lt;input[name=points] /&gt;)&#39;s value + &#39; pts&#39;\n\t\t\t\t\t\t\tend\">
  pts</span> 
 <span class=\"loading loading-dots loading-md htmx-indicator\"></span></h3></div><div class=\"flex gap-3 z-10\"><button type=\"button\" class=\"block-delete btn btn-sm btn-circle shadow-none hover:btn-error tooltip flex\" data-tip=\"Delete\" data-location=\"
 \" data-block=\"

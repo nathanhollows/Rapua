@@ -293,22 +293,43 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 		return nil, nil, errors.New("blockID must be set")
 	}
 
-	block, state, err := s.BlockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
-	if err != nil {
-		return nil, nil, fmt.Errorf("getting block with state: %w", err)
+	// Check if we're in preview mode - preview mode should use fresh mock state
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+	
+	var block blocks.Block
+	var state blocks.PlayerState
+	var err error
+	
+	if isPreview {
+		// In preview mode, always get a fresh block and create a new mock state
+		block, err = s.BlockService.GetByBlockID(ctx, blockID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
+		}
+		
+		state, err = s.BlockService.NewMockBlockState(ctx, blockID, team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
+		}
+	} else {
+		// In regular mode, get the existing block and state
+		block, state, err = s.BlockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getting block with state: %w", err)
+		}
+	}
+
+	if block == nil {
+		return nil, nil, errors.New("block not found")
 	}
 
 	if state == nil {
 		return nil, nil, errors.New("block state not found")
 	}
-
-	// Check if we're in preview mode - preview mode should allow resubmission for testing
-	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
 	
-	// Returning early here prevents the block from being updated
-	// And points from being added to the team multiple times
-	// But in preview mode, we want to allow resubmission for testing
-	if state.IsComplete() && !isPreview {
+	// In regular mode, return early if already complete to prevent duplicate points
+	// Preview mode always uses fresh state so this check is not needed
+	if !isPreview && state.IsComplete() {
 		return state, block, nil
 	}
 
@@ -318,33 +339,33 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 		return nil, nil, fmt.Errorf("validating block: %w", err)
 	}
 
-	state, err = s.BlockService.UpdateState(ctx, state)
-	if err != nil {
-		return nil, nil, fmt.Errorf("updating block state: %w", err)
+	// Only persist state changes in regular mode, not in preview mode
+	if !isPreview {
+		state, err = s.BlockService.UpdateState(ctx, state)
+		if err != nil {
+			return nil, nil, fmt.Errorf("updating block state: %w", err)
+		}
 	}
 
-	// Assign points on completion
-	if !state.IsComplete() {
-		return state, block, nil
-	}
-	err = s.TeamService.AwardPoints(ctx, &team, block.GetPoints(), fmt.Sprint("Completed block ", block.GetName()))
-	if err != nil {
-		return nil, nil, fmt.Errorf("awarding points: %w", err)
-	}
+	// Only award points and update check-ins in regular mode, not preview mode
+	if !isPreview && state.IsComplete() {
+		err = s.TeamService.AwardPoints(ctx, &team, block.GetPoints(), fmt.Sprint("Completed block ", block.GetName()))
+		if err != nil {
+			return nil, nil, fmt.Errorf("awarding points: %w", err)
+		}
 
-	// Update the check in all blocks have been completed
-	unfinishedCheckIn, err := s.BlockService.CheckValidationRequiredForCheckIn(ctx, block.GetLocationID(), team.Code)
-	if err != nil {
-		return nil, nil, fmt.Errorf("checking if validation is required: %w", err)
-	}
+		// Update the check in all blocks have been completed
+		unfinishedCheckIn, err := s.BlockService.CheckValidationRequiredForCheckIn(ctx, block.GetLocationID(), team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("checking if validation is required: %w", err)
+		}
 
-	if unfinishedCheckIn {
-		return state, block, nil
-	}
-
-	err = s.CheckInService.CompleteBlocks(ctx, team.Code, block.GetLocationID())
-	if err != nil {
-		return nil, nil, fmt.Errorf("completing blocks: %w", err)
+		if !unfinishedCheckIn {
+			err = s.CheckInService.CompleteBlocks(ctx, team.Code, block.GetLocationID())
+			if err != nil {
+				return nil, nil, fmt.Errorf("completing blocks: %w", err)
+			}
+		}
 	}
 
 	return state, block, nil

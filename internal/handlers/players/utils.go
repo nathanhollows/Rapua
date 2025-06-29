@@ -19,6 +19,7 @@ type PlayerHandler struct {
 	Logger              *slog.Logger
 	BlockService        services.BlockService
 	GameplayService     services.GameplayService
+	InstanceService     services.InstanceService
 	NotificationService services.NotificationService
 	TeamService         services.TeamService
 }
@@ -27,6 +28,7 @@ func NewPlayerHandler(
 	logger *slog.Logger,
 	blockService services.BlockService,
 	gameplayService services.GameplayService,
+	instanceService services.InstanceService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
 ) *PlayerHandler {
@@ -34,6 +36,7 @@ func NewPlayerHandler(
 		Logger:              logger,
 		BlockService:        blockService,
 		GameplayService:     gameplayService,
+		InstanceService:     instanceService,
 		NotificationService: notificationService,
 		TeamService:         teamService,
 	}

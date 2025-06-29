@@ -32,6 +32,8 @@ type InstanceService interface {
 
 	// DeleteInstance deletes an instance for the given user
 	DeleteInstance(ctx context.Context, user *models.User, instanceID, confirmName string) (bool, error)
+	// GetInstanceSettings gets the settings for the given instance
+	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
 func NewInstanceService(
@@ -253,4 +255,18 @@ func (s *instanceService) DeleteInstance(ctx context.Context, user *models.User,
 	}
 
 	return true, nil
+}
+
+// GetInstanceSettings gets the settings for the given instance.
+func (s *instanceService) GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
+	if instanceID == "" {
+		return nil, errors.New("instanceID must be set")
+	}
+
+	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	if err != nil {
+		return nil, fmt.Errorf("getting instance settings: %w", err)
+	}
+
+	return settings, nil
 }
