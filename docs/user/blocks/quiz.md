@@ -22,7 +22,7 @@ Single choice questions award full points for the correct answer, while multiple
 
 ## Example
 
-![Quiz block configuration showing question, answer options, and settings](/static/images/docs/user/blocks/quiz-admin.webp)
+<iframe class="w-full aspect-video" src="/static/images/docs/user/blocks/block-quiz-preview.mp4" frameborder="0" allowfullscreen></iframe>
 
 ## Common Use Cases
 
