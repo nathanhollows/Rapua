@@ -259,7 +259,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
-		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input, #form-%s select) delay:100ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
 		// Points setting
@@ -479,7 +479,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 			placeholder="Answer option..."
 			value={ option.Text }
 			autoComplete="off"
-			_="on keyup send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
+			_="on keyup send save to (closest <form/>)"
 		/>
 		<button
 			type="button"
@@ -488,6 +488,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 			_="on click
 				set :group to closest <form />
 				remove closest parent <label />
+				send save to :group
 				send triggerUpdate to :group.querySelector('.quiz-options')
 				"
 		>
