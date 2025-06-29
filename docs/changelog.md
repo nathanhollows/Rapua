@@ -20,6 +20,7 @@ order: 100
 - Lobby and next location pages now correctly handle preview mode.
 - Clues now correctly save when added.
 - Sorting block now correctly saves new items when added.
+- Block content points are now updated live when changed in the admin interface.
 
 ## 3.8.1 (2025-06-18)
 
