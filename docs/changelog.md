@@ -6,10 +6,11 @@ order: 100
 
 # Changelog
 
-## 3.9.0
+## 3.9.0 (2025-06-29)
 
 ### Added
 
+- [Quiz Block](/docs/user/blocks/quiz)! A new interactive content block.
 - [Template](/docs/user/templates) links can now include hashes to specific locations, allowing admins to share direct links to specific parts of a game.
 
 ### Fixed
@@ -21,6 +22,8 @@ order: 100
 - Clues now correctly save when added.
 - Sorting block now correctly saves new items when added.
 - Block content points are now updated live when changed in the admin interface.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.9.0)
 
 ## 3.8.1 (2025-06-18)
 
