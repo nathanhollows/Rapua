@@ -18,7 +18,8 @@ order: 100
 - Fixed preview mode crash when submitting correct answers to already completed blocks.
 - Preview mode now correctly loads and displays instance settings (points, etc.) instead of using empty defaults.
 - Lobby and next location pages now correctly handle preview mode.
-- Clues autosave correctly.
+- Clues now correctly save when added.
+- Sorting block now correctly saves new items when added.
 
 ## 3.8.1 (2025-06-18)
 
