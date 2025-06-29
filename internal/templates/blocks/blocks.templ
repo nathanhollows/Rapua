@@ -147,7 +147,16 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 					</span>
 					{ block.GetName() }
 					if settings.EnablePoints && block.RequiresValidation() {
-						<span class="badge badge-sm">{ fmt.Sprint(block.GetPoints()) } pts</span>
+						<span
+							class="badge badge-sm"
+							_="on keyup from next <input[name=points] /> 
+							set :el to next <input[name=points] />
+							if :el's value == '' 
+								then set my innerHTML to '0 pts'
+							else
+								set my innerHTML to (next <input[name=points] />)'s value + ' pts'
+							end"
+						>{ fmt.Sprint(block.GetPoints()) } pts</span>
 					}
 					<span class="loading loading-dots loading-md htmx-indicator"></span>
 				</h3>
