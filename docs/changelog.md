@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 3.9.1 (2025-07-01)
+
+### Fixed
+
+- Scheduler parses dates correctly again.
+
 ## 3.9.0 (2025-06-29)
 
 ### Added
