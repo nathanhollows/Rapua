@@ -167,7 +167,7 @@ templ ActivityTracker(instance models.Instance) {
       // Create the marker
       const marker = new mapboxgl.Marker(el)
         .setLngLat([location.dataset.lng, location.dataset.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
+        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups
           .setHTML('<h3>' + location.textContent + '</h3>'));
 
 				marker.getElement().addEventListener('mouseenter', function () {
