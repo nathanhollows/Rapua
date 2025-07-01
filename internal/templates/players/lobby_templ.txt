@@ -2,7 +2,7 @@
  hx-swap-oob=\"true\"
 ><p>Team code: <span class=\"font-mono font-bold\">
 </span></p><p>Team name:  
-<a class=\"link font-bold whitespace-nowrap\" onclick=\"my_modal_5.showModal()\">Click to set</a>
+<a class=\"link font-bold whitespace-nowrap text-info\" onclick=\"my_modal_5.showModal()\">Click to set</a>
 <a class=\"link font-bold whitespace-nowrap\" onclick=\"my_modal_5.showModal()\">
 </a>
 </p></div>
