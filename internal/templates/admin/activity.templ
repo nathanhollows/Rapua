@@ -167,7 +167,7 @@ templ ActivityTracker(instance models.Instance) {
       // Create the marker
       const marker = new mapboxgl.Marker(el)
         .setLngLat([location.dataset.lng, location.dataset.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
+        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups
           .setHTML('<h3>' + location.textContent + '</h3>'));
 
 				marker.getElement().addEventListener('mouseenter', function () {
@@ -713,21 +713,38 @@ templ scheduleModal(instance models.Instance) {
             const endDateInput = document.querySelector('input[name="end_date"]');
             const endTimeInput = document.querySelector('input[name="end_time"]');
             
-            const utcStart = localToUTC(startDateInput.value, startTimeInput.value);
-            const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);
+            // Only convert if both date and time have values
+            if (startDateInput.value && startTimeInput.value) {
+                const utcStart = localToUTC(startDateInput.value, startTimeInput.value);
+                document.querySelector('input[name="utc_start_date"]').value = utcStart.date;
+                document.querySelector('input[name="utc_start_time"]').value = utcStart.time;
+            } else {
+                document.querySelector('input[name="utc_start_date"]').value = '';
+                document.querySelector('input[name="utc_start_time"]').value = '';
+            }
             
-            document.querySelector('input[name="utc_start_date"]').value = utcStart.date;
-            document.querySelector('input[name="utc_start_time"]').value = utcStart.time;
-            document.querySelector('input[name="utc_end_date"]').value = utcEnd.date;
-            document.querySelector('input[name="utc_end_time"]').value = utcEnd.time;
+            if (endDateInput.value && endTimeInput.value) {
+                const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);
+                document.querySelector('input[name="utc_end_date"]').value = utcEnd.date;
+                document.querySelector('input[name="utc_end_time"]').value = utcEnd.time;
+            } else {
+                document.querySelector('input[name="utc_end_date"]').value = '';
+                document.querySelector('input[name="utc_end_time"]').value = '';
+            }
         }
 
 		populateDateTimeInputs();
         document.addEventListener('DOMContentLoaded', function () {
             const inputs = document.querySelectorAll('input[type="date"], input[type="time"]');
+            const form = document.querySelector('#schedule_modal form');
 
             inputs.forEach(input => {
                 input.addEventListener('change', handleDateTimeChange);
+            });
+
+            // Ensure UTC conversion happens on form submission
+            form.addEventListener('submit', function(e) {
+                handleDateTimeChange();
             });
 
 			handleDateTimeChange();

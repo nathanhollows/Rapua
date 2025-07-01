@@ -57,6 +57,10 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	if r.Form.Get("set_start") != "" {
 		startDate := r.Form.Get("utc_start_date")
 		startTime := r.Form.Get("utc_start_time")
+		if startDate == "" || startTime == "" {
+			h.handleError(w, r, "ScheduleGame: missing start date or time", "Error parsing start date and time", "Start date and time are required", nil, "instance_id", user.CurrentInstanceID)
+			return
+		}
 		sTime, err = helpers.ParseDateTime(startDate, startTime)
 		if err != nil {
 			h.handleError(w, r, "ScheduleGame: parsing start date and time", "Error parsing start date and time", "Could not parse date and time", err, "instance_id", user.CurrentInstanceID)
@@ -67,6 +71,10 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	if r.Form.Get("set_end") != "" {
 		endDate := r.Form.Get("utc_end_date")
 		endTime := r.Form.Get("utc_end_time")
+		if endDate == "" || endTime == "" {
+			h.handleError(w, r, "ScheduleGame: missing end date or time", "Error parsing end date and time", "End date and time are required", nil, "instance_id", user.CurrentInstanceID)
+			return
+		}
 		eTime, err = helpers.ParseDateTime(endDate, endTime)
 		if err != nil {
 			h.handleError(w, r, "ScheduleGame: parsing end date and time", "Error parsing end date and time", "Could not parse date and time", err, "instance_id", user.CurrentInstanceID)

@@ -15,8 +15,14 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If the user is in preview mode, only render the template, not the full layout.
+	err = h.TeamService.LoadRelations(r.Context(), team)
+	if err != nil {
+		h.Logger.Error("loading check ins", "error", err.Error())
+		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
+		return
+	}
 
+	// If the user is in preview mode, only render the template, not the full layout.
 	template := templates.Lobby(*team)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
 		template = templates.Layout(template, "Lobby", team.Messages)

@@ -9743,16 +9743,6 @@ html:has(.drawer-toggle:checked) {
   content: var(--tw-content);
 }
 
-.checked\:bg-accent:checked {
-  --tw-bg-opacity: 1;
-  background-color: var(--fallback-a,oklch(var(--a)/var(--tw-bg-opacity)));
-}
-
-.checked\:bg-primary:checked {
-  --tw-bg-opacity: 1;
-  background-color: var(--fallback-p,oklch(var(--p)/var(--tw-bg-opacity)));
-}
-
 .invalid\:border-error:invalid {
   --tw-border-opacity: 1;
   border-color: var(--fallback-er,oklch(var(--er)/var(--tw-border-opacity)));

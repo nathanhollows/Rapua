@@ -17,7 +17,7 @@ templ TeamID(team models.Team, oob bool) {
 		<p>
 			Team name: 
 			if team.Name == "" {
-				<a class="link font-bold whitespace-nowrap" onclick="my_modal_5.showModal()">Click to set</a>
+				<a class="link font-bold whitespace-nowrap text-info" onclick="my_modal_5.showModal()">Click to set</a>
 			} else {
 				<a class="link font-bold whitespace-nowrap" onclick="my_modal_5.showModal()">
 					{ team.Name }
