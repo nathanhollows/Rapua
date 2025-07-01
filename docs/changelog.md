@@ -6,6 +6,15 @@ order: 100
 
 # Changelog
 
+## 3.9.2 (2025-07-02)
+
+### Fixed
+
+- Points now show in player footer
+- Hide currently visiting in facilitators dashboard, if not used
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.9.2)
+
 ## 3.9.1 (2025-07-01)
 
 ### Fixed
@@ -14,6 +23,8 @@ order: 100
 - Map markers on hover now no longer steal focus on activity page.
 - Indicator to set team name is now coloured.
 - Notifications appear in the lobby.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.9.1)
 
 ## 3.9.0 (2025-06-29)
 

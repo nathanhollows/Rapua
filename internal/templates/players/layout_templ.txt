@@ -13,4 +13,7 @@
 </p><p><a href=\"/lobby\" class=\"link\">Rules</a> · 
  
 · 
+ 
+· 
+ pts
 </p></div></footer>
