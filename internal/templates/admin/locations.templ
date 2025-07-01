@@ -46,16 +46,12 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 	</div>
 	<!-- Locations list -->
 	<div class="px-5">
-		<form
+		<div
 			if settings.NavigationMode == models.OrderedNav {
 				class="join join-vertical w-full shadow sortable"
 			} else {
 				class="join join-vertical w-full"
 			}
-			hx-post="/admin/locations/reorder"
-			hx-trigger="end"
-			hx-swap="none"
-			hx-indicator=".htmx-indicator"
 		>
 			for _, location := range locations {
 				<div
@@ -127,7 +123,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 					</div>
 				</div>
 			}
-		</form>
+		</div>
 	</div>
 	<script>
 htmx.onLoad(function(content) {
