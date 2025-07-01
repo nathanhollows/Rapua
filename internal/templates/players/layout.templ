@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"os"
 )
@@ -83,6 +84,9 @@ templ footer(team models.Team) {
 				<a href="/lobby" class="link">Rules</a> · { team.Code }
 				if team.Name != "" {
 					· { team.Name }
+				}
+				if team.Instance.Settings.EnablePoints {
+					· { fmt.Sprint(team.Points) } pts
 				}
 			</p>
 		</div>
