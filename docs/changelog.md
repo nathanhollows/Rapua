@@ -11,10 +11,18 @@ order: 100
 ### Added
 
 - [Clue block](/docs/user/blocks/clue)! A new interactive content block that allows players to view clues for a price.
+- [Broker block](/docs/user/blocks/broker)! A new interactive content block that allows players to blindly trade points for clues.
+
+### Changed
+
+- Rearranged blocks into alphabetical order in the admin interface for easier navigation.
+- Iamges in player content are now rounded.
 
 ### Fixed
 
 - Removed "Block" from [Quiz block](/docs/user/blocks/quiz) in the panel for consistency.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.10.0)
 
 ## 3.9.2 (2025-07-02)
 
