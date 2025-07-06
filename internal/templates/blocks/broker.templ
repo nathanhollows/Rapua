@@ -1,0 +1,296 @@
+package blocks
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
+)
+
+templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+	>
+		@pointsBadge(settings.EnablePoints, block.GetPoints())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			if data.IsComplete() {
+				@brokerPlayerComplete(block, data)
+			} else {
+				@templ.Raw(stringToMarkdown(block.Prompt))
+				<form
+					hx-post={ fmt.Sprint("/blocks/validate") }
+					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+				>
+					<input type="hidden" name="block" value={ block.ID }/>
+					<div class="form-control w-full max-w-xs">
+						<label class="label">
+							<span class="label-text">How many points do you offer?</span>
+						</label>
+						<div class="join">
+							<input
+								name="points_bid"
+								type="number"
+								min="0"
+								placeholder="0"
+								class="input input-bordered input-warning join-item w-full max-w-xs"
+								required
+							/>
+							<button
+								type="submit"
+								class="btn btn-warning join-item"
+							>
+								Make Offer
+							</button>
+						</div>
+					</div>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+templ brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+		hx-swap-oob="true"
+	>
+		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+			<div class="mt-0 mb-0 divider divider-warning">Information received</div>
+			@brokerPlayerComplete(block, data)
+		</div>
+	</div>
+}
+
+templ brokerPlayerComplete(block blocks.BrokerBlock, data blocks.PlayerState) {
+	<div>
+		<!-- Parse the player data to show the purchased information -->
+		@templ.Raw(stringToMarkdown(getBrokerInfoReceived(data)))
+	</div>
+}
+
+// getBrokerInfoReceived extracts the purchased information from broker block player data
+func getBrokerInfoReceived(data blocks.PlayerState) string {
+	if data.GetPlayerData() == nil {
+		return "No information purchased yet."
+	}
+
+	// Define a struct that matches the brokerBlockData from broker_block.go
+	type brokerBlockData struct {
+		PointsPaid   int    `json:"points_paid"`
+		InfoReceived string `json:"info_received"`
+		HasPurchased bool   `json:"has_purchased"`
+	}
+
+	var playerData brokerBlockData
+	if err := json.Unmarshal(data.GetPlayerData(), &playerData); err != nil {
+		return "Error loading purchased information."
+	}
+
+	if !playerData.HasPurchased {
+		return "No information purchased yet."
+	}
+
+	return playerData.InfoReceived
+}
+
+templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, resubmit delay:500ms", block.ID) }
+		hx-swap="none"
+		_="
+		init send recount to me
+		on recount
+			if me.querySelectorAll('.tier').length < 2 then
+				add .invisible to (<.tier button/> in me)
+			else
+				remove .invisible from (<.tier button/> in me)
+			end
+			repeat for el in (<.tier /> in me) index i 
+				set el.querySelector('.tier-count').innerHTML to (i + 1)
+			end
+		end"
+	>
+		<!-- Broker blocks don't use completion bonus points -->
+		<label class="form-control w-full mt-4">
+			<div class="label">
+				<span class="label-text font-bold">Prompt</span>
+			</div>
+			<textarea
+				name="prompt"
+				rows="3"
+				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				style="field-sizing: content;"
+				placeholder="The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'"
+			>{ block.Prompt }</textarea>
+			<div class="label">
+				@markdownHint()
+			</div>
+		</label>
+		<label class="form-control w-full mt-4">
+			<div class="label">
+				<span class="label-text font-bold">Default Information (0 points)</span>
+			</div>
+			<textarea
+				name="default_info"
+				rows="2"
+				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				style="field-sizing: content;"
+				placeholder="'I don't know anything.' or 'The shipment left yesterday.'"
+			>{ block.DefaultInfo }</textarea>
+			<div class="label">
+				<span class="label-text-alt">What players receive when they offer 0 points</span>
+			</div>
+		</label>
+		<div class="divider">
+			<div>
+				<div class="dropdown dropdown-hover">
+					<div tabindex="0" role="button" class="text-info">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+					</div>
+					<div
+						tabindex="0"
+						class="card compact font-normal dropdown-content bg-base-300 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+					>
+						<div tabindex="0" class="card-body">
+							<h2 class="card-title">How it works</h2>
+							<p class="text-wrap">
+								Players enter a point amount. They get the best information tier their bid can afford. If they bid less than any tier, they get the default info but still pay their bid.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			Information Tiers
+		</div>
+		<div
+			id={ fmt.Sprintf("tiers-%s", block.ID) }
+		>
+			for i, tier := range block.InformationTiers {
+				@brokerTierAdmin(i+1, tier)
+			}
+			<!-- Always show at least 1 empty tier for new content -->
+			for i := len(block.InformationTiers); i < 1; i++ {
+				@brokerTierAdmin(i+1, blocks.InformationTier{})
+			}
+		</div>
+		<button
+			class="btn btn-sm btn-neutral flex m-auto"
+			type="button"
+			_={ fmt.Sprintf(`on click
+				set :group to #tiers-%s
+				set :end to last .tier in :group
+				put #broker-tier-template's innerHTML after :end
+				send change to :end
+				send recount to :group
+			end`, block.ID) }
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-icon lucide-plus w-5 h-5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+			Add a Tier
+		</button>
+		<template id="broker-tier-template">
+			@brokerTierAdmin(0, blocks.InformationTier{})
+		</template>
+	</form>
+}
+
+templ brokerTierAdmin(tierNum int, tier blocks.InformationTier) {
+	<div
+		class="tier w-full indicator"
+	>
+		<div class="indicator-item mt-4 mr-4">
+			<button
+				type="button"
+				class="btn btn-xs btn-circle hover:btn-error flex tooltip invisible"
+				data-tip="Delete"
+				_="on click
+					set :group to closest <form />
+					remove closest parent .tier
+					send change to first <input[type=number] /> in :group
+					send recount to :group
+					send resubmit to :group
+				end
+				"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+			</button>
+		</div>
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-base-100/50 rounded-lg ">
+			<div class="md:col-span-1">
+				<label class="form-control w-full">
+					<div class="label">
+						<span class="label-text font-bold">Tier <span class="tier-count">{ fmt.Sprint(tierNum) }</span> Points</span>
+					</div>
+					<input
+						name="tier_points"
+						type="number"
+						class="input input-bordered w-full invalid:border-error"
+						placeholder="1"
+						if tier.PointsRequired > 0 {
+							value={ fmt.Sprint(tier.PointsRequired) }
+						}
+						min="1"
+						_="init
+							set :group to closest <form/>
+							set :next to next <input[type=number] /> within :group
+							if :next then
+								set :next's @min to (my value - 0) + 1
+							end
+							set :prev to previous <input[type=number] /> within :group
+							if :prev then
+								if :prev's value == '' then
+									set @min to (:prev's @min - 0) + 1
+								else
+									set @min to (:prev's value - 0) + 1
+								end
+								set @placeholder to @min
+							end
+						end
+						on change
+							set :group to closest <form/>
+							set :next to next <input[type=number] /> within :group
+							if :next then
+								if my value != '' then
+									set :next's @min to (my value - 0) + 1
+								else
+									set :next's @min to (my @min - 0) + 1
+								end
+								if :next's value < :next's @min then
+									if :next's value != '' then
+										set :next's value to :next's @min
+									end
+								end
+								set :next's @placeholder to :next's @min
+								send change to :next
+							end
+						end
+						on keyup send resubmit to closest <form />
+						"
+					/>
+				</label>
+			</div>
+			<div class="md:col-span-3">
+				<label class="form-control w-full">
+					<div class="label">
+						<span class="label-text font-bold">Information Content</span>
+					</div>
+					<textarea
+						name="tier_content"
+						rows="2"
+						class="markdown-textarea textarea textarea-bordered w-full font-mono"
+						style="field-sizing: content;"
+						placeholder="Better information for players who pay this much..."
+						_="on keyup send resubmit to closest <form />"
+					>{ tier.Content }</textarea>
+				</label>
+			</div>
+		</div>
+	</div>
+}

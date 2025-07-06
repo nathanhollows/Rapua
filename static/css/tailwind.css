@@ -4176,6 +4176,12 @@ details.collapse summary::-webkit-details-marker {
   background-color: var(--fallback-a,oklch(var(--a)/var(--tw-bg-opacity)));
 }
 
+.divider-warning:before,
+  .divider-warning:after {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-wa,oklch(var(--wa)/var(--tw-bg-opacity)));
+}
+
 .drawer-toggle:checked ~ .drawer-side > .drawer-overlay {
   background-color: #0006;
 }
@@ -4287,6 +4293,18 @@ details.collapse summary::-webkit-details-marker {
   --tw-border-opacity: 1;
   border-color: var(--fallback-p,oklch(var(--p)/var(--tw-border-opacity)));
   outline-color: var(--fallback-p,oklch(var(--p)/1));
+}
+
+.input-warning {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-wa,oklch(var(--wa)/var(--tw-border-opacity)));
+}
+
+.input-warning:focus,
+    .input-warning:focus-within {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-wa,oklch(var(--wa)/var(--tw-border-opacity)));
+  outline-color: var(--fallback-wa,oklch(var(--wa)/1));
 }
 
 .input-error {
@@ -6718,6 +6736,18 @@ html:has(.drawer-toggle:checked) {
   margin-top: auto;
 }
 
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.mr-5 {
+  margin-right: 1.25rem;
+}
+
+.mr-4 {
+  margin-right: 1rem;
+}
+
 .\!block {
   display: block !important;
 }
@@ -7467,6 +7497,10 @@ html:has(.drawer-toggle:checked) {
   background-color: var(--fallback-b1,oklch(var(--b1)/var(--tw-bg-opacity)));
 }
 
+.bg-base-100\/50 {
+  background-color: var(--fallback-b1,oklch(var(--b1)/0.5));
+}
+
 .bg-base-200 {
   --tw-bg-opacity: 1;
   background-color: var(--fallback-b2,oklch(var(--b2)/var(--tw-bg-opacity)));
@@ -8128,6 +8162,10 @@ html:has(.drawer-toggle:checked) {
 
 .artboard #player-nav, #preview #player-nav {
   display: none;
+}
+
+.prose p img {
+  border-radius: 0.5rem;
 }
 
 /* Basics */
@@ -9883,6 +9921,14 @@ html:has(.drawer-toggle:checked) {
     order: 4;
   }
 
+  .md\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+
+  .md\:col-span-3 {
+    grid-column: span 3 / span 3;
+  }
+
   .md\:mb-0 {
     margin-bottom: 0px;
   }
@@ -9937,6 +9983,10 @@ html:has(.drawer-toggle:checked) {
 
   .md\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .md\:grid-cols-\[1fr_24rem\] {
