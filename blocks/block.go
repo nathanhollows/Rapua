@@ -49,19 +49,21 @@ type BaseBlock struct {
 }
 
 var registeredBlocks = Blocks{
-	&MarkdownBlock{},
+	// Content blocks
+	&MarkdownBlock{}, // Text is always first
+	&AlertBlock{},
 	&DividerBlock{},
 	&ImageBlock{},
 	&YoutubeBlock{},
-	&AlertBlock{},
+	// Interactive blocks
 	&BrokerBlock{},
+	&ChecklistBlock{},
 	&ClueBlock{},
 	&AnswerBlock{},
 	&PincodeBlock{},
-	&ChecklistBlock{},
-	&SortingBlock{},
-	&QuizBlock{},
 	// &PhotoBlock{},
+	&QuizBlock{},
+	&SortingBlock{},
 }
 
 func GetRegisteredBlocks() Blocks {
