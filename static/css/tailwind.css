@@ -6788,6 +6788,14 @@ html:has(.drawer-toggle:checked) {
   aspect-ratio: 16 / 9;
 }
 
+.aspect-auto {
+  aspect-ratio: auto;
+}
+
+.aspect-\[4\/3\] {
+  aspect-ratio: 4/3;
+}
+
 .h-16 {
   height: 4rem;
 }
@@ -8157,6 +8165,10 @@ html:has(.drawer-toggle:checked) {
 }
 
 .prose p img {
+  border-radius: 0.5rem;
+}
+
+.prose iframe {
   border-radius: 0.5rem;
 }
 

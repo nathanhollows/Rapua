@@ -18,6 +18,8 @@ The cost will always be shown if points are enabled. If points are not enabled, 
 
 ## Example
 
+<iframe class="w-full aspect-[4/3]" src="/static/images/docs/user/blocks/block-clue-preview.mp4" frameborder="0" allowfullscreen></iframe>
+
 **Clue Block Configuration:**
 - **Points**: `-15`
 - **Description Text**: `Stuck on the puzzle? This clue will reveal the pattern you need to find. **Costs 15 points.**`
