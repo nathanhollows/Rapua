@@ -20,12 +20,17 @@ Unlike other blocks, the broker block has no completion bonus - players pay exac
 
 ## Best Practices
 
-- **Progressive Information**: Structure tiers from basic to detailed information
-- **Fair Pricing**: Set tier thresholds that match information value
-- **Meaningful Default**: Make the 0-point response useful but limited
-- **Clear Prompts**: Help players understand they're making a blind bid
+Structure your tiers from basic to detailed information, ensuring that each tier provides progressively more valuable insights. This encourages players to think strategically about how much they value the information.
+
+Set tier thresholds that match the perceived value of the information. The first tier should be accessible, while higher tiers should require more points, reflecting their increased value.
+
+Make the 0-point response useful but limited, even if it doesn't provide actionable information. This ensures players still receive some context without incentivising 0-point bids.
+
+Help players understand they're making a blind bid by providing clear prompts. You could lean into the [Anchoring Effect](https://en.wikipedia.org/wiki/Anchoring_effect) by giving a vague hint about the value of the information, but avoid revealing specific tier thresholds.
 
 ## Example
+
+<iframe class="w-full aspect-square" src="/static/images/docs/user/blocks/block-broker-preview.mp4" frameborder="0" allowfullscreen></iframe>
 
 **Broker Block Configuration:**
 - **Prompt**: `The merchant eyes you suspiciously. "I might have information about the missing artifact... depends on how much it's worth to you."`
@@ -59,9 +64,9 @@ Unlike other blocks, the broker block has no completion bonus - players pay exac
 
 ## Notes
 
-- **No Completion Bonus**: Players pay exactly their bid amount
-- **Information Persistence**: Once purchased, information remains visible
-- **One Purchase Only**: Players cannot rebid after completing the block
-- **Blind Bidding**: Players don't see tier thresholds, creating strategic tension
-- **Admin Flexibility**: Create any number of tiers with custom point requirements
-- **Default Safety Net**: 0-point bids ensure all players get some information
+- Players pay exactly their bid amount
+- Once purchased, information remains visible
+- Players cannot rebid after completing the block
+- Players don't see tier thresholds, creating strategic tension
+- Create any number of tiers with custom point requirements
+- 0-point bids are always met with the defined default response
