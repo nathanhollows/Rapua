@@ -22,8 +22,6 @@ func TestQuizBlock_Getters(t *testing.T) {
 		RetryEnabled:   false,
 	}
 
-	assert.Equal(t, "Quiz Block", block.GetName())
-	assert.Equal(t, "Answer a quiz question with multiple choice options.", block.GetDescription())
 	assert.Equal(t, "quiz_block", block.GetType())
 	assert.Equal(t, "test-quiz-id", block.GetID())
 	assert.Equal(t, "location-123", block.GetLocationID())
@@ -43,7 +41,7 @@ func TestQuizBlock_ParseData(t *testing.T) {
 		"randomize_order": true,
 		"retry_enabled": false
 	}`
-	
+
 	block := QuizBlock{
 		BaseBlock: BaseBlock{
 			Data: json.RawMessage(data),
@@ -75,7 +73,7 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"option_text":     {"Paris", "London", "Berlin", "Madrid"},
 		"option_correct":  {"option_0", "option_3"}, // Mark Paris and Madrid as correct
 	}
-	
+
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "What is the capital of France?", block.Question)
@@ -102,7 +100,7 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"option_text":     {"Python", "HTML", "JavaScript", "CSS"},
 		"option_correct":  {"option_0", "option_2"}, // Python and JavaScript
 	}
-	
+
 	err = block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "Select all programming languages:", block.Question)
@@ -119,11 +117,11 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 	// Test with empty options (should be filtered out)
 	block = QuizBlock{}
 	data = map[string][]string{
-		"question":        {"Test question"},
-		"option_text":     {"Valid option", "", "Another valid", ""},
-		"option_correct":  {"option_0"},
+		"question":       {"Test question"},
+		"option_text":    {"Valid option", "", "Another valid", ""},
+		"option_correct": {"option_0"},
 	}
-	
+
 	err = block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Len(t, block.Options, 2)
@@ -159,7 +157,7 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
-	
+
 	// Verify player data shows 1 attempt with no selections
 	var playerData QuizPlayerData
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
@@ -233,7 +231,7 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
-	
+
 	// Should get partial points: 2 out of 4 correct = round(100 * 0.50) = 50
 	// Python selected (correct), HTML selected (incorrect), JavaScript not selected (incorrect), CSS not selected (correct)
 	assert.Equal(t, 50, newState.GetPointsAwarded())
@@ -248,7 +246,7 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
-	
+
 	// Should get partial points: 3 out of 4 correct = round(100 * 0.75) = 75
 	// Python selected (correct), HTML not selected (correct), JavaScript not selected (incorrect), CSS not selected (correct)
 	assert.Equal(t, 75, newState.GetPointsAwarded())
@@ -317,7 +315,7 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	input = map[string][]string{"quiz_option": {"option_0"}} // Only Python (partial answer)
 	newState, err = multiBlock.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
-	assert.False(t, newState.IsComplete()) // Should remain incomplete for retry
+	assert.False(t, newState.IsComplete())           // Should remain incomplete for retry
 	assert.Equal(t, 75, newState.GetPointsAwarded()) // 3 out of 4 correct = 75 points
 
 	// Test perfect answer with multiple choice retry - should complete
@@ -367,14 +365,14 @@ func TestQuizBlock_GetShuffledOptions(t *testing.T) {
 	// Test that all original options are present (though possibly in different order)
 	originalIDs := make(map[string]bool)
 	shuffledIDs := make(map[string]bool)
-	
+
 	for _, option := range block.Options {
 		originalIDs[option.ID] = true
 	}
 	for _, option := range shuffled {
 		shuffledIDs[option.ID] = true
 	}
-	
+
 	assert.Equal(t, originalIDs, shuffledIDs)
 
 	// Test with randomization disabled
@@ -399,7 +397,7 @@ func TestNewQuizBlock(t *testing.T) {
 	}
 
 	block := NewQuizBlock(base)
-	
+
 	assert.Equal(t, base, block.BaseBlock)
 	assert.Equal(t, "", block.Question)
 	assert.Empty(t, block.Options)
@@ -407,3 +405,4 @@ func TestNewQuizBlock(t *testing.T) {
 	assert.False(t, block.RandomizeOrder)
 	assert.False(t, block.RetryEnabled)
 }
+

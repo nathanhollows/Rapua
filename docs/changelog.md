@@ -6,6 +6,16 @@ order: 100
 
 # Changelog
 
+## 3.10.0
+
+### Added
+
+- [Clue block](/docs/user/blocks/clue)! A new interactive content block that allows players to view clues for a price.
+
+### Fixed
+
+- Removed "Block" from [Quiz block](/docs/user/blocks/quiz) in the panel for consistency.
+
 ## 3.9.2 (2025-07-02)
 
 ### Fixed
