@@ -15,12 +15,13 @@ order: 100
 
 ### Changed
 
-- Rearranged blocks into alphabetical order in the admin interface for easier navigation.
+- Rearranged [blocks](/docs/user/blocks/) into alphabetical order in the admin interface for easier navigation.
 - Iamges in player content are now rounded.
+- Videos in docs are now rounded.
 
 ### Fixed
 
-- Removed "Block" from [Quiz block](/docs/user/blocks/quiz) in the panel for consistency.
+- Removed the word "Block" from [Quiz block](/docs/user/blocks/quiz) title for consistency.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.10.0)
 
