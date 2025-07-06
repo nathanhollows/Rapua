@@ -1,0 +1,106 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/models"
+)
+
+templ cluePlayer(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full">
+		@pointsBadge(settings.EnablePoints, block.GetPoints())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			if data.IsComplete() {
+				<div>
+					@templ.Raw(stringToMarkdown(block.ClueText))
+				</div>
+			} else {
+				<div>
+					if block.DescriptionText != "" {
+						@templ.Raw(stringToMarkdown(block.DescriptionText))
+					}
+					<div class="flex justify-center mt-4">
+						<form hx-post={ fmt.Sprint("/blocks/validate") } hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }>
+							<input type="hidden" name="block" value={ block.ID }/>
+							<input type="hidden" name="reveal_clue" value="true"/>
+							<button
+								type="button"
+								class="btn btn-warning"
+								_="on click
+								if my @type == 'button' then
+								halt the event
+								set :text to my innerHTML
+								set my innerHTML to 'Are you sure?'
+								set my @type to 'submit'
+								wait 3000ms
+								then set my innerHTML to :text
+								then set my @type to 'button'
+								end
+								end"
+							>
+								if block.ButtonLabel != "" {
+									{ block.ButtonLabel }
+								} else {
+									Reveal Clue
+								}
+							</button>
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+}
+
+templ cluePlayerUpdate(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full" hx-swap-oob="true">
+		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.ClueText))
+		</div>
+	</div>
+}
+
+templ clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) {
+	<form id={ fmt.Sprintf("form-%s", block.ID) } hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") } hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID) } hx-swap="none">
+		if settings.EnablePoints {
+			<label class="form-control w-full">
+				<div class="label">
+					<span class="label-text font-bold">Point cost</span>
+				</div>
+				<input name="points" type="number" class="input input-bordered w-full" placeholder="10" value={ fmt.Sprint(block.Points) }/>
+				<div class="label">
+					<span class="label-text-alt">
+						The number of points to <span class="font-bold">deduct</span> from the team when they reveal the clue. If set to 0, no points will be deducted.
+					</span>
+				</div>
+			</label>
+		}
+		<label class="form-control w-full mt-4">
+			<div class="label">
+				<span class="label-text font-bold">Description Text</span>
+			</div>
+			<textarea name="description_text" rows="3" class="markdown-textarea textarea textarea-bordered w-full font-mono" style="field-sizing: content;" placeholder="Text shown before the clue is revealed">{ block.DescriptionText }</textarea>
+			<div class="label">
+				@markdownHint()
+			</div>
+		</label>
+		<label class="form-control w-full mt-4">
+			<div class="label">
+				<span class="label-text font-bold">Clue Text</span>
+			</div>
+			<textarea name="clue_text" rows="4" class="markdown-textarea textarea textarea-bordered w-full font-mono" style="field-sizing: content;" placeholder="The actual clue content that will be revealed">{ block.ClueText }</textarea>
+			<div class="label">
+				@markdownHint()
+			</div>
+		</label>
+		<label class="form-control w-full mt-4">
+			<div class="label">
+				<span class="label-text font-bold">Button Label</span>
+			</div>
+			<input type="text" name="button_label" class="input input-bordered w-full" placeholder="Reveal Clue" value={ block.ButtonLabel }/>
+		</label>
+	</form>
+}

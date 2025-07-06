@@ -54,6 +54,7 @@ var registeredBlocks = Blocks{
 	&ImageBlock{},
 	&YoutubeBlock{},
 	&AlertBlock{},
+	&ClueBlock{},
 	&AnswerBlock{},
 	&PincodeBlock{},
 	&ChecklistBlock{},
@@ -88,6 +89,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewSortingBlock(baseBlock), nil
 	case "quiz_block":
 		return NewQuizBlock(baseBlock), nil
+	case "clue":
+		return NewClueBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
@@ -146,6 +149,12 @@ func NewImageBlock(base BaseBlock) *ImageBlock {
 
 func NewSortingBlock(base BaseBlock) *SortingBlock {
 	return &SortingBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewClueBlock(base BaseBlock) *ClueBlock {
+	return &ClueBlock{
 		BaseBlock: base,
 	}
 }
