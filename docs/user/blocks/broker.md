@@ -1,7 +1,7 @@
 ---
 title: "Broker Block"
 sidebar: true
-order: 9
+order: 2
 ---
 
 # Broker Block

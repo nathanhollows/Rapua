@@ -1,7 +1,7 @@
 ---
 title: "Checklist Block"
 sidebar: true
-order: 6
+order: 3
 ---
 
 # Checklist Block
