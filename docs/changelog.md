@@ -6,7 +6,7 @@ order: 100
 
 # Changelog
 
-## 3.10.0
+## 3.10.0 (2025-07-10)
 
 ### Added
 
@@ -16,7 +16,7 @@ order: 100
 ### Changed
 
 - Rearranged [blocks](/docs/user/blocks/) into alphabetical order in the admin interface for easier navigation.
-- Iamges in player content are now rounded.
+- Images in player content are now rounded.
 - Videos in docs are now rounded.
 
 ### Fixed
