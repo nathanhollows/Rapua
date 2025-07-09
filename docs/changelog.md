@@ -21,6 +21,12 @@ order: 100
 
 ### Fixed
 
+- **Bonus Points System**: Fixed critical issues with bonus points calculation and recording:
+  - Bonus points are now calculated correctly based on visit order (first visitor gets 2x, second gets 1.5x, third gets 1.2x points)
+  - CheckIn records now store the actual points awarded to players instead of just base location points
+  - Implemented hybrid points system for "check in and out" mode: bonus points awarded immediately at check-in, base points awarded at check-out completion
+  - CheckIn records are now updated during checkout to show total points earned from location (bonus + base points)
+  - Added comprehensive test coverage for bonus points functionality
 - Removed the word "Block" from [Quiz block](/docs/user/blocks/quiz) title for consistency.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.10.0)
