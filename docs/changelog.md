@@ -6,6 +6,31 @@ order: 100
 
 # Changelog
 
+## 3.10.0 (2025-07-10)
+
+### Added
+
+- [Clue block](/docs/user/blocks/clue)! A new interactive content block that allows players to view clues for a price.
+- [Broker block](/docs/user/blocks/broker)! A new interactive content block that allows players to blindly trade points for clues.
+
+### Changed
+
+- Rearranged [blocks](/docs/user/blocks/) into alphabetical order in the admin interface for easier navigation.
+- Images in player content are now rounded.
+- Videos in docs are now rounded.
+
+### Fixed
+
+- **Bonus Points System**: Fixed critical issues with bonus points calculation and recording:
+  - Bonus points are now calculated correctly based on visit order (first visitor gets 2x, second gets 1.5x, third gets 1.2x points)
+  - CheckIn records now store the actual points awarded to players instead of just base location points
+  - Implemented hybrid points system for "check in and out" mode: bonus points awarded immediately at check-in, base points awarded at check-out completion
+  - CheckIn records are now updated during checkout to show total points earned from location (bonus + base points)
+  - Added comprehensive test coverage for bonus points functionality
+- Removed the word "Block" from [Quiz block](/docs/user/blocks/quiz) title for consistency.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v3.10.0)
+
 ## 3.9.2 (2025-07-02)
 
 ### Fixed

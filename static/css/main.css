@@ -8,6 +8,14 @@
   @apply hidden;
 }
 
+.prose p img {
+  @apply rounded-lg;
+}
+
+.prose iframe {
+  @apply rounded-lg;
+}
+
 /* Basics */
 .mapboxgl-ctrl-geocoder,
 .mapboxgl-ctrl-geocoder *,

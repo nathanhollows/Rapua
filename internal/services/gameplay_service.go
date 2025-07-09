@@ -175,6 +175,10 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
 
+	// The team relations loaded above include Instance and Instance.Settings
+	// Copy the instance settings to the location for bonus points calculation
+	location.Instance = team.Instance
+
 	// A team may not check in if they have previously checked in at this location
 	scanned := false
 	for _, s := range team.CheckIns {
@@ -201,9 +205,59 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 		return fmt.Errorf("checking if validation is required: %w", err)
 	}
 
-	// Log the check in
+	// Calculate the points to award
 	mustCheckOut := team.Instance.Settings.CompletionMethod == models.CheckInAndOut
-	_, err = s.CheckInService.CheckIn(ctx, *team, *location, mustCheckOut, validationRequired)
+	var pointsForCheckInRecord int
+	var bonusPoints int
+
+	if mustCheckOut {
+		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
+		if location.Instance.Settings.EnableBonusPoints {
+			// Calculate bonus points based on visit count
+			switch location.TotalVisits {
+			case 0:
+				bonusPoints = location.Points // First visit gets +100% bonus (2x total)
+			case 1:
+				bonusPoints = int(float64(location.Points) * 0.5) // Second visit gets +50% bonus (1.5x total)
+			case 2:
+				bonusPoints = int(float64(location.Points) * 0.2) // Third visit gets +20% bonus (1.2x total)
+			default:
+				bonusPoints = 0 // No bonus for later visits
+			}
+		}
+		// For CheckIn record: only bonus points are recorded (base points awarded at checkout)
+		pointsForCheckInRecord = bonusPoints
+		// Award bonus points to team immediately
+		team.Points += bonusPoints
+		team.MustCheckOut = location.ID
+		
+	} else {
+		// Check-in-only mode: full points awarded immediately
+		if location.Instance.Settings.EnableBonusPoints {
+			// Calculate total points with bonus
+			switch location.TotalVisits {
+			case 0:
+				pointsForCheckInRecord = location.Points * 2 // First visit gets double points
+			case 1:
+				pointsForCheckInRecord = int(float64(location.Points) * 1.5) // Second visit gets 1.5x points
+			case 2:
+				pointsForCheckInRecord = int(float64(location.Points) * 1.2) // Third visit gets 1.2x points
+			default:
+				pointsForCheckInRecord = location.Points // Regular points for all other visits
+			}
+		} else {
+			pointsForCheckInRecord = location.Points
+		}
+		// Award full points to team immediately
+		team.Points += pointsForCheckInRecord
+	}
+
+	// Create a copy of the location with the calculated points for the CheckIn record
+	locationForCheckIn := *location
+	locationForCheckIn.Points = pointsForCheckInRecord
+
+	// Log the check in with the correct points
+	_, err = s.CheckInService.CheckIn(ctx, *team, locationForCheckIn, mustCheckOut, validationRequired)
 	if err != nil {
 		return fmt.Errorf("logging scan: %w", err)
 	}
@@ -211,14 +265,6 @@ func (s *gameplayService) CheckIn(ctx context.Context, team *models.Team, locati
 	err = s.LocationService.IncrementVisitorStats(ctx, location)
 	if err != nil {
 		return fmt.Errorf("incrementing visitor stats: %w", err)
-	}
-
-	// Points are only added if the team does not need to scan out
-	// If the team must check out, the location is saved to the team
-	if mustCheckOut {
-		team.MustCheckOut = location.ID
-	} else {
-		team.Points += location.Points
 	}
 	err = s.TeamService.Update(ctx, team)
 	if err != nil {
@@ -256,10 +302,30 @@ func (s *gameplayService) CheckOut(ctx context.Context, team *models.Team, locat
 		return ErrUnfinishedCheckIn
 	}
 
-	// Log the scan out
-	_, err = s.CheckInService.CheckOut(ctx, team, location)
+	// Copy the team's instance settings to the location for consistency
+	location.Instance = team.Instance
+
+	// Award base points on checkout completion
+	team.Points += location.Points
+
+	// Log the scan out and get the updated CheckIn record
+	checkIn, err := s.CheckInService.CheckOut(ctx, team, location)
 	if err != nil {
 		return fmt.Errorf("logging scan out: %w", err)
+	}
+
+	// Update the CheckIn record to include the base points in addition to any bonus points
+	// This ensures the CheckIn record shows the total points earned from this location
+	checkIn.Points += location.Points
+	err = s.CheckInService.UpdateCheckIn(ctx, &checkIn)
+	if err != nil {
+		return fmt.Errorf("updating check in points: %w", err)
+	}
+
+	// Update team with the awarded points
+	err = s.TeamService.Update(ctx, team)
+	if err != nil {
+		return fmt.Errorf("updating team points: %w", err)
 	}
 
 	return nil
@@ -295,18 +361,18 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 
 	// Check if we're in preview mode - preview mode should use fresh mock state
 	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
-	
+
 	var block blocks.Block
 	var state blocks.PlayerState
 	var err error
-	
+
 	if isPreview {
 		// In preview mode, always get a fresh block and create a new mock state
 		block, err = s.BlockService.GetByBlockID(ctx, blockID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
 		}
-		
+
 		state, err = s.BlockService.NewMockBlockState(ctx, blockID, team.Code)
 		if err != nil {
 			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
@@ -326,7 +392,7 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 	if state == nil {
 		return nil, nil, errors.New("block state not found")
 	}
-	
+
 	// In regular mode, return early if already complete to prevent duplicate points
 	// Preview mode always uses fresh state so this check is not needed
 	if !isPreview && state.IsComplete() {

@@ -1,7 +1,7 @@
 ---
 title: "Text Block"
 sidebar: true
-order: 1
+order: 11
 ---
 
 # Text Block

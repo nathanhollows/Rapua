@@ -189,6 +189,7 @@ func (r *locationRepository) LoadRelations(ctx context.Context, location *models
 		Relation("Clues").
 		Relation("Blocks").
 		Relation("Instance").
+		Relation("Instance.Settings").
 		Relation("Marker").
 		WherePK().
 		Scan(ctx)

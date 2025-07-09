@@ -5,7 +5,10 @@
 ><div class=\"flex flex-row collapse-title\"><div class=\"flex flex-1 flex-row gap-5\"><h3 class=\"text-lg font-bold flex flex-row gap-3 items-center\"><span class=\"\">
 </span> 
  
-<span class=\"badge badge-sm\" _=\"on keyup from next &lt;input[name=points] /&gt; \n\t\t\t\t\t\t\tset :el to next &lt;input[name=points] /&gt;\n\t\t\t\t\t\t\tif :el&#39;s value == &#39;&#39; \n\t\t\t\t\t\t\t\tthen set my innerHTML to &#39;0 pts&#39;\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tset my innerHTML to (next &lt;input[name=points] /&gt;)&#39;s value + &#39; pts&#39;\n\t\t\t\t\t\t\tend\">
+<span
+ class=\"badge badge-sm\"
+ class=\"badge badge-sm badge-warning\"
+ _=\"on keyup from next &lt;input[name=points] /&gt; \n\t\t\t\t\t\t\tset :el to next &lt;input[name=points] /&gt;\n\t\t\t\t\t\t\tif :el&#39;s value == &#39;&#39; \n\t\t\t\t\t\t\t\tthen set my innerHTML to &#39;0 pts&#39;\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tset my innerHTML to (next &lt;input[name=points] /&gt;)&#39;s value + &#39; pts&#39;\n\t\t\t\t\t\t\tend\">
  pts</span> 
 <span class=\"loading loading-dots loading-md htmx-indicator\"></span></h3></div><div class=\"flex gap-3 z-10\"><button type=\"button\" class=\"block-delete btn btn-sm btn-circle shadow-none hover:btn-error tooltip flex\" data-tip=\"Delete\" data-location=\"
 \" data-block=\"
@@ -17,3 +20,7 @@
 <span class=\"label-text-alt flex flex-row content-center gap-1 text-base-content/80\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-5 h-5\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg> <span class=\"self-center\">This block uses Markdown for formatting content. <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Here's a quick guide</a>.</span></span>
 <span class=\"indicator-item indicator-top indicator-right badge badge-success mr-12\">Complete</span>
 <span class=\"indicator-item indicator-top indicator-right badge mr-12\">Incomplete</span>
+<span class=\"indicator-item indicator-top indicator-center badge badge-warning\">-
+ pts</span>
+<span class=\"indicator-item indicator-top indicator-center badge badge-info\">
+ pts</span>

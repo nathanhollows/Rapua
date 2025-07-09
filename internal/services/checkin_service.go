@@ -15,6 +15,8 @@ type CheckInService interface {
 	CheckIn(ctx context.Context, team models.Team, location models.Location, mustCheckOut bool, validationRequired bool) (models.CheckIn, error)
 	// CheckOut logs a check out for a team at a location
 	CheckOut(ctx context.Context, team *models.Team, location *models.Location) (models.CheckIn, error)
+	// UpdateCheckIn updates an existing check-in
+	UpdateCheckIn(ctx context.Context, checkIn *models.CheckIn) error
 }
 
 type checkInService struct {
@@ -90,4 +92,9 @@ func (s *checkInService) CheckOut(ctx context.Context, team *models.Team, locati
 	}
 
 	return scan, nil
+}
+
+// UpdateCheckIn updates an existing check-in.
+func (s *checkInService) UpdateCheckIn(ctx context.Context, checkIn *models.CheckIn) error {
+	return s.checkInRepo.Update(ctx, checkIn)
 }

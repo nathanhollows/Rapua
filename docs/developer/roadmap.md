@@ -14,6 +14,7 @@ If you want to [request a feature](https://github.com/nathanhollows/Rapua/issues
 
 - **Photo challenge**: A block that allows users to take a photo and submit it ([#49](https://github.com/nathanhollows/Rapua/issues/49)).
 - **Video challenge**: A block that allows users to record a video and submit it.
+- **Map**: Mapbox integration with arbitrary markers, zooming, and coordinates.
 - **Audio waveform**: A block for admins to upload audio files that users can listen to, with a waveform visualisation.
 - **API**: A block that only can only be completed by calling an API. This would enable facilitators to integrate with other systems, e.g., a student sends an email to a specific address, which triggers the API to mark the block as complete ([#41](https://github.com/nathanhollows/Rapua/issues/41)).
 

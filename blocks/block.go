@@ -49,17 +49,21 @@ type BaseBlock struct {
 }
 
 var registeredBlocks = Blocks{
-	&MarkdownBlock{},
+	// Content blocks
+	&MarkdownBlock{}, // Text is always first
+	&AlertBlock{},
 	&DividerBlock{},
 	&ImageBlock{},
 	&YoutubeBlock{},
-	&AlertBlock{},
+	// Interactive blocks
+	&BrokerBlock{},
+	&ChecklistBlock{},
+	&ClueBlock{},
 	&AnswerBlock{},
 	&PincodeBlock{},
-	&ChecklistBlock{},
-	&SortingBlock{},
-	&QuizBlock{},
 	// &PhotoBlock{},
+	&QuizBlock{},
+	&SortingBlock{},
 }
 
 func GetRegisteredBlocks() Blocks {
@@ -88,6 +92,10 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewSortingBlock(baseBlock), nil
 	case "quiz_block":
 		return NewQuizBlock(baseBlock), nil
+	case "clue":
+		return NewClueBlock(baseBlock), nil
+	case "broker":
+		return NewBrokerBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
@@ -146,6 +154,18 @@ func NewImageBlock(base BaseBlock) *ImageBlock {
 
 func NewSortingBlock(base BaseBlock) *SortingBlock {
 	return &SortingBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewClueBlock(base BaseBlock) *ClueBlock {
+	return &ClueBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewBrokerBlock(base BaseBlock) *BrokerBlock {
+	return &BrokerBlock{
 		BaseBlock: base,
 	}
 }

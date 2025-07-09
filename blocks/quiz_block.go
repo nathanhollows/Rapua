@@ -36,7 +36,7 @@ type QuizPlayerData struct {
 }
 
 // Basic Attribute Getters
-func (b *QuizBlock) GetName() string { return "Quiz Block" }
+func (b *QuizBlock) GetName() string { return "Quiz" }
 
 func (b *QuizBlock) GetDescription() string {
 	return "Answer a quiz question with multiple choice options."
@@ -174,7 +174,7 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 		playerData.Attempts++
 		playerData.SelectedOptions = []string{}
 		playerData.IsCorrect = false
-		
+
 		newPlayerData, err := json.Marshal(playerData)
 		if err != nil {
 			return state, fmt.Errorf("failed to save player data: %w", err)
@@ -246,27 +246,27 @@ func (b *QuizBlock) calculatePoints(selectedOptions []string) (int, bool) {
 	if b.MultipleChoice {
 		// Multiple choice: proportional scoring based on correct/incorrect answers
 		correctAnswers := 0
-		
+
 		// Count how many options are answered correctly (checked if should be checked, unchecked if should be unchecked)
 		selectedSet := make(map[string]bool)
 		for _, selectedID := range selectedOptions {
 			selectedSet[selectedID] = true
 		}
-		
+
 		for _, option := range b.Options {
 			// Correct if: (option is correct AND selected) OR (option is incorrect AND not selected)
 			if (option.IsCorrect && selectedSet[option.ID]) || (!option.IsCorrect && !selectedSet[option.ID]) {
 				correctAnswers++
 			}
 		}
-		
+
 		// Calculate proportional points: round(points * (correct/total))
 		ratio := float64(correctAnswers) / float64(len(b.Options))
 		points := int(float64(b.Points)*ratio + 0.5) // +0.5 for rounding
-		
+
 		// Perfect score means all correct
 		isCorrect := correctAnswers == len(b.Options)
-		
+
 		return points, isCorrect
 	} else {
 		// Single choice: all or nothing
@@ -311,3 +311,4 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 		RetryEnabled:   false,
 	}
 }
+

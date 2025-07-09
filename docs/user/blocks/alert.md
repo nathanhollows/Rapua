@@ -1,7 +1,7 @@
 ---
 title: "Alert Block"
 sidebar: true
-order: 5
+order: 1
 ---
 
 # Alert Block

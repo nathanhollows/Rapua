@@ -38,6 +38,12 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "quiz_block":
 		b := block.(*blocks.QuizBlock)
 		return quizAdmin(settings, *b)
+	case "clue":
+		b := block.(*blocks.ClueBlock)
+		return clueAdmin(settings, *b)
+	case "broker":
+		b := block.(*blocks.BrokerBlock)
+		return brokerAdmin(settings, *b)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
@@ -77,6 +83,12 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "quiz_block":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayer(settings, *b, state)
+	case "clue":
+		b := block.(*blocks.ClueBlock)
+		return cluePlayer(settings, *b, state)
+	case "broker":
+		b := block.(*blocks.BrokerBlock)
+		return brokerPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
@@ -116,6 +128,12 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "quiz_block":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayerUpdate(settings, *b, state)
+	case "clue":
+		b := block.(*blocks.ClueBlock)
+		return cluePlayerUpdate(settings, *b, state)
+	case "broker":
+		b := block.(*blocks.BrokerBlock)
+		return brokerPlayerUpdate(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)
@@ -148,7 +166,11 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 					{ block.GetName() }
 					if settings.EnablePoints && block.RequiresValidation() {
 						<span
-							class="badge badge-sm"
+							if block.GetPoints() > 0 {
+								class="badge badge-sm"
+							} else {
+								class="badge badge-sm badge-warning"
+							}
 							_="on keyup from next <input[name=points] /> 
 							set :el to next <input[name=points] />
 							if :el's value == '' 
@@ -221,5 +243,15 @@ templ completionBadge(data blocks.PlayerState) {
 		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
 	} else {
 		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
+	}
+}
+
+templ pointsBadge(enablePoints bool, points int) {
+	if enablePoints {
+		if points < 0 {
+			<span class="indicator-item indicator-top indicator-center badge badge-warning">-{ fmt.Sprint(-points) } pts</span>
+		} else if points > 0 {
+			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(points) } pts</span>
+		}
 	}
 }
