@@ -7,13 +7,11 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
 type gameManagerService struct {
-	transactor           db.Transactor
 	locationService      LocationService
 	userService          UserService
 	teamService          TeamService
@@ -40,7 +38,6 @@ type GameManagerService interface {
 }
 
 func NewGameManagerService(
-	transactor db.Transactor,
 	locationService LocationService,
 	userService UserService,
 	teamService TeamService,
@@ -51,7 +48,6 @@ func NewGameManagerService(
 	instanceService InstanceService,
 ) GameManagerService {
 	return &gameManagerService{
-		transactor:           transactor,
 		locationService:      locationService,
 		userService:          userService,
 		teamService:          teamService,
