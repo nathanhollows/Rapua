@@ -11,6 +11,7 @@ order: 100
 ### Changed
 
 - Refactored the GameManagerService to improve maintainability and separation of concerns.
+- Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
 
 ## 3.10.0 (2025-07-10)
 
