@@ -13,14 +13,14 @@ import (
 func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	response := h.GameManagerService.StartGame(r.Context(), user)
-	if response.Error != nil {
-		h.handleError(w, r, "starting game", "Error starting game", "Could not start game", response.Error, "instance_id", user.CurrentInstanceID)
+	err := h.GameScheduleService.Start(r.Context(), &user.CurrentInstance)
+	if err != nil {
+		h.handleError(w, r, "starting game", "Error starting game", "Could not start game", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
 	msg := *flash.NewSuccess("Game started!")
-	err := templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
+	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("StartGame: rendering template", "error", err)
 	}
@@ -30,14 +30,14 @@ func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) StopGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	response := h.GameManagerService.StopGame(r.Context(), user)
-	if response.Error != nil {
-		h.handleError(w, r, "stopping game", "Error stopping game", "Could not stop game", response.Error, "instance_id", user.CurrentInstanceID)
+	err := h.GameScheduleService.Stop(r.Context(), &user.CurrentInstance)
+	if err != nil {
+		h.handleError(w, r, "stopping game", "Error stopping game", "Could not stop game", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
 	msg := *flash.NewSuccess("Game stopped!")
-	err := templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
+	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("StopGame: rendering template", "error", err)
 	}
@@ -87,21 +87,9 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := h.GameManagerService.ScheduleGame(r.Context(), user, sTime, eTime)
-	for _, msg := range response.FlashMessages {
-		err := templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
-		if err != nil {
-			h.Logger.Error("ScheduleGame: rendering template", "error", err)
-			return
-		}
-	}
-	if response.Error != nil {
-		err := templates.Toast(*flash.NewError("Error scheduling game")).Render(r.Context(), w)
-		if err != nil {
-			h.handleError(w, r, "ScheduleGame: rendering template", "Error rendering template", "error", err)
-			return
-		}
-		h.Logger.Error("scheduling game", "err", response.Error)
+	err = h.GameScheduleService.ScheduleGame(r.Context(), &user.CurrentInstance, sTime, eTime)
+	if err != nil {
+		h.handleError(w, r, "ScheduleGame: scheduling game", "Error scheduling game", "Could not schedule game", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 

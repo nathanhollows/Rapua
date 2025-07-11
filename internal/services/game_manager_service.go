@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/nathanhollows/Rapua/v3/db"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
-	"github.com/uptrace/bun"
 )
 
 type gameManagerService struct {
@@ -29,13 +26,6 @@ type gameManagerService struct {
 
 // TODO: Split this service into smaller services.
 type GameManagerService interface {
-	// Game Control
-	StartGame(ctx context.Context, user *models.User) (response ServiceResponse)
-	StopGame(ctx context.Context, user *models.User) (response ServiceResponse)
-	SetStartTime(ctx context.Context, user *models.User, time time.Time) (response ServiceResponse)
-	SetEndTime(ctx context.Context, user *models.User, time time.Time) (response ServiceResponse)
-	ScheduleGame(ctx context.Context, user *models.User, start time.Time, end time.Time) (response ServiceResponse)
-
 	// Team & Location Management
 	LoadTeams(ctx context.Context, teams *[]models.Team) error
 	CreateLocation(ctx context.Context, user *models.User, data map[string]string) (models.Location, error)
@@ -264,102 +254,6 @@ func (s *gameManagerService) UpdateSettings(ctx context.Context, settings *model
 	}
 
 	return nil
-}
-
-// StartGame starts the game immediately.
-func (s *gameManagerService) StartGame(ctx context.Context, user *models.User) (response ServiceResponse) {
-	return s.SetStartTime(ctx, user, time.Now())
-}
-
-// StopGame stops the game immediately.
-func (s *gameManagerService) StopGame(ctx context.Context, user *models.User) (response ServiceResponse) {
-	return s.SetEndTime(ctx, user, time.Now())
-}
-
-// SetStartTime sets the game start time to the given time.
-func (s *gameManagerService) SetStartTime(ctx context.Context, user *models.User, time time.Time) (response ServiceResponse) {
-	response = ServiceResponse{}
-
-	// Check if the game is already active
-	if user.CurrentInstance.GetStatus() == models.Active {
-		response.AddFlashMessage(*flash.NewInfo("Game is already active"))
-		response.Error = errors.New("game is already active")
-		return response
-	}
-
-	// Update the start time
-	user.CurrentInstance.StartTime = bun.NullTime{Time: time}
-	if !user.CurrentInstance.EndTime.After(time) {
-		user.CurrentInstance.EndTime = bun.NullTime{}
-	}
-
-	if err := s.instanceRepo.Update(ctx, &user.CurrentInstance); err != nil {
-		response.AddFlashMessage(*flash.NewError("Error updating instance"))
-		response.Error = fmt.Errorf("updating instance with new time: %w", err)
-		return response
-	}
-
-	msg := flash.NewSuccess("Game scheduled to start at " + time.Format("2006-01-02 15:04:05"))
-	response.AddFlashMessage(*msg)
-	return response
-}
-
-// SetEndTime sets the game end time to the given time.
-func (s *gameManagerService) SetEndTime(ctx context.Context, user *models.User, time time.Time) (response ServiceResponse) {
-	response = ServiceResponse{}
-
-	// Check if the game is already closed
-	if user.CurrentInstance.GetStatus() == models.Closed {
-		response.AddFlashMessage(*flash.NewError("Game is already over"))
-		response.Error = errors.New("game is already closed")
-		return response
-	}
-
-	// Make sure the end time is after the start time
-	if !user.CurrentInstance.StartTime.IsZero() && time.Before(user.CurrentInstance.StartTime.Time) {
-		response.AddFlashMessage(*flash.NewError("End time must be after start time"))
-		response.Error = errors.New("end time must be after start time")
-		return response
-	}
-
-	// Update the end time
-	user.CurrentInstance.EndTime = bun.NullTime{Time: time}
-	if err := s.instanceRepo.Update(ctx, &user.CurrentInstance); err != nil {
-		response.AddFlashMessage(*flash.NewError("Error updating instance"))
-		response.Error = fmt.Errorf("updating instance with new time: %w", err)
-		return response
-	}
-
-	msg := flash.NewSuccess("Game scheduled to end at " + time.Format("2006-01-02 15:04:05"))
-	response.AddFlashMessage(*msg)
-	return response
-}
-
-// Expects a form with set_start, utc_start_date, utc_start_time, set_end, utc_end_date, and utc_end_time.
-func (s *gameManagerService) ScheduleGame(ctx context.Context, user *models.User, start time.Time, end time.Time) (response ServiceResponse) {
-	response = ServiceResponse{}
-
-	instance := user.CurrentInstance
-
-	// Check if the end time is before the start time
-	if !instance.EndTime.IsZero() && instance.EndTime.Time.Before(instance.StartTime.Time) {
-		response.AddFlashMessage(*flash.NewError("End time must be after start time"))
-		response.Error = errors.New("end time must be after start time")
-		return response
-	}
-
-	instance.StartTime = bun.NullTime{Time: start}
-	instance.EndTime = bun.NullTime{Time: end}
-
-	// Save instance
-	if err := s.instanceRepo.Update(ctx, &instance); err != nil {
-		response.AddFlashMessage(*flash.NewError("Error saving instance"))
-		response.Error = fmt.Errorf("saving instance: %w", err)
-		return response
-	}
-
-	user.CurrentInstance = instance
-	return response
 }
 
 // DismissQuickstart marks the user as having dismissed the quickstart.

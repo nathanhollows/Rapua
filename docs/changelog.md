@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 3.10.1 (2025-07-11)
+
+### Changed
+
+- Refactored the GameManagerService to improve maintainability and separation of concerns.
+
 ## 3.10.0 (2025-07-10)
 
 ### Added

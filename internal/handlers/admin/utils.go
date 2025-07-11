@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
@@ -11,6 +12,14 @@ import (
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
+
+type GameScheduleService interface {
+	Start(ctx context.Context, instance *models.Instance) error
+	Stop(ctx context.Context, instance *models.Instance) error
+	SetStartTime(ctx context.Context, instance *models.Instance, start time.Time) error
+	SetEndTime(ctx context.Context, instance *models.Instance, end time.Time) error
+	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
+}
 
 type AdminHandler struct {
 	Logger              *slog.Logger
@@ -21,6 +30,7 @@ type AdminHandler struct {
 	FacilitatorService  services.FacilitatorService
 	GameManagerService  services.GameManagerService
 	GameplayService     services.GameplayService
+	GameScheduleService GameScheduleService
 	InstanceService     services.InstanceService
 	LocationService     services.LocationService
 	NotificationService services.NotificationService
@@ -39,6 +49,7 @@ func NewAdminHandler(
 	facilitatorService services.FacilitatorService,
 	gameManagerService services.GameManagerService,
 	gameplayService services.GameplayService,
+	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
 	locationService services.LocationService,
 	notificationService services.NotificationService,
@@ -56,6 +67,7 @@ func NewAdminHandler(
 		FacilitatorService:  facilitatorService,
 		GameManagerService:  gameManagerService,
 		GameplayService:     gameplayService,
+		GameScheduleService: gameScheduleService,
 		InstanceService:     instanceService,
 		LocationService:     locationService,
 		NotificationService: notificationService,
