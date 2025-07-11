@@ -20,7 +20,7 @@ func (h *AdminHandler) Quickstart(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) DismissQuickstart(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.GameManagerService.DismissQuickstart(r.Context(), user.CurrentInstanceID)
+	err := h.QuickstartService.DismissQuickstart(r.Context(), user.CurrentInstanceID)
 	if err != nil {
 		h.handleError(w, r, "DismissQuickstart", "Error dismissing quickstart", "error", err)
 		return

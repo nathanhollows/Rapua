@@ -37,7 +37,6 @@ type GameManagerService interface {
 
 	// Settings & Utilities
 	UpdateSettings(ctx context.Context, settings *models.InstanceSettings, form url.Values) error
-	DismissQuickstart(ctx context.Context, instanceID string) error
 }
 
 func NewGameManagerService(
@@ -254,9 +253,4 @@ func (s *gameManagerService) UpdateSettings(ctx context.Context, settings *model
 	}
 
 	return nil
-}
-
-// DismissQuickstart marks the user as having dismissed the quickstart.
-func (s *gameManagerService) DismissQuickstart(ctx context.Context, instanceID string) error {
-	return s.instanceRepo.DismissQuickstart(ctx, instanceID)
 }

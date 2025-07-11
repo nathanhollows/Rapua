@@ -21,6 +21,10 @@ type GameScheduleService interface {
 	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
 }
 
+type QuickstartService interface {
+	DismissQuickstart(ctx context.Context, instanceID string) error
+}
+
 type AdminHandler struct {
 	Logger              *slog.Logger
 	AssetGenerator      services.AssetGenerator
@@ -38,6 +42,7 @@ type AdminHandler struct {
 	TemplateService     services.TemplateService
 	UploadService       services.UploadService
 	UserService         services.UserService
+	QuickstartService   QuickstartService
 }
 
 func NewAdminHandler(
@@ -57,6 +62,7 @@ func NewAdminHandler(
 	templateService services.TemplateService,
 	uploadService services.UploadService,
 	userService services.UserService,
+	quickstartService QuickstartService,
 ) *AdminHandler {
 	return &AdminHandler{
 		Logger:              logger,
@@ -75,6 +81,7 @@ func NewAdminHandler(
 		TemplateService:     templateService,
 		UploadService:       uploadService,
 		UserService:         userService,
+		QuickstartService:   quickstartService,
 	}
 }
 

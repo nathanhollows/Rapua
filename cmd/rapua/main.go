@@ -181,6 +181,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 
 	// Initialize services
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
+	quickstartService := services.NewQuickstartService(instanceRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
@@ -232,6 +233,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		templateService,
 		uploadService,
 		userService,
+		quickstartService,
 	)
 }
 

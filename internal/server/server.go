@@ -40,6 +40,7 @@ func Start(logger *slog.Logger,
 	templateService services.TemplateService,
 	uploadService services.UploadService,
 	userService services.UserService,
+	quickstartService admin.QuickstartService,
 ) {
 	// Public routes
 	publicHandler := public.NewPublicHandler(
@@ -78,6 +79,7 @@ func Start(logger *slog.Logger,
 		templateService,
 		uploadService,
 		userService,
+		quickstartService,
 	)
 	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 
