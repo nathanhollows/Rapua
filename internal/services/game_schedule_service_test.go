@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -18,10 +17,9 @@ import (
 func setupGameScheduleService(t *testing.T) (*services.GameScheduleService, func()) {
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 
-	gameScheduleService := services.NewGameScheduleService(transactor, instanceRepo)
+	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 
 	return gameScheduleService, cleanup
 }
@@ -418,11 +416,11 @@ func TestGameScheduleService_Integration_CompleteWorkflow(t *testing.T) {
 
 	// Test the complete workflow: Schedule -> Start -> Stop
 	ctx := context.Background()
-	
+
 	// 1. Schedule the game
 	startTime := time.Now().Add(1 * time.Hour)
 	endTime := time.Now().Add(3 * time.Hour)
-	
+
 	err := svc.ScheduleGame(ctx, instance, startTime, endTime)
 	assert.NoError(t, err)
 	assert.Equal(t, startTime.Unix(), instance.StartTime.Time.Unix())
@@ -502,8 +500,9 @@ func TestGameScheduleService_Integration_EdgeCases(t *testing.T) {
 	// Test setting end time equal to start time
 	equalTime := time.Now().Add(1 * time.Hour)
 	instance.StartTime = bun.NullTime{Time: equalTime}
-	
+
 	err = svc.SetEndTime(context.Background(), instance, equalTime)
 	assert.NoError(t, err)
 	assert.Equal(t, equalTime.Unix(), instance.EndTime.Time.Unix())
 }
+

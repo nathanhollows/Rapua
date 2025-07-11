@@ -6,20 +6,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 	"github.com/uptrace/bun"
 )
 
 type GameScheduleService struct {
-	transactor   db.Transactor
 	instanceRepo repositories.InstanceRepository
 }
 
-func NewGameScheduleService(transactor db.Transactor, instanceRepo repositories.InstanceRepository) *GameScheduleService {
+func NewGameScheduleService(instanceRepo repositories.InstanceRepository) *GameScheduleService {
 	return &GameScheduleService{
-		transactor:   transactor,
 		instanceRepo: instanceRepo,
 	}
 }
