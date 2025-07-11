@@ -11,6 +11,14 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// Game scheduling errors
+var (
+	ErrGameAlreadyActive = errors.New("game is already active")
+	ErrGameAlreadyClosed = errors.New("game is already closed")
+	ErrInvalidTimeRange  = errors.New("end time cannot be before start time")
+	ErrStartAfterEnd     = errors.New("start time cannot be after end time")
+)
+
 type GameScheduleService struct {
 	instanceRepo repositories.InstanceRepository
 }
@@ -31,7 +39,7 @@ func (s *GameScheduleService) Stop(ctx context.Context, instance *models.Instanc
 
 func (s *GameScheduleService) SetStartTime(ctx context.Context, instance *models.Instance, start time.Time) error {
 	if instance.GetStatus() == models.Active {
-		return errors.New("game is already active")
+		return ErrGameAlreadyActive
 	}
 
 	instance.StartTime = bun.NullTime{Time: start}
@@ -48,11 +56,11 @@ func (s *GameScheduleService) SetStartTime(ctx context.Context, instance *models
 
 func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.Instance, end time.Time) error {
 	if instance.GetStatus() == models.Closed {
-		return errors.New("game is already closed")
+		return ErrGameAlreadyClosed
 	}
 
 	if !instance.StartTime.IsZero() && end.Before(instance.StartTime.Time) {
-		return errors.New("end time cannot be before start time")
+		return ErrInvalidTimeRange
 	}
 
 	instance.EndTime = bun.NullTime{Time: end}
@@ -65,7 +73,7 @@ func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.I
 
 func (s *GameScheduleService) ScheduleGame(ctx context.Context, instance *models.Instance, start time.Time, endTime time.Time) error {
 	if start.After(endTime) {
-		return errors.New("start time cannot be after end time")
+		return ErrStartAfterEnd
 	}
 
 	instance.StartTime = bun.NullTime{Time: start}
