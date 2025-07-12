@@ -17,7 +17,6 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-
 	// Initialize repositories
 	clueRepo := repositories.NewClueRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
@@ -31,7 +30,8 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	teamRepo := repositories.NewTeamRepository(dbc)
 
 	// Initialize services
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
+	markerService := services.NewMarkerService(markerRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
 	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
 		locationService, teamService, instanceRepo, instanceSettingsRepo,

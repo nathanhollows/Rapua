@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 	"github.com/stretchr/testify/assert"
@@ -15,14 +14,13 @@ func setupLocationService(t *testing.T) (services.LocationService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
-
 	clueRepo := repositories.NewClueRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
+	markerService := services.NewMarkerService(markerRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
 	return locationService, cleanup
 }
 
@@ -61,30 +59,6 @@ func TestLocationService_CreateLocation(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.Error(t, err)
-	})
-}
-
-func TestLocationService_CreateMarker(t *testing.T) {
-	service, cleanup := setupLocationService(t)
-	defer cleanup()
-
-	t.Run("Create marker", func(t *testing.T) {
-		marker, err := service.CreateMarker(
-			context.Background(),
-			gofakeit.Name(),
-			gofakeit.Latitude(),
-			gofakeit.Longitude())
-		assert.NoError(t, err)
-		assert.NotEmpty(t, marker.Code)
-	})
-
-	t.Run("Create marker with invalid name", func(t *testing.T) {
-		_, err := service.CreateMarker(
-			context.Background(),
-			"",
-			gofakeit.Latitude(),
-			gofakeit.Longitude())
 		assert.Error(t, err)
 	})
 }

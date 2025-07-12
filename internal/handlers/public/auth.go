@@ -152,7 +152,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	err = h.AuthService.SendEmailVerification(r.Context(), &user)
 	if err != nil {
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
-			err := h.UserService.DeleteUser(r.Context(), user.ID)
+			err := h.deleteService.DeleteUser(r.Context(), user.ID)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: deleting user", "Error deleting user", "error", err)
 				return

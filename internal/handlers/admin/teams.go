@@ -61,7 +61,7 @@ func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, id := range teamID {
-		err := h.TeamService.Delete(r.Context(), user.CurrentInstanceID, id)
+		err := h.DeleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id})
 		if err != nil {
 			h.handleError(w, r, "TeamsDelete deleting team", "Error deleting team", "error", err, "instance_id", user.CurrentInstanceID, "team_id", teamID)
 			return
@@ -95,7 +95,7 @@ func (h *AdminHandler) TeamsReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.TeamService.Reset(r.Context(), user.CurrentInstanceID, teamIDs)
+	err = h.DeleteService.ResetTeams(r.Context(), user.CurrentInstanceID, teamIDs)
 	if err != nil {
 		h.handleError(w, r, "TeamsReset deleting team", "Error resetting teams", "error", err, "instance_id", user.CurrentInstanceID, "team_id", teamIDs)
 		return

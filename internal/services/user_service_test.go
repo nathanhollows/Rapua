@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -16,11 +15,9 @@ func setupUserService(t *testing.T) (services.UserService, repositories.Instance
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
-
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
-	userService := services.NewUserService(transactor, userRepo, instanceRepo)
+	userService := services.NewUserService(userRepo, instanceRepo)
 	return userService, instanceRepo, cleanup
 }
 
@@ -121,7 +118,7 @@ func TestUpdateUserProfile(t *testing.T) {
 	user.DisplayName.Valid = true
 	user.WorkType.String = "formal_education"
 	user.WorkType.Valid = true
-	
+
 	err := service.CreateUser(context.Background(), user, password)
 	assert.NoError(t, err)
 
@@ -152,13 +149,13 @@ func TestUpdateUserProfile(t *testing.T) {
 			name: "Only name and email setting update - preserves other fields",
 			profile: map[string]string{
 				"name":       "Jane Smith",
-				"show_email": "",  // Empty means unchecked
+				"show_email": "", // Empty means unchecked
 			},
 			validate: func(t *testing.T, user *models.User) {
 				// Name and ShareEmail should change
 				assert.Equal(t, "Jane Smith", user.Name)
 				assert.False(t, user.ShareEmail)
-				
+
 				// Other fields should be preserved
 				assert.True(t, user.DisplayName.Valid)
 				assert.Equal(t, "JD", user.DisplayName.String)
@@ -176,7 +173,7 @@ func TestUpdateUserProfile(t *testing.T) {
 				// Work type should change
 				assert.True(t, user.WorkType.Valid)
 				assert.Equal(t, "Museum Curator", user.WorkType.String)
-				
+
 				// Other fields should be preserved
 				assert.Equal(t, "Jane Smith", user.Name)
 				assert.True(t, user.DisplayName.Valid)
@@ -192,7 +189,7 @@ func TestUpdateUserProfile(t *testing.T) {
 			validate: func(t *testing.T, user *models.User) {
 				// Display name should be cleared
 				assert.False(t, user.DisplayName.Valid)
-				
+
 				// Other fields should be preserved
 				assert.Equal(t, "Jane Smith", user.Name)
 				assert.False(t, user.ShareEmail)
@@ -207,15 +204,15 @@ func TestUpdateUserProfile(t *testing.T) {
 			// Get a fresh copy of the user for each test
 			currentUser, err := service.GetUserByEmail(context.Background(), email)
 			assert.NoError(t, err)
-			
+
 			// Update the profile
 			err = service.UpdateUserProfile(context.Background(), currentUser, tc.profile)
 			assert.NoError(t, err)
-			
+
 			// Retrieve the updated user
 			updatedUser, err := service.GetUserByEmail(context.Background(), email)
 			assert.NoError(t, err)
-			
+
 			// Validate fields
 			tc.validate(t, updatedUser)
 		})
@@ -289,27 +286,6 @@ func TestChangePassword(t *testing.T) {
 	})
 }
 
-func TestDeleteUser(t *testing.T) {
-	service, _, cleanup := setupUserService(t)
-	defer cleanup()
-
-	email := gofakeit.Email()
-	password := gofakeit.Password(true, true, true, true, false, 12)
-
-	user := &models.User{
-		Email:    email,
-		Password: password,
-	}
-	err := service.CreateUser(context.Background(), user, password)
-	assert.NoError(t, err)
-
-	err = service.DeleteUser(context.Background(), user.ID)
-	assert.NoError(t, err)
-
-	_, err = service.GetUserByEmail(context.Background(), email)
-	assert.Error(t, err)
-}
-
 func TestUserService_SwitchInstance(t *testing.T) {
 	service, instanceRepo, cleanup := setupUserService(t)
 	defer cleanup()
@@ -346,3 +322,4 @@ func TestUserService_SwitchInstance(t *testing.T) {
 		}
 	})
 }
+

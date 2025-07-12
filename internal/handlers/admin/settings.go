@@ -125,7 +125,7 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 				errorMessage = "Failed to update password"
 				h.Logger.Error("change password", "error", err.Error())
 			}
-			
+
 			h.handleError(w, r, "SettingsSecurityPost", errorMessage, err)
 			return
 		}
@@ -153,7 +153,7 @@ func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.UserService.DeleteUser(r.Context(), user.ID)
+	err = h.DeleteService.DeleteUser(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "DeleteAccount", "Failed to delete account", err)
 		return

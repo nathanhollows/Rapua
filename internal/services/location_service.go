@@ -2,14 +2,11 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
-	"github.com/uptrace/bun"
 )
 
 type LocationService interface {
@@ -17,9 +14,6 @@ type LocationService interface {
 	CreateLocation(ctx context.Context, instanceID, name string, lat, lng float64, points int) (models.Location, error)
 	// CreateLocationFromMarker creates a new location from an existing marker
 	CreateLocationFromMarker(ctx context.Context, instanceID, name string, points int, markerCode string) (models.Location, error)
-	// CreateMarker creates a new marker
-	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
-	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
 	DuplicateLocation(ctx context.Context, location models.Location, newInstanceID string) (models.Location, error)
 
 	// GetByID finds a location by its ID
@@ -28,8 +22,6 @@ type LocationService interface {
 	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
 	// FindByInstance finds all locations for an instance
 	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
-	// FindMarkersNotInInstance finds all markers that are not in the given instance
-	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 
 	// Update visitor stats for a location
 	IncrementVisitorStats(ctx context.Context, location *models.Location) error
@@ -42,11 +34,6 @@ type LocationService interface {
 	// ReorderLocations accepts IDs of locations and reorders them
 	ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error
 
-	// DeleteLocation deletes a location
-	DeleteLocation(ctx context.Context, locationID string) error
-	// DeleteByInstanceID deletes all locations for an instance
-	DeleteLocations(ctx context.Context, tx *bun.Tx, locations []models.Location) error
-
 	// LoadCluesForLocation loads the clues for a specific location if they are not already loaded
 	LoadCluesForLocation(ctx context.Context, location *models.Location) error
 	// LoadCluesForLocations loads the clues for all given locations if they are not already loaded
@@ -56,27 +43,27 @@ type LocationService interface {
 }
 
 type locationService struct {
-	transactor   db.Transactor
-	locationRepo repositories.LocationRepository
-	clueRepo     repositories.ClueRepository
-	markerRepo   repositories.MarkerRepository
-	blockRepo    repositories.BlockRepository
+	locationRepo  repositories.LocationRepository
+	clueRepo      repositories.ClueRepository
+	markerRepo    repositories.MarkerRepository
+	blockRepo     repositories.BlockRepository
+	markerService *MarkerService
 }
 
 // NewLocationService creates a new instance of LocationService.
 func NewLocationService(
-	transactor db.Transactor,
 	clueRepo repositories.ClueRepository,
 	locationRepo repositories.LocationRepository,
 	markerRepo repositories.MarkerRepository,
 	blockRepo repositories.BlockRepository,
+	markerService *MarkerService,
 ) LocationService {
 	return locationService{
-		transactor:   transactor,
-		clueRepo:     clueRepo,
-		locationRepo: locationRepo,
-		markerRepo:   markerRepo,
-		blockRepo:    blockRepo,
+		clueRepo:      clueRepo,
+		locationRepo:  locationRepo,
+		markerRepo:    markerRepo,
+		blockRepo:     blockRepo,
+		markerService: markerService,
 	}
 }
 
@@ -90,7 +77,7 @@ func (s locationService) CreateLocation(ctx context.Context, instanceID, name st
 	}
 
 	// Create the marker
-	marker, err := s.CreateMarker(ctx, name, lat, lng)
+	marker, err := s.markerService.CreateMarker(ctx, name, lat, lng)
 	if err != nil {
 		return models.Location{}, fmt.Errorf("creating marker: %v", err)
 	}
@@ -134,20 +121,6 @@ func (s locationService) CreateLocationFromMarker(ctx context.Context, instanceI
 	}
 
 	return location, nil
-}
-
-// CreateMarker creates a new marker.
-func (s locationService) CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error) {
-	marker := models.Marker{
-		Name: name,
-		Lat:  lat,
-		Lng:  lng,
-	}
-	err := s.markerRepo.Create(ctx, &marker)
-	if err != nil {
-		return models.Marker{}, fmt.Errorf("saving marker: %v", err)
-	}
-	return marker, nil
 }
 
 // DuplicateLocation duplicates a location.
@@ -221,15 +194,6 @@ func (s locationService) FindByInstance(ctx context.Context, instanceID string) 
 	return locations, nil
 }
 
-// FindMarkersNotInInstance finds all markers that are not in the given instance.
-func (s locationService) FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error) {
-	markers, err := s.markerRepo.FindNotInInstance(ctx, instanceID, otherInstances)
-	if err != nil {
-		return nil, fmt.Errorf("finding markers not in instance: %v", err)
-	}
-	return markers, nil
-}
-
 // Update visitor stats for a location.
 func (s locationService) IncrementVisitorStats(ctx context.Context, location *models.Location) error {
 	location.CurrentCount++
@@ -287,7 +251,7 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 	}
 
 	if shared && update {
-		newMarker, err := s.CreateMarker(ctx, location.Marker.Name, location.Marker.Lat, location.Marker.Lng)
+		newMarker, err := s.markerService.CreateMarker(ctx, location.Marker.Name, location.Marker.Lat, location.Marker.Lng)
 		if err != nil {
 			return fmt.Errorf("creating new marker: %v", err)
 		}
@@ -359,89 +323,6 @@ func (s locationService) ReorderLocations(ctx context.Context, instanceID string
 		if err != nil {
 			return fmt.Errorf("updating location: %v", err)
 		}
-	}
-
-	return nil
-}
-
-// If the marker is not used by any other locations, it is also deleted.
-func (s locationService) DeleteLocation(ctx context.Context, locationID string) error {
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("beginning transaction: %v", err)
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				panic(fmt.Errorf("rolling back transaction: %v; %v", p, rollbackErr))
-			}
-			panic(p)
-		}
-	}()
-
-	err = s.deleteLocation(ctx, tx, locationID)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
-		}
-		return fmt.Errorf("deleting location: %v", err)
-	}
-
-	err = s.markerRepo.DeleteUnused(ctx, tx)
-	if err != nil {
-		return fmt.Errorf("deleting unused markers: %v", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
-		}
-		return fmt.Errorf("committing transaction: %v", err)
-	}
-
-	return nil
-}
-
-// DeleteByInstanceID deletes all locations for an instance.
-func (s locationService) DeleteLocations(ctx context.Context, tx *bun.Tx, locations []models.Location) error {
-	for _, location := range locations {
-		err := s.deleteLocation(ctx, tx, location.ID)
-		if err != nil {
-			return fmt.Errorf("deleting location: %v", err)
-		}
-	}
-
-	err := s.markerRepo.DeleteUnused(ctx, tx)
-	if err != nil {
-		return fmt.Errorf("deleting unused markers: %v", err)
-	}
-
-	return nil
-}
-
-// deleteLocation deletes a location and its related data.
-func (s locationService) deleteLocation(ctx context.Context, tx *bun.Tx, locationID string) error {
-	// Delete all related clues
-	err := s.clueRepo.DeleteByLocationIDWithTransaction(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting clues: %v", err)
-	}
-
-	// Delete all related blocks
-	err = s.blockRepo.DeleteByLocationID(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting blocks: %v", err)
-	}
-
-	// Delete the location
-	err = s.locationRepo.Delete(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting location: %v", err)
 	}
 
 	return nil

@@ -250,7 +250,7 @@ func (h *AdminHandler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.LocationService.DeleteLocation(r.Context(), location.ID); err != nil {
+	if err = h.DeleteService.DeleteLocation(r.Context(), location.ID); err != nil {
 		h.handleError(w, r, "LocationDelete: deleting location", "Error deleting location", "error", err)
 		return
 	}

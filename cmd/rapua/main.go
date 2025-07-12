@@ -183,21 +183,32 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	deleteService := services.NewDeleteService(transactor, blockRepo, blockStateRepo)
+	deleteService := services.NewDeleteService(
+		transactor,
+		blockRepo,
+		blockStateRepo,
+		checkInRepo,
+		clueRepo,
+		instanceRepo,
+		instanceSettingsRepo,
+		locationRepo,
+		markerRepo,
+		teamRepo,
+		userRepo,
+	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	authService := services.NewAuthService(userRepo)
-	blockService := services.NewBlockService(transactor, blockRepo, blockStateRepo)
+	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo)
 	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
 	navigationService := services.NewNavigationService()
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
-	userService := services.NewUserService(transactor, userRepo, instanceRepo)
+	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		transactor,
 		locationService, teamService, instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(

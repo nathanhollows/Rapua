@@ -47,6 +47,7 @@ func Start(logger *slog.Logger,
 	publicHandler := public.NewPublicHandler(
 		logger,
 		authService,
+		deleteService,
 		emailService,
 		&templateService,
 		userService,

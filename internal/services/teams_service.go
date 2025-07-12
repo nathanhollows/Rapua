@@ -2,16 +2,12 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/helpers"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
-	"github.com/uptrace/bun"
 )
 
 type TeamService interface {
@@ -29,13 +25,6 @@ type TeamService interface {
 	Update(ctx context.Context, team *models.Team) error
 	// AwardPoints awards points to a team
 	AwardPoints(ctx context.Context, team *models.Team, points int, reason string) error
-	// Reset wipes a team's progress for re-use
-	Reset(ctx context.Context, instanceID string, teamCodes []string) error
-
-	// Delete removes a team from the database
-	Delete(ctx context.Context, instanceID string, teamCode string) error
-	// DeleteByInstanceID removes all teams for a specific instance
-	DeleteByInstanceID(ctx context.Context, tx *bun.Tx, instanceID string) error
 
 	// LoadRelation loads relations for a team
 	LoadRelation(ctx context.Context, team *models.Team, relation string) error
@@ -44,7 +33,6 @@ type TeamService interface {
 }
 
 type teamService struct {
-	transactor     db.Transactor
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
 	blockStateRepo repositories.BlockStateRepository
@@ -53,14 +41,13 @@ type teamService struct {
 }
 
 // NewTeamService creates a new TeamService.
-func NewTeamService(transactor db.Transactor,
+func NewTeamService(
 	tr repositories.TeamRepository,
 	cr repositories.CheckInRepository,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
 ) TeamService {
 	return &teamService{
-		transactor:     transactor,
 		teamRepo:       tr,
 		checkInRepo:    cr,
 		blockStateRepo: bsr,
@@ -205,136 +192,6 @@ func (s *teamService) Update(ctx context.Context, team *models.Team) error {
 func (s *teamService) AwardPoints(ctx context.Context, team *models.Team, points int, _ string) error {
 	team.Points += points
 	return s.teamRepo.Update(ctx, team)
-}
-
-// Reset wipes a team's progress for re-use.
-func (s *teamService) Reset(ctx context.Context, instanceID string, teamCodes []string) error {
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("starting transaction: %w", err)
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
-			}
-			panic(p)
-		}
-	}()
-
-	err = s.teamRepo.Reset(ctx, tx, instanceID, teamCodes)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("resetting team: rollback failed: %w", rollbackErr)
-		}
-		return fmt.Errorf("resetting team: %w", err)
-	}
-
-	err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting check ins: %w", err)
-	}
-
-	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, teamCodes)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting block states: %w", err)
-	}
-
-	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("updating location statistics: %w", err)
-	}
-
-	return tx.Commit()
-}
-
-// Delete removes a team from the database.
-func (s *teamService) Delete(ctx context.Context, instanceID string, teamCode string) error {
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("starting transaction: %w", err)
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
-			}
-			panic(p)
-		}
-	}()
-
-	err = s.teamRepo.Delete(ctx, tx, instanceID, teamCode)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting team: %w", err)
-	}
-
-	err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, []string{teamCode})
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting check ins: %w", err)
-	}
-
-	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, []string{teamCode})
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting block states: %w", err)
-	}
-
-	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("updating location statistics: %w", err)
-	}
-
-	return tx.Commit()
-}
-
-// DeleteByInstanceID removes all teams for a specific instance.
-func (s *teamService) DeleteByInstanceID(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	err := s.teamRepo.DeleteByInstanceID(ctx, tx, instanceID)
-	if err != nil {
-		return fmt.Errorf("deleting teams by instance ID: %w", err)
-	}
-
-	return nil
 }
 
 // LoadRelation loads the specified relation for a team.

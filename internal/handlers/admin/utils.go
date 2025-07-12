@@ -15,6 +15,11 @@ import (
 
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
+	DeleteInstance(ctx context.Context, userID, instanceID string) error
+	DeleteLocation(ctx context.Context, locationID string) error
+	ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error
+	DeleteTeams(ctx context.Context, instanceID string, teamIDs []string) error
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 type GameScheduleService interface {
@@ -56,6 +61,7 @@ func NewAdminHandler(
 	authService services.AuthService,
 	blockService services.BlockService,
 	clueService services.ClueService,
+	DeleteService DeleteService,
 	facilitatorService services.FacilitatorService,
 	gameManagerService services.GameManagerService,
 	gameplayService services.GameplayService,

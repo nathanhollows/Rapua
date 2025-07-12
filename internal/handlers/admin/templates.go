@@ -199,7 +199,7 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.InstanceService.DeleteInstance(r.Context(), user, template.ID, template.Name)
+	err = h.DeleteService.DeleteInstance(r.Context(), user.ID, template.ID)
 	if err != nil {
 		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
 	} else {

@@ -12,6 +12,10 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type DeleteService interface {
+	DeleteUser(ctx context.Context, userID string) error
+}
+
 type FindTemplateService interface {
 	GetByID(ctx context.Context, id string) (*models.Instance, error)
 	GetShareLink(ctx context.Context, id string) (*models.ShareLink, error)
@@ -52,6 +56,7 @@ type PublicHandler struct {
 	EmailService    services.EmailService
 	TemplateService FindTemplateService
 	UserService     services.UserService
+	deleteService   DeleteService
 }
 
 func NewPublicHandler(
@@ -67,6 +72,7 @@ func NewPublicHandler(
 		EmailService:    emailService,
 		TemplateService: templateService,
 		UserService:     userService,
+		deleteService:   deleteService,
 	}
 }
 

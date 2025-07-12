@@ -125,6 +125,8 @@ func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Check if the confirmName matches the instance name
+
 	if user.CurrentInstanceID == id {
 		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).Render(r.Context(), w)
 		if err != nil {
@@ -133,7 +135,7 @@ func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.InstanceService.DeleteInstance(r.Context(), user, id, confirmName)
+	err := h.DeleteService.DeleteInstance(r.Context(), user.ID, id)
 	if err != nil {
 		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
