@@ -50,7 +50,7 @@ func NewInstanceService(
 // CreateInstance implements InstanceService.
 func (s *instanceService) CreateInstance(ctx context.Context, name string, user *models.User) (*models.Instance, error) {
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 
 	if user == nil {
@@ -98,10 +98,10 @@ func (s *instanceService) DuplicateInstance(ctx context.Context, user *models.Us
 	}
 
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 	if id == "" {
-		return nil, NewValidationError("id")
+		return nil, errors.New("id cannot be empty")
 	}
 
 	newInstance := &models.Instance{

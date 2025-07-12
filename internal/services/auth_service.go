@@ -18,7 +18,6 @@ import (
 )
 
 var (
-	ErrUserNotAuthenticated = errors.New("user not authenticated")
 	ErrSessionNotFound      = errors.New("session not found")
 	ErrInvalidToken         = errors.New("invalid token")
 	ErrTokenExpired         = errors.New("token expired")

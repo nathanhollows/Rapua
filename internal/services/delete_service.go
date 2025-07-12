@@ -4,6 +4,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
@@ -120,7 +121,7 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 	}
 
 	if instanceID == "" {
-		return NewValidationError("instanceID")
+		return errors.New("instanceID cannot be empty")
 	}
 
 	// Check if the user has permission to delete the instance

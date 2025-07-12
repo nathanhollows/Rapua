@@ -61,17 +61,17 @@ func (s *blockService) GetByBlockID(ctx context.Context, blockID string) (blocks
 // FindByLocationID fetches all content blocks for a location.
 func (s *blockService) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
 	if locationID == "" {
-		return nil, errors.New("location must be set")
+		return nil, errors.New("locationID cannot be empty")
 	}
 	return s.blockRepo.FindByLocationID(ctx, locationID)
 }
 
 func (s *blockService) NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error) {
 	if locationID == "" {
-		return nil, errors.New("location must be set")
+		return nil, errors.New("locationID cannot be empty")
 	}
 	if blockType == "" {
-		return nil, errors.New("block type must be set")
+		return nil, errors.New("blockType cannot be empty")
 	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
@@ -97,10 +97,10 @@ func (s *blockService) NewBlock(ctx context.Context, locationID string, blockTyp
 // NewBlockState creates a new block state.
 func (s *blockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
 	if blockID == "" {
-		return nil, errors.New("blockID must be set")
+		return nil, errors.New("blockID cannot be empty")
 	}
 	if teamCode == "" {
-		return nil, errors.New("teamCode must be set")
+		return nil, errors.New("teamCode cannot be empty")
 	}
 	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, teamCode)
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *blockService) NewBlockState(ctx context.Context, blockID, teamCode stri
 // NewMockBlockState creates a new mock block state.
 func (s *blockService) NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
 	if blockID == "" {
-		return nil, errors.New("blockID must be set")
+		return nil, errors.New("blockID cannot be empty")
 	}
 	// teamCode may be blank
 	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, teamCode)

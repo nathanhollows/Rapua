@@ -70,10 +70,10 @@ func NewLocationService(
 // CreateLocation creates a new location.
 func (s locationService) CreateLocation(ctx context.Context, instanceID, name string, lat, lng float64, points int) (models.Location, error) {
 	if name == "" {
-		return models.Location{}, NewValidationError("name")
+		return models.Location{}, errors.New("name cannot be empty")
 	}
 	if instanceID == "" {
-		return models.Location{}, NewValidationError("instanceID")
+		return models.Location{}, errors.New("instanceID cannot be empty")
 	}
 
 	// Create the marker
@@ -99,10 +99,10 @@ func (s locationService) CreateLocation(ctx context.Context, instanceID, name st
 // CreateLocationFromMarker creates a new location from an existing marker.
 func (s locationService) CreateLocationFromMarker(ctx context.Context, instanceID, name string, points int, markerCode string) (models.Location, error) {
 	if name == "" {
-		return models.Location{}, NewValidationError("name")
+		return models.Location{}, errors.New("name cannot be empty")
 	}
 	if instanceID == "" {
-		return models.Location{}, NewValidationError("instanceID")
+		return models.Location{}, errors.New("instanceID cannot be empty")
 	}
 	marker, err := s.markerRepo.GetByCode(ctx, markerCode)
 	if err != nil {
