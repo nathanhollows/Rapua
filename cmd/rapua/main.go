@@ -201,7 +201,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		locationService, teamService, instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(
-		transactor, locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
+		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 	gameplayService := services.NewGameplayService(
 		checkInService, locationService, teamService, blockService, navigationService, markerRepo,

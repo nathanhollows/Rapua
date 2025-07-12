@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -18,7 +17,6 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
 
 	// Initialize repositories
 	clueRepo := repositories.NewClueRepository(dbc)
@@ -34,14 +32,12 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 
 	// Initialize services
 	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
-		transactor,
 		locationService, teamService, instanceRepo, instanceSettingsRepo,
 	)
 
 	templateService := services.NewTemplateService(
-		transactor,
 		locationService,
 		instanceRepo,
 		instanceSettingsRepo,

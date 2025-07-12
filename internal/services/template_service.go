@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/helpers"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -14,7 +13,6 @@ import (
 )
 
 type TemplateService struct {
-	transactor           db.Transactor
 	locationService      LocationService
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
@@ -22,14 +20,12 @@ type TemplateService struct {
 }
 
 func NewTemplateService(
-	transactor db.Transactor,
 	locationService LocationService,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	shareLinkRepo repositories.ShareLinkRepository,
 ) TemplateService {
 	return TemplateService{
-		transactor:           transactor,
 		locationService:      locationService,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
