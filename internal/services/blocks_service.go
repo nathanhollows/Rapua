@@ -2,13 +2,10 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
@@ -39,23 +36,18 @@ type BlockService interface {
 	// ReorderBlocks changes the display/order of blocks at a location
 	ReorderBlocks(ctx context.Context, locationID string, blockIDs []string) error
 
-	// DeleteBlock removes the specified block and its associated player states
-	DeleteBlock(ctx context.Context, blockID string) error
-
 	// CheckValidationRequiredForLocation checks if any blocks in a location require validation
 	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
 	// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check-in
 	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
 }
 type blockService struct {
-	transactor     db.Transactor
 	blockRepo      repositories.BlockRepository
 	blockStateRepo repositories.BlockStateRepository
 }
 
-func NewBlockService(transactor db.Transactor, blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) BlockService {
+func NewBlockService(blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) BlockService {
 	return &blockService{
-		transactor:     transactor,
 		blockRepo:      blockRepo,
 		blockStateRepo: blockStateRepo,
 	}
@@ -141,41 +133,6 @@ func (s *blockService) UpdateBlock(ctx context.Context, block blocks.Block, data
 		return nil, fmt.Errorf("updating block data: %w", err)
 	}
 	return s.blockRepo.Update(ctx, block)
-}
-
-// DeleteBlock deletes a block.
-func (s *blockService) DeleteBlock(ctx context.Context, blockID string) error {
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("beginning transaction: %w", err)
-	}
-
-	// Ensure rollback on failure
-	defer func() {
-		if p := recover(); p != nil {
-			err := tx.Rollback()
-			log.Printf("recovered from panic, rolling back transaction: %v", err)
-			panic(p)
-		}
-	}()
-
-	if err := s.blockRepo.Delete(ctx, tx, blockID); err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return fmt.Errorf("deleting block: transaction rollback: %w", err)
-		}
-		return fmt.Errorf("deleting block: %w", err)
-	}
-
-	if err := s.blockStateRepo.DeleteByBlockID(ctx, tx, blockID); err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return fmt.Errorf("deleting block state: transaction rollback: %w", err)
-		}
-		return fmt.Errorf("deleting block state: %w", err)
-	}
-
-	return tx.Commit()
 }
 
 // ReorderBlocks reorders the blocks in a location.

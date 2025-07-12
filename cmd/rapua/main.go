@@ -183,6 +183,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
+	deleteService := services.NewDeleteService(transactor, blockRepo, blockStateRepo)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	authService := services.NewAuthService(userRepo)
@@ -219,6 +220,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		blockService,
 		checkInService,
 		clueService,
+		deleteService,
 		emailService,
 		facilitatorService,
 		gameManagerService,

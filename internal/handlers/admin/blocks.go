@@ -138,7 +138,7 @@ func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.BlockService.DeleteBlock(r.Context(), block.GetID())
+	err = h.DeleteService.DeleteBlock(r.Context(), block.GetID())
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: deleting block", "Could not delete block", "error", err)
 		return

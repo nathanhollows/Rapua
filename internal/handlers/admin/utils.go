@@ -13,6 +13,10 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type DeleteService interface {
+	DeleteBlock(ctx context.Context, blockID string) error
+}
+
 type GameScheduleService interface {
 	Start(ctx context.Context, instance *models.Instance) error
 	Stop(ctx context.Context, instance *models.Instance) error
@@ -31,6 +35,7 @@ type AdminHandler struct {
 	AuthService         services.AuthService
 	BlockService        services.BlockService
 	ClueService         services.ClueService
+	DeleteService       DeleteService
 	FacilitatorService  services.FacilitatorService
 	GameManagerService  services.GameManagerService
 	GameplayService     services.GameplayService
@@ -70,6 +75,7 @@ func NewAdminHandler(
 		AuthService:         authService,
 		BlockService:        blockService,
 		ClueService:         clueService,
+		DeleteService:       DeleteService,
 		FacilitatorService:  facilitatorService,
 		GameManagerService:  gameManagerService,
 		GameplayService:     gameplayService,

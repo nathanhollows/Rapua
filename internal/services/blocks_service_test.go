@@ -6,7 +6,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 	"github.com/stretchr/testify/assert"
@@ -15,12 +14,10 @@ import (
 func setupBlocksService(t *testing.T) (services.BlockService, func()) {
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
-
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blocksRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 
-	blocksService := services.NewBlockService(transactor, blocksRepo, blockStateRepo)
+	blocksService := services.NewBlockService(blocksRepo, blockStateRepo)
 
 	return blocksService, cleanup
 }
@@ -471,54 +468,6 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestBlockService_DeleteBlock(t *testing.T) {
-	testCases := []struct {
-		name    string
-		setupFn func(svc services.BlockService) (string, error)
-		wantErr bool
-	}{
-		{
-			name: "Delete existing block",
-			setupFn: func(svc services.BlockService) (string, error) {
-				blk, err := svc.NewBlock(context.Background(), gofakeit.UUID(), "checklist")
-				if err != nil {
-					return "", err
-				}
-				return blk.GetID(), nil
-			},
-			wantErr: false,
-		},
-		{
-			name: "Delete non-existent block",
-			setupFn: func(svc services.BlockService) (string, error) {
-				return gofakeit.UUID(), nil
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
-			defer cleanup()
-
-			blockID, err := tc.setupFn(svc)
-			assert.NoError(t, err, "setup should not fail")
-
-			err = svc.DeleteBlock(context.Background(), blockID)
-			if tc.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-
-				// Double-check that the block is gone
-				_, getErr := svc.GetByBlockID(context.Background(), blockID)
-				assert.Error(t, getErr, "Should fail to fetch deleted block")
 			}
 		})
 	}
