@@ -11,7 +11,7 @@ import (
 func (h *PublicHandler) TemplatesPreview(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	shareLink, err := h.TemplateService.GetShareLink(r.Context(), id)
+	shareLink, err := h.templateService.GetShareLink(r.Context(), id)
 	if err != nil {
 		h.handleError(w, r, "TemplatesPreview: getting template", "Error getting template", "error", err, "id", id)
 		return
@@ -22,7 +22,7 @@ func (h *PublicHandler) TemplatesPreview(w http.ResponseWriter, r *http.Request)
 		c := templates.TemplateNotFound()
 		err = templates.PublicLayout(c, "Template not found", authed).Render(r.Context(), w)
 		if err != nil {
-			h.Logger.Error("Contact: rendering template", "error", err)
+			h.logger.Error("Contact: rendering template", "error", err)
 		}
 		return
 	}
@@ -31,6 +31,6 @@ func (h *PublicHandler) TemplatesPreview(w http.ResponseWriter, r *http.Request)
 	c := templates.TemplatePeview(*shareLink, authed)
 	err = templates.PublicLayout(c, "Template: "+shareLink.Template.Name, authed).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Contact: rendering template", "error", err)
+		h.logger.Error("Contact: rendering template", "error", err)
 	}
 }

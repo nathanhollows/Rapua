@@ -51,36 +51,37 @@ type AuthService interface {
 }
 
 type PublicHandler struct {
-	Logger          *slog.Logger
+	logger          *slog.Logger
 	AuthService     AuthService
-	EmailService    services.EmailService
-	TemplateService FindTemplateService
-	UserService     services.UserService
 	deleteService   DeleteService
+	emailService    services.EmailService
+	templateService FindTemplateService
+	userService     services.UserService
 }
 
 func NewPublicHandler(
 	logger *slog.Logger,
 	authService AuthService,
+	deleteService DeleteService,
 	emailService services.EmailService,
 	templateService FindTemplateService,
 	userService services.UserService,
 ) *PublicHandler {
 	return &PublicHandler{
-		Logger:          logger,
+		logger:          logger,
 		AuthService:     authService,
-		EmailService:    emailService,
-		TemplateService: templateService,
-		UserService:     userService,
 		deleteService:   deleteService,
+		emailService:    emailService,
+		templateService: templateService,
+		userService:     userService,
 	}
 }
 
 func (h *PublicHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
-	h.Logger.Error(logMsg, params...)
+	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error(logMsg+" - rendering template", "error", err)
+		h.logger.Error(logMsg+" - rendering template", "error", err)
 	}
 }
 

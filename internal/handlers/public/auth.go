@@ -30,7 +30,7 @@ func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
 	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("Error rendering login page", "err", err)
+		h.logger.Error("Error rendering login page", "err", err)
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	user, err := h.AuthService.AuthenticateUser(r.Context(), email, password)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			h.Logger.Error("authenticating user", "err", err)
+			h.logger.Error("authenticating user", "err", err)
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		c := templates.LoginError("Invalid email or password.")
@@ -61,7 +61,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.Logger.Error("creating session", "err", err)
+		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err := c.Render(r.Context(), w)
@@ -82,7 +82,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
-		h.Logger.Error("getting session for logout", "err", err)
+		h.logger.Error("getting session for logout", "err", err)
 		// Redirect to the login page
 		http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
 		return
@@ -109,7 +109,7 @@ func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering register page", "err", err)
+		h.logger.Error("rendering register page", "err", err)
 	}
 }
 
@@ -128,9 +128,9 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	confirmPassword := r.Form.Get("password-confirm")
 
 	// Create the user
-	err = h.UserService.CreateUser(r.Context(), &user, confirmPassword)
+	err = h.userService.CreateUser(r.Context(), &user, confirmPassword)
 	if err != nil {
-		h.Logger.Error("creating user", "err", err)
+		h.logger.Error("creating user", "err", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		if errors.Is(err, services.ErrPasswordsDoNotMatch) {
 			c := templates.RegisterError("Passwords do not match.")
@@ -157,7 +157,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 				h.handleError(w, r, "RegisterPost: deleting user", "Error deleting user", "error", err)
 				return
 			}
-			h.Logger.Error("sending email verification", "err", err)
+			h.logger.Error("sending email verification", "err", err)
 			c := templates.RegisterError("Your account was created, but an error occurred while trying to send the email verification. Please try again.")
 			err = c.Render(r.Context(), w)
 			if err != nil {
@@ -187,7 +187,7 @@ func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	err := templates.AuthLayout(c, "Forgot Password", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering forgot password page", "err", err)
+		h.logger.Error("rendering forgot password page", "err", err)
 	}
 }
 
@@ -230,20 +230,20 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.AuthService.CompleteUserAuth(w, r)
 	if err != nil {
-		h.Logger.Error("completing auth", "error", err)
+		h.logger.Error("completing auth", "error", err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	if user == nil {
-		h.Logger.Error("completing auth", "error", "user is nil")
+		h.logger.Error("completing auth", "error", "user is nil")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.Logger.Error("creating session", "err", err)
+		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err := c.Render(r.Context(), w)
@@ -285,7 +285,7 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	err = templates.AuthLayout(c, "Verify Email", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering verify email page", "err", err)
+		h.logger.Error("rendering verify email page", "err", err)
 	}
 }
 
@@ -310,7 +310,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 			return
 		}
-		h.Logger.Error("verifying email", "err", err)
+		h.logger.Error("verifying email", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 		return
@@ -362,7 +362,7 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 			}
 		}
 
-		h.Logger.Error("sending email verification", "err", err)
+		h.logger.Error("sending email verification", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.Toast(
 			*flash.NewError("An error occurred while trying to send the email. Please try again."),

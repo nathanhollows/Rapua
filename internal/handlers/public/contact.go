@@ -12,7 +12,7 @@ func (h *PublicHandler) Contact(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Contact: rendering template", "error", err)
+		h.logger.Error("Contact: rendering template", "error", err)
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *PublicHandler) ContactPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.EmailService.SendContactEmail(r.Context(), name, email, message)
+	_, err = h.emailService.SendContactEmail(r.Context(), name, email, message)
 	if err != nil {
 		h.handleError(w, r, "ContactPost: sending email", "Error sending email", "error", err)
 		return
@@ -42,6 +42,6 @@ func (h *PublicHandler) ContactPost(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err = templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("ContactPost: rendering template", "error", err)
+		h.logger.Error("ContactPost: rendering template", "error", err)
 	}
 }
