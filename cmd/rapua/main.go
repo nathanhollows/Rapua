@@ -201,7 +201,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	assetGenerator := services.NewAssetGenerator()
 	authService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo)
 	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
 	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)

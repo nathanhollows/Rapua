@@ -78,7 +78,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.GameplayService.CheckIn(r.Context(), team, locationCode)
+	err = h.checkInService.CheckIn(r.Context(), team, locationCode)
 	if err != nil {
 		if errors.Is(err, services.ErrLocationNotFound) {
 			h.handleError(w, r, "CheckInPost: checking in", "Location not found. Please try again.", "error", err, "team", team.Code, "location", locationCode)
@@ -158,7 +158,7 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.GameplayService.CheckOut(r.Context(), team, locationCode)
+	err = h.checkInService.CheckOut(r.Context(), team, locationCode)
 
 	var message *flash.Message
 	if err != nil {
