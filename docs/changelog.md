@@ -10,9 +10,10 @@ order: 100
 
 ### Changed
 
-- Refactored the GameManagerService to improve maintainability and separation of concerns.
+- Refactored the `GameManagerService` into `GameScheduleService` and `QuickstartService` to improve maintainability and separation of concerns.
 - Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
+- Normalised error handling across all services to use a consistent pattern, especially with missing or invalid data.
 
 ## 3.10.0 (2025-07-10)
 
