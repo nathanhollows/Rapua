@@ -203,6 +203,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
+	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
 	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, *locationStatsService, navigationService, blockService)
@@ -216,12 +217,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 	gameplayService := services.NewGameplayService(
-		checkInService, locationService, teamService, blockService, navigationService, markerRepo,
+		*checkInService, locationService, teamService, blockService, markerRepo,
 	)
 	gameManagerService := services.NewGameManagerService(
-		locationService, userService, teamService,
-		markerRepo, clueRepo, instanceRepo, instanceSettingsRepo,
-		instanceService,
+		locationService, teamService, markerRepo, instanceService,
 	)
 
 	sessions.Start()
@@ -239,6 +238,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		gameplayService,
 		gameScheduleService,
 		instanceService,
+		instanceSettingsService,
 		locationService,
 		navigationService,
 		notificationService,

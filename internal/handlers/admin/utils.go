@@ -30,6 +30,11 @@ type GameScheduleService interface {
 	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
 }
 
+type InstanceSettingsService interface {
+	SaveSettings(ctx context.Context, settings *models.InstanceSettings) error
+	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
+}
+
 type NavigationService interface {
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
 }
@@ -58,6 +63,7 @@ type AdminHandler struct {
 	UploadService       services.UploadService
 	UserService         services.UserService
 	QuickstartService   QuickstartService
+	instanceSettingsService InstanceSettingsService
 }
 
 func NewAdminHandler(
@@ -72,6 +78,7 @@ func NewAdminHandler(
 	gameplayService services.GameplayService,
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
+	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
 	navigationService NavigationService,
 	notificationService services.NotificationService,
@@ -100,6 +107,7 @@ func NewAdminHandler(
 		UploadService:       uploadService,
 		UserService:         userService,
 		QuickstartService:   quickstartService,
+		instanceSettingsService: instanceSettingsService,
 	}
 }
 

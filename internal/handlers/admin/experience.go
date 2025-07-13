@@ -35,8 +35,58 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse the navigation method
+	if !r.Form.Has("navigationMethod") {
+		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
+		if err != nil {
+			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
+			return
+		}
+		user.CurrentInstance.Settings.NavigationMethod = method
+	}
+
+	// Parse the navigation mode
+	if !r.Form.Has("navigationMode") {
+		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
+		if err != nil {
+			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
+			return
+		}
+		user.CurrentInstance.Settings.NavigationMode = mode
+	}
+
+	// Parse the completion method
+	if r.Form.Has("completionMethod") {
+		completionMethod, err := models.ParseCompletionMethod(r.Form.Get("completionMethod"))
+		if err != nil {
+			h.handleError(w, r, "Error parsing completion method", "Error parsing completion method", "error", err)
+			return
+		}
+		user.CurrentInstance.Settings.CompletionMethod = completionMethod
+	}
+
+	// Parse the maximum number of next locations
+	if r.Form.Has("maxLocations") {
+		maxLocations, err := strconv.Atoi(r.Form.Get("maxLocations"))
+		if err != nil {
+			h.handleError(w, r, "Error parsing max locations", "Error parsing max locations", "error", err)
+			return
+		}
+		user.CurrentInstance.Settings.MaxNextLocations = maxLocations
+	}
+
+	// Parse whether to show the team count
+	if r.Form.Has("showTeamCount") {
+		showTeamCount := r.Form.Get("showTeamCount") == "on"
+		user.CurrentInstance.Settings.ShowTeamCount = showTeamCount
+	}
+
+	// Parse points
+	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints")
+	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints")
+
 	// Update the navigation settings
-	err := h.GameManagerService.UpdateSettings(r.Context(), &user.CurrentInstance.Settings, r.Form)
+	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)
 	if err != nil {
 		h.handleError(w, r, "updating instance settings", "Error updating instance settings", "error", err)
 		return

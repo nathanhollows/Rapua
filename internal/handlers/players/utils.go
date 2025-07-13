@@ -20,6 +20,10 @@ type CheckInService interface {
 	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
 }
 
+type InstanceSettingsService interface {
+	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
+}
+
 type NavigationService interface {
 	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
@@ -27,14 +31,15 @@ type NavigationService interface {
 }
 
 type PlayerHandler struct {
-	Logger              *slog.Logger
-	BlockService        services.BlockService
-	checkInService      CheckInService
-	GameplayService     services.GameplayService
-	InstanceService     services.InstanceService
-	NavigationService   NavigationService
-	NotificationService services.NotificationService
-	TeamService         services.TeamService
+	Logger                  *slog.Logger
+	BlockService            services.BlockService
+	checkInService          CheckInService
+	GameplayService         services.GameplayService
+	InstanceService         services.InstanceService
+	InstanceSettingsService InstanceSettingsService
+	NavigationService       NavigationService
+	NotificationService     services.NotificationService
+	TeamService             services.TeamService
 }
 
 func NewPlayerHandler(
@@ -43,19 +48,21 @@ func NewPlayerHandler(
 	checkInService CheckInService,
 	gameplayService services.GameplayService,
 	instanceService services.InstanceService,
+	instanceSettingsService InstanceSettingsService,
 	navigationService NavigationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
 ) *PlayerHandler {
 	return &PlayerHandler{
-		Logger:              logger,
-		BlockService:        blockService,
-		checkInService:      checkInService,
-		GameplayService:     gameplayService,
-		InstanceService:     instanceService,
-		NavigationService:   navigationService,
-		NotificationService: notificationService,
-		TeamService:         teamService,
+		Logger:                  logger,
+		BlockService:            blockService,
+		checkInService:          checkInService,
+		GameplayService:         gameplayService,
+		InstanceService:         instanceService,
+		InstanceSettingsService: instanceSettingsService,
+		NavigationService:       navigationService,
+		NotificationService:     notificationService,
+		TeamService:             teamService,
 	}
 }
 

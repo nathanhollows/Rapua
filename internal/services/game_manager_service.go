@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"strconv"
 
 	"github.com/nathanhollows/Rapua/v3/models"
@@ -12,14 +11,10 @@ import (
 )
 
 type gameManagerService struct {
-	locationService      LocationService
-	userService          UserService
-	teamService          TeamService
-	markerRepo           repositories.MarkerRepository
-	clueRepo             repositories.ClueRepository
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
-	instanceService      InstanceService
+	locationService LocationService
+	teamService     TeamService
+	markerRepo      repositories.MarkerRepository
+	instanceService InstanceService
 }
 
 // TODO: Split this service into smaller services.
@@ -32,30 +27,19 @@ type GameManagerService interface {
 	// Marker & Validation
 	ValidateLocationMarker(user *models.User, id string) bool
 	ValidateLocationID(user *models.User, id string) bool
-
-	// Settings & Utilities
-	UpdateSettings(ctx context.Context, settings *models.InstanceSettings, form url.Values) error
 }
 
 func NewGameManagerService(
 	locationService LocationService,
-	userService UserService,
 	teamService TeamService,
 	markerRepo repositories.MarkerRepository,
-	clueRepo repositories.ClueRepository,
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	instanceService InstanceService,
 ) GameManagerService {
 	return &gameManagerService{
-		locationService:      locationService,
-		userService:          userService,
-		teamService:          teamService,
-		markerRepo:           markerRepo,
-		clueRepo:             clueRepo,
-		instanceRepo:         instanceRepo,
-		instanceSettingsRepo: instanceSettingsRepo,
-		instanceService:      instanceService,
+		locationService: locationService,
+		teamService:     teamService,
+		markerRepo:      markerRepo,
+		instanceService: instanceService,
 	}
 }
 
@@ -196,57 +180,4 @@ func (s *gameManagerService) ValidateLocationID(user *models.User, id string) bo
 		}
 	}
 	return false
-}
-
-// UpdateSettings parses the form values and updates the instance settings.
-func (s *gameManagerService) UpdateSettings(ctx context.Context, settings *models.InstanceSettings, form url.Values) error {
-	// Navigation mode
-	navMode, err := models.ParseNavigationMode(form.Get("navigationMode"))
-	if err != nil {
-		return fmt.Errorf("parsing navigation mode: %w", err)
-	}
-	settings.NavigationMode = navMode
-
-	// Completion method
-	completionMethod, err := models.ParseCompletionMethod(form.Get("completionMethod"))
-	if err != nil {
-		return fmt.Errorf("parsing completion method: %w", err)
-	}
-	settings.CompletionMethod = completionMethod
-
-	// Navigation method
-	navMethod, err := models.ParseNavigationMethod(form.Get("navigationMethod"))
-	if err != nil {
-		return fmt.Errorf("parsing navigation method: %w", err)
-	}
-	settings.NavigationMethod = navMethod
-
-	// Show team count
-	showTeamCount := form.Has("showTeamCount")
-	settings.ShowTeamCount = showTeamCount
-
-	// Max locations
-	maxLoc := form.Get("maxLocations")
-	if maxLoc != "" {
-		maxLocInt, err := strconv.Atoi(form.Get("maxLocations"))
-		if err != nil {
-			return fmt.Errorf("parsing max locations: %w", err)
-		}
-		settings.MaxNextLocations = maxLocInt
-	}
-
-	// Enable points
-	enablePoints := form.Has("enablePoints")
-	settings.EnablePoints = enablePoints
-
-	// Enable Bonus Points
-	enableBonusPoints := form.Has("enableBonusPoints")
-	settings.EnableBonusPoints = enableBonusPoints
-
-	// Save settings
-	if err := s.instanceSettingsRepo.Update(ctx, settings); err != nil {
-		return fmt.Errorf("updating settings: %w", err)
-	}
-
-	return nil
 }

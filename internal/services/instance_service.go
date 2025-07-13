@@ -28,9 +28,6 @@ type InstanceService interface {
 	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
 	// FindInstanceIDsForUser returns the IDs of all instances for the given user
 	FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error)
-
-	// GetInstanceSettings gets the settings for the given instance
-	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
 func NewInstanceService(
@@ -152,18 +149,4 @@ func (s *instanceService) FindInstanceIDsForUser(ctx context.Context, userID str
 		ids[i] = instance.ID
 	}
 	return ids, nil
-}
-
-// GetInstanceSettings gets the settings for the given instance.
-func (s *instanceService) GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
-	if instanceID == "" {
-		return nil, errors.New("instanceID must be set")
-	}
-
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
-	if err != nil {
-		return nil, fmt.Errorf("getting instance settings: %w", err)
-	}
-
-	return settings, nil
 }
