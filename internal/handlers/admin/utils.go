@@ -30,6 +30,10 @@ type GameScheduleService interface {
 	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
 }
 
+type NavigationService interface {
+	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+}
+
 type QuickstartService interface {
 	DismissQuickstart(ctx context.Context, instanceID string) error
 }
@@ -47,6 +51,7 @@ type AdminHandler struct {
 	GameScheduleService GameScheduleService
 	InstanceService     services.InstanceService
 	LocationService     services.LocationService
+	NavigationService   NavigationService
 	NotificationService services.NotificationService
 	TeamService         services.TeamService
 	TemplateService     services.TemplateService
@@ -68,6 +73,7 @@ func NewAdminHandler(
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
 	locationService services.LocationService,
+	navigationService NavigationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
 	templateService services.TemplateService,

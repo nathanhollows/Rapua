@@ -18,7 +18,7 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.GameplayService.SuggestNextLocations(r.Context(), team)
+	locations, err := h.NavigationService.GetNextLocations(r.Context(), team)
 	if err != nil && !preview {
 		if errors.Is(err, services.ErrAllLocationsVisited) && team.MustCheckOut == "" {
 			h.redirect(w, r, "/finish")

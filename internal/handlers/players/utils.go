@@ -15,11 +15,18 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type NavigationService interface {
+	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
+	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	// HasVisited(checkins []models.CheckIn, locationID string) bool
+}
+
 type PlayerHandler struct {
 	Logger              *slog.Logger
 	BlockService        services.BlockService
 	GameplayService     services.GameplayService
 	InstanceService     services.InstanceService
+	NavigationService   NavigationService
 	NotificationService services.NotificationService
 	TeamService         services.TeamService
 }
@@ -29,6 +36,7 @@ func NewPlayerHandler(
 	blockService services.BlockService,
 	gameplayService services.GameplayService,
 	instanceService services.InstanceService,
+	navigationService NavigationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
 ) *PlayerHandler {
@@ -37,6 +45,7 @@ func NewPlayerHandler(
 		BlockService:        blockService,
 		GameplayService:     gameplayService,
 		InstanceService:     instanceService,
+		NavigationService:   navigationService,
 		NotificationService: notificationService,
 		TeamService:         teamService,
 	}
