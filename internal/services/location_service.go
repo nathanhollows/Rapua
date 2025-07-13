@@ -23,8 +23,6 @@ type LocationService interface {
 	// FindByInstance finds all locations for an instance
 	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
 
-	// Update visitor stats for a location
-	IncrementVisitorStats(ctx context.Context, location *models.Location) error
 	// UpdateCoords updates the coordinates for a location
 	UpdateCoords(ctx context.Context, location *models.Location, lat, lng float64) error
 	// UpdateName updates the name of a location
@@ -192,13 +190,6 @@ func (s locationService) FindByInstance(ctx context.Context, instanceID string) 
 		return nil, fmt.Errorf("finding all locations: %v", err)
 	}
 	return locations, nil
-}
-
-// Update visitor stats for a location.
-func (s locationService) IncrementVisitorStats(ctx context.Context, location *models.Location) error {
-	location.CurrentCount++
-	location.TotalVisits++
-	return s.locationRepo.Update(ctx, location)
 }
 
 // UpdateCoords updates the coordinates for a location.
