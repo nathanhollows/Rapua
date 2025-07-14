@@ -40,7 +40,7 @@ func (h *AdminHandler) LocationNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duplicatable, err := h.LocationService.FindMarkersNotInInstance(r.Context(), user.CurrentInstanceID, instances)
+	duplicatable, err := h.MarkerService.FindMarkersNotInInstance(r.Context(), user.CurrentInstanceID, instances)
 	if err != nil {
 		h.handleError(w, r, "LocationNew: getting markers", "Error getting markers", "error", err, "instance_id", user.CurrentInstanceID)
 		return

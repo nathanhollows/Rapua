@@ -183,6 +183,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	locationStatsService := services.NewLocationStatsService(locationRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
+	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
 	deleteService := services.NewDeleteService(
 		transactor,
@@ -240,6 +241,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		instanceService,
 		instanceSettingsService,
 		locationService,
+		markerService,
 		navigationService,
 		notificationService,
 		teamService,

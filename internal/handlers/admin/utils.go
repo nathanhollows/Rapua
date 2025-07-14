@@ -43,27 +43,36 @@ type QuickstartService interface {
 	DismissQuickstart(ctx context.Context, instanceID string) error
 }
 
+type MarkerService interface {
+	// CreateMarker creates a new marker
+	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
+	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
+	// FindMarkersNotInInstance finds all markers that are not in the given instance
+	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
+}
+
 type AdminHandler struct {
-	Logger              *slog.Logger
-	AssetGenerator      services.AssetGenerator
-	AuthService         services.AuthService
-	BlockService        services.BlockService
-	ClueService         services.ClueService
-	DeleteService       DeleteService
-	FacilitatorService  services.FacilitatorService
-	GameManagerService  services.GameManagerService
-	GameplayService     services.GameplayService
-	GameScheduleService GameScheduleService
-	InstanceService     services.InstanceService
-	LocationService     services.LocationService
-	NavigationService   NavigationService
-	NotificationService services.NotificationService
-	TeamService         services.TeamService
-	TemplateService     services.TemplateService
-	UploadService       services.UploadService
-	UserService         services.UserService
-	QuickstartService   QuickstartService
+	Logger                  *slog.Logger
+	AssetGenerator          services.AssetGenerator
+	AuthService             services.AuthService
+	BlockService            services.BlockService
+	ClueService             services.ClueService
+	DeleteService           DeleteService
+	FacilitatorService      services.FacilitatorService
+	GameManagerService      services.GameManagerService
+	GameplayService         services.GameplayService
+	GameScheduleService     GameScheduleService
+	InstanceService         services.InstanceService
 	instanceSettingsService InstanceSettingsService
+	LocationService         services.LocationService
+	MarkerService           MarkerService
+	NavigationService       NavigationService
+	NotificationService     services.NotificationService
+	TeamService             services.TeamService
+	TemplateService         services.TemplateService
+	UploadService           services.UploadService
+	UserService             services.UserService
+	QuickstartService       QuickstartService
 }
 
 func NewAdminHandler(
@@ -80,6 +89,7 @@ func NewAdminHandler(
 	instanceService services.InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
+	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService services.NotificationService,
 	teamService services.TeamService,
@@ -89,25 +99,27 @@ func NewAdminHandler(
 	quickstartService QuickstartService,
 ) *AdminHandler {
 	return &AdminHandler{
-		Logger:              logger,
-		AssetGenerator:      assetGenerator,
-		AuthService:         authService,
-		BlockService:        blockService,
-		ClueService:         clueService,
-		DeleteService:       DeleteService,
-		FacilitatorService:  facilitatorService,
-		GameManagerService:  gameManagerService,
-		GameplayService:     gameplayService,
-		GameScheduleService: gameScheduleService,
-		InstanceService:     instanceService,
-		LocationService:     locationService,
-		NotificationService: notificationService,
-		TeamService:         teamService,
-		TemplateService:     templateService,
-		UploadService:       uploadService,
-		UserService:         userService,
-		QuickstartService:   quickstartService,
+		Logger:                  logger,
+		AssetGenerator:          assetGenerator,
+		AuthService:             authService,
+		BlockService:            blockService,
+		ClueService:             clueService,
+		DeleteService:           DeleteService,
+		FacilitatorService:      facilitatorService,
+		GameManagerService:      gameManagerService,
+		GameplayService:         gameplayService,
+		GameScheduleService:     gameScheduleService,
+		InstanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
+		LocationService:         locationService,
+		MarkerService:           markerService,
+		NavigationService:       navigationService,
+		NotificationService:     notificationService,
+		TeamService:             teamService,
+		TemplateService:         templateService,
+		UploadService:           uploadService,
+		UserService:             userService,
+		QuickstartService:       quickstartService,
 	}
 }
 
