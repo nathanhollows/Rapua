@@ -55,9 +55,9 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.TeamService.LoadRelation(r.Context(), team, "Scans")
+	err = h.TeamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "TeamActivity: loading scans", "Error loading scans", "Could not load data", err)
+		h.handleError(w, r, "TeamActivity: loading scans", "Error loading data", "Could not load data", err)
 		return
 	}
 
