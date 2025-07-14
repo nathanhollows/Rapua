@@ -36,7 +36,7 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the navigation method
-	if !r.Form.Has("navigationMethod") {
+	if r.Form.Has("navigationMethod") {
 		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
@@ -46,7 +46,7 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the navigation mode
-	if !r.Form.Has("navigationMode") {
+	if r.Form.Has("navigationMode") {
 		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
@@ -76,14 +76,11 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse whether to show the team count
-	if r.Form.Has("showTeamCount") {
-		showTeamCount := r.Form.Get("showTeamCount") == "on"
-		user.CurrentInstance.Settings.ShowTeamCount = showTeamCount
-	}
+	user.CurrentInstance.Settings.ShowTeamCount = r.Form.Has("showTeamCount") && r.Form.Get("showTeamCount") == "on"
 
 	// Parse points
-	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints")
-	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints")
+	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
+	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") && r.Form.Get("enableBonusPoints") == "on"
 
 	// Update the navigation settings
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)
