@@ -25,9 +25,9 @@ func setupNavigationService(t *testing.T) (*services.NavigationService, func()) 
 
 func createTestTeamWithInstance(t *testing.T, navMode models.NavigationMode, maxNextLocs int) *models.Team {
 	t.Helper()
-	
+
 	instanceID := gofakeit.UUID()
-	
+
 	// Create locations with simple marker IDs for testing
 	locations := make([]models.Location, 3)
 	for i := 0; i < 3; i++ {
@@ -50,9 +50,9 @@ func createTestTeamWithInstance(t *testing.T, navMode models.NavigationMode, max
 			ID:        instanceID,
 			Locations: locations,
 			Settings: models.InstanceSettings{
-				InstanceID:        instanceID,
-				NavigationMode:    navMode,
-				MaxNextLocations:  maxNextLocs,
+				InstanceID:       instanceID,
+				NavigationMode:   navMode,
+				MaxNextLocations: maxNextLocs,
 			},
 		},
 	}
@@ -73,7 +73,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 	t.Run("Invalid location code", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
-		
+
 		valid, err := service.IsValidLocation(context.Background(), team, "INVALID")
 		assert.Error(t, err)
 		assert.False(t, valid)
@@ -82,12 +82,12 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 	t.Run("Ordered navigation - only first location valid", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
-		
+
 		// First location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		// Second location should be invalid
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
 		assert.Error(t, err)
@@ -96,8 +96,8 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 	t.Run("Team with missing instance", func(t *testing.T) {
 		team := &models.Team{
-			ID:   gofakeit.UUID(),
-			Code: gofakeit.Word(),
+			ID:       gofakeit.UUID(),
+			Code:     gofakeit.Word(),
 			Instance: models.Instance{}, // Empty instance
 		}
 
@@ -108,7 +108,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 	t.Run("Normalize marker ID - case insensitive and trimmed", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
-		
+
 		// Test with lowercase and spaces
 		valid, err := service.IsValidLocation(context.Background(), team, "  marker0  ")
 		assert.NoError(t, err)
@@ -124,16 +124,16 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 	t.Run("Free roam navigation logic", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
-		
+
 		// Test using IsValidLocation which uses the core logic without loading relations
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER2")
 		assert.NoError(t, err)
 		assert.True(t, valid)
@@ -141,12 +141,12 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 	t.Run("Ordered navigation logic", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
-		
+
 		// Only first location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		// Second location should not be valid yet
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
 		assert.Error(t, err)
@@ -155,7 +155,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 	t.Run("Random navigation logic", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.RandomNav, 2)
-		
+
 		// At least some locations should be valid
 		validCount := 0
 		for i := 0; i < 3; i++ {
@@ -170,7 +170,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 	t.Run("All locations visited", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
-		
+
 		// Add check-ins for all locations
 		for _, location := range team.Instance.Locations {
 			team.CheckIns = append(team.CheckIns, models.CheckIn{
@@ -225,22 +225,22 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 
 	t.Run("Returns location with lowest order via validation", func(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
-		
+
 		// Shuffle the locations to test order selection
 		team.Instance.Locations[0].Order = 5
-		team.Instance.Locations[1].Order = 1  // This should be the only valid one
+		team.Instance.Locations[1].Order = 1 // This should be the only valid one
 		team.Instance.Locations[2].Order = 3
 
 		// Only the location with order 1 should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER1")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		// Other locations should not be valid
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER0")
 		assert.Error(t, err)
 		assert.False(t, valid)
-		
+
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER2")
 		assert.Error(t, err)
 		assert.False(t, valid)
@@ -264,7 +264,7 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
 		assert.NoError(t, err)
 		assert.True(t, valid)
-		
+
 		// First location should no longer be valid (already visited)
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER0")
 		assert.Error(t, err)
@@ -279,22 +279,22 @@ func TestNavigationService_RandomNavigation(t *testing.T) {
 	t.Run("Deterministic randomness with same team code", func(t *testing.T) {
 		team1 := createTestTeamWithInstance(t, models.RandomNav, 2)
 		team1.Code = "TESTTEAM"
-		
+
 		team2 := createTestTeamWithInstance(t, models.RandomNav, 2)
-		team2.Code = "TESTTEAM" // Same code
+		team2.Code = "TESTTEAM"                             // Same code
 		team2.Instance.Locations = team1.Instance.Locations // Same locations
 
 		// Test that both teams get the same validity results due to deterministic seeding
 		results1 := make([]bool, 3)
 		results2 := make([]bool, 3)
-		
+
 		for i := 0; i < 3; i++ {
 			valid1, _ := service.IsValidLocation(context.Background(), team1, fmt.Sprintf("MARKER%d", i))
 			valid2, _ := service.IsValidLocation(context.Background(), team2, fmt.Sprintf("MARKER%d", i))
 			results1[i] = valid1
 			results2[i] = valid2
 		}
-		
+
 		// Should get same results due to deterministic seeding
 		assert.Equal(t, results1, results2)
 	})
@@ -347,3 +347,4 @@ func TestNavigationService_EdgeCases(t *testing.T) {
 		assert.False(t, valid)
 	})
 }
+
