@@ -11,7 +11,7 @@ order: 100
 ### Changed
 
 - Refactored the `GameManagerService` into `GameScheduleService`, `QuickstartService`, `InstanceSettingsService` to improve maintainability and separation of concerns.
-- Refactored the `LocationService` into `LocationStatsService` and `InstanceSettingsService`.
+- Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.
 - Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
