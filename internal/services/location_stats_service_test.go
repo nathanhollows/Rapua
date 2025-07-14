@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupLocationStatsService(t *testing.T) (*services.LocationStatsService, func()) {
+func setupLocationStatsService(t *testing.T) (services.LocationStatsService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 

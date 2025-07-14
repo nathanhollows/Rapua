@@ -9,6 +9,11 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
+type LocationStatsService interface {
+	IncrementVisitors(ctx context.Context, location *models.Location) error
+	DecrementVisitors(ctx context.Context, location *models.Location) error
+}
+
 type CheckInService struct {
 	checkInRepo          repositories.CheckInRepository
 	locationRepo         repositories.LocationRepository

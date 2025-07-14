@@ -9,17 +9,17 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-type LocationStatsService struct {
+type locationStatsService struct {
 	locationRepo repositories.LocationRepository
 }
 
-func NewLocationStatsService(locationRepo repositories.LocationRepository) *LocationStatsService {
-	return &LocationStatsService{
+func NewLocationStatsService(locationRepo repositories.LocationRepository) *locationStatsService {
+	return &locationStatsService{
 		locationRepo: locationRepo,
 	}
 }
 
-func (s *LocationStatsService) IncrementVisitors(ctx context.Context, location *models.Location) error {
+func (s *locationStatsService) IncrementVisitors(ctx context.Context, location *models.Location) error {
 	if location == nil {
 		return errors.New("location cannot be nil")
 	}
@@ -35,7 +35,7 @@ func (s *LocationStatsService) IncrementVisitors(ctx context.Context, location *
 	return nil
 }
 
-func (s *LocationStatsService) DecrementVisitors(ctx context.Context, location *models.Location) error {
+func (s *locationStatsService) DecrementVisitors(ctx context.Context, location *models.Location) error {
 	if location == nil {
 		return errors.New("location cannot be nil")
 	}
