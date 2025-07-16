@@ -463,7 +463,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 				tc.reorderIDs = ids
 			}
 
-			err := svc.ReorderBlocks(context.Background(), tc.locationID, tc.reorderIDs)
+			err := svc.ReorderBlocks(context.Background(), tc.reorderIDs)
 			if tc.wantErr {
 				assert.Error(t, err)
 			} else {

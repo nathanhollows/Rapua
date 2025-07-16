@@ -34,7 +34,7 @@ type BlockService interface {
 	// UpdateState updates the player state for a block
 	UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
 	// ReorderBlocks changes the display/order of blocks at a location
-	ReorderBlocks(ctx context.Context, locationID string, blockIDs []string) error
+	ReorderBlocks(ctx context.Context, blockIDs []string) error
 
 	// CheckValidationRequiredForLocation checks if any blocks in a location require validation
 	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
@@ -136,8 +136,8 @@ func (s *blockService) UpdateBlock(ctx context.Context, block blocks.Block, data
 }
 
 // ReorderBlocks reorders the blocks in a location.
-func (s *blockService) ReorderBlocks(ctx context.Context, locationID string, blockIDs []string) error {
-	return s.blockRepo.Reorder(ctx, locationID, blockIDs)
+func (s *blockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
+	return s.blockRepo.Reorder(ctx, blockIDs)
 }
 
 func (s *blockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error) {
