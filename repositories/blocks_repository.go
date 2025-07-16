@@ -34,7 +34,7 @@ type BlockRepository interface {
 	DeleteByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error
 
 	// Reorder reorders the blocks for a specific location
-	Reorder(ctx context.Context, locationID string, blockIDs []string) error
+	Reorder(ctx context.Context, blockIDs []string) error
 }
 
 type blockRepository struct {
@@ -172,7 +172,7 @@ func (r *blockRepository) DeleteByLocationID(ctx context.Context, tx *bun.Tx, lo
 }
 
 // Reorder reorders the blocks.
-func (r *blockRepository) Reorder(ctx context.Context, locationID string, blockIDs []string) error {
+func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
 	for i, blockID := range blockIDs {
 		_, err := r.db.NewUpdate().
 			Model(&models.Block{}).

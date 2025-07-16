@@ -7,9 +7,11 @@ order: 100
 # Changelog
 
 ## 3.10.1 (2025-07-11)
+## 4.0.0 (2025-07-15)
 
 ### Changed
 
+- **Breaking change:** Removed locationID field from Reorder method in `BlockRepository` interface. Not needed as blocks are now always associated with a location.
 - Refactored the `GameManagerService` into `GameScheduleService`, `QuickstartService`, `InstanceSettingsService` to improve maintainability and separation of concerns.
 - Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.
