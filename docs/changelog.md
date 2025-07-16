@@ -6,16 +6,15 @@ order: 100
 
 # Changelog
 
-## 3.10.1 (2025-07-11)
 ## 4.0.0 (2025-07-15)
 
 ### Changed
 
 - **Breaking change:** Removed locationID field from Reorder method in `BlockRepository` interface. Not needed as blocks are now always associated with a location.
+- **Breaking change:** Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
 - Refactored the `GameManagerService` into `GameScheduleService`, `QuickstartService`, `InstanceSettingsService` to improve maintainability and separation of concerns.
 - Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.
-- Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
 - Normalised error handling across all services to use a consistent pattern, especially with missing or invalid data.
 
