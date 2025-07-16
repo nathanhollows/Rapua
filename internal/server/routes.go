@@ -178,7 +178,7 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.AdminAuthMiddleware(adminHandler.AuthService, next)
+			return middlewares.AdminAuthMiddleware(adminHandler.IdentityService, next)
 		})
 		r.Use(middlewares.AdminCheckInstanceMiddleware)
 

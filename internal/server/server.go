@@ -24,7 +24,7 @@ var server *http.Server
 func Start(logger *slog.Logger,
 	accessService admin.AccessService,
 	assetGenerator services.AssetGenerator,
-	authService services.AuthService,
+	authService services.IdentityService,
 	blockService services.BlockService,
 	checkInService players.CheckInService,
 	clueService services.ClueService,

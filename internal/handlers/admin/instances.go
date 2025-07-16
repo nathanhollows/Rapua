@@ -13,7 +13,7 @@ func (h *AdminHandler) Instances(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// We need to show both the instances and the templates
-	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	gameTemplates, err := h.templateService.Find(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "Instances: finding templates", "Error finding templates", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -36,14 +36,14 @@ func (h *AdminHandler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := r.FormValue("name")
-	instance, err := h.InstanceService.CreateInstance(r.Context(), name, user)
+	instance, err := h.instanceService.CreateInstance(r.Context(), name, user)
 	if err != nil {
 		h.handleError(w, r, "InstancesCreate: creating instance", "Error creating instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
 	// Switch to the new instance
-	err = h.UserService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.userService.SwitchInstance(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(w, r, "InstancesCreate: switching instance", "Error switching instance", "error", err)
 		return
@@ -65,13 +65,13 @@ func (h *AdminHandler) InstanceDuplicate(w http.ResponseWriter, r *http.Request)
 	id := r.Form.Get("id")
 	name := r.Form.Get("name")
 
-	instance, err := h.InstanceService.DuplicateInstance(r.Context(), user, id, name)
+	instance, err := h.instanceService.DuplicateInstance(r.Context(), user, id, name)
 	if err != nil {
 		h.handleError(w, r, "InstanceDuplicate: duplicating instance", "Error duplicating instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
-	err = h.UserService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.userService.SwitchInstance(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(w, r, "InstanceDuplicate: switching instance", "Error switching instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -90,7 +90,7 @@ func (h *AdminHandler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.UserService.SwitchInstance(r.Context(), user, instanceID)
+	err := h.userService.SwitchInstance(r.Context(), user, instanceID)
 	if err != nil {
 		h.handleError(w, r, "InstanceSwitch: switching instance", "Error switching instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -130,12 +130,12 @@ func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 	if user.CurrentInstanceID == id {
 		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).Render(r.Context(), w)
 		if err != nil {
-			h.Logger.Error("InstanceDelete: rendering template", "error", err)
+			h.logger.Error("InstanceDelete: rendering template", "error", err)
 		}
 		return
 	}
 
-	err := h.DeleteService.DeleteInstance(r.Context(), user.ID, id)
+	err := h.deleteService.DeleteInstance(r.Context(), user.ID, id)
 	if err != nil {
 		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return

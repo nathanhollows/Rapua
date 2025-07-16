@@ -16,21 +16,21 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	// Extract parameters from the URL
 	extension := chi.URLParam(r, "extension")
 	if extension != "png" && extension != "svg" {
-		h.Logger.Error("QRCodeHandler: Invalid extension provided")
+		h.logger.Error("QRCodeHandler: Invalid extension provided")
 		http.Error(w, "Invalid extension provided", http.StatusNotFound)
 		return
 	}
 
 	action := chi.URLParam(r, "action")
 	if action != "in" && action != "out" {
-		h.Logger.Error("QRCodeHandler: Invalid type provided")
+		h.logger.Error("QRCodeHandler: Invalid type provided")
 		http.Error(w, "Improper type provided", http.StatusNotFound)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		h.Logger.Error("QRCodeHandler: No location provided")
+		h.logger.Error("QRCodeHandler: No location provided")
 		http.Error(w, "No location provided", http.StatusNotFound)
 		return
 	}
@@ -38,18 +38,18 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	// Check if the user has access to the location
 	access, err := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, id)
 	if err != nil {
-		h.Logger.Error("QRCodeHandler: Error checking access", "error", err)
+		h.logger.Error("QRCodeHandler: Error checking access", "error", err)
 		http.Error(w, "Error checking access", http.StatusInternalServerError)
 		return
 	}
 	if !access {
-		h.Logger.Error("QRCodeHandler: User does not have access to this location", "user", user.ID, "location", id)
+		h.logger.Error("QRCodeHandler: User does not have access to this location", "user", user.ID, "location", id)
 		http.Error(w, "You do not have access to this location", http.StatusForbidden)
 		return
 	}
 
 	// Get the path and content for the QR code
-	path, content := h.AssetGenerator.GetQRCodePathAndContent(action, id, "", extension)
+	path, content := h.assetGenerator.GetQRCodePathAndContent(action, id, "", extension)
 
 	// Check if the file already exists, if so serve it
 	if _, err := os.Stat(path); err == nil {
@@ -63,14 +63,14 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate the QR code
-	err = h.AssetGenerator.CreateQRCodeImage(
+	err = h.assetGenerator.CreateQRCodeImage(
 		r.Context(),
 		path,
 		content,
-		h.AssetGenerator.WithQRFormat(extension),
+		h.assetGenerator.WithQRFormat(extension),
 	)
 	if err != nil {
-		h.Logger.Error("QRCodeHandler: Could not create QR code", "error", err)
+		h.logger.Error("QRCodeHandler: Could not create QR code", "error", err)
 		http.Error(w, "Could not create QR code", http.StatusInternalServerError)
 		return
 	}
@@ -100,7 +100,7 @@ func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Requ
 	for _, location := range user.CurrentInstance.Locations {
 		for _, extension := range []string{"png", "svg"} {
 			for _, action := range actions {
-				path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, extension)
+				path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, extension)
 				paths = append(paths, path)
 
 				// Check if the file already exists, otherwise generate it
@@ -109,14 +109,14 @@ func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Requ
 				}
 
 				// Generate the QR code
-				err := h.AssetGenerator.CreateQRCodeImage(
+				err := h.assetGenerator.CreateQRCodeImage(
 					r.Context(),
 					path,
 					content,
-					h.AssetGenerator.WithQRFormat(extension),
+					h.assetGenerator.WithQRFormat(extension),
 				)
 				if err != nil {
-					h.Logger.Error("QRCodeHandler: Could not create QR code", "error", err)
+					h.logger.Error("QRCodeHandler: Could not create QR code", "error", err)
 					http.Error(w, "Could not create QR code", http.StatusInternalServerError)
 					return
 				}
@@ -124,9 +124,9 @@ func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	path, err := h.AssetGenerator.CreateArchive(r.Context(), paths)
+	path, err := h.assetGenerator.CreateArchive(r.Context(), paths)
 	if err != nil {
-		h.Logger.Error("QR codes could not be zipped", "error", err, "instance", user.CurrentInstanceID)
+		h.logger.Error("QR codes could not be zipped", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "QR codes could not be zipped", http.StatusInternalServerError)
 		return
 	}
@@ -150,19 +150,19 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, location := range user.CurrentInstance.Locations {
 		for _, action := range actions {
-			path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+			path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
 
 			// Check if the file already exists, otherwise generate it
 			if _, err := os.Stat(path); err != nil {
 				// Generate the QR code
-				err := h.AssetGenerator.CreateQRCodeImage(
+				err := h.assetGenerator.CreateQRCodeImage(
 					r.Context(),
 					path,
 					content,
-					h.AssetGenerator.WithQRFormat("png"),
+					h.assetGenerator.WithQRFormat("png"),
 				)
 				if err != nil {
-					h.Logger.Error("GeneratePoster: Could not create posters", "error", err)
+					h.logger.Error("GeneratePoster: Could not create posters", "error", err)
 					http.Error(w, "Could not create posters", http.StatusInternalServerError)
 					return
 				}
@@ -179,9 +179,9 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 			pdfData.Pages = append(pdfData.Pages, page)
 		}
 	}
-	path, err := h.AssetGenerator.CreatePDF(r.Context(), pdfData)
+	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
 	if err != nil {
-		h.Logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
+		h.logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "Posters could not be generated", http.StatusInternalServerError)
 		return
 	}
@@ -198,7 +198,7 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		h.Logger.Error("QRCodeHandler: No location provided")
+		h.logger.Error("QRCodeHandler: No location provided")
 		http.Error(w, "No location provided", http.StatusNotFound)
 		return
 	}
@@ -213,7 +213,7 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !found {
-		h.Logger.Error("GeneratePoster: Location not found", "location", id)
+		h.logger.Error("GeneratePoster: Location not found", "location", id)
 		http.Error(w, "Location not found", http.StatusNotFound)
 		return
 	}
@@ -228,19 +228,19 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		actions = []string{"in", "out"}
 	}
 	for _, action := range actions {
-		path, content := h.AssetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+		path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
 
 		// Check if the file already exists, otherwise generate it
 		if _, err := os.Stat(path); err != nil {
 			// Generate the QR code
-			err := h.AssetGenerator.CreateQRCodeImage(
+			err := h.assetGenerator.CreateQRCodeImage(
 				r.Context(),
 				path,
 				content,
-				h.AssetGenerator.WithQRFormat("png"),
+				h.assetGenerator.WithQRFormat("png"),
 			)
 			if err != nil {
-				h.Logger.Error("GeneratePoster: Could not create posters", "error", err)
+				h.logger.Error("GeneratePoster: Could not create posters", "error", err)
 				http.Error(w, "Could not create posters", http.StatusInternalServerError)
 				return
 			}
@@ -256,9 +256,9 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		}
 		pdfData.Pages = append(pdfData.Pages, page)
 	}
-	path, err := h.AssetGenerator.CreatePDF(r.Context(), pdfData)
+	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
 	if err != nil {
-		h.Logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
+		h.logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "Posters could not be generated", http.StatusInternalServerError)
 		return
 	}

@@ -12,7 +12,7 @@ func (h *AdminHandler) Quickstart(w http.ResponseWriter, r *http.Request) {
 
 	err := templates.QuickstartBar(user.CurrentInstance).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Quickstart: rendering template", "error", err)
+		h.logger.Error("Quickstart: rendering template", "error", err)
 	}
 }
 
@@ -20,7 +20,7 @@ func (h *AdminHandler) Quickstart(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) DismissQuickstart(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.QuickstartService.DismissQuickstart(r.Context(), user.CurrentInstanceID)
+	err := h.quickstartService.DismissQuickstart(r.Context(), user.CurrentInstanceID)
 	if err != nil {
 		h.handleError(w, r, "DismissQuickstart", "Error dismissing quickstart", "error", err)
 		return

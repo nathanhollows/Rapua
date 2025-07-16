@@ -14,7 +14,7 @@ func (h *AdminHandler) Teams(w http.ResponseWriter, r *http.Request) {
 	err := admin.Layout(c, *user, "Teams", "Teams").Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering teams page", "error", err.Error())
+		h.logger.Error("rendering teams page", "error", err.Error())
 	}
 }
 
@@ -34,7 +34,7 @@ func (h *AdminHandler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add the teams
-	teams, err := h.TeamService.AddTeams(r.Context(), user.CurrentInstanceID, count)
+	teams, err := h.teamService.AddTeams(r.Context(), user.CurrentInstanceID, count)
 	if err != nil {
 		h.handleError(w, r, "TeamsAdd adding teams", "Error adding teams", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -42,7 +42,7 @@ func (h *AdminHandler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
 
 	err = admin.TeamsList(teams).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("TeamsAdd rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
+		h.logger.Error("TeamsAdd rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
 	}
 }
 
@@ -61,14 +61,14 @@ func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, id := range teamID {
-		err := h.DeleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id})
+		err := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id})
 		if err != nil {
 			h.handleError(w, r, "TeamsDelete deleting team", "Error deleting team", "error", err, "instance_id", user.CurrentInstanceID, "team_id", teamID)
 			return
 		}
 	}
 
-	teams, err := h.TeamService.FindAll(r.Context(), user.CurrentInstanceID)
+	teams, err := h.teamService.FindAll(r.Context(), user.CurrentInstanceID)
 	if err != nil {
 		h.handleError(w, r, "TeamsReset finding teams", "Error finding teams", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -76,7 +76,7 @@ func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 
 	err = admin.TeamsTable(teams).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
+		h.logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
 	}
 	h.handleSuccess(w, r, "Deleted team(s)")
 }
@@ -95,13 +95,13 @@ func (h *AdminHandler) TeamsReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.DeleteService.ResetTeams(r.Context(), user.CurrentInstanceID, teamIDs)
+	err = h.deleteService.ResetTeams(r.Context(), user.CurrentInstanceID, teamIDs)
 	if err != nil {
 		h.handleError(w, r, "TeamsReset deleting team", "Error resetting teams", "error", err, "instance_id", user.CurrentInstanceID, "team_id", teamIDs)
 		return
 	}
 
-	teams, err := h.TeamService.FindAll(r.Context(), user.CurrentInstanceID)
+	teams, err := h.teamService.FindAll(r.Context(), user.CurrentInstanceID)
 	if err != nil {
 		h.handleError(w, r, "TeamsReset finding teams", "Error finding teams", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -109,7 +109,7 @@ func (h *AdminHandler) TeamsReset(w http.ResponseWriter, r *http.Request) {
 
 	err = admin.TeamsTable(teams).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
+		h.logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
 	}
 	h.handleSuccess(w, r, "Reset team(s)")
 }

@@ -35,7 +35,7 @@ func (h *AdminHandler) getTemplateByID(w http.ResponseWriter, r *http.Request, i
 		return nil, false
 	}
 
-	template, err := h.TemplateService.GetByID(r.Context(), id)
+	template, err := h.templateService.GetByID(r.Context(), id)
 	if err != nil {
 		h.handleError(w, r, "TemplateName: getting template", "Error getting template", "error", err)
 		return nil, false
@@ -65,7 +65,7 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.TemplateService.CreateFromInstance(r.Context(), user.ID, id, name)
+	_, err := h.templateService.CreateFromInstance(r.Context(), user.ID, id, name)
 	if err != nil {
 		h.handleError(w, r, "TemplateCreate: creating instance", "Error creating instance", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -73,10 +73,10 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.Toast(*flash.NewSuccess("Template created")).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("InstanceDelete: rendering template", "Error", err)
+		h.logger.Error("InstanceDelete: rendering template", "Error", err)
 	}
 
-	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	gameTemplates, err := h.templateService.Find(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "TemplatesCreate: getting templates", "Error getting templates", "error", err)
 		return
@@ -112,14 +112,14 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	regen := r.Form.Has("regenerate")
 
 	// Create a new instance from the template
-	newGame, err := h.TemplateService.LaunchInstance(r.Context(), user.ID, id, name, regen)
+	newGame, err := h.templateService.LaunchInstance(r.Context(), user.ID, id, name, regen)
 	if err != nil {
 		h.handleError(w, r, "TemplatesLaunch: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
 		return
 	}
 
 	// Switch to the new instance
-	err = h.UserService.SwitchInstance(r.Context(), user, newGame.ID)
+	err = h.userService.SwitchInstance(r.Context(), user, newGame.ID)
 	if err != nil {
 		h.handleError(w, r, "TemplatesLaunch: switching instance", "Error switching instance", "error", err)
 		return
@@ -142,7 +142,7 @@ func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	shareLink, err := h.TemplateService.GetShareLink(r.Context(), linkID)
+	shareLink, err := h.templateService.GetShareLink(r.Context(), linkID)
 	if err != nil {
 		h.handleError(w, r, "TemplatesLaunchFromLink: getting template", "Error getting template", "error", err)
 		return
@@ -162,14 +162,14 @@ func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Re
 	regen := r.Form.Has("regenerate")
 
 	// Create a new instance from the template
-	newGame, err := h.TemplateService.LaunchInstanceFromShareLink(r.Context(), user.ID, linkID, name, regen)
+	newGame, err := h.templateService.LaunchInstanceFromShareLink(r.Context(), user.ID, linkID, name, regen)
 	if err != nil {
 		h.handleError(w, r, "TemplatesLaunchFromLink: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
 		return
 	}
 
 	// Switch to the new instance
-	err = h.UserService.SwitchInstance(r.Context(), user, newGame.ID)
+	err = h.userService.SwitchInstance(r.Context(), user, newGame.ID)
 	if err != nil {
 		h.handleError(w, r, "TemplatesLaunchFromLink: switching instance", "Error switching instance", "error", err)
 		return
@@ -193,23 +193,23 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := h.TemplateService.GetByID(r.Context(), id)
+	template, err := h.templateService.GetByID(r.Context(), id)
 	if err != nil {
 		h.handleError(w, r, "TemplateDelete: getting template", "Error getting template", "error", err, "instance_id", user.CurrentInstanceID)
 		return
 	}
 
-	err = h.DeleteService.DeleteInstance(r.Context(), user.ID, template.ID)
+	err = h.deleteService.DeleteInstance(r.Context(), user.ID, template.ID)
 	if err != nil {
 		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
 	} else {
 		err = templates.Toast(*flash.NewSuccess("Template deleted")).Render(r.Context(), w)
 		if err != nil {
-			h.Logger.Error("InstanceDelete: rendering template", "Error", err)
+			h.logger.Error("InstanceDelete: rendering template", "Error", err)
 		}
 	}
 
-	gameTemplates, err := h.TemplateService.Find(r.Context(), user.ID)
+	gameTemplates, err := h.templateService.Find(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "TemplatesCreate: getting templates", "Error getting templates", "error", err)
 		return
@@ -231,7 +231,7 @@ func (h *AdminHandler) TemplatesName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := templates.TemplateName(*template).Render(r.Context(), w); err != nil {
-		h.Logger.Error("InstanceDelete: rendering template", "Error", err, "user_id", user.ID)
+		h.logger.Error("InstanceDelete: rendering template", "Error", err, "user_id", user.ID)
 		_ = templates.TemplateName(*template).Render(r.Context(), w)
 	}
 }
@@ -245,7 +245,7 @@ func (h *AdminHandler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := templates.TemplateNameEdit(*template).Render(r.Context(), w); err != nil {
-		h.Logger.Error("InstanceDelete: rendering template", "Error", err, "user_id", user.ID)
+		h.logger.Error("InstanceDelete: rendering template", "Error", err, "user_id", user.ID)
 		_ = templates.TemplateNameEdit(*template).Render(r.Context(), w)
 	}
 }
@@ -274,8 +274,8 @@ func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Requ
 	}
 
 	template.Name = name
-	if err := h.TemplateService.Update(r.Context(), template); err != nil {
-		h.Logger.Error("InstanceDelete: rendering template", "Error", err)
+	if err := h.templateService.Update(r.Context(), template); err != nil {
+		h.logger.Error("InstanceDelete: rendering template", "Error", err)
 		_ = templates.TemplateNameEdit(*template).Render(r.Context(), w)
 		return
 	}
@@ -283,7 +283,7 @@ func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Requ
 	h.handleSuccess(w, r, "Updated template name")
 
 	if err := templates.TemplateName(*template).Render(r.Context(), w); err != nil {
-		h.Logger.Error("InstanceDelete: rendering template", "Error", err)
+		h.logger.Error("InstanceDelete: rendering template", "Error", err)
 	}
 }
 
@@ -325,7 +325,7 @@ func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request
 		Regenerate: r.Form.Has("regenerate"),
 	}
 
-	link, err := h.TemplateService.CreateShareLink(r.Context(), user.ID, data)
+	link, err := h.templateService.CreateShareLink(r.Context(), user.ID, data)
 	if err != nil {
 		h.handleError(w, r, "TemplateSharePost: creating link", "Error creating link", "error", err, "user_id", user.ID)
 		_ = templates.TemplateShareModal(models.Instance{}).Render(r.Context(), w)
@@ -334,6 +334,6 @@ func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request
 
 	err = templates.ShareLinkCopyModal(link).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("TemplateSharePost: rendering template", "Error", err, "user_id", user.ID)
+		h.logger.Error("TemplateSharePost: rendering template", "Error", err, "user_id", user.ID)
 	}
 }

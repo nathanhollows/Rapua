@@ -13,7 +13,7 @@ import (
 func (h *AdminHandler) Experience(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	locations, err := h.LocationService.FindByInstance(r.Context(), user.CurrentInstanceID)
+	locations, err := h.locationService.FindByInstance(r.Context(), user.CurrentInstanceID)
 	if err != nil {
 		h.handleError(w, r, "Experience: getting locations", "Error getting locations", "error", err)
 		return
@@ -22,7 +22,7 @@ func (h *AdminHandler) Experience(w http.ResponseWriter, r *http.Request) {
 	c := admin.Experience(user.CurrentInstance.Settings, len(locations))
 	err = admin.Layout(c, *user, "Experience", "Experience").Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering navigation page", "error", err.Error())
+		h.logger.Error("rendering navigation page", "error", err.Error())
 	}
 }
 
@@ -142,6 +142,6 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
 	err = players.Next(team, locations).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering template", "error", err)
+		h.logger.Error("rendering template", "error", err)
 	}
 }

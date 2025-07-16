@@ -16,7 +16,7 @@ func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 
 	// Send the notification
-	err := h.NotificationService.SendNotificationToAllTeams(r.Context(), user.CurrentInstanceID, content)
+	err := h.notificationService.SendNotificationToAllTeams(r.Context(), user.CurrentInstanceID, content)
 	if err != nil {
 		h.handleError(w, r, "NotifyAllPost sending notification", "Error sending notification", "error", err, "instance_id", user.CurrentInstanceID)
 		return
@@ -38,7 +38,7 @@ func (h *AdminHandler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 	teamCode := r.FormValue("teamCode")
 
 	// Send the notification
-	_, err := h.NotificationService.SendNotification(r.Context(), teamCode, content)
+	_, err := h.notificationService.SendNotification(r.Context(), teamCode, content)
 	if err != nil {
 		h.handleError(w, r, "NotifyTeamPost sending notification", "Error sending notification", "error", err, "instance_id", user.CurrentInstanceID)
 		return

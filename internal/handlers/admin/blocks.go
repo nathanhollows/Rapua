@@ -23,7 +23,7 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockEdit: getting block", "Could not find block", "error", err)
 		return
@@ -31,7 +31,7 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.RenderAdminEdit(user.CurrentInstance.Settings, block).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("BlockEdit: rendering template", "error", err)
+		h.logger.Error("BlockEdit: rendering template", "error", err)
 	}
 }
 
@@ -51,7 +51,7 @@ func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockEditPost: getting block", "Could not update block", "error", err)
 		return
@@ -68,7 +68,7 @@ func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 		data[key] = value
 	}
 
-	_, err = h.BlockService.UpdateBlock(r.Context(), block, data)
+	_, err = h.blockService.UpdateBlock(r.Context(), block, data)
 	if err != nil {
 		h.handleError(w, r, "BlockEditPost: updating block", "Could not update block", "error", err)
 		return
@@ -94,13 +94,13 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location, err := h.LocationService.GetByID(r.Context(), locationID)
+	location, err := h.locationService.GetByID(r.Context(), locationID)
 	if err != nil {
 		h.handleError(w, r, "BlockNewPost: finding location", "Could not create block", "error", err)
 		return
 	}
 
-	block, err := h.BlockService.NewBlock(r.Context(), location.ID, blockType)
+	block, err := h.blockService.NewBlock(r.Context(), location.ID, blockType)
 	if err != nil {
 		h.handleError(w, r, "BlockNewPost: creating block", "Could not create block", "error", err)
 		return
@@ -108,7 +108,7 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("BlockNewPost: rendering template", "error", err)
+		h.logger.Error("BlockNewPost: rendering template", "error", err)
 	}
 }
 
@@ -128,13 +128,13 @@ func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: getting block", "Could not delete block", "error", err)
 		return
 	}
 
-	err = h.DeleteService.DeleteBlock(r.Context(), block.GetID())
+	err = h.deleteService.DeleteBlock(r.Context(), block.GetID())
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: deleting block", "Could not delete block", "error", err)
 		return
@@ -167,7 +167,7 @@ func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.BlockService.ReorderBlocks(r.Context(), blockOrder)
+	err = h.blockService.ReorderBlocks(r.Context(), blockOrder)
 	if err != nil {
 		h.handleError(w, r, "ReorderBlocks: reordering blocks", "Could not reorder blocks", "error", err)
 		return

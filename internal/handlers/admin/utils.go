@@ -59,34 +59,34 @@ type MarkerService interface {
 }
 
 type AdminHandler struct {
-	Logger                  *slog.Logger
+	logger                  *slog.Logger
 	accessService           AccessService
-	AssetGenerator          services.AssetGenerator
-	AuthService             services.IdentityService
-	BlockService            services.BlockService
-	ClueService             services.ClueService
-	DeleteService           DeleteService
-	FacilitatorService      services.FacilitatorService
-	GameplayService         services.GameplayService
-	GameScheduleService     GameScheduleService
-	InstanceService         services.InstanceService
+	assetGenerator          services.AssetGenerator
+	IdentityService         services.IdentityService
+	blockService            services.BlockService
+	clueService             services.ClueService
+	deleteService           DeleteService
+	facilitatorService      services.FacilitatorService
+	gameplayService         services.GameplayService
+	gameScheduleService     GameScheduleService
+	instanceService         services.InstanceService
 	instanceSettingsService InstanceSettingsService
-	LocationService         services.LocationService
-	MarkerService           MarkerService
+	locationService         services.LocationService
+	markerService           MarkerService
 	navigationService       NavigationService
-	NotificationService     services.NotificationService
-	TeamService             services.TeamService
-	TemplateService         services.TemplateService
-	UploadService           services.UploadService
-	UserService             services.UserService
-	QuickstartService       QuickstartService
+	notificationService     services.NotificationService
+	teamService             services.TeamService
+	templateService         services.TemplateService
+	uploadService           services.UploadService
+	userService             services.UserService
+	quickstartService       QuickstartService
 }
 
 func NewAdminHandler(
 	logger *slog.Logger,
 	accessService AccessService,
 	assetGenerator services.AssetGenerator,
-	authService services.IdentityService,
+	identityService services.IdentityService,
 	blockService services.BlockService,
 	clueService services.ClueService,
 	DeleteService DeleteService,
@@ -106,27 +106,27 @@ func NewAdminHandler(
 	quickstartService QuickstartService,
 ) *AdminHandler {
 	return &AdminHandler{
-		Logger:                  logger,
+		logger:                  logger,
 		accessService:           accessService,
-		AssetGenerator:          assetGenerator,
-		AuthService:             authService,
-		BlockService:            blockService,
-		ClueService:             clueService,
-		DeleteService:           DeleteService,
-		FacilitatorService:      facilitatorService,
-		GameplayService:         gameplayService,
-		GameScheduleService:     gameScheduleService,
-		InstanceService:         instanceService,
+		assetGenerator:          assetGenerator,
+		IdentityService:         identityService,
+		blockService:            blockService,
+		clueService:             clueService,
+		deleteService:           DeleteService,
+		facilitatorService:      facilitatorService,
+		gameplayService:         gameplayService,
+		gameScheduleService:     gameScheduleService,
+		instanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
-		LocationService:         locationService,
-		MarkerService:           markerService,
+		locationService:         locationService,
+		markerService:           markerService,
 		navigationService:       navigationService,
-		NotificationService:     notificationService,
-		TeamService:             teamService,
-		TemplateService:         templateService,
-		UploadService:           uploadService,
-		UserService:             userService,
-		QuickstartService:       quickstartService,
+		notificationService:     notificationService,
+		teamService:             teamService,
+		templateService:         templateService,
+		uploadService:           uploadService,
+		userService:             userService,
+		quickstartService:       quickstartService,
 	}
 }
 
@@ -137,17 +137,17 @@ func (h AdminHandler) UserFromContext(ctx context.Context) *models.User {
 }
 
 func (h *AdminHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
-	h.Logger.Error(logMsg, params...)
+	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error(logMsg+" - rendering template", "error", err)
+		h.logger.Error(logMsg+" - rendering template", "error", err)
 	}
 }
 
 func (h *AdminHandler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {
 	err := templates.Toast(*flash.NewSuccess(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering success template", "error", err)
+		h.logger.Error("rendering success template", "error", err)
 	}
 }
 
