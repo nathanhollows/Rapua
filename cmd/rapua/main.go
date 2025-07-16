@@ -221,7 +221,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		*checkInService, teamService, blockService, markerRepo,
 	)
 	gameManagerService := services.NewGameManagerService(
-		locationService, teamService, markerRepo, instanceService,
+		locationService, markerRepo, instanceService,
 	)
 
 	sessions.Start()

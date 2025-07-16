@@ -12,7 +12,6 @@ import (
 
 type gameManagerService struct {
 	locationService LocationService
-	teamService     TeamService
 	markerRepo      repositories.MarkerRepository
 	instanceService InstanceService
 }
@@ -29,13 +28,11 @@ type GameManagerService interface {
 
 func NewGameManagerService(
 	locationService LocationService,
-	teamService TeamService,
 	markerRepo repositories.MarkerRepository,
 	instanceService InstanceService,
 ) GameManagerService {
 	return &gameManagerService{
 		locationService: locationService,
-		teamService:     teamService,
 		markerRepo:      markerRepo,
 		instanceService: instanceService,
 	}
