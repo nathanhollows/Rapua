@@ -19,8 +19,6 @@ type gameManagerService struct {
 
 // TODO: Split this service into smaller services.
 type GameManagerService interface {
-	// Team & Location Management
-	LoadTeams(ctx context.Context, teams *[]models.Team) error
 	CreateLocation(ctx context.Context, user *models.User, data map[string]string) (models.Location, error)
 	SaveLocation(ctx context.Context, location *models.Location, lat, lng, name string) error
 
@@ -41,16 +39,6 @@ func NewGameManagerService(
 		markerRepo:      markerRepo,
 		instanceService: instanceService,
 	}
-}
-
-func (s *gameManagerService) LoadTeams(ctx context.Context, teams *[]models.Team) error {
-	for i := range *teams {
-		err := s.teamService.LoadRelation(ctx, &(*teams)[i], "Scans")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *gameManagerService) SaveLocation(ctx context.Context, location *models.Location, lat, lng, name string) error {

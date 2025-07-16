@@ -13,14 +13,19 @@ import (
 func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.GameManagerService.LoadTeams(r.Context(), &user.CurrentInstance.Teams)
-	if err != nil {
-		h.handleError(w, r, "Activity: loading teams", "Error loading teams", "Could not load data", err)
-		return
+	for i := range user.CurrentInstance.Teams {
+		if user.CurrentInstance.Teams[i].Code == "" {
+			continue // Skip teams without a code
+		}
+		err := h.TeamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		if err != nil {
+			h.handleError(w, r, "ActivityTeamsOverview: loading team relations", "Error loading team relations", "Could not load data", err)
+			return
+		}
 	}
 
 	c := templates.ActivityTracker(user.CurrentInstance)
-	err = templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
+	err := templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("Activity: rendering template", "error", err)
 	}
@@ -30,13 +35,15 @@ func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.GameManagerService.LoadTeams(r.Context(), &user.CurrentInstance.Teams)
-	if err != nil {
-		h.handleError(w, r, "ActivityTeamsOverview: loading teams", "Error loading teams", "Could not load data", err)
-		return
+	for i := range user.CurrentInstance.Teams {
+		err := h.TeamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		if err != nil {
+			h.handleError(w, r, "ActivityTeamsOverview: loading team relations", "Error loading team relations", "Could not load data", err)
+			return
+		}
 	}
 
-	err = templates.ActivityTeamsTable(user.CurrentInstance.Locations, user.CurrentInstance.Teams).Render(r.Context(), w)
+	err := templates.ActivityTeamsTable(user.CurrentInstance.Locations, user.CurrentInstance.Teams).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("ActivityTeamsOverview: rendering template", "error", err)
 	}
