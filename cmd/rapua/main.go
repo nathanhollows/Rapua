@@ -180,6 +180,12 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
 	// Initialize services
+	accessService := services.NewAccessService(
+		blockRepo,
+		instanceRepo,
+		locationRepo,
+		markerRepo,
+	)
 	locationStatsService := services.NewLocationStatsService(locationRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
@@ -227,6 +233,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	sessions.Start()
 	server.Start(
 		logger,
+		accessService,
 		assetGenerator,
 		authService,
 		blockService,

@@ -154,8 +154,9 @@ func (r *markerRepository) UserOwnsMarker(ctx context.Context, userID, markerCod
 	var count int
 	count, err := r.db.
 		NewSelect().
-		Model(&models.Location{}).
-		Where("marker_id = ? AND user_id = ?", markerCode, userID).
+		Model(&models.Instance{}).
+		Join("JOIN locations ON locations.instance_id = instance.id").
+		Where("instance.user_id = ?", userID).
 		Count(ctx)
 	if err != nil {
 		return false, err
