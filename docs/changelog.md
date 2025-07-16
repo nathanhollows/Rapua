@@ -18,6 +18,10 @@ order: 100
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
 - Normalised error handling across all services to use a consistent pattern, especially with missing or invalid data.
 
+### Removed
+
+- `ServiceResponse` is gone! Use standard Go errors instead.
+
 ## 3.10.0 (2025-07-10)
 
 ### Added

@@ -22,6 +22,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const version = "4.0.0"
+
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
@@ -41,7 +43,7 @@ func main() {
 		Name:        "Rapua",
 		Usage:       "rapua [global options] command [command options] [arguments...]",
 		Description: `An open-source platform for location-based games.`,
-		Version:     "3.10.0",
+		Version:     version,
 		Commands: []*cli.Command{
 			newDBCommand(migrator),
 		},
