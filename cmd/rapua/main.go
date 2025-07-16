@@ -228,9 +228,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	gameplayService := services.NewGameplayService(
 		*checkInService, teamService, blockService, markerRepo,
 	)
-	gameManagerService := services.NewGameManagerService(
-		locationService, markerRepo, instanceService,
-	)
 
 	sessions.Start()
 	server.Start(
@@ -244,7 +241,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		deleteService,
 		emailService,
 		facilitatorService,
-		gameManagerService,
 		gameplayService,
 		gameScheduleService,
 		instanceService,

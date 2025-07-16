@@ -63,15 +63,57 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := make(map[string]string)
-	for key, value := range r.Form {
-		data[key] = value[0]
+	if !r.Form.Has("name") || r.FormValue("name") == "" {
+		h.handleError(w, r, "LocationNewPost: missing name", "Location name is required")
+		return
 	}
 
-	location, err := h.GameManagerService.CreateLocation(r.Context(), user, data)
-	if err != nil {
-		h.handleError(w, r, "LocationNewPost: creating location", "Error creating location", "error", err, "instance_id", user.CurrentInstanceID)
-		return
+	var lat, lng float64
+	if r.FormValue("latitude") != "" {
+		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: converting latitude", "Error converting latitude", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
+		lng, err = strconv.ParseFloat(r.FormValue("longitude"), 64)
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: converting longitude", "Error converting longitude", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
+	}
+
+	points := 0
+	if user.CurrentInstance.Settings.EnablePoints && r.FormValue("points") != "" {
+		points, err = strconv.Atoi(r.FormValue("points"))
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: converting points", "Error converting points", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
+	}
+
+	marker := r.FormValue("marker")
+	var location models.Location
+	if marker == "" {
+		location, err = h.LocationService.CreateLocation(r.Context(), user.CurrentInstanceID, r.FormValue("name"), lat, lng, points)
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: creating location without marker", "Error creating location without marker", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
+	} else {
+		access, err := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: checking marker access", "Error checking marker access", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
+		if !access {
+			h.handleError(w, r, "LocationNewPost: no access to marker", "You do not have access to this marker")
+			return
+		}
+		location, err = h.LocationService.CreateLocationFromMarker(r.Context(), user.CurrentInstanceID, r.FormValue("name"), points, marker)
+		if err != nil {
+			h.handleError(w, r, "LocationNewPost: creating location from marker", "Error creating location from marker", "error", err, "instance_id", user.CurrentInstanceID)
+			return
+		}
 	}
 
 	h.redirect(w, r, "/admin/locations/"+location.MarkerID)
