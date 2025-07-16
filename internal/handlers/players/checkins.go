@@ -33,20 +33,15 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := h.GameplayService.GetMarkerByCode(r.Context(), code)
-	if response.Error != nil {
+	marker, err := h.GameplayService.GetMarkerByCode(r.Context(), code)
+	if err != nil {
+		h.Logger.Error("CheckOut: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")
 		return
 	}
 
-	marker, ok := response.Data["marker"].(*models.Marker)
-	if !ok {
-		h.redirect(w, r, "/404")
-		return
-	}
-
-	c := templates.CheckIn(*marker, team.Code, team.BlockingLocation)
-	err = templates.Layout(c, "Check In: "+marker.Name, team.Messages).Render(r.Context(), w)
+	c := templates.CheckOut(marker, team.Code, team.BlockingLocation)
+	err = templates.Layout(c, "Check Out: "+marker.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("rendering checkin", "error", err.Error())
 	}
@@ -114,19 +109,14 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := h.GameplayService.GetMarkerByCode(r.Context(), code)
-	if response.Error != nil {
+	marker, err := h.GameplayService.GetMarkerByCode(r.Context(), code)
+	if err != nil {
+		h.Logger.Error("CheckOut: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")
 		return
 	}
 
-	marker, ok := response.Data["marker"].(*models.Marker)
-	if !ok {
-		h.redirect(w, r, "/404")
-		return
-	}
-
-	c := templates.CheckOut(*marker, team.Code, team.BlockingLocation)
+	c := templates.CheckOut(marker, team.Code, team.BlockingLocation)
 	err = templates.Layout(c, "Check Out: "+marker.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.Logger.Error("rendering checkin", "error", err.Error())

@@ -8,7 +8,6 @@ import (
 
 	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
@@ -25,19 +24,14 @@ var (
 )
 
 type GameplayService interface {
-	CheckGameStatus(ctx context.Context, team *models.Team) *ServiceResponse
 	GetTeamByCode(ctx context.Context, teamCode string) (*models.Team, error)
-	GetMarkerByCode(ctx context.Context, locationCode string) *ServiceResponse
-	StartPlaying(ctx context.Context, teamCode, customTeamName string) *ServiceResponse
-	// CheckIn checks a team in at a location
-	// It also manages the points and mustScanOut fields
-	// As well as checking if any blocks must be completed
+	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
+	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
 	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
 }
 
 type gameplayService struct {
 	CheckInService   CheckInService
-	LocationService  LocationService
 	TeamService      TeamService
 	BlockService     BlockService
 	MarkerRepository repositories.MarkerRepository
@@ -45,35 +39,16 @@ type gameplayService struct {
 
 func NewGameplayService(
 	checkInService CheckInService,
-	locationService LocationService,
 	teamService TeamService,
 	blockService BlockService,
 	markerRepository repositories.MarkerRepository,
 ) GameplayService {
 	return &gameplayService{
 		CheckInService:   checkInService,
-		LocationService:  locationService,
 		TeamService:      teamService,
 		BlockService:     blockService,
 		MarkerRepository: markerRepository,
 	}
-}
-
-// GetGameStatus returns the current status of the game.
-func (s *gameplayService) CheckGameStatus(ctx context.Context, team *models.Team) (response *ServiceResponse) {
-	response = &ServiceResponse{}
-	response.Data = make(map[string]interface{})
-
-	// Load the instance
-	err := s.TeamService.LoadRelation(ctx, team, "Instance")
-	if err != nil {
-		response.Error = fmt.Errorf("loading instance: %w", err)
-		return response
-	}
-
-	status := team.Instance.GetStatus()
-	response.Data["status"] = status
-	return response
 }
 
 func (s *gameplayService) GetTeamByCode(ctx context.Context, teamCode string) (*models.Team, error) {
@@ -85,29 +60,19 @@ func (s *gameplayService) GetTeamByCode(ctx context.Context, teamCode string) (*
 	return team, nil
 }
 
-func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode string) (response *ServiceResponse) {
-	response = &ServiceResponse{}
-	response.Data = make(map[string]interface{})
-
+func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error) {
 	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
 	marker, err := s.MarkerRepository.GetByCode(ctx, locationCode)
 	if err != nil {
-		response.Error = fmt.Errorf("GetLocationByCode finding marker: %w", err)
-		return response
+		return models.Marker{}, fmt.Errorf("GetMarkerByCode: %w", err)
 	}
-	response.Data["marker"] = marker
-	return response
+	return *marker, nil
 }
 
-func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeamName string) (response *ServiceResponse) {
-	response = &ServiceResponse{}
-	response.Data = make(map[string]interface{})
-
+func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
 	team, err := s.TeamService.FindTeamByCode(ctx, teamCode)
 	if err != nil {
-		response.Error = fmt.Errorf("StartPlaying find team: %w", err)
-		response.AddFlashMessage(*flash.NewError("Team not found. Please double check the code and try again."))
-		return response
+		return ErrTeamNotFound
 	}
 
 	// Update team with custom name if provided
@@ -116,15 +81,11 @@ func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeam
 		team.HasStarted = true
 		err = s.TeamService.Update(ctx, team)
 		if err != nil {
-			response.Error = fmt.Errorf("StartPlaying update team: %w", err)
-			response.AddFlashMessage(*flash.NewError("Something went wrong. Please try again."))
-			return response
+			return fmt.Errorf("updating team: %w", err)
 		}
 	}
 
-	response.Data["team"] = team
-	response.AddFlashMessage(*flash.NewSuccess("You have started the game!"))
-	return response
+	return nil
 }
 
 func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error) {
