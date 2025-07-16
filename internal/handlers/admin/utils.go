@@ -62,7 +62,7 @@ type AdminHandler struct {
 	Logger                  *slog.Logger
 	accessService           AccessService
 	AssetGenerator          services.AssetGenerator
-	AuthService             services.AuthService
+	AuthService             services.IdentityService
 	BlockService            services.BlockService
 	ClueService             services.ClueService
 	DeleteService           DeleteService
@@ -87,7 +87,7 @@ func NewAdminHandler(
 	logger *slog.Logger,
 	accessService AccessService,
 	assetGenerator services.AssetGenerator,
-	authService services.AuthService,
+	authService services.IdentityService,
 	blockService services.BlockService,
 	clueService services.ClueService,
 	DeleteService DeleteService,
@@ -123,7 +123,6 @@ func NewAdminHandler(
 		instanceSettingsService: instanceSettingsService,
 		LocationService:         locationService,
 		MarkerService:           markerService,
-		NavigationService:       navigationService,
 		NotificationService:     notificationService,
 		TeamService:             teamService,
 		TemplateService:         templateService,

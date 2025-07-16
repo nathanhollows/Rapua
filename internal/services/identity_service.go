@@ -18,14 +18,14 @@ import (
 )
 
 var (
-	ErrSessionNotFound      = errors.New("session not found")
-	ErrInvalidToken         = errors.New("invalid token")
-	ErrTokenExpired         = errors.New("token expired")
-	ErrUserAlreadyVerified  = errors.New("user already verified")
-	ErrRateLimitExceeded    = errors.New("rate limit exceeded")
+	ErrSessionNotFound     = errors.New("session not found")
+	ErrInvalidToken        = errors.New("invalid token")
+	ErrTokenExpired        = errors.New("token expired")
+	ErrUserAlreadyVerified = errors.New("user already verified")
+	ErrRateLimitExceeded   = errors.New("rate limit exceeded")
 )
 
-type AuthService interface {
+type IdentityService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 	IsUserAuthenticated(r *http.Request) bool
@@ -43,7 +43,7 @@ type authService struct {
 	emailService   EmailService
 }
 
-func NewAuthService(userRepository repositories.UserRepository) AuthService {
+func NewAuthService(userRepository repositories.UserRepository) IdentityService {
 	return &authService{
 		userRepository: userRepository,
 		emailService:   NewEmailService(),

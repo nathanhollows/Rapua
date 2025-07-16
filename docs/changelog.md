@@ -20,6 +20,7 @@ order: 100
 - Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
+- Renamed `AuthService` to `IndentityService` to better reflect its purpose, and to avoid confusion with the new `AccessService`.
 - Normalised error handling across all services to use a consistent pattern, especially with missing or invalid data.
 
 ### Removed
