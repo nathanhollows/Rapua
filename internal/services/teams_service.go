@@ -195,6 +195,7 @@ func (s *teamService) AwardPoints(ctx context.Context, team *models.Team, points
 }
 
 // LoadRelation loads the specified relation for a team.
+// Relations can be "Instance", "Scans", "BlockingLocation", or "Messages".
 func (s *teamService) LoadRelation(ctx context.Context, team *models.Team, relation string) error {
 	switch relation {
 	case "Instance":
