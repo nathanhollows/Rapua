@@ -68,7 +68,7 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.NavigationService.GetNextLocations(r.Context(), team)
+	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
 	if err != nil {
 		if !errors.Is(err, services.ErrAllLocationsVisited) {
 			h.handleError(w, r, "TeamActivity: getting next locations", "Error getting next locations", "Could not load data", err)

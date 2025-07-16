@@ -133,7 +133,7 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 		Instance:   user.CurrentInstance,
 	}
 
-	locations, err := h.NavigationService.GetNextLocations(r.Context(), &team)
+	locations, err := h.navigationService.GetNextLocations(r.Context(), &team)
 	if err != nil {
 		h.handleError(w, r, "Next: getting next locations", "Error getting next locations", "Could not load data", err)
 		return

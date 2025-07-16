@@ -67,14 +67,13 @@ type AdminHandler struct {
 	ClueService             services.ClueService
 	DeleteService           DeleteService
 	FacilitatorService      services.FacilitatorService
-	GameManagerService      services.GameManagerService
 	GameplayService         services.GameplayService
 	GameScheduleService     GameScheduleService
 	InstanceService         services.InstanceService
 	instanceSettingsService InstanceSettingsService
 	LocationService         services.LocationService
 	MarkerService           MarkerService
-	NavigationService       NavigationService
+	navigationService       NavigationService
 	NotificationService     services.NotificationService
 	TeamService             services.TeamService
 	TemplateService         services.TemplateService
@@ -92,7 +91,6 @@ func NewAdminHandler(
 	clueService services.ClueService,
 	DeleteService DeleteService,
 	facilitatorService services.FacilitatorService,
-	gameManagerService services.GameManagerService,
 	gameplayService services.GameplayService,
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
@@ -116,13 +114,13 @@ func NewAdminHandler(
 		ClueService:             clueService,
 		DeleteService:           DeleteService,
 		FacilitatorService:      facilitatorService,
-		GameManagerService:      gameManagerService,
 		GameplayService:         gameplayService,
 		GameScheduleService:     gameScheduleService,
 		InstanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
 		LocationService:         locationService,
 		MarkerService:           markerService,
+		navigationService:       navigationService,
 		NotificationService:     notificationService,
 		TeamService:             teamService,
 		TemplateService:         templateService,
