@@ -20,10 +20,6 @@ type gameManagerService struct {
 type GameManagerService interface {
 	CreateLocation(ctx context.Context, user *models.User, data map[string]string) (models.Location, error)
 	SaveLocation(ctx context.Context, location *models.Location, lat, lng, name string) error
-
-	// Marker & Validation
-	ValidateLocationMarker(user *models.User, id string) bool
-	ValidateLocationID(user *models.User, id string) bool
 }
 
 func NewGameManagerService(
@@ -147,22 +143,4 @@ func (s *gameManagerService) CreateLocation(
 		points,
 		markerCode,
 	)
-}
-
-func (s *gameManagerService) ValidateLocationMarker(user *models.User, id string) bool {
-	for _, loc := range user.CurrentInstance.Locations {
-		if loc.MarkerID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *gameManagerService) ValidateLocationID(user *models.User, id string) bool {
-	for _, loc := range user.CurrentInstance.Locations {
-		if loc.ID == id {
-			return true
-		}
-	}
-	return false
 }

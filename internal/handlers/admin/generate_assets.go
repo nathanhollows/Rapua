@@ -35,10 +35,16 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the location exists
-	if !h.GameManagerService.ValidateLocationMarker(user, id) {
-		h.Logger.Error("QRCodeHandler: Location not found", "location", id)
-		http.Error(w, "Location not found", http.StatusNotFound)
+	// Check if the user has access to the location
+	access, err := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, id)
+	if err != nil {
+		h.Logger.Error("QRCodeHandler: Error checking access", "error", err)
+		http.Error(w, "Error checking access", http.StatusInternalServerError)
+		return
+	}
+	if !access {
+		h.Logger.Error("QRCodeHandler: User does not have access to this location", "user", user.ID, "location", id)
+		http.Error(w, "You do not have access to this location", http.StatusForbidden)
 		return
 	}
 
@@ -57,7 +63,7 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate the QR code
-	err := h.AssetGenerator.CreateQRCodeImage(
+	err = h.AssetGenerator.CreateQRCodeImage(
 		r.Context(),
 		path,
 		content,

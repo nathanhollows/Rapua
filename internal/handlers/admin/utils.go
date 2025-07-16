@@ -13,6 +13,13 @@ import (
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type AccessService interface {
+	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
+	CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error)
+	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
+	CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error)
+}
+
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteInstance(ctx context.Context, userID, instanceID string) error
@@ -53,6 +60,7 @@ type MarkerService interface {
 
 type AdminHandler struct {
 	Logger                  *slog.Logger
+	accessService           AccessService
 	AssetGenerator          services.AssetGenerator
 	AuthService             services.AuthService
 	BlockService            services.BlockService
@@ -77,6 +85,7 @@ type AdminHandler struct {
 
 func NewAdminHandler(
 	logger *slog.Logger,
+	accessService AccessService,
 	assetGenerator services.AssetGenerator,
 	authService services.AuthService,
 	blockService services.BlockService,
@@ -100,6 +109,7 @@ func NewAdminHandler(
 ) *AdminHandler {
 	return &AdminHandler{
 		Logger:                  logger,
+		accessService:           accessService,
 		AssetGenerator:          assetGenerator,
 		AuthService:             authService,
 		BlockService:            blockService,

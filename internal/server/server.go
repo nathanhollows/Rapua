@@ -22,6 +22,7 @@ var router *chi.Mux
 var server *http.Server
 
 func Start(logger *slog.Logger,
+	accessService admin.AccessService,
 	assetGenerator services.AssetGenerator,
 	authService services.AuthService,
 	blockService services.BlockService,
@@ -71,6 +72,7 @@ func Start(logger *slog.Logger,
 	// Admin routes
 	adminHandler := admin.NewAdminHandler(
 		logger,
+		accessService,
 		assetGenerator,
 		authService,
 		blockService,

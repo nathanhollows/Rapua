@@ -8,6 +8,10 @@ order: 100
 
 ## 4.0.0 (2025-07-15)
 
+### Added
+
+- `AccessService` to manage user access control and permissions.
+
 ### Changed
 
 - **Breaking change:** Removed locationID field from Reorder method in `BlockRepository` interface. Not needed as blocks are now always associated with a location.
