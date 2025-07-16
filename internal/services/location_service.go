@@ -65,13 +65,27 @@ func NewLocationService(
 	}
 }
 
-// CreateLocation creates a new location.
-func (s locationService) CreateLocation(ctx context.Context, instanceID, name string, lat, lng float64, points int) (models.Location, error) {
+// checkLocationData checks if the provided location data is valid.
+func checkLocationData(instanceID, name string, lat, lng float64) error {
 	if name == "" {
-		return models.Location{}, errors.New("name cannot be empty")
+		return errors.New("name cannot be empty")
 	}
 	if instanceID == "" {
-		return models.Location{}, errors.New("instanceID cannot be empty")
+		return errors.New("instanceID cannot be empty")
+	}
+	if lat < -90 || lat > 90 {
+		return fmt.Errorf("latitude must be between -90 and 90, got: %f", lat)
+	}
+	if lng < -180 || lng > 180 {
+		return fmt.Errorf("longitude must be between -180 and 180, got: %f", lng)
+	}
+	return nil
+}
+
+// CreateLocation creates a new location.
+func (s locationService) CreateLocation(ctx context.Context, instanceID, name string, lat, lng float64, points int) (models.Location, error) {
+	if err := checkLocationData(instanceID, name, lat, lng); err != nil {
+		return models.Location{}, err
 	}
 
 	// Create the marker
@@ -96,12 +110,10 @@ func (s locationService) CreateLocation(ctx context.Context, instanceID, name st
 
 // CreateLocationFromMarker creates a new location from an existing marker.
 func (s locationService) CreateLocationFromMarker(ctx context.Context, instanceID, name string, points int, markerCode string) (models.Location, error) {
-	if name == "" {
-		return models.Location{}, errors.New("name cannot be empty")
+	if err := checkLocationData(instanceID, name, 0, 0); err != nil {
+		return models.Location{}, err
 	}
-	if instanceID == "" {
-		return models.Location{}, errors.New("instanceID cannot be empty")
-	}
+
 	marker, err := s.markerRepo.GetByCode(ctx, markerCode)
 	if err != nil {
 		return models.Location{}, fmt.Errorf("finding marker: %v", err)
