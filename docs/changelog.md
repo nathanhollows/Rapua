@@ -27,6 +27,7 @@ order: 100
 ### Removed
 
 - `ServiceResponse` is gone! Use standard Go errors instead.
+- `GameManagerService` is now split into multiple services, each with a single responsibility.
 
 ## 3.10.0 (2025-07-10)
 
