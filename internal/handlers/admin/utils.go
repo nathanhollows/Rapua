@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
@@ -18,6 +19,38 @@ type AccessService interface {
 	CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error)
 	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
 	CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error)
+}
+
+type BlockService interface {
+	// NewBlock creates a new content block of the specified type for the given location
+	NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error)
+	// NewBlockState creates a new player state for the given block and team
+	NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
+	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
+	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
+
+	// GetByBlockID fetches a content block by its ID
+	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
+	// GetBlockWithStateByBlockIDAndTeamCode fetches a block + its state
+	// for the given block ID and team
+	GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error)
+	// FindByLocationID fetches all content blocks for a location
+	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
+	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
+	// for the given location and team
+	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+
+	// UpdateBlock updates the data for the given block
+	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
+	// UpdateState updates the player state for a block
+	UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
+	// ReorderBlocks changes the display/order of blocks at a location
+	ReorderBlocks(ctx context.Context, blockIDs []string) error
+
+	// CheckValidationRequiredForLocation checks if any blocks in a location require validation
+	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
+	// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check-in
+	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
 }
 
 type DeleteService interface {
@@ -63,7 +96,7 @@ type AdminHandler struct {
 	accessService           AccessService
 	assetGenerator          services.AssetGenerator
 	IdentityService         services.IdentityService
-	blockService            services.BlockService
+	blockService            BlockService
 	clueService             services.ClueService
 	deleteService           DeleteService
 	facilitatorService      services.FacilitatorService
@@ -87,7 +120,7 @@ func NewAdminHandler(
 	accessService AccessService,
 	assetGenerator services.AssetGenerator,
 	identityService services.IdentityService,
-	blockService services.BlockService,
+	blockService BlockService,
 	clueService services.ClueService,
 	DeleteService DeleteService,
 	facilitatorService services.FacilitatorService,

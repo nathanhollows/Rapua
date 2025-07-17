@@ -10,63 +10,32 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-type BlockService interface {
-	// NewBlock creates a new content block of the specified type for the given location
-	NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error)
-	// NewBlockState creates a new player state for the given block and team
-	NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
-	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
-	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
-
-	// GetByBlockID fetches a content block by its ID
-	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
-	// GetBlockWithStateByBlockIDAndTeamCode fetches a block + its state
-	// for the given block ID and team
-	GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error)
-	// FindByLocationID fetches all content blocks for a location
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
-	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
-	// for the given location and team
-	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
-
-	// UpdateBlock updates the data for the given block
-	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
-	// UpdateState updates the player state for a block
-	UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
-	// ReorderBlocks changes the display/order of blocks at a location
-	ReorderBlocks(ctx context.Context, blockIDs []string) error
-
-	// CheckValidationRequiredForLocation checks if any blocks in a location require validation
-	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
-	// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check-in
-	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
-}
-type blockService struct {
+type BlockService struct {
 	blockRepo      repositories.BlockRepository
 	blockStateRepo repositories.BlockStateRepository
 }
 
-func NewBlockService(blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) BlockService {
-	return &blockService{
+func NewBlockService(blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) *BlockService {
+	return &BlockService{
 		blockRepo:      blockRepo,
 		blockStateRepo: blockStateRepo,
 	}
 }
 
 // GetByBlockID fetches a content block by its ID.
-func (s *blockService) GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error) {
+func (s *BlockService) GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error) {
 	return s.blockRepo.GetByID(ctx, blockID)
 }
 
 // FindByLocationID fetches all content blocks for a location.
-func (s *blockService) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
+func (s *BlockService) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
 	if locationID == "" {
 		return nil, errors.New("locationID cannot be empty")
 	}
 	return s.blockRepo.FindByLocationID(ctx, locationID)
 }
 
-func (s *blockService) NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error) {
+func (s *BlockService) NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error) {
 	if locationID == "" {
 		return nil, errors.New("locationID cannot be empty")
 	}
@@ -95,7 +64,7 @@ func (s *blockService) NewBlock(ctx context.Context, locationID string, blockTyp
 }
 
 // NewBlockState creates a new block state.
-func (s *blockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (s *BlockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
 	if blockID == "" {
 		return nil, errors.New("blockID cannot be empty")
 	}
@@ -114,7 +83,7 @@ func (s *blockService) NewBlockState(ctx context.Context, blockID, teamCode stri
 }
 
 // NewMockBlockState creates a new mock block state.
-func (s *blockService) NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (s *BlockService) NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
 	if blockID == "" {
 		return nil, errors.New("blockID cannot be empty")
 	}
@@ -127,7 +96,7 @@ func (s *blockService) NewMockBlockState(ctx context.Context, blockID, teamCode 
 }
 
 // UpdateBlock updates a block.
-func (s *blockService) UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error) {
+func (s *BlockService) UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error) {
 	err := block.UpdateBlockData(data)
 	if err != nil {
 		return nil, fmt.Errorf("updating block data: %w", err)
@@ -136,11 +105,11 @@ func (s *blockService) UpdateBlock(ctx context.Context, block blocks.Block, data
 }
 
 // ReorderBlocks reorders the blocks in a location.
-func (s *blockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
+func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
 
-func (s *blockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error) {
+func (s *BlockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error) {
 	if locationID == "" {
 		return nil, nil, errors.New("locationID must be set")
 	}
@@ -158,7 +127,7 @@ func (s *blockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context,
 	return foundBlocks, blockStates, nil
 }
 
-func (s *blockService) GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error) {
+func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error) {
 	if blockID == "" || teamCode == "" {
 		return nil, nil, fmt.Errorf("blockID and teamCode must be set, got blockID: %s, teamCode: %s", blockID, teamCode)
 	}
@@ -167,7 +136,7 @@ func (s *blockService) GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context
 }
 
 // Convert block to model.
-func (s *blockService) ConvertBlockToModel(block blocks.Block) models.Block {
+func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
 		LocationID:         block.GetLocationID(),
@@ -180,7 +149,7 @@ func (s *blockService) ConvertBlockToModel(block blocks.Block) models.Block {
 }
 
 // CheckValidationRequiredForLocation checks if any blocks in a location require validation.
-func (s *blockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
+func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
 	blocks, err := s.FindByLocationID(ctx, locationID)
 	if err != nil {
 		return false, err
@@ -196,7 +165,7 @@ func (s *blockService) CheckValidationRequiredForLocation(ctx context.Context, l
 }
 
 // CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check in.
-func (s *blockService) CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error) {
+func (s *BlockService) CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error) {
 	blocks, state, err := s.FindByLocationIDAndTeamCodeWithState(ctx, locationID, teamCode)
 	if err != nil {
 		return false, err
@@ -218,6 +187,6 @@ func (s *blockService) CheckValidationRequiredForCheckIn(ctx context.Context, lo
 }
 
 // UpdateState updates the player state for a block.
-func (s *blockService) UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
+func (s *BlockService) UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
 	return s.blockStateRepo.Update(ctx, state)
 }

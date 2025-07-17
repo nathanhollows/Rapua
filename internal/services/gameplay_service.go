@@ -33,14 +33,14 @@ type GameplayService interface {
 type gameplayService struct {
 	CheckInService   CheckInService
 	TeamService      TeamService
-	BlockService     BlockService
+	BlockService     *BlockService
 	MarkerRepository repositories.MarkerRepository
 }
 
 func NewGameplayService(
 	checkInService CheckInService,
 	teamService TeamService,
-	blockService BlockService,
+	blockService *BlockService,
 	markerRepository repositories.MarkerRepository,
 ) GameplayService {
 	return &gameplayService{

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
@@ -14,6 +15,16 @@ import (
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
+
+type BlockService interface {
+	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
+	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
+	// FindByLocationID fetches all content blocks for a location
+	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
+	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
+	// for the given location and team
+	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+}
 
 type CheckInService interface {
 	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
@@ -32,7 +43,7 @@ type NavigationService interface {
 
 type PlayerHandler struct {
 	Logger                  *slog.Logger
-	BlockService            services.BlockService
+	blockService            BlockService
 	checkInService          CheckInService
 	GameplayService         services.GameplayService
 	InstanceService         services.InstanceService
@@ -44,7 +55,7 @@ type PlayerHandler struct {
 
 func NewPlayerHandler(
 	logger *slog.Logger,
-	blockService services.BlockService,
+	blockService BlockService,
 	checkInService CheckInService,
 	gameplayService services.GameplayService,
 	instanceService services.InstanceService,
@@ -55,7 +66,7 @@ func NewPlayerHandler(
 ) *PlayerHandler {
 	return &PlayerHandler{
 		Logger:                  logger,
-		BlockService:            blockService,
+		blockService:            blockService,
 		checkInService:          checkInService,
 		GameplayService:         gameplayService,
 		InstanceService:         instanceService,

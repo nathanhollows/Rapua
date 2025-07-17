@@ -19,7 +19,7 @@ func setupBlocksService(t *testing.T) (services.BlockService, func()) {
 
 	blocksService := services.NewBlockService(blocksRepo, blockStateRepo)
 
-	return blocksService, cleanup
+	return *blocksService, cleanup
 }
 
 func TestBlockService_NewBlock(t *testing.T) {

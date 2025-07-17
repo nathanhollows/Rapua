@@ -22,6 +22,7 @@ order: 100
 - Refactored out deletion logic into a new `DeleteService` to handle deletion of any entity in the system that requires cascading deletes.
 - Renamed `AuthService` to `IndentityService` to better reflect its purpose, and to avoid confusion with the new `AccessService`.
 - Normalised error handling across all services to use a consistent pattern, especially with missing or invalid data.
+- Moved interfaces from services into handlers.
 
 ### Removed
 

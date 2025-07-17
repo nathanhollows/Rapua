@@ -18,7 +18,7 @@ type CheckInService struct {
 	checkInRepo          repositories.CheckInRepository
 	locationRepo         repositories.LocationRepository
 	teamRepo             repositories.TeamRepository
-	blockService         BlockService
+	blockService         *BlockService
 	locationStatsService LocationStatsService
 	navigationService    *NavigationService
 }
@@ -29,7 +29,7 @@ func NewCheckInService(
 	teamRepo repositories.TeamRepository,
 	locationStatsService LocationStatsService,
 	navigationService *NavigationService,
-	blockService BlockService,
+	blockService *BlockService,
 ) *CheckInService {
 	return &CheckInService{
 		checkInRepo:          checkInRepo,

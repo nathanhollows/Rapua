@@ -235,7 +235,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blocks, blockStates, err := h.BlockService.FindByLocationIDAndTeamCodeWithState(r.Context(), team.CheckIns[index].Location.ID, team.Code)
+	blocks, blockStates, err := h.blockService.FindByLocationIDAndTeamCodeWithState(r.Context(), team.CheckIns[index].Location.ID, team.Code)
 	if err != nil {
 		h.handleError(w, r, "CheckInView: getting blocks", "Error loading blocks", "error", err, "team", team.Code, "location", locationCode)
 		return
@@ -280,7 +280,7 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 		Location: location,
 	}
 
-	contentBlocks, err := h.BlockService.FindByLocationID(r.Context(), location.ID)
+	contentBlocks, err := h.blockService.FindByLocationID(r.Context(), location.ID)
 	if err != nil {
 		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
 		return
@@ -288,7 +288,7 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 
 	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
 	for _, block := range contentBlocks {
-		blockStates[block.GetID()], err = h.BlockService.NewMockBlockState(r.Context(), block.GetID(), "")
+		blockStates[block.GetID()], err = h.blockService.NewMockBlockState(r.Context(), block.GetID(), "")
 		if err != nil {
 			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
 			return
