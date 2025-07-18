@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -17,8 +16,8 @@ type FacilitatorService struct {
 	repo repositories.FacilitatorTokenRepo
 }
 
-func NewFacilitatorService(repo repositories.FacilitatorTokenRepo) FacilitatorService {
-	return FacilitatorService{repo: repo}
+func NewFacilitatorService(repo repositories.FacilitatorTokenRepo) *FacilitatorService {
+	return &FacilitatorService{repo: repo}
 }
 
 // Generate a secure random token.
@@ -69,13 +68,4 @@ func (s *FacilitatorService) ValidateToken(ctx context.Context, token string) (*
 // CleanupExpiredTokens removes all expired facilitator tokens.
 func (s *FacilitatorService) CleanupExpiredTokens(ctx context.Context) error {
 	return s.repo.CleanUpExpiredTokens(ctx)
-}
-
-// FormatTokenResponse converts a FacilitatorToken to JSON output format.
-func (s *FacilitatorService) FormatTokenResponse(token *models.FacilitatorToken) (string, error) {
-	output, err := json.Marshal(token)
-	if err != nil {
-		return "", err
-	}
-	return string(output), nil
 }

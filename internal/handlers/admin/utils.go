@@ -66,12 +66,22 @@ type DeleteService interface {
 	DeleteUser(ctx context.Context, userID string) error
 }
 
+type FacilitatorService interface {
+	CreateFacilitatorToken(ctx context.Context, instanceID string, locations []string, duration time.Duration) (string, error)
+	ValidateToken(ctx context.Context, token string) (*models.FacilitatorToken, error)
+	CleanupExpiredTokens(ctx context.Context) error
+}
+
 type GameScheduleService interface {
 	Start(ctx context.Context, instance *models.Instance) error
 	Stop(ctx context.Context, instance *models.Instance) error
 	SetStartTime(ctx context.Context, instance *models.Instance, start time.Time) error
 	SetEndTime(ctx context.Context, instance *models.Instance, end time.Time) error
 	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
+}
+
+type IdentityService interface {
+	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 }
 
 type InstanceSettingsService interface {
@@ -116,11 +126,11 @@ type AdminHandler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
 	assetGenerator          services.AssetGenerator
-	IdentityService         services.IdentityService
+	IdentityService         IdentityService
 	blockService            BlockService
 	clueService             ClueService
 	deleteService           DeleteService
-	facilitatorService      services.FacilitatorService
+	facilitatorService      FacilitatorService
 	gameplayService         services.GameplayService
 	gameScheduleService     GameScheduleService
 	instanceService         services.InstanceService
@@ -140,11 +150,11 @@ func NewAdminHandler(
 	logger *slog.Logger,
 	accessService AccessService,
 	assetGenerator services.AssetGenerator,
-	identityService services.IdentityService,
+	identityService IdentityService,
 	blockService BlockService,
 	clueService ClueService,
 	DeleteService DeleteService,
-	facilitatorService services.FacilitatorService,
+	facilitatorService FacilitatorService,
 	gameplayService services.GameplayService,
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
