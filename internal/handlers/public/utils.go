@@ -43,6 +43,11 @@ type EmailVerificationService interface {
 	SendEmailVerification(ctx context.Context, user *models.User) error
 }
 
+type UserService interface {
+	// CreateUser creates a new user
+	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
+}
+
 // AuthService (optional) can compose the individual services if needed
 type AuthService interface {
 	UserAuthenticator
@@ -56,7 +61,7 @@ type PublicHandler struct {
 	deleteService   DeleteService
 	emailService    services.EmailService
 	templateService FindTemplateService
-	userService     services.UserService
+	userService     UserService
 }
 
 func NewPublicHandler(
@@ -65,7 +70,7 @@ func NewPublicHandler(
 	deleteService DeleteService,
 	emailService services.EmailService,
 	templateService FindTemplateService,
-	userService services.UserService,
+	userService UserService,
 ) *PublicHandler {
 	return &PublicHandler{
 		logger:          logger,

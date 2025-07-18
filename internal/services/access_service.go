@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-type accessService struct {
+type AccessService struct {
 	blockRepo    repositories.BlockRepository
 	instanceRepo repositories.InstanceRepository
 	locationRepo repositories.LocationRepository
@@ -20,8 +20,8 @@ func NewAccessService(
 	instanceRepository repositories.InstanceRepository,
 	locationRepository repositories.LocationRepository,
 	markerRepository repositories.MarkerRepository,
-) *accessService {
-	return &accessService{
+) *AccessService {
+	return &AccessService{
 		blockRepo:    blockRepository,
 		instanceRepo: instanceRepository,
 		locationRepo: locationRepository,
@@ -30,7 +30,7 @@ func NewAccessService(
 }
 
 // CanAdminAccessInstance checks if the user can access the instance.
-func (s *accessService) CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error) {
+func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error) {
 	if userID == "" {
 		return false, ErrUserNotAuthenticated
 	}
@@ -53,7 +53,7 @@ func (s *accessService) CanAdminAccessInstance(ctx context.Context, userID, inst
 }
 
 // CanAdminAccessLocation checks if the user can access the location in the given instance.
-func (s *accessService) CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error) {
+func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error) {
 	if userID == "" {
 		return false, errors.New("user ID cannot be empty")
 	}
@@ -79,7 +79,7 @@ func (s *accessService) CanAdminAccessLocation(ctx context.Context, userID, loca
 }
 
 // CanAdminAccessMarker checks if the user can access the marker in the given instance.
-func (s *accessService) CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error) {
+func (s *AccessService) CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error) {
 	if userID == "" {
 		return false, errors.New("user ID cannot be empty")
 	}
@@ -94,7 +94,7 @@ func (s *accessService) CanAdminAccessMarker(ctx context.Context, userID, marker
 }
 
 // CanAdminAccessBlock checks if the user can access the block in the given instance.
-func (s *accessService) CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error) {
+func (s *AccessService) CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	if userID == "" {
 		return false, errors.New("user ID cannot be empty")
 	}

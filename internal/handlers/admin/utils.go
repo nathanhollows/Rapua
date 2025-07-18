@@ -95,6 +95,23 @@ type MarkerService interface {
 	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
+type UserService interface {
+	// CreateUser creates a new user
+	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
+
+	// UpdateUser updates a user
+	UpdateUser(ctx context.Context, user *models.User) error
+
+	// UpdateUserProfile updates a user's profile with form data
+	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
+
+	// ChangePassword changes a user's password
+	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
+
+	// SwitchInstance switches the user's current instance
+	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
+}
+
 type AdminHandler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
@@ -115,7 +132,7 @@ type AdminHandler struct {
 	teamService             services.TeamService
 	templateService         services.TemplateService
 	uploadService           services.UploadService
-	userService             services.UserService
+	userService             UserService
 	quickstartService       QuickstartService
 }
 
@@ -139,7 +156,7 @@ func NewAdminHandler(
 	teamService services.TeamService,
 	templateService services.TemplateService,
 	uploadService services.UploadService,
-	userService services.UserService,
+	userService UserService,
 	quickstartService QuickstartService,
 ) *AdminHandler {
 	return &AdminHandler{

@@ -19,40 +19,20 @@ var (
 	ErrPasswordUpdateFailed = errors.New("failed to update password")
 )
 
-type UserService interface {
-	// CreateUser creates a new user
-	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
-
-	// GetUserByEmail retrieves a user by their email address
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-
-	// UpdateUser updates a user
-	UpdateUser(ctx context.Context, user *models.User) error
-
-	// UpdateUserProfile updates a user's profile with form data
-	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
-
-	// ChangePassword changes a user's password
-	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
-
-	// SwitchInstance switches the user's current instance
-	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
-}
-
-type userService struct {
+type UserService struct {
 	instanceRepo repositories.InstanceRepository
 	userRepo     repositories.UserRepository
 }
 
-func NewUserService(userRepository repositories.UserRepository, instanceRepository repositories.InstanceRepository) UserService {
-	return &userService{
+func NewUserService(userRepository repositories.UserRepository, instanceRepository repositories.InstanceRepository) *UserService {
+	return &UserService{
 		instanceRepo: instanceRepository,
 		userRepo:     userRepository,
 	}
 }
 
 // CreateUser creates a new user in the database.
-func (s *userService) CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error {
+func (s *UserService) CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error {
 	// Confirm passwords match
 	if user.Password != passwordConfirm {
 		return ErrPasswordsDoNotMatch
@@ -72,13 +52,13 @@ func (s *userService) CreateUser(ctx context.Context, user *models.User, passwor
 }
 
 // UpdateUser updates a user in the database.
-func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
+func (s *UserService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Update(ctx, user)
 }
 
 // UpdateUserProfile updates a user's profile information
 // Only updates the fields that are present in the profile map
-func (s *userService) UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error {
+func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error {
 	// Update basic fields only if provided
 	if name, exists := profile["name"]; exists {
 		user.Name = name
@@ -123,12 +103,12 @@ func (s *userService) UpdateUserProfile(ctx context.Context, user *models.User, 
 }
 
 // GetUserByEmail retrieves a user by their email address.
-func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return s.userRepo.GetByEmail(ctx, email)
 }
 
 // ChangePassword changes a user's password
-func (s *userService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error {
+func (s *UserService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error {
 	// Make sure the user is using email/password authentication
 	if user.Provider != models.ProviderEmail {
 		return errors.New("cannot change password for SSO accounts")
@@ -166,7 +146,7 @@ func (s *userService) ChangePassword(ctx context.Context, user *models.User, old
 }
 
 // SwitchInstance implements InstanceService.
-func (s *userService) SwitchInstance(ctx context.Context, user *models.User, instanceID string) error {
+func (s *UserService) SwitchInstance(ctx context.Context, user *models.User, instanceID string) error {
 	if user == nil {
 		return ErrUserNotAuthenticated
 	}
