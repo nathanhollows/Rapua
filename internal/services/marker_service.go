@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -45,6 +46,15 @@ func (s *MarkerService) CreateMarker(ctx context.Context, name string, lat, lng 
 		return models.Marker{}, fmt.Errorf("failed to create marker: %w", err)
 	}
 	return marker, nil
+}
+
+func (s *MarkerService) GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error) {
+	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
+	marker, err := s.markerRepo.GetByCode(ctx, locationCode)
+	if err != nil {
+		return models.Marker{}, fmt.Errorf("GetMarkerByCode: %w", err)
+	}
+	return *marker, nil
 }
 
 // FindMarkersNotInInstance finds all markers that are not in the given instance.

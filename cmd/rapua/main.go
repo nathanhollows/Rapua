@@ -252,6 +252,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		gameplayService,
 		instanceService,
 		instanceSettingsService,
+		markerService,
 		navigationService,
 		notificationService,
 		teamService,

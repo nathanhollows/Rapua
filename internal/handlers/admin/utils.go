@@ -90,6 +90,14 @@ type InstanceSettingsService interface {
 	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
+type MarkerService interface {
+	// CreateMarker creates a new marker
+	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
+	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
+	// FindMarkersNotInInstance finds all markers that are not in the given instance
+	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
+}
+
 type NavigationService interface {
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
 }
@@ -102,14 +110,6 @@ type NotificationService interface {
 
 type QuickstartService interface {
 	DismissQuickstart(ctx context.Context, instanceID string) error
-}
-
-type MarkerService interface {
-	// CreateMarker creates a new marker
-	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
-	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
-	// FindMarkersNotInInstance finds all markers that are not in the given instance
-	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
 type TeamService interface {

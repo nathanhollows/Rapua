@@ -169,7 +169,7 @@ func (s *TeamService) Update(ctx context.Context, team *models.Team) error {
 }
 
 // AwardPoints awards points to a team.
-func (s *TeamService) AwardPoints(ctx context.Context, team *models.Team, points int, _ string) error {
+func (s *TeamService) AwardPoints(ctx context.Context, team *models.Team, points int) error {
 	team.Points += points
 	return s.teamRepo.Update(ctx, team)
 }

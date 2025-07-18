@@ -33,7 +33,7 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	marker, err := h.GameplayService.GetMarkerByCode(r.Context(), code)
+	marker, err := h.markerService.GetMarkerByCode(r.Context(), code)
 	if err != nil {
 		h.Logger.Error("CheckOut: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")
@@ -109,7 +109,7 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	marker, err := h.GameplayService.GetMarkerByCode(r.Context(), code)
+	marker, err := h.markerService.GetMarkerByCode(r.Context(), code)
 	if err != nil {
 		h.Logger.Error("CheckOut: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")

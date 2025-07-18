@@ -35,6 +35,10 @@ type InstanceSettingsService interface {
 	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
+type MarkerService interface {
+	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
+}
+
 type NavigationService interface {
 	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
@@ -64,6 +68,7 @@ type PlayerHandler struct {
 	GameplayService         services.GameplayService
 	InstanceService         services.InstanceService
 	InstanceSettingsService InstanceSettingsService
+	markerService           MarkerService
 	NavigationService       NavigationService
 	NotificationService     NotificationService
 	TeamService             TeamService
@@ -76,6 +81,7 @@ func NewPlayerHandler(
 	gameplayService services.GameplayService,
 	instanceService services.InstanceService,
 	instanceSettingsService InstanceSettingsService,
+	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService NotificationService,
 	teamService TeamService,
@@ -87,6 +93,7 @@ func NewPlayerHandler(
 		GameplayService:         gameplayService,
 		InstanceService:         instanceService,
 		InstanceSettingsService: instanceSettingsService,
+		markerService:           markerService,
 		NavigationService:       navigationService,
 		NotificationService:     notificationService,
 		TeamService:             teamService,

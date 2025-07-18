@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
@@ -24,7 +23,6 @@ var (
 )
 
 type GameplayService interface {
-	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
 	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
 	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
 }
@@ -48,15 +46,6 @@ func NewGameplayService(
 		BlockService:     blockService,
 		MarkerRepository: markerRepository,
 	}
-}
-
-func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error) {
-	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
-	marker, err := s.MarkerRepository.GetByCode(ctx, locationCode)
-	if err != nil {
-		return models.Marker{}, fmt.Errorf("GetMarkerByCode: %w", err)
-	}
-	return *marker, nil
 }
 
 func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
@@ -140,7 +129,7 @@ func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team 
 
 	// Only award points and update check-ins in regular mode, not preview mode
 	if !isPreview && state.IsComplete() {
-		err = s.TeamService.AwardPoints(ctx, &team, block.GetPoints(), fmt.Sprint("Completed block ", block.GetName()))
+		err = s.TeamService.AwardPoints(ctx, &team, block.GetPoints())
 		if err != nil {
 			return nil, nil, fmt.Errorf("awarding points: %w", err)
 		}
