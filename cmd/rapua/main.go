@@ -246,7 +246,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		logger,
 		blockService,
 		checkInService,
-		instanceService,
 		instanceSettingsService,
 		markerService,
 		navigationService,

@@ -10,7 +10,6 @@ import (
 	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
@@ -68,7 +67,6 @@ type PlayerHandler struct {
 	Logger                  *slog.Logger
 	blockService            BlockService
 	checkInService          CheckInService
-	InstanceService         services.InstanceService
 	InstanceSettingsService InstanceSettingsService
 	markerService           MarkerService
 	NavigationService       NavigationService
@@ -80,7 +78,6 @@ func NewPlayerHandler(
 	logger *slog.Logger,
 	blockService BlockService,
 	checkInService CheckInService,
-	instanceService services.InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	markerService MarkerService,
 	navigationService NavigationService,
@@ -91,7 +88,6 @@ func NewPlayerHandler(
 		Logger:                  logger,
 		blockService:            blockService,
 		checkInService:          checkInService,
-		InstanceService:         instanceService,
 		InstanceSettingsService: instanceSettingsService,
 		markerService:           markerService,
 		NavigationService:       navigationService,
