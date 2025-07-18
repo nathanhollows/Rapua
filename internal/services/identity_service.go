@@ -38,20 +38,20 @@ type IdentityService interface {
 	SendEmailVerification(ctx context.Context, user *models.User) error
 }
 
-type authService struct {
+type AuthService struct {
 	userRepository repositories.UserRepository
 	emailService   EmailService
 }
 
 func NewAuthService(userRepository repositories.UserRepository) IdentityService {
-	return &authService{
+	return &AuthService{
 		userRepository: userRepository,
 		emailService:   NewEmailService(),
 	}
 }
 
 // AuthenticateUser authenticates the user with the given email and password.
-func (s *authService) AuthenticateUser(ctx context.Context, email, password string) (*models.User, error) {
+func (s *AuthService) AuthenticateUser(ctx context.Context, email, password string) (*models.User, error) {
 	if email == "" || password == "" {
 		return nil, errors.New("email and password are required")
 	}
@@ -69,7 +69,7 @@ func (s *authService) AuthenticateUser(ctx context.Context, email, password stri
 }
 
 // IsUserAuthenticated checks if the user is authenticated.
-func (s *authService) IsUserAuthenticated(r *http.Request) bool {
+func (s *AuthService) IsUserAuthenticated(r *http.Request) bool {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
 		return false
@@ -80,7 +80,7 @@ func (s *authService) IsUserAuthenticated(r *http.Request) bool {
 }
 
 // GetAuthenticatedUser retrieves the authenticated user from the session.
-func (s *authService) GetAuthenticatedUser(r *http.Request) (*models.User, error) {
+func (s *AuthService) GetAuthenticatedUser(r *http.Request) (*models.User, error) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
 		return nil, err
@@ -100,13 +100,13 @@ func (s *authService) GetAuthenticatedUser(r *http.Request) (*models.User, error
 }
 
 // Check if the system allows google login (env var set).
-func (s *authService) AllowGoogleLogin() bool {
+func (s *AuthService) AllowGoogleLogin() bool {
 	provider, err := goth.GetProvider("google")
 	return err == nil && provider != nil
 }
 
 // OAuthLogin handles User Login via OAuth.
-func (s *authService) OAuthLogin(ctx context.Context, provider string, oauthUser goth.User) (*models.User, error) {
+func (s *AuthService) OAuthLogin(ctx context.Context, provider string, oauthUser goth.User) (*models.User, error) {
 	existingUser, err := s.userRepository.GetByEmail(ctx, oauthUser.Email)
 	if err != nil {
 		// User doesn't exist, create a new one
@@ -121,7 +121,7 @@ func (s *authService) OAuthLogin(ctx context.Context, provider string, oauthUser
 }
 
 // CheckUserRegisteredWithOAuth looks for user already registered with OAuth.
-func (s *authService) CheckUserRegisteredWithOAuth(ctx context.Context, provider, email string) (*models.User, error) {
+func (s *AuthService) CheckUserRegisteredWithOAuth(ctx context.Context, provider, email string) (*models.User, error) {
 	user, err := s.userRepository.GetByEmailAndProvider(ctx, email, provider)
 	if err != nil {
 		return nil, fmt.Errorf("getting user by email and provider: %w", err)
@@ -131,7 +131,7 @@ func (s *authService) CheckUserRegisteredWithOAuth(ctx context.Context, provider
 }
 
 // CreateUserWithOAuth creates a new user if logging in with OAuth for the first time.
-func (s *authService) CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error) {
+func (s *AuthService) CreateUserWithOAuth(ctx context.Context, user goth.User) (*models.User, error) {
 	var provider models.Provider
 	switch user.Provider {
 	case "google":
@@ -160,7 +160,7 @@ func (s *authService) CreateUserWithOAuth(ctx context.Context, user goth.User) (
 }
 
 // CompleteUserAuth completes the user authentication process.
-func (s *authService) CompleteUserAuth(w http.ResponseWriter, r *http.Request) (*models.User, error) {
+func (s *AuthService) CompleteUserAuth(w http.ResponseWriter, r *http.Request) (*models.User, error) {
 	gothUser, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
 		return nil, fmt.Errorf("completing user auth: %w", err)
@@ -175,7 +175,7 @@ func (s *authService) CompleteUserAuth(w http.ResponseWriter, r *http.Request) (
 }
 
 // VerifyEmail verifies the user's email address.
-func (s *authService) VerifyEmail(ctx context.Context, token string) error {
+func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 	user, err := s.userRepository.GetByEmailToken(ctx, token)
 	if err != nil {
 		return ErrInvalidToken
@@ -202,7 +202,7 @@ func (s *authService) VerifyEmail(ctx context.Context, token string) error {
 }
 
 // SendVerificationEmail sends a verification email to the user.
-func (s *authService) SendEmailVerification(ctx context.Context, user *models.User) error {
+func (s *AuthService) SendEmailVerification(ctx context.Context, user *models.User) error {
 	// If the user is already verified, return an error
 	if user.EmailVerified {
 		return ErrUserAlreadyVerified
