@@ -32,7 +32,7 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		locationService, teamService, instanceRepo, instanceSettingsRepo,
+		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
 
 	return instanceService, *userService, cleanup
