@@ -223,13 +223,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		locationService, teamService, instanceRepo, instanceSettingsRepo,
+		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(
 		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 	gameplayService := services.NewGameplayService(
-		*checkInService, teamService, blockService, markerRepo,
+		*checkInService, *teamService, blockService, markerRepo,
 	)
 
 	sessions.Start()

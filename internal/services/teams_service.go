@@ -11,29 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-type TeamService interface {
-	// AddTeams adds teams to the database
-	AddTeams(ctx context.Context, instanceID string, count int) ([]models.Team, error)
-
-	// FindAll returns all teams for an instance
-	FindAll(ctx context.Context, instanceID string) ([]models.Team, error)
-	// GetTeamByCode returns a team by code
-	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
-	// GetTeamActivityOverview returns a list of teams and their activity
-	GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]TeamActivity, error)
-
-	// Update updates a team in the database
-	Update(ctx context.Context, team *models.Team) error
-	// AwardPoints awards points to a team
-	AwardPoints(ctx context.Context, team *models.Team, points int, reason string) error
-
-	// LoadRelation loads relations for a team
-	LoadRelation(ctx context.Context, team *models.Team, relation string) error
-	// LoadRelations loads all relations for a team
-	LoadRelations(ctx context.Context, team *models.Team) error
-}
-
-type teamService struct {
+type TeamService struct {
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
 	blockStateRepo repositories.BlockStateRepository
@@ -47,8 +25,8 @@ func NewTeamService(
 	cr repositories.CheckInRepository,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
-) TeamService {
-	return &teamService{
+) *TeamService {
+	return &TeamService{
 		teamRepo:       tr,
 		checkInRepo:    cr,
 		blockStateRepo: bsr,
@@ -72,7 +50,7 @@ type LocationActivity struct {
 }
 
 // Helper function to check for code uniqueness within a batch.
-func (s *teamService) containsCode(teams []models.Team, code string) bool {
+func (s *TeamService) containsCode(teams []models.Team, code string) bool {
 	for _, team := range teams {
 		if team.Code == code {
 			return true
@@ -82,7 +60,7 @@ func (s *teamService) containsCode(teams []models.Team, code string) bool {
 }
 
 // AddTeams generates and inserts teams in batches, retrying if unique constraint errors occur.
-func (s *teamService) AddTeams(ctx context.Context, instanceID string, count int) ([]models.Team, error) {
+func (s *TeamService) AddTeams(ctx context.Context, instanceID string, count int) ([]models.Team, error) {
 	var newTeams []models.Team
 	for i := 0; i < count; i += s.batchSize {
 		size := min(s.batchSize, count-i)
@@ -122,18 +100,18 @@ func (s *teamService) AddTeams(ctx context.Context, instanceID string, count int
 }
 
 // FindAll returns all teams for an instance.
-func (s *teamService) FindAll(ctx context.Context, instanceID string) ([]models.Team, error) {
+func (s *TeamService) FindAll(ctx context.Context, instanceID string) ([]models.Team, error) {
 	return s.teamRepo.FindAll(ctx, instanceID)
 }
 
 // GetTeamByCode returns a team by code.
-func (s *teamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+func (s *TeamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	return s.teamRepo.GetByCode(ctx, code)
 }
 
 // GetTeamActivityOverview returns a list of teams and their activity.
-func (s *teamService) GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]TeamActivity, error) {
+func (s *TeamService) GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]TeamActivity, error) {
 	teams, err := s.teamRepo.FindAll(ctx, instanceID)
 	if err != nil {
 		return nil, err
@@ -186,19 +164,19 @@ func (s *teamService) GetTeamActivityOverview(ctx context.Context, instanceID st
 }
 
 // Update updates a team in the database.
-func (s *teamService) Update(ctx context.Context, team *models.Team) error {
+func (s *TeamService) Update(ctx context.Context, team *models.Team) error {
 	return s.teamRepo.Update(ctx, team)
 }
 
 // AwardPoints awards points to a team.
-func (s *teamService) AwardPoints(ctx context.Context, team *models.Team, points int, _ string) error {
+func (s *TeamService) AwardPoints(ctx context.Context, team *models.Team, points int, _ string) error {
 	team.Points += points
 	return s.teamRepo.Update(ctx, team)
 }
 
 // LoadRelation loads the specified relation for a team.
 // Relations can be "Instance", "Scans", "BlockingLocation", or "Messages".
-func (s *teamService) LoadRelation(ctx context.Context, team *models.Team, relation string) error {
+func (s *TeamService) LoadRelation(ctx context.Context, team *models.Team, relation string) error {
 	switch relation {
 	case "Instance":
 		return s.teamRepo.LoadInstance(ctx, team)
@@ -214,7 +192,7 @@ func (s *teamService) LoadRelation(ctx context.Context, team *models.Team, relat
 }
 
 // LoadRelations loads all relations for a team.
-func (s *teamService) LoadRelations(ctx context.Context, team *models.Team) error {
+func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) error {
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {
 		return err

@@ -46,6 +46,17 @@ type NotificationService interface {
 	DismissNotification(ctx context.Context, notificationID string) error
 }
 
+type TeamService interface {
+	// GetTeamByCode returns a team by code
+	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
+	// Update updates a team in the database
+	Update(ctx context.Context, team *models.Team) error
+	// LoadRelation loads relations for a team
+	LoadRelation(ctx context.Context, team *models.Team, relation string) error
+	// LoadRelations loads all relations for a team
+	LoadRelations(ctx context.Context, team *models.Team) error
+}
+
 type PlayerHandler struct {
 	Logger                  *slog.Logger
 	blockService            BlockService
@@ -55,7 +66,7 @@ type PlayerHandler struct {
 	InstanceSettingsService InstanceSettingsService
 	NavigationService       NavigationService
 	NotificationService     NotificationService
-	TeamService             services.TeamService
+	TeamService             TeamService
 }
 
 func NewPlayerHandler(
@@ -67,7 +78,7 @@ func NewPlayerHandler(
 	instanceSettingsService InstanceSettingsService,
 	navigationService NavigationService,
 	notificationService NotificationService,
-	teamService services.TeamService,
+	teamService TeamService,
 ) *PlayerHandler {
 	return &PlayerHandler{
 		Logger:                  logger,

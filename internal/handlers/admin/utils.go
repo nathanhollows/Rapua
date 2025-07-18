@@ -112,6 +112,23 @@ type MarkerService interface {
 	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
+type TeamService interface {
+	// AddTeams adds teams to the database
+	AddTeams(ctx context.Context, instanceID string, count int) ([]models.Team, error)
+
+	// FindAll returns all teams for an instance
+	FindAll(ctx context.Context, instanceID string) ([]models.Team, error)
+	// GetTeamByCode returns a team by code
+	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
+	// GetTeamActivityOverview returns a list of teams and their activity
+	GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]services.TeamActivity, error)
+
+	// LoadRelation loads relations for a team
+	LoadRelation(ctx context.Context, team *models.Team, relation string) error
+	// LoadRelations loads all relations for a team
+	LoadRelations(ctx context.Context, team *models.Team) error
+}
+
 type UploadService interface {
 	UploadFile(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, data services.UploadMetadata) (*models.Upload, error)
 	Search(ctx context.Context, filters map[string]string) ([]*models.Upload, error)
@@ -120,16 +137,12 @@ type UploadService interface {
 type UserService interface {
 	// CreateUser creates a new user
 	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
-
 	// UpdateUser updates a user
 	UpdateUser(ctx context.Context, user *models.User) error
-
 	// UpdateUserProfile updates a user's profile with form data
 	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
-
 	// ChangePassword changes a user's password
 	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
-
 	// SwitchInstance switches the user's current instance
 	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
 }
@@ -151,7 +164,7 @@ type AdminHandler struct {
 	markerService           MarkerService
 	navigationService       NavigationService
 	notificationService     NotificationService
-	teamService             services.TeamService
+	teamService             TeamService
 	templateService         services.TemplateService
 	uploadService           UploadService
 	userService             UserService
@@ -175,7 +188,7 @@ func NewAdminHandler(
 	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService NotificationService,
-	teamService services.TeamService,
+	teamService TeamService,
 	templateService services.TemplateService,
 	uploadService UploadService,
 	userService UserService,
