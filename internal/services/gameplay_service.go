@@ -24,7 +24,6 @@ var (
 )
 
 type GameplayService interface {
-	GetTeamByCode(ctx context.Context, teamCode string) (*models.Team, error)
 	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
 	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
 	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
@@ -51,15 +50,6 @@ func NewGameplayService(
 	}
 }
 
-func (s *gameplayService) GetTeamByCode(ctx context.Context, teamCode string) (*models.Team, error) {
-	teamCode = strings.TrimSpace(strings.ToUpper(teamCode))
-	team, err := s.TeamService.FindTeamByCode(ctx, teamCode)
-	if err != nil {
-		return nil, fmt.Errorf("GetTeamStatus: %w", err)
-	}
-	return team, nil
-}
-
 func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error) {
 	locationCode = strings.TrimSpace(strings.ToUpper(locationCode))
 	marker, err := s.MarkerRepository.GetByCode(ctx, locationCode)
@@ -70,7 +60,7 @@ func (s *gameplayService) GetMarkerByCode(ctx context.Context, locationCode stri
 }
 
 func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
-	team, err := s.TeamService.FindTeamByCode(ctx, teamCode)
+	team, err := s.TeamService.GetTeamByCode(ctx, teamCode)
 	if err != nil {
 		return ErrTeamNotFound
 	}

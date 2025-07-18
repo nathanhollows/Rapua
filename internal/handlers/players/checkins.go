@@ -61,7 +61,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 	// Or start a new session if the provided team code is valid
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		team, err = h.GameplayService.GetTeamByCode(r.Context(), r.FormValue("team"))
+		team, err = h.TeamService.GetTeamByCode(r.Context(), r.FormValue("team"))
 		if err != nil {
 			h.handleError(w, r, "CheckInPost: getting team by code", "Error finding team. Please double check your team code.", "error", err, "team", r.FormValue("team"))
 			return
@@ -136,7 +136,7 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 	// Or start a new session if the provided team code is valid
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
-		team, err = h.GameplayService.GetTeamByCode(r.Context(), r.FormValue("team"))
+		team, err = h.TeamService.GetTeamByCode(r.Context(), r.FormValue("team"))
 		if err != nil {
 			h.handleError(w, r, "CheckInPost: getting team by code", "Error finding team. Please double check your team code.", "error", err, "team", r.FormValue("team"))
 			return

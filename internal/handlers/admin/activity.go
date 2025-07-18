@@ -56,7 +56,7 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 
 	teamCode := chi.URLParam(r, "teamCode")
 
-	team, err := h.gameplayService.GetTeamByCode(r.Context(), teamCode)
+	team, err := h.teamService.GetTeamByCode(r.Context(), teamCode)
 	if err != nil || team.InstanceID != user.CurrentInstanceID {
 		h.handleError(w, r, "TeamActivity: getting team", "Error getting team", "Could not load data", err)
 		return

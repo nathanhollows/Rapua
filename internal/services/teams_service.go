@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v3/helpers"
@@ -16,8 +17,8 @@ type TeamService interface {
 
 	// FindAll returns all teams for an instance
 	FindAll(ctx context.Context, instanceID string) ([]models.Team, error)
-	// FindTeamByCode returns a team by code
-	FindTeamByCode(ctx context.Context, code string) (*models.Team, error)
+	// GetTeamByCode returns a team by code
+	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
 	// GetTeamActivityOverview returns a list of teams and their activity
 	GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]TeamActivity, error)
 
@@ -125,8 +126,9 @@ func (s *teamService) FindAll(ctx context.Context, instanceID string) ([]models.
 	return s.teamRepo.FindAll(ctx, instanceID)
 }
 
-// FindTeamByCode returns a team by code.
-func (s *teamService) FindTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+// GetTeamByCode returns a team by code.
+func (s *teamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+	code = strings.TrimSpace(strings.ToUpper(code))
 	return s.teamRepo.GetByCode(ctx, code)
 }
 

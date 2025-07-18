@@ -81,7 +81,7 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, teams, 1)
 
-	team, err := teamService.FindTeamByCode(context.Background(), teams[0].Code)
+	team, err := teamService.GetTeamByCode(context.Background(), teams[0].Code)
 	assert.NoError(t, err)
 	assert.Equal(t, teams[0].Code, team.Code)
 }
