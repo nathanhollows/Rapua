@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/nathanhollows/Rapua/v3/blocks"
+	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
@@ -276,4 +278,89 @@ func (s *CheckInService) checkOut(ctx context.Context, team *models.Team, locati
 	}
 
 	return scan, nil
+}
+
+func (s *CheckInService) ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error) {
+	blockID := data["block"][0]
+	if blockID == "" {
+		return nil, nil, errors.New("blockID must be set")
+	}
+
+	// Check if we're in preview mode - preview mode should use fresh mock state
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+
+	var block blocks.Block
+	var state blocks.PlayerState
+	var err error
+
+	if isPreview {
+		// In preview mode, always get a fresh block and create a new mock state
+		block, err = s.blockService.GetByBlockID(ctx, blockID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
+		}
+
+		state, err = s.blockService.NewMockBlockState(ctx, blockID, team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
+		}
+	} else {
+		// In regular mode, get the existing block and state
+		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getting block with state: %w", err)
+		}
+	}
+
+	if block == nil {
+		return nil, nil, errors.New("block not found")
+	}
+
+	if state == nil {
+		return nil, nil, errors.New("block state not found")
+	}
+
+	// In regular mode, return early if already complete to prevent duplicate points
+	// Preview mode always uses fresh state so this check is not needed
+	if !isPreview && state.IsComplete() {
+		return state, block, nil
+	}
+
+	// Validate the block
+	state, err = block.ValidatePlayerInput(state, data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validating block: %w", err)
+	}
+
+	// Only persist state changes in regular mode, not in preview mode
+	if !isPreview {
+		state, err = s.blockService.UpdateState(ctx, state)
+		if err != nil {
+			return nil, nil, fmt.Errorf("updating block state: %w", err)
+		}
+	}
+
+	// Only award points and update check-ins in regular mode, not preview mode
+	if !isPreview && state.IsComplete() {
+		team.Points += block.GetPoints()
+		err = s.teamRepo.Update(ctx, &team)
+		if err != nil {
+			return nil, nil, fmt.Errorf("awarding points: %w", err)
+		}
+
+		// Update the check in all blocks have been completed
+		unfinishedCheckIn, err := s.blockService.CheckValidationRequiredForCheckIn(ctx, block.GetLocationID(), team.Code)
+		if err != nil {
+			return nil, nil, fmt.Errorf("checking if validation is required: %w", err)
+		}
+
+		if !unfinishedCheckIn {
+			err = s.CompleteBlocks(ctx, team.Code, block.GetLocationID())
+			if err != nil {
+				return nil, nil, fmt.Errorf("completing blocks: %w", err)
+			}
+		}
+	}
+
+	return state, block, nil
 }

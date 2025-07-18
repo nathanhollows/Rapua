@@ -25,7 +25,7 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		data[key] = value
 	}
 
-	state, block, err := h.GameplayService.ValidateAndUpdateBlockState(r.Context(), *team, data)
+	state, block, err := h.checkInService.ValidateAndUpdateBlockState(r.Context(), *team, data)
 	if err != nil {
 		blockID := "unknown"
 		if block != nil {

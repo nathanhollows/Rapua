@@ -13,6 +13,8 @@ import (
 type BlockService struct {
 	blockRepo      repositories.BlockRepository
 	blockStateRepo repositories.BlockStateRepository
+	checkInService CheckInService
+	teamService    TeamService
 }
 
 func NewBlockService(blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) *BlockService {

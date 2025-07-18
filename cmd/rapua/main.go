@@ -228,9 +228,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	templateService := services.NewTemplateService(
 		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
-	gameplayService := services.NewGameplayService(
-		*checkInService, *teamService, blockService, markerRepo,
-	)
 
 	sessions.Start()
 
@@ -249,7 +246,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		logger,
 		blockService,
 		checkInService,
-		gameplayService,
 		instanceService,
 		instanceSettingsService,
 		markerService,

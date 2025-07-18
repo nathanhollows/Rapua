@@ -29,6 +29,7 @@ type BlockService interface {
 type CheckInService interface {
 	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
 	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
+	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
 }
 
 type InstanceSettingsService interface {
@@ -67,7 +68,6 @@ type PlayerHandler struct {
 	Logger                  *slog.Logger
 	blockService            BlockService
 	checkInService          CheckInService
-	GameplayService         services.GameplayService
 	InstanceService         services.InstanceService
 	InstanceSettingsService InstanceSettingsService
 	markerService           MarkerService
@@ -80,7 +80,6 @@ func NewPlayerHandler(
 	logger *slog.Logger,
 	blockService BlockService,
 	checkInService CheckInService,
-	gameplayService services.GameplayService,
 	instanceService services.InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	markerService MarkerService,
@@ -92,7 +91,6 @@ func NewPlayerHandler(
 		Logger:                  logger,
 		blockService:            blockService,
 		checkInService:          checkInService,
-		GameplayService:         gameplayService,
 		InstanceService:         instanceService,
 		InstanceSettingsService: instanceSettingsService,
 		markerService:           markerService,
