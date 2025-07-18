@@ -93,6 +93,12 @@ type NavigationService interface {
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
 }
 
+type NotificationService interface {
+	SendNotification(ctx context.Context, teamCode string, content string) (models.Notification, error)
+	SendNotificationToAllTeams(ctx context.Context, instanceID string, content string) error
+	GetNotifications(ctx context.Context, teamCode string) ([]models.Notification, error)
+}
+
 type QuickstartService interface {
 	DismissQuickstart(ctx context.Context, instanceID string) error
 }
@@ -138,7 +144,7 @@ type AdminHandler struct {
 	locationService         services.LocationService
 	markerService           MarkerService
 	navigationService       NavigationService
-	notificationService     services.NotificationService
+	notificationService     NotificationService
 	teamService             services.TeamService
 	templateService         services.TemplateService
 	uploadService           services.UploadService
@@ -162,7 +168,7 @@ func NewAdminHandler(
 	locationService services.LocationService,
 	markerService MarkerService,
 	navigationService NavigationService,
-	notificationService services.NotificationService,
+	notificationService NotificationService,
 	teamService services.TeamService,
 	templateService services.TemplateService,
 	uploadService services.UploadService,

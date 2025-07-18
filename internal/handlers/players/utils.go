@@ -41,6 +41,11 @@ type NavigationService interface {
 	// HasVisited(checkins []models.CheckIn, locationID string) bool
 }
 
+type NotificationService interface {
+	GetNotifications(ctx context.Context, teamCode string) ([]models.Notification, error)
+	DismissNotification(ctx context.Context, notificationID string) error
+}
+
 type PlayerHandler struct {
 	Logger                  *slog.Logger
 	blockService            BlockService
@@ -49,7 +54,7 @@ type PlayerHandler struct {
 	InstanceService         services.InstanceService
 	InstanceSettingsService InstanceSettingsService
 	NavigationService       NavigationService
-	NotificationService     services.NotificationService
+	NotificationService     NotificationService
 	TeamService             services.TeamService
 }
 
@@ -61,7 +66,7 @@ func NewPlayerHandler(
 	instanceService services.InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	navigationService NavigationService,
-	notificationService services.NotificationService,
+	notificationService NotificationService,
 	teamService services.TeamService,
 ) *PlayerHandler {
 	return &PlayerHandler{
