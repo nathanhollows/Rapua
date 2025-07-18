@@ -18,7 +18,7 @@ func setupUserService(t *testing.T) (services.UserService, repositories.Instance
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	userService := services.NewUserService(userRepo, instanceRepo)
-	return userService, instanceRepo, cleanup
+	return *userService, instanceRepo, cleanup
 }
 
 func TestCreateUser(t *testing.T) {
@@ -322,4 +322,3 @@ func TestUserService_SwitchInstance(t *testing.T) {
 		}
 	})
 }
-
