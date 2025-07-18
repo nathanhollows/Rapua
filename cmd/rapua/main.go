@@ -211,7 +211,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
-	authService := services.NewAuthService(userRepo)
+	identityService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
@@ -237,9 +237,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	// Construct handlers (dependency injection root)
 	publicHandler := public.NewPublicHandler(
 		logger,
-		authService,
+		identityService,
 		deleteService,
 		emailService,
+		identityService,
 		&templateService,
 		userService,
 	)
@@ -260,7 +261,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		logger,
 		accessService,
 		assetGenerator,
-		authService,
+		identityService,
 		blockService,
 		clueService,
 		deleteService,

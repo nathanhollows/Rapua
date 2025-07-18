@@ -130,7 +130,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.Use(func(next http.Handler) http.Handler {
-		return middlewares.AuthStatusMiddleware(publicHandler.AuthService, next)
+		return middlewares.AuthStatusMiddleware(publicHandler.IdentityService, next)
 	})
 
 	router.Get("/", publicHandler.Index)

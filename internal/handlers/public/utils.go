@@ -21,8 +21,8 @@ type FindTemplateService interface {
 	GetShareLink(ctx context.Context, id string) (*models.ShareLink, error)
 }
 
-// UserAuthenticator handles core authentication operations
-type UserAuthenticator interface {
+// IdentityService handles core authentication operations
+type IdentityService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 	IsUserAuthenticated(r *http.Request) bool
@@ -50,7 +50,6 @@ type UserService interface {
 
 // AuthService (optional) can compose the individual services if needed
 type AuthService interface {
-	UserAuthenticator
 	OAuthService
 	EmailVerificationService
 }
@@ -60,6 +59,7 @@ type PublicHandler struct {
 	AuthService     AuthService
 	deleteService   DeleteService
 	emailService    services.EmailService
+	IdentityService IdentityService
 	templateService FindTemplateService
 	userService     UserService
 }
@@ -69,6 +69,7 @@ func NewPublicHandler(
 	authService AuthService,
 	deleteService DeleteService,
 	emailService services.EmailService,
+	identityService IdentityService,
 	templateService FindTemplateService,
 	userService UserService,
 ) *PublicHandler {
@@ -77,6 +78,7 @@ func NewPublicHandler(
 		AuthService:     authService,
 		deleteService:   deleteService,
 		emailService:    emailService,
+		IdentityService: identityService,
 		templateService: templateService,
 		userService:     userService,
 	}

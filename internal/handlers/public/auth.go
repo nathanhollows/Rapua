@@ -45,7 +45,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 
 	// Try to authenticate the user
-	user, err := h.AuthService.AuthenticateUser(r.Context(), email, password)
+	user, err := h.IdentityService.AuthenticateUser(r.Context(), email, password)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("authenticating user", "err", err)
@@ -274,7 +274,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 // VerifyEmail shows the user the verify email page, the first step in the email verification process.
 func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.IdentityService.GetAuthenticatedUser(r)
 	if err != nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -292,7 +292,7 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // VerifyEmailWithToken verifies the user's email address and redirects upon error or success.
 func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.IdentityService.GetAuthenticatedUser(r)
 	if err == nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -325,7 +325,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 // VerifyEmailStatus checks the status of the email verification and redirects accordingly.
 func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.IdentityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
@@ -342,7 +342,7 @@ func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request
 
 // ResendEmailVerification resends the email verification email.
 func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.IdentityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
