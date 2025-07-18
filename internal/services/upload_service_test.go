@@ -31,7 +31,7 @@ func setupUploadService(t *testing.T) (services.UploadService, func()) {
 	mockStorage := &mockUploadStorage{}
 
 	uploadService := services.NewUploadService(uploadsRepository, mockStorage)
-	return uploadService, cleanup
+	return *uploadService, cleanup
 }
 
 func TestUploadService_UploadFile(t *testing.T) {

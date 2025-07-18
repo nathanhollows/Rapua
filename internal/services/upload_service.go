@@ -18,8 +18,8 @@ type UploadService struct {
 }
 
 // NewUploadService creates a new UploadService.
-func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage) UploadService {
-	return UploadService{
+func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage) *UploadService {
+	return &UploadService{
 		repo:    repo,
 		storage: storage,
 	}

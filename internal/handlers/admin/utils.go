@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -111,6 +112,11 @@ type MarkerService interface {
 	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
+type UploadService interface {
+	UploadFile(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, data services.UploadMetadata) (*models.Upload, error)
+	Search(ctx context.Context, filters map[string]string) ([]*models.Upload, error)
+}
+
 type UserService interface {
 	// CreateUser creates a new user
 	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
@@ -147,7 +153,7 @@ type AdminHandler struct {
 	notificationService     NotificationService
 	teamService             services.TeamService
 	templateService         services.TemplateService
-	uploadService           services.UploadService
+	uploadService           UploadService
 	userService             UserService
 	quickstartService       QuickstartService
 }
@@ -171,7 +177,7 @@ func NewAdminHandler(
 	notificationService NotificationService,
 	teamService services.TeamService,
 	templateService services.TemplateService,
-	uploadService services.UploadService,
+	uploadService UploadService,
 	userService UserService,
 	quickstartService QuickstartService,
 ) *AdminHandler {
