@@ -267,7 +267,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		clueService,
 		deleteService,
 		facilitatorService,
-		gameplayService,
 		gameScheduleService,
 		instanceService,
 		instanceSettingsService,

@@ -23,7 +23,6 @@ var (
 )
 
 type GameplayService interface {
-	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
 	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
 }
 
@@ -46,25 +45,6 @@ func NewGameplayService(
 		BlockService:     blockService,
 		MarkerRepository: markerRepository,
 	}
-}
-
-func (s *gameplayService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
-	team, err := s.TeamService.GetTeamByCode(ctx, teamCode)
-	if err != nil {
-		return ErrTeamNotFound
-	}
-
-	// Update team with custom name if provided
-	if !team.HasStarted || customTeamName != "" {
-		team.Name = customTeamName
-		team.HasStarted = true
-		err = s.TeamService.Update(ctx, team)
-		if err != nil {
-			return fmt.Errorf("updating team: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func (s *gameplayService) ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error) {

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -196,6 +197,25 @@ func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) erro
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *TeamService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
+	team, err := s.GetTeamByCode(ctx, teamCode)
+	if err != nil {
+		return ErrTeamNotFound
+	}
+
+	// Update team with custom name if provided
+	if !team.HasStarted || customTeamName != "" {
+		team.Name = customTeamName
+		team.HasStarted = true
+		err = s.Update(ctx, team)
+		if err != nil {
+			return fmt.Errorf("updating team: %w", err)
+		}
 	}
 
 	return nil
