@@ -35,7 +35,7 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 		locationService, teamService, instanceRepo, instanceSettingsRepo,
 	)
 
-	return instanceService, userService, cleanup
+	return instanceService, *userService, cleanup
 }
 
 func TestInstanceService(t *testing.T) {
