@@ -46,7 +46,7 @@ type AuthService struct {
 func NewAuthService(userRepository repositories.UserRepository) IdentityService {
 	return &AuthService{
 		userRepository: userRepository,
-		emailService:   NewEmailService(),
+		emailService:   *NewEmailService(),
 	}
 }
 
@@ -221,7 +221,7 @@ func (s *AuthService) SendEmailVerification(ctx context.Context, user *models.Us
 		return fmt.Errorf("updating user: %w", err)
 	}
 
-	_, err = s.emailService.SendVerificationEmail(ctx, *user)
+	err = s.emailService.SendVerificationEmail(ctx, *user)
 	if err != nil {
 		return fmt.Errorf("sending verification email: %w", err)
 	}

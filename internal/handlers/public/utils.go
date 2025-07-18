@@ -7,7 +7,6 @@ import (
 
 	"github.com/markbates/goth"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
@@ -26,6 +25,8 @@ type IdentityService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 	IsUserAuthenticated(r *http.Request) bool
+	VerifyEmail(ctx context.Context, token string) error
+	SendEmailVerification(ctx context.Context, user *models.User) error
 }
 
 // OAuthService manages OAuth-specific authentication flows
@@ -38,9 +39,8 @@ type OAuthService interface {
 }
 
 // EmailVerificationService handles email-related authentication tasks
-type EmailVerificationService interface {
-	VerifyEmail(ctx context.Context, token string) error
-	SendEmailVerification(ctx context.Context, user *models.User) error
+type EmailService interface {
+	SendContactEmail(ctx context.Context, name, contactEmail, content string) error
 }
 
 type UserService interface {
@@ -51,14 +51,13 @@ type UserService interface {
 // AuthService (optional) can compose the individual services if needed
 type AuthService interface {
 	OAuthService
-	EmailVerificationService
 }
 
 type PublicHandler struct {
 	logger          *slog.Logger
 	AuthService     AuthService
 	deleteService   DeleteService
-	emailService    services.EmailService
+	emailService    EmailService
 	IdentityService IdentityService
 	templateService FindTemplateService
 	userService     UserService
@@ -68,7 +67,7 @@ func NewPublicHandler(
 	logger *slog.Logger,
 	authService AuthService,
 	deleteService DeleteService,
-	emailService services.EmailService,
+	emailService EmailService,
 	identityService IdentityService,
 	templateService FindTemplateService,
 	userService UserService,

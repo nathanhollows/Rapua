@@ -32,7 +32,7 @@ func (h *PublicHandler) ContactPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.emailService.SendContactEmail(r.Context(), name, email, message)
+	err = h.emailService.SendContactEmail(r.Context(), name, email, message)
 	if err != nil {
 		h.handleError(w, r, "ContactPost: sending email", "Error sending email", "error", err)
 		return

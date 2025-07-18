@@ -149,7 +149,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send the email verification
-	err = h.AuthService.SendEmailVerification(r.Context(), &user)
+	err = h.IdentityService.SendEmailVerification(r.Context(), &user)
 	if err != nil {
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
 			err := h.deleteService.DeleteUser(r.Context(), user.ID)
@@ -300,7 +300,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 	token := chi.URLParam(r, "token")
 
-	err = h.AuthService.VerifyEmail(r.Context(), token)
+	err = h.IdentityService.VerifyEmail(r.Context(), token)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidToken) {
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
@@ -348,7 +348,7 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = h.AuthService.SendEmailVerification(r.Context(), user)
+	err = h.IdentityService.SendEmailVerification(r.Context(), user)
 	if err != nil {
 		if errors.Is(err, services.ErrUserAlreadyVerified) {
 			w.WriteHeader(http.StatusUnauthorized)
