@@ -16,6 +16,7 @@ order: 100
 
 - **Breaking change:** Removed locationID field from Reorder method in `BlockRepository` interface. Not needed as blocks are now always associated with a location.
 - **Breaking change:** Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
+- Handlers are now defined in `main.go` and passed to the server, rather than being defined in the server package. This cuts down on plumbing.
 - Refactored the `GameManagerService` into `GameScheduleService`, `QuickstartService`, `InstanceSettingsService` to improve maintainability and separation of concerns.
 - Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.

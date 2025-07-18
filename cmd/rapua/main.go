@@ -11,6 +11,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nathanhollows/Rapua/v3/db"
+	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
 	"github.com/nathanhollows/Rapua/v3/internal/migrations"
 	"github.com/nathanhollows/Rapua/v3/internal/server"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
@@ -230,16 +233,37 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	)
 
 	sessions.Start()
-	server.Start(
+
+	// Construct handlers (dependency injection root)
+	publicHandler := public.NewPublicHandler(
+		logger,
+		authService,
+		deleteService,
+		emailService,
+		&templateService,
+		userService,
+	)
+
+	playerHandler := players.NewPlayerHandler(
+		logger,
+		blockService,
+		checkInService,
+		gameplayService,
+		instanceService,
+		instanceSettingsService,
+		navigationService,
+		notificationService,
+		teamService,
+	)
+
+	adminHandler := admin.NewAdminHandler(
 		logger,
 		accessService,
 		assetGenerator,
 		authService,
 		blockService,
-		checkInService,
 		clueService,
 		deleteService,
-		emailService,
 		facilitatorService,
 		gameplayService,
 		gameScheduleService,
@@ -255,6 +279,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		userService,
 		quickstartService,
 	)
+
+	server.Start(logger, publicHandler, playerHandler, adminHandler)
 }
 
 func initialiseFolders(logger *slog.Logger) {

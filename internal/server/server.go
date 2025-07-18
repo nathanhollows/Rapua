@@ -15,83 +15,17 @@ import (
 	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
 	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 )
 
 var router *chi.Mux
 var server *http.Server
 
-func Start(logger *slog.Logger,
-	accessService admin.AccessService,
-	assetGenerator services.AssetGenerator,
-	authService services.IdentityService,
-	blockService admin.BlockService,
-	checkInService players.CheckInService,
-	clueService admin.ClueService,
-	deleteService admin.DeleteService,
-	emailService services.EmailService,
-	facilitatorService services.FacilitatorService,
-	gameplayService services.GameplayService,
-	gameScheduleService admin.GameScheduleService,
-	instanceService services.InstanceService,
-	instanceSettingsService admin.InstanceSettingsService,
-	locationService services.LocationService,
-	markerService admin.MarkerService,
-	navigationService *services.NavigationService,
-	notificationService services.NotificationService,
-	teamService services.TeamService,
-	templateService services.TemplateService,
-	uploadService services.UploadService,
-	userService services.UserService,
-	quickstartService admin.QuickstartService,
+func Start(
+	logger *slog.Logger,
+	publicHandler *public.PublicHandler,
+	playerHandler *players.PlayerHandler,
+	adminHandler *admin.AdminHandler,
 ) {
-	// Public routes
-	publicHandler := public.NewPublicHandler(
-		logger,
-		authService,
-		deleteService,
-		emailService,
-		&templateService,
-		userService,
-	)
-
-	// Player routes
-	playerHandler := players.NewPlayerHandler(
-		logger,
-		blockService,
-		checkInService,
-		gameplayService,
-		instanceService,
-		instanceSettingsService,
-		navigationService,
-		notificationService,
-		teamService,
-	)
-
-	// Admin routes
-	adminHandler := admin.NewAdminHandler(
-		logger,
-		accessService,
-		assetGenerator,
-		authService,
-		blockService,
-		clueService,
-		deleteService,
-		facilitatorService,
-		gameplayService,
-		gameScheduleService,
-		instanceService,
-		instanceSettingsService,
-		locationService,
-		markerService,
-		navigationService,
-		notificationService,
-		teamService,
-		templateService,
-		uploadService,
-		userService,
-		quickstartService,
-	)
 	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 
 	killSig := make(chan os.Signal, 1)
