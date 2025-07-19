@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
+	"github.com/nathanhollows/Rapua/v3/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v3/internal/handlers/public"
 )
 
 var router *chi.Mux
