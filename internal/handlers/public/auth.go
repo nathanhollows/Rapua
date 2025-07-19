@@ -1,4 +1,4 @@
-package handlers
+package public
 
 import (
 	"database/sql"
@@ -26,7 +26,7 @@ func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.Login(h.AuthService.AllowGoogleLogin())
+	c := templates.Login(h.identityService.AllowGoogleLogin())
 	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 
 	// Try to authenticate the user
-	user, err := h.IdentityService.AuthenticateUser(r.Context(), email, password)
+	user, err := h.identityService.AuthenticateUser(r.Context(), email, password)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("authenticating user", "err", err)
@@ -105,7 +105,7 @@ func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.Register(h.AuthService.AllowGoogleLogin())
+	c := templates.Register(h.identityService.AllowGoogleLogin())
 	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
 
 	if err != nil {
@@ -149,7 +149,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send the email verification
-	err = h.IdentityService.SendEmailVerification(r.Context(), &user)
+	err = h.identityService.SendEmailVerification(r.Context(), &user)
 	if err != nil {
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
 			err := h.deleteService.DeleteUser(r.Context(), user.ID)
@@ -211,7 +211,7 @@ func (h *PublicHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
 	r.URL.RawQuery = fmt.Sprintf("%s&provider=%s", r.URL.RawQuery, provider)
 
-	_, err := h.AuthService.CompleteUserAuth(w, r)
+	_, err := h.identityService.CompleteUserAuth(w, r)
 	if err == nil {
 		// User is authenticated, redirect to the admin page
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
@@ -228,7 +228,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
 	r.URL.RawQuery = fmt.Sprintf("%s&provider=%s", r.URL.RawQuery, provider)
 
-	user, err := h.AuthService.CompleteUserAuth(w, r)
+	user, err := h.identityService.CompleteUserAuth(w, r)
 	if err != nil {
 		h.logger.Error("completing auth", "error", err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -274,7 +274,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 // VerifyEmail shows the user the verify email page, the first step in the email verification process.
 func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.IdentityService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -292,7 +292,7 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // VerifyEmailWithToken verifies the user's email address and redirects upon error or success.
 func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.IdentityService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err == nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -300,7 +300,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 	token := chi.URLParam(r, "token")
 
-	err = h.IdentityService.VerifyEmail(r.Context(), token)
+	err = h.identityService.VerifyEmail(r.Context(), token)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidToken) {
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
@@ -325,7 +325,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 // VerifyEmailStatus checks the status of the email verification and redirects accordingly.
 func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
-	user, err := h.IdentityService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
@@ -342,13 +342,13 @@ func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request
 
 // ResendEmailVerification resends the email verification email.
 func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
-	user, err := h.IdentityService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	err = h.IdentityService.SendEmailVerification(r.Context(), user)
+	err = h.identityService.SendEmailVerification(r.Context(), user)
 	if err != nil {
 		if errors.Is(err, services.ErrUserAlreadyVerified) {
 			w.WriteHeader(http.StatusUnauthorized)

@@ -11,7 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v3/filesystem"
 	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v3/internal/handlers/public"
 	"github.com/nathanhollows/Rapua/v3/internal/middlewares"
 )
 
@@ -130,7 +130,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.Use(func(next http.Handler) http.Handler {
-		return middlewares.AuthStatusMiddleware(publicHandler.IdentityService, next)
+		return middlewares.AuthStatusMiddleware(publicHandler.GetIdentityService(), next)
 	})
 
 	router.Get("/", publicHandler.Index)

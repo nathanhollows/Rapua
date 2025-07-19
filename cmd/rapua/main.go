@@ -237,7 +237,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		identityService,
 		deleteService,
 		emailService,
-		identityService,
 		&templateService,
 		userService,
 	)
