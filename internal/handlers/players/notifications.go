@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"net/http"
@@ -9,12 +9,12 @@ import (
 // DismissNotificationPost dismisses a message.
 func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.Request) {
 	notificationID := chi.URLParam(r, "ID")
-	err := h.NotificationService.DismissNotification(r.Context(), notificationID)
+	err := h.notificationService.DismissNotification(r.Context(), notificationID)
 
 	// Handle HTMX request
 	if r.Header.Get("HX-Request") == "true" {
 		if err != nil {
-			h.Logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
+			h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -23,7 +23,7 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		h.Logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
+		h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusSeeOther)
 
 		return

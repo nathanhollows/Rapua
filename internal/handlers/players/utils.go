@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"context"
@@ -64,14 +64,14 @@ type TeamService interface {
 }
 
 type PlayerHandler struct {
-	Logger                  *slog.Logger
+	logger                  *slog.Logger
 	blockService            BlockService
 	checkInService          CheckInService
-	InstanceSettingsService InstanceSettingsService
+	instanceSettingsService InstanceSettingsService
 	markerService           MarkerService
-	NavigationService       NavigationService
-	NotificationService     NotificationService
-	TeamService             TeamService
+	navigationService       NavigationService
+	notificationService     NotificationService
+	teamService             TeamService
 }
 
 func NewPlayerHandler(
@@ -85,15 +85,23 @@ func NewPlayerHandler(
 	teamService TeamService,
 ) *PlayerHandler {
 	return &PlayerHandler{
-		Logger:                  logger,
+		logger:                  logger,
 		blockService:            blockService,
 		checkInService:          checkInService,
-		InstanceSettingsService: instanceSettingsService,
+		instanceSettingsService: instanceSettingsService,
 		markerService:           markerService,
-		NavigationService:       navigationService,
-		NotificationService:     notificationService,
-		TeamService:             teamService,
+		navigationService:       navigationService,
+		notificationService:     notificationService,
+		teamService:             teamService,
 	}
+}
+
+func (h PlayerHandler) GetInstanceSettingsService() InstanceSettingsService {
+	return h.instanceSettingsService
+}
+
+func (h PlayerHandler) GetTeamService() TeamService {
+	return h.teamService
 }
 
 // GetTeamFromContext retrieves the team from the context.
@@ -151,9 +159,9 @@ func invalidateSession(r *http.Request, w http.ResponseWriter) error {
 }
 
 func (h *PlayerHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
-	h.Logger.Error(logMsg, params...)
+	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error(logMsg+" - rendering template", "error", err)
+		h.logger.Error(logMsg+" - rendering template", "error", err)
 	}
 }

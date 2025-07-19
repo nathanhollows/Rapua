@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.NavigationService.GetNextLocations(r.Context(), team)
+	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
 	if err != nil {
 		if !errors.Is(err, services.ErrAllLocationsVisited) {
 			h.handleError(w, r, "Next: getting next locations", "Error getting next locations", "Could not load data", err)

@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"net/http"
@@ -19,7 +19,7 @@ func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
 	c := templates.Home(*team)
 	err := templates.Layout(c, "Home", nil).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Home: rendering template", "error", err)
+		h.logger.Error("Home: rendering template", "error", err)
 	}
 }
 
@@ -33,7 +33,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	teamCode := r.FormValue("team")
 	teamName := r.FormValue("customTeamName")
 
-	err = h.TeamService.StartPlaying(r.Context(), teamCode, teamName)
+	err = h.teamService.StartPlaying(r.Context(), teamCode, teamName)
 	if err != nil {
 		if err == services.ErrTeamNotFound {
 			h.handleError(w, r, "PlayPost: starting game", "Team not found: "+teamCode, "Cannot start game with this team code", err, "teamCode", teamCode)

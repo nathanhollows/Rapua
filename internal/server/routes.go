@@ -48,7 +48,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Takes a POST request to submit the home page form
 	router.Route("/play", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
 		})
 
 		r.Get("/", playerHandler.Play)
@@ -58,9 +58,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceSettingsService,
-				middlewares.TeamMiddleware(playerHandler.TeamService,
-					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
+			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
 		})
 		r.Get("/", playerHandler.Next)
 		r.Post("/", playerHandler.Next)
@@ -68,9 +68,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceSettingsService,
-				middlewares.TeamMiddleware(playerHandler.TeamService,
-					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
+			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
@@ -78,9 +78,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceSettingsService,
-				middlewares.TeamMiddleware(playerHandler.TeamService,
-					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
+			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
 		})
 		r.Get("/", playerHandler.Lobby)
 		r.Post("/team-name", playerHandler.SetTeamName)
@@ -89,7 +89,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Ending the game
 	router.Route("/finish", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService, next)
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
 		})
 		r.Get("/", playerHandler.Finish)
 	})
@@ -97,8 +97,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Check in to a location
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
 		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)
@@ -107,8 +107,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Check out of a location
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.TeamService,
-				middlewares.LobbyMiddleware(playerHandler.TeamService, next))
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
 		})
 		r.Get("/", playerHandler.CheckOut)
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)
@@ -117,9 +117,9 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.TeamService, playerHandler.InstanceSettingsService,
-				middlewares.TeamMiddleware(playerHandler.TeamService,
-					middlewares.LobbyMiddleware(playerHandler.TeamService, next)))
+			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
 		})
 		r.Get("/", playerHandler.MyCheckins)
 		r.Get("/{id}", playerHandler.CheckInView)
