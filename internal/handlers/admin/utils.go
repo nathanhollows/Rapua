@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"context"
@@ -151,7 +151,7 @@ type AdminHandler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
 	assetGenerator          services.AssetGenerator
-	IdentityService         IdentityService
+	identityService         IdentityService
 	blockService            BlockService
 	clueService             ClueService
 	deleteService           DeleteService
@@ -196,7 +196,7 @@ func NewAdminHandler(
 		logger:                  logger,
 		accessService:           accessService,
 		assetGenerator:          assetGenerator,
-		IdentityService:         identityService,
+		identityService:         identityService,
 		blockService:            blockService,
 		clueService:             clueService,
 		deleteService:           DeleteService,
@@ -214,6 +214,11 @@ func NewAdminHandler(
 		userService:             userService,
 		quickstartService:       quickstartService,
 	}
+}
+
+// GetIdentityService returns the IdentityService used by the handler.
+func (h *AdminHandler) GetIdentityService() IdentityService {
+	return h.identityService
 }
 
 // GetUserFromContext retrieves the user from the context.
