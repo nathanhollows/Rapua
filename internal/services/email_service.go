@@ -9,25 +9,17 @@ import (
 	"github.com/a-h/templ"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/emails"
 	"github.com/nathanhollows/Rapua/v3/models"
-	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-type EmailService interface {
-	// SendVerificationEmail sends a verification email to the user to complete their registration
-	SendVerificationEmail(ctx context.Context, user models.User) (*rest.Response, error)
-	// SendContactEmail sends an email to the site owner from the contact form
-	SendContactEmail(ctx context.Context, name, contactEmail, content string) (*rest.Response, error)
+type EmailService struct{}
+
+func NewEmailService() *EmailService {
+	return &EmailService{}
 }
 
-type emailService struct{}
-
-func NewEmailService() EmailService {
-	return &emailService{}
-}
-
-func (s emailService) SendContactEmail(ctx context.Context, name, contactEmail, content string) (*rest.Response, error) {
+func (s EmailService) SendContactEmail(ctx context.Context, name, contactEmail, content string) error {
 	sentFrom := mail.NewEmail("Rapua Contact Form", os.Getenv("CONTACT_EMAIL"))
 	sentTo := mail.NewEmail("Rapua", os.Getenv("CONTACT_EMAIL"))
 	subject := "New message from Rapua contact form"
@@ -41,11 +33,11 @@ func (s emailService) SendContactEmail(ctx context.Context, name, contactEmail, 
 	message := mail.NewSingleEmail(sentFrom, subject, sentTo, content, fmt.Sprintf(htmlTemplate, name, contactEmail, content))
 
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
-	response, err := client.Send(message)
-	return response, err
+	_, err := client.Send(message)
+	return err
 }
 
-func (s emailService) SendVerificationEmail(ctx context.Context, user models.User) (*rest.Response, error) {
+func (s EmailService) SendVerificationEmail(ctx context.Context, user models.User) error {
 	from := mail.NewEmail(os.Getenv("SENDGRID_FROM_NAME"), os.Getenv("SENDGRID_FROM_EMAIL"))
 	to := mail.NewEmail(user.Name, user.Email)
 	subject := "Please verify your email"
@@ -66,11 +58,11 @@ Nathan`
 	c := templates.VerifyEmail(url)
 	err := c.Render(ctx, w)
 	if err != nil {
-		return nil, fmt.Errorf("rendering email template: %w", err)
+		return fmt.Errorf("rendering email template: %w", err)
 	}
 
 	message := mail.NewSingleEmail(from, subject, to, plainTextContent, w.String())
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
-	response, err := client.Send(message)
-	return response, err
+	_, err = client.Send(message)
+	return err
 }

@@ -9,23 +9,19 @@ import (
 	"github.com/nathanhollows/Rapua/v3/repositories"
 )
 
-type ClueService interface {
-	UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error
-}
-
-type clueService struct {
+type ClueService struct {
 	clueRepo     repositories.ClueRepository
 	locationRepo repositories.LocationRepository
 }
 
-func NewClueService(clueRepo repositories.ClueRepository, locationRepo repositories.LocationRepository) ClueService {
-	return &clueService{
+func NewClueService(clueRepo repositories.ClueRepository, locationRepo repositories.LocationRepository) *ClueService {
+	return &ClueService{
 		clueRepo:     clueRepo,
 		locationRepo: locationRepo,
 	}
 }
 
-func (s *clueService) UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error {
+func (s *ClueService) UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error {
 	var err error
 	if len(location.Clues) == 0 {
 		err = s.locationRepo.LoadClues(ctx, location)

@@ -1,4 +1,4 @@
-package handlers
+package public
 
 import (
 	"net/http"
@@ -14,6 +14,6 @@ func (h *PublicHandler) Pricing(w http.ResponseWriter, r *http.Request) {
 	err := templates.PublicLayout(c, "Pricing", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering Pricing page", "err", err)
+		h.logger.Error("rendering Pricing page", "err", err)
 	}
 }

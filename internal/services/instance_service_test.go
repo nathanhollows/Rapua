@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -14,8 +13,6 @@ import (
 func setupInstanceService(t *testing.T) (services.InstanceService, services.UserService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
-
-	transactor := db.NewTransactor(dbc)
 
 	// Initialize repositories
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
@@ -28,17 +25,17 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
+	markerService := services.NewMarkerService(markerRepo)
 
 	// Initialize services
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
-	userService := services.NewUserService(transactor, userRepo, instanceRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		transactor,
-		locationService, teamService, instanceRepo, instanceSettingsRepo,
+		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
 
-	return instanceService, userService, cleanup
+	return instanceService, *userService, cleanup
 }
 
 func TestInstanceService(t *testing.T) {
@@ -151,65 +148,6 @@ func TestInstanceService(t *testing.T) {
 				if tc.wantErr {
 					assert.Error(t, err)
 					assert.Nil(t, instances)
-				}
-			})
-		}
-	})
-
-	t.Run("DeleteInstance", func(t *testing.T) {
-		instance, _ := svc.CreateInstance(context.Background(), "GameToDelete", user)
-
-		tests := []struct {
-			name         string
-			instanceID   string
-			confirmName  string
-			user         *models.User
-			wantErr      bool
-			expectedBool bool
-		}{
-			{"Invalid, currently in use",
-				instance.ID,
-				"GameToDelete",
-				&models.User{
-					ID:                "user123",
-					Password:          "password",
-					CurrentInstanceID: instance.ID,
-				},
-				true,
-				true,
-			},
-			{"Mismatched Confirmation",
-				instance.ID,
-				"WrongName",
-				user,
-				true,
-				false,
-			},
-			{"Invalid Instance ID",
-				"invalid-id",
-				"GameToDelete",
-				user,
-				true,
-				false,
-			},
-			{"Nil User",
-				instance.ID,
-				"GameToDelete",
-				nil,
-				true,
-				false,
-			},
-		}
-
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				success, err := svc.DeleteInstance(context.Background(), tc.user, tc.instanceID, tc.confirmName)
-				if tc.wantErr {
-					assert.Error(t, err)
-					assert.False(t, success)
-				} else {
-					assert.NoError(t, err)
-					assert.Equal(t, tc.expectedBool, success)
 				}
 			})
 		}

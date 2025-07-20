@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"net/http"
@@ -49,7 +49,7 @@ func (h *AdminHandler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http
 		locations = append(locations, r.Form.Get("locations"))
 	}
 
-	token, err := h.FacilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentInstanceID, locations, duration)
+	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentInstanceID, locations, duration)
 	if err != nil {
 		h.handleError(w, r, "creating facilitator token", "Error creating facilitator token")
 		return
@@ -74,7 +74,7 @@ func (h *AdminHandler) FacilitatorLogin(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Validate token
-	facToken, err := h.FacilitatorService.ValidateToken(r.Context(), token)
+	facToken, err := h.facilitatorService.ValidateToken(r.Context(), token)
 	if err != nil {
 		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 		return
@@ -103,14 +103,14 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	facToken, err := h.FacilitatorService.ValidateToken(r.Context(), token.Value)
+	facToken, err := h.facilitatorService.ValidateToken(r.Context(), token.Value)
 	if err != nil {
 		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 		return
 	}
 
 	// Fetch locations
-	locations, err := h.LocationService.FindByInstance(r.Context(), facToken.InstanceID)
+	locations, err := h.locationService.FindByInstance(r.Context(), facToken.InstanceID)
 	if err != nil {
 		h.handleError(w, r, "fetching locations", "Error fetching locations", "error", err)
 		return
@@ -131,7 +131,7 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Team activity overview
-	overview, err := h.TeamService.GetTeamActivityOverview(r.Context(), facToken.InstanceID, filteredLocations)
+	overview, err := h.teamService.GetTeamActivityOverview(r.Context(), facToken.InstanceID, filteredLocations)
 	if err != nil {
 		h.handleError(w, r, "fetching team activity overview", "Error fetching team activity overview", "error", err)
 		return
@@ -178,6 +178,6 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 	c := templates.FacilitatorDashboard(locations, overview)
 	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Activity: rendering template", "error", err)
+		h.logger.Error("Activity: rendering template", "error", err)
 	}
 }

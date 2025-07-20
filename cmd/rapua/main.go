@@ -11,6 +11,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nathanhollows/Rapua/v3/db"
+	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v3/internal/handlers/public"
 	"github.com/nathanhollows/Rapua/v3/internal/migrations"
 	"github.com/nathanhollows/Rapua/v3/internal/server"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
@@ -21,6 +24,8 @@ import (
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
+
+const version = "4.0.0"
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
@@ -41,7 +46,7 @@ func main() {
 		Name:        "Rapua",
 		Usage:       "rapua [global options] command [command options] [arguments...]",
 		Description: `An open-source platform for location-based games.`,
-		Version:     "3.10.0",
+		Version:     version,
 		Commands: []*cli.Command{
 			newDBCommand(migrator),
 		},
@@ -180,57 +185,97 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
 	// Initialize services
+	accessService := services.NewAccessService(
+		blockRepo,
+		instanceRepo,
+		locationRepo,
+		markerRepo,
+	)
+	locationStatsService := services.NewLocationStatsService(locationRepo)
+	gameScheduleService := services.NewGameScheduleService(instanceRepo)
+	quickstartService := services.NewQuickstartService(instanceRepo)
+	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
+	deleteService := services.NewDeleteService(
+		transactor,
+		blockRepo,
+		blockStateRepo,
+		checkInRepo,
+		clueRepo,
+		instanceRepo,
+		instanceSettingsRepo,
+		locationRepo,
+		markerRepo,
+		teamRepo,
+		userRepo,
+	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
-	authService := services.NewAuthService(userRepo)
-	blockService := services.NewBlockService(transactor, blockRepo, blockStateRepo)
-	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo)
+	identityService := services.NewAuthService(userRepo)
+	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
-	navigationService := services.NewNavigationService()
+	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	navigationService := services.NewNavigationService(locationRepo, teamRepo)
+	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
-	userService := services.NewUserService(transactor, userRepo, instanceRepo)
+	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		transactor,
-		locationService, teamService, instanceRepo, instanceSettingsRepo,
+		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(
-		transactor, locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
-	)
-	gameplayService := services.NewGameplayService(
-		checkInService, locationService, teamService, blockService, navigationService, markerRepo,
-	)
-	gameManagerService := services.NewGameManagerService(
-		transactor,
-		locationService, userService, teamService,
-		markerRepo, clueRepo, instanceRepo, instanceSettingsRepo,
-		instanceService,
+		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 
 	sessions.Start()
-	server.Start(
+
+	// Construct handlers (dependency injection root)
+	publicHandler := public.NewPublicHandler(
 		logger,
-		assetGenerator,
-		authService,
+		identityService,
+		deleteService,
+		emailService,
+		&templateService,
+		userService,
+	)
+
+	playerHandler := players.NewPlayerHandler(
+		logger,
 		blockService,
 		checkInService,
+		instanceSettingsService,
+		markerService,
+		navigationService,
+		notificationService,
+		teamService,
+	)
+
+	adminHandler := admin.NewAdminHandler(
+		logger,
+		accessService,
+		assetGenerator,
+		identityService,
+		blockService,
 		clueService,
-		emailService,
+		deleteService,
 		facilitatorService,
-		gameManagerService,
-		gameplayService,
+		gameScheduleService,
 		instanceService,
+		instanceSettingsService,
 		locationService,
+		markerService,
 		navigationService,
 		notificationService,
 		teamService,
 		templateService,
 		uploadService,
 		userService,
+		quickstartService,
 	)
+
+	server.Start(logger, publicHandler, playerHandler, adminHandler)
 }
 
 func initialiseFolders(logger *slog.Logger) {

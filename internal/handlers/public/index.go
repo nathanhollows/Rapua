@@ -1,4 +1,4 @@
-package handlers
+package public
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ func (h *PublicHandler) Index(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Home", authed).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Error rendering index", "err", err)
+		h.logger.Error("Error rendering index", "err", err)
 		return
 	}
 }

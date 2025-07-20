@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/services"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"gopkg.in/yaml.v3"
 )
 
@@ -226,7 +226,7 @@ func TestRedirects(t *testing.T) {
 
 	// Verify redirects were loaded
 	if docsService.Redirects["/docs/old-page"] != "/docs/new-page" {
-		t.Errorf("expected redirect for '/docs/old-page' to be '/docs/new-page', got '%s'", 
+		t.Errorf("expected redirect for '/docs/old-page' to be '/docs/new-page', got '%s'",
 			docsService.Redirects["/docs/old-page"])
 	}
 

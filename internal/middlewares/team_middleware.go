@@ -34,7 +34,7 @@ func TeamMiddleware(teamService teamService, next http.Handler) http.Handler {
 		}
 
 		// Find the matching team instance
-		team, err := teamService.FindTeamByCode(r.Context(), teamCode)
+		team, err := teamService.GetTeamByCode(r.Context(), teamCode)
 		if err != nil {
 			slog.Error("finding team by code: ", "err", err, "teamCode", teamCode)
 			next.ServeHTTP(w, r)

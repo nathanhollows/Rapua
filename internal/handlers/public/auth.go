@@ -1,4 +1,4 @@
-package handlers
+package public
 
 import (
 	"database/sql"
@@ -26,11 +26,11 @@ func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.Login(h.AuthService.AllowGoogleLogin())
+	c := templates.Login(h.identityService.AllowGoogleLogin())
 	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("Error rendering login page", "err", err)
+		h.logger.Error("Error rendering login page", "err", err)
 	}
 }
 
@@ -45,10 +45,10 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 
 	// Try to authenticate the user
-	user, err := h.AuthService.AuthenticateUser(r.Context(), email, password)
+	user, err := h.identityService.AuthenticateUser(r.Context(), email, password)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			h.Logger.Error("authenticating user", "err", err)
+			h.logger.Error("authenticating user", "err", err)
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		c := templates.LoginError("Invalid email or password.")
@@ -61,7 +61,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.Logger.Error("creating session", "err", err)
+		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err := c.Render(r.Context(), w)
@@ -82,7 +82,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
-		h.Logger.Error("getting session for logout", "err", err)
+		h.logger.Error("getting session for logout", "err", err)
 		// Redirect to the login page
 		http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
 		return
@@ -105,11 +105,11 @@ func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.Register(h.AuthService.AllowGoogleLogin())
+	c := templates.Register(h.identityService.AllowGoogleLogin())
 	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering register page", "err", err)
+		h.logger.Error("rendering register page", "err", err)
 	}
 }
 
@@ -128,9 +128,9 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	confirmPassword := r.Form.Get("password-confirm")
 
 	// Create the user
-	err = h.UserService.CreateUser(r.Context(), &user, confirmPassword)
+	err = h.userService.CreateUser(r.Context(), &user, confirmPassword)
 	if err != nil {
-		h.Logger.Error("creating user", "err", err)
+		h.logger.Error("creating user", "err", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		if errors.Is(err, services.ErrPasswordsDoNotMatch) {
 			c := templates.RegisterError("Passwords do not match.")
@@ -149,15 +149,15 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send the email verification
-	err = h.AuthService.SendEmailVerification(r.Context(), &user)
+	err = h.identityService.SendEmailVerification(r.Context(), &user)
 	if err != nil {
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
-			err := h.UserService.DeleteUser(r.Context(), user.ID)
+			err := h.deleteService.DeleteUser(r.Context(), user.ID)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: deleting user", "Error deleting user", "error", err)
 				return
 			}
-			h.Logger.Error("sending email verification", "err", err)
+			h.logger.Error("sending email verification", "err", err)
 			c := templates.RegisterError("Your account was created, but an error occurred while trying to send the email verification. Please try again.")
 			err = c.Render(r.Context(), w)
 			if err != nil {
@@ -187,7 +187,7 @@ func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	err := templates.AuthLayout(c, "Forgot Password", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering forgot password page", "err", err)
+		h.logger.Error("rendering forgot password page", "err", err)
 	}
 }
 
@@ -211,7 +211,7 @@ func (h *PublicHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
 	r.URL.RawQuery = fmt.Sprintf("%s&provider=%s", r.URL.RawQuery, provider)
 
-	_, err := h.AuthService.CompleteUserAuth(w, r)
+	_, err := h.identityService.CompleteUserAuth(w, r)
 	if err == nil {
 		// User is authenticated, redirect to the admin page
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
@@ -228,22 +228,22 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
 	r.URL.RawQuery = fmt.Sprintf("%s&provider=%s", r.URL.RawQuery, provider)
 
-	user, err := h.AuthService.CompleteUserAuth(w, r)
+	user, err := h.identityService.CompleteUserAuth(w, r)
 	if err != nil {
-		h.Logger.Error("completing auth", "error", err)
+		h.logger.Error("completing auth", "error", err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	if user == nil {
-		h.Logger.Error("completing auth", "error", "user is nil")
+		h.logger.Error("completing auth", "error", "user is nil")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.Logger.Error("creating session", "err", err)
+		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err := c.Render(r.Context(), w)
@@ -274,7 +274,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 // VerifyEmail shows the user the verify email page, the first step in the email verification process.
 func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -285,14 +285,14 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	err = templates.AuthLayout(c, "Verify Email", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering verify email page", "err", err)
+		h.logger.Error("rendering verify email page", "err", err)
 	}
 }
 
 // VerifyEmailWithToken verifies the user's email address and redirects upon error or success.
 func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err == nil && user != nil && user.EmailVerified {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -300,7 +300,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 	token := chi.URLParam(r, "token")
 
-	err = h.AuthService.VerifyEmail(r.Context(), token)
+	err = h.identityService.VerifyEmail(r.Context(), token)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidToken) {
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
@@ -310,7 +310,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 			return
 		}
-		h.Logger.Error("verifying email", "err", err)
+		h.logger.Error("verifying email", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 		return
@@ -325,7 +325,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 
 // VerifyEmailStatus checks the status of the email verification and redirects accordingly.
 func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
@@ -342,13 +342,13 @@ func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request
 
 // ResendEmailVerification resends the email verification email.
 func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetAuthenticatedUser(r)
+	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	err = h.AuthService.SendEmailVerification(r.Context(), user)
+	err = h.identityService.SendEmailVerification(r.Context(), user)
 	if err != nil {
 		if errors.Is(err, services.ErrUserAlreadyVerified) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -362,7 +362,7 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 			}
 		}
 
-		h.Logger.Error("sending email verification", "err", err)
+		h.logger.Error("sending email verification", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.Toast(
 			*flash.NewError("An error occurred while trying to send the email. Please try again."),

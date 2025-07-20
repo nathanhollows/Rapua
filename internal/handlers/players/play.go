@@ -1,8 +1,9 @@
-package handlers
+package players
 
 import (
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
@@ -18,7 +19,7 @@ func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
 	c := templates.Home(*team)
 	err := templates.Layout(c, "Home", nil).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("Home: rendering template", "error", err)
+		h.logger.Error("Home: rendering template", "error", err)
 	}
 }
 
@@ -26,27 +27,24 @@ func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
 func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
+		h.handleError(w, r, "PlayPost: parsing form", "Error parsing form", "error", err)
 		return
 	}
 	teamCode := r.FormValue("team")
 	teamName := r.FormValue("customTeamName")
 
-	response := h.GameplayService.StartPlaying(r.Context(), teamCode, teamName)
-	if response.Error != nil {
-		err := templates.Toast(response.FlashMessages...).Render(r.Context(), w)
-		if err != nil {
-			h.Logger.Error("HomePost: rendering template", "error", err)
-			return
+	err = h.teamService.StartPlaying(r.Context(), teamCode, teamName)
+	if err != nil {
+		if err == services.ErrTeamNotFound {
+			h.handleError(w, r, "PlayPost: starting game", "Team not found: "+teamCode, "Cannot start game with this team code", err, "teamCode", teamCode)
 		}
+		h.handleError(w, r, "PlayPost: starting game", "Error starting game", "Could not start game", err, "teamCode", teamCode)
 		return
 	}
 
-	team := response.Data["team"].(*models.Team)
-
-	err = h.startSession(w, r, team.Code)
+	err = h.startSession(w, r, teamCode)
 	if err != nil {
-		h.handleError(w, r, "HomePost: starting session", "Error starting session. Please try again.", "error", err, "team", team.Code)
+		h.handleError(w, r, "HomePost: starting session", "Error starting session. Please try again.", "error", err, "team", teamCode)
 		return
 	}
 

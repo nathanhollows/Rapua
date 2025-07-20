@@ -15,7 +15,7 @@ import (
 
 type teamService interface {
 	LoadRelation(context.Context, *models.Team, string) error
-	FindTeamByCode(context.Context, string) (*models.Team, error)
+	GetTeamByCode(context.Context, string) (*models.Team, error)
 }
 
 type instanceService interface {

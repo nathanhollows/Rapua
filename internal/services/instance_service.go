@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -29,22 +28,15 @@ type InstanceService interface {
 	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
 	// FindInstanceIDsForUser returns the IDs of all instances for the given user
 	FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error)
-
-	// DeleteInstance deletes an instance for the given user
-	DeleteInstance(ctx context.Context, user *models.User, instanceID, confirmName string) (bool, error)
-	// GetInstanceSettings gets the settings for the given instance
-	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
 
 func NewInstanceService(
-	transactor db.Transactor,
 	locationService LocationService,
 	teamService TeamService,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
 ) InstanceService {
 	return &instanceService{
-		transactor:           transactor,
 		locationService:      locationService,
 		teamService:          teamService,
 		instanceRepo:         instanceRepo,
@@ -55,7 +47,7 @@ func NewInstanceService(
 // CreateInstance implements InstanceService.
 func (s *instanceService) CreateInstance(ctx context.Context, name string, user *models.User) (*models.Instance, error) {
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 
 	if user == nil {
@@ -103,10 +95,10 @@ func (s *instanceService) DuplicateInstance(ctx context.Context, user *models.Us
 	}
 
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 	if id == "" {
-		return nil, NewValidationError("id")
+		return nil, errors.New("id cannot be empty")
 	}
 
 	newInstance := &models.Instance{
@@ -157,116 +149,4 @@ func (s *instanceService) FindInstanceIDsForUser(ctx context.Context, userID str
 		ids[i] = instance.ID
 	}
 	return ids, nil
-}
-
-// DeleteInstance implements InstanceService.
-func (s *instanceService) DeleteInstance(ctx context.Context, user *models.User, instanceID string, confirmName string) (bool, error) {
-	if user == nil {
-		return false, ErrUserNotAuthenticated
-	}
-
-	// Check if the user has permission to delete the instance
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
-	if err != nil {
-		return false, fmt.Errorf("finding instance: %w", err)
-	}
-
-	if user.ID != instance.UserID {
-		return false, ErrPermissionDenied
-	}
-
-	// If the name does not match the confirmation, return an error
-	if confirmName != instance.Name {
-		return false, errors.New("instance name does not match confirmation")
-	}
-
-	// Check if the user is currently using this instance
-	if user.CurrentInstanceID == instance.ID {
-		return false, errors.New("cannot delete an instance that is currently in use")
-	}
-
-	for i, location := range instance.Locations {
-		err := s.locationService.LoadRelations(ctx, &location)
-		if err != nil {
-			return false, fmt.Errorf("loading relations for location: %w", err)
-		}
-		instance.Locations[i] = location
-	}
-
-	// Start transaction
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		err2 := tx.Rollback()
-		if err2 != nil {
-			return false, fmt.Errorf("rolling back transaction: %w", err2)
-		}
-		return false, fmt.Errorf("beginning transaction: %w", err)
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			err := tx.Rollback()
-			if err != nil {
-				panic(fmt.Errorf("rolling back transaction: %w", err))
-			}
-			panic(p)
-		}
-	}()
-
-	err = s.instanceRepo.Delete(ctx, tx, instanceID)
-	if err != nil {
-		err2 := tx.Rollback()
-		if err2 != nil {
-			return false, fmt.Errorf("rolling back transaction: %w", err2)
-		}
-		return false, fmt.Errorf("deleting instance: %w", err)
-	}
-
-	err = s.instanceSettingsRepo.Delete(ctx, tx, instanceID)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return false, fmt.Errorf("deleting instance settings: %w", err)
-	}
-
-	err = s.teamService.DeleteByInstanceID(ctx, tx, instanceID)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return false, fmt.Errorf("deleting teams: %w", err)
-	}
-
-	err = s.locationService.DeleteLocations(ctx, tx, instance.Locations)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return false, fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return false, fmt.Errorf("deleting locations: %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return false, fmt.Errorf("committing transaction: %w", err)
-	}
-
-	return true, nil
-}
-
-// GetInstanceSettings gets the settings for the given instance.
-func (s *instanceService) GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
-	if instanceID == "" {
-		return nil, errors.New("instanceID must be set")
-	}
-
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
-	if err != nil {
-		return nil, fmt.Errorf("getting instance settings: %w", err)
-	}
-
-	return settings, nil
 }

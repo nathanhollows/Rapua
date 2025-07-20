@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"fmt"
@@ -25,13 +25,13 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		data[key] = value
 	}
 
-	state, block, err := h.GameplayService.ValidateAndUpdateBlockState(r.Context(), *team, data)
+	state, block, err := h.checkInService.ValidateAndUpdateBlockState(r.Context(), *team, data)
 	if err != nil {
 		blockID := "unknown"
 		if block != nil {
 			blockID = block.GetID()
 		}
-		h.Logger.Error("validateBlock: validating and updating block state", "Something went wrong. Please try again.", err, "block", blockID, "team", team.Code)
+		h.logger.Error("validateBlock: validating and updating block state", "Something went wrong. Please try again.", err, "block", blockID, "team", team.Code)
 		return
 	}
 

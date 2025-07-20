@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"net/http"
@@ -15,9 +15,9 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.TeamService.LoadRelations(r.Context(), team)
+	err = h.teamService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.Logger.Error("loading check ins", "error", err.Error())
+		h.logger.Error("loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
 		return
 	}
@@ -30,7 +30,7 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering lobby", "error", err.Error())
+		h.logger.Error("rendering lobby", "error", err.Error())
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	team.Name = r.FormValue("name")
-	err = h.TeamService.Update(r.Context(), team)
+	err = h.teamService.Update(r.Context(), team)
 	if err != nil {
 		h.handleError(w, r, "Error updating team", "Error updating team", "error", err)
 		return
@@ -56,6 +56,6 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.TeamID(*team, true).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering team id", "error", err.Error())
+		h.logger.Error("rendering team id", "error", err.Error())
 	}
 }

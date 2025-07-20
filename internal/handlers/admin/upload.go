@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"encoding/json"
@@ -29,7 +29,7 @@ func (h *AdminHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	metadata.BlockID = r.Form.Get("block_id")
 	metadata.LocationID = r.Form.Get("location_id")
 
-	media, err := h.UploadService.UploadFile(r.Context(), file, fileHeader, metadata)
+	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)
 	if err != nil {
 		h.handleError(w, r, "UploadFiles", "Error uploading files", "error", err)
 		return
@@ -71,7 +71,7 @@ func (h *AdminHandler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	uploads, err := h.UploadService.Search(r.Context(), filters)
+	uploads, err := h.uploadService.Search(r.Context(), filters)
 	if err != nil {
 		h.handleError(w, r, "Couldn't search images", "Failed to search images", "error", err)
 		return

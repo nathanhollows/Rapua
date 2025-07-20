@@ -1,4 +1,4 @@
-package handlers
+package players
 
 import (
 	"context"
@@ -7,39 +7,101 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v3/blocks"
 	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/internal/sessions"
 	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v3/models"
 )
 
+type BlockService interface {
+	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
+	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
+	// FindByLocationID fetches all content blocks for a location
+	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
+	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
+	// for the given location and team
+	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+}
+
+type CheckInService interface {
+	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
+	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
+	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
+}
+
+type InstanceSettingsService interface {
+	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
+}
+
+type MarkerService interface {
+	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
+}
+
+type NavigationService interface {
+	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
+	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	// HasVisited(checkins []models.CheckIn, locationID string) bool
+}
+
+type NotificationService interface {
+	GetNotifications(ctx context.Context, teamCode string) ([]models.Notification, error)
+	DismissNotification(ctx context.Context, notificationID string) error
+}
+
+type TeamService interface {
+	// GetTeamByCode returns a team by code
+	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
+	// Update updates a team in the database
+	Update(ctx context.Context, team *models.Team) error
+	// LoadRelation loads relations for a team
+	LoadRelation(ctx context.Context, team *models.Team, relation string) error
+	// LoadRelations loads all relations for a team
+	LoadRelations(ctx context.Context, team *models.Team) error
+	// StartPlaying starts a team playing the game
+	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
+}
+
 type PlayerHandler struct {
-	Logger              *slog.Logger
-	BlockService        services.BlockService
-	GameplayService     services.GameplayService
-	InstanceService     services.InstanceService
-	NotificationService services.NotificationService
-	TeamService         services.TeamService
+	logger                  *slog.Logger
+	blockService            BlockService
+	checkInService          CheckInService
+	instanceSettingsService InstanceSettingsService
+	markerService           MarkerService
+	navigationService       NavigationService
+	notificationService     NotificationService
+	teamService             TeamService
 }
 
 func NewPlayerHandler(
 	logger *slog.Logger,
-	blockService services.BlockService,
-	gameplayService services.GameplayService,
-	instanceService services.InstanceService,
-	notificationService services.NotificationService,
-	teamService services.TeamService,
+	blockService BlockService,
+	checkInService CheckInService,
+	instanceSettingsService InstanceSettingsService,
+	markerService MarkerService,
+	navigationService NavigationService,
+	notificationService NotificationService,
+	teamService TeamService,
 ) *PlayerHandler {
 	return &PlayerHandler{
-		Logger:              logger,
-		BlockService:        blockService,
-		GameplayService:     gameplayService,
-		InstanceService:     instanceService,
-		NotificationService: notificationService,
-		TeamService:         teamService,
+		logger:                  logger,
+		blockService:            blockService,
+		checkInService:          checkInService,
+		instanceSettingsService: instanceSettingsService,
+		markerService:           markerService,
+		navigationService:       navigationService,
+		notificationService:     notificationService,
+		teamService:             teamService,
 	}
+}
+
+func (h PlayerHandler) GetInstanceSettingsService() InstanceSettingsService {
+	return h.instanceSettingsService
+}
+
+func (h PlayerHandler) GetTeamService() TeamService {
+	return h.teamService
 }
 
 // GetTeamFromContext retrieves the team from the context.
@@ -97,9 +159,9 @@ func invalidateSession(r *http.Request, w http.ResponseWriter) error {
 }
 
 func (h *PlayerHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
-	h.Logger.Error(logMsg, params...)
+	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error(logMsg+" - rendering template", "error", err)
+		h.logger.Error(logMsg+" - rendering template", "error", err)
 	}
 }

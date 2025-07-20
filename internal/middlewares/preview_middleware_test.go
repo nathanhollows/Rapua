@@ -20,7 +20,7 @@ func (d *dummyTeamService) LoadRelation(ctx context.Context, t *models.Team, rel
 	return nil
 }
 
-func (d *dummyTeamService) FindTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+func (d *dummyTeamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
 	return nil, nil
 }
 

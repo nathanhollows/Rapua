@@ -5,29 +5,27 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/nathanhollows/Rapua/v3/repositories"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupLocationService(t *testing.T) (services.LocationService, func()) {
+func setupLocationService(t *testing.T) (services.LocationService, *services.MarkerService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
-
-	transactor := db.NewTransactor(dbc)
 
 	clueRepo := repositories.NewClueRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	locationService := services.NewLocationService(transactor, clueRepo, locationRepo, markerRepo, blockRepo)
-	return locationService, cleanup
+	markerService := services.NewMarkerService(markerRepo)
+	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	return locationService, markerService, cleanup
 }
 
 func TestLocationService_CreateLocation(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, _, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Create location", func(t *testing.T) {
@@ -65,35 +63,11 @@ func TestLocationService_CreateLocation(t *testing.T) {
 	})
 }
 
-func TestLocationService_CreateMarker(t *testing.T) {
-	service, cleanup := setupLocationService(t)
-	defer cleanup()
-
-	t.Run("Create marker", func(t *testing.T) {
-		marker, err := service.CreateMarker(
-			context.Background(),
-			gofakeit.Name(),
-			gofakeit.Latitude(),
-			gofakeit.Longitude())
-		assert.NoError(t, err)
-		assert.NotEmpty(t, marker.Code)
-	})
-
-	t.Run("Create marker with invalid name", func(t *testing.T) {
-		_, err := service.CreateMarker(
-			context.Background(),
-			"",
-			gofakeit.Latitude(),
-			gofakeit.Longitude())
-		assert.Error(t, err)
-	})
-}
-
 func TestLocationService_CreateLocationFromMarker(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, markerService, cleanup := setupLocationService(t)
 	defer cleanup()
 
-	marker, err := service.CreateMarker(
+	marker, err := markerService.CreateMarker(
 		context.Background(),
 		gofakeit.Name(),
 		gofakeit.Latitude(),
@@ -143,7 +117,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 }
 
 func TestLocationService_DuplicateLocation(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, _, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	blockService, blockCleanup := setupBlocksService(t)
@@ -182,7 +156,7 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 }
 
 func TestLocationService_GetByID(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, _, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Get location by ID", func(t *testing.T) {
@@ -207,7 +181,7 @@ func TestLocationService_GetByID(t *testing.T) {
 }
 
 func TestLocationService_GetByInstanceAndCode(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, _, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Get location by instance and code", func(t *testing.T) {
@@ -232,7 +206,7 @@ func TestLocationService_GetByInstanceAndCode(t *testing.T) {
 }
 
 func TestLocationService_FindByInstance(t *testing.T) {
-	service, cleanup := setupLocationService(t)
+	service, _, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Find locations by instance", func(t *testing.T) {

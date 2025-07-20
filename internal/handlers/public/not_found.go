@@ -1,4 +1,4 @@
-package handlers
+package public
 
 import (
 	"net/http"
@@ -16,6 +16,6 @@ func (h *PublicHandler) NotFound(w http.ResponseWriter, r *http.Request) {
 	err := templates.PublicLayout(c, "Not Found", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.Logger.Error("rendering NotFound page", "err", err)
+		h.logger.Error("rendering NotFound page", "err", err)
 	}
 }

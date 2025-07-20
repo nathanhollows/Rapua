@@ -16,7 +16,7 @@ func setupFacilitatorService(t *testing.T) (services.FacilitatorService, func())
 
 	repo := repositories.NewFacilitatorTokenRepo(dbc)
 	service := services.NewFacilitatorService(repo)
-	return service, cleanup
+	return *service, cleanup
 }
 func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	service, cleanup := setupFacilitatorService(t)

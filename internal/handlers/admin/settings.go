@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(*user)
 	err := templates.Layout(c, *user, "Settings", "Account Settings").Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering account page", "error", err.Error())
+		h.logger.Error("rendering account page", "error", err.Error())
 	}
 }
 
@@ -24,7 +24,7 @@ func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 
 	err := templates.SettingsProfile(*user).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering account page", "error", err.Error())
+		h.logger.Error("rendering account page", "error", err.Error())
 	}
 }
 
@@ -49,7 +49,7 @@ func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Update the user in the database using the service
-	err = h.UserService.UpdateUserProfile(r.Context(), user, profileData)
+	err = h.userService.UpdateUserProfile(r.Context(), user, profileData)
 	if err != nil {
 		h.handleError(w, r, "SettingsProfilePost: update user", "Failed to update user profile", err)
 		return
@@ -64,7 +64,7 @@ func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request
 
 	err := templates.SettingsAppearance(*user).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering account appearance page", "error", err.Error())
+		h.logger.Error("rendering account appearance page", "error", err.Error())
 	}
 }
 
@@ -74,7 +74,7 @@ func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) 
 
 	err := templates.SettingsSecurity(*user).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering account security page", "error", err.Error())
+		h.logger.Error("rendering account security page", "error", err.Error())
 	}
 }
 
@@ -84,7 +84,7 @@ func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 
 	err := templates.SettingsBilling(*user).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("rendering account billing page", "error", err.Error())
+		h.logger.Error("rendering account billing page", "error", err.Error())
 	}
 }
 
@@ -111,7 +111,7 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 		}
 
 		// Call the service to change the password
-		err := h.UserService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
+		err := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
 		if err != nil {
 			var errorMessage string
 			switch err {
@@ -123,9 +123,9 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 				errorMessage = "Password cannot be empty"
 			default:
 				errorMessage = "Failed to update password"
-				h.Logger.Error("change password", "error", err.Error())
+				h.logger.Error("change password", "error", err.Error())
 			}
-			
+
 			h.handleError(w, r, "SettingsSecurityPost", errorMessage, err)
 			return
 		}
@@ -153,7 +153,7 @@ func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.UserService.DeleteUser(r.Context(), user.ID)
+	err = h.deleteService.DeleteUser(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "DeleteAccount", "Failed to delete account", err)
 		return

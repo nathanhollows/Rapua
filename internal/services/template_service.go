@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/db"
 	"github.com/nathanhollows/Rapua/v3/helpers"
 	"github.com/nathanhollows/Rapua/v3/models"
 	"github.com/nathanhollows/Rapua/v3/repositories"
@@ -14,7 +13,6 @@ import (
 )
 
 type TemplateService struct {
-	transactor           db.Transactor
 	locationService      LocationService
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
@@ -22,14 +20,12 @@ type TemplateService struct {
 }
 
 func NewTemplateService(
-	transactor db.Transactor,
 	locationService LocationService,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	shareLinkRepo repositories.ShareLinkRepository,
 ) TemplateService {
 	return TemplateService{
-		transactor:           transactor,
 		locationService:      locationService,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
@@ -40,14 +36,14 @@ func NewTemplateService(
 // CreateFromInstance creates a new template from an existing instance.
 func (s *TemplateService) CreateFromInstance(ctx context.Context, userID, instanceID, name string) (*models.Instance, error) {
 	if userID == "" {
-		return nil, NewValidationError("userID")
+		return nil, errors.New("userID cannot be empty")
 	}
 
 	if instanceID == "" {
-		return nil, NewValidationError("instanceID")
+		return nil, errors.New("instanceID cannot be empty")
 	}
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 
 	oldInstance, err := s.instanceRepo.GetByID(ctx, instanceID)
@@ -72,10 +68,10 @@ func (s *TemplateService) CreateFromInstance(ctx context.Context, userID, instan
 	}
 
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 	if instanceID == "" {
-		return nil, NewValidationError("id")
+		return nil, errors.New("id cannot be empty")
 	}
 
 	newInstance := &models.Instance{
@@ -109,10 +105,10 @@ func (s *TemplateService) CreateFromInstance(ctx context.Context, userID, instan
 // LaunchInstance creates a new instance from a template.
 func (s *TemplateService) LaunchInstance(ctx context.Context, userID, templateID, name string, regen_location_codes bool) (*models.Instance, error) {
 	if userID == "" {
-		return nil, NewValidationError("userID")
+		return nil, errors.New("userID cannot be empty")
 	}
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 
 	template, err := s.instanceRepo.GetByID(ctx, templateID)
@@ -164,13 +160,13 @@ func (s *TemplateService) LaunchInstance(ctx context.Context, userID, templateID
 // LaunchInstanceFromShareLink creates a new instance from a share link.
 func (s *TemplateService) LaunchInstanceFromShareLink(ctx context.Context, userID, shareLinkID string, name string, regen bool) (*models.Instance, error) {
 	if userID == "" {
-		return nil, NewValidationError("userID")
+		return nil, errors.New("userID cannot be empty")
 	}
 	if name == "" {
-		return nil, NewValidationError("name")
+		return nil, errors.New("name cannot be empty")
 	}
 	if shareLinkID == "" {
-		return nil, NewValidationError("shareLinkID")
+		return nil, errors.New("shareLinkID cannot be empty")
 	}
 	shareLink, err := s.shareLinkRepo.GetByID(ctx, shareLinkID)
 	if err != nil {
@@ -260,7 +256,7 @@ func (s *TemplateService) GetShareLink(ctx context.Context, id string) (*models.
 // Find retrieves all templates.
 func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Instance, error) {
 	if userID == "" {
-		return nil, NewValidationError("userID")
+		return nil, errors.New("userID cannot be empty")
 	}
 	instances, err := s.instanceRepo.FindTemplates(ctx, userID)
 	if err != nil {
@@ -272,13 +268,13 @@ func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Ins
 // Update updates a template.
 func (s *TemplateService) Update(ctx context.Context, instance *models.Instance) error {
 	if instance == nil {
-		return NewValidationError("instance")
+		return errors.New("instance cannot be empty")
 	}
 	if instance.ID == "" {
-		return NewValidationError("instance.ID")
+		return errors.New("instance.ID cannot be empty")
 	}
 	if instance.Name == "" {
-		return NewValidationError("instance.Name")
+		return errors.New("instance.Name cannot be empty")
 	}
 
 	err := s.instanceRepo.Update(ctx, instance)
@@ -298,10 +294,10 @@ type ShareLinkData struct {
 // CreateShareLink creates a share link for a template.
 func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, data ShareLinkData) (string, error) {
 	if userID == "" {
-		return "", NewValidationError("userID")
+		return "", errors.New("userID cannot be empty")
 	}
 	if data.TemplateID == "" {
-		return "", NewValidationError("data.InstanceID")
+		return "", errors.New("data.InstanceID cannot be empty")
 	}
 
 	instance, err := s.instanceRepo.GetByID(ctx, data.TemplateID)
@@ -331,7 +327,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 	case "month":
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 1, 0)}
 	default:
-		return "", NewValidationError("data.Validity")
+		return "", errors.New("data.Validity cannot be empty")
 	}
 
 	err = s.shareLinkRepo.Create(ctx, shareLink)

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/services"
+	"github.com/nathanhollows/Rapua/v3/internal/services"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -39,7 +39,7 @@ func testDocs_MarkdownToAST(t *testing.T, markdown string) ast.Node {
 
 // Make sure that all internal links are valid and point to an existing page.
 func TestDocs_LinksResolve(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -77,7 +77,7 @@ func TestDocs_LinksResolve(t *testing.T) {
 					// Verify the redirect target exists
 					_, err := docsService.GetPage(redirectTo)
 					if err != nil {
-						t.Errorf("redirect for (%s -> %s) points to non-existent page in /docs/%s", 
+						t.Errorf("redirect for (%s -> %s) points to non-existent page in /docs/%s",
 							dest, redirectTo, page.Path)
 					}
 					return ast.WalkContinue, nil
@@ -102,7 +102,7 @@ func TestDocs_LinksResolve(t *testing.T) {
 
 // Make sure the body is not empty.
 func TestDocs_BodyNotEmpty(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -127,7 +127,7 @@ func TestDocs_BodyNotEmpty(t *testing.T) {
 
 // Make sure headers use title case (first letter capitalized).
 func TestDocs_HeadersTitleCase(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -139,19 +139,19 @@ func TestDocs_HeadersTitleCase(t *testing.T) {
 			if len(page.Children) > 0 {
 				walkPages(page.Children)
 			}
-			
+
 			for _, heading := range page.Headings {
 				// Only check if the first word starts with a capital letter
 				words := strings.Split(heading.Text, " ")
 				if len(words) == 0 {
 					continue
 				}
-				
+
 				firstWord := words[0]
 				if len(firstWord) == 0 || !isAlpha(firstWord[0]) {
 					continue
 				}
-				
+
 				// Check if the first letter of the heading is capitalized
 				if !strings.HasPrefix(firstWord, strings.ToUpper(firstWord[:1])) {
 					t.Errorf("heading '%s' doesn't start with a capital letter in /docs/%s", heading.Text, page.Path)
@@ -169,7 +169,7 @@ func isAlpha(c byte) bool {
 
 // Make sure no pages have the same order number.
 func TestDocs_OrderNumbersUnique(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -198,7 +198,7 @@ func TestDocs_OrderNumbersUnique(t *testing.T) {
 
 // Make sure no pages have the same title within the same level.
 func TestDocs_TitlesUnique(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -222,7 +222,7 @@ func TestDocs_TitlesUnique(t *testing.T) {
 
 // Test to make sure there are no missing pages reported by the docs service.
 func TestDocs_NoMissingPages(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -239,7 +239,7 @@ func TestDocs_NoMissingPages(t *testing.T) {
 
 // Test to make sure all redirects point to valid pages.
 func TestDocs_RedirectsValid(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -260,7 +260,7 @@ func TestDocs_RedirectsValid(t *testing.T) {
 
 // Test to make sure redirects don't create loops.
 func TestDocs_NoRedirectLoops(t *testing.T) {
-	dir := "../docs"
+	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
 	if err != nil {
 		t.Fatalf("failed to create DocsService: %v", err)
@@ -275,14 +275,14 @@ func TestDocs_NoRedirectLoops(t *testing.T) {
 				t.Errorf("redirect loop detected starting from %s", from)
 				break
 			}
-			
+
 			visited[current] = true
 			redirectTo, ok := docsService.Redirects[current]
 			if !ok {
 				// No redirect, we've reached the end
 				break
 			}
-			
+
 			current = redirectTo
 		}
 	}

@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"net/http"
@@ -10,28 +10,28 @@ import (
 // BlockEdit shows the form to edit a block.
 func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-	location := chi.URLParam(r, "location")
-	if !h.GameManagerService.ValidateLocationID(user, location) {
-		h.handleError(w, r, "BlockEdit: invalid location", "Could not find block", "location", location)
-		return
-	}
 
 	blockID := chi.URLParam(r, "blockID")
 
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
+	if err != nil {
+		h.handleError(w, r, "BlockEditPost: checking access", "Could not update block", "error", err)
+		return
+	}
+	if !access {
+		h.handleError(w, r, "BlockEditPost: access denied", "Could not update block. Access denied", "blockID", blockID)
+		return
+	}
+
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockEdit: getting block", "Could not find block", "error", err)
 		return
 	}
 
-	if block.GetLocationID() != location {
-		h.handleError(w, r, "BlockEdit: block does not belong to location", "Could not find block", "blockID", blockID, "location", location)
-		return
-	}
-
 	err = templates.RenderAdminEdit(user.CurrentInstance.Settings, block).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("BlockEdit: rendering template", "error", err)
+		h.logger.Error("BlockEdit: rendering template", "error", err)
 	}
 }
 
@@ -39,22 +39,21 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	location := chi.URLParam(r, "location")
-	if !h.GameManagerService.ValidateLocationID(user, location) {
-		h.handleError(w, r, "BlockEditPost: invalid location", "Could not update block. Invalid location", "location", location)
-		return
-	}
-
 	blockID := chi.URLParam(r, "blockID")
 
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
 	if err != nil {
-		h.handleError(w, r, "BlockEditPost: getting block", "Could not update block", "error", err)
+		h.handleError(w, r, "BlockEditPost: checking access", "Could not update block", "error", err)
+		return
+	}
+	if !access {
+		h.handleError(w, r, "BlockEditPost: access denied", "Could not update block. Access denied", "blockID", blockID)
 		return
 	}
 
-	if block.GetLocationID() != location {
-		h.handleError(w, r, "BlockEditPost: block does not belong to location", "Could not update block", "blockID", blockID, "location", location)
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
+	if err != nil {
+		h.handleError(w, r, "BlockEditPost: getting block", "Could not update block", "error", err)
 		return
 	}
 
@@ -69,7 +68,7 @@ func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 		data[key] = value
 	}
 
-	_, err = h.BlockService.UpdateBlock(r.Context(), block, data)
+	_, err = h.blockService.UpdateBlock(r.Context(), block, data)
 	if err != nil {
 		h.handleError(w, r, "BlockEditPost: updating block", "Could not update block", "error", err)
 		return
@@ -85,18 +84,23 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 	blockType := chi.URLParam(r, "type")
 
 	locationID := chi.URLParam(r, "location")
-	if !h.GameManagerService.ValidateLocationID(user, locationID) {
-		h.handleError(w, r, "BlockNewPost: invalid location", "Could not create block. Invalid location", "location", locationID)
+	access, err := h.accessService.CanAdminAccessLocation(r.Context(), user.ID, locationID)
+	if err != nil {
+		h.handleError(w, r, "BlockNewPost: checking access", "Could not create block", "error", err)
+		return
+	}
+	if !access {
+		h.handleError(w, r, "BlockNewPost: access denied", "Could not create block. Access denied", "location", locationID)
 		return
 	}
 
-	location, err := h.LocationService.GetByID(r.Context(), locationID)
+	location, err := h.locationService.GetByID(r.Context(), locationID)
 	if err != nil {
 		h.handleError(w, r, "BlockNewPost: finding location", "Could not create block", "error", err)
 		return
 	}
 
-	block, err := h.BlockService.NewBlock(r.Context(), location.ID, blockType)
+	block, err := h.blockService.NewBlock(r.Context(), location.ID, blockType)
 	if err != nil {
 		h.handleError(w, r, "BlockNewPost: creating block", "Could not create block", "error", err)
 		return
@@ -104,7 +108,7 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
 	if err != nil {
-		h.Logger.Error("BlockNewPost: rendering template", "error", err)
+		h.logger.Error("BlockNewPost: rendering template", "error", err)
 	}
 }
 
@@ -112,33 +116,25 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	location := chi.URLParam(r, "location")
 	blockID := chi.URLParam(r, "blockID")
 
-	if location == "" || blockID == "" {
-		h.handleError(w, r, "BlockDelete: missing parameters", "Could not delete block. Missing parameters")
+	access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
+	if err != nil {
+		h.handleError(w, r, "BlockDelete: checking access", "Could not delete block", "error", err)
+		return
+	}
+	if !access {
+		h.handleError(w, r, "BlockDelete: access denied", "Could not delete block. Access denied", "blockID", blockID)
 		return
 	}
 
-	// Check if the user has access to the location
-	if !h.GameManagerService.ValidateLocationID(user, location) {
-		h.handleError(w, r, "BlockDelete: invalid location", "Could not delete block. Invalid location", "location", location)
-		return
-	}
-
-	block, err := h.BlockService.GetByBlockID(r.Context(), blockID)
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: getting block", "Could not delete block", "error", err)
 		return
 	}
 
-	// Sanity check, but should never happen
-	if block.GetLocationID() != location {
-		h.handleError(w, r, "BlockDelete: block does not belong to location", "Could not delete block", "blockID", blockID, "location", location)
-		return
-	}
-
-	err = h.BlockService.DeleteBlock(r.Context(), block.GetID())
+	err = h.deleteService.DeleteBlock(r.Context(), block.GetID())
 	if err != nil {
 		h.handleError(w, r, "BlockDelete: deleting block", "Could not delete block", "error", err)
 		return
@@ -151,12 +147,6 @@ func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	location := chi.URLParam(r, "location")
-	if !h.GameManagerService.ValidateLocationID(user, location) {
-		h.handleError(w, r, "ReorderBlocks: invalid location", "Could not reorder blocks. Invalid location", "location", location)
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "ReorderBlocks: parsing form", "Could not reorder blocks", "error", err)
@@ -164,7 +154,20 @@ func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blockOrder := r.Form["block_id"]
-	err = h.BlockService.ReorderBlocks(r.Context(), location, blockOrder)
+
+	for _, blockID := range blockOrder {
+		access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
+		if err != nil {
+			h.handleError(w, r, "ReorderBlocks: checking access", "Could not reorder blocks", "error", err)
+			return
+		}
+		if !access {
+			h.handleError(w, r, "ReorderBlocks: access denied", "Could not reorder blocks. Access denied", "blockID", blockID)
+			return
+		}
+	}
+
+	err = h.blockService.ReorderBlocks(r.Context(), blockOrder)
 	if err != nil {
 		h.handleError(w, r, "ReorderBlocks: reordering blocks", "Could not reorder blocks", "error", err)
 		return
