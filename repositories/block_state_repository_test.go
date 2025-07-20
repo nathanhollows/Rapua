@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/db"
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/db"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
 )
 

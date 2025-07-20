@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/internal/storage"
+	"github.com/nathanhollows/Rapua/v4/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 func photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) templ.Component {

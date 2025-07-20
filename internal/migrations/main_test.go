@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/db"
-	"github.com/nathanhollows/Rapua/v3/internal/migrations"
+	"github.com/nathanhollows/Rapua/v4/db"
+	"github.com/nathanhollows/Rapua/v4/internal/migrations"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun/migrate"
 )

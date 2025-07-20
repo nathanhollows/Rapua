@@ -8,11 +8,11 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/nathanhollows/Rapua/v3/filesystem"
-	admin "github.com/nathanhollows/Rapua/v3/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v3/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v3/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v3/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v4/filesystem"
+	admin "github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v4/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
 )
 
 func setupRouter(

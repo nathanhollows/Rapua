@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/sessions"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v4/internal/sessions"
 )
 
 // TeamMiddleware extracts the team code from the session and finds the matching instance.

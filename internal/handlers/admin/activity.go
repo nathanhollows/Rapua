@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
 
 // Activity displays the activity tracker page.

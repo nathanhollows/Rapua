@@ -3,8 +3,8 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/public"
 )
 
 func (h *PublicHandler) Privacy(w http.ResponseWriter, r *http.Request) {

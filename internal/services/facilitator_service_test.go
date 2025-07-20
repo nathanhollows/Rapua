@@ -6,8 +6,8 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
 )
 

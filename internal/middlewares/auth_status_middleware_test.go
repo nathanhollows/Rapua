@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
 )
 
 // mockAuthChecker is a test implementation of AuthChecker

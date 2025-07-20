@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 4.0.1 (2025-07-20)
+
+### Changed
+
+- Updated package to `v4` and migrated all imports to the new version.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.0.1)
+
 ## 4.0.0 (2025-07-20)
 
 This update introduces significant architectural changes to make the codebase easier to maintain, test, and extend.
@@ -32,6 +40,8 @@ This update introduces significant architectural changes to make the codebase ea
 
 - `ServiceResponse` is gone! Use standard Go errors instead.
 - `GameplayService` and `GameManagerService` are now split into multiple services, each with a single responsibility.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.0.0)
 
 ## 3.10.0 (2025-07-10)
 

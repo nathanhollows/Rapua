@@ -12,8 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/models"
 	"io"
 )
 

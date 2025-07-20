@@ -3,8 +3,8 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/public"
 )
 
 // NotFound shows the not found page.

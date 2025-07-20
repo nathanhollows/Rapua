@@ -9,7 +9,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 var store sessions.Store

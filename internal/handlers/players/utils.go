@@ -7,12 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/internal/sessions"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v4/internal/flash"
+	"github.com/nathanhollows/Rapua/v4/internal/sessions"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 type BlockService interface {

@@ -3,8 +3,8 @@ package players
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 )
 
 // Lobby is where teams wait for the game to begin.

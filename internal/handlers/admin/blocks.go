@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
 )
 
 // BlockEdit shows the form to edit a block.

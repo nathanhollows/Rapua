@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/internal/flash"
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun/schema"
 	"sort"
 )

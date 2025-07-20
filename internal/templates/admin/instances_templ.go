@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 func Instances(instances []models.Instance, currentInstance models.Instance, templates []models.Instance) templ.Component {
