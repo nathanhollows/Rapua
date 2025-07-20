@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/models"
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
 type LocationStatsService interface {

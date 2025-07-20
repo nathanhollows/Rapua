@@ -3,7 +3,7 @@ package models_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/stretchr/testify/assert"
 )
 

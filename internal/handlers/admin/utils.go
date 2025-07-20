@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/blocks"
-	"github.com/nathanhollows/Rapua/v3/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v3/internal/flash"
-	"github.com/nathanhollows/Rapua/v3/internal/services"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v3/models"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v4/internal/flash"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 type AccessService interface {

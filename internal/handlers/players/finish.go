@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v3/internal/services"
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 )
 
 func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {

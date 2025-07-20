@@ -3,7 +3,7 @@ package repositories_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
 func setupNotificationRepo(t *testing.T) (repositories.NotificationRepository, func()) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/internal/services"
-	"github.com/nathanhollows/Rapua/v3/models"
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
 )
 

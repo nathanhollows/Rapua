@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v3/models"
-	"github.com/nathanhollows/Rapua/v3/repositories"
-	"github.com/nathanhollows/Rapua/v3/security"
+	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v4/security"
 )
 
 // Password-related errors

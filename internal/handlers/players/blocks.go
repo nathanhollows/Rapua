@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	templates "github.com/nathanhollows/Rapua/v3/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
 )
 
 // ValidateBlock runs input validation on the block.

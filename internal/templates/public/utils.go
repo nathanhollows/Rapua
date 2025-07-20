@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v3/helpers"
+	"github.com/nathanhollows/Rapua/v4/helpers"
 	enclave "github.com/quail-ink/goldmark-enclave"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"

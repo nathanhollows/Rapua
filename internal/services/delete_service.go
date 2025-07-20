@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nathanhollows/Rapua/v3/db"
-	"github.com/nathanhollows/Rapua/v3/repositories"
+	"github.com/nathanhollows/Rapua/v4/db"
+	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/uptrace/bun"
 )
 

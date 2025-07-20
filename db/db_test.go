@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v3/db"
+	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/stretchr/testify/require"
 )
 
