@@ -6,7 +6,9 @@ order: 100
 
 # Changelog
 
-## 4.0.0 (2025-07-15)
+## 4.0.0 (2025-07-20)
+
+This update introduces significant architectural changes to make the codebase easier to maintain, test, and extend.
 
 ### Added
 
@@ -15,9 +17,9 @@ order: 100
 ### Changed
 
 - **Breaking change:** Removed locationID field from Reorder method in `BlockRepository` interface. Not needed as blocks are now always associated with a location.
-- **Breaking change:** Moved docs service to internal/services for consistency with other services. Will deprecate the old docs service in the next major release.
+- **Breaking change:** Moved docs service to internal/services for consistency with other services.
 - Renamed handler subpackages to `public`, `admin`, and `player` for clarity and consistency.
-- Handlers are now defined in `main.go` and passed to the server, rather than being defined in the server package. This cuts down on plumbing.
+- Handlers now define the interfaces they depend on, rather than relying on services to provide them. This improves testability and reduces coupling. Handlers are now plumbed directly in `main.go` and passed to the server, rather than being defined in the server package. This cuts down on plumbing.
 - Refactored the `GameManagerService` into `GameScheduleService`, `QuickstartService`, `InstanceSettingsService` to improve maintainability and separation of concerns.
 - Refactored the `LocationService` into `InstanceSettingsService`, `LocationStatsService`, and `MarkerService`.
 - Refactored the `GameplayService` into `CheckInService` and `NaivgationService` to better separate concerns and improve readability.
@@ -29,7 +31,7 @@ order: 100
 ### Removed
 
 - `ServiceResponse` is gone! Use standard Go errors instead.
-- `GameManagerService` is now split into multiple services, each with a single responsibility.
+- `GameplayService` and `GameManagerService` are now split into multiple services, each with a single responsibility.
 
 ## 3.10.0 (2025-07-10)
 
