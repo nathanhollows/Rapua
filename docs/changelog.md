@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 4.0.1 (2025-07-23)
+
+### Fixed
+
+- Makefile for `build` output now works.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.0.1)
+
 ## 4.0.1 (2025-07-20)
 
 ### Changed
