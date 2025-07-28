@@ -16,6 +16,41 @@
   @apply rounded-lg;
 }
 
+.card[data-group-color="secondary"] {
+  --p: var(--s);
+  --pc: var(--sc);
+}
+
+.card[data-group-color="accent"] {
+  --p: var(--a);
+  --pc: var(--ac);
+}
+
+.card[data-group-color="success"] {
+  --p: var(--su);
+  --pc: var(--suc);
+}
+
+.card[data-group-color="info"] {
+  --p: var(--in);
+  --pc: var(--inc);
+}
+
+.card[data-group-color="warning"] {
+  --p: var(--wa);
+  --pc: var(--wac);
+}
+
+.card[data-group-color="error"] {
+  --p: var(--er);
+  --pc: var(--erc);
+}
+
+.card[data-group-color="base"] {
+  --p: var(--b2);
+  --pc: var(--b2c);
+}
+
 /* Basics */
 .mapboxgl-ctrl-geocoder,
 .mapboxgl-ctrl-geocoder *,
