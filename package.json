@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tailwindcss build -o -i ./static/css/main.css.css static/css/tailwind.css",
+    "build": "tailwindcss build -i ./static/css/main.css -o static/css/tailwind.css",
     "watch": "tailwindcss build -i ./static/css/main.css -o static/css/tailwind.css --watch"
   },
   "github": "nathanhollows/Rapua",
