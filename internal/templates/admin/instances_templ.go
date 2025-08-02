@@ -31,7 +31,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Games<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Games</h2><p>Games are the core of your event. They contain all the locations, content, teams, and settings for your event.</p><p>Your active game is the one you are currently managing. You can switch between games at any time.</p><p>You can run multiple games at the same time, but only one can be active in the admin panel.</p></div></div></div></h1><button class=\"btn btn-secondary\" onclick=\"new_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus w-5 h-5\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Create a new game</button></div><div class=\"px-5\"><div id=\"instance-list\" class=\"join join-vertical w-full rounded-lg border border-base-300\"><div class=\"flex flex-row items-center gap-3 bg-base-200/80 rounded p-3 py-4 join-item\"><span class=\"font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap\"><span id=\"instance-count\" _=\"on htmx:afterSettle from body or keyup from #search-instances\n\t\t\t\t\t\tset my textContent to &lt;.instance-item:not( [style*=&#39;display: none&#39;] )/&gt;&#39;s length\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +44,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> games</span> <span class=\"flex-grow\"></span><div id=\"instance-filters\" class=\"flex flex-row justify-between\"><div class=\"flex flex-row gap-2\"><!-- Search --><label class=\"input input-sm flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-instances\" type=\"text\" class=\"grow\" placeholder=\"Search Games\" _=\"on input \n\t\t\t\t\t\t\t\tshow .instance-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize(&#39;NFD&#39;)\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize(&#39;NFD&#39;)\"></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -54,22 +54,22 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(instances) == 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" _=\"on htmx:afterSettle from body\n\t\t\t\tif &lt;.instance-item/&gt;&#39;s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif &lt;.instance-item/&gt;&#39;s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div></div><!-- Templates -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -77,7 +77,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Modals --><dialog id=\"confirm_duplicate_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Duplicate a game</h3><p class=\"pt-4\">You are about to duplicate a game including its:</p><ul class=\"mt-0\"><li>locations and content</li><li>settings</li></ul><p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p><form method=\"post\" action=\"/admin/instances/duplicate\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">New game name</span></div><input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"> <input type=\"hidden\" name=\"id\" value=\"\"></label><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_duplicate_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Duplicate</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a game</h3><p class=\"pt-4\">You are about to delete a game. Doing this will delete its:</p><ul><li>locations and content</li><li>teams and check-ins</li><li>settings</li></ul><p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id=\"instance_name\">instance</code></p><form hx-post=\"/admin/instances/delete\" hx-swap=\"none\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">Game name</span></div><input type=\"text\" class=\"input w-full\" name=\"confirmname\" autocomplete=\"off\" required> <input type=\"hidden\" name=\"id\" value=\"\"></label><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"new_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><form hx-post=\"/admin/instances/new\" hx-swap=\"none\"><h3 class=\"text-lg font-bold\">Create a new game</h3><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">What is the name of the new game?</span></div><input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"></label><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"new_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n  const { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Instance ID is required');\n\t\treturn;\n\t}\n  const modal = document.getElementById(modalId);\n  const form = modal.querySelector('form');\n  const input = form.querySelector('input[name=\"name\"]');\n  const hidden = form.querySelector('input[name=\"id\"]');\n\n  if (showInstanceName) {\n    document.getElementById(nameFieldId).textContent = name;\n  }\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n  hidden.value = id;\n\n  modal.showModal();\n}\n\nfunction confirmDeleteInstance() {\n  handleModalAction('confirm_delete_modal', 'instance_name', '', true);\n}\n\nfunction confirmDeleteTemplate() {\n  handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction confirmDuplicate() {\n  handleModalAction('confirm_duplicate_modal', '', '(copy)');\n}\n\nfunction createTemplate() {\n  handleModalAction('create_template_modal', 'template-modal-instance-name', '', true);\n}\n\nfunction shareTemplate() {\n\thandleModalAction('share_template_modal');\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -103,28 +103,28 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"><div class=\"flex flex-row items-center gap-3 grow\"><!-- Play Status -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip\" data-tip=\"Playing\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-play w-5 h-5 stroke-success\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polygon points=\"10 8 16 12 10 16 10 8\"></polygon></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip\" data-tip=\"Scheduled\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5 stroke-info\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip\" data-tip=\"Closed\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-stop w-5 h-5 stroke-error\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><rect x=\"9\" y=\"9\" width=\"6\" height=\"6\" rx=\"1\"></rect></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Instance name --><span class=\"instance-name\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -137,22 +137,22 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if active {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-sm badge-info tooltip cursor-default ml-2\" data-tip=\"Currently selected game\">Active</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span class=\"grow\"></span><!-- Action buttons -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !active {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"hidden sm:inline-block tooltip\" data-tip=\"Make this your active game\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -161,17 +161,17 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"btn btn-sm inline-flex\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-4 h-4\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Switch</a></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Actions Menu --><span class=\"tooltip\" data-tip=\"More actions\"><div class=\"dropdown dropdown-end\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm m-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ellipsis w-5 h-5\"><circle cx=\"12\" cy=\"12\" r=\"1\"></circle><circle cx=\"19\" cy=\"12\" r=\"1\"></circle><circle cx=\"5\" cy=\"12\" r=\"1\"></circle></svg></div><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow\"><!-- Switch -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !active {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li class=\"inline-block sm:hidden\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -180,17 +180,17 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-4 h-4\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Switch to this game</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li class=\"inline-block sm:hidden menu-disabled\"><a><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-4 h-4\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Switch to this game</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Duplicate --><li><a data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -203,7 +203,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -216,7 +216,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" onclick=\"confirmDuplicate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-copy w-4 h-4\"><path d=\"M2 16V4a2 2 0 0 1 2-2h11\"></path><path d=\"M22 18H11a2 2 0 1 0 0 4h10.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5H11a2 2 0 0 0-2 2v12\"></path><path d=\"M5 14H4a2 2 0 1 0 0 4h1\"></path></svg> Duplicate</a></li><!-- Create new template --><li><a data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -229,7 +229,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -242,17 +242,17 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" onclick=\"createTemplate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-dashed w-4 h-4\"><path d=\"M12 17h1.5\"></path><path d=\"M12 22h1.5\"></path><path d=\"M12 2h1.5\"></path><path d=\"M17.5 22H19a1 1 0 0 0 1-1\"></path><path d=\"M17.5 2H19a1 1 0 0 1 1 1v1.5\"></path><path d=\"M20 14v3h-2.5\"></path><path d=\"M20 8.5V10\"></path><path d=\"M4 10V8.5\"></path><path d=\"M4 19.5V14\"></path><path d=\"M4 4.5A2.5 2.5 0 0 1 6.5 2H8\"></path><path d=\"M8 22H6.5a1 1 0 0 1 0-5H8\"></path></svg> Create template</a></li><span class=\"divider my-0\"></span><!-- Delete -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if active {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li class=\"menu-disabled\"><a class=\"tooltip cursor-not-allowed flex\" data-tip=\"Cannot delete current instance\" data-tip=\"Cannot delete current instance\" aria-disabled=\"true\" disabled><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><a class=\"text-error\" data-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -265,7 +265,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 29)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-name=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -278,12 +278,12 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 30)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" onclick=\"confirmDeleteInstance()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 31)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div></span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

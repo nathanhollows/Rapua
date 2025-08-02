@@ -34,7 +34,7 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 								type="number"
 								min="0"
 								placeholder="0"
-								class="input input-bordered input-warning join-item w-full max-w-xs"
+								class="input input-warning join-item w-full max-w-xs"
 								required
 							/>
 							<button
@@ -126,7 +126,7 @@ templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 			<textarea
 				name="prompt"
 				rows="3"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'"
 			>{ block.Prompt }</textarea>
@@ -141,7 +141,7 @@ templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 			<textarea
 				name="default_info"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="'I don't know anything.' or 'The shipment left yesterday.'"
 			>{ block.DefaultInfo }</textarea>
@@ -231,7 +231,7 @@ templ brokerTierAdmin(tierNum int, tier blocks.InformationTier) {
 					<input
 						name="tier_points"
 						type="number"
-						class="input input-bordered w-full invalid:border-error"
+						class="input w-full invalid:border-error"
 						placeholder="1"
 						if tier.PointsRequired > 0 {
 							value={ fmt.Sprint(tier.PointsRequired) }
@@ -284,7 +284,7 @@ templ brokerTierAdmin(tierNum int, tier blocks.InformationTier) {
 					<textarea
 						name="tier_content"
 						rows="2"
-						class="markdown-textarea textarea textarea-bordered w-full font-mono"
+						class="markdown-textarea textarea w-full font-mono"
 						style="field-sizing: content;"
 						placeholder="Better information for players who pay this much..."
 						_="on keyup send resubmit to closest <form />"

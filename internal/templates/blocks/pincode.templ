@@ -37,7 +37,7 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 								name="pincode"
 								type="number"
 								placeholder="Answer"
-								class="input input-bordered input-primary join-item w-full max-w-xs font-mono tracking-widest"
+								class="input input-primary join-item w-full max-w-xs font-mono tracking-widest"
 								autoComplete="off"
 								required
 							/>
@@ -91,7 +91,7 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 								name="pincode"
 								type="number"
 								placeholder="Answer"
-								class="input input-bordered input-primary join-item w-full max-w-xs font-mono tracking-widest"
+								class="input input-primary join-item w-full max-w-xs font-mono tracking-widest"
 								autoComplete="off"
 								required
 							/>
@@ -121,7 +121,7 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 				<div class="label">
 					<span class="label-text font-bold">Points</span>
 				</div>
-				<label class="input input-bordered flex items-center gap-2">
+				<label class="input flex items-center gap-2">
 					<input name="points" type="number" class="grow" placeholder="Search" value={ fmt.Sprint(block.Points) }/>
 					<span class="badge badge-info tooltip tooltip-left" data-tip="Set to 0 to disable">Optional</span>
 				</label>
@@ -138,7 +138,7 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="prompt"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				placeholder="What is third word of the second paragraph? What is the middle name of the person wearing a red hat?"
 			>{ block.Prompt }</textarea>
 			<div class="label">
@@ -156,7 +156,7 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 				id={ fmt.Sprintf("admin-pincode-%s", block.ID) }
 				type="number"
 				name="pincode"
-				class="input input-bordered font-mono tracking-widest max-w-sm"
+				class="input font-mono tracking-widest max-w-sm"
 				placeholder="12345"
 				value={ block.Pincode }
 			/>

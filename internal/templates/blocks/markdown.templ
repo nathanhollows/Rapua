@@ -28,7 +28,7 @@ templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="content"
 				rows="7"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="Markdown content here"
 			>{ block.Content }</textarea>

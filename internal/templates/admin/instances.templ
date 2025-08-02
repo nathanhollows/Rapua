@@ -45,7 +45,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<div id="instance-filters" class="flex flex-row justify-between">
 					<div class="flex flex-row gap-2">
 						<!-- Search -->
-						<label class="input input-bordered input-sm flex items-center gap-2">
+						<label class="input input-sm flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 							<input
 								id="search-instances"
@@ -110,7 +110,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 					<div class="label">
 						<span class="label-text">New game name</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 					<input type="hidden" name="id" value=""/>
 				</label>
 				<div class="modal-action">
@@ -138,7 +138,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 					<div class="label">
 						<span class="label-text">Game name</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="confirmname" autocomplete="off" required/>
+					<input type="text" class="input w-full" name="confirmname" autocomplete="off" required/>
 					<input type="hidden" name="id" value=""/>
 				</label>
 				<div class="modal-action">
@@ -159,7 +159,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 					<div class="label">
 						<span class="label-text">What is the name of the new game?</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 				</label>
 				<div class="modal-action">
 					<button
@@ -299,7 +299,7 @@ templ instanceItem(instance models.Instance, active bool) {
 								</a>
 							</li>
 						} else {
-							<li class="inline-block sm:hidden disabled">
+							<li class="inline-block sm:hidden menu-disabled">
 								<a>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
 									Switch to this game
@@ -331,7 +331,7 @@ templ instanceItem(instance models.Instance, active bool) {
 						<span class="divider my-0"></span>
 						<!-- Delete -->
 						if active {
-							<li class="disabled">
+							<li class="menu-disabled">
 								<a
 									class="tooltip cursor-not-allowed flex"
 									data-tip="Cannot delete current instance"

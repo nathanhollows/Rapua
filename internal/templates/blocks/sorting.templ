@@ -407,7 +407,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 				<div class="label">
 					<span class="label-text font-bold">Points</span>
 				</div>
-				<label class="input input-bordered flex items-center gap-2">
+				<label class="input flex items-center gap-2">
 					<input name="points" type="number" class="grow" placeholder="Points" value={ fmt.Sprint(block.Points) }/>
 					<span class="badge badge-info tooltip tooltip-left" data-tip="Set to 0 to disable">Optional</span>
 				</label>
@@ -417,7 +417,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 			<div class="label">
 				<span class="label-text font-bold">Scoring Scheme</span>
 			</div>
-			<select name="scoring_scheme" class="select select-bordered w-full">
+			<select name="scoring_scheme" class="select w-full">
 				<option value="all_or_nothing" selected?={ block.ScoringScheme == "all_or_nothing" }>All or Nothing</option>
 				<option value="correct_item_correct_place" selected?={ block.ScoringScheme == "correct_item_correct_place" }>Correct Item, Correct Place</option>
 				<option value="retry_until_correct" selected?={ block.ScoringScheme == "retry_until_correct" }>Retry Until Correct</option>
@@ -445,7 +445,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="content"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono pt-3"
+				class="markdown-textarea textarea w-full font-mono pt-3"
 				style="field-sizing: content;"
 				placeholder="## Sortable
 Sort the items below in the correct order."
@@ -485,7 +485,7 @@ Sort the items below in the correct order."
 			</div>
 		</div>
 		<template id="sorting-item-template">
-			<label class="sorting-item input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item">
+			<label class="sorting-item input bg-transparent flex flex-row items-top gap-2 h-auto join-item">
 				<textarea
 					name="sorting-items"
 					class="w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent"
@@ -561,7 +561,7 @@ templ SortingJS() {
 }
 
 templ sortingItem(item blocks.SortingItem) {
-	<label class="sorting-item input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ item.ID }>
+	<label class="sorting-item input bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ item.ID }>
 		<textarea
 			name="sorting-items"
 			class={ fmt.Sprintf("w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent item-%s", item.ID) }

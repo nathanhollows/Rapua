@@ -51,7 +51,7 @@ templ alertAdmin(_ models.InstanceSettings, block blocks.AlertBlock) {
 			<select
 				id={ fmt.Sprintf("variant-%s", block.ID) }
 				name="variant"
-				class="select select-bordered w-full max-w-xs"
+				class="select w-full max-w-xs"
 			>
 				<option value="">Default</option>
 				<option value="info">Info</option>
@@ -68,7 +68,7 @@ templ alertAdmin(_ models.InstanceSettings, block blocks.AlertBlock) {
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="content"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="**Alert title!** Alert content."
 			>{ block.Content }</textarea>

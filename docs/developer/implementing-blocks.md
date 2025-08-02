@@ -219,7 +219,7 @@ templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
             <textarea
                 name="content"
                 rows="3"
-                class="textarea textarea-bordered w-full"
+                class="textarea w-full"
                 placeholder="Block content here..."
             >{ block.Content }</textarea>
         </label>
@@ -233,7 +233,7 @@ templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
                 <input 
                     name="points" 
                     type="number" 
-                    class="input input-bordered w-full" 
+                    class="input w-full" 
                     placeholder="Points" 
                     value={ fmt.Sprint(block.Points) }
                 />
@@ -507,7 +507,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
                 <div class="label">
                     <span class="label-text font-bold">Points</span>
                 </div>
-                <input name="points" type="number" class="input input-bordered w-full" value={ fmt.Sprint(block.Points) }/>
+                <input name="points" type="number" class="input w-full" value={ fmt.Sprint(block.Points) }/>
             </label>
         }
         
@@ -516,7 +516,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
             <div class="label">
                 <span class="label-text font-bold">Scoring Scheme</span>
             </div>
-            <select name="scoring_scheme" class="select select-bordered w-full">
+            <select name="scoring_scheme" class="select w-full">
                 <option value="all_or_nothing" selected?={ block.ScoringScheme == "all_or_nothing" }>All or Nothing</option>
                 <option value="correct_item_correct_place" selected?={ block.ScoringScheme == "correct_item_correct_place" }>Correct Item, Correct Place</option>
                 <option value="runs_percentage" selected?={ block.ScoringScheme == "runs_percentage" }>Percentage of Correct Items</option>
@@ -532,7 +532,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
             <textarea
                 name="content"
                 rows="2"
-                class="textarea textarea-bordered w-full"
+                class="textarea w-full"
                 placeholder="Markdown content here..."
             >{ block.Content }</textarea>
         </label>

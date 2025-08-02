@@ -577,7 +577,7 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 		<form hx-post="/admin/notify/team/" hx-swap="none">
 			<input type="hidden" name="teamCode" value={ team.Code }/>
 			<div class="join w-full">
-				<input class="input input-bordered join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
+				<input class="input join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
 				<button type="submit" class="btn btn-primary join-item rounded-r-full" onclick="announcement_modal.close()">
 					Send
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-5 h-5"><path d="m3 3 3 9-3 9 19-9Z"></path><path d="M6 12h16"></path></svg>
@@ -620,13 +620,13 @@ templ scheduleModal(instance models.Instance) {
 					id="start_date"
 					type="date"
 					name="start_date"
-					class="input input-bordered join-item"
+					class="input join-item"
 				/>
 				<input
 					id="start_time"
 					type="time"
 					name="start_time"
-					class="input input-bordered join-item"
+					class="input join-item"
 				/>
 			</div>
 			<div class="divider py-5">
@@ -646,13 +646,13 @@ templ scheduleModal(instance models.Instance) {
 					id="end_date"
 					type="date"
 					name="end_date"
-					class="input input-bordered join-item"
+					class="input join-item"
 				/>
 				<input
 					id="end_time"
 					type="time"
 					name="end_time"
-					class="input input-bordered join-item"
+					class="input join-item"
 				/>
 			</div>
 			<!-- Hidden UTC Inputs -->
@@ -760,7 +760,7 @@ templ announcementModal() {
 				Announcement
 			</h3>
 			<p class="py-3">Send an announcement to all teams.</p>
-			<textarea class="textarea textarea-bordered w-full" name="content" placeholder="Announcement"></textarea>
+			<textarea class="textarea w-full" name="content" placeholder="Announcement"></textarea>
 			<p class="text-sm py-3"><em>Note:</em> This will only be sent to teams that have already started playing.</p>
 			<div class="modal-action">
 				<button class="btn" onclick="event.preventDefault(); announcement_modal.close()">Nevermind</button>

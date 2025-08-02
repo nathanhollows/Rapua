@@ -33,7 +33,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Header --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Locations  <span class=\"badge badge-ghost\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,37 +46,37 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span class=\"htmx-indicator loading loading-dots loading-md text-info\">Updating</span></h1><span class=\"flex md:flex-row flex-wrap justify-center gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(locations) > 1 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"join\"><a href=\"/admin/locations/qr-codes.zip\" class=\"btn btn-base btn-outline join-item mb-3 md:mb-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-image-down\"><path d=\"M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21\"></path> <path d=\"m14 19 3 3v-5.5\"></path> <path d=\"m17 22 3-3\"></path> <circle cx=\"9\" cy=\"9\" r=\"2\"></circle></svg> QR codes</a> <a class=\"btn btn-base btn-outline join-item\" href=\"/admin/locations/posters.pdf\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-down\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path> <path d=\"M12 18v-6\"></path> <path d=\"m9 15 3 3 3-3\"></path></svg> Posters</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a href=\"/admin/locations/new\" hx-boost=\"true\" class=\"btn btn-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-plus w-5 h-5\"><path d=\"M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle><path d=\"M16 18h6\"></path><path d=\"M19 15v6\"></path></svg> Add Location</a></span></div><!-- Locations list --><div class=\"px-5\"><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.NavigationMode == models.OrderedNav {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"join join-vertical w-full shadow sortable\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"join join-vertical w-full\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, location := range locations {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-row justify-between items-center gap-3 bg-base-200 hover:bg-base-300 rounded-lg p-4 join-item\" data-order=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -89,12 +89,12 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><div class=\"flex flex-row items-center gap-3 grow\"><!-- Drag handle -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if settings.NavigationMode == models.OrderedNav {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"tooltip tooltip-right flex gap-3 cursor-move\" data-tip=\"Drag to reorder\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div><input type=\"hidden\" name=\"location\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -107,44 +107,44 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Marker icon -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if location.Marker.Lat != 0 {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip tooltip-right @7xl:tooltip-top cursor-help\" data-tip=\"Has coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin\"><path d=\"M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z\"></path> <circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip tooltip-right @7xl:tooltip-top cursor-help\" data-tip=\"Unmapped location\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-off tooltip\" data-tip=\"Location has no coordinates set\"><path d=\"M5.43 5.43A8.06 8.06 0 0 0 4 10c0 6 8 12 8 12a29.94 29.94 0 0 0 5-5\"></path> <path d=\"M19.18 13.52A8.66 8.66 0 0 0 20 10a8 8 0 0 0-8-8 7.88 7.88 0 0 0-3.52.82\"></path> <path d=\"M9.13 9.13A2.78 2.78 0 0 0 9 10a3 3 0 0 0 3 3 2.78 2.78 0 0 0 .87-.13\"></path> <path d=\"M14.9 9.25a3 3 0 0 0-2.15-2.16\"></path> <line x1=\"2\" x2=\"22\" y1=\"2\" y2=\"22\"></line></svg></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Clue indicator -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if settings.NavigationMethod == models.ShowClues {
 				if len(location.Clues) == 0 {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip text-neutral cursor-help\" data-tip=\"No clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-x\"><path d=\"m13.5 8.5-5 5\"></path><path d=\"m8.5 8.5 5 5\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"tooltip cursor-help\" data-tip=\"Has clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Location code --><div class=\"badge badge-ghost basis-16 tooltip\" data-tip=\"Unique location code\"><code>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -157,7 +157,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code></div><!-- Location name --><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -166,7 +166,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"link flex-grow\" hx-boost=\"true\" hx-swap=\"outerHTML\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -179,12 +179,12 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if settings.EnablePoints {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -197,17 +197,17 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" pts</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div><script>\nhtmx.onLoad(function(content) {\n    var sortables = content.querySelectorAll(\".sortable\");\n    for (var i = 0; i < sortables.length; i++) {\n      var sortable = sortables[i];\n      var sortableInstance = new Sortable(sortable, {\n          animation: 150,\n          ghostClass: 'blue-background-class',\n          handle: \".cursor-move\",\n\n          // Make the `.htmx-indicator` unsortable\n          filter: \".htmx-indicator\",\n          onMove: function (evt) {\n            return evt.related.className.indexOf('htmx-indicator') === -1;\n          },\n\n          // Disable sorting on the `end` event\n          onEnd: function (evt) {\n            this.option(\"disabled\", true);\n          }\n      });\n\n      // Re-enable sorting on the `htmx:afterSwap` event\n      sortable.addEventListener(\"htmx:afterSwap\", function() {\n        sortableInstance.option(\"disabled\", false);\n      });\n    }\n})\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -233,55 +233,55 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form class=\"flex flex-col gap-5 w-full p-5 max-w-2xl mx-auto\" method=\"post\" hx-post=\"/admin/locations/new\"><!-- Header --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full\"><h1 class=\"text-2xl font-bold\">Add a location</h1><button type=\"submit\" class=\"btn btn-primary hidden md:inline-flex\">Save</button></div><div class=\"flex flex-col md:flex-row gap-3\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Location name</span></div><div class=\"input flex items-center gap-2\"><input id=\"name\" name=\"name\" type=\"text\" placeholder=\"Location name\" class=\"grow text-ellipsis\" autocomplete=\"off\" required> <span id=\"marker-badge\" class=\"badge badge-neutral hidden\"></span></div></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<label for=\"points\" class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Points</span></div><input type=\"number\" id=\"points\" name=\"points\" class=\"input w-full\" value=\"10\" placeholder=\"Enter points\" required></label>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div role=\"tablist\" class=\"tabs tabs-box font-bold\"><a id=\"new-marker-tab\" role=\"tab\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 29)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"tab transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 30)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"tab transition-colors tab-active\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 31)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" _=\"on click \n\t\t\t\tif I do not match .tab-active\n\t\t\t\t\tremove .tab-active from .tab-active\n\t\t\t\t\ttoggle .tab-active\n\t\t\t\t\tremove .hidden from #new-marker\n\t\t\t\t\tadd .hidden to #shared-marker\n\t\t\t\t\tremove .hidden from #marker-controls\n\t\t\t\t\tset &lt;input[name=marker]/&gt;&#39;s disabled to true\n\t\t\t\t\tset &lt;input[name=name]/&gt;&#39;s value to &#39;&#39;\n\t\t\t\t\tadd .hidden to #marker-badge\n\t\t\t\t\tset &lt;input[name=latitude]/&gt;&#39;s disabled to false\n\t\t\t\t\tset &lt;input[name=longitude]/&gt;&#39;s disabled to false\n\t\t\t\">New map marker</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(duplicatable) > 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 32)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a role=\"tab\" class=\"tab transition-colors group\" _=\"on click \n\t\t\t\tif I do not match .tab-active\n\t\t\t\t\tremove .tab-active from .tab-active\n\t\t\t\t\ttoggle .tab-active\n\t\t\t\t\tremove .hidden from #shared-marker\n\t\t\t\t\tremove .hidden from #marker-controls\n\t\t\t\t\tadd .hidden to #new-marker\n\t\t\t\t\tset &lt;input[name=marker]/&gt;&#39;s disabled to false\n\t\t\t\t\ttrigger change on #marker-code\n\t\t\t\t\tset &lt;input[name=latitude]/&gt;&#39;s disabled to false\n\t\t\t\t\tset &lt;input[name=longitude]/&gt;&#39;s disabled to false\n\t\t\t\">Shared map marker<div class=\"dropdown dropdown-end dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Shared markers</h2><p>Shared markers enable multiple games to use the same posters while showing different content.</p><p>This makes it possible to play overlapping games at the same time with different content and rules.</p></div></div></div></a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 33)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a role=\"tab\" class=\"tab transition-colors tab-active group\" _=\"on click\n\t\t\t\t\t\t\tif I do not match .tab-active\n\t\t\t\t\t\t\t\tremove .tab-active from .tab-active\n\t\t\t\t\t\t\t\ttoggle .tab-active\n\t\t\t\t\t\t\t\tadd .hidden to #new-marker\n\t\t\t\t\t\t\t\tadd .hidden to #shared-marker\n\t\t\t\t\t\t\t\tadd .hidden to #marker-controls\n\t\t\t\t\t\t\t\tset &lt;input[name=marker]/&gt;&#39;s disabled to true\n\t\t\t\t\t\t\t\tset &lt;input[name=name]/&gt;&#39;s value to &#39;&#39;\n\t\t\t\t\t\t\t\tadd .hidden to #marker-badge\n\t\t\t\t\t\t\t\tset &lt;input[name=latitude]/&gt;&#39;s disabled to true\n\t\t\t\t\t\t\t\tset &lt;input[name=longitude]/&gt;&#39;s disabled to true\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\ton load if I match .tab-active\n\t\t\t\t\t\t\tadd .hidden to #new-marker\n\t\t\t\t\t\t\tadd .hidden to #shared-marker\n\t\t\t\t\t\t\tadd .hidden to #marker-controls\n\t\t\t\t\t\t\tset &lt;input[name=marker]/&gt;&#39;s disabled to true\n\t\t\t\t\t\t\tset &lt;input[name=name]/&gt;&#39;s value to &#39;&#39;\n\t\t\t\t\t\t\tadd .hidden to #marker-badge\n\t\t\t\t\t\t\tset &lt;input[name=latitude]/&gt;&#39;s disabled to true\n\t\t\t\t\t\t\tset &lt;input[name=longitude]/&gt;&#39;s disabled to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">No map marker<div class=\"dropdown dropdown-end dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">No map marker</h2><p>Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.</p></div></div></div></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 34)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(neighbouring) > 0 {
 			for _, location := range neighbouring {
 				if location.Marker.IsMapped() {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 35)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"neighbour-marker hidden\" data-location=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -294,7 +294,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 36)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-lat=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -307,7 +307,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 37)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-lng=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -320,20 +320,20 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 38)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 39)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"marker-controls\"><div id=\"new-marker\" class=\"flex flex-col gap-3\"><!-- Map --><div class=\"form-control\"><label class=\"\"><span class=\"label-text font-bold p-2 mb-2\">Add a new map marker</span><div id=\"geocoder\" class=\"geocoder mt-2\"></div></label></div></div><div id=\"shared-marker\" class=\"hidden flex flex-row gap-3\"><input type=\"hidden\" name=\"marker\" disabled><div class=\"form-control w-full\"><label class=\"\"><span class=\"label-text font-bold p-2 mb-2\">Share a location with another game</span></label> <select id=\"marker-code\" class=\"select w-full mt-2\" _=\"on change\n\t\t\t\t\tset val to my value\n\t\t\t\t\tset &lt;input[name=name]/&gt;&#39;s value to &lt;option[value=${val}]/&gt;&#39;s text\n\t\t\t\t\tset &lt;input[name=marker]/&gt;&#39;s value to my value\n\t\t\t\t\tremove .hidden from #marker-badge\n\t\t\t\t\tset #marker-badge&#39;s textContent to my value\n\t\t\t\t\t\"><option disabled selected>Select a location</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, marker := range duplicatable {
 			if marker.IsMapped() {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 40)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -346,7 +346,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 41)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-code=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -359,7 +359,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 42)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-lat=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -372,7 +372,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 43)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-lng=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -385,7 +385,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 44)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-name=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -398,7 +398,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 45)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -411,13 +411,13 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 46)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 47)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div></div><div id=\"map-container\" class=\"relative w-full aspect-square h-96 rounded-lg shadow-lg\"><div id=\"map\" class=\"map w-full h-full rounded-lg\"></div></div><input type=\"hidden\" name=\"latitude\"> <input type=\"hidden\" name=\"longitude\"></div><button type=\"submit\" class=\"btn btn-primary\">Save</button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -447,7 +447,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 48)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Header --><div class=\"flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Editing <em>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -460,7 +460,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 49)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</em></h1><div class=\"flex gap-3\"><div class=\"dropdown\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-outline\">Download <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></div><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow\"><h2 class=\"menu-title\">Pre-made</h2><li><ul><li><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -469,22 +469,22 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 50)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.CompletionMethod == models.CheckInAndOut {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 51)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Posters (PDF)")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 52)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Poster (PDF)")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 53)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></li></ul></li><h2 class=\"menu-title\">Check-In</h2><li><ul><li><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -493,7 +493,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 54)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" download=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -506,7 +506,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 55)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">QR Code (PNG)</a></li><li><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -515,7 +515,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 56)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" download=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -528,12 +528,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 57)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">QR Code (SVG)</a></li></ul></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.CompletionMethod == models.CheckInAndOut {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 58)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<h2 class=\"menu-title\">Check-Out</h2><li><ul><li><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -542,7 +542,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 59)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" download=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -555,7 +555,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 60)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">QR Code (PNG)</a></li><li><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -564,7 +564,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 61)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" download=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -577,12 +577,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 62)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">QR Code (SVG)</a></li></ul></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 63)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div><button type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.showModal();\">Delete</button><form id=\"edit-location\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -595,7 +595,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 64)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-trigger=\"click, savelocation delay:500ms, keyup changed from:[form=edit-location] delay:500ms\" hx-swap=\"none\"><button id=\"edit-location-btn\" class=\"btn btn-primary\" type=\"submit\">Save</button></form></div></div><div class=\"flex-grow mx-auto\"><div class=\"flex flex-col md:flex-row p-5 pt-0 gap-5\"><div class=\"flex flex-col flex-grow\"><div class=\"flex flex-col sm:flex-row gap-5 mb-5\"><!-- Location Title --><label for=\"name\" class=\"form-control w-full md:w-1/2\"><div class=\"label\"><span class=\"label-text font-bold\">Location name</span></div><input type=\"text\" id=\"name\" name=\"name\" form=\"edit-location\" class=\"input w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -608,22 +608,22 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 65)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" placeholder=\"Location name\"></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 66)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Location Points --> <label for=\"points\" class=\"form-control w-full md:w-1/2\"><div class=\"label\"><span class=\"label-text font-bold\">Points</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if !settings.EnablePoints {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 67)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"label-text-alt\"><span class=\"flex gap-1 badge badge-outline badge-sm tooltip cursor-help\" data-tip=\"Points are currently disabled\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-3 h-3\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg> Disabled</span></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 68)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><input type=\"number\" id=\"points\" name=\"points\" form=\"edit-location\" class=\"input w-full\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -636,12 +636,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 69)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" placeholder=\"Enter points\"></label>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 70)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"hidden\" name=\"points\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -654,41 +654,41 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 71)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 72)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Clues -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.NavigationMethod == models.ShowClues {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 73)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section class=\"mb-8\"><div class=\"label flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row\"><strong>Clues</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert w-4 h-4 text-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Clues</h2><p class=\"text-wrap\">Each team is shown one randomly selected clue.</p><p class=\"text-wrap\">If no clues are available then the player is told the name of the location as a freebie.</p><p class=\"text-wrap\">Clues may contain <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Markdown</a> formatting.</p></div></div></div></div><button class=\"btn btn-sm btn-neutral my-2\" type=\"button\" _=\"on click\n\t\t\t\t\t\t\t\t\tif &lt;#clue-list .clue-line/&gt;&#39;s length &gt; 0\n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add a clue</button><template id=\"clue-template\"><label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData(&#39;text/plain&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split(&#39;\\n&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not &#39;&#39;\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first &lt;input /&gt; in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el&#39;s value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></div><div id=\"clue-list\" class=\"flex flex-col join join-vertical\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(location.Clues) == 0 {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 74)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\tget #clue-template\n\t\t\t\t\t\t\t\t\tput its innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\thtmx.process(document.body)\n\t\t\t\t\t\t\t\t\tremove #clue-list.alert\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">add a clue</a>? </span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			for _, clue := range location.Clues {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 75)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item\" data-item-id=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 626, Col: 138}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 626, Col: 123}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 76)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -701,7 +701,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 77)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData(&#39;text/plain&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split(&#39;\\n&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not &#39;&#39;\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first &lt;input /&gt; in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el&#39;s value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <input type=\"hidden\" name=\"clue-ids\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -714,23 +714,23 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 78)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 79)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 80)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Blocks --><section><div class=\"divider mt-5 mb-10\"><div class=\"dropdown\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-neutral w-32 flex flex-col\"><svg class=\"w-5 h-5\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add content</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 -ml-24 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-neutral\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, block := range blocks.GetRegisteredBlocks() {
 			if !block.RequiresValidation() {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 81)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -743,7 +743,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 82)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -756,7 +756,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 83)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -773,19 +773,19 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 84)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 85)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"divider\"><span class=\"badge badge-neutral\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, block := range blocks.GetRegisteredBlocks() {
 			if block.RequiresValidation() {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 86)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -798,7 +798,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 87)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -811,7 +811,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 88)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -828,13 +828,13 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 89)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 90)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div></div></div></div><div id=\"blocks\" class=\"flex flex-col gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -844,12 +844,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 91)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></section><!-- Map -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if location.Marker.IsMapped() {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 92)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section><div class=\"divider mt-5 mb-10\"></div><div class=\"label\"><span class=\"label-text font-bold\">Map marker</span></div><div id=\"map-container\" class=\"relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg\"><div id=\"map\" class=\"map w-full h-full rounded-lg\"></div><!-- Overlay Button and Backdrop --><div id=\"map-lock-overlay\" class=\"absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100\" tabindex=\"0\"><button id=\"unlock-map-btn\" class=\"btn btn-neutral\" _=\"on click\n\t\t\t\t\t\t\t\t\tremove #map-lock-overlay then\n\t\t\t\t\t\t\t\t\ttransition #map-note&#39;s opacity to 1\n\t\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-keyhole w-5 h-5\"><circle cx=\"12\" cy=\"16\" r=\"1\"></circle><rect x=\"3\" y=\"10\" width=\"18\" height=\"12\" rx=\"2\"></rect><path d=\"M7 10V7a5 5 0 0 1 10 0v3\"></path></svg> Unlock to edit</button></div></div><div id=\"map-note\" class=\"label opacity-0\"><span class=\"label-text\"><strong>Note:</strong> Changing the map marker might change the location code.</span> <span class=\"label-text\">Autosave is disabled for map markers.</span></div><!-- Hidden inputs for form handling --><input type=\"hidden\" name=\"code\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -862,7 +862,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 93)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <input type=\"hidden\" name=\"latitude\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -875,7 +875,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 94)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <input type=\"hidden\" name=\"longitude\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -888,12 +888,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 95)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 96)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Sidebar --><!-- Preview Divider --><div class=\"divider lg:divider-horizontal px-5\"><div class=\"divider-text\">Preview</div></div><!-- Preview --><div class=\"flex h-min-content flex-col\"><div class=\"mockup-phone h-min sticky top-8\"><div class=\"camera\"></div><div class=\"display\"><div class=\"artboard artboard-demo phone lg:phone-2\" data-theme=\"cupcake\"><!-- Demo --><div class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -906,7 +906,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 97)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-trigger=\"load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -919,7 +919,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 98)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-swap=\"innerHTML\"></div><!-- /Demo --></div></div></div></div></div></div><dialog id=\"confirm_delete_block\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this location?</h3><p class=\"pt-4\">You are about to delete this location. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -932,7 +932,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 99)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></div></dialog><script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n                \n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n                        \n                        block.style.position = '';\n                        sibling.style.position = '';\n                        \n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script><style>\n    .transitioning {\n        transition: transform 0.3s ease;\n    }\n\t\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -962,7 +962,7 @@ func locationScript() templ.Component {
 			templ_7745c5c3_Var49 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 100)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n(function () {\n  let map; \n  let marker;\n\n  function initializeMap() {\n    let coords = [174.0710596, -40.9664536];\n    let zoom = 4;\n\n    // Check if longitude and latitude fields are set\n    if (document.querySelector('input[name=\"longitude\"]').value !== \"\" &&\n        document.querySelector('input[name=\"latitude\"]').value !== \"\") {\n      coords = [\n        parseFloat(document.querySelector('input[name=\"longitude\"]').value),\n        parseFloat(document.querySelector('input[name=\"latitude\"]').value)\n      ];\n      zoom = 16;\n    }\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine map style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map',\n      style: style,\n      center: coords,\n      zoom: zoom\n    });\n\n    // Create and place the main marker\n    marker = new mapboxgl.Marker()\n      .setLngLat(coords)\n      .addTo(map);\n\n    // Update marker position on map drag\n    map.on('move', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n      document.querySelector('input[name=\"latitude\"]').value = center.lat;\n      document.querySelector('input[name=\"longitude\"]').value = center.lng;\n    });\n\n    // Update marker position on map zoom\n    map.on('zoom', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n    });\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, null);\n\n    // Handle select change event\n    const locationSelect = document.getElementById('marker-code');\n    if (locationSelect) {\n      locationSelect.addEventListener('change', function (event) {\n        const selectedOption = event.target.options[event.target.selectedIndex];\n        const lat = parseFloat(selectedOption.dataset.lat);\n        const lng = parseFloat(selectedOption.dataset.lng);\n\n        if (!isNaN(lat) && !isNaN(lng)) {\n          // Update the map center and marker position\n          map.flyTo({ center: [lng, lat], zoom: 16 });\n          marker.setLngLat([lng, lat]);\n\n          // Disable dragging on the map\n          map.dragPan.disable();\n          map.scrollZoom.disable();\n\n          // Update latitude and longitude fields\n          document.querySelector('input[name=\"latitude\"]').value = lat;\n          document.querySelector('input[name=\"longitude\"]').value = lng;\n        }\n      });\n    }\n\n    // Re-enable map dragging when new marker tab is clicked\n    const newMarkerTab = document.getElementById('new-marker-tab');\n    if (newMarkerTab) {\n      newMarkerTab.addEventListener('click', function () {\n        map.dragPan.enable();\n        map.scrollZoom.enable();\n      });\n    }\n\n\t\t// Check for .neighbour-marker elements\n\t\tconst neighborMarkers = document.querySelectorAll('.neighbour-marker');\n\t\tif (neighborMarkers.length > 0) {\n\t\t\t// Fit to bounding box of all neighbor markers with a max zoom of 14\n\t\t\tlet bounds = new mapboxgl.LngLatBounds();\n\t\t\tneighborMarkers.forEach(elem => {\n\t\t\t\tconst lat = parseFloat(elem.dataset.lat);\n\t\t\t\tconst lng = parseFloat(elem.dataset.lng);\n\t\t\t\tif (!isNaN(lat) && !isNaN(lng)) {\n\t\t\t\t\tbounds.extend([lng, lat]);\n\t\t\t\t}\n\t\t\t});\n\t\t\tmap.fitBounds(bounds, { padding: 14, duration: 0 });\n\t\t}\n\n    var geocoderEl = document.getElementById('geocoder');\n    if (geocoderEl) {\n      var geocoder = new MapboxGeocoder({\n        accessToken: mapboxgl.accessToken,\n        mapboxgl: mapboxgl,\n        marker: false,\n        placeholder: 'Search for an address or use the map',\n      });\n      geocoderEl.appendChild(geocoder.onAdd(map));\n    }\n  }\n\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    modal = document.getElementById(\"confirm_delete_block\");\n    url = \"/admin/locations/\" + event.currentTarget.dataset.location + \"/blocks/\" + event.currentTarget.dataset.block + \"/delete\";\n    btn = modal.querySelector(\"button.btn-error\")\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  for (const element of document.querySelectorAll('.block-delete')) {\n    element.addEventListener('click', confirmDeleteBlock);\n  }\n\n  // Add listener to #blocks for new blocks\n  if (document.getElementById(\"blocks\")) {\n    document.getElementById(\"blocks\").addEventListener(\"htmx:afterSwap\", function (event) {\n      for (const element of document.querySelectorAll('.block-delete')) {\n        element.addEventListener('click', confirmDeleteBlock);\n      }\n    });\n  }\n\n  initializeMap();\n})();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

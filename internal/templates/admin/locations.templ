@@ -174,7 +174,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 				<div class="label">
 					<span class="label-text font-bold">Location name</span>
 				</div>
-				<div class="input input-bordered flex items-center gap-2">
+				<div class="input flex items-center gap-2">
 					<input
 						id="name"
 						name="name"
@@ -196,7 +196,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 						type="number"
 						id="points"
 						name="points"
-						class="input input-bordered w-full"
+						class="input w-full"
 						value="10"
 						placeholder="Enter points"
 						required
@@ -204,7 +204,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 				</label>
 			}
 		</div>
-		<div role="tablist" class="tabs tabs-boxed font-bold">
+		<div role="tablist" class="tabs tabs-box font-bold">
 			<a
 				id="new-marker-tab"
 				role="tab"
@@ -347,7 +347,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					</label>
 					<select
 						id="marker-code"
-						class="select select-bordered w-full mt-2"
+						class="select w-full mt-2"
 						_="on change
 					set val to my value
 					set <input[name=name]/>'s value to <option[value=${val}]/>'s text
@@ -482,7 +482,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							id="name"
 							name="name"
 							form="edit-location"
-							class="input input-bordered w-full"
+							class="input w-full"
 							value={ location.Marker.Name }
 							placeholder="Location name"
 						/>
@@ -506,7 +506,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								id="points"
 								name="points"
 								form="edit-location"
-								class="input input-bordered w-full"
+								class="input w-full"
 								value={ fmt.Sprint(location.Points) }
 								placeholder="Enter points"
 							/>
@@ -555,7 +555,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							</button>
 							<template id="clue-template">
 								<label
-									class="clue-line input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item"
+									class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item"
 								>
 									<input
 										type="text"
@@ -623,7 +623,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								</div>
 							}
 							for _, clue := range location.Clues {
-								<label class="clue-line input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ clue.ID }>
+								<label class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ clue.ID }>
 									<input
 										type="text"
 										name="clues"

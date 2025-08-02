@@ -107,7 +107,7 @@
 }
 
 .mapboxgl-ctrl-geocoder {
-  @apply w-full relative bg-base-100 input input-bordered flex items-center;
+  @apply w-full relative bg-base-100 input flex items-center;
 }
 
 .mapboxgl-ctrl-geocoder--input {

@@ -28,7 +28,7 @@ func Settings(user models.User) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<main class=\"max-w-7xl m-auto pb-8\"><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><ul class=\"menu rounded-box w-80 h-min gap-1\" hx-target=\"#settings\" hx-swap=\"innerHTML\"><li><h2 class=\"menu-title\">Settings</h2></li><li><a hx-get=\"/admin/settings/profile\" hx-target=\"#settings\" class=\"active\" _=\"on click\n\t\tremove .active from &lt;li a /&gt;\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round-icon lucide-circle-user-round\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Profile</a></li><li><a hx-get=\"/admin/settings/appearance\" _=\"on click\n\t\tremove .active from &lt;li a /&gt;\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-palette-icon lucide-palette\"><path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"></path><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"></circle></svg> Appearance</a></li><li><a hx-get=\"/admin/settings/security\" _=\"on click\n\t\tremove .active from &lt;li a /&gt;\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-lock-icon lucide-user-lock\"><circle cx=\"10\" cy=\"7\" r=\"4\"></circle><path d=\"M10.3 15H7a4 4 0 0 0-4 4v2\"></path><path d=\"M15 15.5V14a2 2 0 0 1 4 0v1.5\"></path><rect width=\"8\" height=\"5\" x=\"13\" y=\"16\" rx=\".899\"></rect></svg> Security</a></li><!--\n\t\t\t\t<li>\n\t\t\t\t\t<a\n\t\t\t\t\t\thx-get=\"/admin/settings/billing\"\n\t\t\t\t\t\t_=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"\n\t\t\t\t\t>\n\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign-icon lucide-dollar-sign\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg>\n\t\t\t\t\t\tBilling\n\t\t\t\t\t</a>\n\t\t\t\t</li>\n--></ul><section id=\"settings\" class=\"w-full order-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -36,7 +36,7 @@ func Settings(user models.User) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</section></div></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +62,7 @@ func SettingsProfile(user models.User) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/admin/settings/profile\" hx-trigger=\"keyup delay:500ms, change delay:500ms\" hx-swap=\"none\"><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Update your profile</h2><!-- Account settings --><div class=\"flex gap-5\"><!-- Name --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Full name</span></div><input name=\"name\" type=\"text\" placeholder=\"Janette Dough\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -75,12 +75,12 @@ func SettingsProfile(user models.User) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"input bg-base-200 w-full\"></label><!-- Display Name --><label class=\"form-control flex-grow\"><div class=\"label\"><span class=\"label-text\">Display name</span></div><input name=\"display_name\" type=\"text\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.DisplayName.Valid {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -93,98 +93,98 @@ func SettingsProfile(user models.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if user.Name == "" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" placeholder=\"Jane\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input bg-base-200 w-full\"></label></div><!-- Work Type --><div class=\"my-5\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">What best describes your work?</span></div><select name=\"work_type\" class=\"select w-full bg-base-200\" _=\"on change\n\t\tif my value is &#39;other&#39; then\n\t\t\t\tremove .hidden from #other-type\n\t\telse\n\t\t\t\tadd .hidden to #other-type\n\t\t\t\t\"><option value=\"formal_education\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.String == "formal_education" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Formal education</option> <option value=\"informal_education\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.String == "informal_education" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Informal education</option> <option value=\"event_organiser\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.String == "event_organiser" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Event organiser</option> <option value=\"experience_designer\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.String == "experience_designer" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Experience designer</option> <option value=\"corporate_training\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.String == "corporate_training" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Corporate training</option> <option value=\"other\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Other</option></select></label></div><!-- Other Work Type --><div id=\"other-type\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">Please specify your work type</span></div><input name=\"other_work_type\" type=\"text\" placeholder=\"Your work type\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -197,22 +197,22 @@ func SettingsProfile(user models.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input bg-base-200 w-full\"><div class=\"label\"><span class=\"label-text-alt\">This helps me understand who I'm building Rapua for.</span></div></label></div><!-- Preferences --><div class=\"my-5\"><label class=\"form-control w-full\"><div class=\"form-control\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Show your email on templates to other logged-in admins?</span> <input name=\"show_email\" type=\"checkbox\" class=\"toggle toggle-primary\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.ShareEmail {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("></label></div></label></div></div></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -238,7 +238,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 29)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Change your theme</h2><p class=\"text-sm mb-4\">Theme preferences are stored in your browser and not tied to your account.</p><div id=\"theme-buttons\" class=\"space-y-2\"><button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"cupcake\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;cupcake&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"cupcake\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">Cupcake</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button> <button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"dracula\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;dracula&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"dracula\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">Dracula</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button> <button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"system\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;system&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"system\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">System</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button></div><!-- Theme initialization script --><script>\n\t\t\t\t\t// Initialize theme UI\n\t\t\t\t\tfunction updateThemeUI() {\n\t\t\t\t\t\t// Get current theme from localStorage\n\t\t\t\t\t\tconst currentTheme = localStorage.getItem('theme') || 'system';\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update document attribute\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', currentTheme);\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Hide all checkmarks first\n\t\t\t\t\t\tdocument.querySelectorAll('.theme-check').forEach(el => {\n\t\t\t\t\t\t\tel.classList.add('invisible');\n\t\t\t\t\t\t});\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Show checkmark for current theme\n\t\t\t\t\t\tconst activeButton = document.querySelector(`[data-theme-value=\"${currentTheme}\"]`);\n\t\t\t\t\t\tif (activeButton) {\n\t\t\t\t\t\t\tactiveButton.classList.add('active');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.remove('invisible');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.add('visible');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// Run on page load\n\t\t\t\t\tdocument.addEventListener('DOMContentLoaded', updateThemeUI);\n\t\t\t\t\t\n\t\t\t\t\t// Also run now in case the script loads after DOMContentLoaded\n\t\t\t\t\tupdateThemeUI();\n\t\t\t\t</script></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -265,7 +265,7 @@ func SettingsSecurity(user models.User) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if user.Provider == models.ProviderEmail {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 30)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"alert bg-transparent border-0\"><p class=\"text-sm\">Logged in with <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -278,12 +278,12 @@ func SettingsSecurity(user models.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 31)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Current password</span></div><input name=\"old_password\" type=\"password\" class=\"input bg-base-200 w-full\" required></label><!-- New password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">New password</span></div><input name=\"new_password\" type=\"password\" class=\"input bg-base-200 w-full\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != &#39;&#39; then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><div class=\"label\"><span class=\"label-text-alt\">Use at least 8 characters. Longer passwords are stronger.</span></div></label> <label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Confirm password</span></div><input name=\"confirm_password\" type=\"password\" class=\"input bg-base-200 w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById(&#39;new_password&#39;).value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .hidden to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><div class=\"label\"><span id=\"password-mismatch\" class=\"label-text-alt text-error hidden\">Passwords don't match</span></div></label><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 32)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"alert bg-transparent border-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" x=\"0px\" y=\"0px\" class=\"w-8 h-8 fill-base-content\" viewBox=\"0 0 32 32\"><path d=\"M 16.003906 14.0625 L 16.003906 18.265625 L 21.992188 18.265625 C 21.210938 20.8125 19.082031 22.636719 16.003906 22.636719 C 12.339844 22.636719 9.367188 19.664063 9.367188 16 C 9.367188 12.335938 12.335938 9.363281 16.003906 9.363281 C 17.652344 9.363281 19.15625 9.96875 20.316406 10.964844 L 23.410156 7.867188 C 21.457031 6.085938 18.855469 5 16.003906 5 C 9.925781 5 5 9.925781 5 16 C 5 22.074219 9.925781 27 16.003906 27 C 25.238281 27 27.277344 18.363281 26.371094 14.078125 Z\"></path></svg><div><h3 class=\"font-bold\">You're using Google to sign in</h3><p class=\"text-sm\">Your account is managed through Google authentication. Password settings are not available.</p><p class=\"text-sm\">Logged in with <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -296,12 +296,12 @@ func SettingsSecurity(user models.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 33)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 34)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><!-- Delete Account Section --><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Delete your account</h2><div class=\"prose\"><p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p><p>This is an irreversible process.</p><button type=\"button\" class=\"btn btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">Delete my account</button></div></div></div></div><dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete your account</h3><p class=\"pt-4\">You are about to delete your account. Doing this will wipe all data including:</p><ul><li>games</li><li>historical play data</li><li>any uploaded media</li><li>templates</li></ul><p>This action cannot be undone. If you choose to register again, you will start with a clean slate.</p><p>Please enter your email address to confirm:</p><form hx-delete=\"/admin/settings/delete-account\" hx-swap=\"none\"><input type=\"email\" name=\"confirm-email\" class=\"input w-full\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -327,7 +327,7 @@ func SettingsBilling(user models.User) templ.Component {
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 35)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Your plan</h2><div class=\"prose\"><p>You are currently on the <strong>Free Plan</strong>.</p><p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p><button type=\"button\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\tfetch &#39;/admin/settings/billing/upgrade&#39; {method: &#39;POST&#39;}\n\t\t\t\t\t\t\t\tthen if(it.ok) call window.location.href = &#39;/admin/settings/billing/checkout&#39;\n\t\t\t\t\t\t\">Upgrade to Pro</button></div></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Order history</h2><table class=\"table w-full\"><thead><tr><th>Date</th><th>Amount</th><th>Plan</th><th>Receipt</th></tr></thead> <tbody><tr><td colspan=\"4\" class=\"text-center py-4\">No orders yet</td></tr></tbody></table></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Payment method</h2><div class=\"prose\"><p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

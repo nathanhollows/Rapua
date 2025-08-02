@@ -35,7 +35,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 		if strings.Contains(page.Path, "deprecations.md") {
 		} else if !(strings.Contains(page.Path, "index.md") && page.Order != 1) {
 			if len(page.Children) == 0 {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -44,28 +44,28 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if topPage.URL == page.URL {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"active\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				switch page.Title {
 				case "Changelog":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-diff w-5 h-5 stroke-success\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path><path d=\"M9 10h6\"></path><path d=\"M12 13V7\"></path><path d=\"M9 17h6\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Overview":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-marked w-5 h-5 stroke-info\"><path d=\"M10 2v8l3-3 3 3V2\"></path><path d=\"M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -79,39 +79,39 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><details open><summary>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				switch page.Title {
 				case "User Docs":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-5 h-5 text-accent\"><path d=\"M12 7v14\"></path><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Developer Docs":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-code w-5 h-5 stroke-primary\"><polyline points=\"16 18 22 12 16 6\"></polyline><polyline points=\"8 6 2 12 8 18\"></polyline></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Guides":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lightbulb w-5 h-5\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"></path><path d=\"M9 18h6\"></path><path d=\"M10 22h4\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Content Blocks":
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grid-2x2-plus w-5 h-5\"><path d=\"M12 3v17a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1H3\"></path><path d=\"M16 19h6\"></path><path d=\"M19 22v-6\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if isChild {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<h2 class=\"py-0 menu-title flex items-center gap-4 px-1.5\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -124,7 +124,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h2>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -139,7 +139,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</summary><ul>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -149,7 +149,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></details></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -177,7 +177,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<main class=\"max-w-7xl m-auto pb-8\"><div class=\"drawer\"><input id=\"my-drawer\" type=\"checkbox\" class=\"drawer-toggle\"><div class=\"drawer-side z-20\"><label for=\"my-drawer\" aria-label=\"close sidebar\" class=\"drawer-overlay\"></label><ul hx-boost=\"true\" class=\"menu bg-base-200 w-80 min-h-full overflow-y-scroll\"><li><a href=\"/about\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-4 h-4\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"></path><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"></path></svg> About</a></li><li><a href=\"/pricing\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign w-4 h-4\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg> Pricing</a></li><div class=\"divider px-4\">Docs</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,7 +187,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div></div><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><div class=\"md:w-min-content hidden lg:block\"><ul hx-boost=\"true\" class=\"menu rounded-box w-full md:w-72\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -197,18 +197,18 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(page.Headings) > 2 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"md:w-min-content order-2 md:order-4\"><ul id=\"toc\" class=\"menu bg-base-200 rounded-box w-full md:w-72 sticky top-12\"><li><a class=\"menu-title\">Table of Contents</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, item := range page.Headings {
 				if item.Level < 3 {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><a href=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -217,7 +217,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -230,18 +230,18 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section class=\"w-full prose prose-sm md:prose-base order-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -249,7 +249,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</section></div></main><style>\n\th1 a, h2 a, h3 a {\n\t\topacity: 0.4;\n  }\n.prose pre code{\n  text-wrap: auto;\n  display: inline-flex;\n  padding-right: 4em;\n}\n.mockup-code pre {\n  overflow: hidden;\n}\n</style><script>\n(function() {\n  function initScrollSpy() {\n    // Remove previous event listeners if any\n    if (window._onScrollSpyScroll) {\n      window.removeEventListener(\"scroll\", window._onScrollSpyScroll);\n    }\n    if (window._scrollSpyMenuLinks) {\n      window._scrollSpyMenuLinks.forEach(link => {\n        link.removeEventListener(\"click\", link._onScrollSpyClick);\n      });\n    }\n\n    // Get all navigation links and sections\n    const menuLinks = document.querySelectorAll(\"#toc a\");\n    const sections = document.querySelectorAll(\".prose h1, .prose h2\");\n    const scrollMargin = 7 * 16; // 3rem in pixels\n\n    function onScroll() {\n      let scrollPos = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;\n      let offset = scrollMargin; // Offset for highlighting\n      let found = false; // Flag to check if a section is matched\n\n      sections.forEach(section => {\n        let top = section.offsetTop - offset;\n        let bottom = top + section.offsetHeight;\n\n        if (scrollPos >= top && scrollPos < bottom) {\n          found = true;\n          menuLinks.forEach(link => {\n            link.classList.remove(\"active\");\n            if (link.hasAttribute(\"href\") && link.getAttribute(\"href\").substring(1) === section.id) {\n              link.classList.add(\"active\");\n            }\n          });\n        }\n      });\n\n      // If no section is matched and scrollPos is at the top, highlight the first menu link\n      if (!found && scrollPos === 0) {\n        menuLinks.forEach(link => link.classList.remove(\"active\"));\n        if (menuLinks.length > 0) {\n          menuLinks[0].classList.add(\"active\");\n        }\n      }\n    }\n\n    function onClick(event) {\n      menuLinks.forEach(link => link.classList.remove(\"active\"));\n      event.currentTarget.classList.add(\"active\");\n    }\n\n    // Attach the scroll event listener\n    window._onScrollSpyScroll = onScroll;\n    window.addEventListener(\"scroll\", window._onScrollSpyScroll);\n\n    // Attach click event listeners to menu links\n    window._scrollSpyMenuLinks = menuLinks;\n    menuLinks.forEach(link => {\n      link._onScrollSpyClick = function(event) {\n        onClick(event);\n        setTimeout(onScroll, 100); // Re-run onScroll after a short delay\n      };\n      link.addEventListener(\"click\", link._onScrollSpyClick);\n    });\n\n    // Initial check in case the page is already scrolled\n    onScroll();\n  }\n\n  // Initialize scrollspy when the DOM is ready\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", initScrollSpy);\n  } else {\n    initScrollSpy();\n  }\n\n  // Re-initialize after htmx content is swapped\n  document.body.addEventListener(\"htmx:afterSwap\", function(evt) {\n    initScrollSpy();\n  });\n})();\n</script><style>\n.prose img {\n\t\t\t\tborder-radius: var(--rounded-box, 1rem);\n}\n</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -275,7 +275,7 @@ func MarkdownPreview(md template.HTML) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"prose w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -283,7 +283,7 @@ func MarkdownPreview(md template.HTML) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

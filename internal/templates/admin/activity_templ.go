@@ -34,13 +34,13 @@ func ActivityTracker(instance models.Instance) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Activity tracker ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-success\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -53,12 +53,12 @@ func ActivityTracker(instance models.Instance) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-warning\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -71,17 +71,17 @@ func ActivityTracker(instance models.Instance) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-outline\">Inactive</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h1><button hx-get=\"/admin/facilitator/create-link\" hx-target=\"#facilitator_link_modal\" hx-swap=\"innerHTML\" class=\"btn btn-sm btn-circle tooltip md:tooltip-right md:mr-auto md:ml-0 md:mt-1\" data-tip=\"Share activity overview with Facilitators\" _=\"on click facilitator_link_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4 mx-auto\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg></button> <dialog id=\"facilitator_link_modal\" class=\"modal\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -89,7 +89,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</dialog><div class=\"flex gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -97,19 +97,19 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"btn btn-secondary\" onclick=\"announcement_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-megaphone\"><path d=\"m3 11 18-5v12L3 14v-3z\"></path><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"></path></svg> Announce</button></div></div><div class=\"relative flex flex-col md:flex-row px-5 md:space-x-5\"><div class=\"w-full md:w-5/12\"><div id=\"map-container\" class=\"group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden\"><div id=\"map-activity\" class=\"map w-full h-full rounded-lg\"></div></div><div class=\"join join-vertical w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(instance.Locations) == 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div role=\"alert\" class=\"alert\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-info h-6 w-6 shrink-0\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>No locations available</span><div><a href=\"/admin/locations/new\" class=\"btn btn-sm btn-secondary\">Add a location</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if len(instance.Locations) > 0 {
 			for i, location := range instance.Locations {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"location-item flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 border-base-300 rounded-lg p-4 join-item\"><div class=\"flex flex-row items-center space-x-3 grow\"><strong>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -122,7 +122,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong> <a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -131,12 +131,12 @@ func ActivityTracker(instance models.Instance) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-boost=\"true\" class=\"link flex-grow location-name\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if location.Marker.IsMapped() {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" data-lat=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -149,7 +149,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" data-lng=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -162,12 +162,12 @@ func ActivityTracker(instance models.Instance) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -180,13 +180,13 @@ func ActivityTracker(instance models.Instance) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div><div class=\"overflow-y-auto w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -194,7 +194,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -210,7 +210,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n(function () {\n  let map; // Store the map instance globally within the IIFE\n  let markerArray = []; // Store the markers array globally within the IIFE\n\n  function initializeMap() {\n    const locations = document.querySelectorAll('.location-name');\n    // Calculate the center and zoom level based on the locations\n    let coords = [170.5111643, -45.8650509];\n    let zoom = 17;\n    for (let i = 0; i < locations.length; i++) {\n      const lat = parseFloat(locations[i].dataset.lat);\n      const lng = parseFloat(locations[i].dataset.lng);\n      if (lat !== 0 && lng !== 0) {\n        coords = [lng, lat];\n        break;\n      }\n    }\n\n    // Clear any existing markers\n    markerArray.forEach(marker => marker.remove());\n    markerArray = [];\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine the style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map-activity',\n      style: style,\n      center: coords,\n      zoom: zoom,\n      cooperativeGestures: true,\n    });\n\n    map.on('load', function () {\n      map.resize();\n    });\n\n    // Find and loop through .location-name elements to create markers with original numbers\n    locations.forEach(function (location, index) {\n\t  if (!location.dataset.lat || !location.dataset.lng) {\n\t\treturn;\n\t\t}\n      // Create a HTML element for each marker\n      const el = document.createElement('div');\n      el.className = 'marker';\n      el.innerHTML = '<span><b>' + (index + 1) + '</b></span>';\n\n      // Create the marker\n      const marker = new mapboxgl.Marker(el)\n        .setLngLat([location.dataset.lng, location.dataset.lat])\n        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups\n          .setHTML('<h3>' + location.textContent + '</h3>'));\n\n\t\t\t\tmarker.getElement().addEventListener('mouseenter', function () {\n\t\t\t\t  popup = marker.getPopup();\n\t\t\t\t\tif (!popup.isOpen()) {\n\t\t\t\t\t\tmarker.togglePopup();\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tmarker.getElement().addEventListener('mouseleave', function () {\n\t\t\t\t\tmarker.togglePopup();\t\n\t\t\t\t});\n\n      markerArray.push(marker);\n\n\t\t\tlet locationContainer = location.parentElement.parentElement;\n\n      // Add hover event listener to open the marker popup when hovering over the list item\n      locationContainer.addEventListener('mouseenter', () => {\n\t\t\t\tif (!marker.getPopup().isOpen()) {\n\t\t\t\t\t\t\tmarker.togglePopup();\n\t\t\t\t\t\t}\n      });\n\n      locationContainer.addEventListener('mouseleave', () => {\n\t\t\t\tif (marker.getPopup().isOpen()) {\n\t\t\t\t\t\t\tmarker.togglePopup();\n\t\t\t\t\t\t}\n      });\n    });\n\n    // Sort markers by latitude\n    markerArray.sort(function (a, b) {\n      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);\n    });\n\n    // Add markers to the map in the sorted order without changing their displayed numbers\n    markerArray.forEach(marker => {\n      marker.addTo(map);\n    });\n\n    // Fit the map to the bounds of the markers\n    if (markerArray.length > 1) {\n      const bounds = new mapboxgl.LngLatBounds();\n      markerArray.forEach(marker => {\n        bounds.extend(marker.getLngLat());\n      });\n\n      map.fitBounds(bounds, { padding: 50 });\n    }\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, markerArray);\n  }\n\n  // Initialize the map on page load\n  initializeMap();\n\n})();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -236,7 +236,7 @@ func teamModal() templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<dialog id=\"team_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><!-- Contents will be replaced by the fetched content --></div></dialog><script>\n\tdocument.getElementById(\"team_modal\").addEventListener('htmx:afterSwap', (evt) => {\n\t  // Open the modal once the content is loaded and swapped\n\t  document.getElementById(\"team_modal\").showModal();\n\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -262,12 +262,12 @@ func ActivityTeamsTable(locations []models.Location, teams []models.Team) templ.
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<table id=\"team-activity\" class=\"table table-sm w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"/admin/activity/teams\" hx-target=\"#team-activity\" hx-indicator=\".loading\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\"><thead><tr class=\"text-center\"><th scope=\"col\" class=\"text-start\">Team Code</th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for i := range locations {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<th scope=\"col\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -280,23 +280,23 @@ func ActivityTeamsTable(locations []models.Location, teams []models.Team) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</th>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, team := range teamLocationMatrix(locations, teams) {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr class=\"hover\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for i, location := range team {
 				if i == 0 {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<th scope=\"row\"><button class=\"link\" hx-get=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -309,7 +309,7 @@ func ActivityTeamsTable(locations []models.Location, teams []models.Team) templ.
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 29)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-indicator=\".loading\" hx-swap=\"innerHTML\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -322,12 +322,12 @@ func ActivityTeamsTable(locations []models.Location, teams []models.Team) templ.
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 30)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <span class=\"loading loading-spinner loading-lg\" style=\"display:none;\"></span></button></th>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 31)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<td class=\"text-center\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -340,24 +340,24 @@ func ActivityTeamsTable(locations []models.Location, teams []models.Team) templ.
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 32)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 33)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if len(teamLocationMatrix(locations, teams)) == 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 34)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><th scope=\"row\" colspan=\"100%\" class=\"text-center\"><a href=\"/admin/teams\" hx-boost=\"true\" class=\"link\" hx-target=\"body\">Teams</a> will appear here once they start checking in.</th></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 35)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tbody></table>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -434,13 +434,13 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 36)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"schedule-status\" class=\"flex flex-row gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 37)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a hx-get=\"/admin/schedule/stop\" hx-target=\"#schedule-status\" class=\"btn btn-outline btn-error flex join-item tooltip\" data-tip=\"Stop the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-octagon-x w-5 h-5\"><path d=\"m15 9-6 6\"></path><path d=\"M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z\"></path><path d=\"m9 9 6 6\"></path></svg> Stop</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -449,7 +449,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 38)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-outline btn-success flex join-item tooltip\" data-tip=\"Start the game early\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start now</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -458,7 +458,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 39)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-outline btn-success flex join-item tooltip\" data-tip=\"Start the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -467,7 +467,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 40)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -494,12 +494,12 @@ func scheduleButton(scheduled bool, t schema.NullTime) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if !scheduled {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 41)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Sechedule\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg> Schedule</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 42)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button id=\"start-time\" data-start=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -512,7 +512,7 @@ func scheduleButton(scheduled bool, t schema.NullTime) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 43)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Sechedule\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg><div id=\"days-container\"><span class=\"countdown font-mono font-bold\" id=\"days\"><span></span></span> d</div><div id=\"hours-container\"><span class=\"countdown font-mono font-bold\" id=\"hours\"><span></span></span> h</div><div><span class=\"countdown font-mono font-bold\" id=\"minutes\"><span></span></span> m</div><div><span class=\"countdown font-mono font-bold\" id=\"seconds\"><span></span></span> s</div></button><style>\n\t\t\t\tfor i := range 60 {\n\t\t\t\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t\t\t\t--value: { fmt.Sprint(i) };\n\t\t\t\t    }\n\t\t\t\t}\n\t\t\t\t</style> <script>\n  // JavaScript for countdown\n  function startCountdown(startTime) {\n    function updateCountdown() {\n      const now = new Date();\n      const remainingTime = new Date(startTime) - now;\n\n      if (remainingTime == 0) {\n\t\twindow.location.reload();\n        return;\n      }\n\n      const seconds = Math.floor((remainingTime / 1000) % 60);\n      const minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n      const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n      const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n      document.getElementById(\"seconds\").style.setProperty('--value', seconds);\n      document.getElementById(\"minutes\").style.setProperty('--value', minutes);\n\n      if (hours > 0) {\n        document.getElementById(\"hours-container\").style.display = \"block\";\n        document.getElementById(\"hours\").style.setProperty('--value', hours);\n      } else {\n        document.getElementById(\"hours-container\").style.display = \"none\";\n      }\n\n      if (days > 0) {\n        document.getElementById(\"days-container\").style.display = \"block\";\n        document.getElementById(\"days\").style.setProperty('--value', days);\n      } else {\n        document.getElementById(\"days-container\").style.display = \"none\";\n      }\n\t  \n    }\n\n    updateCountdown();\n    setInterval(updateCountdown, 1000);\n\n  }\n\n  if (document.getElementById('start-time') != null) {\n\t\tfunction UTCtoLocal(time) {\n\t\t\tconst utc = new Date(`${time}`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn local\n\t\t}\n\t  const startTimeElement = document.getElementById('start-time');\n\t  const startTime = startTimeElement.dataset.start;\n\t  startCountdown(UTCtoLocal(startTime));\n  }\n</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -539,7 +539,7 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 44)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<h3 class=\"text-lg font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -552,12 +552,12 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 45)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Name != "" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 46)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"opacity-50\">∕</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -570,13 +570,13 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 47)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 48)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-info badge-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -589,17 +589,17 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 49)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" pts</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 50)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h3><!-- Current Location -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.MustCheckOut != "" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 51)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Current Location</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -612,22 +612,22 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 52)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 53)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Next Locations --><div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Next Locations</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(nextLocations) > 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 54)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"prose\"><ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, location := range nextLocations {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 55)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -640,13 +640,13 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 56)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if settings.NavigationMethod.String() == "Show Clues" {
 					for _, clue := range location.Clues {
-						templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 57)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<blockquote class=\"text-sm\"><p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -659,39 +659,39 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 58)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></blockquote>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 59)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 60)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 61)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p>All done!</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 62)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Previous Locations -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(team.CheckIns) > 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 63)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"py-3 font-bold divider divider-start\">Previous Locations</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, scan := range team.CheckIns {
 				if !scan.MustCheckOut {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 64)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"prose\"><ul><li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -704,7 +704,7 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 65)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <span class=\"convert-time badge badge-sm badge-ghost\" data-datetime=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -717,12 +717,12 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 66)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if settings.EnablePoints && scan.Points > 0 {
-						templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 67)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"badge badge-sm badge-info\">+")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -735,25 +735,25 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 68)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" pts</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 69)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li></ul></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 70)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p class=\"py-3 font-bold divider divider-start\">Alerts</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(notifications) > 0 {
 			for _, notification := range notifications {
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 71)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"chat chat-start\"><div class=\"chat-bubble\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -766,22 +766,22 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 72)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"chat-footer text-xs opacity-50 flex items-center gap-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if notification.Dismissed {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 73)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Read ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 74)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Unread ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 75)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("· <time>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -794,13 +794,13 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 76)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</time></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 77)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<label class=\"form-control w-full mt-3\"><form hx-post=\"/admin/notify/team/\" hx-swap=\"none\"><input type=\"hidden\" name=\"teamCode\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -813,7 +813,7 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 78)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><div class=\"join w-full\"><input class=\"input join-item w-full\" name=\"content\" placeholder=\"Message\" autocomplete=\"off\" autofocus=\"off\" required> <button type=\"submit\" class=\"btn btn-primary join-item rounded-r-full\" onclick=\"announcement_modal.close()\">Send <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-5 h-5\"><path d=\"m3 3 3 9-3 9 19-9Z\"></path><path d=\"M6 12h16\"></path></svg></button></div></form><div class=\"label\"><span class=\"label-text-alt\">This is a read-only message. Teams cannot reply.</span></div></label><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -839,22 +839,22 @@ func scheduleModal(instance models.Instance) templ.Component {
 			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 79)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<dialog id=\"schedule_modal\" class=\"modal modal-bottom sm:modal-middle\"><form hx-post=\"/admin/schedule/\" hx-swap=\"none\" class=\"modal-box\"><h3 class=\"text-lg font-bold\">Schedule a Game</h3><p class=\"py-3\">Schedule a game to start and/or end at a specific time. </p><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled Start ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if instance.StartTime.Time.IsZero() {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 80)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 81)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\" checked>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 82)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label></div></div><div id=\"utc-start-time\" class=\"join flex justify-center pb-5\" data-start=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -867,22 +867,22 @@ func scheduleModal(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 83)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><input id=\"start_date\" type=\"date\" name=\"start_date\" class=\"input join-item\"> <input id=\"start_time\" type=\"time\" name=\"start_time\" class=\"input join-item\"></div><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled End ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 84)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\" checked>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 85)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 86)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label></div></div><div id=\"utc-end-time\" class=\"join flex justify-center\" data-end=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -895,7 +895,7 @@ func scheduleModal(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 87)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><input id=\"end_date\" type=\"date\" name=\"end_date\" class=\"input join-item\"> <input id=\"end_time\" type=\"time\" name=\"end_time\" class=\"input join-item\"></div><!-- Hidden UTC Inputs --><input type=\"hidden\" name=\"utc_start_date\"> <input type=\"hidden\" name=\"utc_start_time\"> <input type=\"hidden\" name=\"utc_end_date\"> <input type=\"hidden\" name=\"utc_end_time\"><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); schedule_modal.close()\">Nevermind</button> <button type=\"submit\" onclick=\"schedule_modal.close()\" class=\"btn btn-primary\">Save</button></div></form></dialog><script>\n\t\tfunction localToUTC(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}`);\n\t\t\treturn {\n\t\t\t\tdate: utc.toISOString().split('T')[0],\n\t\t\t\ttime: utc.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction UTCtoLocal(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}Z`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn {\n\t\t\t\tdate: local.toISOString().split('T')[0],\n\t\t\t\ttime: local.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction populateDateTimeInputs() {\n\t\t\tconst startDateInput = document.querySelector('input[name=\"start_date\"]');\n\t\t\tconst startTimeInput = document.querySelector('input[name=\"start_time\"]');\n\t\t\tconst endDateInput = document.querySelector('input[name=\"end_date\"]');\n\t\t\tconst endTimeInput = document.querySelector('input[name=\"end_time\"]');\n\n\t\t\tconst utcStart = document.getElementById('utc-start-time').dataset.start.split(' ');\n\t\t\tconst utcEnd = document.getElementById('utc-end-time').dataset.end.split(' ');\n\n\t\t\t// Check the time is not empty: 0001-01-01 00:00\n\t\t\tif (utcStart[0] != '0001-01-01') {\n\t\t\t\tconst localStart = UTCtoLocal(utcStart[0], utcStart[1]);\n\t\t\t\tstartDateInput.value = localStart.date;\n\t\t\t\tstartTimeInput.value = localStart.time;\n\t\t\t}\n\n\t\t\tif (utcEnd[0] != '0001-01-01') {\n\t\t\t\tconst localEnd = UTCtoLocal(utcEnd[0], utcEnd[1]);\n\t\t\t\tendDateInput.value = localEnd.date;\n\t\t\t\tendTimeInput.value = localEnd.time;\n\t\t\t}\n\t\t}\n\n        function handleDateTimeChange() {\n            const startDateInput = document.querySelector('input[name=\"start_date\"]');\n            const startTimeInput = document.querySelector('input[name=\"start_time\"]');\n            const endDateInput = document.querySelector('input[name=\"end_date\"]');\n            const endTimeInput = document.querySelector('input[name=\"end_time\"]');\n            \n            // Only convert if both date and time have values\n            if (startDateInput.value && startTimeInput.value) {\n                const utcStart = localToUTC(startDateInput.value, startTimeInput.value);\n                document.querySelector('input[name=\"utc_start_date\"]').value = utcStart.date;\n                document.querySelector('input[name=\"utc_start_time\"]').value = utcStart.time;\n            } else {\n                document.querySelector('input[name=\"utc_start_date\"]').value = '';\n                document.querySelector('input[name=\"utc_start_time\"]').value = '';\n            }\n            \n            if (endDateInput.value && endTimeInput.value) {\n                const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);\n                document.querySelector('input[name=\"utc_end_date\"]').value = utcEnd.date;\n                document.querySelector('input[name=\"utc_end_time\"]').value = utcEnd.time;\n            } else {\n                document.querySelector('input[name=\"utc_end_date\"]').value = '';\n                document.querySelector('input[name=\"utc_end_time\"]').value = '';\n            }\n        }\n\n\t\tpopulateDateTimeInputs();\n        document.addEventListener('DOMContentLoaded', function () {\n            const inputs = document.querySelectorAll('input[type=\"date\"], input[type=\"time\"]');\n            const form = document.querySelector('#schedule_modal form');\n\n            inputs.forEach(input => {\n                input.addEventListener('change', handleDateTimeChange);\n            });\n\n            // Ensure UTC conversion happens on form submission\n            form.addEventListener('submit', function(e) {\n                handleDateTimeChange();\n            });\n\n\t\t\thandleDateTimeChange();\n        });\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -921,7 +921,7 @@ func announcementModal() templ.Component {
 			templ_7745c5c3_Var34 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 88)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<dialog id=\"announcement_modal\" class=\"modal modal-bottom sm:modal-middle\"><form hx-post=\"/admin/notify/all\" hx-swap=\"none\" class=\"modal-box\"><h3 class=\"text-lg font-bold\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-megaphone inline-block w-5 h-5 mb-1 mr-2\"><path d=\"m3 11 18-5v12L3 14v-3z\"></path><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"></path></svg> Announcement</h3><p class=\"py-3\">Send an announcement to all teams.</p><textarea class=\"textarea w-full\" name=\"content\" placeholder=\"Announcement\"></textarea><p class=\"text-sm py-3\"><em>Note:</em> This will only be sent to teams that have already started playing.</p><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); announcement_modal.close()\">Nevermind</button> <button class=\"btn btn-primary\" onclick=\"announcement_modal.close()\">Send</button></div></form></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

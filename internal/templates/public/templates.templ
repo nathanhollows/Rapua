@@ -59,7 +59,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<input type="hidden" name="instanceID" value={ fmt.Sprint(link.TemplateID) }/>
 								<select
 									id="pages"
-									class="select select-sm select-bordered w-56 md:w-96 mx-auto text-ellipsis"
+									class="select select-sm select w-56 md:w-96 mx-auto text-ellipsis"
 									_="
 										on load
 										set :hash to window.location.hash
@@ -319,7 +319,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						<div class="label">
 							<span class="label-text">What is the name of the new game?</span>
 						</div>
-						<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+						<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 						<input type="hidden" name="link" value={ fmt.Sprint(link.ID) }/>
 					</label>
 					<p>

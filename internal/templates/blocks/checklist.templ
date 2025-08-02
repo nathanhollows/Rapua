@@ -81,7 +81,7 @@ templ checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBlo
 				<div class="label">
 					<span class="label-text font-bold">Points</span>
 				</div>
-				<label class="input input-bordered flex items-center gap-2">
+				<label class="input flex items-center gap-2">
 					<input name="points" type="number" class="grow" placeholder="Points" value={ fmt.Sprint(block.Points) }/>
 					<span class="badge badge-info tooltip tooltip-left" data-tip="Set to 0 to disable">Optional</span>
 				</label>
@@ -98,7 +98,7 @@ templ checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBlo
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="content"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono pt-3"
+				class="markdown-textarea textarea w-full font-mono pt-3"
 				style="field-sizing: content;"
 				placeholder="Markdown content here..."
 			>{ block.Content }</textarea>
@@ -185,7 +185,7 @@ function moveChecklistItemDown(event) {
 }
 
 templ checklistItem(item blocks.ChecklistItem) {
-	<label class="checklist-item input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ item.ID }>
+	<label class="checklist-item input bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ item.ID }>
 		<textarea
 			name="checklist-items"
 			class={ fmt.Sprintf("w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent item-%s", item.ID) }

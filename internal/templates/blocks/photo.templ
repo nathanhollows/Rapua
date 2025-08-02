@@ -134,7 +134,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 								name="photo"
 								type="text"
 								placeholder="Photo"
-								class="input input-bordered input-primary join-item w-full max-w-xs"
+								class="input input-primary join-item w-full max-w-xs"
 								autoComplete="off"
 								required
 							/>
@@ -178,7 +178,7 @@ templ photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBloc
 								name="photo"
 								type="text"
 								placeholder="Photo"
-								class="input input-bordered input-primary join-item w-full max-w-xs"
+								class="input input-primary join-item w-full max-w-xs"
 								autoComplete="off"
 								required
 							/>
@@ -208,7 +208,7 @@ templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 				<div class="label">
 					<span class="label-text font-bold">Points</span>
 				</div>
-				<label class="input input-bordered flex items-center gap-2">
+				<label class="input flex items-center gap-2">
 					<input name="points" type="number" class="grow" placeholder="Search" value={ fmt.Sprint(block.Points) }/>
 					<span class="badge badge-info tooltip tooltip-left cursor-help" data-tip="Set to 0 to disable">Optional</span>
 				</label>
@@ -225,7 +225,7 @@ templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 				id={ fmt.Sprintf("md-%s", block.ID) }
 				name="prompt"
 				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="What is third word of the second paragraph? What is the middle name of the person wearing a red hat?"
 			>{ block.Prompt }</textarea>

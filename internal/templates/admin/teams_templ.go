@@ -31,7 +31,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"teams-list\" class=\"join join-vertical w-full px-5 rounded-lg\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset &lt;.team-item:not(.hidden) input[name=&#39;team-checkbox&#39;]/&gt;&#39;s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to &lt;.team-item:not(.hidden)/&gt;\n\t\t\t\t\t\t\tremove .bg-transparent from &lt;.team-item:not(.hidden)/&gt;\n\t\t\t\t\t\telse \n\t\t\t\t\t\t\tadd .bg-transparent to &lt;.team-item:not(.hidden)/&gt;\n\t\t\t\t\t\t\tremove .bg-base-200 from &lt;.team-item:not(.hidden)/&gt;\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from &lt;input[name=&#39;team-checkbox&#39;]/&gt;\n\t\t\t\t\t\tif &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length is not &lt;input[name=&#39;team-checkbox&#39;]/&gt;&#39;s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length is &lt;input[name=&#39;team-checkbox&#39;]/&gt;&#39;s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from &lt;input[type=&#39;checkbox&#39;]/&gt; or load\n\t\t\t\t\t\t\tset my textContent to &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;\n\t\t\t\t\t\t\tappend x&#39;s value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join(&#39;\\n&#39;)) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to &#39;Copied!&#39;\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"flex gap-3 items-center flex-row\"><a href=\"#\" class=\"font-bold text-base-content text-sm\" _=\"on click\n\t\t\t\t\t\tif I do not match .opacity-60 and (next &lt;a/&gt;) matches .opacity-60\n\t\t\t\t\t\t\tremove .opacity-60 from next &lt;a/&gt;\n\t\t\t\t\t\t\tremove .hidden from &lt;.team-item.inactive/&gt;\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .opacity-60 to next &lt;a/&gt;\n\t\t\t\t\t\t\tremove .opacity-60 from me\n\t\t\t\t\t\t\tremove .hidden from &lt;.team-item.active/&gt;\n\t\t\t\t\t\t\tadd .hidden to &lt;.team-item.inactive/&gt;\n\t\t\t\t\t\tend\"><span _=\"on htmx:afterSettle from body set my textContent to &lt;.team-item.active/&gt;&#39;s length\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +44,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> Active</a> <a href=\"#\" class=\"font-bold text-sm\" _=\"on click\n\t\t\t\t\t\tif I do not match .opacity-60 and (previous &lt;a/&gt;) matches .opacity-60\n\t\t\t\t\t\t\tremove .opacity-60 from previous &lt;a/&gt;\n\t\t\t\t\t\t\tremove .hidden from &lt;.team-item.active/&gt;\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .opacity-60 to previous &lt;a/&gt;\n\t\t\t\t\t\t\tremove .opacity-60 from me\n\t\t\t\t\t\t\tremove .hidden from &lt;.team-item.inactive/&gt;\n\t\t\t\t\t\t\tadd .hidden to &lt;.team-item.active/&gt;\n\t\t\t\t\t\tend\"><span _=\"on htmx:afterSettle from body or htmx:afterRequest from #delete-confirm wait 0.5s set my textContent to &lt;.team-item.inactive/&gt;&#39;s length\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -57,7 +57,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> Inactive</a></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in &lt;input[name=&#39;team-checkbox&#39;]/&gt;\n\t\t\t\t\t\t\tif x&#39;s offsetParent is not null\n\t\t\t\t\t\t\t\tappend x&#39;s value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join(&#39;\\n&#39;)) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to &#39;Copied!&#39;\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"on input \n\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize(&#39;NFD&#39;)\n\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize(&#39;NFD&#39;)\"></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -73,22 +73,22 @@ func TeamsTable(teams []models.Team) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(teams) == 0 {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" _=\"on htmx:afterSettle from body\n\t\t\t\tif &lt;.team-item/&gt;&#39;s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif &lt;.team-item/&gt;&#39;s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div><dialog id=\"confirm_reset_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Reset teams</h3><p class=\"pt-4\">You are about to reset  <span class=\"font-bold\" _=\"on change from &lt;input[type=&#39;checkbox&#39;]/&gt; or load\n\t\t\t\t\t\t\tset my textContent to &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length\"></span> team(s). Doing this will wipe all related data including:</p><ul><li>the team name</li><li>all related check-ins, points, activity progress, and media</li></ul><p>Only the team code will be kept. This action cannot be undone.</p><form hx-post=\"/admin/teams/reset\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_reset_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-warning\" onclick=\"confirm_reset_modal.close()\">Reset</button></div></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete teams</h3><p class=\"pt-4\">You are about to delete <span class=\"font-bold\" _=\"on change from &lt;input[type=&#39;checkbox&#39;]/&gt; or load\n\t\t\t\t\t\t\tset my textContent to &lt;input[name=&#39;team-checkbox&#39;]:checked/&gt;&#39;s length\"></span> team(s). Doing this will wipe all data including:</p><ul><li>the team</li><li>check-ins</li><li>activity progress</li><li>any uploaded media</li></ul><p>This action cannot be undone.</p><form hx-delete=\"/admin/teams/delete\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button id=\"delete-confirm\" type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -147,7 +147,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -160,7 +160,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><div class=\"flex flex-row items-center gap-3 grow\"><input name=\"team-checkbox\" type=\"checkbox\" class=\"team-checkbox checkbox checkbox-sm checkbox-primary\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -173,12 +173,12 @@ func teamItem(team models.Team, classes string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" _=\"on htmx:afterRequest from #delete-confirm\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tadd .bg-danger .text-danger-content to closest .team-item\n\t\t\t\t\t\ttransition opacity to 0 then\n\t\t\t\t\t\tremove the closest .team-item\n\t\t\t\t\tend\n\t\t\t\t\ton input or change\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tremove .bg-transparent from closest .team-item\n\t\t\t\t\t\t\tadd .bg-base-200 to closest .team-item\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to closest .team-item\n\t\t\t\t\t\t\tremove .bg-base-200 from closest .team-item\n\t\t\t\t\t\tend\n\t\t\t\t\"><!-- Location code --><div class=\"tooltip cursor-pointer\" data-tip=\"Click to copy\" _=\"on click \n\t\t\t\t\twriteText(my textContent) on navigator.clipboard\n\t\t\t\t\tset @data-tip to &#39;Copied!&#39;\n\t\t\t\t\twait 2s\n\t\t\t\t\tset @data-tip to &#39;Click to copy&#39;\n\t\t\t\t\t\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.HasStarted {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"team-code badge badge-success badge-outline font-mono tracking-wider\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -191,12 +191,12 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"team-code badge font-mono tracking-wider\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -209,22 +209,22 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Location name -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Name == "" {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<em class=\"flex-grow opacity-50\">No name set</em> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a class=\"flex-grow\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -237,13 +237,13 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if team.HasStarted {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"btn btn-xs\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -256,12 +256,12 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-indicator=\".loading\" hx-swap=\"innerHTML\">See activity</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -291,7 +291,7 @@ func Teams(teams []models.Team) templ.Component {
 			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"hidden bg-danger text-danger-content border-error border-warning\"></span><div class=\"flex gap-3 flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Teams<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewbox=\"0 0 24 24\" fill=\"none\" stroke=\"currentcolor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m12 16v-4\"></path><path d=\"m12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Teams</h2><p>Teams can play individually or as a group sharing a single device with a unique team code.</p><p>Progress is tracked collectively for each team, whether played by an individual or a group.</p><p>Team codes are randomly generated. Players can set their own team names when they start playing.</p></div></div></div></h1><div class=\"flex gap-3\"><button class=\"btn btn-secondary\" onclick=\"add_teams_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg> Add teams</button></div></div><div id=\"teams-table\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -299,7 +299,7 @@ func Teams(teams []models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Modal for adding teams --><dialog id=\"add_teams_modal\" class=\"modal\"><div class=\"modal-box\"><h3 class=\"font-bold text-lg\">Quick add teams</h3><p class=\"py-4\">How many teams would you like to add?</p><form hx-post=\"/admin/teams/add\" hx-target=\"#teams-list\" hx-swap=\"beforeend swap:0.5s\" class=\"join flex flex-row w-full\"><input name=\"count\" type=\"number\" id=\"count\" class=\"input join-item flex-grow\" placeholder=\"1+\" min=\"1\" step=\"1\" value=\"10\"> <button class=\"btn btn-primary join-item\" onclick=\"add_teams_modal.close()\">Add Teams</button></form><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Nevermind</button></form></div></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

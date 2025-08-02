@@ -74,7 +74,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 				name="file"
 				type="file"
 				accept="image/*"
-				class="file-input file-input-bordered w-full"
+				class="file-input w-full"
 				_="on change
 					remove .hidden from the next <progress />"
 			/>
@@ -103,7 +103,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 			block.ID, block.ID,
 			) }
 	>
-		<label id={ fmt.Sprintf("url-%s-label", block.ID) } class="input input-bordered input-disabled border-opacity-100 flex items-center gap-2">
+		<label id={ fmt.Sprintf("url-%s-label", block.ID) } class="input input-disabled border-opacity-100 flex items-center gap-2">
 			<input
 				id={ fmt.Sprintf("url-%s", block.ID) }
 				name="url"
@@ -129,7 +129,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 					id={ fmt.Sprintf("caption-%s", block.ID) }
 					name="caption"
 					type="text"
-					class="input input-bordered w-full"
+					class="input w-full"
 					placeholder="Caption below image"
 					value={ block.Caption }
 				/>
@@ -148,7 +148,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 					id={ fmt.Sprintf("link-%s", block.ID) }
 					name="link"
 					type="url"
-					class="input input-bordered w-full invalid:border-error"
+					class="input w-full invalid:border-error"
 					placeholder="Link when clicked"
 					value={ block.Link }
 				/>
@@ -160,7 +160,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 templ ImageAdminUpload(media models.Upload) {
 	<label
 		id={ fmt.Sprintf("url-%s-label", media.BlockID) }
-		class="input input-bordered input-disabled border-opacity-100 flex items-center gap-2"
+		class="input input-disabled border-opacity-100 flex items-center gap-2"
 		hx-swap-oob="true"
 	>
 		<input

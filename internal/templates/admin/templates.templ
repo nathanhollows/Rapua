@@ -47,7 +47,7 @@ templ Templates(templates []models.Instance) {
 				<div id="template-filters" class="flex flex-row justify-between">
 					<div class="flex flex-row gap-2">
 						<!-- Search -->
-						<label class="input input-bordered input-sm flex items-center gap-2">
+						<label class="input input-sm flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 							<input
 								id="search-templates"
@@ -259,7 +259,7 @@ templ templateModals() {
 					<div class="label">
 						<span class="label-text">Give your template a name:</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 					<input type="hidden" name="id" value=""/>
 				</label>
 				<div class="modal-action">
@@ -310,7 +310,7 @@ templ templateModals() {
 					<div class="label">
 						<span class="label-text">What is the name of the new game?</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 					<input type="hidden" name="id" value=""/>
 				</label>
 				<!-- TODO -->
@@ -399,7 +399,7 @@ templ TemplateShareModal(template models.Instance) {
 					<label class="label" for="link-validity">
 						<span class="label-text">Validity</span>
 					</label>
-					<select id="link-validity" name="validity" class="select select-bordered w-full">
+					<select id="link-validity" name="validity" class="select w-full">
 						<option value="always" selected>Never expires</option>
 						<option value="day">1 day</option>
 						<option value="week">1 week</option>
@@ -413,7 +413,7 @@ templ TemplateShareModal(template models.Instance) {
 					<input
 						id="link-limit"
 						type="number"
-						class="input input-bordered w-full"
+						class="input w-full"
 						name="limit"
 						placeholder="Unlimited"
 						step="1"
@@ -491,7 +491,7 @@ templ ShareLinkCopyModal(url string) {
 		<div class="join w-full">
 			<input
 				id="facilitator_link"
-				class="input input-bordered join-item w-full"
+				class="input join-item w-full"
 				value={ url }
 			/>
 			<button

@@ -26,17 +26,17 @@ func Register(allowGoogleLogin bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-4 sm:outline dark:outline-base-200  rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Create an account</h1><span class=\"self-center\">Already have an account? <a href=\"login\" hx-boost=\"true\" class=\"link\">Log in</a></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if allowGoogleLogin {
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a class=\"btn btn-neutral\"><svg role=\"img\" class=\"w-5 h-5 fill-current\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Google</title><path d=\"M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z\"></path></svg> Create with Google</a><div class=\"divider my-0\">OR</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"register-error\"></div><form class=\"space-y-3\" hx-post=\"/register\" hx-trigger=\"submit\" hx-target-401=\"#register-error\"><label class=\"form-control\"><div class=\"label\"><span class=\"label-text\">Email</span></div><input id=\"email\" name=\"email\" type=\"email\" placeholder=\"Email\" autoComplete=\"email\" class=\"input\" required></label> <label class=\"form-control\"><div class=\"label\"><span class=\"label-text\">Password</span></div><input id=\"password\" name=\"password\" type=\"password\" placeholder=\"Password\" autoComplete=\"new-password\" class=\"input\" required></label> <label class=\"form-control\"><div class=\"label\"><span class=\"label-text\">Confirm password</span></div><input id=\"password-confirm\" name=\"password-confirm\" type=\"password\" placeholder=\"Confirm password\" class=\"input\" required></label><div class=\"form-control\"><label class=\"cursor-pointer label self-start gap-2\"><input type=\"checkbox\" class=\"checkbox\"> <span class=\"label-text\">I accept the <a href=\"/terms\" target=\"blank\" class=\"link\">Terms and Conditions</a></span></label></div><button class=\"btn btn-primary w-full\">Create</button></form></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +62,7 @@ func RegisterError(message string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert alert-error\"><div class=\"flex-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div class=\"flex-1\"><p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -75,7 +75,7 @@ func RegisterError(message string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,7 +101,7 @@ func RegisterSuccess() templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert alert-success\"><div class=\"flex-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check-big\"><path d=\"M21.801 10A10 10 0 1 1 17 3.335\"></path><path d=\"m9 11 3 3L22 4\"></path></svg></div><div class=\"flex-1\"><p>You have successfully registered. Please <a href=\"/login\" class=\"link\">login</a> to continue.</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

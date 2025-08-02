@@ -271,7 +271,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				<input
 					name="points"
 					type="number"
-					class="input input-bordered w-full"
+					class="input w-full"
 					placeholder="Points"
 					value={ fmt.Sprint(block.Points) }
 				/>
@@ -285,7 +285,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 			<textarea
 				name="question"
 				rows="3"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
+				class="markdown-textarea textarea w-full font-mono"
 				style="field-sizing: content;"
 				placeholder="Enter your quiz question here..."
 			>{ block.Question }</textarea>
@@ -412,7 +412,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 			</span>
 		</div>
 		<template id="quiz-option-template">
-			<label class="quiz-option join-item input input-bordered flex flex-row items-top gap-2 h-auto w-full">
+			<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
 				<input
 					type="checkbox"
 					name="option_correct"
@@ -452,7 +452,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 }
 
 templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool) {
-	<label class="quiz-option join-item input input-bordered flex flex-row items-top gap-2 h-auto w-full">
+	<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
 		if isMultipleChoice {
 			<input
 				type="checkbox"
