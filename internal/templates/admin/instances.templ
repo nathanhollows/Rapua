@@ -247,20 +247,17 @@ templ instanceItem(instance models.Instance, active bool) {
 	>
 		<div class="flex flex-row items-center gap-3 grow">
 			<!-- Play Status -->
-			switch instance.GetStatus() {
-				case models.Active:
-					<span class="tooltip" data-tip="Playing">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-play w-5 h-5 stroke-success"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-					</span>
-				case models.Scheduled:
-					<span class="tooltip" data-tip="Scheduled">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5 stroke-info"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
-					</span>
-				case models.Closed:
-					<span class="tooltip" data-tip="Closed">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-stop w-5 h-5 stroke-error"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>
-					</span>
-			}
+			<div class="inline-grid *:[grid-area:1/1] tooltip tooltip-right" data-tip={ instance.GetStatus().Description() }>
+				switch instance.GetStatus() {
+					case models.Active:
+						<div class="status status-lg status-success animate-ping"></div>
+						<div class="status status-lg status-success"></div>
+					case models.Scheduled:
+						<div class="status status-lg status-info"></div>
+					case models.Closed:
+						<div class="status status-lg status-error"></div>
+				}
+			</div>
 			<!-- Instance name -->
 			<span class="instance-name">
 				{ instance.Name }
