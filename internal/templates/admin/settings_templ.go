@@ -8,7 +8,10 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/nathanhollows/Rapua/v4/models"
+import (
+	"github.com/nathanhollows/Rapua/v4/models"
+	"strings"
+)
 
 func Settings(user models.User) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -69,7 +72,7 @@ func SettingsProfile(user models.User) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 98, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 101, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -87,7 +90,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.DisplayName.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 111, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 114, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -191,7 +194,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.WorkType.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 193, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 196, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -220,6 +223,10 @@ func SettingsProfile(user models.User) templ.Component {
 	})
 }
 
+func themes() []string {
+	return []string{"Cupcake", "Dracula", "System"}
+}
+
 func SettingsAppearance(user models.User) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -238,7 +245,63 @@ func SettingsAppearance(user models.User) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Change your theme</h2><p class=\"text-sm mb-4\">Theme preferences are stored in your browser and not tied to your account.</p><div id=\"theme-buttons\" class=\"space-y-2\"><button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"cupcake\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;cupcake&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"cupcake\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">Cupcake</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button> <button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"dracula\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;dracula&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"dracula\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">Dracula</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button> <button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"system\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to &#39;system&#39;\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"system\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">System</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button></div><!-- Theme initialization script --><script>\n\t\t\t\t\t// Initialize theme UI\n\t\t\t\t\tfunction updateThemeUI() {\n\t\t\t\t\t\t// Get current theme from localStorage\n\t\t\t\t\t\tconst currentTheme = localStorage.getItem('theme') || 'system';\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update document attribute\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', currentTheme);\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Hide all checkmarks first\n\t\t\t\t\t\tdocument.querySelectorAll('.theme-check').forEach(el => {\n\t\t\t\t\t\t\tel.classList.add('invisible');\n\t\t\t\t\t\t});\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Show checkmark for current theme\n\t\t\t\t\t\tconst activeButton = document.querySelector(`[data-theme-value=\"${currentTheme}\"]`);\n\t\t\t\t\t\tif (activeButton) {\n\t\t\t\t\t\t\tactiveButton.classList.add('active');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.remove('invisible');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.add('visible');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// Run on page load\n\t\t\t\t\tdocument.addEventListener('DOMContentLoaded', updateThemeUI);\n\t\t\t\t\t\n\t\t\t\t\t// Also run now in case the script loads after DOMContentLoaded\n\t\t\t\t\tupdateThemeUI();\n\t\t\t\t</script></div></div></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Change your theme</h2><p class=\"text-sm mb-4\">Theme preferences are stored in your browser and not tied to your account.</p><div id=\"theme-buttons\" class=\"space-y-2\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, theme := range themes() {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button type=\"button\" class=\"theme-button outline-base-content text-start outline-offset-4 w-full\" data-theme-value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 243, Col: 48}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" _=\"on click \n\t\t\t\t\t\t\tremove .active from .theme-button\n\t\t\t\t\t\t\tremove .visible from .theme-check\n\t\t\t\t\t\t\tadd .invisible to .theme-check\n\t\t\t\t\t\t\tadd .visible to .theme-check in me\n\t\t\t\t\t\t\tadd .active to me\n\t\t\t\t\t\t\tset localStorage.theme to @data-theme-value\n\t\t\t\t\t\t\tcall updateThemeUI()\n\t\t\t\t\t\t\"><span class=\"bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans\" data-theme=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 254, Col: 136}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><span class=\"grid grid-cols-5 grid-rows-3\"><span class=\"col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" class=\"theme-check h-3 w-3 shrink-0\"><path d=\"M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z\"></path></svg> <span class=\"flex-grow text-sm\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if theme == "System" {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Follow system theme")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(theme)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 262, Col: 19}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span class=\"flex h-full shrink-0 flex-wrap gap-1\"><span class=\"bg-primary rounded-badge w-2\"></span> <span class=\"bg-secondary rounded-badge w-2\"></span> <span class=\"bg-accent rounded-badge w-2\"></span> <span class=\"bg-neutral rounded-badge w-2\"></span></span></span></span></span></button>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><!-- Theme initialization script --><script>\n\t\t\t\t\t// Initialize theme UI\n\t\t\t\t\tfunction updateThemeUI() {\n\t\t\t\t\t\t// Get current theme from localStorage\n\t\t\t\t\t\tconst currentTheme = localStorage.getItem('theme') || 'system';\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update document attribute\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', currentTheme);\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Hide all checkmarks first\n\t\t\t\t\t\tdocument.querySelectorAll('.theme-check').forEach(el => {\n\t\t\t\t\t\t\tel.classList.add('invisible');\n\t\t\t\t\t\t});\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Show checkmark for current theme\n\t\t\t\t\t\tconst activeButton = document.querySelector(`[data-theme-value=\"${currentTheme}\"]`);\n\t\t\t\t\t\tif (activeButton) {\n\t\t\t\t\t\t\tactiveButton.classList.add('active');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.remove('invisible');\n\t\t\t\t\t\t\tactiveButton.querySelector('.theme-check').classList.add('visible');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// Run on page load\n\t\t\t\t\tdocument.addEventListener('DOMContentLoaded', updateThemeUI);\n\t\t\t\t\t\n\t\t\t\t\t// Also run now in case the script loads after DOMContentLoaded\n\t\t\t\t\tupdateThemeUI();\n\t\t\t\t</script></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -259,26 +322,26 @@ func SettingsSecurity(user models.User) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if user.Provider == models.ProviderEmail {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"alert bg-transparent border-0\"><p class=\"text-sm\">Logged in with <strong>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-10 py-10 mt-12\"><p class=\"text-sm\">Logged in with <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 350, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 315, Col: 57}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Current password</span></div><input name=\"old_password\" type=\"password\" class=\"input bg-base-200 w-full\" required></label><!-- New password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">New password</span></div><input name=\"new_password\" type=\"password\" class=\"input bg-base-200 w-full\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != &#39;&#39; then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><div class=\"label\"><span class=\"label-text-alt\">Use at least 8 characters. Longer passwords are stronger.</span></div></label> <label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Confirm password</span></div><input name=\"confirm_password\" type=\"password\" class=\"input bg-base-200 w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById(&#39;new_password&#39;).value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .hidden to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><div class=\"label\"><span id=\"password-mismatch\" class=\"label-text-alt text-error hidden\">Passwords don't match</span></div></label><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Current password</span></div><input name=\"old_password\" type=\"password\" class=\"input bg-base-200 w-full\" required></label><!-- New password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">New password</span></div><input name=\"new_password\" type=\"password\" class=\"input bg-base-200 w-full\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != &#39;&#39; then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><div class=\"label\"><span class=\"label-text-alt\">Use at least 8 characters. Longer passwords are stronger.</span></div></label> <label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Confirm password</span></div><input name=\"confirm_password\" type=\"password\" class=\"input bg-base-200 w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById(&#39;new_password&#39;).value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .hidden to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><div class=\"label\"><span id=\"password-mismatch\" class=\"label-text-alt text-error hidden\">Passwords don't match</span></div></label><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -287,12 +350,12 @@ func SettingsSecurity(user models.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 442, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 406, Col: 59}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -322,9 +385,9 @@ func SettingsBilling(user models.User) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var10 == nil {
-			templ_7745c5c3_Var10 = templ.NopComponent
+		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var13 == nil {
+			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Your plan</h2><div class=\"prose\"><p>You are currently on the <strong>Free Plan</strong>.</p><p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p><button type=\"button\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\tfetch &#39;/admin/settings/billing/upgrade&#39; {method: &#39;POST&#39;}\n\t\t\t\t\t\t\t\tthen if(it.ok) call window.location.href = &#39;/admin/settings/billing/checkout&#39;\n\t\t\t\t\t\t\">Upgrade to Pro</button></div></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Order history</h2><table class=\"table w-full\"><thead><tr><th>Date</th><th>Amount</th><th>Plan</th><th>Receipt</th></tr></thead> <tbody><tr><td colspan=\"4\" class=\"text-center py-4\">No orders yet</td></tr></tbody></table></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Payment method</h2><div class=\"prose\"><p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p></div></div></div></div>")

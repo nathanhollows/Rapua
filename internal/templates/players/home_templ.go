@@ -28,12 +28,12 @@ func Home(team models.Team) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"sm:mx-auto sm:w-full sm:max-w-sm\"><svg class=\"w-16 h-16 m-auto stroke-base-content fill-base-content mb-3\" viewBox=\"0 0 31.622356 38.219368\" version=\"1.1\" id=\"svg1\" xml:space=\"preserve\" inkscape:version=\"1.4 (e7c3feb100, 2024-10-09)\" sodipodi:docname=\"Rapua logo.svg\" xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\" xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><defs id=\"defs1\"></defs> <g inkscape:label=\"Layer 1\" inkscape:groupmode=\"layer\" id=\"layer1\" transform=\"translate(-89.188871,-132.68906)\"><path id=\"rect7\" style=\"fill:currentColor;stroke-width:2.14931;stroke:none\" inkscape:label=\"marker\" d=\"M -20.305083 167.98526 A 15.811142 15.811142 0 0 0 -42.664893 167.88867 A 15.811142 15.811142 0 0 0 -47.303905 179.08273 L -47.412432 179.08263 L -47.412546 194.92794 L -34.216461 194.9283 L -34.192744 189.43774 A 10.677655 10.677655 0 0 1 -39.116241 186.6346 A 10.677655 10.677655 0 0 1 -39.050648 171.53428 A 10.677655 10.677655 0 0 1 -23.950687 171.5995 A 10.677655 10.677655 0 0 1 -24.01555 186.69983 A 10.677655 10.677655 0 0 1 -29.059306 189.48878 L -29.081823 194.70164 A 15.811142 15.811142 0 0 0 -20.401305 190.34543 A 15.811142 15.811142 0 0 0 -20.305083 167.98526 z M -27.741984 175.35819 A 5.3388276 5.3388276 0 0 0 -35.291965 175.32557 A 5.3388276 5.3388276 0 0 0 -35.324578 182.87555 A 5.3388276 5.3388276 0 0 0 -27.774233 182.90853 A 5.3388276 5.3388276 0 0 0 -27.741984 175.35819 z \" transform=\"rotate(-45.247493,-8.4160937e-7,1.1747519e-6)\"></path></g></svg><h2 class=\"text-center text-2xl font-bold leading-9 tracking-tight\">Start Playing</h2></div><div class=\"sm:mx-auto sm:w-full sm:max-w-sm\"><form class=\"space-y-6\" hx-post=\"/play\" hx-swap=\"none\"><div><label class=\"form-control w-full\" for=\"team\"><div class=\"label font-bold\"><span class=\"label-text\">Team code</span></div><input id=\"team\" name=\"team\" type=\"text\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Code != "" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -46,22 +46,22 @@ func Home(team models.Team) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input input-lg w-full text-2xl font-mono text-center uppercase tracking-widest\" autofocus></label></div><div><button type=\"submit\" class=\"btn btn-accent w-full\">Start</button> ")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Code != "" && team.Instance.GetStatus() != models.Closed {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p class=\"mt-5 text-center\"><a href=\"/checkins\" class=\"link\">See my scanned locations</a></p>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></form></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

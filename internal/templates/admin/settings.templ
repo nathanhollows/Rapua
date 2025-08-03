@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/nathanhollows/Rapua/v4/models"
+import (
+	"github.com/nathanhollows/Rapua/v4/models"
+	"strings"
+)
 
 templ Settings(user models.User) {
 	<main class="max-w-7xl m-auto pb-8">
@@ -222,6 +225,10 @@ templ SettingsProfile(user models.User) {
 	</form>
 }
 
+func themes() []string {
+	return []string{"Cupcake", "Dracula", "System"}
+}
+
 templ SettingsAppearance(user models.User) {
 	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
 		<div class="grid h-fit px-5 flex-grow">
@@ -229,84 +236,43 @@ templ SettingsAppearance(user models.User) {
 				<h2 class="font-bold pb-5">Change your theme</h2>
 				<p class="text-sm mb-4">Theme preferences are stored in your browser and not tied to your account.</p>
 				<div id="theme-buttons" class="space-y-2">
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="cupcake"
-						_="on click 
+					for _, theme := range themes() {
+						<button
+							type="button"
+							class="theme-button outline-base-content text-start outline-offset-4 w-full"
+							data-theme-value={ strings.ToLower(theme) }
+							_="on click 
 							remove .active from .theme-button
+							remove .visible from .theme-check
+							add .invisible to .theme-check
+							add .visible to .theme-check in me
 							add .active to me
-							set localStorage.theme to 'cupcake'
+							set localStorage.theme to @data-theme-value
 							call updateThemeUI()
 						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="cupcake">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">Cupcake</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
+						>
+							<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme={ strings.ToLower(theme) }>
+								<span class="grid grid-cols-5 grid-rows-3">
+									<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+										<span class="flex-grow text-sm">
+											if theme == "System" {
+												Follow system theme
+											} else {
+												{ theme }
+											}
+										</span>
+										<span class="flex h-full shrink-0 flex-wrap gap-1">
+											<span class="bg-primary rounded-badge w-2"></span>
+											<span class="bg-secondary rounded-badge w-2"></span>
+											<span class="bg-accent rounded-badge w-2"></span>
+											<span class="bg-neutral rounded-badge w-2"></span>
+										</span>
 									</span>
 								</span>
 							</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="dracula"
-						_="on click 
-							remove .active from .theme-button
-							add .active to me
-							set localStorage.theme to 'dracula'
-							call updateThemeUI()
-						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="dracula">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">Dracula</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
-									</span>
-								</span>
-							</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="system"
-						_="on click 
-							remove .active from .theme-button
-							add .active to me
-							set localStorage.theme to 'system'
-							call updateThemeUI()
-						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="system">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">System</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
-									</span>
-								</span>
-							</span>
-						</span>
-					</button>
+						</button>
+					}
 				</div>
 				<!-- Theme initialization script -->
 				<script>
@@ -345,10 +311,8 @@ templ SettingsAppearance(user models.User) {
 
 templ SettingsSecurity(user models.User) {
 	if user.Provider == models.ProviderEmail {
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="alert bg-transparent border-0">
-				<p class="text-sm">Logged in with <strong>{ user.Email }</strong></p>
-			</div>
+		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-10 py-10 mt-12">
+			<p class="text-sm">Logged in with <strong>{ user.Email }</strong></p>
 		</div>
 		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
 			<div class="grid h-fit px-5 flex-grow">

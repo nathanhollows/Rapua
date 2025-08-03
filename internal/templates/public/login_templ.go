@@ -26,17 +26,17 @@ func Login(allowGoogleLogin bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-4 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Log in</h1><span class=\"self-center\">Don't have an account? <a href=\"/register\" class=\"link\" hx-boost=\"true\">Register</a></span> ")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if allowGoogleLogin {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a href=\"/auth/google\" class=\"btn btn-neutral\"><svg role=\"img\" class=\"w-5 h-5 fill-current\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Google</title><path d=\"M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z\"></path></svg> Log in with Google</a><div class=\"divider\">OR</div>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/login\" hx-trigger=\"submit\" hx-target-401=\"#login-error\"><div id=\"login-error\"></div><div class=\"space-y-4\"><label class=\"form-control\"><div class=\"label\"><span class=\"label-text\">Email</span></div><input name=\"email\" type=\"email\" id=\"email\" class=\"input\" placeholder=\"name@email.com\" autocomplete=\"email\" required></label> <label class=\"form-control\"><div class=\"label\"><span class=\"label-text\">Password</span> <a href=\"forgot\" class=\"label-text link\" hx-boost=\"true\">Forgot password?</a></div><input type=\"password\" name=\"password\" id=\"password\" class=\"input\" autocomplete=\"current-password\" required></label><div class=\"form-control\"><label class=\"cursor-pointer label self-start gap-2\"><input type=\"checkbox\" class=\"checkbox\" checked> <span class=\"label-text\">Remember me</span></label></div><button type=\"submit\" class=\"btn btn-primary w-full\">Log in</button></div></form></div></div></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +62,7 @@ func LoginError(message string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert alert-error\"><div class=\"flex-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div class=\"flex-1\"><p>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -75,7 +75,7 @@ func LoginError(message string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></div></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

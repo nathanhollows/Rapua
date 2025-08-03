@@ -1,0 +1,105 @@
+ <div class=\"form-control\">
+<label class=\"
+\">
+<input type=\"checkbox\" class=\"
+\"
+ checked
+ disabled>
+<input type=\"radio\" class=\"
+\"
+ checked
+ disabled>
+<div
+ class=\"label-text prose text-success\"
+ else
+ class=\"label-text prose text-error\"
+ class=\"label-text prose\"
+>
+</div></label>
+</div>
+<div id=\"
+\" class=\"indicator w-full\">
+<span class=\"indicator-item indicator-top indicator-center badge badge-info\">
+ pts</span>
+<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">
+<form id=\"
+\" hx-post=\"/blocks/validate\" hx-target=\"
+\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"block\" value=\"
+\"><div class=\"form-control\">
+<label class=\"label cursor-pointer justify-start gap-3\">
+<input type=\"checkbox\" name=\"quiz_option\" value=\"
+\" class=\"checkbox checkbox-primary\">
+<input type=\"radio\" name=\"quiz_option\" value=\"
+\" class=\"radio radio-primary\">
+<div class=\"label-text prose\">
+</div></label>
+</div>
+ 
+<p class=\"p-4 pb-0 text-primary font-bold text-center\">Please select an option to continue (Attempts: 
+)</p>
+<p class=\"p-4 pb-0 text-primary font-bold text-center\">Not quite! Try again (Attempts: 
+)</p>
+<div class=\"flex justify-center mt-4\"><button type=\"submit\" class=\"btn btn-primary\" disabled id=\"
+\" _=\"\n\t\t\t\t\t\t\t\ton change from (closest &lt;form /&gt;).querySelectorAll(&#39;input[name=quiz_option]&#39;)\n\t\t\t\t\t\t\t\t\tremove @disabled from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\">Check <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div></form>
+</div></div>
+<div id=\"
+\" class=\"indicator w-full\">
+<span class=\"indicator-item indicator-top indicator-center badge badge-info\">
+ pts</span>
+<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">
+<form id=\"
+\" hx-post=\"/blocks/validate\" hx-target=\"
+\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"block\" value=\"
+\"><div class=\"form-control\">
+<label class=\"label cursor-pointer justify-start gap-3\">
+<input type=\"checkbox\" name=\"quiz_option\" value=\"
+\" class=\"checkbox checkbox-primary\">
+<input type=\"radio\" name=\"quiz_option\" value=\"
+\" class=\"radio radio-primary\">
+<div class=\"label-text prose\">
+</div></label>
+</div>
+ 
+<p class=\"p-4 pb-0 text-primary font-bold text-center\">Please select an option to continue (Attempts: 
+)</p>
+<p class=\"p-4 pb-0 text-primary font-bold text-center\">Not quite! Try again (Attempts: 
+)</p>
+<div class=\"flex justify-center mt-4\"><button type=\"submit\" class=\"btn btn-primary\" id=\"
+\">
+Check 
+Submit 
+<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div></form>
+ <div class=\"animate-[pulse_1s_ease-in-out]\">
+</div>
+</div></div>
+<form id=\"
+\" hx-post=\"
+\" hx-trigger=\"
+\" hx-swap=\"none\">
+<label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Points</span></div><input name=\"points\" type=\"number\" class=\"input w-full\" placeholder=\"Points\" value=\"
+\"></label>
+<label class=\"form-control w-full mt-5\"><div class=\"label\"><span class=\"label-text font-bold\">Question</span></div><textarea name=\"question\" rows=\"3\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"Enter your quiz question here...\">
+</textarea><div class=\"label\">
+</div></label><div class=\"form-control\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Multiple choice</span> <input type=\"checkbox\" name=\"multiple_choice\" class=\"toggle\"
+ checked
+ _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\tset :inputs to (closest &lt;form /&gt;).querySelectorAll(&#39;input[name=option_correct]&#39;)\n\t\t\t\t\t\tif I match &lt;:checked /&gt; then\n\t\t\t\t\t\t\tadd .checkbox to :inputs\n\t\t\t\t\t\t\tadd .checkbox-sm to :inputs\n\t\t\t\t\t\t\tadd .checkbox-success to :inputs\n\t\t\t\t\t\t\tremove .radio from :inputs\n\t\t\t\t\t\t\tremove .radio-sm from :inputs\n\t\t\t\t\t\t\tremove .radio-success from :inputs\n\t\t\t\t\t\t\tset @type of :inputs to &#39;checkbox&#39;\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .radio to :inputs\n\t\t\t\t\t\t\tadd .radio-sm to :inputs\n\t\t\t\t\t\t\tadd .radio-success to :inputs\n\t\t\t\t\t\t\tremove .checkbox from :inputs\n\t\t\t\t\t\t\tremove .checkbox-sm from :inputs\n\t\t\t\t\t\t\tremove .checkbox-success from :inputs\n\t\t\t\t\t\t\tset @type of :inputs to &#39;radio&#39;\n\t\t\t\t\t\tend\n\t\t\t\t\t\"></label></div><div class=\"form-control\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Randomise Order</span> <input type=\"checkbox\" name=\"randomize_order\" class=\"toggle\"
+ checked
+></label></div><div class=\"form-control w-full\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Multiple Attempts</span> <input type=\"checkbox\" name=\"retry_enabled\" class=\"toggle\"
+ checked
+></label></div><div class=\"form-control w-full mt-5\"><div class=\"label font-bold flex justify-between\"><span class=\"label-text\">Answer Options</span> <button class=\"btn btn-outline btn-xs\" type=\"button\" _=\"\n\t\t\t\t\t\ton click\n\t\t\t\t\t\t\tset :group to closest &lt;form /&gt;\n\t\t\t\t\t\t\tput #quiz-option-template&#39;s innerHTML after last .quiz-option in :group.querySelector(&#39;.quiz-options&#39;)\n\t\t\t\t\t\t\tif :group.querySelectorAll(&#39;input[name=multiple_choice]:checked&#39;).length then\n\t\t\t\t\t\t\t\tremove &lt;input[type=radio] /&gt; from last &lt;label /&gt; in :group\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tremove &lt;input[type=checkbox] /&gt; from last &lt;label /&gt; in :group\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tset @value of last &lt;input[name=option_correct] /&gt; to &#39;option_&#39; + ( :group.querySelectorAll(&#39;.quiz-options label&#39;).length - 1 )\n\t\t\t\t\t\t\">Add Option</button></div><div class=\"quiz-options join join-vertical\" _=\"on load or click from me.querySelectorAll(&#39;button&#39;) or click from previous &lt;button /&gt; or triggerUpdate\n\t\t\t\tif my children&#39;s length &gt; 2\n\t\t\t\t\tremove .invisible from me.querySelectorAll(&#39;button&#39;)\n\t\t\t\telse\n\t\t\t\t\tadd .invisible to me.querySelectorAll(&#39;button&#39;)\n\t\t\t\tend\n\t\t\t\t\">
+ 
+</div><span class=\"label-text text-xs text-error invisible mt-1\" _=\"\n\t\t\t\tset :group to closest &lt;form /&gt;\n\t\t\t\ton load or click from :group.querySelectorAll(&#39;.quiz-options input&#39;)\n\t\t\t\tset :checkedInputs to :group.querySelectorAll(&#39;.quiz-options input:checked&#39;)\n\t\t\t\tif :checkedInputs&#39;s length != 0\n\t\t\t\t\tadd .invisible to me\n\t\t\t\telse\n\t\t\t\t\tremove .invisible from me\n\t\t\t\tend\n\t\t\t\">At least one option must be correct.</span></div><template id=\"quiz-option-template\"><label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\"><input type=\"checkbox\" name=\"option_correct\" class=\"checkbox checkbox-sm checkbox-success mt-3\" _=\"on change send save to (closest &lt;form/&gt;)\"> <input type=\"radio\" name=\"option_correct\" class=\"radio radio-sm radio-success mt-3\" _=\"on change send triggerUpdate to (closest &lt;form/&gt;).querySelector(&#39;.quiz-options&#39;)\"> 
+<input name=\"option_text\" class=\"
+\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" autoComplete=\"off\" _=\"on keyup send save to (closest &lt;form/&gt;)\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest &lt;form /&gt;\n\t\t\t\tremove closest parent &lt;label /&gt;\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector(&#39;.quiz-options&#39;)\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></form>
+<label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\">
+<input type=\"checkbox\" name=\"option_correct\" value=\"
+\" class=\"checkbox checkbox-sm checkbox-success mt-3\"
+ checked
+ _=\"on change send triggerUpdate to (closest &lt;form/&gt;).querySelector(&#39;.quiz-options&#39;)\"> 
+<input type=\"radio\" name=\"option_correct\" value=\"
+\" class=\"radio radio-sm radio-success mt-3\"
+ checked
+ _=\"on change send triggerUpdate to (closest &lt;form/&gt;).querySelector(&#39;.quiz-options&#39;)\"> 
+<input name=\"option_text\" class=\"
+\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" value=\"
+\" autoComplete=\"off\" _=\"on keyup send save to (closest &lt;form/&gt;)\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest &lt;form /&gt;\n\t\t\t\tremove closest parent &lt;label /&gt;\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector(&#39;.quiz-options&#39;)\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>

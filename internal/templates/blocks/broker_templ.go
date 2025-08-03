@@ -33,7 +33,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,7 +46,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"indicator w-full\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -58,7 +58,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -72,7 +72,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <form hx-post=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -85,7 +85,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -98,7 +98,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><input type=\"hidden\" name=\"block\" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -111,12 +111,12 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><div class=\"form-control w-full max-w-xs\"><label class=\"label\"><span class=\"label-text\">How many points do you offer?</span></label><div class=\"join\"><input name=\"points_bid\" type=\"number\" min=\"0\" placeholder=\"0\" class=\"input input-warning join-item w-full max-w-xs\" required> <button type=\"submit\" class=\"btn btn-warning join-item\">Make Offer</button></div></div></form>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -142,7 +142,7 @@ func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlo
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -155,7 +155,7 @@ func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"indicator w-full\" hx-swap-oob=\"true\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -167,7 +167,7 @@ func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -175,7 +175,7 @@ func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"mt-0 mb-0 divider divider-warning\">Information received</div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -183,7 +183,7 @@ func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -209,7 +209,7 @@ func brokerPlayerComplete(block blocks.BrokerBlock, data blocks.PlayerState) tem
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><!-- Parse the player data to show the purchased information -->")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -217,7 +217,7 @@ func brokerPlayerComplete(block blocks.BrokerBlock, data blocks.PlayerState) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -268,7 +268,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form id=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -281,7 +281,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-post=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -294,7 +294,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-trigger=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -307,7 +307,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-swap=\"none\" _=\"\n\t\tinit send recount to me\n\t\ton recount\n\t\t\tif me.querySelectorAll(&#39;.tier&#39;).length &lt; 2 then\n\t\t\t\tadd .invisible to (&lt;.tier button/&gt; in me)\n\t\t\telse\n\t\t\t\tremove .invisible from (&lt;.tier button/&gt; in me)\n\t\t\tend\n\t\t\trepeat for el in (&lt;.tier /&gt; in me) index i \n\t\t\t\tset el.querySelector(&#39;.tier-count&#39;).innerHTML to (i + 1)\n\t\t\tend\n\t\tend\"><!-- Broker blocks don't use completion bonus points --><label class=\"form-control w-full mt-4\"><div class=\"label\"><span class=\"label-text font-bold\">Prompt</span></div><textarea name=\"prompt\" rows=\"3\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"The merchant eyes you suspiciously. &#39;I might know something... depends on how much it&#39;s worth to you.&#39;\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -320,7 +320,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</textarea><div class=\"label\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -328,7 +328,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></label> <label class=\"form-control w-full mt-4\"><div class=\"label\"><span class=\"label-text font-bold\">Default Information (0 points)</span></div><textarea name=\"default_info\" rows=\"2\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"&#39;I don&#39;t know anything.&#39; or &#39;The shipment left yesterday.&#39;\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -341,7 +341,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</textarea><div class=\"label\"><span class=\"label-text-alt\">What players receive when they offer 0 points</span></div></label><div class=\"divider\"><div><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact font-normal dropdown-content bg-base-300 text-base-content rounded-box z-20 w-64 shadow-lg text-start\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">How it works</h2><p class=\"text-wrap\">Players enter a point amount. They get the best information tier their bid can afford. If they bid less than any tier, they get the default info but still pay their bid.</p></div></div></div></div>Information Tiers</div><div id=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -354,7 +354,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -364,7 +364,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Always show at least 1 empty tier for new content -->")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -374,7 +374,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><button class=\"btn btn-sm btn-neutral flex m-auto\" type=\"button\" _=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -393,7 +393,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus-icon lucide-plus w-5 h-5\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add a Tier</button><template id=\"broker-tier-template\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -401,7 +401,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</template></form>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -427,7 +427,7 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"tier w-full indicator\"><div class=\"indicator-item mt-4 mr-4\"><button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error flex tooltip invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\tset :group to closest &lt;form /&gt;\n\t\t\t\t\tremove closest parent .tier\n\t\t\t\t\tsend change to first &lt;input[type=number] /&gt; in :group\n\t\t\t\t\tsend recount to :group\n\t\t\t\t\tsend resubmit to :group\n\t\t\t\tend\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div><div class=\"grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-base-100/50 rounded-lg \"><div class=\"md:col-span-1\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Tier <span class=\"tier-count\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -440,12 +440,12 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> Points</span></div><input name=\"tier_points\" type=\"number\" class=\"input w-full invalid:border-error\" placeholder=\"1\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 29)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if tier.PointsRequired > 0 {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 30)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -458,12 +458,12 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 31)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" min=\"1\" _=\"init\n\t\t\t\t\t\t\tset :group to closest &lt;form/&gt;\n\t\t\t\t\t\t\tset :next to next &lt;input[type=number] /&gt; within :group\n\t\t\t\t\t\t\tif :next then\n\t\t\t\t\t\t\t\tset :next&#39;s @min to (my value - 0) + 1\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tset :prev to previous &lt;input[type=number] /&gt; within :group\n\t\t\t\t\t\t\tif :prev then\n\t\t\t\t\t\t\t\tif :prev&#39;s value == &#39;&#39; then\n\t\t\t\t\t\t\t\t\tset @min to (:prev&#39;s @min - 0) + 1\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tset @min to (:prev&#39;s value - 0) + 1\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tset @placeholder to @min\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tset :group to closest &lt;form/&gt;\n\t\t\t\t\t\t\tset :next to next &lt;input[type=number] /&gt; within :group\n\t\t\t\t\t\t\tif :next then\n\t\t\t\t\t\t\t\tif my value != &#39;&#39; then\n\t\t\t\t\t\t\t\t\tset :next&#39;s @min to (my value - 0) + 1\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tset :next&#39;s @min to (my @min - 0) + 1\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tif :next&#39;s value &lt; :next&#39;s @min then\n\t\t\t\t\t\t\t\t\tif :next&#39;s value != &#39;&#39; then\n\t\t\t\t\t\t\t\t\t\tset :next&#39;s value to :next&#39;s @min\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tset :next&#39;s @placeholder to :next&#39;s @min\n\t\t\t\t\t\t\t\tsend change to :next\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\ton keyup send resubmit to closest &lt;form /&gt;\n\t\t\t\t\t\t\"></label></div><div class=\"md:col-span-3\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Information Content</span></div><textarea name=\"tier_content\" rows=\"2\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"Better information for players who pay this much...\" _=\"on keyup send resubmit to closest &lt;form /&gt;\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -476,7 +476,7 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</textarea></label></div></div></div>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 33)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

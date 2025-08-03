@@ -1,0 +1,46 @@
+<figure id=\"
+\">
+<a href=\"
+\" target=\"_blank\" rel=\"noopener\"><img src=\"
+\" alt=\"
+\" title=\"
+\" class=\"rounded-2xl\"></a> 
+<img src=\"
+\" alt=\"
+\" class=\"rounded-2xl\"> 
+<figcaption class=\"text-sm text-center\">
+</figcaption>
+</figure>
+<form id=\"
+\"
+ class=\"w-full hidden\"
+ class=\"w-full\"
+ hx-post=\"/admin/media/upload\" hx-encoding=\"multipart/form-data\" hx-trigger=\"
+\" _=\"
+\" hx-swap=\"none\" _=\"
+\"><input type=\"hidden\" name=\"location_id\" value=\"
+\"> <input type=\"hidden\" name=\"block_id\" value=\"
+\"> <input type=\"hidden\" name=\"context\" value=\"image_block\"> <label for=\"
+\" class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Upload Image</span></div><input id=\"
+\" name=\"file\" type=\"file\" accept=\"image/*\" class=\"file-input w-full\" _=\"on change\n\t\t\t\t\tremove .hidden from the next &lt;progress /&gt;\"></label> <progress id=\"
+\" class=\"progress progress-primary w-full hidden\" value=\"0\" max=\"100\"></progress></form><form
+ class=\"w-full hidden\"
+ class=\"w-full\"
+ id=\"
+\" hx-post=\"
+\" hx-trigger=\"
+\" hx-swap=\"none\" _=\"
+\"><label id=\"
+\" class=\"input input-disabled border-opacity-100 flex items-center gap-2\"><input id=\"
+\" name=\"url\" type=\"url\" class=\"grow\" placeholder=\"Image URL\" value=\"
+\"> <button class=\"btn btn-sm btn-secondary btn-ghost btn-circle\">×</button></label><div class=\"flex flex-col md:flex-row gap-5\"><label for=\"
+\" class=\"form-control w-full mt-5\"><div class=\"label\"><span class=\"w-full label-text font-bold flex justify-between\">Caption  <badge class=\"badge badge-info badge-sm opacity-80\">Optional</badge></span></div><input id=\"
+\" name=\"caption\" type=\"text\" class=\"input w-full\" placeholder=\"Caption below image\" value=\"
+\"></label> <label for=\"
+\" class=\"form-control w-full mt-5\"><div class=\"label\"><span class=\"w-full label-text font-bold flex justify-between\">Link <badge class=\"badge badge-info badge-sm opacity-80\">Optional</badge></span></div><input id=\"
+\" name=\"link\" type=\"url\" class=\"input w-full invalid:border-error\" placeholder=\"Link when clicked\" value=\"
+\"></label></div></form>
+<label id=\"
+\" class=\"input input-disabled border-opacity-100 flex items-center gap-2\" hx-swap-oob=\"true\"><input id=\"
+\" name=\"url\" type=\"url\" class=\"grow\" placeholder=\"Image URL\" value=\"
+\"> <button class=\"btn btn-sm btn-secondary btn-ghost btn-circle\">×</button></label>

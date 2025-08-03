@@ -52,7 +52,7 @@
 }
 
 /* Custom CSS */
-.artboard #player-nav, #preview #player-nav {
+.mockup-phone #player-nav, #preview #player-nav {
   @apply hidden;
 }
 
@@ -62,6 +62,10 @@
 
 .prose iframe {
   @apply rounded-lg;
+}
+
+.prose p {
+  @apply text-wrap;
 }
 
 .card[data-group-color="secondary"] {

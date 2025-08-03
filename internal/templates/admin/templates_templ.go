@@ -216,7 +216,7 @@ func TemplateNameEdit(template models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-swap=\"innerHTML\" hx-trigger=\"submit\"><label class=\"input input-sm py-4 pr-1 input-bordered flex items-center gap-1\"><input id=\"name-input\" name=\"name\" type=\"text\" class=\"grow text-ellipsis\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-swap=\"innerHTML\" hx-trigger=\"submit\"><label class=\"input input-sm py-4 pr-1 flex items-center gap-1\"><input id=\"name-input\" name=\"name\" type=\"text\" class=\"grow text-ellipsis\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

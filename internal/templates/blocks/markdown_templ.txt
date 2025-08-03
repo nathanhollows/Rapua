@@ -1,0 +1,11 @@
+<div class=\"card prose\">
+</div>
+<form id=\"
+\" hx-post=\"
+\" hx-trigger=\"
+\" hx-swap=\"none\" hx-indicator=\"
+\"><label for=\"
+\" class=\"form-control w-full mt-5\"><textarea id=\"
+\" name=\"content\" rows=\"7\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"Markdown content here\">
+</textarea><div class=\"label\">
+</div></label></form>

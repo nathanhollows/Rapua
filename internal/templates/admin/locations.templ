@@ -15,18 +15,19 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			<span class="badge badge-ghost">{ fmt.Sprint(len(locations)) }</span>
 			<span class="htmx-indicator loading loading-dots loading-md text-info">Updating</span>
 		</h1>
-		<span class="flex md:flex-row flex-wrap justify-center gap-5">
+		<span class="flex md:flex-row flex-wrap items-center justify-center gap-5">
+			<!-- Download buttons -->
 			if len(locations) > 1 {
 				<div class="join">
 					<a
 						href="/admin/locations/qr-codes.zip"
-						class="btn btn-base btn-outline join-item mb-3 md:mb-0"
+						class="btn btn-sm btn-base btn-outline join-item mb-3 md:mb-0"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-down"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"></path> <path d="m14 19 3 3v-5.5"></path> <path d="m17 22 3-3"></path> <circle cx="9" cy="9" r="2"></circle></svg>
 						QR codes
 					</a>
 					<a
-						class="btn btn-base btn-outline join-item"
+						class="btn btn-sm btn-base btn-outline join-item"
 						href="/admin/locations/posters.pdf"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path> <path d="M14 2v4a2 2 0 0 0 2 2h4"></path> <path d="M12 18v-6"></path> <path d="m9 15 3 3 3-3"></path></svg>
@@ -46,18 +47,45 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 	</div>
 	<!-- Locations list -->
 	<div class="px-5">
-		<div
+		<ul
 			if settings.NavigationMode == models.OrderedNav {
-				class="join join-vertical w-full shadow sortable"
+				class="list rounded-lg shadow sortable"
 			} else {
-				class="join join-vertical w-full"
+				class="list rounded-lg"
 			}
 		>
+			<li class="flex flex-row gap-3 items-center p-3 py-4 text-xs rounded-lg tracking-wide bg-base-200/80 border border-base-300">
+				<!-- Search -->
+				<label class="input input-sm flex items-center gap-2 w-60 ml-auto">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input
+						type="text"
+						placeholder="Search"
+						_="on input 
+							show .location-item
+								when its textContent.toLowerCase()
+								contains my value.toLowerCase()"
+					/>
+				</label>
+			</li>
 			for _, location := range locations {
-				<div
-					class="flex flex-row justify-between items-center gap-3 bg-base-200 hover:bg-base-300 rounded-lg p-4 join-item"
+				<li
+					class="location-item list-row hover:bg-base-200 transition-colors"
 					data-order={ fmt.Sprint(location.Order) }
 				>
+					<!-- Drag handle -->
+					<div>
+						if settings.NavigationMode == models.OrderedNav {
+							<div
+								class="tooltip tooltip-right flex gap-3 cursor-move"
+								data-tip="Drag to reorder"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+							</div>
+							<input type="hidden" name="location" value={ location.ID }/>
+						}
+					</div>
+					<!-- Location icons -->
 					<div class="flex flex-row items-center gap-3 grow">
 						<!-- Drag handle -->
 						if settings.NavigationMode == models.OrderedNav {
@@ -97,33 +125,34 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 								</span>
 							}
 						}
-						<!-- Location code -->
-						<div
-							class="badge badge-ghost basis-16 tooltip"
-							data-tip="Unique location code"
-						>
-							<code>
-								{ location.Marker.Code }
-							</code>
-						</div>
-						<!-- Location name -->
+					</div>
+					<!-- Location code -->
+					<div
+						class="badge badge-ghost basis-16 tooltip"
+						data-tip="Unique location code"
+					>
+						<code>
+							{ location.Marker.Code }
+						</code>
+					</div>
+					<div class="list-col-grow">
 						<a
 							href={ templ.SafeURL(fmt.Sprint("/admin/locations/", location.MarkerID)) }
-							class="link flex-grow"
+							class="link"
 							hx-boost="true"
 							hx-swap="outerHTML"
 						>
 							{ location.Marker.Name }
 						</a>
-						if settings.EnablePoints {
-							<span class="badge">
-								{ fmt.Sprint(location.Points) } pts
-							</span>
-						}
 					</div>
-				</div>
+					if settings.EnablePoints {
+						<span class="badge">
+							{ fmt.Sprint(location.Points) } pts
+						</span>
+					}
+				</li>
 			}
-		</div>
+		</ul>
 	</div>
 	<script>
 htmx.onLoad(function(content) {
@@ -170,41 +199,21 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 			<button type="submit" class="btn btn-primary hidden md:inline-flex">Save</button>
 		</div>
 		<div class="flex flex-col md:flex-row gap-3">
-			<label class="form-control w-full">
-				<div class="label">
-					<span class="label-text font-bold">Location name</span>
-				</div>
-				<div class="input flex items-center gap-2">
-					<input
-						id="name"
-						name="name"
-						type="text"
-						placeholder="Location name"
-						class="grow text-ellipsis"
-						autocomplete="off"
-						required
-					/>
+			<fieldset class="fieldset w-full">
+				<legend class="fieldset-legend">Location Name</legend>
+				<div class="input w-full validator">
+					<input type="text" class="grow text-ellipsis validator" placeholder="South Placeville" name="name" id="name" autocomplete="off" required/>
 					<span id="marker-badge" class="badge badge-neutral hidden"></span>
 				</div>
-			</label>
+			</fieldset>
 			if settings.EnablePoints {
-				<label for="points" class="form-control w-full">
-					<div class="label">
-						<span class="label-text font-bold">Points</span>
-					</div>
-					<input
-						type="number"
-						id="points"
-						name="points"
-						class="input w-full"
-						value="10"
-						placeholder="Enter points"
-						required
-					/>
-				</label>
+				<fieldset class="fieldset w-40">
+					<legend class="fieldset-legend">Points</legend>
+					<input type="number" class="input w-full validator" placeholder="Enter points" name="points" id="points" autocomplete="off" value="10" required/>
+				</fieldset>
 			}
 		</div>
-		<div role="tablist" class="tabs tabs-box font-bold">
+		<div role="tablist" class="tabs tabs-box font-bold m-auto">
 			<a
 				id="new-marker-tab"
 				role="tab"
@@ -393,42 +402,38 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">Editing <em>{ location.Name }</em></h1>
 		<div class="flex gap-3">
-			<div class="dropdown">
+			<div class="dropdown dropdown-center">
 				<div tabindex="0" role="button" class="btn btn-outline">
 					Download
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
 				</div>
-				<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
-					<h2 class="menu-title">Pre-made</h2>
+				<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-52 p-2 shadow">
+					<h2 class="menu-title">Posters</h2>
 					<li>
 						<ul>
 							<li>
 								<a
 									href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", location.MarkerID, ".pdf")) }
 								>
-									if settings.CompletionMethod == models.CheckInAndOut {
-										Posters (PDF)
-									} else {
-										Poster (PDF)
-									}
+									Default (PDF)
 								</a>
 							</li>
 						</ul>
 					</li>
-					<h2 class="menu-title">Check-In</h2>
+					<h2 class="menu-title">QR Codes</h2>
 					<li>
 						<ul>
 							<li>
 								<a
 									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".png")) }
 									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".png") }
-								>QR Code (PNG)</a>
+								>PNG</a>
 							</li>
 							<li>
 								<a
 									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".svg")) }
 									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".svg") }
-								>QR Code (SVG)</a>
+								>SVG</a>
 							</li>
 						</ul>
 					</li>
@@ -555,7 +560,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							</button>
 							<template id="clue-template">
 								<label
-									class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item"
+									class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full"
 								>
 									<input
 										type="text"
@@ -590,7 +595,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									/>
 									<button
 										type="button"
-										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
+										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2"
 										data-tip="Delete"
 										_="on click
 											remove closest .clue-line to me
@@ -623,7 +628,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								</div>
 							}
 							for _, clue := range location.Clues {
-								<label class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ clue.ID }>
+								<label class="clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full" data-item-id={ clue.ID }>
 									<input
 										type="text"
 										name="clues"
@@ -659,7 +664,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									<input type="hidden" name="clue-ids" value={ clue.ID }/>
 									<button
 										type="button"
-										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex mt-3"
+										class="btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2"
 										data-tip="Delete"
 										_="on click
 											remove closest .clue-line to me
@@ -678,17 +683,17 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				<!-- Blocks -->
 				<section>
 					<div class="divider mt-5 mb-10">
-						<div class="dropdown">
+						<div class="dropdown dropdown-center">
 							<div class="block">
-								<div tabindex="0" role="button" class="btn btn-sm btn-neutral w-32 flex flex-col">
+								<div tabindex="0" role="button" class="btn btn-sm btn-outline">
 									<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
 									Add content
 								</div>
 							</div>
-							<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 -ml-24 mt-3 z-50">
+							<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
 								<div class="card-body pt-3">
 									<div class="divider">
-										<span class="badge badge-neutral">Static content</span>
+										<span class="badge badge-ghost">Static content</span>
 									</div>
 									<div class="grid grid-cols-3 grid-flow-row gap-5">
 										for _, block := range blocks.GetRegisteredBlocks() {
@@ -709,7 +714,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 										}
 									</div>
 									<div class="divider">
-										<span class="badge badge-neutral">Interactive</span>
+										<span class="badge badge-ghost">Interactive</span>
 									</div>
 									<div class="grid grid-cols-3 grid-flow-row gap-5">
 										for _, block := range blocks.GetRegisteredBlocks() {
@@ -787,21 +792,16 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				<div class="divider-text">Preview</div>
 			</div>
 			<!-- Preview -->
-			<div class="flex h-min-content flex-col">
+			<div class="h-min-content">
 				<div class="mockup-phone h-min sticky top-8">
-					<div class="camera"></div>
-					<div class="display">
-						<div class="artboard artboard-demo phone lg:phone-2" data-theme="cupcake">
-							<!-- Demo -->
-							<div
-								class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
-								hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
-								hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
-								hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
-								hx-swap="innerHTML"
-							></div>
-							<!-- /Demo -->
-						</div>
+					<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden" data-theme="cupcake">
+						<div
+							class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
+							hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
+							hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
+							hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
+							hx-swap="innerHTML"
+						></div>
 					</div>
 				</div>
 			</div>
@@ -824,6 +824,9 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 					onclick="confirm_delete_block.close()"
 				>Delete</button>
 			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
 		</div>
 	</dialog>
 	<dialog id="confirm_delete_modal" class="modal">
@@ -844,6 +847,9 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 					onclick="confirm_delete_modal.close()"
 				>Delete</button>
 			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
 		</div>
 	</dialog>
 	<script>

@@ -1,0 +1,29 @@
+<div id=\"
+\" class=\"indicator w-full\">
+<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">
+<div>
+</div>
+<div>
+<div class=\"flex justify-center mt-4\"><form hx-post=\"
+\" hx-target=\"
+\"><input type=\"hidden\" name=\"block\" value=\"
+\"> <input type=\"hidden\" name=\"reveal_clue\" value=\"true\"> <button type=\"button\" class=\"btn btn-warning\" _=\"on click\n\t\t\t\t\t\t\t\tif my @type == &#39;button&#39; then\n\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\tset :text to my innerHTML\n\t\t\t\t\t\t\t\tset my innerHTML to &#39;Are you sure?&#39;\n\t\t\t\t\t\t\t\tset my @type to &#39;submit&#39;\n\t\t\t\t\t\t\t\twait 3000ms\n\t\t\t\t\t\t\t\tthen set my innerHTML to :text\n\t\t\t\t\t\t\t\tthen set my @type to &#39;button&#39;\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\">
+Reveal Clue
+</button></form></div></div>
+</div></div>
+<div id=\"
+\" class=\"indicator w-full\" hx-swap-oob=\"true\">
+<div class=\"card prose p-5 bg-base-200 shadow-lg w-full\">
+</div></div>
+<form id=\"
+\" hx-post=\"
+\" hx-trigger=\"
+\" hx-swap=\"none\">
+<label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Point cost</span></div><input name=\"points\" type=\"number\" class=\"input w-full\" placeholder=\"10\" value=\"
+\"><div class=\"label\"><span class=\"label-text-alt\">The number of points to <span class=\"font-bold\">deduct</span> from the team when they reveal the clue. If set to 0, no points will be deducted.</span></div></label> 
+<label class=\"form-control w-full mt-4\"><div class=\"label\"><span class=\"label-text font-bold\">Description Text</span></div><textarea name=\"description_text\" rows=\"3\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"Text shown before the clue is revealed\">
+</textarea><div class=\"label\">
+</div></label> <label class=\"form-control w-full mt-4\"><div class=\"label\"><span class=\"label-text font-bold\">Clue Text</span></div><textarea name=\"clue_text\" rows=\"4\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"The actual clue content that will be revealed\">
+</textarea><div class=\"label\">
+</div></label> <label class=\"form-control w-full mt-4\"><div class=\"label\"><span class=\"label-text font-bold\">Button Label</span></div><input type=\"text\" name=\"button_label\" class=\"input w-full\" placeholder=\"Reveal Clue\" value=\"
+\"></label></form>

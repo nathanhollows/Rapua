@@ -1,0 +1,8 @@
+<div class=\"skeleton w-full aspect-square\">
+</div>
+<form hx-post=\"
+\" hx-trigger=\"
+\" hx-swap=\"none\"><label for=\"
+\" class=\"form-control w-full mt-5\"><div class=\"label\"><span class=\"label-text font-bold\">Video URL</span></div><input id=\"
+\" name=\"URL\" type=\"url\" class=\"input w-full\" placeholder=\"Youtube URL\" value=\"
+\"></label></form>
