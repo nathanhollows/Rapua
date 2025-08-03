@@ -32,7 +32,6 @@ templ header(title string) {
 			content="width=device-width, initial-scale=1.0"
 		/>
 		<title>{ title } | Rapua</title>
-		
 		<!-- Theme initialization - must be before any CSS to prevent flashing -->
 		<script>
 			// Apply theme from localStorage immediately to prevent flashing
@@ -56,14 +55,15 @@ templ header(title string) {
 				}
 			})();
 		</script>
-		
 		<!-- CSS -->
-		<link rel="stylesheet" href="/static/css/tailwind.css"/>
+		<link
+			rel="stylesheet"
+			href={ "/static/css/tailwind.css" + getCSSVersion() }
+		/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
-		
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
 		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js" defer></script>

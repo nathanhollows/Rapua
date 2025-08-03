@@ -19,7 +19,7 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 				content="width=device-width, initial-scale=1.0"
 			/>
 			<title>{ title } | Rapua</title>
-			<link rel="stylesheet" href="/static/css/tailwind.css"/>
+			<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
 			<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 			<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 			<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
