@@ -672,12 +672,12 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			return templ_7745c5c3_Err
 		}
 		if settings.NavigationMethod == models.ShowClues {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section class=\"mb-8\"><div class=\"label flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row\"><strong>Clues</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert w-4 h-4 text-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Clues</h2><p class=\"text-wrap\">Each team is shown one randomly selected clue.</p><p class=\"text-wrap\">If no clues are available then the player is told the name of the location as a freebie.</p><p class=\"text-wrap\">Clues may contain <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Markdown</a> formatting.</p></div></div></div></div><button class=\"btn btn-sm btn-neutral my-2\" type=\"button\" _=\"on click\n\t\t\t\t\t\t\t\t\tif &lt;#clue-list .clue-line/&gt;&#39;s length &gt; 0\n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add a clue</button><template id=\"clue-template\"><label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData(&#39;text/plain&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split(&#39;\\n&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not &#39;&#39;\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first &lt;input /&gt; in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el&#39;s value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></div><div id=\"clue-list\" class=\"flex flex-col join join-vertical\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section class=\"mb-8\"><div class=\"label flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row\"><strong>Clues</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert w-4 h-4 text-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Clues</h2><p class=\"text-wrap\">Each team is shown one randomly selected clue.</p><p class=\"text-wrap\">If no clues are available then the player is told the name of the location as a freebie.</p><p class=\"text-wrap\">Clues may contain <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Markdown</a> formatting.</p></div></div></div></div><button class=\"btn btn-sm btn-neutral my-2\" type=\"button\" _=\"on click\n\t\t\t\t\t\t\t\t\tif &lt;#clue-list .clue-line/&gt;&#39;s length &gt; 0\n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tput #clue-template&#39;s innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add a clue</button><template id=\"clue-template\"><label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData(&#39;text/plain&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split(&#39;\\n&#39;)\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not &#39;&#39;\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template&#39;s innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first &lt;input /&gt; in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el&#39;s value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></div><template id=\"clue-add-template\"><div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\tget #clue-template\n\t\t\t\t\t\t\t\t\tput its innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\thtmx.process(document.body)\n\t\t\t\t\t\t\t\t\tremove #clue-list.alert\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">add a clue</a>? </span></div></template><div id=\"clue-list\" class=\"flex flex-col join join-vertical\" _=\"on emptylist\n\t\t\t\t\t\t\t\t\tset my innerHTML to &lt;#clue-add-template/&gt;&#39;s innerHTML\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(location.Clues) == 0 {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\tget #clue-template\n\t\t\t\t\t\t\t\t\tput its innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\thtmx.process(document.body)\n\t\t\t\t\t\t\t\t\tremove #clue-list.alert\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">add a clue</a>? </span></div>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\tget #clue-template\n\t\t\t\t\t\t\t\t\tput its innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\thtmx.process(document.body)\n\t\t\t\t\t\t\t\t\tremove &lt;#clue-list .alert/&gt;\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">add a clue</a>? </span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -690,7 +690,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 631, Col: 130}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 658, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
@@ -703,7 +703,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(clue.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 637, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 664, Col: 30}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -716,13 +716,13 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 664, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 691, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\talert(&#39;No clues left, sending empty list&#39;)\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -745,7 +745,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 704, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 735, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -758,7 +758,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 705, Col: 101}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 736, Col: 101}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -775,7 +775,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 710, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 741, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -800,7 +800,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 725, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 756, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -813,7 +813,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 726, Col: 101}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 757, Col: 101}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -830,7 +830,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 731, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 762, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -864,7 +864,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(location.Marker.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 783, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 814, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
@@ -877,7 +877,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lat))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 784, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 815, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -890,7 +890,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lng))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 785, Col: 107}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 816, Col: 107}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -908,7 +908,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", location.MarkerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 800, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 831, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -921,7 +921,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		var templ_7745c5c3_Var48 string
 		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 802, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 833, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 		if templ_7745c5c3_Err != nil {
@@ -934,7 +934,7 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 		var templ_7745c5c3_Var49 string
 		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.MarkerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 845, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 876, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 		if templ_7745c5c3_Err != nil {

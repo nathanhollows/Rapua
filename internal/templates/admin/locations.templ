@@ -599,7 +599,10 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 										data-tip="Delete"
 										_="on click
 											remove closest .clue-line to me
-											send savelocation to #edit-location
+												send savelocation to #edit-location
+												if #clue-list.children.length == 0
+													send emptylist to #clue-list
+												end
 											end
 										"
 										tabindex="-1"
@@ -609,7 +612,31 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								</label>
 							</template>
 						</div>
-						<div id="clue-list" class="flex flex-col join join-vertical">
+						<template id="clue-add-template">
+							<div class="alert">
+								<span>
+									There are no clues to show. Do you want to 
+									<a
+										class="link add-clue-btn"
+										_="on click
+									get #clue-template
+									put its innerHTML into #clue-list
+									htmx.process(document.body)
+									remove #clue-list.alert
+									end
+								"
+									>add a clue</a>? 
+								</span>
+							</div>
+						</template>
+						<div
+							id="clue-list"
+							class="flex flex-col join join-vertical"
+							_="on emptylist
+									set my innerHTML to <#clue-add-template/>'s innerHTML
+								end
+								"
+						>
 							if len(location.Clues) == 0 {
 								<div class="alert">
 									<span>
@@ -620,7 +647,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									get #clue-template
 									put its innerHTML into #clue-list
 									htmx.process(document.body)
-									remove #clue-list.alert
+									remove <#clue-list .alert/>
 									end
 								"
 										>add a clue</a>? 
@@ -668,7 +695,11 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 										data-tip="Delete"
 										_="on click
 											remove closest .clue-line to me
-											send savelocation to #edit-location
+												send savelocation to #edit-location
+												if #clue-list.children.length == 0
+													alert('No clues left, sending empty list')
+													send emptylist to #clue-list
+												end
 											end
 										"
 										tabindex="-1"
