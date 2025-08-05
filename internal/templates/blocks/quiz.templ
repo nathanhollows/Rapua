@@ -33,7 +33,7 @@ templ quizResults(block blocks.QuizBlock, data blocks.PlayerState) {
 		<div class="form-control">
 			for _, option := range block.Options {
 				<label
-					class={ fmt.Sprintf("label cursor-default justify-start gap-3 %s", 
+					class={ fmt.Sprintf("label cursor-default justify-start gap-3 %s w-full", 
 							func() string {
 								if option.IsCorrect {
 									return "text-success"
@@ -119,7 +119,7 @@ templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data 
 					<div class="form-control">
 						// Get shuffled or regular options
 						for _, option := range block.GetShuffledOptions() {
-							<label class="label cursor-pointer justify-start gap-3">
+							<label class="label justify-start gap-3 w-full">
 								if block.MultipleChoice {
 									<input
 										type="checkbox"
@@ -198,7 +198,7 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 					<div class="form-control">
 						// Get options (maintain same order as before)
 						for _, option := range block.Options {
-							<label class="label cursor-pointer justify-start gap-3">
+							<label class="label cursor-pointer justify-start gap-3 w-full">
 								if block.MultipleChoice {
 									<input
 										type="checkbox"
@@ -255,6 +255,13 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 	</div>
 }
 
+var quizQuestionTextarea = TextareaParams{
+	Name:        "question",
+	Title:       "Question",
+	Placeholder: "How many chickens are there in the world?",
+	Markdown:    true,
+}
+
 templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
@@ -264,72 +271,43 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 	>
 		// Points setting
 		if settings.EnablePoints {
-			<label class="form-control w-full">
-				<div class="label">
-					<span class="label-text font-bold">Points</span>
-				</div>
-				<input
-					name="points"
-					type="number"
-					class="input w-full"
-					placeholder="Points"
-					value={ fmt.Sprint(block.Points) }
-				/>
-			</label>
+			@adminPointsField(block.Points)
 		}
 		// Question field
-		<label class="form-control w-full mt-5">
-			<div class="label">
-				<span class="label-text font-bold">Question</span>
-			</div>
-			<textarea
-				name="question"
-				rows="3"
-				class="markdown-textarea textarea w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="Enter your quiz question here..."
-			>{ block.Question }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
+		@TextareaField(quizQuestionTextarea.SetValue(block.Question))
 		// Answer type selection
-		<div class="form-control">
-			<label class="label cursor-pointer">
-				<span class="label-text">Multiple choice</span>
+		<div class="flex flex-col gap-2 my-3">
+			<label class="label w-full flex justify-between">
+				Multiple choice
 				<input
 					type="checkbox"
 					name="multiple_choice"
 					class="toggle"
 					checked?={ block.MultipleChoice }
-					_="
-						on change
-						set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
-						if I match <:checked /> then
-							add .checkbox to :inputs
-							add .checkbox-sm to :inputs
-							add .checkbox-success to :inputs
-							remove .radio from :inputs
-							remove .radio-sm from :inputs
-							remove .radio-success from :inputs
-							set @type of :inputs to 'checkbox'
-						else
-							add .radio to :inputs
-							add .radio-sm to :inputs
-							add .radio-success to :inputs
-							remove .checkbox from :inputs
-							remove .checkbox-sm from :inputs
-							remove .checkbox-success from :inputs
-							set @type of :inputs to 'radio'
-						end
-					"
+					_="on change
+					set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
+					if I match <:checked /> then
+						add .checkbox to :inputs
+						add .checkbox-sm to :inputs
+						add .checkbox-success to :inputs
+						remove .radio from :inputs
+						remove .radio-sm from :inputs
+						remove .radio-success from :inputs
+						set @type of :inputs to 'checkbox'
+					else
+						add .radio to :inputs
+						add .radio-sm to :inputs
+						add .radio-success to :inputs
+						remove .checkbox from :inputs
+						remove .checkbox-sm from :inputs
+						remove .checkbox-success from :inputs
+						set @type of :inputs to 'radio'
+					end
+				"
 				/>
 			</label>
-		</div>
-		// Optional settings
-		<div class="form-control">
-			<label class="label cursor-pointer">
-				<span class="label-text">Randomise Order</span>
+			<label class="label w-full flex justify-between">
+				Randomise Order
 				<input
 					type="checkbox"
 					name="randomize_order"
@@ -337,10 +315,8 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 					checked?={ block.RandomizeOrder }
 				/>
 			</label>
-		</div>
-		<div class="form-control w-full">
-			<label class="label cursor-pointer">
-				<span class="label-text">Multiple Attempts</span>
+			<label class="label w-full flex justify-between">
+				Multiple Attempts
 				<input
 					type="checkbox"
 					name="retry_enabled"
@@ -350,9 +326,9 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 			</label>
 		</div>
 		// Answer options
-		<div class="form-control w-full mt-5">
-			<div class="label font-bold flex justify-between">
-				<span class="label-text">Answer Options</span>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend flex justify-between w-full">
+				Answer options
 				<button
 					class="btn btn-outline btn-xs"
 					type="button"
@@ -370,7 +346,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				>
 					Add Option
 				</button>
-			</div>
+			</legend>
 			<div
 				class="quiz-options join join-vertical"
 				_="on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate
@@ -410,19 +386,19 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 			>
 				At least one option must be correct.
 			</span>
-		</div>
+		</fieldset>
 		<template id="quiz-option-template">
 			<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
 				<input
 					type="checkbox"
 					name="option_correct"
-					class="checkbox checkbox-sm checkbox-success mt-3"
+					class="checkbox checkbox-sm checkbox-success"
 					_="on change send save to (closest <form/>)"
 				/>
 				<input
 					type="radio"
 					name="option_correct"
-					class="radio radio-sm radio-success mt-3"
+					class="radio radio-sm radio-success"
 					_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 				/>
 				<input
@@ -458,7 +434,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 				type="checkbox"
 				name="option_correct"
 				value={ fmt.Sprintf("option_%d", index) }
-				class="checkbox checkbox-sm checkbox-success mt-3"
+				class="checkbox checkbox-sm checkbox-success"
 				checked?={ option.IsCorrect }
 				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 			/>
@@ -467,7 +443,7 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 				type="radio"
 				name="option_correct"
 				value={ fmt.Sprintf("option_%d", index) }
-				class="radio radio-sm radio-success mt-3"
+				class="radio radio-sm radio-success"
 				checked?={ option.IsCorrect }
 				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
 			/>

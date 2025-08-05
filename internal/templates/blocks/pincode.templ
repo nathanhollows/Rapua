@@ -11,9 +11,7 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
+		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
 		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			@templ.Raw(stringToMarkdown(block.Prompt))
@@ -22,6 +20,49 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 				hx-swap="none"
 			>
 				<input type="hidden" name="block" value={ block.ID }/>
+				<div class="flex flex-row flex-wrap gap-2 justify-center mb-4">
+					for _ = range block.Pincode {
+						<input
+							type="text"
+							name="pincode"
+							class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+							minlength="1"
+							maxlength="1"
+							required
+							_="on input
+								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
+									set input to event.target.nextElementSibling
+									if input != null then
+										input.focus()
+									end
+								else 
+									set event.target.value to ''
+								end
+							on keydown
+								if event.key is in ['Backspace', 'Delete'] then
+									set event.target.value to ''
+									set input to event.target.previousElementSibling
+									input.focus()
+									event.preventDefault()
+								else if event.key is in ['ArrowLeft'] then
+									set input to event.target.previousElementSibling
+									if input != null then
+										input.focus()
+									end
+								else if event.key is in ['ArrowRight'] then
+									set input to event.target.nextElementSibling
+									if input != null then
+										input.focus()
+									end
+								end
+							"
+						/>
+					}
+				</div>
+				<button type="submit" class="btn btn-primary w-full">
+					Check
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+				</button>
 				<label
 					for={ fmt.Sprintf("pincode-%s", block.ID) }
 					class="form-control w-full"
@@ -30,24 +71,6 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 						<p class="label-text font-bold text-success">
 							You got it!
 						</p>
-					} else {
-						<div class="join w-full">
-							<input
-								id={ fmt.Sprintf("pincode-%s", block.ID) }
-								name="pincode"
-								type="number"
-								placeholder="Answer"
-								class="input input-primary join-item w-full max-w-xs font-mono tracking-widest"
-								autoComplete="off"
-								required
-							/>
-							<button
-								class="btn btn-primary btn-outline join-item rounded-r-full"
-							>
-								Check
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-							</button>
-						</div>
 					}
 				</label>
 			</form>
@@ -61,14 +84,8 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 		class="indicator w-full"
 		hx-swap-oob="true"
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
-		if data.IsComplete() {
-			<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
-		} else {
-			<span class="indicator-item indicator-top indicator-right badge badge-primary mr-12">Incomplete</span>
-		}
+		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
+		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			@templ.Raw(stringToMarkdown(block.Prompt))
 			<form
@@ -81,32 +98,78 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 					class="form-control w-full"
 				>
 					if data.IsComplete() {
-						<p class="label-text font-bold text-success">
-							You got it!
-						</p>
-					} else {
-						<div class="join w-full animate-[wobble_1s_ease-in-out]">
-							<input
-								id={ fmt.Sprintf("pincode-%s", block.ID) }
-								name="pincode"
-								type="number"
-								placeholder="Answer"
-								class="input input-primary join-item w-full max-w-xs font-mono tracking-widest"
-								autoComplete="off"
-								required
-							/>
-							<button
-								class="btn btn-primary btn-outline join-item rounded-r-full"
-							>
-								Check
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-							</button>
+						<div class="flex flex-row flex-wrap gap-2 justify-center mb-4">
+							for _, val := range block.Pincode {
+								<input
+									type="text"
+									name="pincode"
+									class="input input-lg !text-success w-auto rounded-md aspect-square text-center font-mono font-bold"
+									minlength="1"
+									maxlength="1"
+									value={ string(val) }
+									disabled
+								/>
+							}
 						</div>
+						<div class="font-bold text-center w-full">
+							Correct!
+						</div>
+					} else {
+						<div class="flex flex-row flex-wrap gap-2 justify-center mb-4 animate-[wobble_1s_ease-in-out]">
+							for _ = range block.Pincode {
+								<input
+									type="text"
+									name="pincode"
+									class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+									minlength="1"
+									maxlength="1"
+									required
+									_="on input
+								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
+									set input to event.target.nextElementSibling
+									if input != null then
+										input.focus()
+									end
+								else 
+									set event.target.value to ''
+								end
+							on keydown
+								if event.key is in ['Backspace', 'Delete'] then
+									set event.target.value to ''
+									set input to event.target.previousElementSibling
+									input.focus()
+									event.preventDefault()
+								else if event.key is in ['ArrowLeft'] then
+									set input to event.target.previousElementSibling
+									if input != null then
+										input.focus()
+									end
+								else if event.key is in ['ArrowRight'] then
+									set input to event.target.nextElementSibling
+									if input != null then
+										input.focus()
+									end
+								end
+							"
+								/>
+							}
+						</div>
+						<button type="submit" class="btn btn-primary w-full">
+							Check
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+						</button>
 					}
 				</label>
 			</form>
 		</div>
 	</div>
+}
+
+var pincodeTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "How many chickens are there in the world?",
+	Markdown:    true,
 }
 
 templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) {
@@ -117,49 +180,20 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 		hx-swap="none"
 	>
 		if settings.EnablePoints {
-			<label class="form-control w-full mt-5">
-				<div class="label">
-					<span class="label-text font-bold">Points</span>
-				</div>
-				<label class="input flex items-center gap-2">
-					<input name="points" type="number" class="grow" placeholder="Search" value={ fmt.Sprint(block.Points) }/>
-					<span class="badge badge-info tooltip tooltip-left" data-tip="Set to 0 to disable">Optional</span>
-				</label>
-			</label>
+			@adminPointsField(block.Points)
 		}
-		<label
-			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Prompt</span>
-			</div>
-			<textarea
-				id={ fmt.Sprintf("md-%s", block.ID) }
-				name="prompt"
-				rows="2"
-				class="markdown-textarea textarea w-full font-mono"
-				placeholder="What is third word of the second paragraph? What is the middle name of the person wearing a red hat?"
-			>{ block.Prompt }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
-		<label
-			for={ fmt.Sprintf("admin-pincode-%s", block.ID) }
-			class="form-control w-full"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Pincode</span>
-			</div>
+		@TextareaField(pincodeTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Pincode</legend>
 			<input
-				id={ fmt.Sprintf("admin-pincode-%s", block.ID) }
-				type="number"
+				id={ fmt.Sprintf("admin-pincode-name-%s", block.ID) }
 				name="pincode"
-				class="input font-mono tracking-widest max-w-sm"
+				type="number"
+				class="input font-mono tracking-widest max-w-sm validator"
 				placeholder="12345"
 				value={ block.Pincode }
+				required
 			/>
-		</label>
+		</fieldset>
 	</form>
 }

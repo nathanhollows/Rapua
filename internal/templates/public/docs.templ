@@ -14,7 +14,7 @@ templ recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sideba
 				<a
 					href={ templ.SafeURL(page.URL) }
 					if topPage.URL == page.URL {
-						class="active"
+						class="menu-active"
 					}
 				>
 					switch page.Title {
@@ -147,9 +147,9 @@ templ Docs(page *services.DocPage, sidebar []*services.DocPage) {
         if (scrollPos >= top && scrollPos < bottom) {
           found = true;
           menuLinks.forEach(link => {
-            link.classList.remove("active");
+            link.classList.remove("menu-active");
             if (link.hasAttribute("href") && link.getAttribute("href").substring(1) === section.id) {
-              link.classList.add("active");
+              link.classList.add("menu-active");
             }
           });
         }
@@ -157,16 +157,16 @@ templ Docs(page *services.DocPage, sidebar []*services.DocPage) {
 
       // If no section is matched and scrollPos is at the top, highlight the first menu link
       if (!found && scrollPos === 0) {
-        menuLinks.forEach(link => link.classList.remove("active"));
+        menuLinks.forEach(link => link.classList.remove("menu-active"));
         if (menuLinks.length > 0) {
-          menuLinks[0].classList.add("active");
+          menuLinks[0].classList.add("menu-active");
         }
       }
     }
 
     function onClick(event) {
-      menuLinks.forEach(link => link.classList.remove("active"));
-      event.currentTarget.classList.add("active");
+      menuLinks.forEach(link => link.classList.remove("menu-active"));
+      event.currentTarget.classList.add("menu-active");
     }
 
     // Attach the scroll event listener

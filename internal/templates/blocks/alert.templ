@@ -33,6 +33,13 @@ templ alertPlayer(_ models.InstanceSettings, block blocks.AlertBlock) {
 	}
 }
 
+var alertTextarea = TextareaParams{
+	Name:        "content",
+	Title:       "Alert content",
+	Placeholder: "**Alert title!** Alert content.",
+	Markdown:    true,
+}
+
 templ alertAdmin(_ models.InstanceSettings, block blocks.AlertBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
@@ -58,22 +65,6 @@ templ alertAdmin(_ models.InstanceSettings, block blocks.AlertBlock) {
 				}
 			</select>
 		</fieldset>
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Alert content</legend>
-			<textarea
-				id={ fmt.Sprintf("md-%s", block.ID) }
-				name="content"
-				rows="2"
-				class="markdown-textarea textarea w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="**Alert title!** Alert content."
-				class="textarea h-24"
-			>
-				{ block.Content }
-			</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</fieldset>
+		@TextareaField(alertTextarea.SetValue(block.Content))
 	</form>
 }

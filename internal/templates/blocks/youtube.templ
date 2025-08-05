@@ -7,9 +7,11 @@ import (
 )
 
 templ youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) {
-	<div class="skeleton w-full aspect-square">
-		@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
-	</div>
+	if block.URL != "" {
+		<div class="skeleton w-full aspect-square">
+			@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
+		</div>
+	}
 }
 
 templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {
@@ -18,13 +20,8 @@ templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {
 		hx-trigger={ fmt.Sprintf("submit, keyup change from:#url-%s delay:500ms", block.ID) }
 		hx-swap="none"
 	>
-		<label
-			for={ fmt.Sprintf("url-%s", block.ID) }
-			class="form-control w-full mt-5"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Video URL</span>
-			</div>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Video URL</legend>
 			<input
 				id={ fmt.Sprintf("url-%s", block.ID) }
 				name="URL"
@@ -33,6 +30,6 @@ templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {
 				placeholder="Youtube URL"
 				value={ block.URL }
 			/>
-		</label>
+		</fieldset>
 	</form>
 }

@@ -827,7 +827,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				<div class="mockup-phone h-min sticky top-8">
 					<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden" data-theme="cupcake">
 						<div
-							class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12"
+							class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full"
 							hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
 							hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 							hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }

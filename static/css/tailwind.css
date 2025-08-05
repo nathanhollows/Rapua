@@ -58,11 +58,13 @@
     --animate-spin: spin 1s linear infinite;
     --animate-ping: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
     --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    --animate-bounce: bounce 1s infinite;
     --aspect-video: 16 / 9;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
+    --animate-wiggle: wiggle 1s ease-in-out infinite;
   }
 }
 @layer base {
@@ -4262,6 +4264,9 @@
   .h-screen {
     height: 100vh;
   }
+  .min-h-40 {
+    min-height: calc(var(--spacing) * 40);
+  }
   .min-h-80 {
     min-height: calc(var(--spacing) * 80);
   }
@@ -4819,6 +4824,10 @@
   .border-t-primary {
     border-top-color: var(--color-primary);
   }
+  .status-error {
+    background-color: var(--color-error);
+    color: var(--color-error);
+  }
   .status-info {
     background-color: var(--color-info);
     color: var(--color-info);
@@ -4962,9 +4971,6 @@
   .stroke-current {
     stroke: currentcolor;
   }
-  .stroke-error {
-    stroke: var(--color-error);
-  }
   .stroke-info {
     stroke: var(--color-info);
   }
@@ -5039,6 +5045,11 @@
     --size: calc(var(--size-selector, 0.25rem) * 5);
     font-size: 0.75rem;
     padding-inline: calc(0.25rem * 2.5 - var(--border));
+  }
+  .badge-xs {
+    --size: calc(var(--size-selector, 0.25rem) * 4);
+    font-size: 0.625rem;
+    padding-inline: calc(0.25rem * 2 - var(--border));
   }
   .px-1 {
     padding-inline: calc(var(--spacing) * 1);
@@ -5273,6 +5284,9 @@
     color: var(--color-success-content);
     --input-color: var(--color-success);
   }
+  .\!text-success {
+    color: var(--color-success) !important;
+  }
   .progress-primary {
     color: var(--color-primary);
   }
@@ -5373,9 +5387,6 @@
   }
   .opacity-70 {
     opacity: 70%;
-  }
-  .opacity-80 {
-    opacity: 80%;
   }
   .shadow {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
@@ -5725,6 +5736,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-base-300);
+      }
+    }
+  }
+  .hover\:text-info {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-info);
       }
     }
   }
@@ -7599,6 +7617,16 @@
 @keyframes pulse {
   50% {
     opacity: 0.5;
+  }
+}
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
 @keyframes wobble {

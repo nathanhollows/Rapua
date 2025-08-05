@@ -63,44 +63,36 @@ templ cluePlayerUpdate(settings models.InstanceSettings, block blocks.ClueBlock,
 	</div>
 }
 
+var clueTextarea = TextareaParams{
+	Name:        "description_text",
+	Title:       "Description Text",
+	Placeholder: "Text shown before the clue is revealed",
+	Markdown:    true,
+}
+
+var clueRevealTextarea = TextareaParams{
+	Name:        "clue_text",
+	Title:       "Revealed Clue Text",
+	Placeholder: "The actual clue content that will be revealed",
+	Markdown:    true,
+}
+
+var clueButtonTextInput = TextInputParams{
+	Name:         "button_label",
+	Title:        "Button Label",
+	Placeholder:  "Label for the button to reveal the clue",
+	ExtraClasses: "w-full",
+	Required:     false,
+	HyperScript:  "",
+}
+
 templ clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) {
 	<form id={ fmt.Sprintf("form-%s", block.ID) } hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") } hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID) } hx-swap="none">
 		if settings.EnablePoints {
-			<label class="form-control w-full">
-				<div class="label">
-					<span class="label-text font-bold">Point cost</span>
-				</div>
-				<input name="points" type="number" class="input w-full" placeholder="10" value={ fmt.Sprint(block.Points) }/>
-				<div class="label">
-					<span class="label-text-alt">
-						The number of points to <span class="font-bold">deduct</span> from the team when they reveal the clue. If set to 0, no points will be deducted.
-					</span>
-				</div>
-			</label>
+			@adminPointCostField(block.Points)
 		}
-		<label class="form-control w-full mt-4">
-			<div class="label">
-				<span class="label-text font-bold">Description Text</span>
-			</div>
-			<textarea name="description_text" rows="3" class="markdown-textarea textarea w-full font-mono" style="field-sizing: content;" placeholder="Text shown before the clue is revealed">{ block.DescriptionText }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
-		<label class="form-control w-full mt-4">
-			<div class="label">
-				<span class="label-text font-bold">Clue Text</span>
-			</div>
-			<textarea name="clue_text" rows="4" class="markdown-textarea textarea w-full font-mono" style="field-sizing: content;" placeholder="The actual clue content that will be revealed">{ block.ClueText }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
-		<label class="form-control w-full mt-4">
-			<div class="label">
-				<span class="label-text font-bold">Button Label</span>
-			</div>
-			<input type="text" name="button_label" class="input w-full" placeholder="Reveal Clue" value={ block.ButtonLabel }/>
-		</label>
+		@TextareaField(clueTextarea.SetValue(block.DescriptionText))
+		@TextareaField(clueRevealTextarea.SetValue(block.ClueText))
+		@TextInputField(clueButtonTextInput.SetValue(block.ButtonLabel))
 	</form>
 }
