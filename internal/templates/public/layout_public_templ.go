@@ -81,14 +81,14 @@ func publicHeader(title string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><!-- Apply theme from localStorage immediately to prevent flashing --><script>\n\t\t\t(function() {\n\t\t\t\tconst theme = localStorage.getItem('theme') || 'system';\n\t\t\t\tconst prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\t\t\t\n\t\t\t\tif (theme === 'system') {\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', prefersDark ? 'dracula' : 'cupcake');\n\t\t\t\t} else {\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', theme);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\t// Listen for system preference changes if using system theme\n\t\t\t\tif (theme === 'system') {\n\t\t\t\t\twindow.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {\n\t\t\t\t\t\tif (localStorage.getItem('theme') === 'system') {\n\t\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t})();\n\t\t</script><link rel=\"stylesheet\" href=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><!-- Apply theme from localStorage immediately to prevent flashing --><script>\n\t\t\t(function() {\n\t\t\t\tconst theme = localStorage.getItem('theme') || 'system';\n\t\t\t\tconst prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\t\t\t\n\t\t\t\tif (theme === 'system') {\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', prefersDark ? 'dracula' : 'cupcake');\n\t\t\t\t} else {\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', theme);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\t// Listen for system preference changes regardless of whether theme is explicitly set\n\t\t\t\t// This ensures it works even when localStorage hasn't been set yet\n\t\t\t\twindow.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {\n\t\t\t\t\tconst currentTheme = localStorage.getItem('theme');\n\t\t\t\t\t// If no theme is set OR if it's explicitly set to 'system'\n\t\t\t\t\tif (!currentTheme || currentTheme === 'system') {\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t})();\n\t\t</script><link rel=\"stylesheet\" href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/static/css/tailwind.css" + getCSSVersion())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 47, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 48, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -101,7 +101,7 @@ func publicHeader(title string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(os.Getenv("MAPBOX_KEY"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 52, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 53, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -114,7 +114,7 @@ func publicHeader(title string) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 53, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 54, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -153,7 +153,7 @@ func publicFooter() templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(currYear())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 96, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/layout_public.templ`, Line: 97, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
