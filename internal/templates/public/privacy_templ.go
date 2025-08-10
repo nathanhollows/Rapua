@@ -26,7 +26,7 @@ func Privacy() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section id=\"why\" class=\"container max-w-7xl mx-auto px-4 py-8\"><div class=\"prose mx-auto pb-5\"><h1 id=\"privacy-policy\">Privacy Policy</h1><h2>The short version:</h2><ul><li>We collect your <strong>email</strong> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -39,7 +39,7 @@ func Privacy() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" authentication.</li><li>We collect your <strong>name</strong> and <strong>institution</strong> to better understand our users. We may personally reach out to discuss your experience.</li><li>We allow <strong>Google Auth</strong> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -52,7 +52,7 @@ func Privacy() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" login, and you control what you share.</li><li><strong>Stripe</strong> handles all payment processes and information; we don’t store any billing data.</li><li>You can request to <strong>delete your account</strong> and data anytime.</li><li>We don’t use cookies ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -65,7 +65,7 @@ func Privacy() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" tracking or advertising, just ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -78,7 +78,7 @@ func Privacy() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" gameplay and login.</li><li>We don’t share your data with third parties.</li><li>If we make changes to this policy, we’ll notify you in-app with <strong>30 days’ notice</strong>.</li></ul><hr><h2>The long version:</h2><h4 id=\"personal-information-we-collect\">Personal Information We Collect</h4><p>We collect the following personal information from you:</p><ul><li>Name</li><li>Email address</li><li>Institution/Organisation</li></ul><p>This information is necessary for authentication and development purposes.</p><p><strong>Note</strong>: We do not store payment informtion. Payment processing is handled by <strong>Stripe</strong>, and all sensitive payment data is processed securely on their platform.</p><h4 id=\"purpose-of-collecting-personal-information\">Purpose of Collecting Personal Information</h4><p>We collect your personal information for the following purposes:</p><ul><li><strong>Authentication</strong>: To verify your identity and provide secure access to Rapua using <strong>Google Auth</strong>.</li><li><strong>Future Development</strong>: To understand and cater to our core user base by collecting institution/organisation information.</li><li><strong>Communication</strong>: To notify you of important updates related to the game or your account.</li></ul><p>All personal data is provided explicitly by the user and is not collected without your consent.</p><h4 id=\"data-retention-and-deletion\">Data Retention and Deletion</h4><p>Personal information is stored <strong>indefinitely</strong> unless you request deletion. Gameplay-specific data, such as team codes and check-ins, may be deleted after a period of inactivity to free up space.</p><p>Users can request to delete their account and personal data by contacting us at <strong>nathan@rapua.nz</strong>. We will respond to all requests for access, correction, or deletion of personal information as soon as reasonably practicable and within 20 working days, in compliance with the <strong>New Zealand Privacy Act 2020</strong>.</p><h4 id=\"international-data-transfers\">International Data Transfers</h4><p>Your personal information is stored on servers located in Australia. While this means your data is processed outside of New Zealand, we ensure that it is afforded the same level of protection as required under the <strong>New Zealand Privacy Act 2020</strong>.</p><h4 id=\"sharing-of-personal-information\">Sharing of Personal Information</h4><p>We do not share your personal information with any third parties except for the following:</p><ul><li><strong>Google Auth</strong>: For authentication, with user consent.</li><li><strong>Stripe</strong>: For payment processing, with no sensitive payment information stored on our servers.</li></ul><p>No other third-party services or integrations are used.</p><h4 id=\"data-security\">Data Security</h4><p>We take all reasonable steps to protect your personal information from unauthorized access, misuse, or loss. Passwords are <strong>salted and hashed</strong> according to best practices, and all data is securely stored and processed.</p><h4 id=\"your-rights\">Your Rights</h4><p>You have the right to:</p><ul><li>Request a copy of any personal information we hold about you.</li><li>Request corrections if you believe your personal information is inaccurate.</li><li>Request the deletion of your personal data at any time.</li></ul><p>We will respond to these requests within <strong>20 working days</strong>, in compliance with the <strong>New Zealand Privacy Act 2020</strong>. Please contact <strong>nathan@rapua.nz</strong> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -91,7 +91,7 @@ func Privacy() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" any requests or inquiries regarding your data.</p><h4 id=\"cookies\">Cookies</h4><p>We use cookies solely for:</p><ul><li><strong>Authentication</strong>: To manage your login session.</li><li><strong>Gameplay</strong>: To enhance your experience and manage in-game interactions.</li></ul><p>No third-party cookies are used for advertising or tracking purposes.</p><h4 id=\"future-changes-to-this-privacy-policy\">Future Changes to This Privacy Policy</h4><p>We may update this privacy policy to reflect changes in our practices. Users will be notified of any significant changes within the app, with at least <strong>30 days’ notice</strong> before the changes take effect. Please review the policy periodically for updates.</p><h4 id=\"contact-information\">Contact Information</h4><p>For any questions regarding this privacy policy, or if you’d like to request a copy of your personal information or have it corrected, please contact us at <strong>nathan@rapua.nz</strong>.</p></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
