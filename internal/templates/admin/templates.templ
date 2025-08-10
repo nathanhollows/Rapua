@@ -128,16 +128,17 @@ templ TemplateNameEdit(template models.Instance) {
 		hx-swap="innerHTML"
 		hx-trigger="submit"
 	>
-		<label class="input input-sm py-4 pr-1 flex items-center gap-1">
+		<label class="input gap-2">
 			<input
 				id="name-input"
-				name="name"
 				type="text"
+				name="name"
 				class="grow text-ellipsis"
-				value={ template.Name }
+				placeholder="Template name"
 				autoComplete="off"
 				autoFocus
 				tabIndex="0"
+				value={ template.Name }
 				_="on keyup[key == 'Escape'] send closeNameEdit"
 			/>
 			<button
