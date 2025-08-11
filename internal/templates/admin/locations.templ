@@ -12,7 +12,6 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Locations 
-			<span class="badge badge-ghost">{ fmt.Sprint(len(locations)) }</span>
 			<span class="htmx-indicator loading loading-dots loading-md text-info">Updating</span>
 		</h1>
 		<span class="flex md:flex-row flex-wrap items-center justify-center gap-5">
@@ -55,23 +54,111 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			}
 		>
 			<li class="flex flex-row gap-3 items-center p-3 py-4 text-xs rounded-lg tracking-wide bg-base-200/80 border border-base-300">
-				<!-- Search -->
-				<label class="input input-sm flex items-center gap-2 w-60 ml-auto">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
+					<span
+						id="location-count"
+						_="on searchfilter
+						set my textContent to <.location-item:not( [style*='display: none'] )/>'s length"
+					>
+						{ fmt.Sprint(len(locations)) }
+					</span> locations
+				</span>
+				<form class="filter ml-auto">
 					<input
-						type="text"
-						placeholder="Search"
-						_="on input 
+						class="btn btn-square btn-sm"
+						type="reset"
+						value="×"
+						_="on click
 							show .location-item
 								when its textContent.toLowerCase()
-								contains my value.toLowerCase()"
+								contains #search-locations's value.toLowerCase()
+							send searchfilter to #location-count
+						"
 					/>
+					<input
+						id="filter-clues"
+						class="btn btn-sm"
+						type="radio"
+						name="frameworks"
+						aria-label="No Clues"
+						_="on change
+							if my checked then
+								show .location-item
+									when its @data-clues is 'false' and
+									its textContent.toLowerCase()
+									contains #search-locations's value.toLowerCase()
+								then
+								send searchfilter to #location-count
+							end
+							"
+					/>
+					<input
+						id="filter-marker"
+						class="btn btn-sm"
+						type="radio"
+						name="frameworks"
+						aria-label="No Coordinates"
+						_="on change
+							if my checked then
+								show .location-item
+									when its @data-marker is 'false' and
+									its textContent.toLowerCase()
+									contains #search-locations's value.toLowerCase()
+								then
+								send searchfilter to #location-count
+							end
+							"
+					/>
+				</form>
+				<!-- Search -->
+				<label class="input input-sm flex items-center gap-2 w-60">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input
+						id="search-locations"
+						type="text"
+						placeholder="Search"
+						class="grow"
+						_="
+						init send input to me
+						on input 
+							show .location-item
+								when its textContent.toLowerCase()
+								contains my value.toLowerCase()
+							then
+							if my value's length > 0 then
+								remove .invisible from #clear-search
+							else
+								add .invisible to #clear-search
+							end
+							send change to #filter-clues
+							send change to #filter-marker
+							send searchfilter to #location-count"
+					/>
+					<button
+						id="clear-search"
+						role="button"
+						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+						type="reset"
+						_="
+						init if #search-locations's value's length > 0 then
+							remove .invisible from me
+						end
+						on click
+							set #search-locations's value to ''
+							add .invisible to me
+							send input to #search-locations
+							"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					</button>
 				</label>
 			</li>
 			for _, location := range locations {
 				<li
 					class="location-item list-row hover:bg-base-200 transition-colors"
 					data-order={ fmt.Sprint(location.Order) }
+					data-clues={ fmt.Sprint(len(location.Clues) > 0) }
+					data-marker={ fmt.Sprint(location.Marker.Lat != 0) }
 				>
 					<!-- Drag handle -->
 					<div>
