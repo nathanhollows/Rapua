@@ -6,7 +6,7 @@ import (
 )
 
 templ Toast(messages ...flash.Message) {
-	<div class="toast toast-center" id="alerts" hx-swap-oob="true" hx-swap="beforeend">
+	<div class="toast toast-center z-50" id="alerts" hx-target="#alerts" hx-swap-oob="true" hx-swap="beforeend">
 		for _, message := range messages {
 			<div
 				role="alert"
@@ -38,9 +38,64 @@ templ Toast(messages ...flash.Message) {
 					aria-label="Close"
 					onclick="this.parentElement.remove();"
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					<div class="radial-progress alert-progress" style="--value:0; --size:1rem;" role="progressbar">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-3 h-3"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					</div>
 				</button>
 			</div>
 		}
+		<script>
+(function() {
+  document.querySelectorAll('.alert').forEach((alert) => {
+    function startTimer(alertElement) {
+      const progressElement = alertElement.querySelector('.alert-progress');
+      if (!progressElement) return;
+
+	  let duration = 5; // seconds
+
+      let remainingTime = duration; // seconds
+      const updateInterval = 100; // milliseconds
+      let timer;
+
+      const updateProgress = () => {
+        const percentage = ((duration - remainingTime) / duration) * 100;
+        progressElement.style.setProperty('--value', Math.max(0, percentage));
+        remainingTime -= updateInterval / 1000;
+
+        if (remainingTime < 0) {
+          clearInterval(timer);
+		  // Fade out the alert
+		  alertElement.style.transition = 'opacity 0.2s';
+		  alertElement.style.opacity = 0;
+		  setTimeout(() => {
+			alertElement.remove(); // Remove the alert once the timer finishes
+		  }, 200);
+        }
+      };
+
+      const start = () => {
+        timer = setInterval(updateProgress, updateInterval);
+      };
+
+      const stop = () => {
+        clearInterval(timer);
+      };
+
+      // Start the timer initially
+      start();
+
+      // Pause the timer when the #alerts container is hovered
+      const alertsContainer = document.getElementById('alerts');
+      if (alertsContainer) {
+        alertsContainer.addEventListener('mouseenter', stop);
+        alertsContainer.addEventListener('mouseleave', start);
+      }
+    }
+
+    // Initialize the timer for the alert element
+    startTimer(alert);
+  });
+})();
+</script>
 	</div>
 }

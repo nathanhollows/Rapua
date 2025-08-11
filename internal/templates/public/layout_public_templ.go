@@ -39,7 +39,7 @@ func PublicLayout(contents templ.Component, title string, authed bool) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body class=\"h-full flex flex-col\"><div id=\"alerts\" class=\"toast toast-center\"></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body class=\"h-full flex flex-col\"><div class=\"toast toast-center z-50\" id=\"alerts\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

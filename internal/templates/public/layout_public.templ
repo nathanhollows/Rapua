@@ -10,7 +10,7 @@ templ PublicLayout(contents templ.Component, title string, authed bool) {
 	<html lang="en" class="h-full">
 		@publicHeader(title)
 		<body class="h-full flex flex-col">
-			<div id="alerts" class="toast toast-center"></div>
+			<div class="toast toast-center z-50" id="alerts"></div>
 			@publicNav(title, authed)
 			@contents
 			@publicFooter()
