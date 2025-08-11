@@ -162,8 +162,10 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
+		if data.IsComplete() {
+			@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
+		} else {
+			@pointsBadge(settings.EnablePoints, block.Points)
 		}
 		@completionBadge(data)
 		<div class="card bg-base-200 shadow-lg w-full">
@@ -184,7 +186,7 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 				<input type="hidden" name="block" value={ block.ID }/>
 				<div
 					id={ fmt.Sprintf("sorting-items-%s", block.ID) }
-					class="sort-container mt-4 join join-vertical w-full rounded-none"
+					class="list sort-container"
 				>
 					@renderItems(block, data)
 				</div>
@@ -209,7 +211,6 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 			</form>
 		</div>
 	</div>
-	@SortingJS()
 	<script>
 		// Initialize sortable functionality on the sort container
 		document.addEventListener('DOMContentLoaded', function() {
@@ -291,108 +292,88 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 }
 
 templ sortItem(item blocks.SortingItem) {
-	<div
+	<li
 		id={ fmt.Sprintf("sort-item-%s", item.ID) }
-		class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2 cursor-grab"
+		class="list-row items-center py-3 pr-3 pl-5"
 		data-id={ item.ID }
 		data-correct-position={ fmt.Sprint(item.Position) }
 	>
-		<input type="hidden" name="sorting-item-order" value={ item.ID }/>
-		<div class="flex-grow">
+		<div class="list-col-grow prose">
 			@templ.Raw(stringToMarkdown(item.Description))
 		</div>
-		<div class="flex flex-shrink-0 ml-2">
-			<span class="join join-vertical">
-				<button
-					type="button"
-					class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-					data-tip="Move up"
-					onclick="moveSortingItemUp(event)"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-				</button>
-				<button
-					type="button"
-					class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-					data-tip="Move down"
-					onclick="moveSortingItemDown(event)"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-				</button>
-			</span>
-		</div>
-	</div>
+		<input type="hidden" name="sorting-item-order" value={ item.ID }/>
+		<span class="join join-vertical">
+			<button
+				type="button"
+				class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+				data-tip="Move up"
+				_="on click
+						set :item to closest parent <li/>
+						set :prev to :item.previousElementSibling
+						if :prev then
+							put :item before :prev
+						end
+					"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+			</button>
+			<button
+				type="button"
+				class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
+				data-tip="Move down"
+				_="on click
+					set :item to closest parent <li/>
+					set :next to :item.nextElementSibling
+					if :next then
+						put :item after :next
+					end
+				"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+			</button>
+		</span>
+	</li>
 }
 
 // Template for an item with position indicators for completed blocks
 templ sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrect bool) {
 	if isCorrect {
-		<div
+		<li
 			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2"
+			class="list-row items-center py-3 pr-3 pl-5"
 			data-id={ item.ID }
+			data-correct-position={ fmt.Sprint(item.Position) }
 		>
-			<div class="flex flex-grow gap-2">
-				<span class="badge badge-lg badge-success rounded-full">
-					{ fmt.Sprint(item.Position) }
-				</span>
+			<span class="badge badge-lg badge-success rounded-full">
+				{ fmt.Sprint(item.Position) }
+			</span>
+			<div class="list-col-grow prose">
 				@templ.Raw(stringToMarkdown(item.Description))
 			</div>
-			<div class="flex flex-shrink-0 ml-2 invisible">
-				<span class="join join-vertical">
-					<button
-						type="button"
-						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-						data-tip="Move up"
-						onclick="moveSortingItemUp(event)"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-					</button>
-					<button
-						type="button"
-						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-						data-tip="Move down"
-						onclick="moveSortingItemDown(event)"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-					</button>
-				</span>
-			</div>
-		</div>
+		</li>
 	} else {
-		<div
+		<li
 			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="sorting-item join-item border border-x-0 border-base-300 flex justify-between items-center px-4 py-2"
+			class="list-row items-center py-3 pr-3 pl-5"
 			data-id={ item.ID }
+			data-correct-position={ fmt.Sprint(item.Position) }
 		>
-			<div class="flex flex-grow gap-2">
-				<span class="badge badge-lg badge-error rounded-full">
-					{ fmt.Sprint(item.Position) }
-				</span>
+			<span class="badge badge-lg badge-error rounded-full">
+				{ fmt.Sprint(item.Position) }
+			</span>
+			<div class="list-col-grow prose">
 				@templ.Raw(stringToMarkdown(item.Description))
 			</div>
-			<div class="flex flex-shrink-0 ml-2 invisible">
-				<span class="join join-vertical">
-					<button
-						type="button"
-						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-						data-tip="Move up"
-						onclick="moveSortingItemUp(event)"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-					</button>
-					<button
-						type="button"
-						class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-						data-tip="Move down"
-						onclick="moveSortingItemDown(event)"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-					</button>
-				</span>
-			</div>
-		</div>
+		</li>
 	}
+}
+
+var sortableInstructionTextarea = TextareaParams{
+	Name:  "content",
+	Title: "Instructions",
+	Placeholder: `## Sortable
+Sort the items below in the correct order.`,
+	Markdown: true,
 }
 
 templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) {
@@ -403,57 +384,31 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 		hx-swap="none"
 	>
 		if settings.EnablePoints {
-			<label class="form-control w-full">
-				<div class="label">
-					<span class="label-text font-bold">Points</span>
-				</div>
-				<label class="input input-bordered flex items-center gap-2">
-					<input name="points" type="number" class="grow" placeholder="Points" value={ fmt.Sprint(block.Points) }/>
-					<span class="badge badge-info tooltip tooltip-left" data-tip="Set to 0 to disable">Optional</span>
-				</label>
-			</label>
+			@adminPointsField(block.Points)
 		}
-		<label class="form-control w-full mt-5">
-			<div class="label">
-				<span class="label-text font-bold">Scoring Scheme</span>
-			</div>
-			<select name="scoring_scheme" class="select select-bordered w-full">
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Scoring Scheme</legend>
+			<select class="select w-full" name="scoring_scheme">
 				<option value="all_or_nothing" selected?={ block.ScoringScheme == "all_or_nothing" }>All or Nothing</option>
 				<option value="correct_item_correct_place" selected?={ block.ScoringScheme == "correct_item_correct_place" }>Correct Item, Correct Place</option>
 				<option value="retry_until_correct" selected?={ block.ScoringScheme == "retry_until_correct" }>Retry Until Correct</option>
 			</select>
-			<div class="label">
-				<span class="label-text-alt">
-					Choose how points will be awarded:
-					<ul class="mt-1 list-disc list-inside text-xs">
-						<li><strong>All or Nothing</strong>: One attempt only, full points or zero</li>
-						<li><strong>Correct Item, Correct Place</strong>: Points for each correctly placed item</li>
-						<li><strong>Retry Until Correct</strong>: Multiple attempts allowed until correct</li>
-					</ul>
-				</span>
-			</div>
-		</label>
+			<span class="label inline-block">
+				<ul class="list-disc list-inside text-xs">
+					<li><strong>All or Nothing</strong>: One attempt only, full points or none</li>
+					<li><strong>Correct Item, Correct Place</strong>: Points for each correctly placed item</li>
+					<li><strong>Retry Until Correct</strong>: Multiple attempts allowed until correct</li>
+				</ul>
+			</span>
+		</fieldset>
 		// No scoring percentage needed
-		<label
-			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full mt-5"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Instructions</span>
-			</div>
-			<textarea
-				id={ fmt.Sprintf("md-%s", block.ID) }
-				name="content"
-				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono pt-3"
-				style="field-sizing: content;"
-				placeholder="## Sortable
-Sort the items below in the correct order."
-			></textarea>
-		</label>
-		<div class="form-control w-full">
-			<div class="label font-bold flex justify-between">
-				<span class="label-text">Sorting Items</span>
+		@TextareaField(sortableInstructionTextarea.SetValue(block.Content))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend w-full">
+				<div class="flex items-center gap-2">
+					@markdownBadge()
+					Scoring Scheme
+				</div>
 				<button
 					class="btn btn-outline btn-xs"
 					type="button"
@@ -465,7 +420,7 @@ Sort the items below in the correct order."
 				>
 					Add Item
 				</button>
-			</div>
+			</legend>
 			<div
 				class="sorting-items join join-vertical"
 				_="on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate
@@ -483,12 +438,12 @@ Sort the items below in the correct order."
 					@sortingItem(blocks.SortingItem{})
 				}
 			</div>
-		</div>
+		</fieldset>
 		<template id="sorting-item-template">
-			<label class="sorting-item input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item">
+			<label class="sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full">
 				<textarea
 					name="sorting-items"
-					class="w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent"
+					class="w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent"
 					style="field-sizing: content;"
 					rows="1"
 					placeholder="Sorting item description..."
@@ -501,7 +456,7 @@ Sort the items below in the correct order."
 					value=""
 				/>
 				<div class="flex gap-1 mt-2">
-					<span class="join join-horizontal">
+					<span class="join join-vertical">
 						<button
 							type="button"
 							class="btn btn-xs join-item tooltip"
@@ -552,19 +507,13 @@ Sort the items below in the correct order."
 			</label>
 		</template>
 	</form>
-	@SortingJS()
-}
-
-templ SortingJS() {
-	<script>
-	</script>
 }
 
 templ sortingItem(item blocks.SortingItem) {
-	<label class="sorting-item input input-bordered bg-transparent flex flex-row items-top gap-2 h-auto join-item" data-item-id={ item.ID }>
+	<label class="sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full" data-item-id={ item.ID }>
 		<textarea
 			name="sorting-items"
-			class={ fmt.Sprintf("w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent item-%s", item.ID) }
+			class={ fmt.Sprintf("w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 bg-transparent item-%s", item.ID) }
 			_="on keyup send save to (closest <form/>)"
 			style="field-sizing: content;"
 			rows="1"
@@ -580,7 +529,7 @@ templ sortingItem(item blocks.SortingItem) {
 			value={ item.ID }
 		/>
 		<div class="flex gap-1 mt-2">
-			<span class="join join-horizontal">
+			<span class="join join-vertical">
 				<button
 					type="button"
 					class="btn btn-xs join-item tooltip"

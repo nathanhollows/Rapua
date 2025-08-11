@@ -56,3 +56,13 @@ func (b *AlertBlock) ValidatePlayerInput(state PlayerState, input map[string][]s
 	state.SetComplete(true)
 	return state, nil
 }
+
+func (b *AlertBlock) GetVariants() map[string]string {
+	return map[string]string{
+		"":        "Default",
+		"info":    "Info",
+		"success": "Success",
+		"warning": "Warning",
+		"error":   "Error",
+	}
+}

@@ -40,7 +40,7 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.CheckOut(marker, team.Code, team.BlockingLocation)
+	c := templates.CheckIn(marker, team.Code, team.BlockingLocation)
 	err = templates.Layout(c, "Check Out: "+marker.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering checkin", "error", err.Error())

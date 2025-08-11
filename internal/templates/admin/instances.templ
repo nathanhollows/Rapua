@@ -45,7 +45,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<div id="instance-filters" class="flex flex-row justify-between">
 					<div class="flex flex-row gap-2">
 						<!-- Search -->
-						<label class="input input-bordered input-sm flex items-center gap-2">
+						<label class="input input-sm flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 							<input
 								id="search-instances"
@@ -106,13 +106,14 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 			</ul>
 			<p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p>
 			<form method="post" action="/admin/instances/duplicate">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text">New game name</span>
-					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
-					<input type="hidden" name="id" value=""/>
-				</label>
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">New game name</legend>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick="confirm_duplicate_modal.close()">Nevermind</button>
 					<button type="submit" class="btn btn-primary">Duplicate</button>
@@ -134,13 +135,11 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 			</ul>
 			<p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id="instance_name">instance</code></p>
 			<form hx-post="/admin/instances/delete" hx-swap="none">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text">Game name</span>
-					</div>
-					<input type="text" class="input input-bordered w-full" name="confirmname" autocomplete="off" required/>
-					<input type="hidden" name="id" value=""/>
-				</label>
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Game name</legend>
+					<input type="text" class="input w-full" name="confirmname" autocomplete="off" required/>
+				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
 					<button type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
@@ -155,12 +154,13 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 		<div class="modal-box">
 			<form hx-post="/admin/instances/new" hx-swap="none">
 				<h3 class="text-lg font-bold">Create a new game</h3>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text">What is the name of the new game?</span>
-					</div>
-					<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
-				</label>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">Game name</legend>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
 				<div class="modal-action">
 					<button
 						class="btn"
@@ -247,20 +247,17 @@ templ instanceItem(instance models.Instance, active bool) {
 	>
 		<div class="flex flex-row items-center gap-3 grow">
 			<!-- Play Status -->
-			switch instance.GetStatus() {
-				case models.Active:
-					<span class="tooltip" data-tip="Playing">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-play w-5 h-5 stroke-success"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-					</span>
-				case models.Scheduled:
-					<span class="tooltip" data-tip="Scheduled">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5 stroke-info"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
-					</span>
-				case models.Closed:
-					<span class="tooltip" data-tip="Closed">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-stop w-5 h-5 stroke-error"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>
-					</span>
-			}
+			<div class="inline-grid *:[grid-area:1/1] tooltip tooltip-right" data-tip={ instance.GetStatus().Description() }>
+				switch instance.GetStatus() {
+					case models.Active:
+						<div class="status status-lg status-success animate-ping"></div>
+						<div class="status status-lg status-success"></div>
+					case models.Scheduled:
+						<div class="status status-lg status-info"></div>
+					case models.Closed:
+						<div class="status status-lg status-error"></div>
+				}
+			</div>
 			<!-- Instance name -->
 			<span class="instance-name">
 				{ instance.Name }
@@ -299,7 +296,7 @@ templ instanceItem(instance models.Instance, active bool) {
 								</a>
 							</li>
 						} else {
-							<li class="inline-block sm:hidden disabled">
+							<li class="inline-block sm:hidden menu-disabled">
 								<a>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
 									Switch to this game
@@ -331,7 +328,7 @@ templ instanceItem(instance models.Instance, active bool) {
 						<span class="divider my-0"></span>
 						<!-- Delete -->
 						if active {
-							<li class="disabled">
+							<li class="menu-disabled">
 								<a
 									class="tooltip cursor-not-allowed flex"
 									data-tip="Cannot delete current instance"

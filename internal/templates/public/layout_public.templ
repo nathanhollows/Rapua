@@ -10,7 +10,7 @@ templ PublicLayout(contents templ.Component, title string, authed bool) {
 	<html lang="en" class="h-full">
 		@publicHeader(title)
 		<body class="h-full flex flex-col">
-			<div id="alerts" class="toast toast-center"></div>
+			<div class="toast toast-center z-50" id="alerts"></div>
 			@publicNav(title, authed)
 			@contents
 			@publicFooter()
@@ -34,17 +34,18 @@ templ publicHeader(title string) {
 					document.documentElement.setAttribute('data-theme', theme);
 				}
 				
-				// Listen for system preference changes if using system theme
-				if (theme === 'system') {
-					window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-						if (localStorage.getItem('theme') === 'system') {
-							document.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');
-						}
-					});
-				}
+				// Listen for system preference changes regardless of whether theme is explicitly set
+				// This ensures it works even when localStorage hasn't been set yet
+				window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+					const currentTheme = localStorage.getItem('theme');
+					// If no theme is set OR if it's explicitly set to 'system'
+					if (!currentTheme || currentTheme === 'system') {
+						document.documentElement.setAttribute('data-theme', e.matches ? 'dracula' : 'cupcake');
+					}
+				});
 			})();
 		</script>
-		<link rel="stylesheet" href="/static/css/tailwind.css"/>
+		<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
@@ -121,7 +122,7 @@ templ publicNav(title string, authed bool) {
 								<a
 									href="/about"
 									if title == "About" {
-										class="active"
+										class="menu-active"
 									}
 								>
 									if title == "About" {
@@ -136,7 +137,7 @@ templ publicNav(title string, authed bool) {
 								<a
 									href="/pricing"
 									if title == "Pricing" {
-										class="active"
+										class="menu-active"
 									}
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign w-4 h-4"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -147,7 +148,7 @@ templ publicNav(title string, authed bool) {
 								<a
 									href="/docs"
 									if strings.HasSuffix(title, "Docs") {
-										class="active"
+										class="menu-active"
 									}
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked w-4 h-4"><path d="M10 2v8l3-3 3 3V2"></path><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"></path></svg>
@@ -168,7 +169,7 @@ templ publicNav(title string, authed bool) {
 						<a
 							href="/about"
 							if title == "About" {
-								class="active"
+								class="menu-active"
 							}
 						>
 							if title == "About" {
@@ -183,7 +184,7 @@ templ publicNav(title string, authed bool) {
 						<a
 							href="/pricing"
 							if title == "Pricing" {
-								class="active"
+								class="menu-active"
 							}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign w-4 h-4"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -194,7 +195,7 @@ templ publicNav(title string, authed bool) {
 						<a
 							href="/docs"
 							if strings.HasSuffix(title, "Docs") {
-								class="active"
+								class="menu-active"
 							}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked w-4 h-4"><path d="M10 2v8l3-3 3 3V2"></path><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"></path></svg>

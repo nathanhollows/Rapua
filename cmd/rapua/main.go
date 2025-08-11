@@ -25,7 +25,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "4.0.0"
+const version = "4.1.0"
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
