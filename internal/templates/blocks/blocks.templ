@@ -141,14 +141,11 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	return nil
 }
 
-templ RenderAdminError() {
-}
-
 templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open bool) {
 	<div
 		id={ fmt.Sprint("block-", block.GetID()) }
-		class="overflow-visible collapse collapse-arrow content-block card card-compact rounded-2xl bg-base-200"
 		tabindex="0"
+		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"
 		data-block-id={ block.GetID() }
 	>
 		<input
@@ -157,36 +154,29 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 				checked
 			}
 		/>
-		<div class="flex flex-row collapse-title">
-			<div class="flex flex-1 flex-row gap-5">
-				<h3 class="text-lg font-bold flex flex-row gap-3 items-center">
-					<span class="">
-						@templ.Raw(block.GetIconSVG())
-					</span>
-					{ block.GetName() }
-					if settings.EnablePoints && block.RequiresValidation() {
-						<span
-							if block.GetPoints() > 0 {
-								class="badge badge-sm"
-							} else {
-								class="badge badge-sm badge-warning"
-							}
-							_="on keyup from next <input[name=points] /> 
+		<div class="collapse-title font-semibold w-full flex flex-row items-center gap-3">
+			@templ.Raw(block.GetIconSVG())
+			{ block.GetName() }
+			if settings.EnablePoints && block.RequiresValidation() {
+				<span
+					if block.GetPoints() > 0 {
+						class="badge badge-sm"
+					} else {
+						class="badge badge-sm badge-warning"
+					}
+					_="on keyup from next <input[name=points] /> 
 							set :el to next <input[name=points] />
 							if :el's value == '' 
 								then set my innerHTML to '0 pts'
 							else
 								set my innerHTML to (next <input[name=points] />)'s value + ' pts'
 							end"
-						>{ fmt.Sprint(block.GetPoints()) } pts</span>
-					}
-					<span class="loading loading-dots loading-md htmx-indicator"></span>
-				</h3>
-			</div>
-			<div class="flex gap-3 z-10">
+				>{ fmt.Sprint(block.GetPoints()) } pts</span>
+			}
+			<div class="flex gap-3 z-10 ml-auto">
 				<button
 					type="button"
-					class="block-delete btn btn-sm btn-circle shadow-none hover:btn-error tooltip flex"
+					class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
 					data-tip="Delete"
 					data-location={ block.GetLocationID() }
 					data-block={ block.GetID() }
@@ -196,7 +186,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 				<span class="join join-horizontal">
 					<button
 						type="button"
-						class="btn btn-sm btn-ghost join-item tooltip move-up-btn"
+						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-up-btn"
 						data-tip="Move up"
 						onclick="moveblock(event, 'up')"
 						hx-post={ fmt.Sprint("/admin/locations/", block.GetLocationID(), "/blocks/reorder") }
@@ -209,7 +199,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 					</button>
 					<button
 						type="button"
-						class="btn btn-sm btn-ghost join-item tooltip move-down-btn"
+						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-down-btn"
 						data-tip="Move down"
 						onclick="moveblock(event, 'down')"
 						hx-post={ fmt.Sprint("/admin/locations/", block.GetLocationID(), "/blocks/reorder") }
@@ -227,15 +217,6 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 			@RenderAdminEdit(settings, block)
 		</div>
 	</div>
-}
-
-templ markdownHint() {
-	<span class="label-text-alt flex flex-row content-center gap-1 text-base-content/80">
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-		<span class="self-center">
-			This block uses Markdown for formatting content. <a class="link" href="/docs/user/markdown-guide" target="blank">Here's a quick guide</a>.
-		</span>
-	</span>
 }
 
 templ completionBadge(data blocks.PlayerState) {

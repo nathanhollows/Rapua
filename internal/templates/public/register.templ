@@ -18,61 +18,41 @@ templ Register(allowGoogleLogin bool) {
 				}
 				<div id="register-error"></div>
 				<form
-					class="space-y-3"
 					hx-post="/register"
 					hx-trigger="submit"
 					hx-target-401="#register-error"
 				>
-					<label class="form-control">
-						<div class="label">
-							<span class="label-text">Email</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Email</legend>
+						<input type="email" name="email" placeholder="name@email.com" id="email" class="input" autocomplete="email" required/>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Password</legend>
 						<input
-							id="email"
-							name="email"
-							type="email"
-							placeholder="Email"
-							autoComplete="email"
-							class="input input-bordered"
-							required
-						/>
-					</label>
-					<label class="form-control">
-						<div class="label">
-							<span class="label-text">Password</span>
-						</div>
-						<input
-							id="password"
+							type="password"
 							name="password"
-							type="password"
-							placeholder="Password"
-							autoComplete="new-password"
-							class="input input-bordered"
+							id="password"
+							class="input"
 							required
 						/>
-					</label>
-					<label class="form-control">
-						<div class="label">
-							<span class="label-text">Confirm password</span>
-						</div>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Confirm password</legend>
 						<input
-							id="password-confirm"
-							name="password-confirm"
 							type="password"
-							placeholder="Confirm password"
-							class="input input-bordered"
+							name="password-confirm"
+							id="password-confirm"
+							class="input"
 							required
 						/>
+					</fieldset>
+					<label class="cursor-pointer label self-start gap-2 mt-3 mb-5">
+						<input type="checkbox" class="checkbox"/>
+						<span class="label-text">
+							I accept the
+							<a href="/terms" target="blank" class="link">Terms and Conditions</a>
+						</span>
 					</label>
-					<div class="form-control">
-						<label class="cursor-pointer label self-start gap-2">
-							<input type="checkbox" class="checkbox"/>
-							<span class="label-text">
-								I accept the
-								<a href="/terms" target="blank" class="link">Terms and Conditions</a>
-							</span>
-						</label>
-					</div>
 					<button class="btn btn-primary w-full">Create</button>
 				</form>
 			</div>

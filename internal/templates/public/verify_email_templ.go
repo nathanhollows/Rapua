@@ -28,7 +28,7 @@ func VerifyEmail(user models.User) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<main class=\"h-full flex flex-col justify-center items-center \"><div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div hx-trigger=\"every 15s\" hx-get=\"/verify-email/status\" class=\"\"></div><div class=\"flex flex-col gap-5 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Please verify your email</h1><p>You're almost there! We sent an email to <span class=\"font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +41,7 @@ func VerifyEmail(user models.User) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span></p><p>Just click on the link in that email to verify your email address and complete your registration. If you don't see it, you may need to <strong>check your spam folder</strong>.</p><p>Still didn't get the email? No problem.</p><button class=\"btn btn-primary btn-outline w-auto flex justify-between\" hx-post=\"/verify-email/resend\" hx-target=\"#alerts\"><span class=\"w-6\"></span> <span>Resend verification email</span> <span class=\"htmx-indicator loading loading-dots\"></span></button></div></div></div></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

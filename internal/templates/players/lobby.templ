@@ -101,9 +101,9 @@ templ Lobby(team models.Team) {
 	<dialog id="my_modal_5" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box">
 			<h3 class="text-lg font-bold">Choose a team name</h3>
-			<label class="input input-bordered flex items-center gap-2 my-5">
+			<label class="input flex items-center gap-2 my-5 w-full">
 				Name:
-				<input form="team-name" name="name" type="text" class="grow" value={ team.Name } autocomplete="off"/>
+				<input form="team-name" name="name" type="text" class="grow w-full" value={ team.Name } autocomplete="off"/>
 			</label>
 			<input form="team-name" type="hidden" name="team_id" value={ team.Code }/>
 			<div class="modal-action">

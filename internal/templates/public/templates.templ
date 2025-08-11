@@ -12,9 +12,6 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 			<h1 class="text-5xl font-black">
 				{ link.Template.Name }
 			</h1>
-			<p class="py-6">
-				<em>No description provided.</em>
-			</p>
 		</div>
 	</div>
 	<div class="max-w-7xl m-auto px-4 md:px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8">
@@ -23,9 +20,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 			_="on load wait 1s set my.style.height to my.offsetHeight + 'px'"
 		>
 			<section class="w-full max-w-full grow flex flex-col h-full">
-				<div class="prose pb-4">
-					<h2>Preview</h2>
-				</div>
+				<h2 class="pb-4 font-semibold tracking-wider">Preview</h2>
 				<div class="mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-2xl md:shadow-xl">
 					<div class="mockup-browser-toolbar">
 						<div class="flex gap-2 mx-auto">
@@ -49,7 +44,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									  end
 									"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"></path></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
 							</button>
 							<form
 								hx-swap="innerHTML"
@@ -59,7 +54,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<input type="hidden" name="instanceID" value={ fmt.Sprint(link.TemplateID) }/>
 								<select
 									id="pages"
-									class="select select-sm select-bordered w-56 md:w-96 mx-auto text-ellipsis"
+									class="select select-sm select w-56 md:w-96 mx-auto text-ellipsis"
 									_="
 										on load
 										set :hash to window.location.hash
@@ -161,7 +156,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									  trigger change on sel
 								  "
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"></path></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
 							</button>
 						</div>
 					</div>
@@ -319,7 +314,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						<div class="label">
 							<span class="label-text">What is the name of the new game?</span>
 						</div>
-						<input type="text" class="input input-bordered w-full" name="name" required autocomplete="off"/>
+						<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 						<input type="hidden" name="link" value={ fmt.Sprint(link.ID) }/>
 					</label>
 					<p>

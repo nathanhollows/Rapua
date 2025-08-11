@@ -12,40 +12,44 @@ templ ActivityTracker(instance models.Instance) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Activity tracker
-			switch instance.GetStatus() {
-				case models.Active:
-					<span class="badge badge-success">
-						{ instance.GetStatus().String() }
-					</span>
-				case models.Scheduled:
-					<span class="badge badge-warning">
-						{ instance.GetStatus().String() }
-					</span>
-				case models.Closed:
-					<span class="badge badge-outline">
-						Inactive
-					</span>
-			}
 		</h1>
-		<button
-			hx-get="/admin/facilitator/create-link"
-			hx-target="#facilitator_link_modal"
-			hx-swap="innerHTML"
-			class="btn btn-sm btn-circle tooltip md:tooltip-right md:mr-auto md:ml-0 md:mt-1"
-			data-tip="Share activity overview with Facilitators"
-			_="on click facilitator_link_modal.showModal()"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2 w-4 h-4 mx-auto"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
-		</button>
-		<dialog id="facilitator_link_modal" class="modal">
-			@FacilitatorLinkModal()
-		</dialog>
+		<div class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
+			<div class="inline-grid *:[grid-area:1/1]">
+				switch instance.GetStatus() {
+					case models.Active:
+						<div class="status status-lg status-success animate-ping"></div>
+						<div class="status status-lg status-success"></div>
+					case models.Scheduled:
+						<div class="status status-lg status-info"></div>
+					case models.Closed:
+						<div class="status status-lg"></div>
+				}
+			</div>
+			{ instance.GetStatus().String() }
+		</div>
 		<div class="flex gap-3">
 			@GameScheduleStatus(instance)
-			<button class="btn btn-secondary" onclick="announcement_modal.showModal()">
+			<button
+				class="btn btn-secondary tooltip"
+				data-tip="Send an announcement to all teams"
+				onclick="announcement_modal.showModal()"
+			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-megaphone"><path d="m3 11 18-5v12L3 14v-3z"></path><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path></svg>
 				Announce
 			</button>
+			<button
+				hx-get="/admin/facilitator/create-link"
+				hx-target="#facilitator_link_modal"
+				hx-swap="innerHTML"
+				class="btn btn-circle tooltip tooltip-left md:tooltip-top"
+				data-tip="Share activity overview with Facilitators"
+				_="on click facilitator_link_modal.showModal()"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2 w-4 h-4 mx-auto"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
+			</button>
+			<dialog id="facilitator_link_modal" class="modal modal-bottom sm:modal-middle">
+				@FacilitatorLinkModal()
+			</dialog>
 		</div>
 	</div>
 	<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
@@ -394,7 +398,7 @@ templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
 
 templ scheduleButton(scheduled bool, t schema.NullTime) {
 	if !scheduled {
-		<button class="btn btn-secondary flex join-item tooltip" onclick="schedule_modal.showModal()" data-tip="Sechedule">
+		<button class="btn btn-secondary flex join-item tooltip" onclick="schedule_modal.showModal()" data-tip="Set the start and end time">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
 			Schedule
 		</button>
@@ -577,7 +581,7 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 		<form hx-post="/admin/notify/team/" hx-swap="none">
 			<input type="hidden" name="teamCode" value={ team.Code }/>
 			<div class="join w-full">
-				<input class="input input-bordered join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
+				<input class="input join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
 				<button type="submit" class="btn btn-primary join-item rounded-r-full" onclick="announcement_modal.close()">
 					Send
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-5 h-5"><path d="m3 3 3 9-3 9 19-9Z"></path><path d="M6 12h16"></path></svg>
@@ -594,77 +598,87 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 			<button class="btn">Close</button>
 		</form>
 	</div>
+	<form method="dialog">
+		<button
+			class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+		>✕</button>
+	</form>
 }
 
 templ scheduleModal(instance models.Instance) {
 	<dialog id="schedule_modal" class="modal modal-bottom sm:modal-middle">
-		<form hx-post="/admin/schedule/" hx-swap="none" class="modal-box">
+		<div class="modal-box">
 			<h3 class="text-lg font-bold">Schedule a Game</h3>
 			<p class="py-3">
 				Schedule a game to start and/or end at a specific time. 
 			</p>
-			<div class="divider py-5">
-				<div class="form-control">
-					<label class="label cursor-pointer flex gap-3">
-						Scheduled Start
-						if instance.StartTime.Time.IsZero() {
-							<input type="checkbox" name="set_start" class="checkbox"/>
-						} else {
-							<input type="checkbox" name="set_start" class="checkbox" checked/>
-						}
-					</label>
+			<form hx-post="/admin/schedule/" hx-swap="none">
+				<div class="divider py-5">
+					<div class="form-control">
+						<label class="label cursor-pointer flex gap-3">
+							Scheduled Start
+							if instance.StartTime.Time.IsZero() {
+								<input type="checkbox" name="set_start" class="checkbox"/>
+							} else {
+								<input type="checkbox" name="set_start" class="checkbox" checked/>
+							}
+						</label>
+					</div>
 				</div>
-			</div>
-			<div id="utc-start-time" class="join flex justify-center pb-5" data-start={ instance.StartTime.Format("2006-01-02 15:04") }>
-				<input
-					id="start_date"
-					type="date"
-					name="start_date"
-					class="input input-bordered join-item"
-				/>
-				<input
-					id="start_time"
-					type="time"
-					name="start_time"
-					class="input input-bordered join-item"
-				/>
-			</div>
-			<div class="divider py-5">
-				<div class="form-control">
-					<label class="label cursor-pointer flex gap-3">
-						Scheduled End
-						if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
-							<input type="checkbox" name="set_end" class="checkbox" checked/>
-						} else {
-							<input type="checkbox" name="set_end" class="checkbox"/>
-						}
-					</label>
+				<div id="utc-start-time" class="join flex justify-center pb-5" data-start={ instance.StartTime.Format("2006-01-02 15:04") }>
+					<input
+						id="start_date"
+						type="date"
+						name="start_date"
+						class="input join-item"
+					/>
+					<input
+						id="start_time"
+						type="time"
+						name="start_time"
+						class="input join-item"
+					/>
 				</div>
-			</div>
-			<div id="utc-end-time" class="join flex justify-center" data-end={ instance.EndTime.Format("2006-01-02 15:04") }>
-				<input
-					id="end_date"
-					type="date"
-					name="end_date"
-					class="input input-bordered join-item"
-				/>
-				<input
-					id="end_time"
-					type="time"
-					name="end_time"
-					class="input input-bordered join-item"
-				/>
-			</div>
-			<!-- Hidden UTC Inputs -->
-			<input type="hidden" name="utc_start_date"/>
-			<input type="hidden" name="utc_start_time"/>
-			<input type="hidden" name="utc_end_date"/>
-			<input type="hidden" name="utc_end_time"/>
-			<div class="modal-action">
-				<button class="btn" onclick="event.preventDefault(); schedule_modal.close()">Nevermind</button>
-				<button type="submit" onclick="schedule_modal.close()" class="btn btn-primary">Save</button>
-			</div>
-		</form>
+				<div class="divider py-5">
+					<div class="form-control">
+						<label class="label cursor-pointer flex gap-3">
+							Scheduled End
+							if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
+								<input type="checkbox" name="set_end" class="checkbox" checked/>
+							} else {
+								<input type="checkbox" name="set_end" class="checkbox"/>
+							}
+						</label>
+					</div>
+				</div>
+				<div id="utc-end-time" class="join flex justify-center" data-end={ instance.EndTime.Format("2006-01-02 15:04") }>
+					<input
+						id="end_date"
+						type="date"
+						name="end_date"
+						class="input join-item"
+					/>
+					<input
+						id="end_time"
+						type="time"
+						name="end_time"
+						class="input join-item"
+					/>
+				</div>
+				<!-- Hidden UTC Inputs -->
+				<input type="hidden" name="utc_start_date"/>
+				<input type="hidden" name="utc_start_time"/>
+				<input type="hidden" name="utc_end_date"/>
+				<input type="hidden" name="utc_end_time"/>
+				<div class="modal-action">
+					<button class="btn" onclick="event.preventDefault(); schedule_modal.close()">Nevermind</button>
+					<button type="submit" onclick="schedule_modal.close()" class="btn btn-primary">Save</button>
+				</div>
+			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
 	</dialog>
 	<script>
 		function localToUTC(date, time) {
@@ -754,18 +768,23 @@ templ scheduleModal(instance models.Instance) {
 
 templ announcementModal() {
 	<dialog id="announcement_modal" class="modal modal-bottom sm:modal-middle">
-		<form hx-post="/admin/notify/all" hx-swap="none" class="modal-box">
+		<div class="modal-box">
 			<h3 class="text-lg font-bold">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-megaphone inline-block w-5 h-5 mb-1 mr-2"><path d="m3 11 18-5v12L3 14v-3z"></path><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path></svg>
 				Announcement
 			</h3>
 			<p class="py-3">Send an announcement to all teams.</p>
-			<textarea class="textarea textarea-bordered w-full" name="content" placeholder="Announcement"></textarea>
-			<p class="text-sm py-3"><em>Note:</em> This will only be sent to teams that have already started playing.</p>
-			<div class="modal-action">
-				<button class="btn" onclick="event.preventDefault(); announcement_modal.close()">Nevermind</button>
-				<button class="btn btn-primary" onclick="announcement_modal.close()">Send</button>
-			</div>
-		</form>
+			<form hx-post="/admin/notify/all" hx-swap="none">
+				<textarea class="textarea w-full" name="content" placeholder="Announcement"></textarea>
+				<p class="text-sm py-3"><em>Note:</em> This will only be sent to teams that have already started playing.</p>
+				<div class="modal-action">
+					<button class="btn" onclick="event.preventDefault(); announcement_modal.close()">Nevermind</button>
+					<button class="btn btn-primary" onclick="announcement_modal.close()">Send</button>
+				</div>
+			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
 	</dialog>
 }

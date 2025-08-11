@@ -26,9 +26,4 @@ export const theme = {
 export const plugins = [
   require('@tailwindcss/container-queries'),
   require("@tailwindcss/typography"),
-  require("daisyui"),
 ];
-export const daisyui = {
-  themes: ["cupcake", "dracula"],
-  darkTheme: "dracula",
-};
