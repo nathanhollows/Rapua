@@ -51,6 +51,10 @@
   }
 }
 
+p.label {
+  @apply text-wrap;
+}
+
 /* Custom CSS */
 .mockup-phone #player-nav, #preview #player-nav {
   @apply hidden;

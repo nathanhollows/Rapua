@@ -65,20 +65,20 @@ func SettingsProfile(user models.User) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/admin/settings/profile\" hx-trigger=\"keyup delay:500ms, change delay:500ms\" hx-swap=\"none\"><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Update your profile</h2><!-- Account settings --><div class=\"flex gap-5\"><!-- Name --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Full name</span></div><input name=\"name\" type=\"text\" placeholder=\"Janette Dough\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/admin/settings/profile\" hx-trigger=\"keyup delay:500ms, change delay:500ms\" hx-swap=\"none\"><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Update your profile</h2><!-- Account settings --><div class=\"flex gap-5\"><!-- Name --><fieldset class=\"fieldset w-7/12\"><legend class=\"fieldset-legend\">Full name</legend> <input name=\"name\" type=\"text\" placeholder=\"Janette Dough\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 101, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 99, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"input bg-base-200 w-full\"></label><!-- Display Name --><label class=\"form-control flex-grow\"><div class=\"label\"><span class=\"label-text\">Display name</span></div><input name=\"display_name\" type=\"text\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"input w-full\"></fieldset><!-- Display Name --><fieldset class=\"fieldset flex-grow\"><legend class=\"fieldset-legend\">Display name</legend> <input name=\"display_name\" type=\"text\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -90,7 +90,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.DisplayName.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 114, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 110, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -107,7 +107,7 @@ func SettingsProfile(user models.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input bg-base-200 w-full\"></label></div><!-- Work Type --><div class=\"my-5\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">What best describes your work?</span></div><select name=\"work_type\" class=\"select w-full bg-base-200\" _=\"on change\n\t\tif my value is &#39;other&#39; then\n\t\t\t\tremove .hidden from #other-type\n\t\telse\n\t\t\t\tadd .hidden to #other-type\n\t\t\t\t\"><option value=\"formal_education\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input w-full\"></fieldset></div><!-- Work Type --><div class=\"my-5\"><fieldset class=\"fieldset flex-grow\"><legend class=\"fieldset-legend\">What best describes your work?</legend> <select name=\"work_type\" class=\"select w-full\" _=\"on change\n\t\tif my value is &#39;other&#39; then\n\t\t\t\tremove .hidden from #other-type\n\t\telse\n\t\t\t\tadd .hidden to #other-type\n\t\t\t\t\"><option value=\"formal_education\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -161,17 +161,17 @@ func SettingsProfile(user models.User) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+		if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Other</option></select></label></div><!-- Other Work Type --><div id=\"other-type\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">Other</option></select></fieldset></div><!-- Other Work Type --><div id=\"other-type\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+		if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -182,7 +182,7 @@ func SettingsProfile(user models.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">Please specify your work type</span></div><input name=\"other_work_type\" type=\"text\" placeholder=\"Your work type\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Please specify your work type</legend> <input name=\"other_work_type\" type=\"text\" placeholder=\"Your work type\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -194,7 +194,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.WorkType.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 196, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 188, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -205,7 +205,7 @@ func SettingsProfile(user models.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input bg-base-200 w-full\"><div class=\"label\"><span class=\"label-text-alt\">This helps me understand who I'm building Rapua for.</span></div></label></div><!-- Preferences --><div class=\"my-5\"><label class=\"form-control w-full\"><div class=\"form-control\"><label class=\"label cursor-pointer\"><span class=\"label-text\">Show your email on templates to other logged-in admins?</span> <input name=\"show_email\" type=\"checkbox\" class=\"toggle toggle-primary\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input w-full\"></fieldset></div><!-- Preferences --><div class=\"my-5\"><label class=\"form-control w-full\"><div class=\"form-control\"><label class=\"label cursor-pointer\"><input name=\"show_email\" type=\"checkbox\" class=\"checkbox\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -215,7 +215,7 @@ func SettingsProfile(user models.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("></label></div></label></div></div></div></form>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("> <span class=\"text-sm text-base-content\">Show your email on templates to other logged-in admins?</span></label></div></label></div></div></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -257,7 +257,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 243, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 232, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -270,7 +270,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 254, Col: 136}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 243, Col: 136}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -289,7 +289,7 @@ func SettingsAppearance(user models.User) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(theme)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 262, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 251, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -335,13 +335,13 @@ func SettingsSecurity(user models.User) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 315, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 304, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Current password</span></div><input name=\"old_password\" type=\"password\" class=\"input bg-base-200 w-full\" required></label><!-- New password --><label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">New password</span></div><input name=\"new_password\" type=\"password\" class=\"input bg-base-200 w-full\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != &#39;&#39; then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><div class=\"label\"><span class=\"label-text-alt\">Use at least 8 characters. Longer passwords are stronger.</span></div></label> <label class=\"form-control w-7/12\"><div class=\"label\"><span class=\"label-text\">Confirm password</span></div><input name=\"confirm_password\" type=\"password\" class=\"input bg-base-200 w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById(&#39;new_password&#39;).value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .hidden to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><div class=\"label\"><span id=\"password-mismatch\" class=\"label-text-alt text-error hidden\">Passwords don't match</span></div></label><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</strong></p></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Current password</legend> <input name=\"old_password\" type=\"password\" class=\"input w-full\" required></fieldset><!-- New password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">New password</legend> <input name=\"new_password\" type=\"password\" class=\"input w-full validator\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != &#39;&#39; then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><p class=\"validator-hint\">Must be 8 characters or longer.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Confirm password</legend> <input name=\"confirm_password\" type=\"password\" class=\"input w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById(&#39;new_password&#39;).value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .input-success from me\n\t\t\t\t\t\t\t\t\tremove .invisible from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .input-success to me\n\t\t\t\t\t\t\t\t\tadd .invisible to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><p id=\"password-mismatch\" class=\"invisible mt-2 text-xs text-error\">Passwords don't match</p></fieldset><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -353,7 +353,7 @@ func SettingsSecurity(user models.User) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 406, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 387, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {

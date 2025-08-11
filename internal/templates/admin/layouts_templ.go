@@ -280,7 +280,7 @@ func nav(user models.User, section string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-5 h-5 lucide lucide-chevron-down\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><ul tabindex=\"0\" class=\"font-normal menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-5 h-5 lucide lucide-chevron-down\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><ul tabindex=\"0\" class=\"font-normal menu dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -350,7 +350,7 @@ func nav(user models.User, section string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><a href=\"/admin/instances\">Manage games and templates</a></li></ul></div><div class=\"dropdown dropdown-end hidden lg:inline-block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-ghost btn-circle avatar\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round w-7 h-7\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg></div><ul tabindex=\"0\" class=\"menu menu-sm dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg\"><li><a href=\"/docs/user\">Read the docs</a></li><li><a href=\"/pricing\">Contribute</a></li><div class=\"divider my-0\"></div><li><a href=\"/admin/settings\">Settings </a></li><div class=\"divider my-0\"></div><li><a href=\"/logout\">Sign out</a></li></ul></div></div></div></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li><a href=\"/admin/instances\">Manage games and templates</a></li></ul></div><div class=\"dropdown dropdown-end hidden lg:inline-block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-ghost btn-circle avatar\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round w-7 h-7\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg></div><ul tabindex=\"0\" class=\"menu dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg\"><li><a href=\"/docs/user\">Read the docs</a></li><li><a href=\"/pricing\">Contribute</a></li><div class=\"divider my-0\"></div><li><a href=\"/admin/settings\">Settings </a></li><div class=\"divider my-0\"></div><li><a href=\"/logout\">Sign out</a></li></ul></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

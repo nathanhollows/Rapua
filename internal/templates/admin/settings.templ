@@ -90,23 +90,19 @@ templ SettingsProfile(user models.User) {
 				<!-- Account settings -->
 				<div class="flex gap-5">
 					<!-- Name -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Full name</span>
-						</div>
+					<fieldset class="fieldset w-7/12">
+						<legend class="fieldset-legend">Full name</legend>
 						<input
 							name="name"
 							type="text"
 							placeholder="Janette Dough"
 							value={ user.Name }
-							class="input bg-base-200 w-full"
+							class="input w-full"
 						/>
-					</label>
+					</fieldset>
 					<!-- Display Name -->
-					<label class="form-control flex-grow">
-						<div class="label">
-							<span class="label-text">Display name</span>
-						</div>
+					<fieldset class="fieldset flex-grow">
+						<legend class="fieldset-legend">Display name</legend>
 						<input
 							name="display_name"
 							type="text"
@@ -116,19 +112,17 @@ templ SettingsProfile(user models.User) {
 							if user.Name == "" {
 								placeholder="Jane"
 							}
-							class="input bg-base-200 w-full"
+							class="input w-full"
 						/>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Work Type -->
 				<div class="my-5">
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">What best describes your work?</span>
-						</div>
+					<fieldset class="fieldset flex-grow">
+						<legend class="fieldset-legend">What best describes your work?</legend>
 						<select
 							name="work_type"
-							class="select w-full bg-base-200"
+							class="select w-full"
 							_="on change
 		if my value is 'other' then
 				remove .hidden from #other-type
@@ -168,26 +162,24 @@ templ SettingsProfile(user models.User) {
 							>Corporate training</option>
 							<option
 								value="other"
-								if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+								if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 									selected
 								}
 							>Other</option>
 						</select>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Other Work Type -->
 				<div
 					id="other-type"
-					if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+					if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 						class=""
 					} else {
 						class="hidden"
 					}
 				>
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Please specify your work type</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Please specify your work type</legend>
 						<input
 							name="other_work_type"
 							type="text"
@@ -195,27 +187,24 @@ templ SettingsProfile(user models.User) {
 							if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
 								value={ user.WorkType.String }
 							}
-							class="input bg-base-200 w-full"
+							class="input w-full"
 						/>
-						<div class="label">
-							<span class="label-text-alt">This helps me understand who I'm building Rapua for.</span>
-						</div>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Preferences -->
 				<div class="my-5">
 					<label class="form-control w-full">
 						<div class="form-control">
 							<label class="label cursor-pointer">
-								<span class="label-text">Show your email on templates to other logged-in admins?</span>
 								<input
 									name="show_email"
 									type="checkbox"
-									class="toggle toggle-primary"
+									class="checkbox"
 									if user.ShareEmail {
 										checked
 									}
 								/>
+								<span class="text-sm text-base-content">Show your email on templates to other logged-in admins?</span>
 							</label>
 						</div>
 					</label>
@@ -323,62 +312,54 @@ templ SettingsSecurity(user models.User) {
 					hx-swap="none"
 				>
 					<!-- Old password -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Current password</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Current password</legend>
 						<input
 							name="old_password"
 							type="password"
-							class="input bg-base-200 w-full"
+							class="input w-full"
 							required
 						/>
-					</label>
+					</fieldset>
 					<!-- New password -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">New password</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">New password</legend>
 						<input
 							name="new_password"
 							type="password"
-							class="input bg-base-200 w-full"
+							class="input w-full validator"
 							required
 							minlength="8"
 							id="new_password"
 							_="on input if my value != '' then remove .input-error from #confirm_password else add .input-error to #confirm_password end"
 						/>
-						<div class="label">
-							<span class="label-text-alt">
-								Use at least 8 characters. Longer passwords are stronger.
-							</span>
-						</div>
-					</label>
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Confirm password</span>
-						</div>
+						<p class="validator-hint">
+							Must be 8 characters or longer.
+						</p>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Confirm password</legend>
 						<input
 							name="confirm_password"
 							type="password"
-							class="input bg-base-200 w-full"
+							class="input w-full"
 							required
 							id="confirm_password"
 							_="on input 
 								if my value is not document.getElementById('new_password').value then
 									add .input-error to me
-									remove .hidden from #password-mismatch
+									remove .input-success from me
+									remove .invisible from #password-mismatch
 								else
 									remove .input-error from me
-									add .hidden to #password-mismatch
+									add .input-success to me
+									add .invisible to #password-mismatch
 								end"
 						/>
-						<div class="label">
-							<span id="password-mismatch" class="label-text-alt text-error hidden">
-								Passwords don't match
-							</span>
-						</div>
-					</label>
+						<p id="password-mismatch" class="invisible mt-2 text-xs text-error">
+							Passwords don't match
+						</p>
+					</fieldset>
 					<div class="mt-4">
 						<button
 							type="submit"

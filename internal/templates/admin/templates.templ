@@ -256,13 +256,14 @@ templ templateModals() {
 				hx-target="#templates"
 				hx-swap="outerHTML"
 			>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text">Give your template a name:</span>
-					</div>
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">New template name</legend>
 					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
-					<input type="hidden" name="id" value=""/>
-				</label>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick="create_template_modal.close()">Nevermind</button>
 					<button
@@ -307,13 +308,15 @@ templ templateModals() {
 			<h3 class="text-lg font-bold">Launch a new game</h3>
 			<p>You are about to launch a new game from the <code id="launch-template-name"></code> template.</p>
 			<form hx-post="/admin/templates/launch" hx-swap="none">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text">What is the name of the new game?</span>
-					</div>
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">What is the name of the new game?</legend>
 					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
-					<input type="hidden" name="id" value=""/>
-				</label>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
+				<label class="form-control w-full"></label>
 				<!-- TODO -->
 				<div class="form-control my-5 hidden">
 					<label class="label cursor-pointer">
@@ -396,21 +399,18 @@ templ TemplateShareModal(template models.Instance) {
 				<p>Share a template with others by creating a shareable link. Anyone with the link will be able to create a new game from this template.</p>
 			</div>
 			<div class="flex md:flex-row flex-col gap-4">
-				<div class="form-control sm:w-1/2">
-					<label class="label" for="link-validity">
-						<span class="label-text">Validity</span>
-					</label>
+				<fieldset class="fieldset sm:w-1/2">
+					<legend class="fieldset-legend">Validity</legend>
 					<select id="link-validity" name="validity" class="select w-full">
 						<option value="always" selected>Never expires</option>
 						<option value="day">1 day</option>
 						<option value="week">1 week</option>
 						<option value="month">1 month</option>
 					</select>
-				</div>
-				<div class="form-control sm:w-1/2">
-					<label class="label" for="link-limit">
-						<span class="label-text">Maximum uses</span>
-					</label>
+					<p class="label text-wrap">How long should the link last?</p>
+				</fieldset>
+				<fieldset class="fieldset sm:w-1/2">
+					<legend class="fieldset-legend">Maximum uses</legend>
 					<input
 						id="link-limit"
 						type="number"
@@ -420,7 +420,8 @@ templ TemplateShareModal(template models.Instance) {
 						step="1"
 						min="1"
 					/>
-				</div>
+					<p class="label text-wrap">How many games can be created from this link?</p>
+				</fieldset>
 				<input type="hidden" name="id" value={ template.ID }/>
 			</div>
 			<!-- TODO -->
@@ -487,8 +488,37 @@ templ ShareLinkCopyModal(url string) {
 		<form method="dialog">
 			<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 		</form>
-		<h3 class="text-lg font-bold">Share activity overview with Facilitators</h3>
-		<p class="prose pt-4 font-bold label-text mb-2">Share this link with facilitators:</p>
+		<h3 class="text-lg font-bold">Link created!</h3>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">
+				Template link
+			</legend>
+			<div class="join w-full">
+				<input
+					id="facilitator_link"
+					class="input join-item w-full"
+					value={ url }
+				/>
+				<button
+					class="btn join-item"
+					_="init send click to me 
+					on click
+				    set link to #facilitator_link's value
+						writeText(link) on navigator.clipboard
+						set copyText to my innerHTML
+						set my textContent to 'Copied!'
+						wait 1.5s
+						set my innerHTML to copyText
+					"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
+					Copy Link
+				</button>
+			</div>
+			<p class="label text-wrap">
+				This link lets anyone preview the template and create a new game from it.
+			</p>
+		</fieldset>
 		<div class="join w-full">
 			<input
 				id="facilitator_link"
