@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 4.2.0 (2025-08-11)
+
+### Added
+
+- Fields and migration for credit system.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)
+
 ## 4.1.0 (2025-08-11)
 
 ### Added
