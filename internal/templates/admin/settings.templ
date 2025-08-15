@@ -5,13 +5,12 @@ import (
 	"strings"
 )
 
-templ Settings(user models.User) {
+templ Settings(contents templ.Component) {
 	<main class="max-w-7xl m-auto pb-8">
 		<div class="flex flex-col md:flex-row w-full gap-8 p-5">
 			<ul
 				class="menu rounded-box w-80 h-min gap-1"
-				hx-target="#settings"
-				hx-swap="innerHTML"
+				hx-boost="true"
 			>
 				<li>
 					<h2 class="menu-title">
@@ -20,13 +19,10 @@ templ Settings(user models.User) {
 				</li>
 				<li>
 					<a
-						hx-get="/admin/settings/profile"
-						hx-target="#settings"
-						class="active"
-						_="on click
-		remove .active from <li a />
-		add .active to me
-		"
+						href="/admin/settings/profile"
+						_="init if document.title.includes('Profile') then
+							add .menu-active to me
+						end"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round"><path d="M18 20a6 6 0 0 0-12 0"></path><circle cx="12" cy="10" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>
 						Profile
@@ -34,11 +30,10 @@ templ Settings(user models.User) {
 				</li>
 				<li>
 					<a
-						hx-get="/admin/settings/appearance"
-						_="on click
-		remove .active from <li a />
-		add .active to me
-		"
+						href="/admin/settings/appearance"
+						_="init if document.title.includes('Appearance') then
+							add .menu-active to me
+						end"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette-icon lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
 						Appearance
@@ -46,14 +41,29 @@ templ Settings(user models.User) {
 				</li>
 				<li>
 					<a
-						hx-get="/admin/settings/security"
-						_="on click
-		remove .active from <li a />
-		add .active to me
-		"
+						href="/admin/settings/security"
+						_="init if document.title.includes('Security') then
+							add .menu-active to me
+						end"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-lock-icon lucide-user-lock"><circle cx="10" cy="7" r="4"></circle><path d="M10.3 15H7a4 4 0 0 0-4 4v2"></path><path d="M15 15.5V14a2 2 0 0 1 4 0v1.5"></path><rect width="8" height="5" x="13" y="16" rx=".899"></rect></svg>
 						Security
+					</a>
+				</li>
+				<li>
+					<h2 class="menu-title">
+						Billing
+					</h2>
+				</li>
+				<li>
+					<a
+						href="/admin/settings/credits"
+						_="init if document.title.includes('Credit') then
+							add .menu-active to me
+						end"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+						Credit Usage
 					</a>
 				</li>
 				<!--
@@ -72,7 +82,7 @@ templ Settings(user models.User) {
 -->
 			</ul>
 			<section id="settings" class="w-full order-3">
-				@SettingsProfile(user)
+				@contents
 			</section>
 		</div>
 	</main>

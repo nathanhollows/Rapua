@@ -11,10 +11,10 @@ import (
 func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	c := templates.Settings(*user)
-	err := templates.Layout(c, *user, "Settings", "Account Settings").Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsProfile(*user))
+	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
+		h.logger.Error("Locations: rendering template", "error", err)
 	}
 }
 
@@ -22,7 +22,8 @@ func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsProfile(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsProfile(*user))
+	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
 	}
@@ -62,7 +63,8 @@ func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Reques
 func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsAppearance(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsAppearance(*user))
+	err := templates.Layout(c, *user, "Settings", "Appearance").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account appearance page", "error", err.Error())
 	}
@@ -72,19 +74,10 @@ func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request
 func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsSecurity(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsSecurity(*user))
+	err := templates.Layout(c, *user, "Settings", "Security").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account security page", "error", err.Error())
-	}
-}
-
-// SettingsBilling displays the account billing settings page.
-func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	err := templates.SettingsBilling(*user).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering account billing page", "error", err.Error())
 	}
 }
 
