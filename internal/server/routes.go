@@ -286,6 +286,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Get("/profile", adminHandler.SettingsProfile)
 			r.Post("/profile", adminHandler.SettingsProfilePost)
 			r.Get("/appearance", adminHandler.SettingsAppearance)
+			r.Get("/credits", adminHandler.SettingsCreditUsage)
 			r.Get("/security", adminHandler.SettingsSecurity)
 			r.Post("/security", adminHandler.SettingsSecurityPost)
 			r.Delete("/delete-account", adminHandler.DeleteAccount)

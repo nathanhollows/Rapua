@@ -154,3 +154,14 @@ func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	h.redirect(w, r, "/logout")
 }
+
+// SettingsCredits displays the user's credit usage page.
+func (h *AdminHandler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	c := templates.Settings(templates.SettingsCreditUsage(*user))
+	err := templates.Layout(c, *user, "Settings", "Credit Usage").Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("rendering account page", "error", err.Error())
+	}
+}
