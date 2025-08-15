@@ -26,6 +26,8 @@ type UserRepository interface {
 	GetByID(ctx context.Context, userID string) (*models.User, error)
 	// GetByEmailAndProvider retrieves a user by their email address and provider
 	GetByEmailAndProvider(ctx context.Context, email, provider string) (*models.User, error)
+	// GetCreditBalance retrieves the credit balance for a user
+	GetCreditBalance(ctx context.Context, userID string) (int, error)
 
 	// Update updates a user in the database
 	Update(ctx context.Context, user *models.User) error
@@ -129,6 +131,9 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*models.Us
 		}).
 		Scan(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if user.ID == "" {
 		return nil, ErrUserNotFound
 	}
 	return &user, nil
@@ -147,6 +152,20 @@ func (r *userRepository) GetByEmailAndProvider(ctx context.Context, email, provi
 		}).
 		Scan(ctx)
 	return user, err
+}
+
+// GetCreditBalance retrieves the credit balance for a user.
+func (r *userRepository) GetCreditBalance(ctx context.Context, userID string) (int, error) {
+	var credits int
+	err := r.db.NewSelect().
+		Model(&models.User{}).
+		ColumnExpr("SUM(free_credits + paid_credits) AS credits").
+		Where("id = ?", userID).
+		Scan(ctx, &credits)
+	if err != nil {
+		return 0, err
+	}
+	return credits, nil
 }
 
 // Delete deletes a user from the database.
