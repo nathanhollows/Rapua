@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
@@ -42,8 +43,8 @@ type m20250814110632_User struct {
 	Password         string       `bun:"password,type:varchar(255)"`
 	Provider         string       `bun:"provider,type:varchar(255)"`
 	// New fields:
-	FreeCredits int  `bun:"credits,type:int,default:10"`     // Credits for team starts
-	PaidCredits int  `bun:"paid_credits,type:int,default:0"` // Purchased credits
+	FreeCredits int  `bun:"free_credits,type:int,default:10"` // Credits for team starts
+	PaidCredits int  `bun:"paid_credits,type:int,default:0"`  // Purchased credits
 	IsEducator  bool `bun:"is_educator,type:boolean,default:false"`
 
 	Instances         []m20241209083639_Instance          `bun:"rel:has-many,join:id=user_id"`
@@ -67,7 +68,7 @@ func init() {
 			}
 
 			// Add the FreeCredits, PaidCredits, and IsEducator fields to the User struct.
-			_, err = db.NewAddColumn().Model((*m20250814110632_User)(nil)).ColumnExpr("credits int default 10").Exec(ctx)
+			_, err = db.NewAddColumn().Model((*m20250814110632_User)(nil)).ColumnExpr("free_credits int default 10").Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add FreeCredits column: %w", err)
 			}
@@ -97,6 +98,41 @@ func init() {
 				return fmt.Errorf("create index idx_team_start_log_instance_id: %w", err)
 			}
 
+			// Add 500 paid credits to all existing users as a thank you gift
+			_, err = db.NewUpdate().Model((*m20250814110632_User)(nil)).
+				Set("paid_credits = paid_credits + 500").
+				Where("paid_credits < 500"). // Only update users with less than 500 paid credits
+				Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("add 500 paid credits to existing users: %w", err)
+			}
+
+			// Get all existing users to create adjustment records
+			var existingUsers []m20250814110632_User
+			err = db.NewSelect().Model(&existingUsers).Column("id").Scan(ctx)
+			if err != nil {
+				return fmt.Errorf("get existing users for adjustment records: %w", err)
+			}
+
+			// Create adjustment records for each user
+			adjustments := make([]m20250814110632_CreditAdjustments, len(existingUsers))
+			for i, user := range existingUsers {
+				adjustments[i] = m20250814110632_CreditAdjustments{
+					ID:        uuid.New().String(),
+					CreatedAt: time.Now(),
+					UserID:    user.ID,
+					Credits:   500,
+					Reason:    "Migration: Thank you gift for being an early Rapua user",
+				}
+			}
+
+			if len(adjustments) > 0 {
+				_, err = db.NewInsert().Model(&adjustments).Exec(ctx)
+				if err != nil {
+					return fmt.Errorf("create adjustment records for existing users: %w", err)
+				}
+			}
+
 			return nil
 		}, func(ctx context.Context, db *bun.DB) error {
 			// Down migration: drop the CreditAdjustments and TeamStartLog tables.
@@ -110,7 +146,7 @@ func init() {
 			}
 
 			// Remove the FreeCredits, PaidCredits, and IsEducator fields from the User struct.
-			_, err = db.NewDropColumn().Model((*m20250814110632_User)(nil)).Column("credits").Exec(ctx)
+			_, err = db.NewDropColumn().Model((*m20250814110632_User)(nil)).Column("free_credits").Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("drop FreeCredits column: %w", err)
 			}
@@ -126,42 +162,3 @@ func init() {
 			return nil
 		})
 }
-
-// Example of how to add and remove fields in a migration
-// func init() {
-// 	// Adds the IsTemplate and TemplateID fields to the Instance struct.
-// 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-// 		_, err := db.NewAddColumn().Model((*m20250219013821_Instance)(nil)).ColumnExpr("is_template bool").Exec(ctx)
-// 		if err != nil {
-// 			return fmt.Errorf("20250219013821_templates.go: add column is_template: %w", err)
-// 		}
-//
-// 		_, err = db.NewAddColumn().Model((*m20250219013821_Instance)(nil)).ColumnExpr("template_id varchar(36)").Exec(ctx)
-// 		if err != nil {
-// 			return fmt.Errorf("20250219013821_templates.go: add column template_id: %w", err)
-// 		}
-//
-// 		_, err = db.NewUpdate().Model((*m20250219013821_Instance)(nil)).
-// 			Set("is_template = ?", false).
-// 			Where("is_template IS NULL").
-// 			Exec(ctx)
-// 		if err != nil {
-// 			return fmt.Errorf("20250219013821_templates.go: update is_template: %w", err)
-// 		}
-//
-// 		return nil
-// 	}, func(ctx context.Context, db *bun.DB) error {
-// 		// Down migration.
-// 		_, err := db.NewDropColumn().Model((*m20250219013821_Instance)(nil)).Column("is_template").Exec(ctx)
-// 		if err != nil {
-// 			return fmt.Errorf("20250219013821_templates.go: drop column is_template: %w", err)
-// 		}
-//
-// 		_, err = db.NewDropColumn().Model((*m20250219013821_Instance)(nil)).Column("template_id").Exec(ctx)
-// 		if err != nil {
-// 			return fmt.Errorf("20250219013821_templates.go: drop column template_id: %w", err)
-// 		}
-//
-// 		return nil
-// 	})
-// }
