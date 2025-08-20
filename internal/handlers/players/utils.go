@@ -60,7 +60,7 @@ type TeamService interface {
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Team) error
 	// StartPlaying starts a team playing the game
-	StartPlaying(ctx context.Context, teamCode, customTeamName string) error
+	StartPlaying(ctx context.Context, teamCod string) error
 }
 
 type PlayerHandler struct {

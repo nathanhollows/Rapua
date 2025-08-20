@@ -31,9 +31,8 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	teamCode := r.FormValue("team")
-	teamName := r.FormValue("customTeamName")
 
-	err = h.teamService.StartPlaying(r.Context(), teamCode, teamName)
+	err = h.teamService.StartPlaying(r.Context(), teamCode)
 	if err != nil {
 		if err == services.ErrTeamNotFound {
 			h.handleError(w, r, "PlayPost: starting game", "Team not found: "+teamCode, "Cannot start game with this team code", err, "teamCode", teamCode)
