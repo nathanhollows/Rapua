@@ -13,19 +13,21 @@ import (
 // credits + iseducator for users
 
 type m20250814110632_CreditAdjustments struct {
-	ID        string    `bun:"id,unique,pk,type:varchar(36)"`
-	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UserID    string    `bun:"user_id,notnull,type:varchar(36)"`
-	Credits   int       `bun:"credits,type:int,notnull"`
-	Reason    string    `bun:"reason,type:varchar(255),notnull"`
+	bun.BaseModel `bun:"table:credit_adjustments"`
+	ID            string    `bun:"id,unique,pk,type:varchar(36)"`
+	CreatedAt     time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UserID        string    `bun:"user_id,notnull,type:varchar(36)"`
+	Credits       int       `bun:"credits,type:int,notnull"`
+	Reason        string    `bun:"reason,type:varchar(255),notnull"`
 }
 
 type m20250814110632_TeamStartLog struct {
-	ID         string    `bun:"id,unique,pk,type:varchar(36)"`
-	CreatedAt  time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UserID     string    `bun:"user_id,notnull,type:varchar(36)"`
-	InstanceID string    `bun:"instance_id,notnull,type:varchar(36)"`
-	TeamID     string    `bun:"team_id,notnull,type:varchar(36)"`
+	bun.BaseModel `bun:"table:team_start_logs"`
+	ID            string    `bun:"id,unique,pk,type:varchar(36)"`
+	CreatedAt     time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UserID        string    `bun:"user_id,notnull,type:varchar(36)"`
+	InstanceID    string    `bun:"instance_id,notnull,type:varchar(36)"`
+	TeamID        string    `bun:"team_id,notnull,type:varchar(36)"`
 }
 
 type m20250814110632_User struct {
@@ -143,6 +145,23 @@ func init() {
 			_, err = db.NewDropTable().Model(&m20250814110632_TeamStartLog{}).IfExists().Exec(context.Background())
 			if err != nil {
 				return fmt.Errorf("drop TeamStartLog table: %w", err)
+			}
+
+			// Remove the indexes created for the CreditAdjustments and TeamStartLog tables.
+			_, err = db.NewDropIndex().Model((*m20250814110632_CreditAdjustments)(nil)).
+				Index("idx_credit_adjustments_user_id").Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("drop index idx_credit_adjustments_user_id: %w", err)
+			}
+			_, err = db.NewDropIndex().Model((*m20250814110632_TeamStartLog)(nil)).
+				Index("idx_team_start_log_user_id").Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("drop index idx_team_start_log_user_id: %w", err)
+			}
+			_, err = db.NewDropIndex().Model((*m20250814110632_TeamStartLog)(nil)).
+				Index("idx_team_start_log_instance_id").Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("drop index idx_team_start_log_instance_id: %w", err)
 			}
 
 			// Remove the FreeCredits, PaidCredits, and IsEducator fields from the User struct.
