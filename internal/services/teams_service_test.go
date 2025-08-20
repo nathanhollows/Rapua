@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
@@ -13,12 +14,13 @@ import (
 func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
+	transactor := db.NewTransactor(dbc)
 
 	checkinRepo := repositories.NewCheckInRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
-	teamService := services.NewTeamService(teamRepo, checkinRepo, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(transactor, teamRepo, checkinRepo, blockStateRepo, locationRepo)
 
 	return *teamService, cleanup
 }

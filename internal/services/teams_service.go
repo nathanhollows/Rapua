@@ -2,19 +2,23 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/helpers"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
 type TeamService struct {
+	transactor     db.Transactor
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
+	creditService  CreditService
 	blockStateRepo repositories.BlockStateRepository
 	locationRepo   repositories.LocationRepository
 	batchSize      int
@@ -22,14 +26,18 @@ type TeamService struct {
 
 // NewTeamService creates a new TeamService.
 func NewTeamService(
+	transactor db.Transactor,
 	tr repositories.TeamRepository,
-	cr repositories.CheckInRepository,
+	ci repositories.CheckInRepository,
+	creditService CreditService,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
 ) *TeamService {
 	return &TeamService{
+		transactor:     transactor,
 		teamRepo:       tr,
-		checkInRepo:    cr,
+		checkInRepo:    ci,
+		creditService:  creditService,
 		blockStateRepo: bsr,
 		locationRepo:   lr,
 		batchSize:      100,
@@ -202,21 +210,55 @@ func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) erro
 	return nil
 }
 
-func (s *TeamService) StartPlaying(ctx context.Context, teamCode, customTeamName string) error {
+func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
+	teamCode = strings.TrimSpace(strings.ToUpper(teamCode))
+
 	team, err := s.GetTeamByCode(ctx, teamCode)
 	if err != nil {
 		return ErrTeamNotFound
 	}
 
-	// Update team with custom name if provided
-	if !team.HasStarted || customTeamName != "" {
-		team.Name = customTeamName
-		team.HasStarted = true
-		err = s.Update(ctx, team)
-		if err != nil {
-			return fmt.Errorf("updating team: %w", err)
-		}
+	if team.HasStarted {
+		return nil
 	}
 
-	return nil
+	userID, err := s.teamRepo.GetUserIDByCode(ctx, teamCode)
+	if err != nil {
+		return fmt.Errorf("getting user ID for team %s: %w", teamCode, err)
+	}
+
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
+	// Ensure rollback on failure
+	defer func() {
+		if p := recover(); p != nil {
+			err := tx.Rollback()
+			if err != nil {
+				fmt.Println("failed to rollback transaction:", err)
+			}
+			panic(p)
+		}
+	}()
+
+	err = s.creditService.DeductCreditForTeamStartWithTx(ctx, tx, userID, team.ID, team.InstanceID)
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			return fmt.Errorf("rolling back transaction after credit deduction error: %w", txErr)
+		}
+		return fmt.Errorf("deducting credit for team start: %w", err)
+	}
+
+	err = s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			return fmt.Errorf("rolling back transaction after updating team start: %w", txErr)
+		}
+		return fmt.Errorf("updating team start status: %w", err)
+	}
+
+	return tx.Commit()
 }
