@@ -18,8 +18,8 @@ type User struct {
 	Provider         Provider       `bun:"provider,type:varchar(255)"`
 	ShareEmail       bool           `bun:"share_email,type:boolean,notnull,default:false"`
 	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
-	FreeCredits      int            `bun:"credits,type:int,default:10"`     // Credits for team starts
-	PaidCredits      int            `bun:"paid_credits,type:int,default:0"` // Purchased credits
+	FreeCredits      int            `bun:"free_credits,type:int,default:10"` // Credits for team starts
+	PaidCredits      int            `bun:"paid_credits,type:int,default:0"`  // Purchased credits
 	IsEducator       bool           `bun:"is_educator,type:boolean,default:false"`
 
 	Instances         []Instance          `bun:"rel:has-many,join:id=user_id"`
