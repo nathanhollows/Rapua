@@ -17,6 +17,8 @@ type TeamRepository interface {
 
 	// GetByCode returns a team by its code
 	GetByCode(ctx context.Context, code string) (*models.Team, error)
+	// GetUserIDByCode returns the user ID associated with a team code
+	GetUserIDByCode(ctx context.Context, code string) (string, error)
 	// FindAll returns all teams for an instance
 	FindAll(ctx context.Context, instanceID string) ([]models.Team, error)
 	// FindAllWithScans returns all teams for an instance with scans
@@ -24,6 +26,8 @@ type TeamRepository interface {
 
 	// Update saves or updates a team in the database
 	Update(ctx context.Context, t *models.Team) error
+	// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction
+	UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error
 	// Reset wipes a team's progress for re-use
 	Reset(ctx context.Context, tx *bun.Tx, instanceID string, teamCodes []string) error
 
@@ -61,6 +65,16 @@ func NewTeamRepository(db *bun.DB) TeamRepository {
 // Update saves or updates a team in the database.
 func (r *teamRepository) Update(ctx context.Context, t *models.Team) error {
 	_, err := r.db.NewUpdate().Model(t).WherePK().Exec(ctx)
+	return err
+}
+
+// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction.
+func (r *teamRepository) UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error {
+	_, err := tx.NewUpdate().
+		Model(&models.Team{}).
+		Set("has_started = ?", true).
+		Where("code = ?", teamID).
+		Exec(ctx)
 	return err
 }
 
@@ -136,6 +150,25 @@ func (r *teamRepository) GetByCode(ctx context.Context, code string) (*models.Te
 		return nil, fmt.Errorf("FindTeamByCode: %v", err)
 	}
 	return &team, nil
+}
+
+// GetUserIDByCode returns the user ID associated with a team code.
+func (r *teamRepository) GetUserIDByCode(ctx context.Context, code string) (string, error) {
+	code = strings.ToUpper(code)
+	var instance models.Instance
+
+	q := r.db.NewSelect().
+		Model(&instance).
+		Column("instance.user_id").
+		Join("JOIN teams ON teams.instance_id = instance.id").
+		Where("teams.code = ?", code)
+	fmt.Println(q.String())
+	err := q.Scan(ctx)
+	if err != nil {
+		return "", fmt.Errorf("GetUserIDByCode: %v", err)
+	}
+	return instance.UserID, nil
+
 }
 
 // InsertBatch inserts a batch of teams and returns an error if there's a unique constraint conflict.
