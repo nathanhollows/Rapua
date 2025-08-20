@@ -167,6 +167,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
 	clueRepo := repositories.NewClueRepository(dbc)
+	creditRepo := repositories.NewCreditRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
@@ -175,6 +176,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	notificationRepo := repositories.NewNotificationRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
+	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
@@ -220,8 +222,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
 	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
-	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
+	creditService := services.NewCreditService(
+		transactor,
+		creditRepo,
+		*teamStartLogRepo,
+		userRepo,
+	)
+	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, *creditService, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
@@ -259,6 +267,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		identityService,
 		blockService,
 		clueService,
+		creditService,
 		deleteService,
 		facilitatorService,
 		gameScheduleService,

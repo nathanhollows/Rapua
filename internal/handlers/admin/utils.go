@@ -58,6 +58,11 @@ type ClueService interface {
 	UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error
 }
 
+type CreditService interface {
+	GetCreditAdjustments(ctx context.Context, filter services.CreditAdjustmentFilter) ([]models.CreditAdjustments, error)
+	GetTeamStartLogsSummary(ctx context.Context, filter services.TeamStartLogFilter) ([]services.TeamStartSummary, error)
+}
+
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteInstance(ctx context.Context, userID, instanceID string) error
@@ -154,6 +159,7 @@ type AdminHandler struct {
 	identityService         IdentityService
 	blockService            BlockService
 	clueService             ClueService
+	creditService           CreditService
 	deleteService           DeleteService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
@@ -177,6 +183,7 @@ func NewAdminHandler(
 	identityService IdentityService,
 	blockService BlockService,
 	clueService ClueService,
+	creditService CreditService,
 	DeleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
@@ -199,6 +206,7 @@ func NewAdminHandler(
 		identityService:         identityService,
 		blockService:            blockService,
 		clueService:             clueService,
+		creditService:           creditService,
 		deleteService:           DeleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
