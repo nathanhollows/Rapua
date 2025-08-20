@@ -1,8 +1,6 @@
 package templates
 
 import (
-	"fmt"
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"strings"
 )
@@ -224,125 +222,6 @@ templ SettingsProfile(user models.User) {
 			</div>
 		</div>
 	</form>
-}
-
-templ SettingsCreditUsage(user models.User) {
-	<div class="flex gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="stats">
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check-icon lucide-badge-check w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m9 12 2 2 4-4"></path></svg>
-					</div>
-					<div class="stat-title">Free Credits</div>
-					<div class="stat-value">
-						{ fmt.Sprint(user.FreeCredits) }
-					</div>
-					<div class="stat-desc">Refreshed monthly</div>
-				</div>
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-dollar-sign-icon lucide-badge-dollar-sign w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 18V6"></path></svg>
-					</div>
-					<div class="stat-title">Paid Credits</div>
-					<div class="stat-value">
-						{ fmt.Sprint(user.PaidCredits) }
-					</div>
-					<div class="stat-actions">
-						<button class="btn btn-xs btn-success btn-soft">Top up</button>
-					</div>
-				</div>
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw-icon lucide-refresh-cw w-6 h-6"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
-					</div>
-					<div class="stat-title">Free monthly credits</div>
-					<div class="stat-value">
-						if user.IsEducator {
-							50
-						} else {
-							10
-						}
-					</div>
-					<div class="stat-desc">
-						First of each month
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="alert alert-info alert-soft mt-3">
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-		<div>
-			<p>Free credits automatically top up on the first of each month and are used before paid credits.</p>
-		</div>
-	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5 flex justify-between">
-					Credit Usage
-					<button popovertarget="cally-popover1" class="input input-sm" id="cally1" style="anchor-name:--cally1">
-						Pick a date
-					</button>
-					<div popover id="cally-popover1" class="dropdown bg-base-100 rounded-box shadow-lg" style="position-anchor:--cally1">
-						<calendar-range months="2" class="cally">
-							<svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
-							<svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
-							<div class="grid grid-cols-2 gap-3">
-								<calendar-month></calendar-month>
-								<calendar-month offset="1"></calendar-month>
-							</div>
-						</calendar-range>
-					</div>
-				</h2>
-				<div class="skeleton h-64 w-full"></div>
-			</div>
-		</div>
-	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Credit Top-ups</h2>
-				<table class="table">
-					<!-- head -->
-					<thead>
-						<tr>
-							<th align="right">Qty</th>
-							<th>Reason</th>
-							<th>Date</th>
-						</tr>
-					</thead>
-					<tbody>
-						<!-- row 1 -->
-						for i := 1; i <= 7; i++ {
-							if i % 2 == 0 {
-								<tr>
-									<th align="right">{ fmt.Sprint( gofakeit.Number(1, 1000)) }</th>
-									<td>
-										Purchased { fmt.Sprint( gofakeit.Number(1, 1000)) } credits
-									</td>
-									<td>
-										{ gofakeit.Date().Format("2006-01-02") }
-									</td>
-								</tr>
-							} else {
-								<tr>
-									<th align="right">10</th>
-									<td>
-										Monthly free credit top-up (up to 10)
-									</td>
-									<td>
-										{ gofakeit.Date().Format("2006-01") }-01
-									</td>
-								</tr>
-							}
-						}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
 }
 
 func themes() []string {
