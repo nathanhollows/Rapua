@@ -2,6 +2,7 @@ package admin
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
@@ -155,13 +156,95 @@ func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/logout")
 }
 
-// SettingsCredits displays the user's credit usage page.
+// SettingsCreditUsage displays the user's credit usage data.
 func (h *AdminHandler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	c := templates.Settings(templates.SettingsCreditUsage(*user))
-	err := templates.Layout(c, *user, "Settings", "Credit Usage").Render(r.Context(), w)
+	var recurring = 10
+	if user.IsEducator {
+		recurring = 50
+	}
+
+	topupFilter := services.CreditAdjustmentFilter{
+		UserID: user.ID,
+		Limit:  25,
+		Offset: 0,
+	}
+	topups, err := h.creditService.GetCreditAdjustments(r.Context(), topupFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsage: get credit adjustments", "Failed to retrieve credit adjustments", err)
+		return
+	}
+
+	usageFilter := services.TeamStartLogFilter{
+		UserID:    user.ID,
+		StartTime: time.Now().AddDate(0, 0, -6), // Last year
+		EndTime:   time.Now(),
+		GroupBy:   "day",
+	}
+	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsage: get team start logs", "Failed to retrieve team start logs", err)
+		return
+	}
+
+	c := templates.Settings(templates.SettingsCreditUsage(
+		user.FreeCredits,
+		user.PaidCredits,
+		recurring,
+		topups,
+		usage,
+	))
+	err = templates.Layout(c, *user, "Settings", "Credit Usage").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
+	}
+}
+
+// SettingsCreditUsageChart displays the credit usage chart data.
+func (h *AdminHandler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: parse form", "Failed to parse form data", err)
+		return
+	}
+
+	var start, end time.Time
+	groupBy := "day"
+	switch r.FormValue("period") {
+	case "week":
+		start = time.Now().AddDate(0, 0, -6) // Last week
+		end = time.Now()
+	case "month":
+		start = time.Now().AddDate(0, -1, 0) // Last month
+		end = time.Now()
+	case "year":
+		start = time.Now().AddDate(-1, 1, 0) // Last year
+		end = time.Now()
+		groupBy = "month"
+	default:
+		h.handleError(w, r, "SettingsCreditUsageChart", "Invalid period specified", nil)
+		return
+	}
+
+	usageFilter := services.TeamStartLogFilter{
+		UserID:    user.ID,
+		StartTime: start,
+		EndTime:   end,
+		GroupBy:   groupBy,
+	}
+
+	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: get team start logs", "Failed to retrieve team start logs", err)
+		return
+	}
+
+	err = templates.CreditUsageChart(usage, r.FormValue("period")).Render(r.Context(), w)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: render chart", "Failed to render credit usage chart", err)
+		return
 	}
 }
