@@ -1,6 +1,7 @@
 package scheduler_test
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
@@ -14,14 +15,14 @@ func TestJob_Creation(t *testing.T) {
 	tests := []struct {
 		name     string
 		jobName  string
-		runFunc  func() error
+		runFunc  func(context.Context) error
 		nextFunc func() time.Time
 		wantErr  bool
 	}{
 		{
 			name:    "valid job creation",
 			jobName: "test-job",
-			runFunc: func() error { return nil },
+			runFunc: func(context.Context) error { return nil },
 			nextFunc: func() time.Time {
 				return time.Now().Add(time.Hour)
 			},
@@ -30,7 +31,7 @@ func TestJob_Creation(t *testing.T) {
 		{
 			name:    "job with empty name",
 			jobName: "",
-			runFunc: func() error { return nil },
+			runFunc: func(context.Context) error { return nil },
 			nextFunc: func() time.Time {
 				return time.Now().Add(time.Hour)
 			},
@@ -128,7 +129,7 @@ func TestNewScheduler(t *testing.T) {
 	s := scheduler.NewScheduler()
 
 	assert.NotNil(t, s)
-	
+
 	// Test cleanup
 	s.Stop()
 }
@@ -138,12 +139,12 @@ func TestScheduler_AddJob(t *testing.T) {
 	defer s.Stop()
 
 	// Add first job
-	job1 := s.AddJob("test-job-1", func() error { return nil }, func() time.Time {
+	job1 := s.AddJob("test-job-1", func(context.Context) error { return nil }, func() time.Time {
 		return time.Now().Add(time.Hour)
 	})
 
 	// Add second job
-	job2 := s.AddJob("test-job-2", func() error { return nil }, func() time.Time {
+	job2 := s.AddJob("test-job-2", func(context.Context) error { return nil }, func() time.Time {
 		return time.Now().Add(2 * time.Hour)
 	})
 
@@ -162,7 +163,7 @@ func TestScheduler_Start(t *testing.T) {
 	var executionCount int
 	var mu sync.Mutex
 
-	s.AddJob("test-job", func() error {
+	s.AddJob("test-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -191,7 +192,7 @@ func TestScheduler_JobExecution_Success(t *testing.T) {
 	var executionCount int
 	var mu sync.Mutex
 
-	s.AddJob("success-job", func() error {
+	s.AddJob("success-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -220,7 +221,7 @@ func TestScheduler_JobExecution_WithError(t *testing.T) {
 	var mu sync.Mutex
 	expectedError := errors.New("job execution error")
 
-	s.AddJob("error-job", func() error {
+	s.AddJob("error-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -249,7 +250,7 @@ func TestScheduler_Stop_CancelsJobs(t *testing.T) {
 	var mu sync.Mutex
 	executed := make(chan bool, 1)
 
-	s.AddJob("cancellation-job", func() error {
+	s.AddJob("cancellation-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -286,7 +287,7 @@ func TestScheduler_MultipleJobs(t *testing.T) {
 	var job1Count, job2Count int
 	var mu sync.Mutex
 
-	s.AddJob("job-1", func() error {
+	s.AddJob("job-1", func(context.Context) error {
 		mu.Lock()
 		job1Count++
 		mu.Unlock()
@@ -295,7 +296,7 @@ func TestScheduler_MultipleJobs(t *testing.T) {
 		return time.Now().Add(30 * time.Millisecond)
 	})
 
-	s.AddJob("job-2", func() error {
+	s.AddJob("job-2", func(context.Context) error {
 		mu.Lock()
 		job2Count++
 		mu.Unlock()
@@ -326,7 +327,7 @@ func TestScheduler_JobTimerReset(t *testing.T) {
 	var mu sync.Mutex
 	var lastExecution time.Time
 
-	s.AddJob("timer-reset-job", func() error {
+	s.AddJob("timer-reset-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		lastExecution = time.Now()
@@ -361,7 +362,7 @@ func TestScheduler_Integration(t *testing.T) {
 	var mu sync.Mutex
 
 	// Mock the Next functions to execute quickly for testing
-	s.AddJob("daily-job", func() error {
+	s.AddJob("daily-job", func(context.Context) error {
 		mu.Lock()
 		dailyCount++
 		mu.Unlock()
@@ -370,7 +371,7 @@ func TestScheduler_Integration(t *testing.T) {
 		return time.Now().Add(25 * time.Millisecond)
 	})
 
-	s.AddJob("monthly-job", func() error {
+	s.AddJob("monthly-job", func(context.Context) error {
 		mu.Lock()
 		monthlyCount++
 		mu.Unlock()
@@ -438,7 +439,7 @@ func TestScheduler_LongRunningJob(t *testing.T) {
 	var mu sync.Mutex
 	executed := make(chan bool, 1)
 
-	s.AddJob("long-job", func() error {
+	s.AddJob("long-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -473,7 +474,7 @@ func TestScheduler_RapidFireJobs(t *testing.T) {
 	var executionCount int
 	var mu sync.Mutex
 
-	s.AddJob("rapid-job", func() error {
+	s.AddJob("rapid-job", func(context.Context) error {
 		mu.Lock()
 		executionCount++
 		mu.Unlock()
@@ -495,3 +496,4 @@ func TestScheduler_RapidFireJobs(t *testing.T) {
 	// Should have executed many times
 	assert.Greater(t, count, 10, "job should execute rapidly multiple times")
 }
+

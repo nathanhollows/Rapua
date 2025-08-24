@@ -8,7 +8,7 @@ import (
 
 type Job struct {
 	Name string
-	Run  func() error
+	Run  func(context.Context) error
 	Next func() time.Time
 }
 
@@ -47,7 +47,7 @@ func NewScheduler() *Scheduler {
 	}
 }
 
-func (s *Scheduler) AddJob(name string, run func() error, next func() time.Time) *Job {
+func (s *Scheduler) AddJob(name string, run func(context.Context) error, next func() time.Time) *Job {
 	job := &Job{
 		Name: name,
 		Run:  run,
@@ -83,7 +83,7 @@ func (s *Scheduler) runJob(job *Job) {
 		case <-timer.C:
 			log.Printf("Running job: %s", job.Name)
 
-			if err := job.Run(); err != nil {
+			if err := job.Run(s.ctx); err != nil {
 				log.Printf("Job %s failed: %v", job.Name, err)
 			} else {
 				log.Printf("Job %s completed successfully", job.Name)
