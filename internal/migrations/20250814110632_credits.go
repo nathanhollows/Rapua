@@ -147,23 +147,6 @@ func init() {
 				return fmt.Errorf("drop TeamStartLog table: %w", err)
 			}
 
-			// Remove the indexes created for the CreditAdjustments and TeamStartLog tables.
-			_, err = db.NewDropIndex().Model((*m20250814110632_CreditAdjustments)(nil)).
-				Index("idx_credit_adjustments_user_id").Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("drop index idx_credit_adjustments_user_id: %w", err)
-			}
-			_, err = db.NewDropIndex().Model((*m20250814110632_TeamStartLog)(nil)).
-				Index("idx_team_start_log_user_id").Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("drop index idx_team_start_log_user_id: %w", err)
-			}
-			_, err = db.NewDropIndex().Model((*m20250814110632_TeamStartLog)(nil)).
-				Index("idx_team_start_log_instance_id").Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("drop index idx_team_start_log_instance_id: %w", err)
-			}
-
 			// Remove the FreeCredits, PaidCredits, and IsEducator fields from the User struct.
 			_, err = db.NewDropColumn().Model((*m20250814110632_User)(nil)).Column("free_credits").Exec(ctx)
 			if err != nil {
