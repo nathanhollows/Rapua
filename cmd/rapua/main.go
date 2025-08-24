@@ -15,6 +15,7 @@ import (
 	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
 	public "github.com/nathanhollows/Rapua/v4/internal/handlers/public"
 	"github.com/nathanhollows/Rapua/v4/internal/migrations"
+	"github.com/nathanhollows/Rapua/v4/internal/scheduler"
 	"github.com/nathanhollows/Rapua/v4/internal/server"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/internal/sessions"
@@ -161,6 +162,8 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 
 func runApp(logger *slog.Logger, dbc *bun.DB) {
 	initialiseFolders(logger)
+
+	_ = scheduler.NewScheduler()
 
 	// Initialize repositories
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
