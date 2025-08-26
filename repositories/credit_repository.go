@@ -2,8 +2,11 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun"
 )
@@ -87,4 +90,73 @@ func (r *CreditRepository) CreateCreditAdjustmentWithTx(ctx context.Context, tx 
 		Model(adjustment).
 		Exec(ctx)
 	return err
+}
+
+func (r *CreditRepository) BulkUpdateCredits(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool) error {
+	_, err := tx.NewUpdate().
+		Model(&models.User{}).
+		Set("free_credits = ?", needs).
+		Where("free_credits = ? AND is_educator = ?", has, isEducator).
+		Exec(ctx)
+	return err
+}
+
+func (r *CreditRepository) BulkUpdateCreditUpdateNotices(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool, reason string) error {
+	// First, get all users that need top-up
+	var users []struct {
+		ID string `bun:"id"`
+	}
+	err := tx.NewSelect().
+		Model(&models.User{}).
+		Column("id").
+		Where("free_credits = ? AND is_educator = ?", has, isEducator).
+		Scan(ctx, &users)
+	if err != nil {
+		return err
+	}
+
+	// If no users need top-up, return early
+	if len(users) == 0 {
+		return nil
+	}
+
+	// Create credit adjustments for each user
+	adjustments := make([]models.CreditAdjustments, len(users))
+	for i, user := range users {
+		adjustments[i] = models.CreditAdjustments{
+			ID:      uuid.NewString(),
+			UserID:  user.ID,
+			Credits: needs - has, // Amount being added
+			Reason:  reason,
+		}
+	}
+
+	// Bulk insert credit adjustments
+	_, err = tx.NewInsert().
+		Model(&adjustments).
+		Exec(ctx)
+	
+	return err
+}
+
+// GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix
+func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx context.Context, reasonPrefix string) (*time.Time, error) {
+	var adjustment models.CreditAdjustments
+	err := r.db.NewSelect().
+		Model(&adjustment).
+		Column("created_at").
+		Where("reason LIKE ?", reasonPrefix+"%").
+		Order("created_at DESC").
+		Limit(1).
+		Scan(ctx)
+	
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No adjustments found, return nil (not an error)
+			return nil, nil
+		}
+		return nil, err
+	}
+	
+	return &adjustment.CreatedAt, nil
 }
