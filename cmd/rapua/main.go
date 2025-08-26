@@ -251,6 +251,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 
 	sessions.Start()
 
+	// Register jobs
+	jobs := scheduler.NewScheduler(logger)
+	jobs.Start()
+
 	// Construct handlers (dependency injection root)
 	publicHandler := public.NewPublicHandler(
 		logger,
@@ -296,7 +300,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		quickstartService,
 	)
 
-	server.Start(logger, publicHandler, playerHandler, adminHandler)
+	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)
 }
 
 func initialiseFolders(logger *slog.Logger) {

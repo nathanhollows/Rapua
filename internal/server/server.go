@@ -15,6 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
 	"github.com/nathanhollows/Rapua/v4/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v4/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v4/internal/scheduler"
 )
 
 var router *chi.Mux
@@ -25,6 +26,7 @@ func Start(
 	publicHandler *public.PublicHandler,
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.AdminHandler,
+	scheduler *scheduler.Scheduler,
 ) {
 	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 
@@ -53,7 +55,12 @@ func Start(
 	logger.Info("Server started", "addr", os.Getenv("SERVER_ADDR"))
 	<-killSig
 
-	slog.Info("Shutting down server")
+	slog.Info("Shutting down server and scheduler")
+
+	// Stop scheduler first
+	if scheduler != nil {
+		scheduler.Stop()
+	}
 
 	// Create a context with a timeout for the shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -64,5 +71,5 @@ func Start(
 		slog.Error("Server shutdown failed", "error", err)
 	}
 
-	logger.Info("Server shutdown complete")
+	logger.Info("Server and scheduler shutdown complete")
 }
