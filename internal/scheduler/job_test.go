@@ -3,6 +3,7 @@ package scheduler_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +11,8 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/scheduler"
 	"github.com/stretchr/testify/assert"
 )
+
+var jobLogger = slog.New(&slog.TextHandler{})
 
 func TestJob_Creation(t *testing.T) {
 	tests := []struct {
@@ -41,7 +44,7 @@ func TestJob_Creation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := scheduler.NewScheduler()
+			s := scheduler.NewScheduler(jobLogger)
 			defer s.Stop()
 
 			job := s.AddJob(tt.jobName, tt.runFunc, tt.nextFunc)
@@ -126,7 +129,7 @@ func TestNextFirstOfMonth(t *testing.T) {
 }
 
 func TestNewScheduler(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 
 	assert.NotNil(t, s)
 
@@ -135,7 +138,7 @@ func TestNewScheduler(t *testing.T) {
 }
 
 func TestScheduler_AddJob(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	// Add first job
@@ -157,7 +160,7 @@ func TestScheduler_AddJob(t *testing.T) {
 }
 
 func TestScheduler_Start(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int
@@ -186,7 +189,7 @@ func TestScheduler_Start(t *testing.T) {
 }
 
 func TestScheduler_JobExecution_Success(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int
@@ -214,7 +217,7 @@ func TestScheduler_JobExecution_Success(t *testing.T) {
 }
 
 func TestScheduler_JobExecution_WithError(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int
@@ -244,7 +247,7 @@ func TestScheduler_JobExecution_WithError(t *testing.T) {
 }
 
 func TestScheduler_Stop_CancelsJobs(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 
 	var executionCount int
 	var mu sync.Mutex
@@ -281,7 +284,7 @@ func TestScheduler_Stop_CancelsJobs(t *testing.T) {
 }
 
 func TestScheduler_MultipleJobs(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var job1Count, job2Count int
@@ -320,7 +323,7 @@ func TestScheduler_MultipleJobs(t *testing.T) {
 }
 
 func TestScheduler_JobTimerReset(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int
@@ -354,7 +357,7 @@ func TestScheduler_JobTimerReset(t *testing.T) {
 }
 
 func TestScheduler_Integration(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	// Test with predefined Next functions
@@ -421,7 +424,7 @@ func TestPredefinedNextFunctions(t *testing.T) {
 }
 
 func TestScheduler_EmptyJobsStart(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	// Starting with no jobs should not panic
@@ -432,7 +435,7 @@ func TestScheduler_EmptyJobsStart(t *testing.T) {
 }
 
 func TestScheduler_LongRunningJob(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int
@@ -468,7 +471,7 @@ func TestScheduler_LongRunningJob(t *testing.T) {
 }
 
 func TestScheduler_RapidFireJobs(t *testing.T) {
-	s := scheduler.NewScheduler()
+	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 
 	var executionCount int

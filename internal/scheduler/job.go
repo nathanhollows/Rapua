@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -13,6 +13,7 @@ type Job struct {
 }
 
 type Scheduler struct {
+	logger *slog.Logger
 	jobs   []*Job
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -38,9 +39,10 @@ var (
 	}
 )
 
-func NewScheduler() *Scheduler {
+func NewScheduler(logger *slog.Logger) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Scheduler{
+		logger: logger,
 		jobs:   []*Job{},
 		ctx:    ctx,
 		cancel: cancel,
@@ -65,12 +67,12 @@ func (s *Scheduler) Start() {
 
 func (s *Scheduler) Stop() {
 	s.cancel()
-	log.Println("Scheduler stopped")
+	slog.Info("Scheduler stopped")
 }
 
 func (s *Scheduler) runJob(job *Job) {
 	nextRun := job.Next()
-	log.Printf("Starting job: %s, next run at: %s", job.Name, nextRun)
+	slog.Info("Starting job", "job", job.Name, "nextRun", nextRun)
 
 	timer := time.NewTimer(time.Until(nextRun))
 	defer timer.Stop()
@@ -78,20 +80,20 @@ func (s *Scheduler) runJob(job *Job) {
 	for {
 		select {
 		case <-s.ctx.Done():
-			log.Printf("Stopping job: %s", job.Name)
+			slog.Info("Job stopped", "job", job.Name)
 			return
 		case <-timer.C:
-			log.Printf("Running job: %s", job.Name)
+			slog.Info("Executing job", "job", job.Name)
 
 			if err := job.Run(s.ctx); err != nil {
-				log.Printf("Job %s failed: %v", job.Name, err)
+				slog.Error("Job execution", "job", job.Name, "error", err)
 			} else {
-				log.Printf("Job %s completed successfully", job.Name)
+				slog.Info("Job completed successfully", "job", job.Name)
 			}
 
 			nextRun = job.Next()
 			timer.Reset(time.Until(nextRun))
-			log.Printf("Next run for job %s at: %s", job.Name, nextRun)
+			slog.Info("Next run scheduled", "job", job.Name, "nextRun", nextRun)
 		}
 	}
 }
