@@ -21,6 +21,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/sessions"
 	"github.com/nathanhollows/Rapua/v4/internal/storage"
 	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
@@ -29,7 +30,15 @@ import (
 const version = "4.1.0"
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger := slog.New(
+		console.NewHandler(os.Stdout, &console.HandlerOptions{
+			Level:     slog.LevelDebug,
+			AddSource: true,
+		}),
+	)
+	slog.SetDefault(logger)
+
+	log.Printf("Rapua version %s starting...\n", version)
 
 	// Load environment variables
 	if err := godotenv.Load(".env"); err != nil {
