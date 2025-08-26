@@ -20,7 +20,10 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
-	teamService := services.NewTeamService(transactor, teamRepo, checkinRepo, blockStateRepo, locationRepo)
+	creditRepo := repositories.NewCreditRepository(dbc)
+	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	creditService := services.NewCreditService(transactor, creditRepo, *teamStartLogRepo, nil)
+	teamService := services.NewTeamService(transactor, teamRepo, checkinRepo, creditService, blockStateRepo, locationRepo)
 
 	return *teamService, cleanup
 }

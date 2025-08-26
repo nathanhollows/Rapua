@@ -30,11 +30,14 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
+	creditRepo := repositories.NewCreditRepository(dbc)
+	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 
 	// Initialize services
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, *teamStartLogRepo, nil)
+	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)

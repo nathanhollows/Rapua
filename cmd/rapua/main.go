@@ -240,7 +240,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		*teamStartLogRepo,
 		userRepo,
 	)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, *creditService, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)

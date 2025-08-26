@@ -12,13 +12,18 @@ import (
 	"github.com/nathanhollows/Rapua/v4/helpers"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/uptrace/bun"
 )
+
+type TeamCreditService interface {
+	DeductCreditForTeamStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, instanceID string) error
+}
 
 type TeamService struct {
 	transactor     db.Transactor
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
-	creditService  CreditService
+	creditService  TeamCreditService
 	blockStateRepo repositories.BlockStateRepository
 	locationRepo   repositories.LocationRepository
 	batchSize      int
@@ -29,7 +34,7 @@ func NewTeamService(
 	transactor db.Transactor,
 	tr repositories.TeamRepository,
 	ci repositories.CheckInRepository,
-	creditService CreditService,
+	creditService TeamCreditService,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
 ) *TeamService {

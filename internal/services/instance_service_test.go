@@ -27,11 +27,14 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
+	creditRepo := repositories.NewCreditRepository(dbc)
+	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 	markerService := services.NewMarkerService(markerRepo)
 
 	// Initialize services
+	creditService := services.NewCreditService(transactor, creditRepo, *teamStartLogRepo, userRepo)
 	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
