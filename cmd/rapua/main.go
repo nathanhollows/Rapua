@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "4.1.0"
+const version = "4.2.0"
 
 func main() {
 	logger := slog.New(
@@ -172,8 +172,6 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 func runApp(logger *slog.Logger, dbc *bun.DB) {
 	initialiseFolders(logger)
 
-	_ = scheduler.NewScheduler()
-
 	// Initialize repositories
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
@@ -235,6 +233,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
+	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo)
 	creditService := services.NewCreditService(
 		transactor,
 		creditRepo,
@@ -253,6 +252,11 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 
 	// Register jobs
 	jobs := scheduler.NewScheduler(logger)
+	jobs.AddJob(
+		"Monthly Credit Top-Up",
+		monthlyCreditTopupJob.TopUpCredits,
+		scheduler.NextFirstOfMonth,
+	)
 	jobs.Start()
 
 	// Construct handlers (dependency injection root)
