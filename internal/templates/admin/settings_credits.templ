@@ -61,9 +61,9 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 						hx-swap="innerHTML"
 						hx-trigger="change"
 					>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="week" checked aria-label="Week"/>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="month" aria-label="Month"/>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="year" aria-label="Year"/>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="week" checked aria-label="Week" autocomplete="off"/>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="month" aria-label="Month" autocomplete="off"/>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="year" aria-label="Year" autocomplete="off"/>
 					</form>
 				</h2>
 				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"/>
