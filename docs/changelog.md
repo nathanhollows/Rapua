@@ -10,7 +10,17 @@ order: 100
 
 ### Added
 
-- Fields and migration for credit system.
+- Simple credit system so Rapua can be self-sufficient.
+  - One credit = one new team starting play.
+  - No tiered features.
+- Migration scripts for new tables.
+  - Includes 500 credits for all existing users.
+- Job scheduler
+  - Monthly job includes topping all users up with free credits.
+
+### Fixed
+
+- Upgraded to templ 0.3.xxx, fixed issues with LSPs and compilation. This upgrade required a move to Go 1.23.0.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)
 
