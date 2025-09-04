@@ -263,22 +263,18 @@ templ sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock,
 		
 		// Function to update the sorting-item-order hidden inputs
 		function updateSortingOrder(container, form) {
-			console.log("Updating sort order...");
 			
 			// Get current order of items
 			const items = container.querySelectorAll('.sorting-item');
-			console.log("Found " + items.length + " items");
 			
 			// First remove all existing order inputs to avoid duplicates
 			form.querySelectorAll('input[name="sorting-item-order"]').forEach(input => {
-				console.log("Removing existing input: " + input.value);
 				input.remove();
 			});
 			
 			// Add fresh inputs in the current order
 			items.forEach((item, index) => {
 				const itemId = item.getAttribute('data-id');
-				console.log("Item " + (index+1) + ": " + itemId);
 				
 				// Always create a new input
 				const input = document.createElement('input');

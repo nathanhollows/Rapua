@@ -356,7 +356,7 @@ func sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock, 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</form></div></div><script>\n\t\t// Initialize sortable functionality on the sort container\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst sortContainer = document.getElementById('{ fmt.Sprintf(\"sorting-items-%s\", block.ID) }');\n\t\t\tconst form = document.getElementById('{ fmt.Sprintf(\"sorting-form-%s\", block.ID) }');\n\t\t\t\n\t\t\tif (sortContainer && form && !{ fmt.Sprint(data.IsComplete()) }) {\n\t\t\t\t// Initialize Sortable for drag and drop\n\t\t\t\tnew Sortable(sortContainer, {\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tonEnd: function() {\n\t\t\t\t\t\t// When sorting ends, update the hidden inputs to reflect new order\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Set up the up/down buttons to move items\n\t\t\t\tsortContainer.querySelectorAll('.join-vertical button').forEach(btn => {\n\t\t\t\t\tbtn.addEventListener('click', function(e) {\n\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\tconst item = e.target.closest('.sorting-item');\n\t\t\t\t\t\tconst isUp = e.target.closest('button').getAttribute('data-tip') === 'Move up';\n\t\t\t\t\t\t\n\t\t\t\t\t\tif (isUp) {\n\t\t\t\t\t\t\tconst prev = item.previousElementSibling;\n\t\t\t\t\t\t\tif (prev) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(item, prev);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst next = item.nextElementSibling;\n\t\t\t\t\t\t\tif (next) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(next, item);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update the form data after moving\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Add a submit handler to make sure the form has the current order\n\t\t\t\tform.addEventListener('submit', function(e) {\n\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t});\n\t\t\t}\n\t\t});\n\t\t\n\t\t// Function to update the sorting-item-order hidden inputs\n\t\tfunction updateSortingOrder(container, form) {\n\t\t\tconsole.log(\"Updating sort order...\");\n\t\t\t\n\t\t\t// Get current order of items\n\t\t\tconst items = container.querySelectorAll('.sorting-item');\n\t\t\tconsole.log(\"Found \" + items.length + \" items\");\n\t\t\t\n\t\t\t// First remove all existing order inputs to avoid duplicates\n\t\t\tform.querySelectorAll('input[name=\"sorting-item-order\"]').forEach(input => {\n\t\t\t\tconsole.log(\"Removing existing input: \" + input.value);\n\t\t\t\tinput.remove();\n\t\t\t});\n\t\t\t\n\t\t\t// Add fresh inputs in the current order\n\t\t\titems.forEach((item, index) => {\n\t\t\t\tconst itemId = item.getAttribute('data-id');\n\t\t\t\tconsole.log(\"Item \" + (index+1) + \": \" + itemId);\n\t\t\t\t\n\t\t\t\t// Always create a new input\n\t\t\t\tconst input = document.createElement('input');\n\t\t\t\tinput.type = 'hidden';\n\t\t\t\tinput.name = 'sorting-item-order';\n\t\t\t\tinput.value = itemId;\n\t\t\t\tform.appendChild(input);\n\t\t\t});\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</form></div></div><script>\n\t\t// Initialize sortable functionality on the sort container\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst sortContainer = document.getElementById('{ fmt.Sprintf(\"sorting-items-%s\", block.ID) }');\n\t\t\tconst form = document.getElementById('{ fmt.Sprintf(\"sorting-form-%s\", block.ID) }');\n\t\t\t\n\t\t\tif (sortContainer && form && !{ fmt.Sprint(data.IsComplete()) }) {\n\t\t\t\t// Initialize Sortable for drag and drop\n\t\t\t\tnew Sortable(sortContainer, {\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tonEnd: function() {\n\t\t\t\t\t\t// When sorting ends, update the hidden inputs to reflect new order\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Set up the up/down buttons to move items\n\t\t\t\tsortContainer.querySelectorAll('.join-vertical button').forEach(btn => {\n\t\t\t\t\tbtn.addEventListener('click', function(e) {\n\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\tconst item = e.target.closest('.sorting-item');\n\t\t\t\t\t\tconst isUp = e.target.closest('button').getAttribute('data-tip') === 'Move up';\n\t\t\t\t\t\t\n\t\t\t\t\t\tif (isUp) {\n\t\t\t\t\t\t\tconst prev = item.previousElementSibling;\n\t\t\t\t\t\t\tif (prev) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(item, prev);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst next = item.nextElementSibling;\n\t\t\t\t\t\t\tif (next) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(next, item);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update the form data after moving\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Add a submit handler to make sure the form has the current order\n\t\t\t\tform.addEventListener('submit', function(e) {\n\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t});\n\t\t\t}\n\t\t});\n\t\t\n\t\t// Function to update the sorting-item-order hidden inputs\n\t\tfunction updateSortingOrder(container, form) {\n\t\t\t\n\t\t\t// Get current order of items\n\t\t\tconst items = container.querySelectorAll('.sorting-item');\n\t\t\t\n\t\t\t// First remove all existing order inputs to avoid duplicates\n\t\t\tform.querySelectorAll('input[name=\"sorting-item-order\"]').forEach(input => {\n\t\t\t\tinput.remove();\n\t\t\t});\n\t\t\t\n\t\t\t// Add fresh inputs in the current order\n\t\t\titems.forEach((item, index) => {\n\t\t\t\tconst itemId = item.getAttribute('data-id');\n\t\t\t\t\n\t\t\t\t// Always create a new input\n\t\t\t\tconst input = document.createElement('input');\n\t\t\t\tinput.type = 'hidden';\n\t\t\t\tinput.name = 'sorting-item-order';\n\t\t\t\tinput.value = itemId;\n\t\t\t\tform.appendChild(input);\n\t\t\t});\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -392,7 +392,7 @@ func sortItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("sort-item-%s", item.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 296, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 292, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -405,7 +405,7 @@ func sortItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 298, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 294, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -418,7 +418,7 @@ func sortItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 299, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 295, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -439,7 +439,7 @@ func sortItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 304, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 300, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -483,7 +483,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("sort-item-%s", item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 342, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 338, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -496,7 +496,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 344, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 340, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -509,7 +509,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 345, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 341, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -522,7 +522,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 348, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 344, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -548,7 +548,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("sort-item-%s", item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 356, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 352, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -561,7 +561,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 358, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 354, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -574,7 +574,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 359, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 355, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -587,7 +587,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 362, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 358, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -646,7 +646,7 @@ func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) t
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 381, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 377, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -659,7 +659,7 @@ func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) t
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 382, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 378, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -672,7 +672,7 @@ func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) t
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, click from:(#form-%s button) delay:100ms, keyup change from:(#form-%s input) delay:500ms, change from:(#form-%s select) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 383, Col: 271}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 379, Col: 271}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -786,7 +786,7 @@ func sortingItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 513, Col: 111}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 509, Col: 111}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -821,7 +821,7 @@ func sortingItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 520, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 516, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -834,7 +834,7 @@ func sortingItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 524, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 520, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -847,7 +847,7 @@ func sortingItem(item blocks.SortingItem) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 529, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 525, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
