@@ -10,7 +10,10 @@ order: 100
 
 ### Fixed
 
+- Removed duplicate drag handle icons on location list.
+- Fixed an issue where location order was not saved correctly.
 - Clues now use markdown.
+- Add a clue button now works after deleting all clues.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.1.1)
 
