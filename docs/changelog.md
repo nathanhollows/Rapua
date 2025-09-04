@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 4.1.1 (2025-09-4)
+
+### Fixed
+
+- Clues now use markdown.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.1.1)
+
 ## 4.1.0 (2025-08-11)
 
 ### Added
