@@ -5,13 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type PasswordBlock struct {
 	BaseBlock
-	Prompt string `json:"prompt"`
-	Answer string `json:"answer"`
-	Fuzzy  bool   `json:"fuzzy"`
+	Prompt          string `json:"prompt"`
+	Answer          string `json:"answer"`
+	Fuzzy           bool   `json:"fuzzy"`
+	UnlockedContent string `json:"unlocked_content"`
 }
 
 type passwordBlockData struct {
@@ -65,6 +67,9 @@ func (b *PasswordBlock) UpdateBlockData(input map[string][]string) error {
 	if input["fuzzy"] != nil {
 		b.Fuzzy = input["fuzzy"][0] == "on"
 	}
+	if input["unlocked_content"] != nil {
+		b.UnlockedContent = input["unlocked_content"][0]
+	}
 	return nil
 }
 
@@ -90,7 +95,10 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 	newPlayerData.Attempts++
 	newPlayerData.Guesses = append(newPlayerData.Guesses, input["answer"][0])
 
-	if input["answer"][0] != b.Answer {
+	guess := input["answer"][0]
+	guess = strings.TrimSpace(strings.ToLower(guess))
+
+	if guess != strings.TrimSpace(strings.ToLower(b.Answer)) {
 		// Incorrect answer, save player data and return an error
 		playerData, err := json.Marshal(newPlayerData)
 		if err != nil {
