@@ -62,23 +62,6 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 		<input type="hidden" name="location_id" value={ fmt.Sprint(block.LocationID) }/>
 		<input type="hidden" name="block_id" value={ fmt.Sprint(block.ID) }/>
 		<input type="hidden" name="context" value="image_block"/>
-		<label
-			for={ fmt.Sprintf("file-%s", block.ID) }
-			class="form-control w-full"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Upload Image</span>
-			</div>
-			<input
-				id={ fmt.Sprintf("file-%s", block.ID) }
-				name="file"
-				type="file"
-				accept="image/*"
-				class="file-input w-full"
-				_="on change
-					remove .hidden from the next <progress />"
-			/>
-		</label>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Pick a file</legend>
 			<input

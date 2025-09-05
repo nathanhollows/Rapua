@@ -227,6 +227,7 @@ var clueTextarea = TextareaParams{
 	Title:       "Description Text",
 	Placeholder: "Text shown before the clue is revealed",
 	Markdown:    true,
+	Required:    true,
 }
 
 var clueRevealTextarea = TextareaParams{
@@ -234,6 +235,7 @@ var clueRevealTextarea = TextareaParams{
 	Title:       "Revealed Clue Text",
 	Placeholder: "The actual clue content that will be revealed",
 	Markdown:    true,
+	Required:    true,
 }
 
 var clueButtonTextInput = TextInputParams{
@@ -273,7 +275,7 @@ func clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) templ.C
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 90, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 92, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -286,7 +288,7 @@ func clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) templ.C
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 90, Col: 139}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 92, Col: 139}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -299,7 +301,7 @@ func clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) templ.C
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 90, Col: 273}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/clue.templ`, Line: 92, Col: 273}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
