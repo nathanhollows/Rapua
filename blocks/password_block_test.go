@@ -9,7 +9,7 @@ import (
 )
 
 func TestAnswerBlock_Getters(t *testing.T) {
-	block := AnswerBlock{
+	block := PasswordBlock{
 		BaseBlock: BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-456",
@@ -31,7 +31,7 @@ func TestAnswerBlock_Getters(t *testing.T) {
 
 func TestAnswerBlock_ParseData(t *testing.T) {
 	data := `{"prompt":"Answer Content", "answer":"secret", "fuzzy":true}`
-	block := AnswerBlock{
+	block := PasswordBlock{
 		BaseBlock: BaseBlock{
 			Data: json.RawMessage(data),
 		},
@@ -46,7 +46,7 @@ func TestAnswerBlock_ParseData(t *testing.T) {
 
 func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 	// Update all fields
-	block := AnswerBlock{}
+	block := PasswordBlock{}
 	data := map[string][]string{
 		"prompt": {"Updated Answer Content"},
 		"answer": {"newsecret"},
@@ -59,7 +59,7 @@ func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 	assert.True(t, block.Fuzzy)
 
 	// Update without fuzzy
-	block = AnswerBlock{}
+	block = PasswordBlock{}
 	data = map[string][]string{
 		"prompt": {"Updated Answer Content"},
 		"answer": {"newsecret"},
@@ -72,7 +72,7 @@ func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestAnswerBlock_ValidatePlayerInput(t *testing.T) {
-	block := AnswerBlock{
+	block := PasswordBlock{
 		BaseBlock: BaseBlock{
 			Points: 10,
 		},

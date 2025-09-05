@@ -59,7 +59,7 @@ var registeredBlocks = Blocks{
 	&BrokerBlock{},
 	&ChecklistBlock{},
 	&ClueBlock{},
-	&AnswerBlock{},
+	&PasswordBlock{},
 	&PincodeBlock{},
 	// &PhotoBlock{},
 	&QuizBlock{},
@@ -122,8 +122,8 @@ func NewAlertBlock(base BaseBlock) *AlertBlock {
 	}
 }
 
-func NewAnswerBlock(base BaseBlock) *AnswerBlock {
-	return &AnswerBlock{
+func NewAnswerBlock(base BaseBlock) *PasswordBlock {
+	return &PasswordBlock{
 		BaseBlock: base,
 	}
 }
