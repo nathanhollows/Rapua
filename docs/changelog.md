@@ -12,6 +12,7 @@ order: 100
 
 - Password block can now show secret content after a correct answer.
 - Password block is now case-insensitive and trims whitespace, making it easier for players to answer correctly.
+- Pincode block can now show secret content after a correct answer.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)
 

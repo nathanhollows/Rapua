@@ -20,16 +20,26 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 				hx-swap="none"
 			>
 				<input type="hidden" name="block" value={ block.ID }/>
-				<div class="flex flex-row flex-wrap gap-2 justify-center mb-4">
-					for _ = range block.Pincode {
-						<input
-							type="text"
-							name="pincode"
-							class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
-							minlength="1"
-							maxlength="1"
-							required
-							_="on input
+				<label
+					for={ fmt.Sprintf("pincode-%s", block.ID) }
+					class="form-control w-full"
+				>
+					<div
+						class="flex flex-row flex-wrap gap-2 justify-center mb-4"
+					>
+						for i := range block.Pincode {
+							<input
+								type="text"
+								name="pincode"
+								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+								minlength="1"
+								maxlength="1"
+								required
+								if data.IsComplete() {
+									disabled
+									value={ string(block.Pincode[i]) }
+								}
+								_="on input
 								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
 									set input to event.target.nextElementSibling
 									if input != null then
@@ -56,21 +66,16 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 									end
 								end
 							"
-						/>
-					}
-				</div>
-				<button type="submit" class="btn btn-primary w-full">
-					Check
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-				</button>
-				<label
-					for={ fmt.Sprintf("pincode-%s", block.ID) }
-					class="form-control w-full"
-				>
-					if data.IsComplete() {
-						<p class="label-text font-bold text-success">
-							You got it!
-						</p>
+							/>
+						}
+					</div>
+					if !data.IsComplete() {
+						<button type="submit" class="btn btn-primary w-full">
+							Check
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+						</button>
+					} else {
+						@templ.Raw(stringToMarkdown(block.UnlockedContent))
 					}
 				</label>
 			</form>
@@ -97,34 +102,26 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 					for={ fmt.Sprintf("pincode-%s", block.ID) }
 					class="form-control w-full"
 				>
-					if data.IsComplete() {
-						<div class="flex flex-row flex-wrap gap-2 justify-center mb-4">
-							for _, val := range block.Pincode {
-								<input
-									type="text"
-									name="pincode"
-									class="input input-lg !text-success w-auto rounded-md aspect-square text-center font-mono font-bold"
-									minlength="1"
-									maxlength="1"
-									value={ string(val) }
+					<div
+						if data.IsComplete() {
+							class="flex flex-row flex-wrap gap-2 justify-center mb-4"
+						} else {
+							class="flex flex-row flex-wrap gap-2 justify-center mb-4 animate-[wobble_1s_ease-in-out]"
+						}
+					>
+						for i := range block.Pincode {
+							<input
+								type="text"
+								name="pincode"
+								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+								minlength="1"
+								maxlength="1"
+								required
+								if data.IsComplete() {
 									disabled
-								/>
-							}
-						</div>
-						<div class="font-bold text-center w-full">
-							Correct!
-						</div>
-					} else {
-						<div class="flex flex-row flex-wrap gap-2 justify-center mb-4 animate-[wobble_1s_ease-in-out]">
-							for _ = range block.Pincode {
-								<input
-									type="text"
-									name="pincode"
-									class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
-									minlength="1"
-									maxlength="1"
-									required
-									_="on input
+									value={ string(block.Pincode[i]) }
+								}
+								_="on input
 								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
 									set input to event.target.nextElementSibling
 									if input != null then
@@ -151,13 +148,16 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 									end
 								end
 							"
-								/>
-							}
-						</div>
+							/>
+						}
+					</div>
+					if !data.IsComplete() {
 						<button type="submit" class="btn btn-primary w-full">
 							Check
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
 						</button>
+					} else {
+						@templ.Raw(stringToMarkdown(block.UnlockedContent))
 					}
 				</label>
 			</form>
@@ -170,6 +170,15 @@ var pincodeTextarea = TextareaParams{
 	Title:       "Prompt",
 	Placeholder: "How many chickens are there in the world?",
 	Markdown:    true,
+}
+
+var pincodeUnlockedContentTextarea = TextareaParams{
+	Name:        "unlocked_content",
+	Title:       "Unlocked Content",
+	Placeholder: "Aye, you got it! Here's your next clue: ...",
+	Markdown:    true,
+	Required:    false,
+	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
 templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) {
@@ -195,5 +204,6 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 				required
 			/>
 		</fieldset>
+		@TextareaField(pincodeUnlockedContentTextarea.SetValue(block.UnlockedContent))
 	</form>
 }

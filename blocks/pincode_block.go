@@ -9,8 +9,9 @@ import (
 
 type PincodeBlock struct {
 	BaseBlock
-	Prompt  string `json:"prompt"`
-	Pincode string `json:"pincode"`
+	Prompt          string `json:"prompt"`
+	Pincode         string `json:"pincode"`
+	UnlockedContent string `json:"unlocked_content"`
 }
 
 type pincodeBlockData struct {
@@ -61,6 +62,9 @@ func (b *PincodeBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.Prompt = input["prompt"][0]
 	b.Pincode = input["pincode"][0]
+	if input["unlocked_content"] != nil {
+		b.UnlockedContent = input["unlocked_content"][0]
+	}
 	return nil
 }
 
