@@ -93,9 +93,17 @@ func (params TextareaParams) SetValue(value string) TextareaParams {
 templ TextareaField(params TextareaParams) {
 	<fieldset class="fieldset">
 		if params.Title != "" {
-			<legend class="fieldset-legend">
+			<legend class="fieldset-legend justify-start w-full">
 				@markdownBadge()
 				{ params.Title }
+				if !params.Required {
+					<span
+						class="ml-auto badge badge-neutral badge-xs tooltip tooltip-left"
+						data-tip="This field is optional"
+					>
+						Optional
+					</span>
+				}
 			</legend>
 		}
 		<textarea
@@ -151,8 +159,16 @@ func (params TextInputParams) SetValue(value string) TextInputParams {
 templ TextInputField(params TextInputParams) {
 	<fieldset class="fieldset">
 		if params.Title != "" {
-			<legend class="fieldset-legend">
+			<legend class="fieldset-legend justify-start w-full">
 				{ params.Title }
+				if !params.Required {
+					<span
+						class="ml-auto badge badge-neutral badge-xs tooltip tooltip-left"
+						data-tip="This field is optional"
+					>
+						Optional
+					</span>
+				}
 			</legend>
 		}
 		<input

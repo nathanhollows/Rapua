@@ -264,6 +264,7 @@ var brokerTextarea = TextareaParams{
 	Title:       "Prompt",
 	Placeholder: "The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'",
 	Markdown:    true,
+	Required:    true,
 }
 
 var brokerDefaultInfoTextarea = TextareaParams{
@@ -272,6 +273,7 @@ var brokerDefaultInfoTextarea = TextareaParams{
 	Placeholder: "'I don't know anything.' or 'The shipment left yesterday.'",
 	Markdown:    true,
 	HelpText:    "What players receive when they offer 0 points",
+	Required:    true,
 }
 
 var brokerInformationTierTextarea = TextareaParams{
@@ -279,6 +281,7 @@ var brokerInformationTierTextarea = TextareaParams{
 	Title:       "Information Content",
 	Placeholder: "Better information for players who pay this much...",
 	Markdown:    true,
+	Required:    true,
 	HyperScript: `
 		on keyup send resubmit to closest <form />
 	`,
@@ -312,7 +315,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 129, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 132, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -325,7 +328,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 130, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 133, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -338,7 +341,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, resubmit delay:500ms", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 131, Col: 112}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 134, Col: 112}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -363,7 +366,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("tiers-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 171, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 174, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -402,7 +405,7 @@ func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) tem
 				send recount to :group
 			end`, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 190, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 193, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -452,7 +455,7 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(tierNum))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 226, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 229, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -470,7 +473,7 @@ func brokerTierAdmin(tierNum int, tier blocks.InformationTier) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(tier.PointsRequired))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 234, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/broker.templ`, Line: 237, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {

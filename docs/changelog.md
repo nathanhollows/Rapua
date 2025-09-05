@@ -6,7 +6,22 @@ order: 100
 
 # Changelog
 
-## 4.1.1 (2025-09-4)
+## 4.2.0 (2025-09-05)
+
+### Added
+
+- Password block can now show secret content after a correct answer.
+- Password block is now case-insensitive and trims whitespace, making it easier for players to answer correctly.
+- Pincode block can now show secret content after a correct answer.
+- Textareas and text inputs now show `Optional` when not required, to help admins understand the form better.
+
+### Fixed
+
+- Removed duplicate form input from image block.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)
+
+## 4.1.1 (2025-09-04)
 
 ### Fixed
 
