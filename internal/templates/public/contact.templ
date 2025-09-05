@@ -46,15 +46,15 @@ templ Contact() {
 }
 
 templ contactForm() {
-	<label class="input input-bordered flex items-center gap-2">
+	<label class="input flex items-center gap-2 w-full">
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-round w-4 h-7 opacity-70"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>
 		<input type="text" name="name" class="grow" placeholder="Name" required/>
 	</label>
-	<label class="input input-bordered flex items-center gap-2">
+	<label class="input flex items-center gap-2 w-full">
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail h-4 w-4 opacity-70"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
 		<input name="email" type="email" class="grow" placeholder="Email" required/>
 	</label>
-	<textarea name="message" class="textarea textarea-bordered grow w-full" placeholder="Message" rows="5" required></textarea>
+	<textarea name="message" class="textarea grow w-full" placeholder="Message" rows="5" required></textarea>
 	<button id="contact-submit" type="submit" class="btn btn-primary w-full">
 		Send
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-5 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>

@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/nathanhollows/Rapua/v4/models"
+import (
+	"github.com/nathanhollows/Rapua/v4/models"
+	"strings"
+)
 
 templ Settings(user models.User) {
 	<main class="max-w-7xl m-auto pb-8">
@@ -87,23 +90,19 @@ templ SettingsProfile(user models.User) {
 				<!-- Account settings -->
 				<div class="flex gap-5">
 					<!-- Name -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Full name</span>
-						</div>
+					<fieldset class="fieldset w-7/12">
+						<legend class="fieldset-legend">Full name</legend>
 						<input
 							name="name"
 							type="text"
 							placeholder="Janette Dough"
 							value={ user.Name }
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full"
 						/>
-					</label>
+					</fieldset>
 					<!-- Display Name -->
-					<label class="form-control flex-grow">
-						<div class="label">
-							<span class="label-text">Display name</span>
-						</div>
+					<fieldset class="fieldset flex-grow">
+						<legend class="fieldset-legend">Display name</legend>
 						<input
 							name="display_name"
 							type="text"
@@ -113,19 +112,17 @@ templ SettingsProfile(user models.User) {
 							if user.Name == "" {
 								placeholder="Jane"
 							}
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full"
 						/>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Work Type -->
 				<div class="my-5">
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">What best describes your work?</span>
-						</div>
+					<fieldset class="fieldset flex-grow">
+						<legend class="fieldset-legend">What best describes your work?</legend>
 						<select
 							name="work_type"
-							class="select select-bordered w-full bg-base-200"
+							class="select w-full"
 							_="on change
 		if my value is 'other' then
 				remove .hidden from #other-type
@@ -165,26 +162,24 @@ templ SettingsProfile(user models.User) {
 							>Corporate training</option>
 							<option
 								value="other"
-								if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+								if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 									selected
 								}
 							>Other</option>
 						</select>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Other Work Type -->
 				<div
 					id="other-type"
-					if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
+					if !user.WorkType.Valid || (user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training") {
 						class=""
 					} else {
 						class="hidden"
 					}
 				>
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Please specify your work type</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Please specify your work type</legend>
 						<input
 							name="other_work_type"
 							type="text"
@@ -192,27 +187,24 @@ templ SettingsProfile(user models.User) {
 							if user.WorkType.Valid && user.WorkType.String != "formal_education" && user.WorkType.String != "informal_education" && user.WorkType.String != "event_organiser" && user.WorkType.String != "experience_designer" && user.WorkType.String != "corporate_training" {
 								value={ user.WorkType.String }
 							}
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full"
 						/>
-						<div class="label">
-							<span class="label-text-alt">This helps me understand who I'm building Rapua for.</span>
-						</div>
-					</label>
+					</fieldset>
 				</div>
 				<!-- Preferences -->
 				<div class="my-5">
 					<label class="form-control w-full">
 						<div class="form-control">
 							<label class="label cursor-pointer">
-								<span class="label-text">Show your email on templates to other logged-in admins?</span>
 								<input
 									name="show_email"
 									type="checkbox"
-									class="toggle toggle-primary"
+									class="checkbox"
 									if user.ShareEmail {
 										checked
 									}
 								/>
+								<span class="text-sm text-base-content">Show your email on templates to other logged-in admins?</span>
 							</label>
 						</div>
 					</label>
@@ -222,6 +214,10 @@ templ SettingsProfile(user models.User) {
 	</form>
 }
 
+func themes() []string {
+	return []string{"Cupcake", "Dracula", "System"}
+}
+
 templ SettingsAppearance(user models.User) {
 	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
 		<div class="grid h-fit px-5 flex-grow">
@@ -229,84 +225,43 @@ templ SettingsAppearance(user models.User) {
 				<h2 class="font-bold pb-5">Change your theme</h2>
 				<p class="text-sm mb-4">Theme preferences are stored in your browser and not tied to your account.</p>
 				<div id="theme-buttons" class="space-y-2">
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="cupcake"
-						_="on click 
+					for _, theme := range themes() {
+						<button
+							type="button"
+							class="theme-button outline-base-content text-start outline-offset-4 w-full"
+							data-theme-value={ strings.ToLower(theme) }
+							_="on click 
 							remove .active from .theme-button
+							remove .visible from .theme-check
+							add .invisible to .theme-check
+							add .visible to .theme-check in me
 							add .active to me
-							set localStorage.theme to 'cupcake'
+							set localStorage.theme to @data-theme-value
 							call updateThemeUI()
 						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="cupcake">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">Cupcake</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
+						>
+							<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme={ strings.ToLower(theme) }>
+								<span class="grid grid-cols-5 grid-rows-3">
+									<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+										<span class="flex-grow text-sm">
+											if theme == "System" {
+												Follow system theme
+											} else {
+												{ theme }
+											}
+										</span>
+										<span class="flex h-full shrink-0 flex-wrap gap-1">
+											<span class="bg-primary rounded-badge w-2"></span>
+											<span class="bg-secondary rounded-badge w-2"></span>
+											<span class="bg-accent rounded-badge w-2"></span>
+											<span class="bg-neutral rounded-badge w-2"></span>
+										</span>
 									</span>
 								</span>
 							</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="dracula"
-						_="on click 
-							remove .active from .theme-button
-							add .active to me
-							set localStorage.theme to 'dracula'
-							call updateThemeUI()
-						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="dracula">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">Dracula</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
-									</span>
-								</span>
-							</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						class="theme-button outline-base-content text-start outline-offset-4 w-full"
-						data-theme-value="system"
-						_="on click 
-							remove .active from .theme-button
-							add .active to me
-							set localStorage.theme to 'system'
-							call updateThemeUI()
-						"
-					>
-						<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme="system">
-							<span class="grid grid-cols-5 grid-rows-3">
-								<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-									<span class="flex-grow text-sm">System</span>
-									<span class="flex h-full shrink-0 flex-wrap gap-1">
-										<span class="bg-primary rounded-badge w-2"></span>
-										<span class="bg-secondary rounded-badge w-2"></span>
-										<span class="bg-accent rounded-badge w-2"></span>
-										<span class="bg-neutral rounded-badge w-2"></span>
-									</span>
-								</span>
-							</span>
-						</span>
-					</button>
+						</button>
+					}
 				</div>
 				<!-- Theme initialization script -->
 				<script>
@@ -345,10 +300,8 @@ templ SettingsAppearance(user models.User) {
 
 templ SettingsSecurity(user models.User) {
 	if user.Provider == models.ProviderEmail {
-		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-			<div class="alert bg-transparent border-0">
-				<p class="text-sm">Logged in with <strong>{ user.Email }</strong></p>
-			</div>
+		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-10 py-10 mt-12">
+			<p class="text-sm">Logged in with <strong>{ user.Email }</strong></p>
 		</div>
 		<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
 			<div class="grid h-fit px-5 flex-grow">
@@ -359,62 +312,54 @@ templ SettingsSecurity(user models.User) {
 					hx-swap="none"
 				>
 					<!-- Old password -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Current password</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Current password</legend>
 						<input
 							name="old_password"
 							type="password"
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full"
 							required
 						/>
-					</label>
+					</fieldset>
 					<!-- New password -->
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">New password</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">New password</legend>
 						<input
 							name="new_password"
 							type="password"
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full validator"
 							required
 							minlength="8"
 							id="new_password"
 							_="on input if my value != '' then remove .input-error from #confirm_password else add .input-error to #confirm_password end"
 						/>
-						<div class="label">
-							<span class="label-text-alt">
-								Use at least 8 characters. Longer passwords are stronger.
-							</span>
-						</div>
-					</label>
-					<label class="form-control w-7/12">
-						<div class="label">
-							<span class="label-text">Confirm password</span>
-						</div>
+						<p class="validator-hint">
+							Must be 8 characters or longer.
+						</p>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Confirm password</legend>
 						<input
 							name="confirm_password"
 							type="password"
-							class="input input-bordered bg-base-200 w-full"
+							class="input w-full"
 							required
 							id="confirm_password"
 							_="on input 
 								if my value is not document.getElementById('new_password').value then
 									add .input-error to me
-									remove .hidden from #password-mismatch
+									remove .input-success from me
+									remove .invisible from #password-mismatch
 								else
 									remove .input-error from me
-									add .hidden to #password-mismatch
+									add .input-success to me
+									add .invisible to #password-mismatch
 								end"
 						/>
-						<div class="label">
-							<span id="password-mismatch" class="label-text-alt text-error hidden">
-								Passwords don't match
-							</span>
-						</div>
-					</label>
+						<p id="password-mismatch" class="invisible mt-2 text-xs text-error">
+							Passwords don't match
+						</p>
+					</fieldset>
 					<div class="mt-4">
 						<button
 							type="submit"
@@ -482,7 +427,7 @@ templ SettingsSecurity(user models.User) {
 				hx-delete="/admin/settings/delete-account"
 				hx-swap="none"
 			>
-				<input type="email" name="confirm-email" class="input input-bordered w-full"/>
+				<input type="email" name="confirm-email" class="input w-full"/>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
 					<button type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>

@@ -130,8 +130,8 @@ templ showClues(seed string, locations []models.Location) {
 			</div>
 		} else {
 			<div class="prose">
-				<blockquote class="m-1">
-					<p>{ chooseClue(seed, location.Clues).Content }</p>
+				<blockquote class="m-1 font-normal not-italic">
+					@templ.Raw(stringToMarkdown(chooseClue(seed, location.Clues).Content))
 				</blockquote>
 			</div>
 		}

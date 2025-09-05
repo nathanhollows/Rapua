@@ -37,3 +37,4 @@ assets/posters/*
 assets/codes/*
 tmp/*
 static/uploads/*
+internal/templates/**/*.txt

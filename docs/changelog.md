@@ -6,13 +6,42 @@ order: 100
 
 # Changelog
 
-## 4.0.1 (2025-07-23)
+## 4.1.1 (2025-09-4)
+
+### Fixed
+
+- Removed duplicate drag handle icons on location list.
+- Fixed an issue where location order was not saved correctly.
+- Clues now use markdown.
+- Add a clue button now works after deleting all clues.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.1.1)
+
+## 4.1.0 (2025-08-11)
+
+### Added
+
+- Filters on locations page to show only locations without clues or markers, and full-text search.
+- CSS cache busting to ensure styles are always up-to-date.
+
+### Changed
+
+- Upgraded from DaisyUI 4 to 5, and from TailwindCSS 3 to 4.
+- Tailwind builds are now minified.
+
+### Fixed
+
+- Fixed incorrect view render on player check-in.
+- Added early return on player start, so first error is shown.
+- Build command
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.1.0)
+
+## 4.0.2 (2025-07-23)
 
 ### Fixed
 
 - Makefile for `build` output now works.
-
-[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.0.1)
 
 ## 4.0.1 (2025-07-20)
 

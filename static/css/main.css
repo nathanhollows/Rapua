@@ -1,10 +1,62 @@
 /* main.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui' {
+  themes: cupcake --default, dracula --prefersdark;
+}
+
+@theme {
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+
+  @keyframes wobble {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    15% {
+      transform: translate3d(-25%, 0, 0) rotate3d(0, 0, 1, -5deg);
+    }
+    30% {
+      transform: translate3d(20%, 0, 0) rotate3d(0, 0, 1, 3deg);
+    }
+    45% {
+      transform: translate3d(-15%, 0, 0) rotate3d(0, 0, 1, -3deg);
+    }
+    60% {
+      transform: translate3d(10%, 0, 0) rotate3d(0, 0, 1, 2deg);
+    }
+    75% {
+      transform: translate3d(-5%, 0, 0) rotate3d(0, 0, 1, -1deg);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+p.label {
+  @apply text-wrap;
+}
 
 /* Custom CSS */
-.artboard #player-nav, #preview #player-nav {
+.mockup-phone #player-nav, #preview #player-nav {
   @apply hidden;
 }
 
@@ -14,6 +66,10 @@
 
 .prose iframe {
   @apply rounded-lg;
+}
+
+.prose p {
+  @apply text-wrap;
 }
 
 .card[data-group-color="secondary"] {
@@ -60,11 +116,11 @@
 }
 
 .mapboxgl-ctrl-geocoder {
-  @apply w-full relative bg-base-100 input input-bordered flex items-center;
+  @apply w-full relative bg-base-100 input flex items-center;
 }
 
 .mapboxgl-ctrl-geocoder--input {
-  @apply w-full grow bg-transparent border-0 m-0 p-2 overflow-ellipsis overflow-hidden whitespace-nowrap;
+  @apply w-full grow bg-transparent border-0 m-0 p-2 text-ellipsis overflow-hidden whitespace-nowrap;
 }
 
 .mapboxgl-ctrl-geocoder--input::-ms-clear {
@@ -97,7 +153,7 @@
 
 /* Suggestions */
 .mapboxgl-ctrl-geocoder .suggestions {
-  @apply absolute z-50 w-full bg-base-100 rounded overflow-hidden left-0 list-none m-0 p-0 text-sm;
+  @apply absolute z-50 w-full bg-base-100 rounded-sm overflow-hidden left-0 list-none m-0 p-0 text-sm;
   top: 110%; /* fallback */
   top: calc(100% + 6px);
 }
@@ -122,7 +178,7 @@
 
 .mapboxgl-ctrl-geocoder--suggestion-title,
 .mapboxgl-ctrl-geocoder--suggestion-address {
-  @apply overflow-ellipsis overflow-hidden whitespace-nowrap;
+  @apply text-ellipsis overflow-hidden whitespace-nowrap;
 }
 
 /* Icons */
@@ -232,7 +288,7 @@
 }
 
 #map-container .mapboxgl-popup-close-button {
-  @apply btn btn-xs btn-ghost focus-visible:outline-none mt-2;
+  @apply btn btn-xs btn-ghost focus-visible:outline-hidden mt-2;
   margin-right: 0.15rem;
 }
 
@@ -271,7 +327,7 @@
 
 /* Mapbox style switcher */
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
-  @apply bg-transparent border-none !shadow-none !m-0;
+  @apply bg-transparent border-none shadow-none! m-0!;
 }
 .mapboxgl-ctrl-group:not(:empty){
   @apply shadow-none;

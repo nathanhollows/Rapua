@@ -34,7 +34,7 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 								type="number"
 								min="0"
 								placeholder="0"
-								class="input input-bordered input-warning join-item w-full max-w-xs"
+								class="input input-warning join-item w-full max-w-xs"
 								required
 							/>
 							<button
@@ -99,6 +99,31 @@ func getBrokerInfoReceived(data blocks.PlayerState) string {
 	return playerData.InfoReceived
 }
 
+var brokerTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'",
+	Markdown:    true,
+}
+
+var brokerDefaultInfoTextarea = TextareaParams{
+	Name:        "default_info",
+	Title:       "Default Information (0 points)",
+	Placeholder: "'I don't know anything.' or 'The shipment left yesterday.'",
+	Markdown:    true,
+	HelpText:    "What players receive when they offer 0 points",
+}
+
+var brokerInformationTierTextarea = TextareaParams{
+	Name:        "tier_content",
+	Title:       "Information Content",
+	Placeholder: "Better information for players who pay this much...",
+	Markdown:    true,
+	HyperScript: `
+		on keyup send resubmit to closest <form />
+	`,
+}
+
 templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
@@ -119,36 +144,8 @@ templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 		end"
 	>
 		<!-- Broker blocks don't use completion bonus points -->
-		<label class="form-control w-full mt-4">
-			<div class="label">
-				<span class="label-text font-bold">Prompt</span>
-			</div>
-			<textarea
-				name="prompt"
-				rows="3"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'"
-			>{ block.Prompt }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
-		<label class="form-control w-full mt-4">
-			<div class="label">
-				<span class="label-text font-bold">Default Information (0 points)</span>
-			</div>
-			<textarea
-				name="default_info"
-				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="'I don't know anything.' or 'The shipment left yesterday.'"
-			>{ block.DefaultInfo }</textarea>
-			<div class="label">
-				<span class="label-text-alt">What players receive when they offer 0 points</span>
-			</div>
-		</label>
+		@TextareaField(brokerTextarea.SetValue(block.Prompt))
+		@TextareaField(brokerDefaultInfoTextarea.SetValue(block.DefaultInfo))
 		<div class="divider">
 			<div>
 				<div class="dropdown dropdown-hover">
@@ -224,14 +221,14 @@ templ brokerTierAdmin(tierNum int, tier blocks.InformationTier) {
 		</div>
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-base-100/50 rounded-lg ">
 			<div class="md:col-span-1">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text font-bold">Tier <span class="tier-count">{ fmt.Sprint(tierNum) }</span> Points</span>
-					</div>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">
+						Tier <span class="tier-count">{ fmt.Sprint(tierNum) }</span> Points
+					</legend>
 					<input
 						name="tier_points"
 						type="number"
-						class="input input-bordered w-full invalid:border-error"
+						class="input w-full invalid:border-error"
 						placeholder="1"
 						if tier.PointsRequired > 0 {
 							value={ fmt.Sprint(tier.PointsRequired) }
@@ -274,22 +271,10 @@ templ brokerTierAdmin(tierNum int, tier blocks.InformationTier) {
 						on keyup send resubmit to closest <form />
 						"
 					/>
-				</label>
+				</fieldset>
 			</div>
 			<div class="md:col-span-3">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text font-bold">Information Content</span>
-					</div>
-					<textarea
-						name="tier_content"
-						rows="2"
-						class="markdown-textarea textarea textarea-bordered w-full font-mono"
-						style="field-sizing: content;"
-						placeholder="Better information for players who pay this much..."
-						_="on keyup send resubmit to closest <form />"
-					>{ tier.Content }</textarea>
-				</label>
+				@TextareaField(brokerInformationTierTextarea.SetValue(tier.Content))
 			</div>
 		</div>
 	</div>

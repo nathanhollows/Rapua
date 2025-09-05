@@ -11,9 +11,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
+		@pointsBadge(settings.EnablePoints, block.GetPoints())
 		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			@templ.Raw(stringToMarkdown(block.Prompt))
@@ -134,7 +132,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 								name="photo"
 								type="text"
 								placeholder="Photo"
-								class="input input-bordered input-primary join-item w-full max-w-xs"
+								class="input input-primary join-item w-full max-w-xs"
 								autoComplete="off"
 								required
 							/>
@@ -178,7 +176,7 @@ templ photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBloc
 								name="photo"
 								type="text"
 								placeholder="Photo"
-								class="input input-bordered input-primary join-item w-full max-w-xs"
+								class="input input-primary join-item w-full max-w-xs"
 								autoComplete="off"
 								required
 							/>
@@ -196,6 +194,13 @@ templ photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBloc
 	</div>
 }
 
+var photoTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Take a photo of your team posing in front of the landmark.",
+	Markdown:    true,
+}
+
 templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
@@ -204,34 +209,8 @@ templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 		hx-swap="none"
 	>
 		if settings.EnablePoints {
-			<label class="form-control w-full mt-5">
-				<div class="label">
-					<span class="label-text font-bold">Points</span>
-				</div>
-				<label class="input input-bordered flex items-center gap-2">
-					<input name="points" type="number" class="grow" placeholder="Search" value={ fmt.Sprint(block.Points) }/>
-					<span class="badge badge-info tooltip tooltip-left cursor-help" data-tip="Set to 0 to disable">Optional</span>
-				</label>
-			</label>
+			@adminPointsField(block.Points)
 		}
-		<label
-			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full"
-		>
-			<div class="label">
-				<span class="label-text font-bold">Prompt</span>
-			</div>
-			<textarea
-				id={ fmt.Sprintf("md-%s", block.ID) }
-				name="prompt"
-				rows="2"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="What is third word of the second paragraph? What is the middle name of the person wearing a red hat?"
-			>{ block.Prompt }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
+		@TextareaField(photoTextarea.SetValue(block.Prompt))
 	</form>
 }

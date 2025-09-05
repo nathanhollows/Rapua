@@ -12,6 +12,14 @@ templ markdownPlayer(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 	</div>
 }
 
+var markdownTextarea = TextareaParams{
+	Name:         "content",
+	Title:        "Markdown Content",
+	Placeholder:  "Markdown content here",
+	Markdown:     true,
+	ExtraClasses: "w-full min-h-40",
+}
+
 templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
@@ -20,21 +28,6 @@ templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 		hx-swap="none"
 		hx-indicator={ fmt.Sprintf("#block-%s .loading", block.ID) }
 	>
-		<label
-			for={ fmt.Sprintf("md-%s", block.ID) }
-			class="form-control w-full mt-5"
-		>
-			<textarea
-				id={ fmt.Sprintf("md-%s", block.ID) }
-				name="content"
-				rows="7"
-				class="markdown-textarea textarea textarea-bordered w-full font-mono"
-				style="field-sizing: content;"
-				placeholder="Markdown content here"
-			>{ block.Content }</textarea>
-			<div class="label">
-				@markdownHint()
-			</div>
-		</label>
+		@TextareaField(markdownTextarea.SetValue(block.Content))
 	</form>
 }

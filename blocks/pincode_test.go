@@ -65,7 +65,7 @@ func TestPincodeBlock_UpdateBlockData(t *testing.T) {
 
 func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	prompt := gofakeit.Question()
-	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
+	pincode := "12345" // Use fixed pincode for predictable testing
 	points := strconv.Itoa(gofakeit.Number(1, 1000))
 	block := PincodeBlock{}
 	data := map[string][]string{
@@ -76,44 +76,68 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	err := block.UpdateBlockData(data)
 	assert.NoError(t, err)
 
-	state := &mockPlayerState{}
-
-	// Test: Incorrect pincode
-	// Guess is valid but incorrect
+	// Keep track of attempts - tests that fail validation don't increment attempts
+	// Only successful validation (correct or incorrect but valid format) increments attempts
+	
+	// Test: Incorrect pincode (wrong digits)
+	// Each digit provided as separate input
 	// Expected behaviour: No error and no points awarded
 	input := map[string][]string{
-		"pincode": {"1234"},
+		"pincode": {"9", "8", "7", "6", "5"},
 	}
-	newState, err := block.ValidatePlayerInput(state, input)
+	state1 := &mockPlayerState{}
+	newState, err := block.ValidatePlayerInput(state1, input)
 	require.NoError(t, err)
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
-	// Test: Non-integer pincode
-	// Guess is valid but incorrect
-	// Expected behaviour: No error and no points awarded
+	// Test: Invalid input (non-digit character)
+	// Expected behaviour: No error and no points awarded (still valid format)
 	input = map[string][]string{
-		"pincode": {"abc"},
+		"pincode": {"a", "b", "c", "d", "e"},
 	}
-	newState, err = block.ValidatePlayerInput(state, input)
+	state2 := &mockPlayerState{}
+	newState, err = block.ValidatePlayerInput(state2, input)
 	require.NoError(t, err)
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
-	// Test: Correct pincode
-	// Guess is valid and correct
+	// Test: Insufficient digits
+	// Expected behaviour: Error due to length mismatch
+	input = map[string][]string{
+		"pincode": {"1", "2", "3"},
+	}
+	state3 := &mockPlayerState{}
+	newState, err = block.ValidatePlayerInput(state3, input)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "pincode length does not match")
+
+	// Test: Multiple characters in single input (invalid)
+	// Expected behaviour: Error due to multi-character input
+	input = map[string][]string{
+		"pincode": {"12", "3", "4", "5", "6"},
+	}
+	state4 := &mockPlayerState{}
+	newState, err = block.ValidatePlayerInput(state4, input)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "pincode must be a single character per input")
+
+	// Test: Correct pincode (individual digits)
 	// Expected behaviour: No error and points awarded
 	input = map[string][]string{
-		"pincode": {pincode},
+		"pincode": {"1", "2", "3", "4", "5"},
 	}
-	newState, err = block.ValidatePlayerInput(state, input)
+	state5 := &mockPlayerState{}
+	newState, err = block.ValidatePlayerInput(state5, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, points, strconv.Itoa(newState.GetPointsAwarded()))
 
+	// Check the successful attempt's data
 	var newPlayerData pincodeBlockData
 	err = json.Unmarshal(newState.GetPlayerData(), &newPlayerData)
 	require.NoError(t, err)
-	assert.Equal(t, 3, newPlayerData.Attempts)
-	assert.Equal(t, 3, len(newPlayerData.Guesses))
+	assert.Equal(t, 1, newPlayerData.Attempts)
+	assert.Equal(t, 1, len(newPlayerData.Guesses))
+	assert.Equal(t, "1", newPlayerData.Guesses[0]) // First digit saved as guess
 }

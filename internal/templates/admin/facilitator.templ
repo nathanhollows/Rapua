@@ -20,7 +20,7 @@ templ FacilitatorLinkModal() {
 			<label class="label">
 				<span class="label-text font-bold">Validity</span>
 			</label>
-			<select id="link-duration" name="duration" class="select select-bordered w-full" name="duration">
+			<select id="link-duration" name="duration" class="select w-full" name="duration">
 				<option value="hour">1 hour</option>
 				<option value="day" selected>1 day</option>
 				<option value="week">1 week</option>
@@ -53,11 +53,11 @@ templ FacilitatorLinkCopyModal(url string) {
 		<div class="join w-full">
 			<input
 				id="facilitator_link"
-				class="input input-bordered join-item w-full"
+				class="input join-item w-full"
 				value={ url }
 			/>
 			<button
-				class="btn btn-outline join-item"
+				class="btn join-item"
 				_="on click
 				    set link to #facilitator_link's value
 						writeText(link) on navigator.clipboard

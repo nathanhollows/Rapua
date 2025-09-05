@@ -18,18 +18,18 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 					src={ block.URL }
 					alt={ block.Caption }
 					title={ block.Caption }
-					class="rounded-2xl"
+					class="rounded-2xl shadow-lg"
 				/>
 			</a>
 		} else {
 			<img
 				src={ block.URL }
 				alt={ block.Caption }
-				class="rounded-2xl"
+				class="rounded-2xl shadow-lg"
 			/>
 		}
 		if block.Caption != "" {
-			<figcaption class="text-sm text-center">{ block.Caption }</figcaption>
+			<figcaption class="text-sm text-center mt-2">{ block.Caption }</figcaption>
 		}
 	</figure>
 }
@@ -74,11 +74,26 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 				name="file"
 				type="file"
 				accept="image/*"
-				class="file-input file-input-bordered w-full"
+				class="file-input w-full"
 				_="on change
 					remove .hidden from the next <progress />"
 			/>
 		</label>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Pick a file</legend>
+			<input
+				type="file"
+				class="file-input"
+				id={ fmt.Sprintf("file-%s", block.ID) }
+				name="file"
+				type="file"
+				accept="image/*"
+				class="file-input w-full"
+				_="on change
+					remove .hidden from the next <progress />"
+			/>
+			<label class="label">Max size 2MB</label>
+		</fieldset>
 		<progress
 			id={ fmt.Sprintf("progress-%s", block.ID) }
 			class="progress progress-primary w-full hidden"
@@ -103,56 +118,42 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 			block.ID, block.ID,
 			) }
 	>
-		<label id={ fmt.Sprintf("url-%s-label", block.ID) } class="input input-bordered input-disabled border-opacity-100 flex items-center gap-2">
-			<input
-				id={ fmt.Sprintf("url-%s", block.ID) }
-				name="url"
-				type="url"
-				class="grow"
-				placeholder="Image URL"
-				value={ block.URL }
-			/>
-			<button class="btn btn-sm btn-secondary btn-ghost btn-circle">×</button>
-		</label>
-		<div class="flex flex-col md:flex-row gap-5">
-			<label
-				for={ fmt.Sprintf("caption-%s", block.ID) }
-				class="form-control w-full mt-5"
-			>
-				<div class="label">
-					<span class="w-full label-text font-bold flex justify-between">
-						Caption 
-						<badge class="badge badge-info badge-sm opacity-80">Optional</badge>
-					</span>
-				</div>
+		<fieldset class="fieldset w-full">
+			<legend class="fieldset-legend">Image URL</legend>
+			<label class="input w-full">
 				<input
-					id={ fmt.Sprintf("caption-%s", block.ID) }
-					name="caption"
 					type="text"
-					class="input input-bordered w-full"
-					placeholder="Caption below image"
+					class="grow text-ellipsis"
+					placeholder="https://..."
+					value={ block.URL }
+					disabled
+				/>
+			</label>
+		</fieldset>
+		<input type="hidden" name="url" value={ block.URL }/>
+		<div class="flex flex-col md:flex-row gap-5">
+			<fieldset class="fieldset w-full">
+				<legend class="fieldset-legend">Caption</legend>
+				<input
+					type="text"
+					name="caption"
+					class="input w-full"
+					placeholder="Caption for image"
 					value={ block.Caption }
 				/>
-			</label>
-			<label
-				for={ fmt.Sprintf("link-%s", block.ID) }
-				class="form-control w-full mt-5"
-			>
-				<div class="label">
-					<span class="w-full label-text font-bold flex justify-between">
-						Link
-						<badge class="badge badge-info badge-sm opacity-80">Optional</badge>
-					</span>
-				</div>
+				<p class="label">Optional</p>
+			</fieldset>
+			<fieldset class="fieldset w-full">
+				<legend class="fieldset-legend">Image Link</legend>
 				<input
-					id={ fmt.Sprintf("link-%s", block.ID) }
+					type="text"
 					name="link"
-					type="url"
-					class="input input-bordered w-full invalid:border-error"
-					placeholder="Link when clicked"
+					class="input w-full"
+					placeholder="Link to image"
 					value={ block.Link }
 				/>
-			</label>
+				<p class="label">Optional</p>
+			</fieldset>
 		</div>
 	</form>
 }
@@ -160,7 +161,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 templ ImageAdminUpload(media models.Upload) {
 	<label
 		id={ fmt.Sprintf("url-%s-label", media.BlockID) }
-		class="input input-bordered input-disabled border-opacity-100 flex items-center gap-2"
+		class="input input-disabled border-opacity-100 flex items-center gap-2"
 		hx-swap-oob="true"
 	>
 		<input
