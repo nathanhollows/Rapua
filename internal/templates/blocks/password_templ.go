@@ -42,7 +42,7 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("player-block-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 11, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 11, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -60,7 +60,7 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(block.GetPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 15, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 15, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -90,7 +90,7 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/blocks/validate"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 21, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 21, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(block.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 24, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 24, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -116,7 +116,7 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("answer-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 26, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 26, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -139,13 +139,13 @@ func answerPlayer(settings models.InstanceSettings, block blocks.PasswordBlock, 
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("answer-%s", block.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 36, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 36, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" name=\"answer\" type=\"text\" placeholder=\"Answer\" class=\"input input-bordered input-primary join-item w-full max-w-xs\" autoComplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary btn-outline join-item rounded-r-full\">Check <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" name=\"answer\" type=\"text\" placeholder=\"Answer\" class=\"input input-primary join-item w-full max-w-xs\" autoComplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary btn-outline join-item rounded-r-full\">Check <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -186,7 +186,7 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("player-block-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 61, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 61, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -204,7 +204,7 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(block.GetPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 66, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 66, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -234,7 +234,7 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/blocks/validate"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 72, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 72, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -247,7 +247,7 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(block.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 75, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 75, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -260,7 +260,7 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("answer-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 77, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 77, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -283,13 +283,13 @@ func answerPlayerUpdate(settings models.InstanceSettings, block blocks.PasswordB
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("answer-%s", block.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 87, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 87, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" name=\"answer\" type=\"text\" placeholder=\"Answer\" class=\"input input-bordered input-primary join-item w-full max-w-xs\" autoComplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary btn-outline join-item rounded-r-full\">Check <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" name=\"answer\" type=\"text\" placeholder=\"Answer\" class=\"input input-primary join-item w-full max-w-xs\" autoComplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary btn-outline join-item rounded-r-full\">Check <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-4 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -330,7 +330,7 @@ func answerAdmin(settings models.InstanceSettings, block blocks.PasswordBlock) t
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 112, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 112, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -343,7 +343,7 @@ func answerAdmin(settings models.InstanceSettings, block blocks.PasswordBlock) t
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 113, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 113, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -356,7 +356,7 @@ func answerAdmin(settings models.InstanceSettings, block blocks.PasswordBlock) t
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 114, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 114, Col: 116}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -367,64 +367,38 @@ func answerAdmin(settings models.InstanceSettings, block blocks.PasswordBlock) t
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<label class=\"form-control w-full mt-5\"><div class=\"label\"><span class=\"label-text font-bold\">Points</span></div><label class=\"input input-bordered flex items-center gap-2\"><input name=\"points\" type=\"number\" class=\"grow\" placeholder=\"Search\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(block.Points))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 123, Col: 106}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"> <span class=\"badge badge-info tooltip tooltip-left cursor-help\" data-tip=\"Set to 0 to disable\">Optional</span></label></label> ")
+			templ_7745c5c3_Err = adminPointsField(block.GetPoints()).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<label for=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Prompt</legend> <textarea id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("md-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 123, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" name=\"prompt\" rows=\"2\" class=\"markdown-textarea textarea w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"What is third word of the second paragraph? What is the middle name of the person wearing a red hat?\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("md-%s", block.ID))
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(block.Prompt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 129, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 129, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Prompt</span></div><textarea id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("md-%s", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 136, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" name=\"prompt\" rows=\"2\" class=\"markdown-textarea textarea textarea-bordered w-full font-mono\" style=\"field-sizing: content;\" placeholder=\"What is third word of the second paragraph? What is the middle name of the person wearing a red hat?\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(block.Prompt)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 142, Col: 18}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</textarea><div class=\"label\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</textarea><div class=\"label\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -432,46 +406,33 @@ func answerAdmin(settings models.InstanceSettings, block blocks.PasswordBlock) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div></label> <label for=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Answer</legend> <input id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("admin-answer-%s", block.ID))
+		var templ_7745c5c3_Var21 string
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("admin-answer-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 148, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 137, Col: 49}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\" class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text font-bold\">Answer</span></div><input id=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("admin-answer-%s", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 155, Col: 49}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" type=\"text\" name=\"answer\" class=\"input w-full\" placeholder=\"Answer here...\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" type=\"text\" name=\"answer\" class=\"input input-bordered w-full\" placeholder=\"Answer here...\" value=\"")
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(block.Answer)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 142, Col: 24}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(block.Answer)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/answer.templ`, Line: 160, Col: 24}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"></label></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"></fieldset></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
