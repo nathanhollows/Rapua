@@ -104,6 +104,7 @@ var brokerTextarea = TextareaParams{
 	Title:       "Prompt",
 	Placeholder: "The merchant eyes you suspiciously. 'I might know something... depends on how much it's worth to you.'",
 	Markdown:    true,
+	Required:    true,
 }
 
 var brokerDefaultInfoTextarea = TextareaParams{
@@ -112,6 +113,7 @@ var brokerDefaultInfoTextarea = TextareaParams{
 	Placeholder: "'I don't know anything.' or 'The shipment left yesterday.'",
 	Markdown:    true,
 	HelpText:    "What players receive when they offer 0 points",
+	Required:    true,
 }
 
 var brokerInformationTierTextarea = TextareaParams{
@@ -119,6 +121,7 @@ var brokerInformationTierTextarea = TextareaParams{
 	Title:       "Information Content",
 	Placeholder: "Better information for players who pay this much...",
 	Markdown:    true,
+	Required:    true,
 	HyperScript: `
 		on keyup send resubmit to closest <form />
 	`,

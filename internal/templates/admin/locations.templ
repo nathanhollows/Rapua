@@ -45,15 +45,22 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 		</span>
 	</div>
 	<!-- Locations list -->
-	<div class="px-5">
+	<div
+		class="px-5"
+	>
 		<ul
+			hx-post="/admin/locations/reorder"
+			hx-trigger="end"
+			hx-swap="none"
+			hx-indicator=".htmx-indicator"
+			hx-include="[name='location']"
 			if settings.NavigationMode == models.OrderedNav {
 				class="list rounded-lg shadow sortable"
 			} else {
 				class="list rounded-lg"
 			}
 		>
-			<li class="flex flex-row gap-3 items-center p-3 py-4 text-xs rounded-lg tracking-wide bg-base-200/80 border border-base-300">
+			<li class="ignore-sort flex flex-row gap-3 items-center p-3 py-4 text-xs rounded-lg tracking-wide bg-base-200/80 border border-base-300">
 				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
 					<span
 						id="location-count"
@@ -156,22 +163,11 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			for _, location := range locations {
 				<li
 					class="location-item list-row hover:bg-base-200 transition-colors"
+					hx-include="none"
 					data-order={ fmt.Sprint(location.Order) }
 					data-clues={ fmt.Sprint(len(location.Clues) > 0) }
 					data-marker={ fmt.Sprint(location.Marker.Lat != 0) }
 				>
-					<!-- Drag handle -->
-					<div>
-						if settings.NavigationMode == models.OrderedNav {
-							<div
-								class="tooltip tooltip-right flex gap-3 cursor-move"
-								data-tip="Drag to reorder"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-							</div>
-							<input type="hidden" name="location" value={ location.ID }/>
-						}
-					</div>
 					<!-- Location icons -->
 					<div class="flex flex-row items-center gap-3 grow">
 						<!-- Drag handle -->
@@ -242,33 +238,32 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 		</ul>
 	</div>
 	<script>
-htmx.onLoad(function(content) {
-    var sortables = content.querySelectorAll(".sortable");
-    for (var i = 0; i < sortables.length; i++) {
-      var sortable = sortables[i];
-      var sortableInstance = new Sortable(sortable, {
-          animation: 150,
-          ghostClass: 'blue-background-class',
-          handle: ".cursor-move",
+		htmx.onLoad(function(content) {
+			var sortables = content.querySelectorAll(".sortable");
+			for (var i = 0; i < sortables.length; i++) {
+			  var sortable = sortables[i];
+			  var sortableInstance = new Sortable(sortable, {
+				  animation: 150,
+				  handle: ".cursor-move",
+				  filter: ".ignore-sort",
 
-          // Make the `.htmx-indicator` unsortable
-          filter: ".htmx-indicator",
-          onMove: function (evt) {
-            return evt.related.className.indexOf('htmx-indicator') === -1;
-          },
+				  // Prevent dragging if the target element has the 'ignore-sort' class
+				  onMove: function (evt) {
+					  return !evt.related.classList.contains('ignore-sort');
+				  },
 
-          // Disable sorting on the `end` event
-          onEnd: function (evt) {
-            this.option("disabled", true);
-          }
-      });
+				  // Disable sorting on the `end` event
+				  onEnd: function (evt) {
+					this.option("disabled", true);
+				  }
+			  });
 
-      // Re-enable sorting on the `htmx:afterSwap` event
-      sortable.addEventListener("htmx:afterSwap", function() {
-        sortableInstance.option("disabled", false);
-      });
-    }
-})
+			  // Re-enable sorting on the `htmx:afterSwap` event
+			  sortable.addEventListener("htmx:afterSettle", function() {
+				sortableInstance.option("disabled", false);
+			  });
+			}
+		})
 </script>
 }
 
@@ -705,12 +700,8 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								<a
 									class="link add-clue-btn"
 									_="on click
-									get #clue-template
-									put its innerHTML into #clue-list
-									htmx.process(document.body)
-									remove #clue-list.alert
-									end
-								"
+											put #clue-template's innerHTML into #clue-list
+										end"
 								>add a clue</a>? 
 							</span>
 						</div>
@@ -719,7 +710,8 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 						id="clue-list"
 						class="flex flex-col join join-vertical"
 						_="on emptylist
-									set my innerHTML to <#clue-add-template/>'s innerHTML
+									set my innerHTML to #clue-add-template's innerHTML
+									call _hyperscript.processNode(me)
 								end
 								"
 					>
@@ -730,12 +722,8 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									<a
 										class="link add-clue-btn"
 										_="on click
-									get #clue-template
-									put its innerHTML into #clue-list
-									htmx.process(document.body)
-									remove <#clue-list .alert/>
-									end
-								"
+											put #clue-template's innerHTML into #clue-list
+										end"
 									>add a clue</a>? 
 								</span>
 							</div>
@@ -783,7 +771,6 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 											remove closest .clue-line to me
 												send savelocation to #edit-location
 												if #clue-list.children.length == 0
-													alert('No clues left, sending empty list')
 													send emptylist to #clue-list
 												end
 											end

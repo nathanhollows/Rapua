@@ -749,6 +749,7 @@ var quizQuestionTextarea = TextareaParams{
 	Title:       "Question",
 	Placeholder: "How many chickens are there in the world?",
 	Markdown:    true,
+	Required:    true,
 }
 
 func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.Component {
@@ -779,7 +780,7 @@ func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.C
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 267, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 268, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -792,7 +793,7 @@ func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.C
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 268, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 269, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -805,7 +806,7 @@ func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.C
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 269, Col: 206}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 270, Col: 206}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -945,7 +946,7 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("option_%d", index))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 436, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 437, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -973,7 +974,7 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("option_%d", index))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 445, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 446, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -1019,7 +1020,7 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(option.Text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 456, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 457, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {

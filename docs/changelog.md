@@ -6,9 +6,7 @@ order: 100
 
 # Changelog
 
-## 4.2.0 (2025-08-11)
-
-### Added
+## 4.3.0
 
 - Simple credit system so Rapua can be self-sufficient.
   - One credit = one new team starting play.
@@ -18,11 +16,34 @@ order: 100
 - Job scheduler
   - Monthly job includes topping all users up with free credits.
 
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
+
+## 4.2.0 (2025-09-05)
+
+### Added
+
+- Password block can now show secret content after a correct answer.
+- Password block is now case-insensitive and trims whitespace, making it easier for players to answer correctly.
+- Pincode block can now show secret content after a correct answer.
+- Textareas and text inputs now show `Optional` when not required, to help admins understand the form better.
+
 ### Fixed
 
 - Upgraded to templ 0.3.xxx, fixed issues with LSPs and compilation. This upgrade required a move to Go 1.23.0.
+- Removed duplicate form input from image block.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)
+
+## 4.1.1 (2025-09-04)
+
+### Fixed
+
+- Removed duplicate drag handle icons on location list.
+- Fixed an issue where location order was not saved correctly.
+- Clues now use markdown.
+- Add a clue button now works after deleting all clues.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.1.1)
 
 ## 4.1.0 (2025-08-11)
 

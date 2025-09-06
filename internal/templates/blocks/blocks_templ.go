@@ -26,8 +26,8 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 		b := block.(*blocks.ImageBlock)
 		return imageAdmin(settings, *b)
 	case "answer":
-		b := block.(*blocks.AnswerBlock)
-		return answerAdmin(settings, *b)
+		b := block.(*blocks.PasswordBlock)
+		return passwordAdmin(settings, *b)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodeAdmin(settings, *b)
@@ -71,8 +71,8 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
 	case "answer":
-		b := block.(*blocks.AnswerBlock)
-		return answerPlayer(settings, *b, state)
+		b := block.(*blocks.PasswordBlock)
+		return passwordPlayer(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayer(settings, *b, state)
@@ -116,8 +116,8 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
 	case "answer":
-		b := block.(*blocks.AnswerBlock)
-		return answerPlayerUpdate(settings, *b, state)
+		b := block.(*blocks.PasswordBlock)
+		return passwordPlayerUpdate(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayerUpdate(settings, *b, state)

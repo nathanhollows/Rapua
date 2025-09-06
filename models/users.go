@@ -22,9 +22,7 @@ type User struct {
 	PaidCredits      int            `bun:"paid_credits,type:int,default:0"`  // Purchased credits
 	IsEducator       bool           `bun:"is_educator,type:boolean,default:false"`
 
-	Instances         []Instance          `bun:"rel:has-many,join:id=user_id"`
-	CurrentInstanceID string              `bun:"current_instance_id,type:varchar(36)"`
-	CurrentInstance   Instance            `bun:"rel:has-one,join:current_instance_id=id"`
-	TeamStartLogs     []TeamStartLog      `bun:"rel:has-many,join:id=user_id"`
-	CreditAdjustments []CreditAdjustments `bun:"rel:has-many,join:id=user_id"`
+	Instances         []Instance `bun:"rel:has-many,join:id=user_id"`
+	CurrentInstanceID string     `bun:"current_instance_id,type:varchar(36)"`
+	CurrentInstance   Instance   `bun:"rel:has-one,join:current_instance_id=id"`
 }

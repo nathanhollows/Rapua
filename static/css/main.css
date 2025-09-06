@@ -76,6 +76,10 @@ p.label {
   @apply hidden;
 }
 
+.prose blockquote {
+  @apply font-normal not-italic;
+}
+
 .prose p img {
   @apply rounded-lg;
 }

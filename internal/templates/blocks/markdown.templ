@@ -18,6 +18,7 @@ var markdownTextarea = TextareaParams{
 	Placeholder:  "Markdown content here",
 	Markdown:     true,
 	ExtraClasses: "w-full min-h-40",
+	Required:     true,
 }
 
 templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
