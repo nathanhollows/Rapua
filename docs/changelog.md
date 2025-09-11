@@ -8,6 +8,8 @@ order: 100
 
 ## 4.4.0
 
+### Added
+
 - Simple credit system so Rapua can be self-sufficient.
   - One credit = one new team starting play.
   - No tiered features.
@@ -15,6 +17,10 @@ order: 100
   - Includes 500 credits for all existing users.
 - Job scheduler
   - Monthly job includes topping all users up with free credits.
+
+### Fixed
+
+- Template share link dialog no longer has duplicate URL field.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
 
