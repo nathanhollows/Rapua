@@ -416,8 +416,18 @@ templ Teams(teams []models.Team, credits int) {
 		</h1>
 		<a
 			href="/admin/settings/credits"
-			class="badge badge-soft badge-info tooltip tooltip-bottom"
-			data-tip="Each team start costs one credit. Credits do not affect how many team codes you can generate."
+			if credits <= 0 {
+				class="badge badge-soft badge-error tooltip tooltip-bottom"
+				data-tip="No credits remaining! Teams won't be able to start new games."
+			}
+			else
+			if credits >= 5 {
+				class="badge badge-soft badge-info tooltip tooltip-bottom"
+				data-tip="Each team start costs one credit. Credits do not affect how many team codes you can generate."
+			} else {
+				class="badge badge-soft badge-warning tooltip tooltip-bottom"
+				data-tip="Low on credits! Each team start costs one credit. Credits do not affect how many team codes you can generate."
+			}
 		>
 			{ fmt.Sprint(credits) } credits remaining
 		</a>
