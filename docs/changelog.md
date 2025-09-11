@@ -6,7 +6,7 @@ order: 100
 
 # Changelog
 
-## 4.3.0
+## 4.4.0
 
 - Simple credit system so Rapua can be self-sufficient.
   - One credit = one new team starting play.
@@ -15,6 +15,14 @@ order: 100
   - Includes 500 credits for all existing users.
 - Job scheduler
   - Monthly job includes topping all users up with free credits.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
+
+## 4.3.0 (2025-10-09)
+
+### Added
+
+- Leaderboard service and view for admins to track teams and their points.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
 

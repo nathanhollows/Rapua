@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 // Activity displays the activity tracker page.
@@ -35,18 +36,57 @@ func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	for i := range user.CurrentInstance.Teams {
-		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+	teams := filterTeamsStarted(user.CurrentInstance.Teams)
+
+	for i := range teams {
+		err := h.teamService.LoadRelation(r.Context(), &teams[i], "Scans")
 		if err != nil {
 			h.handleError(w, r, "ActivityTeamsOverview: loading team relations", "Error loading team relations", "Could not load data", err)
 			return
 		}
 	}
 
-	err := templates.ActivityTeamsTable(user.CurrentInstance.Locations, user.CurrentInstance.Teams).Render(r.Context(), w)
+	// Get query parameters for sorting with defaults
+	sortField := r.URL.Query().Get("sort")
+	sortOrder := r.URL.Query().Get("order")
+	rankingScheme := r.URL.Query().Get("ranking")
+	
+	// Set defaults if not provided
+	if sortField == "" {
+		sortField = "rank"
+	}
+	if sortOrder == "" {
+		sortOrder = "asc"
+	}
+
+	// Get leaderboard data using the new service
+	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(
+		r.Context(),
+		teams,
+		len(user.CurrentInstance.Locations),
+		rankingScheme,
+		sortField,
+		sortOrder,
+	)
+	if err != nil {
+		h.handleError(w, r, "ActivityTeamsOverview: getting leaderboard data", "Error getting leaderboard data", "Could not load data", err)
+		return
+	}
+
+	err = templates.ActivityTeamsTable(user.CurrentInstance.Settings, len(user.CurrentInstance.Locations), leaderboardData, sortField, sortOrder).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("ActivityTeamsOverview: rendering template", "error", err)
 	}
+}
+
+func filterTeamsStarted(teams []models.Team) []models.Team {
+	var filtered []models.Team
+	for _, team := range teams {
+		if team.HasStarted {
+			filtered = append(filtered, team)
+		}
+	}
+	return filtered
 }
 
 // TeamActivity displays the activity tracker page.

@@ -152,6 +152,11 @@ type UserService interface {
 	SwitchInstance(ctx context.Context, user *models.User, instanceID string) error
 }
 
+type LeaderBoardService interface {
+	// GetLeaderBoardData returns sorted and ranked leaderboard data
+	GetLeaderBoardData(ctx context.Context, teams []models.Team, locationCount int, rankingScheme string, sortField string, sortOrder string) ([]services.LeaderBoardTeamData, error)
+}
+
 type AdminHandler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
@@ -174,6 +179,7 @@ type AdminHandler struct {
 	uploadService           UploadService
 	userService             UserService
 	quickstartService       QuickstartService
+	leaderBoardService      LeaderBoardService
 }
 
 func NewAdminHandler(
@@ -198,6 +204,7 @@ func NewAdminHandler(
 	uploadService UploadService,
 	userService UserService,
 	quickstartService QuickstartService,
+	leaderBoardService LeaderBoardService,
 ) *AdminHandler {
 	return &AdminHandler{
 		logger:                  logger,
@@ -221,6 +228,7 @@ func NewAdminHandler(
 		uploadService:           uploadService,
 		userService:             userService,
 		quickstartService:       quickstartService,
+		leaderBoardService:      leaderBoardService,
 	}
 }
 

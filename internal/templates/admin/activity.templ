@@ -2,10 +2,11 @@ package templates
 
 import (
 	"fmt"
+	"github.com/SerhiiCho/timeago/v3"
 	"github.com/nathanhollows/Rapua/v4/internal/flash"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun/schema"
-	"sort"
 )
 
 templ ActivityTracker(instance models.Instance) {
@@ -102,7 +103,16 @@ templ ActivityTracker(instance models.Instance) {
 			</div>
 		</div>
 		<div class="overflow-y-auto w-full">
-			@ActivityTeamsTable(instance.Locations, instance.Teams)
+			<div class="overflow-x-auto">
+				<table
+					id="team-activity"
+					class="overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start"
+					hx-get="/admin/activity/teams"
+					hx-target="#team-activity"
+					hx-swap="outerHTML"
+					hx-trigger="load"
+				></table>
+			</div>
 		</div>
 	</div>
 	@scheduleModal(instance)
@@ -251,111 +261,103 @@ templ teamModal() {
 	</script>
 }
 
-templ ActivityTeamsTable(locations []models.Location, teams []models.Team) {
-	<table
-		id="team-activity"
-		class="table table-sm w-full mt-5 md:mt-0 h-auto self-start"
-		hx-get="/admin/activity/teams"
-		hx-target="#team-activity"
-		hx-indicator=".loading"
-		hx-swap="outerHTML"
-		hx-trigger="every 30s"
-	>
-		<thead>
-			<tr class="text-center">
-				<th
-					scope="col"
-					class="text-start"
-				>
-					Team Code
-				</th>
-				for i := range locations {
-					<th scope="col">{ fmt.Sprint(i + 1) }</th>
-				}
-			</tr>
-		</thead>
-		<tbody>
-			for _, team := range teamLocationMatrix(locations, teams) {
-				<tr class="hover">
-					for i, location := range team {
-						if i == 0 {
-							<th scope="row">
-								<button
-									class="link"
-									hx-get={ fmt.Sprintf("/admin/activity/team/%s", location) }
-									hx-target="#team_modal .modal-box"
-									hx-trigger="click"
-									hx-indicator=".loading"
-									hx-swap="innerHTML"
-								>
-									{ location }
-									<span class="loading loading-spinner loading-lg" style="display:none;"></span>
-								</button>
-							</th>
-						} else {
-							<td class="text-center">{ location }</td>
-						}
-					}
-				</tr>
-			}
-			if len(teamLocationMatrix(locations, teams)) == 0 {
+templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
+	<div class="overflow-x-auto">
+		<table
+			id="team-activity"
+			class="overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start"
+			hx-get={ fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder) }
+			hx-target="#team-activity"
+			hx-swap="outerHTML"
+			hx-trigger="every 30s"
+		>
+			<!-- head -->
+			<thead class="uppercase text-xs font-normal tracking-wider">
 				<tr>
-					<th
-						scope="row"
-						colspan="100%"
-						class="text-center"
-					>
-						<a href="/admin/teams" hx-boost="true" class="link" hx-target="body">Teams</a> will appear here once they start checking in.
+					<th class="text-center">
+						@sortableHeader("rank", "Rank", currentSortField, currentSortOrder, true)
+					</th>
+					<th>
+						@sortableHeader("code", "Code", currentSortField, currentSortOrder, false)
+					</th>
+					<th>
+						@sortableHeader("name", "Name", currentSortField, currentSortOrder, false)
+					</th>
+					if settings.EnablePoints {
+						<th>
+							@sortableHeader("points", "Points", currentSortField, currentSortOrder, false)
+						</th>
+					}
+					<th>
+						@sortableHeader("last_seen", "Last Seen", currentSortField, currentSortOrder, false)
+					</th>
+					<th>
+						@sortableHeader("progress", "Progress", currentSortField, currentSortOrder, false)
+					</th>
+					<th>
+						@sortableHeader("status", "Status", currentSortField, currentSortOrder, false)
 					</th>
 				</tr>
-			}
-		</tbody>
-	</table>
-}
-
-// teamLocationMatrix returns a matrix of team locations [teamCode][locatinStatus]
-// ● for visiting, ✔ for visited, blank for not visited
-func teamLocationMatrix(locations []models.Location, teams []models.Team) [][]string {
-	matrix := make([][]string, len(teams))
-	for i := range matrix {
-		matrix[i] = make([]string, len(locations)+1)
-	}
-	// Sort teams by code
-	teams = func(teams []models.Team) []models.Team {
-		sort.Slice(teams, func(i, j int) bool {
-			return teams[i].Code < teams[j].Code
-		})
-		return teams
-	}(teams)
-	for i, team := range teams {
-		if !team.HasStarted {
-			continue
-		}
-		matrix[i][0] = team.Code
-		for j, location := range locations {
-			if team.MustCheckOut == location.ID {
-				matrix[i][j+1] = "●"
-				continue
-			}
-			for _, visit := range team.CheckIns {
-				if visit.LocationID == location.ID {
-					matrix[i][j+1] = "✔"
-					break
+			</thead>
+			<tbody id="contents" class="overflow-x-hidden">
+				for _, teamData := range leaderboardData {
+					<tr
+						class="cursor-pointer hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden"
+						hx-get={ fmt.Sprintf("/admin/activity/team/%s", teamData.Code) }
+						hx-target="#team_modal .modal-box"
+						hx-trigger="click"
+						hx-swap="innerHTML"
+					>
+						<td class="text-center">
+							switch teamData.Rank {
+								case 1:
+									<span class="text-2xl">🥇</span>
+								case 2:
+									<span class="text-2xl">🥈</span>
+								case 3:
+									<span class="text-2xl">🥉</span>
+								default:
+									<span class="text-xl">{ fmt.Sprint(teamData.Rank) }</span>
+							}
+						</td>
+						<td class="font-mono tracking-wider">{ teamData.Code }</td>
+						if teamData.Name != "" {
+							<td>{ teamData.Name }</td>
+						} else {
+							<td><em class="opacity-50">No name set</em></td>
+						}
+						if settings.EnablePoints {
+							<td>{ fmt.Sprint(teamData.Points) }</td>
+						}
+						<td>
+							<span class="tooltip" data-tip={ teamData.LastSeen.Local().Format("02 Jan 03:04 PM") }>
+								{ timeago.Parse(teamData.LastSeen) }
+							</span>
+						</td>
+						<td>
+							if locationCount > 0 {
+								{ fmt.Sprintf("%d ∕ %d", teamData.Progress, locationCount) }
+							} else {
+								<em class="opacity-50">No locations</em>
+							}
+						</td>
+						<td>
+							switch teamData.Status {
+								case services.StatusOnsite:
+									<span class="badge badge-accent badge-soft badge-sm tooltip tooltip-left" data-tip="Currently checked in">Onsite</span>
+								case services.StatusFinished:
+									<span class="badge badge-success badge-soft badge-sm tooltip tooltip-left" data-tip="Finished all locations!">Finished</span>
+								case services.StatusTransit:
+									<span class="badge badge-secondary badge-soft badge-sm tooltip tooltip-left" data-tip="This team is between locations">In transit</span>
+								case services.StatusStarted:
+									<span class="badge badge-ghost badge-sm badge-soft tooltip tooltip-left" data-tip="This team has not checked in anywhere yet">Started</span>
+							}
+						</td>
+					</tr>
 				}
-			}
-		}
-	}
-	// Filter out teams that have not started
-	matrix = func(matrix [][]string) [][]string {
-		var newMatrix [][]string
-		for _, team := range matrix {
-			if team[0] != "" {
-				newMatrix = append(newMatrix, team)
-			}
-		}
-		return newMatrix
-	}(matrix)
-	return matrix
+			</tbody>
+		</table>
+	</div>
 }
 
 templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
@@ -787,4 +789,61 @@ templ announcementModal() {
 			</form>
 		</div>
 	</dialog>
+}
+
+templ sortableHeader(field string, label string, currentSortField string, currentSortOrder string, center bool) {
+	<span
+		class={ "cursor-pointer inline-flex gap-1 items-center hover:text-primary transition-colors", templ.KV("justify-center", center) }
+		hx-get={ getSortURL(field, currentSortField, currentSortOrder) }
+		hx-target="#team-activity"
+		hx-swap="outerHTML"
+		title={ getSortTooltip(field, currentSortField, currentSortOrder) }
+	>
+		{ label }
+		if currentSortField == field {
+			if currentSortOrder == "desc" {
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-icon lucide-arrow-down w-4 h-4"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>
+			} else {
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-icon lucide-arrow-up w-4 h-4"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg>
+			}
+		} else {
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-down w-4 h-4 opacity-40"><path d="m21 16-4 4-4-4"></path><path d="M17 20V4"></path><path d="m3 8 4-4 4 4"></path><path d="M7 4v16"></path></svg>
+		}
+	</span>
+}
+
+func getSortURL(field string, currentSortField string, currentSortOrder string) string {
+	var newOrder string
+	if currentSortField == field {
+		// Reverse the order if clicking the same field
+		if currentSortOrder == "desc" {
+			newOrder = "asc"
+		} else {
+			newOrder = "desc"
+		}
+	} else {
+		// Default order for new field - most fields default to descending except name/code
+		if field == "name" || field == "code" {
+			newOrder = "asc"
+		} else {
+			newOrder = "desc"
+		}
+	}
+	return fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", field, newOrder)
+}
+
+func getSortTooltip(field string, currentSortField string, currentSortOrder string) string {
+	if currentSortField == field {
+		if currentSortOrder == "desc" {
+			return fmt.Sprintf("Click to sort %s ascending", field)
+		} else {
+			return fmt.Sprintf("Click to sort %s descending", field)
+		}
+	} else {
+		if field == "name" || field == "code" {
+			return fmt.Sprintf("Click to sort by %s (ascending)", field)
+		} else {
+			return fmt.Sprintf("Click to sort by %s (descending)", field)
+		}
+	}
 }

@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "4.2.0"
+const version = "4.4.0"
 
 func main() {
 	logger := slog.New(
@@ -241,6 +241,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		userRepo,
 	)
 	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
+	leaderBoardService := services.NewLeaderBoardService(teamRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
@@ -302,6 +303,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		uploadService,
 		userService,
 		quickstartService,
+		leaderBoardService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)
