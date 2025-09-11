@@ -162,7 +162,6 @@ func (r *teamRepository) GetUserIDByCode(ctx context.Context, code string) (stri
 		Column("instance.user_id").
 		Join("JOIN teams ON teams.instance_id = instance.id").
 		Where("teams.code = ?", code)
-	fmt.Println(q.String())
 	err := q.Scan(ctx)
 	if err != nil {
 		return "", fmt.Errorf("GetUserIDByCode: %v", err)

@@ -128,7 +128,7 @@ func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *
 	}
 
 	if freeBalance+paidBalance < 1 {
-		return errors.New("insufficient credits to start team")
+		return ErrInsufficientCredits
 	}
 
 	// Step 2: Calculate new credit balances (deduct from free credits first)

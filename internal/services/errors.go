@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrAlreadyCheckedIn         = errors.New("player has already scanned in")
 	ErrCheckOutAtWrongLocation  = errors.New("team is not at the correct location to check out")
+	ErrInsufficientCredits      = errors.New("insufficient credits to start team")
 	ErrInstanceSettingsNotFound = errors.New("instance settings not found")
 	ErrLocationNotFound         = errors.New("location not found")
 	ErrPermissionDenied         = errors.New("permission denied")

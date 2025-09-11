@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "4.4.0"
+const version = "v4.4.0"
 
 func main() {
 	logger := slog.New(
@@ -38,7 +38,7 @@ func main() {
 	)
 	slog.SetDefault(logger)
 
-	log.Printf("Rapua version %s starting...\n", version)
+	log.Printf("Rapua %s starting...\n", version)
 
 	// Load environment variables
 	if err := godotenv.Load(".env"); err != nil {

@@ -105,7 +105,7 @@ Implement a credit tracking system for Rapua where users have a credit balance t
 #### Teams Page Integration
 - [x] Add credit balance display to Teams page
 - [x] Show "Insufficient Credits" warning when balance is low
-- [ ] Display error message when trying to start team without credits
+- [x] Display error message when trying to start team without credits
 - [x] Test UI with different credit balance scenarios
 
 #### Team Start History Page

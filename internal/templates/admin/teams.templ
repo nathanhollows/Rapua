@@ -418,7 +418,7 @@ templ Teams(teams []models.Team, credits int) {
 			href="/admin/settings/credits"
 			if credits <= 0 {
 				class="badge badge-soft badge-error tooltip tooltip-bottom"
-				data-tip="No credits remaining! Teams won't be able to start new games."
+				data-tip="No credits remaining! New teams won't be able to start playing."
 			}
 			else
 			if credits >= 5 {

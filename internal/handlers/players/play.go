@@ -1,8 +1,10 @@
 package players
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v4/internal/flash"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v4/models"
@@ -36,6 +38,13 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == services.ErrTeamNotFound {
 			h.handleError(w, r, "PlayPost: starting game", "Team not found: "+teamCode, "Cannot start game with this team code", err, "teamCode", teamCode)
+			return
+		}
+		if errors.Is(err, services.ErrInsufficientCredits) {
+			err := templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).Render(r.Context(), w)
+			if err != nil {
+				h.logger.Error("rendering template", "error", err)
+			}
 			return
 		}
 		h.handleError(w, r, "PlayPost: starting game", "Error joining game", "Could not start game", err, "teamCode", teamCode)

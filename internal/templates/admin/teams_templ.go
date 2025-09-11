@@ -278,7 +278,7 @@ func Teams(teams []models.Team, credits int) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if credits <= 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"badge badge-soft badge-error tooltip tooltip-bottom\" data-tip=\"No credits remaining! Teams won't be able to start new games.\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"badge badge-soft badge-error tooltip tooltip-bottom\" data-tip=\"No credits remaining! New teams won't be able to start playing.\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
