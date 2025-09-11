@@ -18,6 +18,10 @@ order: 100
 - Job scheduler
   - Monthly job includes topping all users up with free credits.
 
+### Changed
+
+- Indicator on the games and template page to show which game is currently selected and active.
+
 ### Fixed
 
 - Template share link dialog no longer has duplicate URL field.

@@ -262,7 +262,9 @@ templ instanceItem(instance models.Instance, active bool) {
 			<span class="instance-name">
 				{ instance.Name }
 				if active {
-					<span class="badge badge-sm badge-info tooltip cursor-default ml-2" data-tip="Currently selected game">Active</span>
+					<div class="text-xs font-semibold opacity-60">
+						Currently selected game
+					</div>
 				}
 			</span>
 			<span class="grow"></span>
