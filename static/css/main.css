@@ -2,8 +2,79 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui' {
-  themes: cupcake --default, dracula --prefersdark;
 }
+
+
+@plugin "daisyui/theme" {
+  name: "cupcake";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(97.788% 0.004 56.375);
+  --color-base-200: oklch(93.982% 0.007 61.449);
+  --color-base-300: oklch(91.586% 0.006 53.44);
+  --color-base-content: oklch(21% 0.034 264.665);
+  --color-primary: oklch(75.46% 0.183 122.31);
+  --color-primary-content: oklch(15.46% 0.183 122.31);
+  --color-secondary: oklch(75.46% 0.183 154.35);
+  --color-secondary-content: oklch(15.46% 0.183 154.35);
+  --color-accent: oklch(75.46% 0.183 314.595);
+  --color-accent-content: oklch(15.46% 0.183 314.595);
+  --color-neutral: oklch(27% 0.006 286.033);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(88.263% 0.093 212.846);
+  --color-info-content: oklch(17.652% 0.018 212.846);
+  --color-success: oklch(87.099% 0.219 148.024);
+  --color-success-content: oklch(17.419% 0.043 148.024);
+  --color-warning: oklch(75.46% 0.183 5.895);
+  --color-warning-content: oklch(15.46% 0.183 5.895);
+  --color-error: oklch(75.46% 0.183 61.425);
+  --color-error-content: oklch(15.46% 0.183 61.425);
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dracula";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(28.822% 0.022 277.508);
+  --color-base-200: oklch(26.805% 0.02 277.508);
+  --color-base-300: oklch(24.787% 0.019 277.508);
+  --color-base-content: oklch(97.747% 0.007 106.545);
+  --color-primary: oklch(75.46% 0.183 122.31);
+  --color-primary-content: oklch(15.46% 0.183 122.31);
+  --color-secondary: oklch(75.46% 0.183 154.35);
+  --color-secondary-content: oklch(15.46% 0.183 154.35);
+  --color-accent: oklch(75.46% 0.183 314.595);
+  --color-accent-content: oklch(15.46% 0.183 314.595);
+  --color-neutral: oklch(39.445% 0.032 275.524);
+  --color-neutral-content: oklch(87.889% 0.006 275.524);
+  --color-info: oklch(88.263% 0.093 212.846);
+  --color-info-content: oklch(17.652% 0.018 212.846);
+  --color-success: oklch(87.099% 0.219 148.024);
+  --color-success-content: oklch(17.419% 0.043 148.024);
+  --color-warning: oklch(75.46% 0.183 5.895);
+  --color-warning-content: oklch(15.46% 0.183 5.895);
+  --color-error: oklch(75.46% 0.183 61.425);
+  --color-error-content: oklch(15.46% 0.183 61.425);
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+@custom-variant dark (&:where([data-theme=dracula], [data-theme=dracula] *));
 
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
