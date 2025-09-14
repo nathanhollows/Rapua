@@ -31,7 +31,7 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 						{ fmt.Sprint(paidCredits) }
 					</div>
 					<div class="stat-actions">
-						<button class="btn btn-xs btn-success btn-soft">Top up</button>
+						@CreditTopupModal()
 					</div>
 				</div>
 				<div class="stat">
@@ -76,7 +76,10 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
 		<div class="grid h-fit px-5 flex-grow">
 			<div class="my-5">
-				<h2 class="font-bold pb-5">Credit Top-ups</h2>
+				<h2 class="font-bold pb-5 flex justify-between">
+					Credit Top-ups
+					<button class="btn btn-sm btn-primary" onclick="topup_modal.showModal()">Top up</button>
+				</h2>
 				<table class="table">
 					<!-- head -->
 					<thead>
@@ -104,6 +107,45 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 			</div>
 		</div>
 	</div>
+}
+
+templ CreditTopupModal() {
+	<!-- Open the modal using ID.showModal() method -->
+	<button class="btn btn-xs btn-primary" onclick="topup_modal.showModal()">Top up</button>
+	<dialog id="topup_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">Top Up Credits</h3>
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">How many credits do you need?</legend>
+				<input
+					type="number"
+					min="3"
+					class="input w-full"
+					value="3"
+					_="on change or keyup
+					set #cost's innerHTML to Number.parseFloat(my value * 0.35).toFixed(2)
+				"
+				/>
+				<p class="label justify-between">
+					<span class="text-base-content text-sm">
+						<strong>Total: </strong> $<span id="cost">1.05</span>
+					</span>
+					$0.35 each
+				</p>
+			</fieldset>
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Nevermind</button>
+				</form>
+				<button class="btn btn-primary">Purchase</button>
+			</div>
+			<form method="dialog">
+				<button
+					class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+				>✕</button>
+			</form>
+		</div>
+	</dialog>
 }
 
 templ CreditUsageWeek(usage []services.TeamStartSummary, period string) {
