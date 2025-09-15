@@ -237,7 +237,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	creditService := services.NewCreditService(
 		transactor,
 		creditRepo,
-		*teamStartLogRepo,
+		teamStartLogRepo,
 		userRepo,
 	)
 	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)

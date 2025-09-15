@@ -21,7 +21,7 @@ func setupCreditService(t *testing.T) (services.CreditService, func()) {
 	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 
-	service := services.NewCreditService(transactor, creditRepo, *teamStartLogRepo, userRepo)
+	service := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
 
 	// Create test users
 	ctx := context.Background()

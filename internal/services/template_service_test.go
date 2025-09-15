@@ -36,7 +36,7 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	// Initialize services
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
-	creditService := services.NewCreditService(transactor, creditRepo, *teamStartLogRepo, nil)
+	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
 	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,

@@ -31,14 +31,14 @@ type CreditRepository interface {
 type CreditService struct {
 	transactor       db.Transactor
 	creditRepo       CreditRepository
-	teamStartLogRepo repositories.TeamStartLogRepository
+	teamStartLogRepo *repositories.TeamStartLogRepository
 	userRepo         repositories.UserRepository
 }
 
 func NewCreditService(
 	transactor db.Transactor,
 	creditRepo CreditRepository,
-	teamStartLogRepo repositories.TeamStartLogRepository,
+	teamStartLogRepo *repositories.TeamStartLogRepository,
 	userRepo repositories.UserRepository,
 ) *CreditService {
 	return &CreditService{
