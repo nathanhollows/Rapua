@@ -95,7 +95,7 @@ templ nav(user models.User, section string) {
 					<div class="drawer-side z-50">
 						<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
 						<div class="bg-base-200 min-h-full overflow-y-scroll text-base-content w-80 p-4 flex flex-col justify-between">
-							<ul class="menu p-0">
+							<ul class="menu p-0 w-full">
 								<li class="menu-title text-xl flex flex-row gap-2 pb-6">
 									<svg class="w-6 h-6 stroke-base-content fill-base-content" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 									<span class="-mt-1">Rapua</span>
@@ -145,7 +145,7 @@ templ nav(user models.User, section string) {
 									</a>
 								</li>
 							</ul>
-							<ul class="menu p-0">
+							<ul class="menu p-0 w-full">
 								<li>
 									<a
 										href="/admin/instances"
@@ -175,6 +175,12 @@ templ nav(user models.User, section string) {
 									<a href="/admin/settings">
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings w-6 h-6"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 										Settings
+									</a>
+								</li>
+								<li>
+									<a href="/admin/settings/credits">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column w-6 h-6"><path d="M5 21v-6"></path><path d="M12 21V3"></path><path d="M19 21V9"></path></svg>
+										Credit Usage
 									</a>
 								</li>
 								<div class="divider my-0"></div>
@@ -310,6 +316,7 @@ templ nav(user models.User, section string) {
 						<div class="divider my-0"></div>
 						<li>
 							<a href="/admin/settings">Settings </a>
+							<a href="/admin/settings/credits">Credit Usage</a>
 						</li>
 						<div class="divider my-0"></div>
 						<li><a href="/logout">Sign out</a></li>
