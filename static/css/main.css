@@ -37,7 +37,7 @@
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
-  --noise: 0;
+  --noise: 1;
 }
 
 @plugin "daisyui/theme" {
@@ -72,7 +72,7 @@
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
-  --noise: 0;
+  --noise: 1;
 }
 @custom-variant dark (&:where([data-theme=dracula], [data-theme=dracula] *));
 
