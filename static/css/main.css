@@ -1,9 +1,7 @@
 /* main.css */
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
-@plugin 'daisyui' {
-}
-
+@plugin 'daisyui' {}
 
 @plugin "daisyui/theme" {
   name: "cupcake";
@@ -43,7 +41,7 @@
 @plugin "daisyui/theme" {
   name: "dracula";
   default: false;
-  prefersdark: false;
+  prefersdark: true;
   color-scheme: "dark";
   --color-base-100: oklch(28.822% 0.022 277.508);
   --color-base-200: oklch(26.805% 0.02 277.508);
@@ -74,6 +72,7 @@
   --depth: 1;
   --noise: 1;
 }
+
 @custom-variant dark (&:where([data-theme=dracula], [data-theme=dracula] *));
 
 @theme {
