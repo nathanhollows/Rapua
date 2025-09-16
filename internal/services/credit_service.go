@@ -66,6 +66,9 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 	if freeCredits < 0 || paidCredits < 0 {
 		return errors.New("credits to add must be greater than zero")
 	}
+	if freeCredits == 0 && paidCredits == 0 {
+		return errors.New("must add at least one credit")
+	}
 
 	// Start a transaction to ensure atomicity
 	tx, err := s.transactor.BeginTx(ctx, nil)
@@ -159,6 +162,10 @@ func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *
 
 // DeductCredits checks if a user has enough credits and deducts them if they do.
 func (s *CreditService) DeductCredits(ctx context.Context, userID string, credits int) (bool, error) {
+	if credits < 0 {
+		return false, nil // Cannot deduct negative credits
+	}
+
 	free, paid, err := s.GetCreditBalance(ctx, userID)
 	if err != nil {
 		return false, err
