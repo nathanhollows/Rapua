@@ -96,6 +96,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewClueBlock(baseBlock), nil
 	case "broker":
 		return NewBrokerBlock(baseBlock), nil
+	case "button":
+		return NewButtonBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
@@ -166,6 +168,12 @@ func NewClueBlock(base BaseBlock) *ClueBlock {
 
 func NewBrokerBlock(base BaseBlock) *BrokerBlock {
 	return &BrokerBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewButtonBlock(base BaseBlock) *ButtonBlock {
+	return &ButtonBlock{
 		BaseBlock: base,
 	}
 }

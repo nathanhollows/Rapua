@@ -6,6 +6,15 @@ order: 100
 
 # Changelog
 
+## 4.4.0
+
+### Added
+
+- New [Button Block](/docs/user/blocks/button) that allows admins to add styled buttons to their game.
+
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
+
 ## 4.3.0 (2025-10-09)
 
 ### Added

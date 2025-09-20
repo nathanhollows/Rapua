@@ -47,6 +47,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonAdmin(settings, *b)
 	}
 	return nil
 }
@@ -92,6 +95,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonPlayer(settings, *b)
 	}
 	return nil
 }
@@ -137,6 +143,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonPlayer(settings, *b)
 	}
 	return nil
 }
