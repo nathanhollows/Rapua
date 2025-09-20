@@ -30,7 +30,7 @@ func TestBlocks_MethodsExist(t *testing.T) {
 
 		template = templates.RenderPlayerUpdate(instanceSettings, block, nil)
 		if template == nil {
-			t.Errorf("Block %s is missing a RenderPlayerEdit view", block.GetName())
+			t.Errorf("Block %s is missing a RenderPlayerUpdate view", block.GetName())
 		}
 	}
 }
