@@ -5,6 +5,22 @@ import (
 	"fmt"
 )
 
+// BlockContext represents where a block can be used
+type BlockContext string
+
+const (
+	ContextLocation BlockContext = "content" // Regular location content blocks
+	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
+	// ContextEnd     BlockContext = "end"     // End pages
+)
+
+// RegisteredBlock holds block metadata for the registry
+type RegisteredBlock struct {
+	BlockType         string
+	Instance          Block
+	SupportedContexts []BlockContext
+}
+
 type PlayerState interface {
 	GetBlockID() string
 	GetPlayerID() string
@@ -48,29 +64,101 @@ type BaseBlock struct {
 	Points     int             `json:"-"`
 }
 
-var registeredBlocks = Blocks{
-	// Content blocks
-	&MarkdownBlock{}, // Text is always first
-	&AlertBlock{},
-	&DividerBlock{},
-	&ImageBlock{},
-	&YoutubeBlock{},
-	// Interactive blocks
-	&BrokerBlock{},
-	&ChecklistBlock{},
-	&ClueBlock{},
-	&PasswordBlock{},
-	&PincodeBlock{},
-	// &PhotoBlock{},
-	&QuizBlock{},
-	&SortingBlock{},
+// Central block registry with context support
+var blockRegistry = make(map[string]*RegisteredBlock)
+var contextRegistry = make(map[BlockContext][]string)
+
+// registerBlock is an internal helper to register blocks with their contexts
+func registerBlock(instance Block, contexts []BlockContext) {
+	registration := &RegisteredBlock{
+		BlockType:         instance.GetType(),
+		Instance:          instance,
+		SupportedContexts: contexts,
+	}
+
+	blockRegistry[instance.GetType()] = registration
+
+	// Update context registry
+	for _, context := range contexts {
+		if contextRegistry[context] == nil {
+			contextRegistry[context] = make([]string, 0)
+		}
+		contextRegistry[context] = append(contextRegistry[context], instance.GetType())
+	}
 }
 
+// Initialize block registry
+func init() {
+	// Content blocks
+	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&AlertBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&DividerBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&ImageBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocation})
+
+	// Interactive blocks
+	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&ClueBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextLocation})
+}
+
+// Public API functions
+
+// GetRegisteredBlocks returns all blocks (for backward compatibility)
 func GetRegisteredBlocks() Blocks {
-	return registeredBlocks
+	blocks := make(Blocks, 0, len(blockRegistry))
+	for _, registration := range blockRegistry {
+		blocks = append(blocks, registration.Instance)
+	}
+	return blocks
+}
+
+// GetBlocksForContext returns block instances available for a specific context
+func GetBlocksForContext(context BlockContext) Blocks {
+	blockTypes := contextRegistry[context]
+	if blockTypes == nil {
+		return Blocks{}
+	}
+
+	blocks := make(Blocks, 0, len(blockTypes))
+	for _, blockType := range blockTypes {
+		if registration := blockRegistry[blockType]; registration != nil {
+			blocks = append(blocks, registration.Instance)
+		}
+	}
+
+	return blocks
+}
+
+// CanBlockBeUsedInContext checks if a block type can be used in a specific context
+func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
+	registration := blockRegistry[blockType]
+	if registration == nil {
+		return false
+	}
+
+	for _, supportedContext := range registration.SupportedContexts {
+		if supportedContext == context {
+			return true
+		}
+	}
+
+	return false
 }
 
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
+	// Check if block type exists in registry
+	registration := blockRegistry[baseBlock.Type]
+	if registration == nil {
+		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
+	}
+
+	// Use the existing constructor functions
 	switch baseBlock.Type {
 	case "markdown":
 		return NewMarkdownBlock(baseBlock), nil

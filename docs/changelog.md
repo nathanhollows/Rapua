@@ -11,6 +11,11 @@ order: 100
 ### Added
 
 - New [Button Block](/docs/user/blocks/button) that allows admins to add styled buttons to their game.
+- Block context system allows blocks to be used in multiple settings, not just location pages.
+  - This sets up the foundation for editing the start and end pages for custom rules and messages.
+  - Also sets the foundation for using content blocks as clues.
+  - A registry means developers can now fetch all blocks registered for a certain type of use. Supports multiple contexts per block.
+  - Implemented `GetBlocksForContext()` and `CanBlockBeUsedInContext()` API functions for context-aware block management
 
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)

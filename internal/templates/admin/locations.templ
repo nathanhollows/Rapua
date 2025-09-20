@@ -800,7 +800,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 									<span class="badge badge-ghost">Static content</span>
 								</div>
 								<div class="grid grid-cols-3 grid-flow-row gap-5">
-									for _, block := range blocks.GetRegisteredBlocks() {
+									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocation) {
 										if !block.RequiresValidation() {
 											<div class="indicator w-full">
 												<div
