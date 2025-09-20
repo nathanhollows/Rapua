@@ -16,7 +16,7 @@ order: 100
   - Also sets the foundation for using content blocks as clues.
   - A registry means developers can now fetch all blocks registered for a certain type of use. Supports multiple contexts per block.
   - Implemented `GetBlocksForContext()` and `CanBlockBeUsedInContext()` API functions for context-aware block management
-
+- Documentation tests now cover mandatory YAML frontmatter for all docs. Files with no yaml or missing `title` or `order` fields will break the docs service.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
