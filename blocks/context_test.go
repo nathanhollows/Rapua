@@ -98,7 +98,7 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 
 func TestBackwardCompatibility(t *testing.T) {
 	// Test that GetRegisteredBlocks still works
-	blocks := GetRegisteredBlocks()
+	blocks := GetBlocksForContext(ContextLocation)
 	if len(blocks) == 0 {
 		t.Error("GetRegisteredBlocks() returned empty slice")
 	}
@@ -123,4 +123,3 @@ func TestBackwardCompatibility(t *testing.T) {
 		}
 	}
 }
-

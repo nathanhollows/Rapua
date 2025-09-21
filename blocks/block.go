@@ -109,15 +109,6 @@ func init() {
 
 // Public API functions
 
-// GetRegisteredBlocks returns all blocks (for backward compatibility)
-func GetRegisteredBlocks() Blocks {
-	blocks := make(Blocks, 0, len(blockRegistry))
-	for _, registration := range blockRegistry {
-		blocks = append(blocks, registration.Instance)
-	}
-	return blocks
-}
-
 // GetBlocksForContext returns block instances available for a specific context
 func GetBlocksForContext(context BlockContext) Blocks {
 	blockTypes := contextRegistry[context]
