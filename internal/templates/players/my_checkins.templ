@@ -25,33 +25,31 @@ templ MyCheckins(team models.Team) {
 		}
 		<div class="w-full indicator">
 			if len(team.CheckIns) > 0 && team.CheckIns[0].MustCheckOut && team.CheckIns[0].BlocksCompleted {
-				<span class="indicator-item indicator-top indicator-center badge badge-primary">Ready to check out</span>
+				<span class="indicator-item indicator-top indicator-center badge badge-primary">Currently checked in</span>
 			}
 			<div class="w-full join join-vertical">
 				for _, scan := range team.CheckIns {
 					<a
 						href={ templ.SafeURL(fmt.Sprint("/checkins/", scan.Location.MarkerID)) }
 						hx-boost="true"
-						if team.MustCheckOut == scan.Location.ID && scan.BlocksCompleted {
-							class="flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-transparent border-t-primary"
+						if team.MustCheckOut == scan.Location.ID {
+							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-primary mb-1"
 						} else {
-							class="flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-base-300"
+							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-base-300"
 						}
 					>
-						<div class="flex items-center">
-							if team.MustCheckOut == scan.Location.ID && scan.BlocksCompleted {
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle inline-block mr-2 w-5 h-5"><circle cx="12" cy="12" r="10"></circle></svg>
-							} else if team.MustCheckOut == scan.Location.ID {
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dashed inline-block mr-2 w-5 h-5"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"></path><path d="M13.9 21.818a10 10 0 0 1-3.8 0"></path><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7"></path><path d="M2.182 13.9a10 10 0 0 1 0-3.8"></path><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69"></path><path d="M21.818 10.1a10 10 0 0 1 0 3.8"></path><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"></path><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7"></path></svg>
-							} else if scan.BlocksCompleted {
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big inline-block mr-2 w-5 h-5"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+						if team.Instance.Settings.MustCheckOut {
+							if team.MustCheckOut == scan.Location.ID {
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dashed inline-block mr-2 min-w-5 h-5"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"></path><path d="M13.9 21.818a10 10 0 0 1-3.8 0"></path><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7"></path><path d="M2.182 13.9a10 10 0 0 1 0-3.8"></path><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69"></path><path d="M21.818 10.1a10 10 0 0 1 0 3.8"></path><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"></path><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7"></path></svg>
 							} else {
-								<div class="w-5 h-5 mr-2"></div>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big inline-block mr-2 min-w-5 h-5"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
 							}
+						}
+						<span class="break-after-auto wrap-break-word grow">
 							{ scan.Location.Name }
-						</div>
+						</span>
 						if team.Instance.Settings.EnablePoints {
-							<span class="badge badge-ghost basis-16">{ fmt.Sprint(scan.Points) } pts</span>
+							<div class="badge badge-soft badge-sm min-w-max">{ fmt.Sprint(scan.Points) } pts</div>
 						}
 					</a>
 				}
@@ -82,20 +80,29 @@ templ CheckInView(settings models.InstanceSettings, scan models.CheckIn, blocks 
 		for _, block := range blocks {
 			@templates.RenderPlayerView(settings, block, states[block.GetID()])
 		}
-		if settings.CompletionMethod == models.CheckInAndOut {
-			<p class="text-center my-5">
-				<strong>Note:</strong> Remember to check out when you are done!
-			</p>
+		if settings.MustCheckOut {
+			if scan.MustCheckOut {
+				<div class="text-center">
+					<a
+						hx-post={ fmt.Sprint("/o/", scan.Location.MarkerID) }
+						hx-swap="none"
+						hx-vals={ fmt.Sprintf(`{"team": "%s"}`, scan.TeamID) }
+						class="btn btn-accent btn-wide"
+					>Check Out</a>
+				</div>
+			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center join mt-5">
 			<a href="/checkins" hx-boost="true" class="btn btn-ghost btn-outline join-item">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle></svg>
 				My Check-ins
 			</a>
-			<a href="/next" hx-boost="true" class="btn btn-ghost btn-outline join-item">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-				Next Location
-			</a>
+			if !(settings.MustCheckOut && scan.MustCheckOut) {
+				<a href="/next" hx-boost="true" class="btn btn-ghost btn-outline join-item">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+					Next Location
+				</a>
+			}
 		</div>
 	</div>
 	<style>
