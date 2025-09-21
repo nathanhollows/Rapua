@@ -160,9 +160,10 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, services.ErrCheckOutAtWrongLocation):
 			message = flash.NewInfo("You are not checked in here.")
 		case errors.Is(err, services.ErrUnfinishedCheckIn):
-			message = flash.NewInfo("Whoops! You still have unfinished activities.")
+			message = flash.NewWarning("Try completing all activities first!")
 		default:
 			message = flash.NewError("Error checking out. Please try again.")
+			h.logger.Error("Check Out post", "err", err.Error())
 		}
 		err = templates.Toast(*message).Render(r.Context(), w)
 		if err != nil {

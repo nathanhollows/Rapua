@@ -24,6 +24,7 @@ order: 100
 - **Breaking!** Removed `CompletionMethods` in favour of a `MustCheckOut` flag. The old field was obsolete with the addition of blocks.
 - **Breaking!** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
+- Updated notification message if a player tries to check out too early.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
