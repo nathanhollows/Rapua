@@ -294,7 +294,7 @@ func quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data b
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if !data.IsComplete() || (block.RetryEnabled && data.IsComplete()) {
+		if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<form id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

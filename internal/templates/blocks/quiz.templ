@@ -108,7 +108,7 @@ templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data 
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			// Render question
 			@templ.Raw(stringToMarkdown(block.Question))
-			if !data.IsComplete() || (block.RetryEnabled && data.IsComplete()) {
+			if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
 				<form
 					id={ fmt.Sprintf("quiz-form-%s", block.ID) }
 					hx-post="/blocks/validate"

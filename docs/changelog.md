@@ -30,6 +30,7 @@ order: 100
 
 - Check in view now displays correct icons and long location names no longer look crowded.
 - Check out logic for tracking players at each location no longer triggers twice.
+- [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
