@@ -270,132 +270,47 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, " is selected</p></div><!-- End Show visiting count --><!-- Completion Method --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Default Completion Method</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, " is selected</p></div><!-- End Show visiting count --><!-- Completion Method --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Check out of every location?</strong></div><div class=\"text-sm font-light\">Do players need to check out of locations? Useful for tracking time spent across locations.</div><label class=\"label text-base-content text-sm pt-3\"><input type=\"checkbox\" id=\"mustCheckOut\" name=\"mustCheckOut\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, v := range models.GetCompletionMethods() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<h2 class=\"card-title\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(v.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 232, Col: 46}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</h2><p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(v.Description())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 233, Col: 31}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</p>")
+		if settings.MustCheckOut {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div></div></div></div><div class=\"text-sm font-light\">Do players need to check out of locations? Useful for tracking time spent across locations.</div><fieldset class=\"fieldset py-3 text-sm\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for i, v := range models.GetCompletionMethods() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<label class=\"label text-base-content\"><input type=\"radio\" name=\"completionMethod\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(v.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 248, Col: 28}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" data-index=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(intToString(i))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 249, Col: 37}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" class=\"radio\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if settings.CompletionMethod == v {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " checked")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "> <span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(v.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 255, Col: 27}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span></label>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</fieldset></div><!-- End Completion Method --></section><div class=\"divider divider-accent font-semibold pb-5 text-sm\">Competition</div><!-- Enable Points --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Enable Points</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title text-center\">Enable Points</h2><p>This settings allows teams to accrue points for checking in. This setting makes the experience more gamelike but may impact intrinsic motivation.</p></div></div></div></div><label class=\"label text-base-content text-sm pt-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle\" onchange=\"updatePreview()\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "> Include a button at the end of every location for players to check out?</label></div><!-- End Completion Method --></section><div class=\"divider divider-accent font-semibold pb-5 text-sm\">Competition</div><!-- Enable Points --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Enable Points</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title text-center\">Enable Points</h2><p>This settings allows teams to accrue points for checking in. This setting makes the experience more gamelike but may impact intrinsic motivation.</p></div></div></div></div><label class=\"label text-base-content text-sm pt-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle\" onchange=\"updatePreview()\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, " _=\"on click or load\n\t\t\t\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\t\t\t\tremove @disabled from #enableBonusPoints\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #bonusPointsDisabledMessage\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tadd @disabled to #enableBonusPoints\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #bonusPointsDisabledMessage\n\t\t\t\t\t\t\t\t\tend\"> Enable points on locations and content blocks?</label></div><!-- End Enable Points --><!-- Bonus Points --><div class=\"my-5\"><div class=\"flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Bonus points for early check-ins</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title text-center\">Early Check-In Bonus</h2><p>This setting awards bonus points to the first, second, and third team to check-in to each location. </p><div class=\"prose text-sm\"><ul><li>First receives 2x the base points.</li><li>Second receives 1.5x the base points.</li><li>Third receives 1.2x the base points.</li></ul></div><p>Base points are awarded for each check-in and are set for each location.</p><p>This setting encourages players to race and disperse.</p></div></div></div></div></div><label class=\"label text-base-content text-sm pt-3\"><input type=\"checkbox\" id=\"enableBonusPoints\" name=\"enableBonusPoints\" class=\"toggle\" onchange=\"updatePreview()\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " _=\"on click or load\n\t\t\t\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\t\t\t\tremove @disabled from #enableBonusPoints\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #bonusPointsDisabledMessage\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tadd @disabled to #enableBonusPoints\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #bonusPointsDisabledMessage\n\t\t\t\t\t\t\t\t\tend\"> Enable points on locations and content blocks?</label></div><!-- End Enable Points --><!-- Bonus Points --><div class=\"my-5\"><div class=\"flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Bonus points for early check-ins</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow-2xl\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title text-center\">Early Check-In Bonus</h2><p>This setting awards bonus points to the first, second, and third team to check-in to each location. </p><div class=\"prose text-sm\"><ul><li>First receives 2x the base points.</li><li>Second receives 1.5x the base points.</li><li>Third receives 1.2x the base points.</li></ul></div><p>Base points are awarded for each check-in and are set for each location.</p><p>This setting encourages players to race and disperse.</p></div></div></div></div></div><label class=\"label text-base-content text-sm pt-3\"><input type=\"checkbox\" id=\"enableBonusPoints\" name=\"enableBonusPoints\" class=\"toggle\" onchange=\"updatePreview()\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnableBonusPoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "> Enable points on locations and content blocks?</label><p id=\"bonusPointsDisabledMessage\" class=\"label text-xs text-error invisible w-full\">Points are not enabled for this game.</p></div><!-- End Bonus Points --><div class=\"text-center\"><button class=\"btn btn-primary w-1/2\" disabled _=\"on change from <form input/>\n\t\t\t\tremove @disabled\n\t\t\t\">Save</button></div></div><!-- Preview Divider --><div class=\"divider lg:divider-horizontal\"><span class=\"lg:[writing-mode:vertical-lr]\">Preview</span></div><!-- Preview --><div class=\"h-min-content\"><div class=\"mockup-phone h-min sticky top-8\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden\" data-theme=\"cupcake\"><!-- Demo --><div")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "> Enable points on locations and content blocks?</label><p id=\"bonusPointsDisabledMessage\" class=\"label text-xs text-error invisible w-full\">Points are not enabled for this game.</p></div><!-- End Bonus Points --><div class=\"text-center\"><button class=\"btn btn-primary w-1/2\" disabled _=\"on change from <form input/>\n\t\t\t\tremove @disabled\n\t\t\t\">Save</button></div></div><!-- Preview Divider --><div class=\"divider lg:divider-horizontal\"><span class=\"lg:[writing-mode:vertical-lr]\">Preview</span></div><!-- Preview --><div class=\"h-min-content\"><div class=\"mockup-phone h-min sticky top-8\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden\" data-theme=\"cupcake\"><!-- Demo --><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if locationCount > 2 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " hx-post=\"/admin/experience/preview\" hx-trigger=\"load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)\" hx-swap=\"innerHTML\" hx-include=\"#movement-settings\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, " hx-post=\"/admin/experience/preview\" hx-trigger=\"load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)\" hx-swap=\"innerHTML\" hx-include=\"#movement-settings\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-16 h-16 mx-auto\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight\">Next location</h2><div class=\"prose\"><p class=\"text-center pb-5\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"text-center\"></div><div id=\"navigationView\" class=\"text-center mt-5\"></div></div></div><!-- /Demo --></div></div></div></div></form><script>\nvar locations = [\n  { name: \"Eiffel Tower\", clue: \"Find the tallest structure in Paris.\" },\n  { name: \"Statue of Liberty\", clue: \"Look for the statue that welcomes visitors to New York Harbor.\" },\n  { name: \"Colosseum\", clue: \"Find the ancient amphitheater in Rome.\" },\n  { name: \"Great Wall of China\", clue: \"Search for the longest wall in the world.\" },\n  { name: \"Taj Mahal\", clue: \"Locate the white marble mausoleum in India.\" }\n];\n\nvar teams = Array.from({ length: locations.length }, () => Math.floor(Math.random() * 5) + 1);\n\nfunction getCheckedData(name) {\n  const checkedElement = document.querySelector(`input[name=\"${name}\"]:checked`);\n  return checkedElement ? checkedElement.getAttribute(\"data-index\") : null;\n}\n\nfunction updatePreview() {\n  // If #locationList or #navigationView is not found, return\n  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {\n\treturn;\n  }\n  const navigationMode = getCheckedData(\"navigationMode\");\n  const navigationMethod = getCheckedData(\"navigationMethod\");\n  let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;\n  const completionMethod = getCheckedData(\"completionMethod\");\n\n  let locationListHtml = \"\";\n  let navigationViewHtml = \"\";\n\n  if (navigationMode === \"0\") { // Random mode\n    shuffleArray(locations);\n  } else if (navigationMode === \"2\") { // Ordered mode\n    maxLocations = 1;\n  }\n\n  const limit = (navigationMode === \"1\") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));\n\n  switch (navigationMethod) {\n    case \"0\": // Show Map\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"1\": // Show Map and Names\n      locationListHtml = generateLocationList(limit, completionMethod);\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"2\": // Show Location Names Only\n      locationListHtml = generateLocationList(limit, completionMethod);\n      break;\n    case \"3\": // Show Clues\n      navigationViewHtml = generateClueList(limit);\n      break;\n  }\n\n  if (navigationMode === \"1\") { // Free Roam mode\n    switch (navigationMethod) {\n      case \"0\": // Show Map\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"1\": // Show Map and Names\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"2\": // Show Location Names Only\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        break;\n      case \"3\": // Show Clues\n        navigationViewHtml = generateClueList(locations.length);\n        break;\n    }\n  }\n\n  document.getElementById('locationList').innerHTML = locationListHtml;\n  document.getElementById('navigationView').innerHTML = navigationViewHtml;\n}\n\nfunction shuffleArray(array) {\n  for (let i = array.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [array[i], array[j]] = [array[j], array[i]];\n  }\n}\n\nfunction generateLocationList(limit, completionMethod) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<p class=\"text-center\"><em>${locations[i].name}</em>`;\n    if (document.getElementById('showTeamCount').checked) {\n      html += `<br><span class=\"badge badge-ghost\">${teams[i]} Teams Visiting</span>`;\n    }\n    html += `</p>`;\n  }\n  return html;\n}\n\nfunction generateClueList(limit) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<blockquote class=\"text-center\">${locations[i].clue}</blockquote>`;\n  }\n  return html;\n}\n\n// Initial update\nupdatePreview();\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-16 h-16 mx-auto\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight\">Next location</h2><div class=\"prose\"><p class=\"text-center pb-5\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"text-center\"></div><div id=\"navigationView\" class=\"text-center mt-5\"></div></div></div><!-- /Demo --></div></div></div></div></form><script>\nvar locations = [\n  { name: \"Eiffel Tower\", clue: \"Find the tallest structure in Paris.\" },\n  { name: \"Statue of Liberty\", clue: \"Look for the statue that welcomes visitors to New York Harbor.\" },\n  { name: \"Colosseum\", clue: \"Find the ancient amphitheater in Rome.\" },\n  { name: \"Great Wall of China\", clue: \"Search for the longest wall in the world.\" },\n  { name: \"Taj Mahal\", clue: \"Locate the white marble mausoleum in India.\" }\n];\n\nvar teams = Array.from({ length: locations.length }, () => Math.floor(Math.random() * 5) + 1);\n\nfunction getCheckedData(name) {\n  const checkedElement = document.querySelector(`input[name=\"${name}\"]:checked`);\n  return checkedElement ? checkedElement.getAttribute(\"data-index\") : null;\n}\n\nfunction updatePreview() {\n  // If #locationList or #navigationView is not found, return\n  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {\n\treturn;\n  }\n  const navigationMode = getCheckedData(\"navigationMode\");\n  const navigationMethod = getCheckedData(\"navigationMethod\");\n  let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;\n  const completionMethod = getCheckedData(\"completionMethod\");\n\n  let locationListHtml = \"\";\n  let navigationViewHtml = \"\";\n\n  if (navigationMode === \"0\") { // Random mode\n    shuffleArray(locations);\n  } else if (navigationMode === \"2\") { // Ordered mode\n    maxLocations = 1;\n  }\n\n  const limit = (navigationMode === \"1\") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));\n\n  switch (navigationMethod) {\n    case \"0\": // Show Map\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"1\": // Show Map and Names\n      locationListHtml = generateLocationList(limit, completionMethod);\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"2\": // Show Location Names Only\n      locationListHtml = generateLocationList(limit, completionMethod);\n      break;\n    case \"3\": // Show Clues\n      navigationViewHtml = generateClueList(limit);\n      break;\n  }\n\n  if (navigationMode === \"1\") { // Free Roam mode\n    switch (navigationMethod) {\n      case \"0\": // Show Map\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"1\": // Show Map and Names\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"2\": // Show Location Names Only\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        break;\n      case \"3\": // Show Clues\n        navigationViewHtml = generateClueList(locations.length);\n        break;\n    }\n  }\n\n  document.getElementById('locationList').innerHTML = locationListHtml;\n  document.getElementById('navigationView').innerHTML = navigationViewHtml;\n}\n\nfunction shuffleArray(array) {\n  for (let i = array.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [array[i], array[j]] = [array[j], array[i]];\n  }\n}\n\nfunction generateLocationList(limit, completionMethod) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<p class=\"text-center\"><em>${locations[i].name}</em>`;\n    if (document.getElementById('showTeamCount').checked) {\n      html += `<br><span class=\"badge badge-ghost\">${teams[i]} Teams Visiting</span>`;\n    }\n    html += `</p>`;\n  }\n  return html;\n}\n\nfunction generateClueList(limit) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<blockquote class=\"text-center\">${locations[i].clue}</blockquote>`;\n  }\n  return html;\n}\n\n// Initial update\nupdatePreview();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

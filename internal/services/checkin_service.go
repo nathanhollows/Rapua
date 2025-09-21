@@ -92,11 +92,10 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	}
 
 	// Calculate the points to award
-	mustCheckOut := team.Instance.Settings.CompletionMethod == models.CheckInAndOut
 	var pointsForCheckInRecord int
 	var bonusPoints int
 
-	if mustCheckOut {
+	if team.Instance.Settings.MustCheckOut {
 		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
 		if location.Instance.Settings.EnableBonusPoints {
 			// Calculate bonus points based on visit count
@@ -143,7 +142,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	locationForCheckIn.Points = pointsForCheckInRecord
 
 	// Log the check in with the correct points
-	_, err = s.checkIn(ctx, *team, locationForCheckIn, mustCheckOut, validationRequired)
+	_, err = s.checkIn(ctx, *team, locationForCheckIn, team.Instance.Settings.MustCheckOut, validationRequired)
 	if err != nil {
 		return fmt.Errorf("logging scan: %w", err)
 	}

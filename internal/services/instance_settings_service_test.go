@@ -23,11 +23,11 @@ func setupInstanceSettingsService(t *testing.T) (*services.InstanceSettingsServi
 
 func createTestInstanceSettings(t *testing.T) *models.InstanceSettings {
 	t.Helper()
-	
+
 	return &models.InstanceSettings{
 		InstanceID:        gofakeit.UUID(),
 		NavigationMode:    models.FreeRoamNav,
-		CompletionMethod:  models.CheckInOnly,
+		MustCheckOut:      gofakeit.Bool(),
 		NavigationMethod:  models.ShowMap,
 		ShowTeamCount:     false,
 		MaxNextLocations:  3,
@@ -124,29 +124,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 		}
 	})
 
-	t.Run("Save settings with various completion methods", func(t *testing.T) {
-		testCases := []struct {
-			name   string
-			method models.CompletionMethod
-		}{
-			{"CheckInOnly", models.CheckInOnly},
-			{"CheckInAndOut", models.CheckInAndOut},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				settings := createTestInstanceSettings(t)
-				settings.CompletionMethod = tc.method
-
-				err := service.SaveSettings(context.Background(), settings)
-				// Validation should pass, might fail on database operations
-				if err != nil {
-					assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-				}
-			})
-		}
-	})
-
 	t.Run("Save settings with various navigation methods", func(t *testing.T) {
 		testCases := []struct {
 			name   string
@@ -174,7 +151,7 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 
 	t.Run("Save settings with boolean flags", func(t *testing.T) {
 		testCases := []struct {
-			name string
+			name   string
 			modify func(*models.InstanceSettings)
 		}{
 			{"ShowTeamCount true", func(s *models.InstanceSettings) { s.ShowTeamCount = true }},
@@ -218,7 +195,7 @@ func TestInstanceSettingsService_ValidationLogic(t *testing.T) {
 	t.Run("Validation edge cases", func(t *testing.T) {
 		// Test the boundary condition for MaxNextLocations
 		settings := createTestInstanceSettings(t)
-		
+
 		// Test exactly -1 (should fail)
 		settings.MaxNextLocations = -1
 		err := service.SaveSettings(context.Background(), settings)
@@ -240,3 +217,4 @@ func TestInstanceSettingsService_ValidationLogic(t *testing.T) {
 		}
 	})
 }
+

@@ -33,7 +33,6 @@ type PDFData struct {
 
 type QRCodeOptions struct {
 	format     string
-	scanType   string
 	foreground string
 	background string
 }
@@ -62,7 +61,6 @@ type AssetGenerator interface {
 	// CreateQRCodeImage creates a QR code image with the given options
 	// Supported options are:
 	// - WithQRFormat(format string), where format is "png" or "svg"
-	// - WithScanType(scanType string), where scanType is "in" or "out"
 	// - WithForeground(color string), where color is a hex color code
 	// - WithBackground(color string), where color is a hex color code
 	CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error)
@@ -95,7 +93,6 @@ func NewAssetGenerator() AssetGenerator {
 func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error) {
 	defaultOptions := &QRCodeOptions{
 		format:     "png",
-		scanType:   "in",
 		foreground: "#000000",
 		background: "#ffffff",
 	}
@@ -243,12 +240,7 @@ func (s *assetGenerator) GetQRCodePathAndContent(action, id, name, extension str
 	name = strings.Trim(name, " ")
 	re := regexp.MustCompile(`[^\d\p{Latin} -]`)
 	name = re.ReplaceAllString(name, "")
-	if action == "in" {
-		content = content + "/s/" + id
-		path = path + extension + "/" + id + " " + name + "." + extension
-	} else {
-		content = content + "/o/" + id
-		path = path + extension + "/" + id + " " + name + " Check Out." + extension
-	}
+	content = content + "/s/" + id
+	path = path + extension + "/" + id + " " + name + "." + extension
 	return path, content
 }

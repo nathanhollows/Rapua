@@ -56,13 +56,10 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the completion method
-	if r.Form.Has("completionMethod") {
-		completionMethod, err := models.ParseCompletionMethod(r.Form.Get("completionMethod"))
-		if err != nil {
-			h.handleError(w, r, "Error parsing completion method", "Error parsing completion method", "error", err)
-			return
-		}
-		user.CurrentInstance.Settings.CompletionMethod = completionMethod
+	if r.Form.Has("mustCheckOut") {
+		user.CurrentInstance.Settings.MustCheckOut = true
+	} else {
+		user.CurrentInstance.Settings.MustCheckOut = false
 	}
 
 	// Parse the maximum number of next locations

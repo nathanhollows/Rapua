@@ -218,44 +218,23 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 					<!-- Completion Method -->
 					<div class="my-5">
 						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1">
-							<strong>Default Completion Method</strong>
-							<div class="dropdown dropdown-hover">
-								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-								</div>
-								<div
-									tabindex="0"
-									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
-								>
-									<div tabindex="0" class="card-body">
-										for _, v := range models.GetCompletionMethods() {
-											<h2 class="card-title">{ v.String() }</h2>
-											<p>{ v.Description() }</p>
-										}
-									</div>
-								</div>
-							</div>
+							<strong>Check out of every location?</strong>
 						</div>
 						<div class="text-sm font-light">
 							Do players need to check out of locations? Useful for tracking time spent across locations.
 						</div>
-						<fieldset class="fieldset py-3 text-sm">
-							for i, v := range models.GetCompletionMethods() {
-								<label class="label text-base-content">
-									<input
-										type="radio"
-										name="completionMethod"
-										value={ v.String() }
-										data-index={ intToString(i) }
-										class="radio"
-										if settings.CompletionMethod == v {
-											checked
-										}
-									/>
-									<span>{ v.String() }</span>
-								</label>
-							}
-						</fieldset>
+						<label class="label text-base-content text-sm pt-3">
+							<input
+								type="checkbox"
+								id="mustCheckOut"
+								name="mustCheckOut"
+								class="toggle"
+								if settings.MustCheckOut {
+									checked
+								}
+							/>
+							Include a button at the end of every location for players to check out?
+						</label>
 					</div>
 					<!-- End Completion Method -->
 				</section>

@@ -519,7 +519,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							</li>
 						</ul>
 					</li>
-					if settings.CompletionMethod == models.CheckInAndOut {
+					if settings.MustCheckOut {
 						<h2 class="menu-title">Check-Out</h2>
 						<li>
 							<ul>

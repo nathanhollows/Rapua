@@ -11,13 +11,11 @@ type StrArray []string
 
 type NavigationMode int
 type NavigationMethod int
-type CompletionMethod int
 type GameStatus int
 type Provider string
 
 type NavigationModes []NavigationMode
 type NavigationMethods []NavigationMethod
-type CompletionMethods []CompletionMethod
 type GameStatuses []GameStatus
 
 const (
@@ -31,14 +29,6 @@ const (
 	ShowMapAndNames
 	ShowNames
 	ShowClues
-)
-
-const (
-	CheckInOnly CompletionMethod = iota
-	CheckInAndOut
-	// SubmitContent
-	// Password
-	// ClickButton
 )
 
 const (
@@ -87,11 +77,6 @@ func GetNavigationMethods() NavigationMethods {
 	return []NavigationMethod{ShowMap, ShowMapAndNames, ShowNames, ShowClues}
 }
 
-// GetCompletionMethods returns a list of completion methods.
-func GetCompletionMethods() CompletionMethods {
-	return []CompletionMethod{CheckInOnly, CheckInAndOut}
-}
-
 // GetGameStatuses returns a list of game statuses.
 func GetGameStatuses() GameStatuses {
 	return []GameStatus{Scheduled, Active, Closed}
@@ -105,11 +90,6 @@ func (n NavigationMode) String() string {
 // String returns the string representation of the NavigationMethod.
 func (n NavigationMethod) String() string {
 	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based"}[n]
-}
-
-// String returns the string representation of the CompletionMethod.
-func (c CompletionMethod) String() string {
-	return [...]string{"Check In Only", "Check In and Out", "Submit Content", "Password", "Click Button"}[c]
 }
 
 // String returns the string representation of the GameStatus.
@@ -134,17 +114,6 @@ func (n NavigationMethod) Description() string {
 		"Players are shown a list of locations by name.",
 		"Players are shown clues but not the location or name.",
 	}[n]
-}
-
-// Description returns the description of the CompletionMethod.
-func (c CompletionMethod) Description() string {
-	return [...]string{
-		"Players must check in to a location but do not need to check out.",
-		"Players must check in and out of a location.",
-		"Players must submit content to a location, i.e., a photo or text.",
-		"Players must enter a password to a location, i.e., a code or phrase.",
-		"Players must click the correct button for the location, i.e., a quick quiz.",
-	}[c]
 }
 
 // Description returns the description of the GameStatus.
@@ -183,24 +152,6 @@ func ParseNavigationMethod(s string) (NavigationMethod, error) {
 		return ShowClues, nil
 	default:
 		return ShowMap, errors.New("invalid NavigationMethod")
-	}
-}
-
-// Parse CompletionMethod.
-func ParseCompletionMethod(s string) (CompletionMethod, error) {
-	switch s {
-	case "Check In Only":
-		return CheckInOnly, nil
-	case "Check In and Out":
-		return CheckInAndOut, nil
-	// case "Submit Content":
-	// 	return SubmitContent, nil
-	// case "Password":
-	// 	return Password, nil
-	// case "Click Button":
-	// 	return ClickButton, nil
-	default:
-		return CheckInOnly, errors.New("invalid CompletionMethod")
 	}
 }
 

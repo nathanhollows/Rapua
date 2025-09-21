@@ -176,7 +176,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 						return templ_7745c5c3_Err
 					}
 				} else {
-					if location.Instance.Settings.CompletionMethod == models.CheckInAndOut {
+					if location.Instance.Settings.MustCheckOut {
 						if location.CurrentCount > 0 {
 							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"badge badge-accent whitespace-nowrap\">")
 							if templ_7745c5c3_Err != nil {

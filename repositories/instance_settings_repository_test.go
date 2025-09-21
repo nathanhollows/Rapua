@@ -35,10 +35,6 @@ func TestInstanceSettingsRepository(t *testing.T) {
 		return models.NavigationMethod(gofakeit.Number(0, 3))
 	}
 
-	var randomCompletionMethod = func() models.CompletionMethod {
-		return models.CompletionMethod(gofakeit.Number(0, 1))
-	}
-
 	tests := []struct {
 		name   string
 		setup  func() *models.InstanceSettings
@@ -53,7 +49,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 					NavigationMode:    randomNavMode(),
 					NavigationMethod:  randomNavMethod(),
 					MaxNextLocations:  gofakeit.Number(1, 10),
-					CompletionMethod:  randomCompletionMethod(),
+					MustCheckOut:      gofakeit.Bool(),
 					EnablePoints:      gofakeit.Bool(),
 					EnableBonusPoints: gofakeit.Bool(),
 					ShowLeaderboard:   gofakeit.Bool(),
@@ -75,7 +71,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 					NavigationMode:    randomNavMode(),
 					NavigationMethod:  randomNavMethod(),
 					MaxNextLocations:  gofakeit.Number(1, 10),
-					CompletionMethod:  randomCompletionMethod(),
+					MustCheckOut:      gofakeit.Bool(),
 					EnablePoints:      gofakeit.Bool(),
 					EnableBonusPoints: gofakeit.Bool(),
 					ShowLeaderboard:   gofakeit.Bool(),
@@ -98,7 +94,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 					NavigationMode:    randomNavMode(),
 					NavigationMethod:  randomNavMethod(),
 					MaxNextLocations:  gofakeit.Number(1, 10),
-					CompletionMethod:  randomCompletionMethod(),
+					MustCheckOut:      gofakeit.Bool(),
 					EnablePoints:      gofakeit.Bool(),
 					EnableBonusPoints: gofakeit.Bool(),
 					ShowLeaderboard:   gofakeit.Bool(),
@@ -154,17 +150,13 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 		return models.NavigationMethod(gofakeit.Number(0, 3))
 	}
 
-	var randomCompletionMethod = func() models.CompletionMethod {
-		return models.CompletionMethod(gofakeit.Number(0, 1))
-	}
-
 	// Create test settings
 	settings := &models.InstanceSettings{
 		InstanceID:        gofakeit.UUID(),
 		NavigationMode:    randomNavMode(),
 		NavigationMethod:  randomNavMethod(),
 		MaxNextLocations:  gofakeit.Number(1, 10),
-		CompletionMethod:  randomCompletionMethod(),
+		MustCheckOut:      gofakeit.Bool(),
 		ShowTeamCount:     gofakeit.Bool(),
 		EnablePoints:      true,
 		EnableBonusPoints: gofakeit.Bool(),
@@ -176,14 +168,14 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name         string
-		instanceID   string
-		expectError  bool
-		expectNil    bool
+		name        string
+		instanceID  string
+		expectError bool
+		expectNil   bool
 	}{
 		{
-			name:       "Get existing settings",
-			instanceID: settings.InstanceID,
+			name:        "Get existing settings",
+			instanceID:  settings.InstanceID,
 			expectError: false,
 			expectNil:   false,
 		},

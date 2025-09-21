@@ -17,8 +17,11 @@ order: 100
   - A registry means developers can now fetch all blocks registered for a certain type of use. Supports multiple contexts per block.
   - Implemented `GetBlocksForContext()` and `CanBlockBeUsedInContext()` API functions for context-aware block management
 - Documentation tests now cover mandatory YAML frontmatter for all docs. Files with no yaml or missing `title` or `order` fields will break the docs service.
+- Added `MustCheckOut` field to instance settings table and added migration.
+
 ### Changed
 
+- **Breaking!** Removed `CompletionMethods` in favour of a `MustCheckOut` flag. The old field was obsolete with the addition of blocks.
 - **Breaking!** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
