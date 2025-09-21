@@ -33,7 +33,7 @@ order: 100
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
-## 4.3.0 (2025-10-09)
+## 4.3.0 (2025-09-09)
 
 ### Added
 
