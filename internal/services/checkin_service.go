@@ -214,11 +214,6 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 		return fmt.Errorf("updating team points: %w", err)
 	}
 
-	err = s.locationStatsService.DecrementVisitors(ctx, location)
-	if err != nil {
-		return fmt.Errorf("decrementing visitor stats: %w", err)
-	}
-
 	return nil
 }
 

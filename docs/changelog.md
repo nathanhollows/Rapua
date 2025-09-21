@@ -26,6 +26,11 @@ order: 100
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
 - Updated notification message if a player tries to check out too early.
 
+### Fixed
+
+- Check in view now displays correct icons and long location names no longer look crowded.
+- Check out logic for tracking players at each location no longer triggers twice.
+
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
 ## 4.3.0 (2025-10-09)
