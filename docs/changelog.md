@@ -25,6 +25,7 @@ order: 100
 - **Breaking!** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
 - Updated notification message if a player tries to check out too early.
+- Cookie settings for easier scanning
 
 ### Fixed
 

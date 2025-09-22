@@ -136,6 +136,9 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	}
 	session.Values["team"] = teamCode
 	session.Options.Path = "/"
+	session.Options.HttpOnly = true
+	session.Options.SameSite = http.SameSiteLaxMode
+	session.Options.Secure = true
 	err = session.Save(r, w)
 	if err != nil {
 		return fmt.Errorf("saving session: %w", err)

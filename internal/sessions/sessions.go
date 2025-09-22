@@ -62,7 +62,7 @@ func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
 
 	session.Values["team"] = team.Code
 	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
+	session.Options.SameSite = http.SameSiteLaxMode
 
 	return session, nil
 }

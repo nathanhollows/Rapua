@@ -39,7 +39,7 @@ func (m Message) Save(w http.ResponseWriter, r *http.Request) error {
 	session, _ := sessions.Get(r, "scanscout")
 	session.Options.HttpOnly = true
 	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
+	session.Options.SameSite = http.SameSiteLaxMode
 	session.AddFlash(m)
 	return session.Save(r, w)
 }
