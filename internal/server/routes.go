@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/gorilla/csrf"
 	"github.com/nathanhollows/Rapua/v4/filesystem"
 	admin "github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
@@ -21,12 +22,29 @@ func setupRouter(
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.AdminHandler,
 ) *chi.Mux {
+	// Get CSRF key from environment
+	csrfKey := os.Getenv("CSRF_KEY")
+	if csrfKey == "" {
+		logger.Warn("CSRF_KEY not set, using default key - CHANGE IN PRODUCTION")
+		csrfKey = "temp-32-byte-long-auth-key-here"
+	}
+	if len(csrfKey) != 32 {
+		logger.Warn("CSRF_KEY should be exactly 32 bytes", "length", len(csrfKey))
+	}
+
+	// CSRF protection middleware
+	CSRF := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(os.Getenv("IS_PROD") == "1"), // Use secure cookies in production
+	)
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.Compress(5))
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
+	router.Use(CSRF)
 
 	setupPublicRoutes(router, publicHandler)
 	setupPlayerRoutes(router, playerHandler)

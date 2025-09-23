@@ -76,7 +76,7 @@ func NewFromUser(r *http.Request, user models.User) (*sessions.Session, error) {
 
 	session.Values["user_id"] = user.ID
 	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
+	session.Options.SameSite = http.SameSiteLaxMode
 
 	return session, nil
 }

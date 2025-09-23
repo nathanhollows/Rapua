@@ -10,7 +10,7 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@header(title)
-		<body class="h-full flex flex-col">
+		<body class="h-lvh flex flex-col" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<div id="app" data-v-app="">
 				@nav(user, section)
 				<div class="toast toast-center z-50" id="alerts"></div>
