@@ -34,6 +34,7 @@ order: 100
 - Check out logic for tracking players at each location no longer triggers twice.
 - [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
 - Minor [Checklist block](/docs/user/blocks/checklist) style fixes.
+- Minor [Sorting block](/docs/user/blocks/sorting) style fixes.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 

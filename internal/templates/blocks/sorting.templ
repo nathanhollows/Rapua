@@ -404,7 +404,7 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 			<legend class="fieldset-legend w-full">
 				<div class="flex items-center gap-2">
 					@markdownBadge()
-					Scoring Scheme
+					Items to be sorted
 				</div>
 				<button
 					class="btn btn-outline btn-xs"
@@ -435,6 +435,9 @@ templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) 
 					@sortingItem(blocks.SortingItem{})
 				}
 			</div>
+			<span class="label inline-block">
+				These must be in the correct order.
+			</span>
 		</fieldset>
 		<template id="sorting-item-template">
 			<label class="sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full">
