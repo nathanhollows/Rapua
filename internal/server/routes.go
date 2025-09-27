@@ -36,6 +36,9 @@ func setupRouter(
 	CSRF := csrf.Protect(
 		[]byte(csrfKey),
 		csrf.Secure(os.Getenv("IS_PROD") == "1"), // Use secure cookies in production
+		csrf.CookieName("csrf"),
+		csrf.FieldName("csrf"),
+		csrf.Path("/"),
 	)
 
 	router := chi.NewRouter()
