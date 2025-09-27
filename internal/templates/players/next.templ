@@ -26,14 +26,14 @@ templ Next(team models.Team, locations []models.Location) {
 				</span>
 			</div>
 		} else {
-			switch team.Instance.Settings.NavigationMethod {
-				case 0:
+			switch team.Instance.Settings.NavigationDisplayMode {
+				case models.NavigationDisplayMap:
 					@showMap(locations)
-				case 1:
+				case models.NavigationDisplayMapAndNames:
 					@showMapAndNames(team, locations)
-				case 2:
+				case models.NavigationDisplayNames:
 					@showNames(team, locations)
-				case 3:
+				case models.NavigationDisplayClues:
 					@showClues(team.Code, locations)
 			}
 		}

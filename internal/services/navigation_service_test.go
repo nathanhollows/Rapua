@@ -23,7 +23,7 @@ func setupNavigationService(t *testing.T) (*services.NavigationService, func()) 
 	return navigationService, cleanup
 }
 
-func createTestTeamWithInstance(t *testing.T, navMode models.NavigationMode, maxNextLocs int) *models.Team {
+func createTestTeamWithInstance(t *testing.T, navMode models.RouteStrategy, maxNextLocs int) *models.Team {
 	t.Helper()
 
 	instanceID := gofakeit.UUID()
@@ -51,7 +51,7 @@ func createTestTeamWithInstance(t *testing.T, navMode models.NavigationMode, max
 			Locations: locations,
 			Settings: models.InstanceSettings{
 				InstanceID:       instanceID,
-				NavigationMode:   navMode,
+				RouteStrategy:    navMode,
 				MaxNextLocations: maxNextLocs,
 			},
 		},
@@ -63,7 +63,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Valid location for free roam", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
+		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 		validMarkerID := "MARKER0" // First location
 
 		valid, err := service.IsValidLocation(context.Background(), team, validMarkerID)
@@ -72,7 +72,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 	})
 
 	t.Run("Invalid location code", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
+		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 
 		valid, err := service.IsValidLocation(context.Background(), team, "INVALID")
 		assert.Error(t, err)
@@ -81,7 +81,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 	})
 
 	t.Run("Ordered navigation - only first location valid", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
+		team := createTestTeamWithInstance(t, models.RouteStrategyOrdered, 1)
 
 		// First location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
@@ -107,7 +107,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 	})
 
 	t.Run("Normalize marker ID - case insensitive and trimmed", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
+		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 
 		// Test with lowercase and spaces
 		valid, err := service.IsValidLocation(context.Background(), team, "  marker0  ")
@@ -123,7 +123,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Free roam navigation logic", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
+		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 
 		// Test using IsValidLocation which uses the core logic without loading relations
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
@@ -140,7 +140,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 	})
 
 	t.Run("Ordered navigation logic", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
+		team := createTestTeamWithInstance(t, models.RouteStrategyOrdered, 1)
 
 		// Only first location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
@@ -154,7 +154,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 	})
 
 	t.Run("Random navigation logic", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.RandomNav, 2)
+		team := createTestTeamWithInstance(t, models.RouteStrategyRandom, 2)
 
 		// At least some locations should be valid
 		validCount := 0
@@ -169,7 +169,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 	})
 
 	t.Run("All locations visited", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.FreeRoamNav, 3)
+		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 
 		// Add check-ins for all locations
 		for _, location := range team.Instance.Locations {
@@ -224,7 +224,7 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Returns location with lowest order via validation", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
+		team := createTestTeamWithInstance(t, models.RouteStrategyOrdered, 1)
 
 		// Shuffle the locations to test order selection
 		team.Instance.Locations[0].Order = 5
@@ -247,7 +247,7 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 	})
 
 	t.Run("Progress through ordered locations", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.OrderedNav, 1)
+		team := createTestTeamWithInstance(t, models.RouteStrategyOrdered, 1)
 
 		// First location (order 0) should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
@@ -277,10 +277,10 @@ func TestNavigationService_RandomNavigation(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Deterministic randomness with same team code", func(t *testing.T) {
-		team1 := createTestTeamWithInstance(t, models.RandomNav, 2)
+		team1 := createTestTeamWithInstance(t, models.RouteStrategyRandom, 2)
 		team1.Code = "TESTTEAM"
 
-		team2 := createTestTeamWithInstance(t, models.RandomNav, 2)
+		team2 := createTestTeamWithInstance(t, models.RouteStrategyRandom, 2)
 		team2.Code = "TESTTEAM"                             // Same code
 		team2.Instance.Locations = team1.Instance.Locations // Same locations
 
@@ -300,7 +300,7 @@ func TestNavigationService_RandomNavigation(t *testing.T) {
 	})
 
 	t.Run("Respects MaxNextLocations limit", func(t *testing.T) {
-		team := createTestTeamWithInstance(t, models.RandomNav, 1)
+		team := createTestTeamWithInstance(t, models.RouteStrategyRandom, 1)
 
 		// Count how many locations are valid
 		validCount := 0
@@ -336,8 +336,8 @@ func TestNavigationService_EdgeCases(t *testing.T) {
 				ID:        gofakeit.UUID(),
 				Locations: []models.Location{}, // No locations
 				Settings: models.InstanceSettings{
-					InstanceID:     gofakeit.UUID(),
-					NavigationMode: models.FreeRoamNav,
+					InstanceID:    gofakeit.UUID(),
+					RouteStrategy: models.RouteStrategyFreeRoam,
 				},
 			},
 		}
@@ -347,4 +347,3 @@ func TestNavigationService_EdgeCases(t *testing.T) {
 		assert.False(t, valid)
 	})
 }
-

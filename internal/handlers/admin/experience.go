@@ -36,23 +36,23 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the navigation method
-	if r.Form.Has("navigationMethod") {
-		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
+	if r.Form.Has("navigationDisplayMode") {
+		method, err := models.ParseNavigationDisplayMode(r.Form.Get("navigationDisplayMode"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMethod = method
+		user.CurrentInstance.Settings.NavigationDisplayMode = method
 	}
 
 	// Parse the navigation mode
-	if r.Form.Has("navigationMode") {
-		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
+	if r.Form.Has("routeStrategy") {
+		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
+			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("routeStrategy"))
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMode = mode
+		user.CurrentInstance.Settings.RouteStrategy = mode
 	}
 
 	// Parse the completion method
@@ -98,22 +98,22 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if r.Form.Has("navigationMethod") {
-		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
+	if r.Form.Has("navigationDisplayMode") {
+		method, err := models.ParseNavigationDisplayMode(r.Form.Get("navigationDisplayMode"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMethod = method
+		user.CurrentInstance.Settings.NavigationDisplayMode = method
 	}
 
-	if r.Form.Has("navigationMode") {
-		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
+	if r.Form.Has("routeStrategy") {
+		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
+			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("routeStrategy"))
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMode = mode
+		user.CurrentInstance.Settings.RouteStrategy = mode
 	}
 
 	if r.Form.Has("maxLocations") {

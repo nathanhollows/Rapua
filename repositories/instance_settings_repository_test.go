@@ -27,12 +27,12 @@ func TestInstanceSettingsRepository(t *testing.T) {
 	repo, transactor, cleanup := setupInstanceSettingsRepo(t)
 	defer cleanup()
 
-	var randomNavMode = func() models.NavigationMode {
-		return models.NavigationMode(gofakeit.Number(0, 2))
+	var randomNavMode = func() models.RouteStrategy {
+		return models.RouteStrategy(gofakeit.Number(0, 2))
 	}
 
-	var randomNavMethod = func() models.NavigationMethod {
-		return models.NavigationMethod(gofakeit.Number(0, 3))
+	var randomNavMethod = func() models.NavigationDisplayMode {
+		return models.NavigationDisplayMode(gofakeit.Number(0, 3))
 	}
 
 	tests := []struct {
@@ -45,14 +45,14 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			name: "Create instance settings successfully",
 			setup: func() *models.InstanceSettings {
 				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
-					NavigationMode:    randomNavMode(),
-					NavigationMethod:  randomNavMethod(),
-					MaxNextLocations:  gofakeit.Number(1, 10),
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
+					InstanceID:            gofakeit.UUID(),
+					RouteStrategy:         randomNavMode(),
+					NavigationDisplayMode: randomNavMethod(),
+					MaxNextLocations:      gofakeit.Number(1, 10),
+					MustCheckOut:          gofakeit.Bool(),
+					EnablePoints:          gofakeit.Bool(),
+					EnableBonusPoints:     gofakeit.Bool(),
+					ShowLeaderboard:       gofakeit.Bool(),
 				}
 			},
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
@@ -67,14 +67,14 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			name: "Update instance settings successfully",
 			setup: func() *models.InstanceSettings {
 				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
-					NavigationMode:    randomNavMode(),
-					NavigationMethod:  randomNavMethod(),
-					MaxNextLocations:  gofakeit.Number(1, 10),
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
+					InstanceID:            gofakeit.UUID(),
+					RouteStrategy:         randomNavMode(),
+					NavigationDisplayMode: randomNavMethod(),
+					MaxNextLocations:      gofakeit.Number(1, 10),
+					MustCheckOut:          gofakeit.Bool(),
+					EnablePoints:          gofakeit.Bool(),
+					EnableBonusPoints:     gofakeit.Bool(),
+					ShowLeaderboard:       gofakeit.Bool(),
 				}
 			},
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
@@ -90,14 +90,14 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			name: "Delete instance settings successfully",
 			setup: func() *models.InstanceSettings {
 				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
-					NavigationMode:    randomNavMode(),
-					NavigationMethod:  randomNavMethod(),
-					MaxNextLocations:  gofakeit.Number(1, 10),
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
+					InstanceID:            gofakeit.UUID(),
+					RouteStrategy:         randomNavMode(),
+					NavigationDisplayMode: randomNavMethod(),
+					MaxNextLocations:      gofakeit.Number(1, 10),
+					MustCheckOut:          gofakeit.Bool(),
+					EnablePoints:          gofakeit.Bool(),
+					EnableBonusPoints:     gofakeit.Bool(),
+					ShowLeaderboard:       gofakeit.Bool(),
 				}
 			},
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
@@ -142,25 +142,25 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 
 	ctx := context.Background()
 
-	var randomNavMode = func() models.NavigationMode {
-		return models.NavigationMode(gofakeit.Number(0, 2))
+	var randomNavMode = func() models.RouteStrategy {
+		return models.RouteStrategy(gofakeit.Number(0, 2))
 	}
 
-	var randomNavMethod = func() models.NavigationMethod {
-		return models.NavigationMethod(gofakeit.Number(0, 3))
+	var randomNavMethod = func() models.NavigationDisplayMode {
+		return models.NavigationDisplayMode(gofakeit.Number(0, 3))
 	}
 
 	// Create test settings
 	settings := &models.InstanceSettings{
-		InstanceID:        gofakeit.UUID(),
-		NavigationMode:    randomNavMode(),
-		NavigationMethod:  randomNavMethod(),
-		MaxNextLocations:  gofakeit.Number(1, 10),
-		MustCheckOut:      gofakeit.Bool(),
-		ShowTeamCount:     gofakeit.Bool(),
-		EnablePoints:      true,
-		EnableBonusPoints: gofakeit.Bool(),
-		ShowLeaderboard:   gofakeit.Bool(),
+		InstanceID:            gofakeit.UUID(),
+		RouteStrategy:         randomNavMode(),
+		NavigationDisplayMode: randomNavMethod(),
+		MaxNextLocations:      gofakeit.Number(1, 10),
+		MustCheckOut:          gofakeit.Bool(),
+		ShowTeamCount:         gofakeit.Bool(),
+		EnablePoints:          true,
+		EnableBonusPoints:     gofakeit.Bool(),
+		ShowLeaderboard:       gofakeit.Bool(),
 	}
 
 	// Create the settings first

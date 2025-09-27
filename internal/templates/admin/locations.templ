@@ -54,7 +54,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			hx-swap="none"
 			hx-indicator=".htmx-indicator"
 			hx-include="[name='location']"
-			if settings.NavigationMode == models.OrderedNav {
+			if settings.RouteStrategy == models.RouteStrategyOrdered {
 				class="list rounded-lg shadow sortable"
 			} else {
 				class="list rounded-lg"
@@ -171,7 +171,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 					<!-- Location icons -->
 					<div class="flex flex-row items-center gap-3 grow">
 						<!-- Drag handle -->
-						if settings.NavigationMode == models.OrderedNav {
+						if settings.RouteStrategy == models.RouteStrategyOrdered {
 							<div
 								class="tooltip tooltip-right flex gap-3 cursor-move"
 								data-tip="Drag to reorder"
@@ -197,7 +197,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 							</span>
 						}
 						<!-- Clue indicator -->
-						if settings.NavigationMethod == models.ShowClues {
+						if settings.NavigationDisplayMode == models.NavigationDisplayClues {
 							if len(location.Clues) == 0 {
 								<span class="tooltip text-neutral cursor-help" data-tip="No clues">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-x"><path d="m13.5 8.5-5 5"></path><path d="m8.5 8.5 5 5"></path><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
@@ -299,7 +299,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 			<a
 				id="new-marker-tab"
 				role="tab"
-				if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+				if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
 					class="tab transition-colors"
 				} else {
 					class="tab transition-colors tab-active"
@@ -353,7 +353,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					</div>
 				</a>
 			}
-			if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+			if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
 				<a
 					role="tab"
 					class="tab transition-colors tab-active group"
@@ -602,7 +602,63 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				}
 			</div>
 			<!-- Clues -->
-			if settings.NavigationMethod == models.ShowClues {
+			<div class="divider mt-5 mb-10">
+				<div class="dropdown dropdown-center">
+					<div class="block">
+						<div tabindex="0" role="button" class="btn btn-sm btn-outline">
+							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+							Change clue type
+						</div>
+					</div>
+					<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
+						<div class="card-body pt-3">
+							<div class="divider">
+								<span class="badge badge-ghost">Static content</span>
+							</div>
+							<div class="grid grid-cols-3 grid-flow-row gap-5">
+								for _, block := range blocks.GetBlocksForContext(blocks.ContextClues) {
+									if !block.RequiresValidation() {
+										<div class="indicator w-full">
+											<div
+												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+												data-tip={ block.GetDescription() }
+												hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
+												hx-target="#blocks"
+												hx-swap="beforeend"
+											>
+												@templ.Raw(block.GetIconSVG())
+												{ block.GetName() }
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<div class="divider">
+								<span class="badge badge-ghost">Interactive</span>
+							</div>
+							<div class="grid grid-cols-3 grid-flow-row gap-5">
+								for _, block := range blocks.GetBlocksForContext(blocks.ContextClues) {
+									if block.RequiresValidation() {
+										<div class="indicator w-full">
+											<div
+												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+												data-tip={ block.GetDescription() }
+												hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
+												hx-target="#blocks"
+												hx-swap="beforeend"
+											>
+												@templ.Raw(block.GetIconSVG())
+												{ block.GetName() }
+											</div>
+										</div>
+									}
+								}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			if settings.NavigationDisplayMode == models.NavigationDisplayClues {
 				<section class="mb-8">
 					<div class="label flex justify-between">
 						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row">

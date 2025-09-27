@@ -27,7 +27,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 					<!-- Routing -->
 					<div class="my-5">
 						<div class="flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1">
-							<strong>Route Planning</strong>
+							<strong>Route Strategy</strong>
 							<div class="dropdown dropdown-hover">
 								<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
@@ -37,7 +37,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 									class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow"
 								>
 									<div tabindex="0" class="card-body">
-										for _, v := range models.GetNavigationModes() {
+										for _, v := range models.GetRouteStrategies() {
 											<h2 class="card-title">{ v.String() }</h2>
 											<p>{ v.Description() }</p>
 										}
@@ -49,15 +49,15 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 							How the system chooses the next location for a team.
 						</span>
 						<fieldset class="fieldset py-3 text-sm">
-							for i, v := range models.GetNavigationModes() {
+							for i, v := range models.GetRouteStrategies() {
 								<label class="label text-base-content">
 									<input
 										type="radio"
-										name="navigationMode"
+										name="routeStrategy"
 										value={ v.String() }
 										data-index={ intToString(i) }
 										class="radio"
-										if settings.NavigationMode == v {
+										if settings.RouteStrategy == v {
 											checked
 										}
 										onchange="updatePreview()"
@@ -117,7 +117,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 								<span
 									id="maxLocationsDisabledMessage"
 									class="label text-error invisible"
-								>Only available for { models.RandomNav.String() }</span>
+								>Only available for { models.RouteStrategyRandom.String() }</span>
 							</div>
 						</fieldset>
 					</div>
@@ -133,7 +133,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 								</div>
 								<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
 									<div tabindex="0" class="card-body">
-										for _, v := range models.GetNavigationMethods() {
+										for _, v := range models.GetNavigationDisplayModes() {
 											<h2 class="card-title">{ v.String() }</h2>
 											<p>{ v.Description() }</p>
 										}
@@ -143,16 +143,16 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 						</div>
 						<div class="text-sm font-light">How locations are revealed to players.</div>
 						<fieldset class="fieldset py-3 text-sm">
-							for i, v := range models.GetNavigationMethods() {
+							for i, v := range models.GetNavigationDisplayModes() {
 								<label class="label text-base-content">
 									<input
 										type="radio"
-										name="navigationMethod"
+										name="navigationDisplayMode"
 										value={ v.String() }
 										data-index={ intToString(i) }
 										class="radio"
 										onchange="updatePreview()"
-										if settings.NavigationMethod == v {
+										if settings.NavigationDisplayMode == v {
 											checked
 										}
 										_="on click
@@ -211,7 +211,7 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 							id="teamCountDisabledMessage"
 							class="label text-xs text-error invisible w-full items-center"
 						>
-							Disabled when { models.ShowClues.String() } is selected
+							Disabled when { models.NavigationDisplayClues.String() } is selected
 						</p>
 					</div>
 					<!-- End Show visiting count -->
@@ -404,23 +404,23 @@ function updatePreview() {
   if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {
 	return;
   }
-  const navigationMode = getCheckedData("navigationMode");
-  const navigationMethod = getCheckedData("navigationMethod");
+  const routeStrategy = getCheckedData("routeStrategy");
+  const navigationDisplayMode = getCheckedData("navigationDisplayMode");
   let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;
   const completionMethod = getCheckedData("completionMethod");
 
   let locationListHtml = "";
   let navigationViewHtml = "";
 
-  if (navigationMode === "0") { // Random mode
+  if (routeStrategy === "0") { // Random mode
     shuffleArray(locations);
-  } else if (navigationMode === "2") { // Ordered mode
+  } else if (routeStrategy === "2") { // Ordered mode
     maxLocations = 1;
   }
 
-  const limit = (navigationMode === "1") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));
+  const limit = (routeStrategy === "1") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));
 
-  switch (navigationMethod) {
+  switch (navigationDisplayMode) {
     case "0": // Show Map
       navigationViewHtml = '<div class="h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral"><em>Map</em></div>';
       break;
@@ -436,8 +436,8 @@ function updatePreview() {
       break;
   }
 
-  if (navigationMode === "1") { // Free Roam mode
-    switch (navigationMethod) {
+  if (routeStrategy === "1") { // Free Roam mode
+    switch (navigationDisplayMode) {
       case "0": // Show Map
         navigationViewHtml = '<div class="h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral"><em>Map</em></div>';
         break;

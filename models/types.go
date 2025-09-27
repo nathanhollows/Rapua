@@ -9,26 +9,27 @@ import (
 
 type StrArray []string
 
-type NavigationMode int
-type NavigationMethod int
+type RouteStrategy int
+type NavigationDisplayMode int
 type GameStatus int
 type Provider string
 
-type NavigationModes []NavigationMode
-type NavigationMethods []NavigationMethod
+type RouteStrategies []RouteStrategy
+type NavigationDisplayModes []NavigationDisplayMode
 type GameStatuses []GameStatus
 
 const (
-	RandomNav NavigationMode = iota
-	FreeRoamNav
-	OrderedNav
+	RouteStrategyRandom RouteStrategy = iota
+	RouteStrategyFreeRoam
+	RouteStrategyOrdered
 )
 
 const (
-	ShowMap NavigationMethod = iota
-	ShowMapAndNames
-	ShowNames
-	ShowClues
+	NavigationDisplayMap NavigationDisplayMode = iota
+	NavigationDisplayMapAndNames
+	NavigationDisplayNames
+	NavigationDisplayClues  // Deprecated
+	NavigationDisplayCustom // For Block content
 )
 
 const (
@@ -67,14 +68,14 @@ func (s *StrArray) Scan(value interface{}) error {
 	return err
 }
 
-// GetNavigationModes returns a list of navigation modes.
-func GetNavigationModes() NavigationModes {
-	return []NavigationMode{RandomNav, FreeRoamNav, OrderedNav}
+// GetRouteStrategies returns a list of navigation modes.
+func GetRouteStrategies() RouteStrategies {
+	return []RouteStrategy{RouteStrategyRandom, RouteStrategyFreeRoam, RouteStrategyOrdered}
 }
 
-// GetNavigationMethods returns a list of navigation methods.
-func GetNavigationMethods() NavigationMethods {
-	return []NavigationMethod{ShowMap, ShowMapAndNames, ShowNames, ShowClues}
+// GetNavigationDisplayModes returns a list of navigation methods.
+func GetNavigationDisplayModes() NavigationDisplayModes {
+	return []NavigationDisplayMode{NavigationDisplayMap, NavigationDisplayMapAndNames, NavigationDisplayNames, NavigationDisplayCustom}
 }
 
 // GetGameStatuses returns a list of game statuses.
@@ -82,14 +83,14 @@ func GetGameStatuses() GameStatuses {
 	return []GameStatus{Scheduled, Active, Closed}
 }
 
-// String returns the string representation of the NavigationMode.
-func (n NavigationMode) String() string {
+// String returns the string representation of the RouteStrategy.
+func (n RouteStrategy) String() string {
 	return [...]string{"Randomised Route", "Open Exploration", "Guided Path"}[n]
 }
 
-// String returns the string representation of the NavigationMethod.
-func (n NavigationMethod) String() string {
-	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based"}[n]
+// String returns the string representation of the NavigationDisplayMode.
+func (n NavigationDisplayMode) String() string {
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Content"}[n]
 }
 
 // String returns the string representation of the GameStatus.
@@ -97,8 +98,8 @@ func (g GameStatus) String() string {
 	return [...]string{"Scheduled", "Active", "Closed"}[g]
 }
 
-// Description returns the description of the NavigationMode.
-func (n NavigationMode) Description() string {
+// Description returns the description of the RouteStrategy.
+func (n RouteStrategy) Description() string {
 	return [...]string{
 		"The game will randomly select locations for players to visit. Good for large groups as it disperses players.",
 		"Players can visit locations in any order. This mode shows all locations and is good for exploration.",
@@ -106,13 +107,14 @@ func (n NavigationMode) Description() string {
 	}[n]
 }
 
-// Description returns the description of the NavigationMethod.
-func (n NavigationMethod) Description() string {
+// Description returns the description of the NavigationDisplayMode
+func (n NavigationDisplayMode) Description() string {
 	return [...]string{
 		"Players are shown a map.",
 		"Players are shown a map with location names.",
 		"Players are shown a list of locations by name.",
-		"Players are shown clues but not the location or name.",
+		"Players are shown clues but not the location or name.", // Deprecated
+		"Players are shown custom content, e.g., randomised clues or images, using the block builder.",
 	}[n]
 }
 
@@ -125,33 +127,35 @@ func (g GameStatus) Description() string {
 	}[g]
 }
 
-// Parse NavigationMode.
-func ParseNavigationMode(s string) (NavigationMode, error) {
+// Parse RouteStrategy
+func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	switch s {
 	case "Random", "Randomised Route":
-		return RandomNav, nil
+		return RouteStrategyRandom, nil
 	case "Free Roam", "Open Exploration":
-		return FreeRoamNav, nil
+		return RouteStrategyFreeRoam, nil
 	case "Ordered", "Guided Path":
-		return OrderedNav, nil
+		return RouteStrategyOrdered, nil
 	default:
-		return 0, errors.New("invalid NavigationMode")
+		return 0, errors.New("invalid RouteStrategy")
 	}
 }
 
-// Parse NavigationMethod.
-func ParseNavigationMethod(s string) (NavigationMethod, error) {
+// Parse NavigationDisplayMode
+func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 	switch s {
 	case "Show Map", "Map Only":
-		return ShowMap, nil
+		return NavigationDisplayMap, nil
 	case "Show Map and Names", "Labelled Map":
-		return ShowMapAndNames, nil
+		return NavigationDisplayMapAndNames, nil
 	case "Show Location Names", "Location List":
-		return ShowNames, nil
+		return NavigationDisplayNames, nil
 	case "Show Clues", "Clue-Based":
-		return ShowClues, nil
+		return NavigationDisplayClues, nil
+	case "Custom Content":
+		return NavigationDisplayCustom, nil
 	default:
-		return ShowMap, errors.New("invalid NavigationMethod")
+		return NavigationDisplayMap, errors.New("invalid NavigationDisplayMode")
 	}
 }
 

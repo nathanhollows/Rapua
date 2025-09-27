@@ -31,11 +31,11 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/admin/experience\" hx-trigger=\"submit\" hx-swap=\"none\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Craft the experience</h1><button class=\"btn btn-primary\" disabled _=\"on change from <form input/>\n\t\t\t\tremove @disabled\n\t\t\t\">Save</button></div><div class=\"flex flex-col lg:flex-row m-5 pt-0 gap-5\"><div class=\"grid h-fit flex-grow min-w-0\"><!--  settings --><section id=\"movement-settings\"><div class=\"divider divider-accent font-semibold pb-5 text-sm\">Routing</div><!-- Routing --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Route Planning</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/admin/experience\" hx-trigger=\"submit\" hx-swap=\"none\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Craft the experience</h1><button class=\"btn btn-primary\" disabled _=\"on change from <form input/>\n\t\t\t\tremove @disabled\n\t\t\t\">Save</button></div><div class=\"flex flex-col lg:flex-row m-5 pt-0 gap-5\"><div class=\"grid h-fit flex-grow min-w-0\"><!--  settings --><section id=\"movement-settings\"><div class=\"divider divider-accent font-semibold pb-5 text-sm\">Routing</div><!-- Routing --><div class=\"my-5\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row items-center gap-1\"><strong>Route Strategy</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, v := range models.GetNavigationModes() {
+		for _, v := range models.GetRouteStrategies() {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<h2 class=\"card-title\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -71,8 +71,8 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for i, v := range models.GetNavigationModes() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"label text-base-content\"><input type=\"radio\" name=\"navigationMode\" value=\"")
+		for i, v := range models.GetRouteStrategies() {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"label text-base-content\"><input type=\"radio\" name=\"routeStrategy\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -102,7 +102,7 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if settings.NavigationMode == v {
+			if settings.RouteStrategy == v {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -144,9 +144,9 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(models.RandomNav.String())
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 120, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 120, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -156,7 +156,7 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, v := range models.GetNavigationMethods() {
+		for _, v := range models.GetNavigationDisplayModes() {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<h2 class=\"card-title\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -192,8 +192,8 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for i, v := range models.GetNavigationMethods() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<label class=\"label text-base-content\"><input type=\"radio\" name=\"navigationMethod\" value=\"")
+		for i, v := range models.GetNavigationDisplayModes() {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<label class=\"label text-base-content\"><input type=\"radio\" name=\"navigationDisplayMode\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -223,7 +223,7 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if settings.NavigationMethod == v {
+			if settings.NavigationDisplayMode == v {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -262,9 +262,9 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(models.ShowClues.String())
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayClues.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 214, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 214, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -310,7 +310,7 @@ func Experience(settings models.InstanceSettings, locationCount int) templ.Compo
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-16 h-16 mx-auto\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight\">Next location</h2><div class=\"prose\"><p class=\"text-center pb-5\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"text-center\"></div><div id=\"navigationView\" class=\"text-center mt-5\"></div></div></div><!-- /Demo --></div></div></div></div></form><script>\nvar locations = [\n  { name: \"Eiffel Tower\", clue: \"Find the tallest structure in Paris.\" },\n  { name: \"Statue of Liberty\", clue: \"Look for the statue that welcomes visitors to New York Harbor.\" },\n  { name: \"Colosseum\", clue: \"Find the ancient amphitheater in Rome.\" },\n  { name: \"Great Wall of China\", clue: \"Search for the longest wall in the world.\" },\n  { name: \"Taj Mahal\", clue: \"Locate the white marble mausoleum in India.\" }\n];\n\nvar teams = Array.from({ length: locations.length }, () => Math.floor(Math.random() * 5) + 1);\n\nfunction getCheckedData(name) {\n  const checkedElement = document.querySelector(`input[name=\"${name}\"]:checked`);\n  return checkedElement ? checkedElement.getAttribute(\"data-index\") : null;\n}\n\nfunction updatePreview() {\n  // If #locationList or #navigationView is not found, return\n  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {\n\treturn;\n  }\n  const navigationMode = getCheckedData(\"navigationMode\");\n  const navigationMethod = getCheckedData(\"navigationMethod\");\n  let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;\n  const completionMethod = getCheckedData(\"completionMethod\");\n\n  let locationListHtml = \"\";\n  let navigationViewHtml = \"\";\n\n  if (navigationMode === \"0\") { // Random mode\n    shuffleArray(locations);\n  } else if (navigationMode === \"2\") { // Ordered mode\n    maxLocations = 1;\n  }\n\n  const limit = (navigationMode === \"1\") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));\n\n  switch (navigationMethod) {\n    case \"0\": // Show Map\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"1\": // Show Map and Names\n      locationListHtml = generateLocationList(limit, completionMethod);\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"2\": // Show Location Names Only\n      locationListHtml = generateLocationList(limit, completionMethod);\n      break;\n    case \"3\": // Show Clues\n      navigationViewHtml = generateClueList(limit);\n      break;\n  }\n\n  if (navigationMode === \"1\") { // Free Roam mode\n    switch (navigationMethod) {\n      case \"0\": // Show Map\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"1\": // Show Map and Names\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"2\": // Show Location Names Only\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        break;\n      case \"3\": // Show Clues\n        navigationViewHtml = generateClueList(locations.length);\n        break;\n    }\n  }\n\n  document.getElementById('locationList').innerHTML = locationListHtml;\n  document.getElementById('navigationView').innerHTML = navigationViewHtml;\n}\n\nfunction shuffleArray(array) {\n  for (let i = array.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [array[i], array[j]] = [array[j], array[i]];\n  }\n}\n\nfunction generateLocationList(limit, completionMethod) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<p class=\"text-center\"><em>${locations[i].name}</em>`;\n    if (document.getElementById('showTeamCount').checked) {\n      html += `<br><span class=\"badge badge-ghost\">${teams[i]} Teams Visiting</span>`;\n    }\n    html += `</p>`;\n  }\n  return html;\n}\n\nfunction generateClueList(limit) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<blockquote class=\"text-center\">${locations[i].clue}</blockquote>`;\n  }\n  return html;\n}\n\n// Initial update\nupdatePreview();\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass w-16 h-16 mx-auto\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight\">Next location</h2><div class=\"prose\"><p class=\"text-center pb-5\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"text-center\"></div><div id=\"navigationView\" class=\"text-center mt-5\"></div></div></div><!-- /Demo --></div></div></div></div></form><script>\nvar locations = [\n  { name: \"Eiffel Tower\", clue: \"Find the tallest structure in Paris.\" },\n  { name: \"Statue of Liberty\", clue: \"Look for the statue that welcomes visitors to New York Harbor.\" },\n  { name: \"Colosseum\", clue: \"Find the ancient amphitheater in Rome.\" },\n  { name: \"Great Wall of China\", clue: \"Search for the longest wall in the world.\" },\n  { name: \"Taj Mahal\", clue: \"Locate the white marble mausoleum in India.\" }\n];\n\nvar teams = Array.from({ length: locations.length }, () => Math.floor(Math.random() * 5) + 1);\n\nfunction getCheckedData(name) {\n  const checkedElement = document.querySelector(`input[name=\"${name}\"]:checked`);\n  return checkedElement ? checkedElement.getAttribute(\"data-index\") : null;\n}\n\nfunction updatePreview() {\n  // If #locationList or #navigationView is not found, return\n  if (!document.getElementById('locationList') || !document.getElementById('navigationView')) {\n\treturn;\n  }\n  const routeStrategy = getCheckedData(\"routeStrategy\");\n  const navigationDisplayMode = getCheckedData(\"navigationDisplayMode\");\n  let maxLocations = parseInt(document.getElementById('maxLocations').value) || 0;\n  const completionMethod = getCheckedData(\"completionMethod\");\n\n  let locationListHtml = \"\";\n  let navigationViewHtml = \"\";\n\n  if (routeStrategy === \"0\") { // Random mode\n    shuffleArray(locations);\n  } else if (routeStrategy === \"2\") { // Ordered mode\n    maxLocations = 1;\n  }\n\n  const limit = (routeStrategy === \"1\") ? locations.length : (maxLocations === 0 ? locations.length : Math.min(maxLocations, locations.length));\n\n  switch (navigationDisplayMode) {\n    case \"0\": // Show Map\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"1\": // Show Map and Names\n      locationListHtml = generateLocationList(limit, completionMethod);\n      navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n      break;\n    case \"2\": // Show Location Names Only\n      locationListHtml = generateLocationList(limit, completionMethod);\n      break;\n    case \"3\": // Show Clues\n      navigationViewHtml = generateClueList(limit);\n      break;\n  }\n\n  if (routeStrategy === \"1\") { // Free Roam mode\n    switch (navigationDisplayMode) {\n      case \"0\": // Show Map\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"1\": // Show Map and Names\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        navigationViewHtml = '<div class=\"h-64 w-full bg-neutral-content rounded-lg shadow-lg flex justify-center items-center text-neutral\"><em>Map</em></div>';\n        break;\n      case \"2\": // Show Location Names Only\n        locationListHtml = generateLocationList(locations.length, completionMethod);\n        break;\n      case \"3\": // Show Clues\n        navigationViewHtml = generateClueList(locations.length);\n        break;\n    }\n  }\n\n  document.getElementById('locationList').innerHTML = locationListHtml;\n  document.getElementById('navigationView').innerHTML = navigationViewHtml;\n}\n\nfunction shuffleArray(array) {\n  for (let i = array.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [array[i], array[j]] = [array[j], array[i]];\n  }\n}\n\nfunction generateLocationList(limit, completionMethod) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<p class=\"text-center\"><em>${locations[i].name}</em>`;\n    if (document.getElementById('showTeamCount').checked) {\n      html += `<br><span class=\"badge badge-ghost\">${teams[i]} Teams Visiting</span>`;\n    }\n    html += `</p>`;\n  }\n  return html;\n}\n\nfunction generateClueList(limit) {\n  let html = \"\";\n  for (let i = 0; i < limit; i++) {\n    html += `<blockquote class=\"text-center\">${locations[i].clue}</blockquote>`;\n  }\n  return html;\n}\n\n// Initial update\nupdatePreview();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

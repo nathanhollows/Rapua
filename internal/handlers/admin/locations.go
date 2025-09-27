@@ -245,7 +245,7 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if user.CurrentInstance.Settings.NavigationMethod == models.ShowClues {
+	if user.CurrentInstance.Settings.NavigationDisplayMode == models.NavigationDisplayClues {
 		// Fetch the form clues
 		clues := []string{}
 		for key, value := range r.Form {

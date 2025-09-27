@@ -73,7 +73,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"> <select id=\"pages\" class=\"select select-sm select w-56 md:w-96 mx-auto text-ellipsis\" _=\"\n\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\tset :hash to window.location.hash\n\t\t\t\t\t\t\t\t\t\tif :hash == '' then\n\t\t\t\t\t\t\t\t\t\t\ttrigger change on me\n\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\" name=\"page\"><option disabled class=\"font-bold\">Pages</option> <option hx-trigger=\"chosen\" hx-get=\"/lobby\" selected value=\"lobby\" _=\"\n\t\t\t\t\t\t\t\t\t\t\ton change from #pages\n\t\t\t\t\t\t\t\t\t\t\t\tif #pages.options[#pages.selectedIndex].value == me.value then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\t\n\t\t\t\t\t\t\t\t\t\t\t\t\tcall window.history.replaceState(null, '', '#' + me.value)\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\t\t\tif window.location.hash == '#lobby' then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\n\t\t\t\t\t\t\t\t\t\t\t\t\tset #pages's value to my.value\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t\">Lobby</option> <option hx-trigger=\"chosen\" hx-get=\"/next\" value=\"next\" _=\"\n\t\t\t\t\t\t\t\t\t\t\ton change from #pages\n\t\t\t\t\t\t\t\t\t\t\t\tif #pages.options[#pages.selectedIndex].value == me.value then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\t\n\t\t\t\t\t\t\t\t\t\t\t\t\tcall window.history.replaceState(null, '', '#' + me.value)\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\t\t\tif window.location.hash == '#next' then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\n\t\t\t\t\t\t\t\t\t\t\t\t\tset #pages's value to my.value\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t\">Navigation</option> <option disabled>Locations</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"> <select id=\"pages\" class=\"select select-sm w-56 md:w-96 mx-auto text-ellipsis\" _=\"\n\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\tset :hash to window.location.hash\n\t\t\t\t\t\t\t\t\t\tif :hash == '' then\n\t\t\t\t\t\t\t\t\t\t\ttrigger change on me\n\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\" name=\"page\"><option disabled class=\"font-bold\">Pages</option> <option hx-trigger=\"chosen\" hx-get=\"/lobby\" selected value=\"lobby\" _=\"\n\t\t\t\t\t\t\t\t\t\t\ton change from #pages\n\t\t\t\t\t\t\t\t\t\t\t\tif #pages.options[#pages.selectedIndex].value == me.value then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\t\n\t\t\t\t\t\t\t\t\t\t\t\t\tcall window.history.replaceState(null, '', '#' + me.value)\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\t\t\tif window.location.hash == '#lobby' then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\n\t\t\t\t\t\t\t\t\t\t\t\t\tset #pages's value to my.value\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t\">Lobby</option> <option hx-trigger=\"chosen\" hx-get=\"/next\" value=\"next\" _=\"\n\t\t\t\t\t\t\t\t\t\t\ton change from #pages\n\t\t\t\t\t\t\t\t\t\t\t\tif #pages.options[#pages.selectedIndex].value == me.value then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\t\n\t\t\t\t\t\t\t\t\t\t\t\t\tcall window.history.replaceState(null, '', '#' + me.value)\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\ton load\n\t\t\t\t\t\t\t\t\t\t\t\tif window.location.hash == '#next' then\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend chosen to me\n\t\t\t\t\t\t\t\t\t\t\t\t\tset #pages's value to my.value\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t\">Navigation</option> <option disabled>Locations</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -310,9 +310,9 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationMode.Description())
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.RouteStrategy.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 268, Col: 132}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 268, Col: 131}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -323,9 +323,9 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationMode.String())
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.RouteStrategy.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 269, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 269, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -336,9 +336,9 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationMethod.Description())
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationDisplayMode.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 273, Col: 134}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 273, Col: 139}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -349,9 +349,9 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationMethod.String())
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationDisplayMode.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 274, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 274, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {

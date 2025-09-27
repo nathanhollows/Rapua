@@ -191,12 +191,12 @@ func (s *NavigationService) determineNextLocations(ctx context.Context, team *mo
 	}
 
 	// Determine the next locations based on the navigation mode
-	switch team.Instance.Settings.NavigationMode {
-	case models.OrderedNav:
+	switch team.Instance.Settings.RouteStrategy {
+	case models.RouteStrategyOrdered:
 		return s.getOrderedLocations(ctx, team)
-	case models.RandomNav:
+	case models.RouteStrategyRandom:
 		return s.getRandomLocations(ctx, team)
-	case models.FreeRoamNav:
+	case models.RouteStrategyFreeRoam:
 		return s.getFreeRoamLocations(ctx, team)
 	}
 

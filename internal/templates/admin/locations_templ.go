@@ -50,7 +50,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.NavigationMode == models.OrderedNav {
+		if settings.RouteStrategy == models.RouteStrategyOrdered {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " class=\"list rounded-lg shadow sortable\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -122,7 +122,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if settings.NavigationMode == models.OrderedNav {
+			if settings.RouteStrategy == models.RouteStrategyOrdered {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"tooltip tooltip-right flex gap-3 cursor-move\" data-tip=\"Drag to reorder\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div><input type=\"hidden\" name=\"location\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -160,7 +160,7 @@ func LocationsIndex(settings models.InstanceSettings, locations []models.Locatio
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if settings.NavigationMethod == models.ShowClues {
+			if settings.NavigationDisplayMode == models.NavigationDisplayClues {
 				if len(location.Clues) == 0 {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"tooltip text-neutral cursor-help\" data-tip=\"No clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-x\"><path d=\"m13.5 8.5-5 5\"></path><path d=\"m8.5 8.5 5 5\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
 					if templ_7745c5c3_Err != nil {
@@ -283,7 +283,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+		if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " class=\"tab transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -304,7 +304,7 @@ func AddLocation(settings models.InstanceSettings, neighbouring []models.Locatio
 				return templ_7745c5c3_Err
 			}
 		}
-		if settings.NavigationMethod == models.ShowClues || settings.NavigationMethod == models.ShowNames {
+		if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<a role=\"tab\" class=\"tab transition-colors tab-active group\" _=\"on click\n\t\t\t\t\t\t\tif I do not match .tab-active\n\t\t\t\t\t\t\t\tremove .tab-active from .tab-active\n\t\t\t\t\t\t\t\ttoggle .tab-active\n\t\t\t\t\t\t\t\tadd .hidden to #new-marker\n\t\t\t\t\t\t\t\tadd .hidden to #shared-marker\n\t\t\t\t\t\t\t\tadd .hidden to #marker-controls\n\t\t\t\t\t\t\t\tset <input[name=marker]/>'s disabled to true\n\t\t\t\t\t\t\t\tset <input[name=name]/>'s value to ''\n\t\t\t\t\t\t\t\tadd .hidden to #marker-badge\n\t\t\t\t\t\t\t\tset <input[name=latitude]/>'s disabled to true\n\t\t\t\t\t\t\t\tset <input[name=longitude]/>'s disabled to true\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\ton load if I match .tab-active\n\t\t\t\t\t\t\tadd .hidden to #new-marker\n\t\t\t\t\t\t\tadd .hidden to #shared-marker\n\t\t\t\t\t\t\tadd .hidden to #marker-controls\n\t\t\t\t\t\t\tset <input[name=marker]/>'s disabled to true\n\t\t\t\t\t\t\tset <input[name=name]/>'s value to ''\n\t\t\t\t\t\t\tadd .hidden to #marker-badge\n\t\t\t\t\t\t\tset <input[name=latitude]/>'s disabled to true\n\t\t\t\t\t\t\tset <input[name=longitude]/>'s disabled to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">No map marker<div class=\"dropdown dropdown-end dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">No map marker</h2><p>Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.</p></div></div></div></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -703,104 +703,94 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</div><!-- Clues -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</div><!-- Clues --><div class=\"divider mt-5 mb-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\"><svg class=\"w-5 h-5\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Change clue type</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.NavigationMethod == models.ShowClues {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<section class=\"mb-8\"><div class=\"label flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row\"><strong>Clues</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert w-4 h-4 text-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Clues</h2><p class=\"text-wrap\">Each team is shown one randomly selected clue.</p><p class=\"text-wrap\">If no clues are available then the player is told the name of the location as a freebie.</p><p class=\"text-wrap\">Clues may contain <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Markdown</a> formatting.</p></div></div></div></div><button class=\"btn btn-sm btn-neutral my-2\" type=\"button\" _=\"on click\n\t\t\t\t\t\t\t\t\tif <#clue-list .clue-line/>'s length > 0\n\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add a clue</button><template id=\"clue-template\"><label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData('text/plain')\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split('\\n')\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not ''\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first <input /> in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el's value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></div><template id=\"clue-add-template\"><div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\t\tend\">add a clue</a>? </span></div></template><div id=\"clue-list\" class=\"flex flex-col join join-vertical\" _=\"on emptylist\n\t\t\t\t\t\t\t\t\tset my innerHTML to #clue-add-template's innerHTML\n\t\t\t\t\t\t\t\t\tcall _hyperscript.processNode(me)\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if len(location.Clues) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\t\tend\">add a clue</a>? </span></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			for _, clue := range location.Clues {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\" data-item-id=\"")
+		for _, block := range blocks.GetBlocksForContext(blocks.ContextClues) {
+			if !block.RequiresValidation() {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
-				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 732, Col: 129}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 624, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var37 string
-				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(clue.Content)
+				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 738, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 625, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData('text/plain')\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split('\\n')\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not ''\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first <input /> in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el's value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <input type=\"hidden\" name=\"clue-ids\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templ.Raw(block.GetIconSVG()).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var38 string
-				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
+				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 765, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 630, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div></section>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<!-- Blocks --><section><div class=\"divider mt-5 mb-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\"><svg class=\"w-5 h-5\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add content</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, block := range blocks.GetBlocksForContext(blocks.ContextLocation) {
-			if !block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+		for _, block := range blocks.GetBlocksForContext(blocks.ContextClues) {
+			if block.RequiresValidation() {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 808, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 645, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" hx-post=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 809, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 646, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -811,51 +801,116 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 814, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 651, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</div></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, block := range blocks.GetBlocksForContext(blocks.ContextLocation) {
-			if block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+		if settings.NavigationDisplayMode == models.NavigationDisplayClues {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<section class=\"mb-8\"><div class=\"label flex justify-between\"><div class=\"flex flex-row-reverse justify-end md:justify-start md:flex-row\"><strong>Clues</strong><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert w-4 h-4 text-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Clues</h2><p class=\"text-wrap\">Each team is shown one randomly selected clue.</p><p class=\"text-wrap\">If no clues are available then the player is told the name of the location as a freebie.</p><p class=\"text-wrap\">Clues may contain <a class=\"link\" href=\"/docs/user/markdown-guide\" target=\"blank\">Markdown</a> formatting.</p></div></div></div></div><button class=\"btn btn-sm btn-neutral my-2\" type=\"button\" _=\"on click\n\t\t\t\t\t\t\t\t\tif <#clue-list .clue-line/>'s length > 0\n\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add a clue</button><template id=\"clue-template\"><label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData('text/plain')\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split('\\n')\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not ''\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first <input /> in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el's value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></div><template id=\"clue-add-template\"><div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\t\tend\">add a clue</a>? </span></div></template><div id=\"clue-list\" class=\"flex flex-col join join-vertical\" _=\"on emptylist\n\t\t\t\t\t\t\t\t\tset my innerHTML to #clue-add-template's innerHTML\n\t\t\t\t\t\t\t\t\tcall _hyperscript.processNode(me)\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if len(location.Clues) == 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<div class=\"alert\"><span>There are no clues to show. Do you want to  <a class=\"link add-clue-btn\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tput #clue-template's innerHTML into #clue-list\n\t\t\t\t\t\t\t\t\t\tend\">add a clue</a>? </span></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			for _, clue := range location.Clues {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<label class=\"clue-line input bg-transparent flex flex-row items-top gap-2 h-auto join-item w-full\" data-item-id=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var42 string
-				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
+				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 829, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 788, Col: 129}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" hx-post=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\"><input type=\"text\" name=\"clues\" form=\"edit-location\" class=\"w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 pl-0 bg-transparent overflow-ellipsis\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var43 string
-				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
+				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(clue.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 830, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 794, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" placeholder=\"Add a clue\" autoComplete=\"off\" _=\"on keyup send savelocation to #edit-location end\n\t\t\t\t\t\t\t\t\t\t\ton paste\n\t\t\t\t\t\t\t\t\t\t\t  halt the event\n\t\t\t\t\t\t\t\t\t\t\t  set pasteData to event.clipboardData.getData('text/plain')\n\t\t\t\t\t\t\t\t\t\t\t  set allLines to pasteData.split('\\n')\n\t\t\t\t\t\t\t\t\t\t\t  set lines to []\n\t\t\t\t\t\t\t\t\t\t\t  for line in allLines\n\t\t\t\t\t\t\t\t\t\t\t\tif line.trim() is not ''\n\t\t\t\t\t\t\t\t\t\t\t\t  append line.trim() to lines\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  if lines.length is 1\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t  else\n\t\t\t\t\t\t\t\t\t\t\t\tset my value to lines[0]\n\t\t\t\t\t\t\t\t\t\t\t\trepeat (lines.length - 1) times index i\n\t\t\t\t\t\t\t\t\t\t\t\t  put #clue-template's innerHTML after last .clue-line in #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el to first <input /> in (last .clue-line in #clue-list)\n\t\t\t\t\t\t\t\t\t\t\t\t  set :el's value to lines[i + 1]\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\t\t  send savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\tend\"> <input type=\"hidden\" name=\"clue-ids\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var44 string
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(clue.ID)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 821, Col: 60}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip tooltip-left flex my-2\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\t\t\t\t\t\t\tremove closest .clue-line to me\n\t\t\t\t\t\t\t\t\t\t\t\tsend savelocation to #edit-location\n\t\t\t\t\t\t\t\t\t\t\t\tif #clue-list.children.length == 0\n\t\t\t\t\t\t\t\t\t\t\t\t\tsend emptylist to #clue-list\n\t\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\t\t\" tabindex=\"-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div></section>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<!-- Blocks --><section><div class=\"divider mt-5 mb-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\"><svg class=\"w-5 h-5\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add content</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, block := range blocks.GetBlocksForContext(blocks.ContextLocation) {
+			if !block.RequiresValidation() {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var45 string
+				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 864, Col: 46}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "\" hx-post=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var46 string
+				templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 865, Col: 100}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -863,22 +918,77 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var44 string
-				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				var templ_7745c5c3_Var47 string
+				templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 835, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 870, Col: 30}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div></div></div></div></div><div id=\"blocks\" class=\"flex flex-col gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, block := range blocks.GetBlocksForContext(blocks.ContextLocation) {
+			if block.RequiresValidation() {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<div class=\"indicator w-full\"><div class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var48 string
+				templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 885, Col: 46}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\" hx-post=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var49 string
+				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 886, Col: 100}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\" hx-target=\"#blocks\" hx-swap=\"beforeend\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templ.Raw(block.GetIconSVG()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var50 string
+				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 891, Col: 30}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</div></div></div></div></div><div id=\"blocks\" class=\"flex flex-col gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -888,95 +998,95 @@ func EditLocation(location models.Location, settings models.InstanceSettings, co
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</div></section><!-- Map -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</div></section><!-- Map -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if location.Marker.IsMapped() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<section><div class=\"divider mt-5 mb-10\"></div><div class=\"label\"><span class=\"label-text font-bold\">Map marker</span></div><div id=\"map-container\" class=\"relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg\"><div id=\"map\" class=\"map w-full h-full rounded-lg\"></div><!-- Overlay Button and Backdrop --><div id=\"map-lock-overlay\" class=\"absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100\" tabindex=\"0\"><button id=\"unlock-map-btn\" class=\"btn btn-neutral\" _=\"on click\n\t\t\t\t\t\t\t\t\tremove #map-lock-overlay then\n\t\t\t\t\t\t\t\t\ttransition #map-note's opacity to 1\n\t\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-keyhole w-5 h-5\"><circle cx=\"12\" cy=\"16\" r=\"1\"></circle><rect x=\"3\" y=\"10\" width=\"18\" height=\"12\" rx=\"2\"></rect><path d=\"M7 10V7a5 5 0 0 1 10 0v3\"></path></svg> Unlock to edit</button></div></div><div id=\"map-note\" class=\"label opacity-0 text-wrap\"><span class=\"label-text\"><strong>Note:</strong> Changing the map marker might change the location code.</span> <span class=\"label-text\">Autosave is disabled for map markers.</span></div><!-- Hidden inputs for form handling --><input type=\"hidden\" name=\"code\" form=\"edit-location\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<section><div class=\"divider mt-5 mb-10\"></div><div class=\"label\"><span class=\"label-text font-bold\">Map marker</span></div><div id=\"map-container\" class=\"relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg\"><div id=\"map\" class=\"map w-full h-full rounded-lg\"></div><!-- Overlay Button and Backdrop --><div id=\"map-lock-overlay\" class=\"absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100\" tabindex=\"0\"><button id=\"unlock-map-btn\" class=\"btn btn-neutral\" _=\"on click\n\t\t\t\t\t\t\t\t\tremove #map-lock-overlay then\n\t\t\t\t\t\t\t\t\ttransition #map-note's opacity to 1\n\t\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-keyhole w-5 h-5\"><circle cx=\"12\" cy=\"16\" r=\"1\"></circle><rect x=\"3\" y=\"10\" width=\"18\" height=\"12\" rx=\"2\"></rect><path d=\"M7 10V7a5 5 0 0 1 10 0v3\"></path></svg> Unlock to edit</button></div></div><div id=\"map-note\" class=\"label opacity-0 text-wrap\"><span class=\"label-text\"><strong>Note:</strong> Changing the map marker might change the location code.</span> <span class=\"label-text\">Autosave is disabled for map markers.</span></div><!-- Hidden inputs for form handling --><input type=\"hidden\" name=\"code\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var45 string
-			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(location.Marker.Code)
+			var templ_7745c5c3_Var51 string
+			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(location.Marker.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 887, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 943, Col: 87}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\"> <input type=\"hidden\" name=\"latitude\" form=\"edit-location\" value=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var46 string
-			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lat))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 888, Col: 105}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\"> <input type=\"hidden\" name=\"latitude\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"> <input type=\"hidden\" name=\"longitude\" form=\"edit-location\" value=\"")
+			var templ_7745c5c3_Var52 string
+			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lat))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 944, Col: 105}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var47 string
-			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lng))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 889, Col: 106}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\"> <input type=\"hidden\" name=\"longitude\" form=\"edit-location\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "\"></section>")
+			var templ_7745c5c3_Var53 string
+			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(floatToString(location.Marker.Lng))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 945, Col: 106}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\"></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</div><!-- Sidebar --><!-- Preview Divider --><div class=\"divider lg:divider-horizontal\"><span class=\"lg:[writing-mode:vertical-lr]\">Preview</span></div><!-- Preview --><div class=\"h-min-content\"><div class=\"mockup-phone h-min sticky top-8\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden\" data-theme=\"cupcake\"><div class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</div><!-- Sidebar --><!-- Preview Divider --><div class=\"divider lg:divider-horizontal\"><span class=\"lg:[writing-mode:vertical-lr]\">Preview</span></div><!-- Preview --><div class=\"h-min-content\"><div class=\"mockup-phone h-min sticky top-8\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden\" data-theme=\"cupcake\"><div class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var48 string
-		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", location.MarkerID))
+		var templ_7745c5c3_Var54 string
+		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", location.MarkerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 906, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 962, Col: 58}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\" hx-trigger=\"load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn\" hx-vals=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var49 string
-		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 908, Col: 73}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "\" hx-trigger=\"load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\" hx-swap=\"innerHTML\"></div></div></div></div></div><dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this location?</h3><p class=\"pt-4\">You are about to delete this location. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
+		var templ_7745c5c3_Var55 string
+		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 964, Col: 73}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var50 string
-		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.MarkerID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 950, Col: 67}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\" hx-swap=\"innerHTML\"></div></div></div></div></div><dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this location?</h3><p class=\"pt-4\">You are about to delete this location. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n                \n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n                        \n                        block.style.position = '';\n                        sibling.style.position = '';\n                        \n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script><style>\n    .transitioning {\n        transition: transform 0.3s ease;\n    }\n\t\t</style>")
+		var templ_7745c5c3_Var56 string
+		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", location.MarkerID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 1006, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n                \n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n                        \n                        block.style.position = '';\n                        sibling.style.position = '';\n                        \n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script><style>\n    .transitioning {\n        transition: transform 0.3s ease;\n    }\n\t\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1004,12 +1114,12 @@ func locationScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var51 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var51 == nil {
-			templ_7745c5c3_Var51 = templ.NopComponent
+		templ_7745c5c3_Var57 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var57 == nil {
+			templ_7745c5c3_Var57 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<script>\n(function () {\n  let map; \n  let marker;\n\n  function initializeMap() {\n    let coords = [174.0710596, -40.9664536];\n    let zoom = 4;\n\n    // Check if longitude and latitude fields are set\n    if (document.querySelector('input[name=\"longitude\"]').value !== \"\" &&\n        document.querySelector('input[name=\"latitude\"]').value !== \"\") {\n      coords = [\n        parseFloat(document.querySelector('input[name=\"longitude\"]').value),\n        parseFloat(document.querySelector('input[name=\"latitude\"]').value)\n      ];\n      zoom = 16;\n    }\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine map style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map',\n      style: style,\n      center: coords,\n      zoom: zoom\n    });\n\n    // Create and place the main marker\n    marker = new mapboxgl.Marker()\n      .setLngLat(coords)\n      .addTo(map);\n\n    // Update marker position on map drag\n    map.on('move', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n      document.querySelector('input[name=\"latitude\"]').value = center.lat;\n      document.querySelector('input[name=\"longitude\"]').value = center.lng;\n    });\n\n    // Update marker position on map zoom\n    map.on('zoom', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n    });\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, null);\n\n    // Handle select change event\n    const locationSelect = document.getElementById('marker-code');\n    if (locationSelect) {\n      locationSelect.addEventListener('change', function (event) {\n        const selectedOption = event.target.options[event.target.selectedIndex];\n        const lat = parseFloat(selectedOption.dataset.lat);\n        const lng = parseFloat(selectedOption.dataset.lng);\n\n        if (!isNaN(lat) && !isNaN(lng)) {\n          // Update the map center and marker position\n          map.flyTo({ center: [lng, lat], zoom: 16 });\n          marker.setLngLat([lng, lat]);\n\n          // Disable dragging on the map\n          map.dragPan.disable();\n          map.scrollZoom.disable();\n\n          // Update latitude and longitude fields\n          document.querySelector('input[name=\"latitude\"]').value = lat;\n          document.querySelector('input[name=\"longitude\"]').value = lng;\n        }\n      });\n    }\n\n    // Re-enable map dragging when new marker tab is clicked\n    const newMarkerTab = document.getElementById('new-marker-tab');\n    if (newMarkerTab) {\n      newMarkerTab.addEventListener('click', function () {\n        map.dragPan.enable();\n        map.scrollZoom.enable();\n      });\n    }\n\n\t\t// Check for .neighbour-marker elements\n\t\tconst neighborMarkers = document.querySelectorAll('.neighbour-marker');\n\t\tif (neighborMarkers.length > 0) {\n\t\t\t// Fit to bounding box of all neighbor markers with a max zoom of 14\n\t\t\tlet bounds = new mapboxgl.LngLatBounds();\n\t\t\tneighborMarkers.forEach(elem => {\n\t\t\t\tconst lat = parseFloat(elem.dataset.lat);\n\t\t\t\tconst lng = parseFloat(elem.dataset.lng);\n\t\t\t\tif (!isNaN(lat) && !isNaN(lng)) {\n\t\t\t\t\tbounds.extend([lng, lat]);\n\t\t\t\t}\n\t\t\t});\n\t\t\tmap.fitBounds(bounds, { padding: 14, duration: 0 });\n\t\t}\n\n    var geocoderEl = document.getElementById('geocoder');\n    if (geocoderEl) {\n      var geocoder = new MapboxGeocoder({\n        accessToken: mapboxgl.accessToken,\n        mapboxgl: mapboxgl,\n        marker: false,\n        placeholder: 'Search for an address or use the map',\n      });\n      geocoderEl.appendChild(geocoder.onAdd(map));\n    }\n  }\n\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    modal = document.getElementById(\"confirm_delete_block\");\n    url = \"/admin/locations/\" + event.currentTarget.dataset.location + \"/blocks/\" + event.currentTarget.dataset.block + \"/delete\";\n    btn = modal.querySelector(\"button.btn-error\")\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  for (const element of document.querySelectorAll('.block-delete')) {\n    element.addEventListener('click', confirmDeleteBlock);\n  }\n\n  // Add listener to #blocks for new blocks\n  if (document.getElementById(\"blocks\")) {\n    document.getElementById(\"blocks\").addEventListener(\"htmx:afterSwap\", function (event) {\n      for (const element of document.querySelectorAll('.block-delete')) {\n        element.addEventListener('click', confirmDeleteBlock);\n      }\n    });\n  }\n\n  initializeMap();\n})();\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<script>\n(function () {\n  let map; \n  let marker;\n\n  function initializeMap() {\n    let coords = [174.0710596, -40.9664536];\n    let zoom = 4;\n\n    // Check if longitude and latitude fields are set\n    if (document.querySelector('input[name=\"longitude\"]').value !== \"\" &&\n        document.querySelector('input[name=\"latitude\"]').value !== \"\") {\n      coords = [\n        parseFloat(document.querySelector('input[name=\"longitude\"]').value),\n        parseFloat(document.querySelector('input[name=\"latitude\"]').value)\n      ];\n      zoom = 16;\n    }\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine map style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map',\n      style: style,\n      center: coords,\n      zoom: zoom\n    });\n\n    // Create and place the main marker\n    marker = new mapboxgl.Marker()\n      .setLngLat(coords)\n      .addTo(map);\n\n    // Update marker position on map drag\n    map.on('move', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n      document.querySelector('input[name=\"latitude\"]').value = center.lat;\n      document.querySelector('input[name=\"longitude\"]').value = center.lng;\n    });\n\n    // Update marker position on map zoom\n    map.on('zoom', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n    });\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, null);\n\n    // Handle select change event\n    const locationSelect = document.getElementById('marker-code');\n    if (locationSelect) {\n      locationSelect.addEventListener('change', function (event) {\n        const selectedOption = event.target.options[event.target.selectedIndex];\n        const lat = parseFloat(selectedOption.dataset.lat);\n        const lng = parseFloat(selectedOption.dataset.lng);\n\n        if (!isNaN(lat) && !isNaN(lng)) {\n          // Update the map center and marker position\n          map.flyTo({ center: [lng, lat], zoom: 16 });\n          marker.setLngLat([lng, lat]);\n\n          // Disable dragging on the map\n          map.dragPan.disable();\n          map.scrollZoom.disable();\n\n          // Update latitude and longitude fields\n          document.querySelector('input[name=\"latitude\"]').value = lat;\n          document.querySelector('input[name=\"longitude\"]').value = lng;\n        }\n      });\n    }\n\n    // Re-enable map dragging when new marker tab is clicked\n    const newMarkerTab = document.getElementById('new-marker-tab');\n    if (newMarkerTab) {\n      newMarkerTab.addEventListener('click', function () {\n        map.dragPan.enable();\n        map.scrollZoom.enable();\n      });\n    }\n\n\t\t// Check for .neighbour-marker elements\n\t\tconst neighborMarkers = document.querySelectorAll('.neighbour-marker');\n\t\tif (neighborMarkers.length > 0) {\n\t\t\t// Fit to bounding box of all neighbor markers with a max zoom of 14\n\t\t\tlet bounds = new mapboxgl.LngLatBounds();\n\t\t\tneighborMarkers.forEach(elem => {\n\t\t\t\tconst lat = parseFloat(elem.dataset.lat);\n\t\t\t\tconst lng = parseFloat(elem.dataset.lng);\n\t\t\t\tif (!isNaN(lat) && !isNaN(lng)) {\n\t\t\t\t\tbounds.extend([lng, lat]);\n\t\t\t\t}\n\t\t\t});\n\t\t\tmap.fitBounds(bounds, { padding: 14, duration: 0 });\n\t\t}\n\n    var geocoderEl = document.getElementById('geocoder');\n    if (geocoderEl) {\n      var geocoder = new MapboxGeocoder({\n        accessToken: mapboxgl.accessToken,\n        mapboxgl: mapboxgl,\n        marker: false,\n        placeholder: 'Search for an address or use the map',\n      });\n      geocoderEl.appendChild(geocoder.onAdd(map));\n    }\n  }\n\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    modal = document.getElementById(\"confirm_delete_block\");\n    url = \"/admin/locations/\" + event.currentTarget.dataset.location + \"/blocks/\" + event.currentTarget.dataset.block + \"/delete\";\n    btn = modal.querySelector(\"button.btn-error\")\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  for (const element of document.querySelectorAll('.block-delete')) {\n    element.addEventListener('click', confirmDeleteBlock);\n  }\n\n  // Add listener to #blocks for new blocks\n  if (document.getElementById(\"blocks\")) {\n    document.getElementById(\"blocks\").addEventListener(\"htmx:afterSwap\", function (event) {\n      for (const element of document.querySelectorAll('.block-delete')) {\n        element.addEventListener('click', confirmDeleteBlock);\n      }\n    });\n  }\n\n  initializeMap();\n})();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

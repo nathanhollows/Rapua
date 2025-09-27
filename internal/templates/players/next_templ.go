@@ -58,23 +58,23 @@ func Next(team models.Team, locations []models.Location) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			switch team.Instance.Settings.NavigationMethod {
-			case 0:
+			switch team.Instance.Settings.NavigationDisplayMode {
+			case models.NavigationDisplayMap:
 				templ_7745c5c3_Err = showMap(locations).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case 1:
+			case models.NavigationDisplayMapAndNames:
 				templ_7745c5c3_Err = showMapAndNames(team, locations).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case 2:
+			case models.NavigationDisplayNames:
 				templ_7745c5c3_Err = showNames(team, locations).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case 3:
+			case models.NavigationDisplayClues:
 				templ_7745c5c3_Err = showClues(team.Code, locations).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
