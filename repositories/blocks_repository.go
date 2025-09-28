@@ -82,6 +82,7 @@ func (r *blockRepository) Create(ctx context.Context, block blocks.Block, locati
 		ID:                 uuid.New().String(),
 		LocationID:         locationID,
 		Type:               block.GetType(),
+		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Data:               block.GetData(),
 		Ordering:           block.GetOrder(),
 		Points:             block.GetPoints(),
@@ -120,6 +121,7 @@ func convertBlockToModel(block blocks.Block) models.Block {
 		ID:                 block.GetID(),
 		LocationID:         block.GetLocationID(),
 		Type:               block.GetType(),
+		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),
 		Points:             block.GetPoints(),

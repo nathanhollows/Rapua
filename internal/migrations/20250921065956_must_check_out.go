@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -53,8 +52,6 @@ type m20250921065956_Location struct {
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		fmt.Print(" [up migration] ")
-
 		// Drop completion_method from instance_settings and add must_check_out
 		_, err := db.ExecContext(ctx, `
 			ALTER TABLE instance_settings
@@ -96,8 +93,6 @@ func init() {
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		fmt.Print(" [down migration] ")
-
 		// Rollback: Add completion_method back to instance_settings and drop must_check_out
 		_, err := db.ExecContext(ctx, `
 			ALTER TABLE instance_settings

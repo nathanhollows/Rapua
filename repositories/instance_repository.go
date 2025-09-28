@@ -80,7 +80,6 @@ func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.In
 		Where("id = ?", id).
 		Relation("Locations").
 		Relation("Locations.Blocks").
-		Relation("Locations.Clues").
 		Relation("Settings").
 		Relation("ShareLinks").
 		Scan(ctx)

@@ -69,7 +69,6 @@ func (r *ShareLinkRepository) GetByID(ctx context.Context, id string) (*models.S
 		Relation("Template.Settings").
 		Relation("Template.Locations").
 		Relation("Template.Locations.Blocks").
-		Relation("Template.Locations.Clues").
 		Relation("Template.Locations.Marker").
 		Scan(ctx)
 	return link, err
