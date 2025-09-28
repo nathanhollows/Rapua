@@ -50,6 +50,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonAdmin(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomClueAdmin(settings, *b)
 	}
 	return nil
 }
@@ -98,6 +101,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomCluePlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -146,6 +152,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomCluePlayer(settings, *b, state)
 	}
 	return nil
 }

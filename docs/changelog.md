@@ -11,6 +11,7 @@ order: 100
 ### Added
 
 - New [Button Block](/docs/user/blocks/button) that allows admins to add styled buttons to their game.
+- New [Random Clue Block](/docs/user/blocks/random-clue) that shows different players random clues from a set.
 - Block context system allows blocks to be used in multiple settings, not just location pages.
   - This sets up the foundation for editing the start and end pages for custom rules and messages.
   - Also sets the foundation for using content blocks as clues.
