@@ -122,12 +122,6 @@ func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) 
 		return err
 	}
 
-	// Delete Clues
-	_, err = tx.NewDelete().Model(&models.Clue{}).Where("instance_id = ?", id).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Delete CheckIns
 	_, err = tx.NewDelete().Model(&models.CheckIn{}).Where("instance_id = ?", id).Exec(ctx)
 	if err != nil {

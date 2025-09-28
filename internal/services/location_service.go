@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
@@ -32,17 +33,12 @@ type LocationService interface {
 	// ReorderLocations accepts IDs of locations and reorders them
 	ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error
 
-	// LoadCluesForLocation loads the clues for a specific location if they are not already loaded
-	LoadCluesForLocation(ctx context.Context, location *models.Location) error
-	// LoadCluesForLocations loads the clues for all given locations if they are not already loaded
-	LoadCluesForLocations(ctx context.Context, locations *[]models.Location) error
 	// LoadRelations loads the related data for a location
 	LoadRelations(ctx context.Context, location *models.Location) error
 }
 
 type locationService struct {
 	locationRepo  repositories.LocationRepository
-	clueRepo      repositories.ClueRepository
 	markerRepo    repositories.MarkerRepository
 	blockRepo     repositories.BlockRepository
 	markerService *MarkerService
@@ -50,14 +46,12 @@ type locationService struct {
 
 // NewLocationService creates a new instance of LocationService.
 func NewLocationService(
-	clueRepo repositories.ClueRepository,
 	locationRepo repositories.LocationRepository,
 	markerRepo repositories.MarkerRepository,
 	blockRepo repositories.BlockRepository,
 	markerService *MarkerService,
 ) LocationService {
 	return locationService{
-		clueRepo:      clueRepo,
 		locationRepo:  locationRepo,
 		markerRepo:    markerRepo,
 		blockRepo:     blockRepo,
@@ -135,40 +129,45 @@ func (s locationService) CreateLocationFromMarker(ctx context.Context, instanceI
 
 // DuplicateLocation duplicates a location.
 func (s locationService) DuplicateLocation(ctx context.Context, location models.Location, newInstanceID string) (models.Location, error) {
-	// Load relations
-	err := s.locationRepo.LoadRelations(ctx, &location)
-	if err != nil {
-		return models.Location{}, fmt.Errorf("loading relations: %v", err)
-	}
-
 	// Copy the location
 	newLocation := location
 	newLocation.ID = ""
 	newLocation.InstanceID = newInstanceID
-	err = s.locationRepo.Create(ctx, &newLocation)
+	err := s.locationRepo.Create(ctx, &newLocation)
 	if err != nil {
 		return models.Location{}, fmt.Errorf("saving location: %v", err)
 	}
 
-	// Copy the clues
-	for _, clue := range location.Clues {
-		newClue := clue
-		newClue.ID = ""
-		newClue.InstanceID = newInstanceID
-		newClue.LocationID = newLocation.ID
-		err = s.clueRepo.Save(ctx, &newClue)
-		if err != nil {
-			return models.Location{}, fmt.Errorf("saving clue: %v", err)
-		}
+	// Copy the blocks using FindByLocationID to avoid duplication issues
+	originalBlocks, err := s.blockRepo.FindByLocationID(ctx, location.ID)
+	if err != nil {
+		return models.Location{}, fmt.Errorf("finding blocks for duplication: %v", err)
 	}
 
-	// Copy the blocks
-	for _, block := range location.Blocks {
-		block, err := s.blockRepo.GetByID(ctx, block.ID)
-		if err != nil {
-			return models.Location{}, fmt.Errorf("finding block: %v", err)
+	for _, originalBlock := range originalBlocks {
+		// Create a new base block with the original block's data but new location ID
+		baseBlock := blocks.BaseBlock{
+			LocationID: newLocation.ID,
+			Type:       originalBlock.GetType(),
+			Data:       originalBlock.GetData(),
+			Order:      originalBlock.GetOrder(),
+			Points:     originalBlock.GetPoints(),
 		}
-		_, err = s.blockRepo.Create(ctx, block, newLocation.ID)
+
+		// Create a new block instance from the base block
+		newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
+		if err != nil {
+			return models.Location{}, fmt.Errorf("creating duplicate block: %v", err)
+		}
+
+		// Parse the data to populate the block's content fields
+		err = newBlock.ParseData()
+		if err != nil {
+			return models.Location{}, fmt.Errorf("parsing block data: %v", err)
+		}
+
+		// Save the new block
+		_, err = s.blockRepo.Create(ctx, newBlock, newLocation.ID)
 		if err != nil {
 			return models.Location{}, fmt.Errorf("saving block: %v", err)
 		}
@@ -328,29 +327,6 @@ func (s locationService) ReorderLocations(ctx context.Context, instanceID string
 		}
 	}
 
-	return nil
-}
-
-// LoadCluesForLocation loads the clues for a specific location if they are not already loaded.
-func (s locationService) LoadCluesForLocation(ctx context.Context, location *models.Location) error {
-	if len(location.Clues) == 0 {
-		clues, err := s.clueRepo.FindCluesByLocation(ctx, location.ID)
-		if err != nil {
-			return fmt.Errorf("finding clues: %v", err)
-		}
-		location.Clues = clues
-	}
-	return nil
-}
-
-// LoadCluesForLocations loads the clues for all given locations if they are not already loaded.
-func (s locationService) LoadCluesForLocations(ctx context.Context, locations *[]models.Location) error {
-	for i := range *locations {
-		err := s.LoadCluesForLocation(ctx, &(*locations)[i])
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

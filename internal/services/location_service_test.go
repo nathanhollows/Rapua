@@ -14,13 +14,12 @@ func setupLocationService(t *testing.T) (services.LocationService, *services.Mar
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	clueRepo := repositories.NewClueRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	markerService := services.NewMarkerService(markerRepo)
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	return locationService, markerService, cleanup
 }
 
@@ -117,15 +116,24 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 }
 
 func TestLocationService_DuplicateLocation(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	// Setup shared database connection
+	dbc, cleanup := setupDB(t)
 	defer cleanup()
 
-	blockService, blockCleanup := setupBlocksService(t)
-	defer blockCleanup()
+	// Create all repositories with shared database connection
+	locationRepo := repositories.NewLocationRepository(dbc)
+	markerRepo := repositories.NewMarkerRepository(dbc)
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	markerService := services.NewMarkerService(markerRepo)
+
+	// Create services with shared repositories
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
+	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	t.Run("Duplicate location", func(t *testing.T) {
 		// Create a location
-		location, err := service.CreateLocation(
+		location, err := locationService.CreateLocation(
 			context.Background(),
 			gofakeit.UUID(),
 			gofakeit.Name(),
@@ -135,23 +143,66 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Create a block
-		_, err = blockService.NewBlock(context.Background(), location.ID, "image")
+		block, err := blockService.NewBlock(context.Background(), location.ID, "image")
+		assert.NoError(t, err)
+		t.Logf("Created block with ID: %s for location: %s", block.GetID(), location.ID)
+
+		// Add some content to the block to test duplication
+		blockData := map[string][]string{
+			"url":     {"https://example.com/test-image.jpg"},
+			"caption": {"Test image caption"},
+			"link":    {"https://example.com/test-link"},
+		}
+
+		// Save the updated block with content
+		block, err = blockService.UpdateBlock(context.Background(), block, blockData)
 		assert.NoError(t, err)
 
+		// Verify the block was created
+		blocksBeforeDuplicate, err := blockService.FindByLocationID(context.Background(), location.ID)
+		assert.NoError(t, err)
+		assert.Len(t, blocksBeforeDuplicate, 1)
+		t.Logf("Blocks before duplicate: %d", len(blocksBeforeDuplicate))
+
+		// Load relations to see if the block is included in the location
+		err = locationService.LoadRelations(context.Background(), &location)
+		assert.NoError(t, err)
+		t.Logf("Location blocks after LoadRelations: %d", len(location.Blocks))
+
 		// Duplicate the location
-		newLocation, err := service.DuplicateLocation(context.Background(), location, gofakeit.UUID())
+		newLocation, err := locationService.DuplicateLocation(context.Background(), location, gofakeit.UUID())
 		assert.NoError(t, err)
 		assert.NotEqual(t, location.ID, newLocation.ID)
 
 		// Check that the location was duplicated
-		checkLocation, err := service.GetByID(context.Background(), newLocation.ID)
+		checkLocation, err := locationService.GetByID(context.Background(), newLocation.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, checkLocation)
 
 		// Check that the blocks were duplicated
 		blocks, err := blockService.FindByLocationID(context.Background(), newLocation.ID)
 		assert.NoError(t, err)
+		t.Logf("Blocks found for new location %s: %d", newLocation.ID, len(blocks))
+		for i, bl := range blocks {
+			t.Logf("Block %d: ID=%s, Type=%s", i, bl.GetID(), bl.GetType())
+		}
 		assert.Len(t, blocks, 1)
+
+		// Verify that the content was copied correctly
+		duplicatedBlock := blocks[0]
+		assert.Equal(t, "image", duplicatedBlock.GetType())
+		assert.NotEqual(t, block.GetID(), duplicatedBlock.GetID())       // Should have different IDs
+		assert.Equal(t, newLocation.ID, duplicatedBlock.GetLocationID()) // Should have new location ID
+
+		// Check that the content data was copied
+		originalData := string(block.GetData())
+		duplicatedData := string(duplicatedBlock.GetData())
+		assert.Equal(t, originalData, duplicatedData)
+
+		// The duplicated data should contain the test content
+		assert.Contains(t, duplicatedData, "https://example.com/test-image.jpg")
+		assert.Contains(t, duplicatedData, "Test image caption")
+		assert.Contains(t, duplicatedData, "https://example.com/test-link")
 	})
 }
 
@@ -257,9 +308,5 @@ func TestLocationService_FindByInstance(t *testing.T) {
 // 	// DeleteByInstanceID deletes all locations for an instance
 // 	DeleteLocations(ctx context.Context, tx *bun.Tx, locations []models.Location) error
 //
-// 	// LoadCluesForLocation loads the clues for a specific location if they are not already loaded
-// 	LoadCluesForLocation(ctx context.Context, location *models.Location) error
-// 	// LoadCluesForLocations loads the clues for all given locations if they are not already loaded
-// 	LoadCluesForLocations(ctx context.Context, locations *[]models.Location) error
 // 	// LoadRelations loads the related data for a location
 // 	LoadRelations(ctx context.Context, location *models.Location) error

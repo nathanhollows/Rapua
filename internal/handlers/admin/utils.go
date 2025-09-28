@@ -54,10 +54,6 @@ type BlockService interface {
 	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
 }
 
-type ClueService interface {
-	UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error
-}
-
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteInstance(ctx context.Context, userID, instanceID string) error
@@ -158,7 +154,6 @@ type AdminHandler struct {
 	assetGenerator          services.AssetGenerator
 	identityService         IdentityService
 	blockService            BlockService
-	clueService             ClueService
 	deleteService           DeleteService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
@@ -182,7 +177,6 @@ func NewAdminHandler(
 	assetGenerator services.AssetGenerator,
 	identityService IdentityService,
 	blockService BlockService,
-	clueService ClueService,
 	DeleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
@@ -205,7 +199,6 @@ func NewAdminHandler(
 		assetGenerator:          assetGenerator,
 		identityService:         identityService,
 		blockService:            blockService,
-		clueService:             clueService,
 		deleteService:           DeleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,

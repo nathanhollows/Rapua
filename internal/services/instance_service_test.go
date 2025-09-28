@@ -18,7 +18,6 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
-	clueRepo := repositories.NewClueRepository(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
@@ -28,7 +27,7 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	markerService := services.NewMarkerService(markerRepo)
 
 	// Initialize services
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(

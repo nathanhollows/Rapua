@@ -18,7 +18,6 @@ type DeleteService struct {
 	transactor           db.Transactor
 	blockRepo            repositories.BlockRepository
 	blockStateRepo       repositories.BlockStateRepository
-	clueRepo             repositories.ClueRepository
 	checkInRepo          repositories.CheckInRepository
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
@@ -34,7 +33,6 @@ func NewDeleteService(
 	blockRepo repositories.BlockRepository,
 	blockStateRepo repositories.BlockStateRepository,
 	checkInRepo repositories.CheckInRepository,
-	clueRepo repositories.ClueRepository,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	locationRepo repositories.LocationRepository,
@@ -47,7 +45,6 @@ func NewDeleteService(
 		blockRepo:            blockRepo,
 		blockStateRepo:       blockStateRepo,
 		checkInRepo:          checkInRepo,
-		clueRepo:             clueRepo,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		locationRepo:         locationRepo,
@@ -166,7 +163,7 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 	return nil
 }
 
-// DeleteLocation deletes a location and all associated clues, blocks, and progress.
+// DeleteLocation deletes a location and all associated blocks and progress.
 func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -215,12 +212,6 @@ func (s *DeleteService) deleteLocation(ctx context.Context, tx *bun.Tx, location
 	err := s.deleteBlocksByLocationID(ctx, tx, locationID)
 	if err != nil {
 		return fmt.Errorf("deleting blocks: %v", err)
-	}
-
-	// Delete all related clues
-	err = s.clueRepo.DeleteByLocationIDWithTransaction(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting clues: %v", err)
 	}
 
 	// Delete the location

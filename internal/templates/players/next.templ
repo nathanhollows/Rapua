@@ -3,7 +3,6 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v4/models"
-	"hash/fnv"
 )
 
 templ Next(team models.Team, locations []models.Location) {
@@ -120,7 +119,8 @@ templ showClues(seed string, locations []models.Location) {
 		Each clue is for a different location.
 	</p>
 	for _, location := range locations {
-		if len(location.Clues) == 0 {
+		// TODO: FIX THIS
+		if true {
 			<div>
 				<div class="alert alert-secondary my-3">
 					<span>
@@ -131,21 +131,11 @@ templ showClues(seed string, locations []models.Location) {
 		} else {
 			<div class="prose">
 				<blockquote class="m-1 font-normal not-italic">
-					@templ.Raw(stringToMarkdown(chooseClue(seed, location.Clues).Content))
+					// @templ.Raw(stringToMarkdown(chooseClue(seed, "").Content))
 				</blockquote>
 			</div>
 		}
 	}
-}
-
-func chooseClue(seed string, clues []models.Clue) models.Clue {
-	if len(clues) == 0 {
-		return models.Clue{Content: "No clues available."}
-	}
-	h := fnv.New32a()
-	h.Write([]byte(seed))
-	index := h.Sum32() % uint32(len(clues))
-	return clues[index]
 }
 
 templ mapScript() {

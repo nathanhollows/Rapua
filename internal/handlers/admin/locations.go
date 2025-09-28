@@ -173,12 +173,6 @@ func (h *AdminHandler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.locationService.LoadCluesForLocation(r.Context(), location)
-	if err != nil {
-		h.handleError(w, r, "LocationEdit: loading clues", "Error loading clues", "error", err, "instance_id", user.CurrentInstanceID, "location_id", location.ID)
-		return
-	}
-
 	c := templates.EditLocation(*location, user.CurrentInstance.Settings, blocks)
 	err = templates.Layout(c, *user, "Locations", "Edit Location").Render(r.Context(), w)
 	if err != nil {
@@ -243,28 +237,6 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		h.handleError(w, r, "LocationEditPost: updating location", "Error updating location", "error", err)
 		return
-	}
-
-	if user.CurrentInstance.Settings.NavigationDisplayMode == models.NavigationDisplayClues {
-		// Fetch the form clues
-		clues := []string{}
-		for key, value := range r.Form {
-			if key == "clues" {
-				clues = value
-			}
-		}
-		clueIDs := []string{}
-		for key, value := range r.Form {
-			if key == "clue-ids" {
-				clueIDs = value
-			}
-		}
-
-		err = h.clueService.UpdateClues(r.Context(), location, clues, clueIDs)
-		if err != nil {
-			h.handleError(w, r, "LocationEdit: updating clues", "Error updating clues", "error", err, "instance_id", user.CurrentInstanceID, "location_id", location.ID)
-			return
-		}
 	}
 
 	if markerID != location.MarkerID {

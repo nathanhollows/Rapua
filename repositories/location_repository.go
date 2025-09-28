@@ -36,8 +36,6 @@ type LocationRepository interface {
 
 	// LoadRelations loads all relations for a location
 	LoadRelations(ctx context.Context, location *models.Location) error
-	// LoadClues loads all clues for a location
-	LoadClues(ctx context.Context, location *models.Location) error
 	// LoadMarker loads the marker for a location
 	LoadMarker(ctx context.Context, location *models.Location) error
 	// LoadInstance loads the instance for a location
@@ -195,18 +193,6 @@ func (r *locationRepository) LoadRelations(ctx context.Context, location *models
 		Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("loading relations for location: %w", err)
-	}
-	return nil
-}
-
-// LoadClues loads all clues for a location.
-func (r *locationRepository) LoadClues(ctx context.Context, location *models.Location) error {
-	err := r.db.NewSelect().
-		Model(&location.Clues).
-		Where("location_id = ?", location.ID).
-		Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("loading clues for location: %w", err)
 	}
 	return nil
 }

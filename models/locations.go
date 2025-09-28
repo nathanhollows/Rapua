@@ -15,7 +15,6 @@ type Location struct {
 	AvgDuration  float64 `bun:"avg_duration,type:float"`
 	Points       int     `bun:"points,"`
 
-	Clues    []Clue   `bun:"rel:has-many,join:id=location_id"`
 	Instance Instance `bun:"rel:has-one,join:instance_id=id"`
 	Marker   Marker   `bun:"rel:has-one,join:marker_id=code"`
 	Blocks   []Block  `bun:"rel:has-many,join:id=location_id"`

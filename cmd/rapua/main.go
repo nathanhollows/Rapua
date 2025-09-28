@@ -166,7 +166,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
-	clueRepo := repositories.NewClueRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
@@ -201,7 +200,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		blockRepo,
 		blockStateRepo,
 		checkInRepo,
-		clueRepo,
 		instanceRepo,
 		instanceSettingsRepo,
 		locationRepo,
@@ -213,10 +211,9 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
 	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
@@ -259,7 +256,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		assetGenerator,
 		identityService,
 		blockService,
-		clueService,
 		deleteService,
 		facilitatorService,
 		gameScheduleService,

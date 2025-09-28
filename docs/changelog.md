@@ -8,6 +8,10 @@ order: 100
 
 ## 5.0.0
 
+v5.0.0 is a *major* release with big architectural changes to improve security, maintainability, and extensibility.
+
+The most exciting change is the ability to use blocks in multiple contexts, not just on location pages. For example, clues have been replaced with blocks which means all sorts of content can be used as clues, not just text.
+
 ### Added
 
 - New [Button Block](/docs/user/blocks/button) that allows admins to add styled buttons to their game.
@@ -37,6 +41,11 @@ order: 100
 - [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
 - Minor [Checklist block](/docs/user/blocks/checklist) style fixes.
 - Minor [Sorting block](/docs/user/blocks/sorting) style fixes.
+
+### Removed
+
+- **Breaking change:** `ClueRepository`, `ClueService`, and all clue-related views and logic. 
+  - Clues are now automatically migrated to [Random Clue Blocks](/docs/user/blocks/random-clue) when the migration is run.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 
