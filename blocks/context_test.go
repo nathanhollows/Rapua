@@ -13,7 +13,7 @@ func TestBlockContextFiltering(t *testing.T) {
 	}{
 		{
 			name:             "Content context should include most blocks",
-			context:          ContextLocation,
+			context:          ContextLocationContent,
 			expectedBlocks:   []string{"markdown", "alert", "button", "image", "broker", "checklist"},
 			unexpectedBlocks: []string{}, // All current blocks support content
 		},
@@ -73,16 +73,16 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 		context   BlockContext
 		expected  bool
 	}{
-		{"markdown", ContextLocation, true},
+		{"markdown", ContextLocationContent, true},
 		// {"markdown", ContextNavigation, true},
 		// {"markdown", ContextStart, true},
-		{"broker", ContextLocation, true},
+		{"broker", ContextLocationContent, true},
 		// {"broker", ContextNavigation, false},
 		// {"broker", ContextStart, false},
-		{"clue", ContextLocation, true},
+		{"clue", ContextLocationContent, true},
 		// {"clue", ContextNavigation, true},
 		// {"clue", ContextStart, false},
-		{"nonexistent", ContextLocation, false},
+		{"nonexistent", ContextLocationContent, false},
 	}
 
 	for _, tt := range tests {
@@ -98,7 +98,7 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 
 func TestBackwardCompatibility(t *testing.T) {
 	// Test that GetRegisteredBlocks still works
-	blocks := GetBlocksForContext(ContextLocation)
+	blocks := GetBlocksForContext(ContextLocationContent)
 	if len(blocks) == 0 {
 		t.Error("GetRegisteredBlocks() returned empty slice")
 	}

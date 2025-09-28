@@ -3,13 +3,15 @@ package blocks
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 )
 
 // BlockContext represents where a block can be used
 type BlockContext string
 
 const (
-	ContextLocation BlockContext = "content" // Regular location content blocks
+	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
+	ContextLocationClues   BlockContext = "location_clues"   // Clues
 	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
 	// ContextEnd     BlockContext = "end"     // End pages
 )
@@ -90,21 +92,22 @@ func registerBlock(instance Block, contexts []BlockContext) {
 // Initialize block registry
 func init() {
 	// Content blocks
-	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&AlertBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&DividerBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&ImageBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
+	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ImageBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent})
 
 	// Interactive blocks
-	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&ClueBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocation})
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocation})
+	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent})
 }
 
 // Public API functions
@@ -133,10 +136,8 @@ func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
 		return false
 	}
 
-	for _, supportedContext := range registration.SupportedContexts {
-		if supportedContext == context {
-			return true
-		}
+	if slices.Contains(registration.SupportedContexts, context) {
+		return true
 	}
 
 	return false
@@ -177,6 +178,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewBrokerBlock(baseBlock), nil
 	case "button":
 		return NewButtonBlock(baseBlock), nil
+	case "random_clue":
+		return NewRandomClueBlock(baseBlock), nil
 	// case "photo":
 	// 	return NewPhotoBlock(baseBlock), nil
 	default:
@@ -253,6 +256,12 @@ func NewBrokerBlock(base BaseBlock) *BrokerBlock {
 
 func NewButtonBlock(base BaseBlock) *ButtonBlock {
 	return &ButtonBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
+	return &RandomClueBlock{
 		BaseBlock: base,
 	}
 }
