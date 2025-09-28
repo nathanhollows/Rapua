@@ -164,10 +164,10 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		assert.Len(t, blocksBeforeDuplicate, 1)
 		t.Logf("Blocks before duplicate: %d", len(blocksBeforeDuplicate))
 
-		// Load relations to see if the block is included in the location
-		err = locationService.LoadRelations(context.Background(), &location)
+		// Verify the blocks are accessible through the service
+		blocksAfterRelations, err := blockService.FindByLocationID(context.Background(), location.ID)
 		assert.NoError(t, err)
-		t.Logf("Location blocks after LoadRelations: %d", len(location.Blocks))
+		t.Logf("Location blocks after service lookup: %d", len(blocksAfterRelations))
 
 		// Duplicate the location
 		newLocation, err := locationService.DuplicateLocation(context.Background(), location, gofakeit.UUID())

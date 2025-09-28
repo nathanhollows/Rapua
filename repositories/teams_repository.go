@@ -168,7 +168,7 @@ func (r *teamRepository) LoadInstance(ctx context.Context, team *models.Team) er
 	}
 
 	if len(team.Instance.Locations) == 0 {
-		query = query.Relation("Locations.Blocks")
+		query = query.Relation("Locations")
 	}
 
 	return query.Scan(ctx)
