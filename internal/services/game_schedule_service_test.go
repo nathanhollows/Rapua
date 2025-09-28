@@ -505,4 +505,3 @@ func TestGameScheduleService_Integration_EdgeCases(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, equalTime.Unix(), instance.EndTime.Time.Unix())
 }
-

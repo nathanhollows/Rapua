@@ -311,4 +311,3 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 		RetryEnabled:   false,
 	}
 }
-

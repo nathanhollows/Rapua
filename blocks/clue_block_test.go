@@ -287,4 +287,3 @@ func TestClueBlock_GetData(t *testing.T) {
 	assert.Equal(t, "Description", unmarshaled.DescriptionText)
 	assert.Equal(t, "Custom Label", unmarshaled.ButtonLabel)
 }
-

@@ -53,7 +53,7 @@ func (s StrArray) Value() (driver.Value, error) {
 }
 
 // Scan converts a database JSON string back into a StrArray.
-func (s *StrArray) Scan(value interface{}) error {
+func (s *StrArray) Scan(value any) error {
 	if value == nil {
 		*s = []string{}
 		return nil

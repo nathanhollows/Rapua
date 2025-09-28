@@ -405,4 +405,3 @@ func TestNewQuizBlock(t *testing.T) {
 	assert.False(t, block.RandomizeOrder)
 	assert.False(t, block.RetryEnabled)
 }
-
