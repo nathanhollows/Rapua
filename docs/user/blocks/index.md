@@ -6,11 +6,11 @@ order: 20
 
 # Content blocks
 
-Rapua has thirteen content blocks that you can use to create interactive learning experiences.
+Rapua has 14 content blocks that you can use to create engaging games.
 
 ![Iterative blocks are marked with an `Interative` badge.](/static/images/docs/user/blocks/block-picker.webp)
 
-## Information blocks
+## Static blocks
 
 These blocks are the foundation of your game and are used to provide information, instructions, and context to participants. They are not interactive and do not award points.
 
@@ -19,6 +19,7 @@ These blocks are the foundation of your game and are used to provide information
 - [Divider Block](/docs/user/blocks/divider)
 - [Image Block](/docs/user/blocks/image)
 - [Text Block](/docs/user/blocks/text)
+- [Random Clue Block](/docs/user/blocks/random-clue)
 - [YouTube Block](/docs/user/blocks/youtube)
 
 ## Interactive blocks
