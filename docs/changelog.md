@@ -30,6 +30,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 - **Breaking change:** Removed `CompletionMethods` in favour of a `MustCheckOut` flag. The old field was obsolete with the addition of blocks.
 - **Breaking change:** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
 - **Breaking change:** Renamed `NavigationMethod` and `NavigationMode` to `RouteStrategy` and `NavigationDisplayMode`. The original names were so bad I don't remember which one became which.
+- **Breaking change:** Renamed `LocationID` to `OwnerID` on in `models.Blocks`.
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
 - Updated notification message if a player tries to check out too early.
 - Cookie settings for easier scanning

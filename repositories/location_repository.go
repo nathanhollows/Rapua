@@ -184,8 +184,6 @@ func (r *locationRepository) DeleteByInstanceWithTransaction(ctx context.Context
 func (r *locationRepository) LoadRelations(ctx context.Context, location *models.Location) error {
 	err := r.db.NewSelect().
 		Model(location).
-		Relation("Clues").
-		Relation("Blocks").
 		Relation("Instance").
 		Relation("Instance.Settings").
 		Relation("Marker").

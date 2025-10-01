@@ -8,7 +8,7 @@ import (
 
 type Block struct {
 	ID                 string              `bun:"id,pk,notnull"`
-	LocationID         string              `bun:"location_id,notnull"`
+	OwnerID            string              `bun:"owner_id,notnull"`
 	Type               string              `bun:"type,type:int"`
 	Context            blocks.BlockContext `bun:"context,type:string"`
 	Data               json.RawMessage     `bun:"data,type:jsonb"`
