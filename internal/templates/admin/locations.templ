@@ -268,7 +268,13 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 </script>
 }
 
-templ AddLocation(settings models.InstanceSettings, neighbouring []models.Location, duplicatable []models.Marker) {
+type AddLocationData struct {
+	Settings     models.InstanceSettings
+	Neighbouring []models.Location
+	Duplicatable []models.Marker
+}
+
+templ AddLocation(data AddLocationData) {
 	<form
 		class="flex flex-col gap-5 w-full p-5 max-w-2xl mx-auto"
 		method="post"
@@ -289,7 +295,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					<span id="marker-badge" class="badge badge-neutral hidden"></span>
 				</div>
 			</fieldset>
-			if settings.EnablePoints {
+			if data.Settings.EnablePoints {
 				<fieldset class="fieldset w-40">
 					<legend class="fieldset-legend">Points</legend>
 					<input type="number" class="input w-full validator" placeholder="Enter points" name="points" id="points" autocomplete="off" value="10" required/>
@@ -300,7 +306,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 			<a
 				id="new-marker-tab"
 				role="tab"
-				if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
+				if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
 					class="tab transition-colors"
 				} else {
 					class="tab transition-colors tab-active"
@@ -319,7 +325,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					set <input[name=longitude]/>'s disabled to false
 			"
 			>New map marker</a>
-			if len(duplicatable) > 0 {
+			if len(data.Duplicatable) > 0 {
 				<a
 					role="tab"
 					class="tab transition-colors group"
@@ -354,7 +360,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					</div>
 				</a>
 			}
-			if settings.NavigationDisplayMode == models.NavigationDisplayClues || settings.NavigationDisplayMode == models.NavigationDisplayNames {
+			if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
 				<a
 					role="tab"
 					class="tab transition-colors tab-active group"
@@ -405,8 +411,8 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 				</a>
 			}
 		</div>
-		if len(neighbouring) > 0 {
-			for _, location := range neighbouring {
+		if len(data.Neighbouring) > 0 {
+			for _, location := range data.Neighbouring {
 				if location.Marker.IsMapped() {
 					<span
 						class="neighbour-marker hidden"
@@ -449,7 +455,7 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 					"
 					>
 						<option disabled selected>Select a location</option>
-						for _, marker := range duplicatable {
+						for _, marker := range data.Duplicatable {
 							if marker.IsMapped() {
 								<option
 									value={ fmt.Sprint(marker.Code) }
@@ -480,10 +486,76 @@ templ AddLocation(settings models.InstanceSettings, neighbouring []models.Locati
 	@locationScript()
 }
 
-templ EditLocation(location models.Location, settings models.InstanceSettings, contentBlocks blocks.Blocks) {
+type EditLocationData struct {
+	Settings         models.InstanceSettings
+	Location         models.Location
+	ContentBlocks    blocks.Blocks
+	NavigationBlocks blocks.Blocks
+}
+
+var deleteModalHandle = templ.NewOnceHandle()
+
+templ deleteBlockModal() {
+	<dialog id="confirm_delete_block" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete this block?</h3>
+			<p class="pt-4">You are about to delete this block. Are you sure?</p>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick="confirm_delete_block.close()"
+				>Nevermind</button>
+				<button
+					id="delete-block-btn"
+					type="button"
+					class="btn btn-error"
+					onclick="confirm_delete_block.close()"
+				>Delete</button>
+			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	<script>
+		// AFter the page has loaded
+		document.addEventListener("DOMContentLoaded", function() {
+			  // Delete block confirmation dialog
+			  function confirmDeleteBlock(event) {
+				modal = document.getElementById("confirm_delete_block");
+				url = "/admin/blocks/" + event.currentTarget.dataset.block;
+				btn = modal.querySelector("button.btn-error")
+				btn.setAttribute("hx-delete", url);
+				btn.setAttribute("hx-swap", "outerHTML");
+				btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
+				modal.showModal();
+				htmx.process(modal);
+			  }
+
+			  for (const element of document.querySelectorAll('.block-delete')) {
+				element.addEventListener('click', confirmDeleteBlock);
+			  }
+
+			  // Add listener to #blocks for new blocks
+			  elements = ["blocks", "nav-blocks"];
+			  for (const id of elements) {
+				  if (document.getElementById(id)) {
+					document.getElementById(id).addEventListener("htmx:afterSwap", function (event) {
+					  for (const element of document.querySelectorAll('.block-delete')) {
+						element.addEventListener('click', confirmDeleteBlock);
+					  }
+					});
+				  }
+			  }
+			  });
+		</script>
+}
+
+templ EditLocation(data EditLocationData) {
 	<!-- Header -->
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">Editing <em>{ location.Name }</em></h1>
+		<h1 class="text-2xl font-bold">Editing <em>{ data.Location.Name }</em></h1>
 		<div class="flex gap-3">
 			<div class="dropdown dropdown-center">
 				<div tabindex="0" role="button" class="btn btn-outline">
@@ -496,7 +568,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 						<ul>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", location.MarkerID, ".pdf")) }
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", data.Location.MarkerID, ".pdf")) }
 								>
 									Default (PDF)
 								</a>
@@ -508,32 +580,32 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 						<ul>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".png")) }
-									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".png") }
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", data.Location.MarkerID, ".png")) }
+									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
 								>PNG</a>
 							</li>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", location.MarkerID, ".svg")) }
-									download={ fmt.Sprint("Check In ", location.MarkerID, " ", location.Name, ".svg") }
+									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", data.Location.MarkerID, ".svg")) }
+									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
 								>SVG</a>
 							</li>
 						</ul>
 					</li>
-					if settings.MustCheckOut {
+					if data.Settings.MustCheckOut {
 						<h2 class="menu-title">Check-Out</h2>
 						<li>
 							<ul>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".png")) }
-										download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".png") }
+										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", data.Location.MarkerID, ".png")) }
+										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
 									>QR Code (PNG)</a>
 								</li>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", location.MarkerID, ".svg")) }
-										download={ fmt.Sprint("Check Out ", location.MarkerID, " ", location.Name, ".svg") }
+										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", data.Location.MarkerID, ".svg")) }
+										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
 									>QR Code (SVG)</a>
 								</li>
 							</ul>
@@ -544,7 +616,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
 			<form
 				id="edit-location"
-				hx-post={ fmt.Sprint("/admin/locations/", location.MarkerID) }
+				hx-post={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
 				hx-trigger="click, savelocation delay:500ms, keyup changed from:[form=edit-location] delay:500ms"
 				hx-swap="none"
 			>
@@ -570,16 +642,16 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 						name="name"
 						form="edit-location"
 						class="input w-full"
-						value={ location.Marker.Name }
+						value={ data.Location.Marker.Name }
 						placeholder="Location name"
 					/>
 				</label>
-				if settings.EnablePoints {
+				if data.Settings.EnablePoints {
 					<!-- Location Points -->
 					<label for="points" class="form-control w-full md:w-1/2">
 						<div class="label">
 							<span class="label-text font-bold">Points</span>
-							if !settings.EnablePoints {
+							if !data.Settings.EnablePoints {
 								<span class="label-text-alt">
 									<span class="flex gap-1 badge badge-outline badge-sm tooltip cursor-help" data-tip="Points are currently disabled">
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-3 h-3"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
@@ -594,14 +666,18 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							name="points"
 							form="edit-location"
 							class="input w-full"
-							value={ fmt.Sprint(location.Points) }
+							value={ fmt.Sprint(data.Location.Points) }
 							placeholder="Enter points"
 						/>
 					</label>
 				} else {
-					<input type="hidden" name="points" value={ fmt.Sprint(location.Points) }/>
+					<input type="hidden" name="points" value={ fmt.Sprint(data.Location.Points) }/>
 				}
 			</div>
+			<!-- Delete modal -->
+			@deleteModalHandle.Once() {
+				@deleteBlockModal()
+			}
 			<!-- Clues -->
 			<div class="divider mt-5 mb-10">
 				<div class="dropdown dropdown-center">
@@ -619,18 +695,24 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							<div class="grid grid-cols-3 grid-flow-row gap-5">
 								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
 									if !block.RequiresValidation() {
-										<div class="indicator w-full">
-											<div
+										<form
+											class="indicator w-full"
+											hx-post="/admin/blocks/"
+											hx-target="#nav-blocks"
+											hx-swap="beforeend"
+										>
+											<input type="hidden" name="owner" value={ data.Location.ID }/>
+											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+											<input type="hidden" name="type" value={ block.GetType() }/>
+											<button
+												type="submit"
 												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
 												data-tip={ block.GetDescription() }
-												hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
-												hx-target="#blocks"
-												hx-swap="beforeend"
 											>
 												@templ.Raw(block.GetIconSVG())
 												{ block.GetName() }
-											</div>
-										</div>
+											</button>
+										</form>
 									}
 								}
 							</div>
@@ -640,18 +722,24 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 							<div class="grid grid-cols-3 grid-flow-row gap-5">
 								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
 									if block.RequiresValidation() {
-										<div class="indicator w-full">
-											<div
+										<form
+											class="indicator w-full"
+											hx-post="/admin/blocks/"
+											hx-target="#nav-blocks"
+											hx-swap="beforeend"
+										>
+											<input type="hidden" name="owner" value={ data.Location.ID }/>
+											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+											<input type="hidden" name="type" value={ block.GetType() }/>
+											<button
+												type="submit"
 												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
 												data-tip={ block.GetDescription() }
-												hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
-												hx-target="#blocks"
-												hx-swap="beforeend"
 											>
 												@templ.Raw(block.GetIconSVG())
 												{ block.GetName() }
-											</div>
-										</div>
+											</button>
+										</form>
 									}
 								}
 							</div>
@@ -663,8 +751,8 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				id="nav-blocks"
 				class="flex flex-col gap-5"
 			>
-				for _, block := range contentBlocks {
-					@bTemplates.RenderAdminBlock(settings, block, len(contentBlocks) < 4)
+				for _, block := range data.NavigationBlocks {
+					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
 				}
 			</div>
 			<!-- Blocks -->
@@ -685,18 +773,24 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								<div class="grid grid-cols-3 grid-flow-row gap-5">
 									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 										if !block.RequiresValidation() {
-											<div class="indicator w-full">
-												<div
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="#blocks"
+												hx-swap="beforeend"
+											>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
 													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
 													data-tip={ block.GetDescription() }
-													hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
-													hx-target="#blocks"
-													hx-swap="beforeend"
 												>
 													@templ.Raw(block.GetIconSVG())
 													{ block.GetName() }
-												</div>
-											</div>
+												</button>
+											</form>
 										}
 									}
 								</div>
@@ -706,18 +800,24 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 								<div class="grid grid-cols-3 grid-flow-row gap-5">
 									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 										if block.RequiresValidation() {
-											<div class="indicator w-full">
-												<div
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="#blocks"
+												hx-swap="beforeend"
+											>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
 													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
 													data-tip={ block.GetDescription() }
-													hx-post={ fmt.Sprint("/admin/locations/", location.ID, "/blocks/new/", block.GetType()) }
-													hx-target="#blocks"
-													hx-swap="beforeend"
 												>
 													@templ.Raw(block.GetIconSVG())
 													{ block.GetName() }
-												</div>
-											</div>
+												</button>
+											</form>
 										}
 									}
 								</div>
@@ -729,13 +829,13 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 					id="blocks"
 					class="flex flex-col gap-5"
 				>
-					for _, block := range contentBlocks {
-						@bTemplates.RenderAdminBlock(settings, block, len(contentBlocks) < 4)
+					for _, block := range data.ContentBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.ContentBlocks) < 4)
 					}
 				</div>
 			</section>
 			<!-- Map -->
-			if location.Marker.IsMapped() {
+			if data.Location.Marker.IsMapped() {
 				<section>
 					<div class="divider mt-5 mb-10"></div>
 					<div class="label">
@@ -767,9 +867,9 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 						</span>
 					</div>
 					<!-- Hidden inputs for form handling -->
-					<input type="hidden" name="code" form="edit-location" value={ location.Marker.Code }/>
-					<input type="hidden" name="latitude" form="edit-location" value={ floatToString(location.Marker.Lat) }/>
-					<input type="hidden" name="longitude" form="edit-location" value={ floatToString(location.Marker.Lng) }/>
+					<input type="hidden" name="code" form="edit-location" value={ data.Location.Marker.Code }/>
+					<input type="hidden" name="latitude" form="edit-location" value={ floatToString(data.Location.Marker.Lat) }/>
+					<input type="hidden" name="longitude" form="edit-location" value={ floatToString(data.Location.Marker.Lng) }/>
 				</section>
 			}
 		</div>
@@ -786,39 +886,17 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden" data-theme="cupcake">
 					<div
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full"
-						hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
+						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
 						hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
-						hx-vals={ fmt.Sprint(`{"instanceID": "`, settings.InstanceID, `"}`) }
+						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
 						hx-swap="innerHTML"
 					></div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<dialog id="confirm_delete_block" class="modal modal-bottom sm:modal-middle">
-		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
-			<h3 class="text-lg font-bold">Delete this block?</h3>
-			<p class="pt-4">You are about to delete this block. Are you sure?</p>
-			<div class="modal-action">
-				<button
-					type="button"
-					class="btn"
-					onclick="confirm_delete_block.close()"
-				>Nevermind</button>
-				<button
-					id="delete-block-btn"
-					type="button"
-					class="btn btn-error"
-					onclick="confirm_delete_block.close()"
-				>Delete</button>
-			</div>
-			<form method="dialog">
-				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-			</form>
-		</div>
-	</dialog>
 	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle">
-		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
+		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
 			<h3 class="text-lg font-bold">Delete this location?</h3>
 			<p class="pt-4">You are about to delete this location. Are you sure?</p>
 			<div class="modal-action">
@@ -830,7 +908,7 @@ templ EditLocation(location models.Location, settings models.InstanceSettings, c
 				<button
 					type="button"
 					class="btn btn-error"
-					hx-delete={ fmt.Sprint("/admin/locations/", location.MarkerID) }
+					hx-delete={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
 					hx-trigger="click"
 					onclick="confirm_delete_modal.close()"
 				>Delete</button>
@@ -1028,31 +1106,6 @@ templ locationScript() {
       });
       geocoderEl.appendChild(geocoder.onAdd(map));
     }
-  }
-
-  // Delete block confirmation dialog
-  function confirmDeleteBlock(event) {
-    modal = document.getElementById("confirm_delete_block");
-    url = "/admin/locations/" + event.currentTarget.dataset.location + "/blocks/" + event.currentTarget.dataset.block + "/delete";
-    btn = modal.querySelector("button.btn-error")
-    btn.setAttribute("hx-delete", url);
-    btn.setAttribute("hx-swap", "outerHTML");
-    btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
-    modal.showModal();
-    htmx.process(modal);
-  }
-
-  for (const element of document.querySelectorAll('.block-delete')) {
-    element.addEventListener('click', confirmDeleteBlock);
-  }
-
-  // Add listener to #blocks for new blocks
-  if (document.getElementById("blocks")) {
-    document.getElementById("blocks").addEventListener("htmx:afterSwap", function (event) {
-      for (const element of document.querySelectorAll('.block-delete')) {
-        element.addEventListener('click', confirmDeleteBlock);
-      }
-    });
   }
 
   initializeMap();

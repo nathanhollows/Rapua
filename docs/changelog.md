@@ -21,6 +21,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
   - Also sets the foundation for using content blocks as clues.
   - A registry means developers can now fetch all blocks registered for a certain type of use. Supports multiple contexts per block.
   - Implemented `GetBlocksForContext()` and `CanBlockBeUsedInContext()` API functions for context-aware block management
+  - All new `admin/blocks` views and handlers support context-aware block management and replace the old routes.
 - Documentation tests now cover mandatory YAML frontmatter for all docs. Files with no yaml or missing `title` or `order` fields will break the docs service.
 - Added `MustCheckOut` field to instance settings table and added migration.
 - CSRF protection using gorilla/csrf middleware with session-based tokens and environment-configurable keys.

@@ -130,7 +130,7 @@ var brokerInformationTierTextarea = TextareaParams{
 templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, resubmit delay:500ms", block.ID) }
 		hx-swap="none"
 		_="

@@ -24,7 +24,7 @@ var markdownTextarea = TextareaParams{
 templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea) delay:1000ms", block.ID) }
 		hx-swap="none"
 		hx-indicator={ fmt.Sprintf("#block-%s .loading", block.ID) }

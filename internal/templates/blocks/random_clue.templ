@@ -17,7 +17,7 @@ templ randomCluePlayer(_ models.InstanceSettings, block blocks.RandomClueBlock, 
 templ randomClueAdmin(_ models.InstanceSettings, block blocks.RandomClueBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, trigger delay:100:ms, updated delay:500ms", block.ID) }
 		hx-swap="none"
 	>

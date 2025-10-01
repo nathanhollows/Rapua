@@ -228,18 +228,18 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
 			r.Get("/poster/{id}.pdf", adminHandler.GeneratePoster)
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
-			// Blocks
-			r.Route("/{location}/blocks", func(r chi.Router) {
-				// r.Get("/", adminHandler.Blocks)
-				// r.Post("/", adminHandler.BlocksPost)
-				r.Post("/reorder", adminHandler.ReorderBlocks)
-				r.Post("/new/{type}", adminHandler.BlockNewPost)
-				r.Get("/{blockID}/edit", adminHandler.BlockEdit)
-				r.Post("/{blockID}/update", adminHandler.BlockEditPost)
-				r.Delete("/{blockID}/delete", adminHandler.BlockDelete)
-			})
 		})
 
+		// RESTful blocks API
+		r.Route("/blocks", func(r chi.Router) {
+			// Primary RESTful endpoints
+			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
+			r.Get("/", adminHandler.BlockList)            // GET /admin/blocks?owner=uuid&context=ctx
+			r.Get("/{id}", adminHandler.BlockGet)         // GET /admin/blocks/{id}
+			r.Put("/{id}", adminHandler.BlockUpdate)      // PUT /admin/blocks/{id}
+			r.Delete("/{id}", adminHandler.BlockDelete)   // DELETE /admin/blocks/{id}
+			r.Post("/reorder", adminHandler.BlockReorder) // POST /admin/blocks/reorder
+		})
 		r.Route("/teams", func(r chi.Router) {
 			r.Get("/", adminHandler.Teams)
 			r.Post("/add", adminHandler.TeamsAdd)
