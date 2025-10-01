@@ -48,10 +48,11 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
+					blocks.ContextLocationContent,
 				)
 			},
 			action: func(block blocks.Block) (interface{}, error) {
-				return repo.Create(context.Background(), block, gofakeit.UUID())
+				return repo.Create(context.Background(), block, gofakeit.UUID(), blocks.ContextLocationContent)
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)
@@ -88,11 +89,17 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
+					blocks.ContextLocationContent,
 				)
 				if err != nil {
 					return nil, err
 				}
-				createdBlock, _ := repo.Create(context.Background(), block, gofakeit.UUID())
+				createdBlock, _ := repo.Create(
+					context.Background(),
+					block,
+					gofakeit.UUID(),
+					blocks.ContextLocationContent,
+				)
 				return createdBlock, nil
 			},
 			action: func(block blocks.Block) (interface{}, error) {
@@ -133,11 +140,17 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
+					blocks.ContextLocationContent,
 				)
 				if err != nil {
 					return nil, err
 				}
-				createdBlock, _ := repo.Create(context.Background(), block, gofakeit.UUID())
+				createdBlock, _ := repo.Create(
+					context.Background(),
+					block,
+					gofakeit.UUID(),
+					blocks.ContextLocationContent,
+				)
 				return createdBlock, nil
 			},
 			action: func(block blocks.Block) (interface{}, error) {
@@ -154,7 +167,7 @@ func TestBlockRepository(t *testing.T) {
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)
 				updatedBlock := result.(blocks.Block)
-				assert.Equal(t, `{"content":"/updated-url","caption":"","link":""}`, string(updatedBlock.GetData()))
+				assert.JSONEq(t, `{"content":"/updated-url","caption":"","link":""}`, string(updatedBlock.GetData()))
 			},
 			cleanupFunc: func(block blocks.Block) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
@@ -187,11 +200,17 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
+					blocks.ContextLocationContent,
 				)
 				if err != nil {
 					return nil, err
 				}
-				createdBlock, _ := repo.Create(context.Background(), block, gofakeit.UUID())
+				createdBlock, _ := repo.Create(
+					context.Background(),
+					block,
+					gofakeit.UUID(),
+					blocks.ContextLocationContent,
+				)
 				return createdBlock, nil
 			},
 			action: func(block blocks.Block) (interface{}, error) {
@@ -249,7 +268,7 @@ func TestBlockRepository_Bulk(t *testing.T) {
 				// Create 3 blocks
 				blockSet := make([]blocks.Block, 3)
 				locationID := gofakeit.UUID()
-				for i := 0; i < 3; i++ {
+				for i := range 3 {
 					block, err := repo.Create(
 						context.Background(),
 						blocks.NewImageBlock(
@@ -260,6 +279,7 @@ func TestBlockRepository_Bulk(t *testing.T) {
 							},
 						),
 						locationID,
+						blocks.ContextLocationContent,
 					)
 					if err != nil {
 						return nil, err
@@ -330,6 +350,7 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 			},
 		),
 		gofakeit.UUID(),
+		blocks.ContextLocationContent,
 	)
 
 	assert.NoError(t, err)
@@ -340,6 +361,7 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 		context.Background(),
 		block,
 		gofakeit.UUID(),
+		blocks.ContextLocationContent,
 	)
 
 	assert.NoError(t, err)

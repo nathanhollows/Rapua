@@ -13,11 +13,12 @@ import (
 type BlockService struct {
 	blockRepo      repositories.BlockRepository
 	blockStateRepo repositories.BlockStateRepository
-	checkInService CheckInService
-	teamService    TeamService
 }
 
-func NewBlockService(blockRepo repositories.BlockRepository, blockStateRepo repositories.BlockStateRepository) *BlockService {
+func NewBlockService(
+	blockRepo repositories.BlockRepository,
+	blockStateRepo repositories.BlockStateRepository,
+) *BlockService {
 	return &BlockService{
 		blockRepo:      blockRepo,
 		blockStateRepo: blockStateRepo,
@@ -29,7 +30,27 @@ func (s *BlockService) GetByBlockID(ctx context.Context, blockID string) (blocks
 	return s.blockRepo.GetByID(ctx, blockID)
 }
 
-// FindByLocationID fetches all content blocks for a location.
+// FindByOwnerID fetches all content blocks for an owner (context agnostic).
+func (s *BlockService) FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error) {
+	if ownerID == "" {
+		return nil, errors.New("ownerID cannot be empty")
+	}
+	return s.blockRepo.FindByOwnerID(ctx, ownerID)
+}
+
+// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context.
+func (s *BlockService) FindByOwnerIDAndContext(
+	ctx context.Context,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) (blocks.Blocks, error) {
+	if ownerID == "" {
+		return nil, errors.New("ownerID cannot be empty")
+	}
+	return s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+}
+
+// FindByLocationID fetches all content blocks for a location (legacy method).
 func (s *BlockService) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
 	if locationID == "" {
 		return nil, errors.New("locationID cannot be empty")
@@ -37,6 +58,41 @@ func (s *BlockService) FindByLocationID(ctx context.Context, locationID string) 
 	return s.blockRepo.FindByLocationID(ctx, locationID)
 }
 
+// NewBlockWithOwnerAndContext creates a new block for an owner with specific context.
+func (s *BlockService) NewBlockWithOwnerAndContext(
+	ctx context.Context,
+	ownerID string,
+	blockContext blocks.BlockContext,
+	blockType string,
+) (blocks.Block, error) {
+	if ownerID == "" {
+		return nil, errors.New("ownerID cannot be empty")
+	}
+	if blockType == "" {
+		return nil, errors.New("blockType cannot be empty")
+	}
+	// Use the blocks package to create the appropriate block based on the type.
+	baseBlock := blocks.BaseBlock{
+		Type:       blockType,
+		LocationID: ownerID, // Use ownerID as LocationID for backward compatibility
+	}
+
+	// Let the blocks package handle the creation logic.
+	block, err := blocks.CreateFromBaseBlock(baseBlock)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create block of type %s: %w", blockType, err)
+	}
+
+	// Store the new block in the repository.
+	newBlock, err := s.blockRepo.Create(ctx, block, ownerID, blockContext)
+	if err != nil {
+		return nil, fmt.Errorf("failed to store block of type %s: %w", blockType, err)
+	}
+
+	return newBlock, nil
+}
+
+// NewBlock creates a new block for a location (legacy method).
 func (s *BlockService) NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error) {
 	if locationID == "" {
 		return nil, errors.New("locationID cannot be empty")
@@ -56,8 +112,8 @@ func (s *BlockService) NewBlock(ctx context.Context, locationID string, blockTyp
 		return nil, fmt.Errorf("failed to create block of type %s: %w", blockType, err)
 	}
 
-	// Store the new block in the repository.
-	newBlock, err := s.blockRepo.Create(ctx, block, locationID)
+	// Store the new block in the repository using default context.
+	newBlock, err := s.blockRepo.Create(ctx, block, locationID, blocks.ContextLocationContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to store block of type %s: %w", blockType, err)
 	}
@@ -98,7 +154,11 @@ func (s *BlockService) NewMockBlockState(ctx context.Context, blockID, teamCode 
 }
 
 // UpdateBlock updates a block.
-func (s *BlockService) UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error) {
+func (s *BlockService) UpdateBlock(
+	ctx context.Context,
+	block blocks.Block,
+	data map[string][]string,
+) (blocks.Block, error) {
 	err := block.UpdateBlockData(data)
 	if err != nil {
 		return nil, fmt.Errorf("updating block data: %w", err)
@@ -111,7 +171,33 @@ func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) err
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
 
-func (s *BlockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error) {
+// FindByOwnerIDAndTeamCodeWithState fetches blocks and their states by owner and team code.
+func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
+	ctx context.Context,
+	ownerID, teamCode string,
+) ([]blocks.Block, map[string]blocks.PlayerState, error) {
+	if ownerID == "" {
+		return nil, nil, errors.New("ownerID must be set")
+	}
+	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCode(ctx, ownerID, teamCode)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create a map for easier lookup of block states by block ID
+	blockStates := make(map[string]blocks.PlayerState, len(states))
+	for _, state := range states {
+		blockStates[state.GetBlockID()] = state
+	}
+
+	return foundBlocks, blockStates, nil
+}
+
+// FindByLocationIDAndTeamCodeWithState fetches blocks and their states by location and team code (legacy method).
+func (s *BlockService) FindByLocationIDAndTeamCodeWithState(
+	ctx context.Context,
+	locationID, teamCode string,
+) ([]blocks.Block, map[string]blocks.PlayerState, error) {
 	if locationID == "" {
 		return nil, nil, errors.New("locationID must be set")
 	}
@@ -129,9 +215,16 @@ func (s *BlockService) FindByLocationIDAndTeamCodeWithState(ctx context.Context,
 	return foundBlocks, blockStates, nil
 }
 
-func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error) {
+func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
+	ctx context.Context,
+	blockID, teamCode string,
+) (blocks.Block, blocks.PlayerState, error) {
 	if blockID == "" || teamCode == "" {
-		return nil, nil, fmt.Errorf("blockID and teamCode must be set, got blockID: %s, teamCode: %s", blockID, teamCode)
+		return nil, nil, fmt.Errorf(
+			"blockID and teamCode must be set, got blockID: %s, teamCode: %s",
+			blockID,
+			teamCode,
+		)
 	}
 
 	return s.blockRepo.GetBlockAndStateByBlockIDAndTeamCode(ctx, blockID, teamCode)
@@ -141,7 +234,7 @@ func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context
 func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		LocationID:         block.GetLocationID(),
+		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
 		Type:               block.GetType(),
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),
@@ -167,7 +260,10 @@ func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, l
 }
 
 // CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check in.
-func (s *BlockService) CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error) {
+func (s *BlockService) CheckValidationRequiredForCheckIn(
+	ctx context.Context,
+	locationID, teamCode string,
+) (bool, error) {
 	blocks, state, err := s.FindByLocationIDAndTeamCodeWithState(ctx, locationID, teamCode)
 	if err != nil {
 		return false, err

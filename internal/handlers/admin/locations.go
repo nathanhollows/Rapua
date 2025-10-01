@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v4/models"
@@ -17,7 +18,16 @@ func (h *AdminHandler) Locations(w http.ResponseWriter, r *http.Request) {
 	for i, location := range user.CurrentInstance.Locations {
 		err := h.locationService.LoadRelations(r.Context(), &location)
 		if err != nil {
-			h.handleError(w, r, "Locations: loading relations", "Error loading relations", "error", err, "instance_id", user.CurrentInstanceID)
+			h.handleError(
+				w,
+				r,
+				"Locations: loading relations",
+				"Error loading relations",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+			)
 			return
 		}
 		user.CurrentInstance.Locations[i] = location
@@ -42,11 +52,26 @@ func (h *AdminHandler) LocationNew(w http.ResponseWriter, r *http.Request) {
 
 	duplicatable, err := h.markerService.FindMarkersNotInInstance(r.Context(), user.CurrentInstanceID, instances)
 	if err != nil {
-		h.handleError(w, r, "LocationNew: getting markers", "Error getting markers", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"LocationNew: getting markers",
+			"Error getting markers",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
-	c := templates.AddLocation(user.CurrentInstance.Settings, user.CurrentInstance.Locations, duplicatable)
+	data := templates.AddLocationData{
+		Settings:     user.CurrentInstance.Settings,
+		Neighbouring: user.CurrentInstance.Locations,
+		Duplicatable: duplicatable,
+	}
+
+	c := templates.AddLocation(data)
 	err = templates.Layout(c, *user, "Locations", "New Location").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("LocationNew: rendering template", "error", err)
@@ -59,7 +84,16 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		h.handleError(w, r, "LocationNewPost: parsing form", "Error parsing form", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"LocationNewPost: parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -72,12 +106,30 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("latitude") != "" {
 		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
 		if err != nil {
-			h.handleError(w, r, "LocationNewPost: converting latitude", "Error converting latitude", "error", err, "instance_id", user.CurrentInstanceID)
+			h.handleError(
+				w,
+				r,
+				"LocationNewPost: converting latitude",
+				"Error converting latitude",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+			)
 			return
 		}
 		lng, err = strconv.ParseFloat(r.FormValue("longitude"), 64)
 		if err != nil {
-			h.handleError(w, r, "LocationNewPost: converting longitude", "Error converting longitude", "error", err, "instance_id", user.CurrentInstanceID)
+			h.handleError(
+				w,
+				r,
+				"LocationNewPost: converting longitude",
+				"Error converting longitude",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+			)
 			return
 		}
 	}
@@ -86,7 +138,16 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	if user.CurrentInstance.Settings.EnablePoints && r.FormValue("points") != "" {
 		points, err = strconv.Atoi(r.FormValue("points"))
 		if err != nil {
-			h.handleError(w, r, "LocationNewPost: converting points", "Error converting points", "error", err, "instance_id", user.CurrentInstanceID)
+			h.handleError(
+				w,
+				r,
+				"LocationNewPost: converting points",
+				"Error converting points",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+			)
 			return
 		}
 	}
@@ -94,9 +155,25 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	marker := r.FormValue("marker")
 	var location models.Location
 	if marker == "" {
-		location, err = h.locationService.CreateLocation(r.Context(), user.CurrentInstanceID, r.FormValue("name"), lat, lng, points)
+		location, err = h.locationService.CreateLocation(
+			r.Context(),
+			user.CurrentInstanceID,
+			r.FormValue("name"),
+			lat,
+			lng,
+			points,
+		)
 		if err != nil {
-			h.handleError(w, r, "LocationNewPost: creating location without marker", "Error creating location without marker", "error", err, "instance_id", user.CurrentInstanceID)
+			h.handleError(
+				w,
+				r,
+				"LocationNewPost: creating location without marker",
+				"Error creating location without marker",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+			)
 			return
 		}
 	} else {
@@ -133,14 +210,32 @@ func (h *AdminHandler) ReorderLocations(w http.ResponseWriter, r *http.Request) 
 
 	err := r.ParseForm()
 	if err != nil {
-		h.handleError(w, r, "ReorderLocations: parsing form", "Error parsing form", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"ReorderLocations: parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
 	locations := r.Form["location"]
 	err = h.locationService.ReorderLocations(r.Context(), user.CurrentInstanceID, locations)
 	if err != nil {
-		h.handleError(w, r, "ReorderLocations: reordering locations", "Error reordering locations", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"ReorderLocations: reordering locations",
+			"Error reordering locations",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -161,19 +256,65 @@ func (h *AdminHandler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 
 	location, err := h.locationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, code)
 	if err != nil {
-		h.logger.Error("LocationEdit: finding location", "error", err, "instance_id", user.CurrentInstanceID, "location_code", code)
+		h.logger.Error(
+			"LocationEdit: finding location",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+			"location_code",
+			code,
+		)
 		h.redirect(w, r, "/admin/locations")
 		return
 	}
 
-	blocks, err := h.blockService.FindByLocationID(r.Context(), location.ID)
+	contentBlocks, err := h.blockService.FindByOwnerIDAndContext(
+		r.Context(),
+		location.ID,
+		blocks.ContextLocationContent,
+	)
 	if err != nil {
-		h.logger.Error("LocationEdit: getting blocks", "error", err, "instance_id", user.CurrentInstanceID, "location_id", location.ID)
+		h.logger.Error(
+			"LocationEdit: getting blocks",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+			"location_id",
+			location.ID,
+		)
 		h.redirect(w, r, "/admin/locations")
 		return
 	}
 
-	c := templates.EditLocation(*location, user.CurrentInstance.Settings, blocks)
+	navigationBlocks, err := h.blockService.FindByOwnerIDAndContext(
+		r.Context(),
+		location.ID,
+		blocks.ContextLocationClues,
+	)
+	if err != nil {
+		h.logger.Error(
+			"LocationEdit: getting blocks",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+			"location_id",
+			location.ID,
+		)
+		h.redirect(w, r, "/admin/locations")
+		return
+	}
+
+	data := templates.EditLocationData{
+		Settings:         user.CurrentInstance.Settings,
+		Location:         *location,
+		ContentBlocks:    contentBlocks,
+		NavigationBlocks: navigationBlocks,
+	}
+
+	c := templates.EditLocation(data)
 	err = templates.Layout(c, *user, "Locations", "Edit Location").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "LocationEdit: rendering template", "Error rendering template", "error", err)
