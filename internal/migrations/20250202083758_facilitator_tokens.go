@@ -19,10 +19,16 @@ type m20250202083758_FacilitatorTokens struct {
 func init() {
 	Migrations.MustRegister(
 		func(ctx context.Context, db *bun.DB) error {
-			_, err := db.NewCreateTable().Model(&m20250202083758_FacilitatorTokens{}).IfNotExists().Exec(context.Background())
+			_, err := db.NewCreateTable().
+				Model(&m20250202083758_FacilitatorTokens{}).
+				IfNotExists().
+				Exec(context.Background())
 			return err
 		}, func(ctx context.Context, db *bun.DB) error {
-			_, err := db.NewDropTable().Model(&m20250202083758_FacilitatorTokens{}).IfExists().Exec(context.Background())
+			_, err := db.NewDropTable().
+				Model(&m20250202083758_FacilitatorTokens{}).
+				IfExists().
+				Exec(context.Background())
 			return err
 		})
 }

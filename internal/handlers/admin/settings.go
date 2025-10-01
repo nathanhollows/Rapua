@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v4/internal/services"
@@ -28,7 +29,7 @@ func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SettingsProfilePost handles updating the user's profile settings
+// SettingsProfilePost handles updating the user's profile settings.
 func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -88,7 +89,7 @@ func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SettingsSecurityPost handles updating security settings like password
+// SettingsSecurityPost handles updating security settings like password.
 func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -114,12 +115,12 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 		err := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
 		if err != nil {
 			var errorMessage string
-			switch err {
-			case services.ErrIncorrectOldPassword:
+			switch {
+			case errors.Is(err, services.ErrIncorrectOldPassword):
 				errorMessage = "Current password is incorrect"
-			case services.ErrPasswordsDoNotMatch:
+			case errors.Is(err, services.ErrPasswordsDoNotMatch):
 				errorMessage = "New passwords do not match"
-			case services.ErrEmptyPassword:
+			case errors.Is(err, services.ErrEmptyPassword):
 				errorMessage = "Password cannot be empty"
 			default:
 				errorMessage = "Failed to update password"
@@ -137,7 +138,7 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 	h.handleSuccess(w, r, "Security settings updated!")
 }
 
-// DeleteAccount handles account deletion
+// DeleteAccount handles account deletion.
 func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 

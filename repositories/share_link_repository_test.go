@@ -145,7 +145,10 @@ func TestShareLinkRepository_Use(t *testing.T) {
 		{
 			name: "Use once",
 			setup: func() *models.ShareLink {
-				link := &models.ShareLink{TemplateID: uuid.New().String(), ExpiresAt: bun.NullTime{Time: time.Now().Add(time.Hour)}}
+				link := &models.ShareLink{
+					TemplateID: uuid.New().String(),
+					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
+				}
 				err := repo.Create(context.Background(), link)
 				assert.NoError(t, err)
 				return link
@@ -167,7 +170,10 @@ func TestShareLinkRepository_Use(t *testing.T) {
 		{
 			name: "Expired link",
 			setup: func() *models.ShareLink {
-				link := &models.ShareLink{TemplateID: uuid.New().String(), ExpiresAt: bun.NullTime{Time: time.Now().Add(-time.Hour)}}
+				link := &models.ShareLink{
+					TemplateID: uuid.New().String(),
+					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
+				}
 				err := repo.Create(context.Background(), link)
 				assert.NoError(t, err)
 				return link

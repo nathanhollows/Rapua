@@ -40,7 +40,12 @@ type UploadStorage interface {
 }
 
 // UploadFile uploads a file and saves metadata to the database.
-func (s *UploadService) UploadFile(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, data UploadMetadata) (*models.Upload, error) {
+func (s *UploadService) UploadFile(
+	ctx context.Context,
+	file multipart.File,
+	fileHeader *multipart.FileHeader,
+	data UploadMetadata,
+) (*models.Upload, error) {
 	if fileHeader == nil {
 		return nil, errors.New("file header is nil")
 	}

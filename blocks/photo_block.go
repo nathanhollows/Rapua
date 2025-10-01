@@ -75,7 +75,7 @@ func (b *PhotoBlock) ValidatePlayerInput(state PlayerState, input map[string][]s
 	if state.GetPlayerData() != nil {
 		err := json.Unmarshal(state.GetPlayerData(), &newPlayerData)
 		if err != nil {
-			return state, fmt.Errorf("unmarshalling player data %v", err)
+			return state, fmt.Errorf("unmarshalling player data %w", err)
 		}
 	}
 

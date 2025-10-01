@@ -215,7 +215,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
-	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
+	checkInService := services.NewCheckInService(
+		checkInRepo,
+		locationRepo,
+		teamRepo,
+		locationStatsService,
+		navigationService,
+		blockService,
+	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	teamService := services.NewTeamService(teamRepo, checkInRepo, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)

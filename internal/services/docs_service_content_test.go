@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,13 +76,15 @@ func TestDocs_RequireYAMLFrontmatter(t *testing.T) {
 	}
 
 	if len(missingYAMLFiles) > 0 {
-		t.Fatalf("%d files are missing proper YAML frontmatter. Docs service cannot be initialized.\nFiles missing YAML frontmatter:\n  - %s\n\nAll .md files must have YAML frontmatter starting with '---' and containing at least title and order fields.",
+		t.Fatalf(
+			"%d files are missing proper YAML frontmatter. Docs service cannot be initialized.\nFiles missing YAML frontmatter:\n  - %s\n\nAll .md files must have YAML frontmatter starting with '---' and containing at least title and order fields.",
 			len(missingYAMLFiles),
-			strings.Join(missingYAMLFiles, "\n  - "))
+			strings.Join(missingYAMLFiles, "\n  - "),
+		)
 	}
 }
 
-// TestDocs_YAMLStructureValid validates that YAML frontmatter contains required fields
+// TestDocs_YAMLStructureValid validates that YAML frontmatter contains required fields.
 func TestDocs_YAMLStructureValid(t *testing.T) {
 	dir := "../../docs"
 	docsService, err := services.NewDocsService(dir)
@@ -262,7 +265,7 @@ func TestDocs_HeadersTitleCase(t *testing.T) {
 	walkPages(docsService.Pages)
 }
 
-// Check if a character is alphabetic
+// Check if a character is alphabetic.
 func isAlpha(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
@@ -288,7 +291,12 @@ func TestDocs_OrderNumbersUnique(t *testing.T) {
 				page.Order = -1
 			}
 			if orderset[page.Order] != "" {
-				t.Errorf("duplicate order number %d in /docs/%s and /docs/%s", page.Order, orderset[page.Order], page.Path)
+				t.Errorf(
+					"duplicate order number %d in /docs/%s and /docs/%s",
+					page.Order,
+					orderset[page.Order],
+					page.Path,
+				)
 			}
 			orderset[page.Order] = page.Path
 		}
@@ -350,7 +358,8 @@ func TestDocs_RedirectsValid(t *testing.T) {
 		_, err := docsService.GetPage(to)
 		if err != nil {
 			// Skip errors that are themselves redirects
-			if _, ok := err.(*services.RedirectError); ok {
+			redirectError := &services.RedirectError{}
+			if errors.As(err, &redirectError) {
 				continue
 			}
 			t.Errorf("redirect from %s points to non-existent page %s", from, to)

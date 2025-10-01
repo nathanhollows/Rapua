@@ -367,7 +367,7 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 
 	t.Run("Very long IDs", func(t *testing.T) {
 		longID := ""
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			longID += "a"
 		}
 		userID := gofakeit.UUID()
@@ -483,7 +483,7 @@ func TestAccessService_ConcurrentAccess(t *testing.T) {
 		results := make(chan bool, 10)
 		errors := make(chan error, 10)
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			go func() {
 				canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, instanceID)
 				results <- canAccess
@@ -492,7 +492,7 @@ func TestAccessService_ConcurrentAccess(t *testing.T) {
 		}
 
 		// Collect results
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			canAccess := <-results
 			err := <-errors
 			assert.NoError(t, err)

@@ -36,7 +36,10 @@ func init() {
 	// Add user preferences columns
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// Add display_name column
-		_, err := db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("display_name varchar(255)").Exec(ctx)
+		_, err := db.NewAddColumn().
+			Model((*m20241209083639_User)(nil)).
+			ColumnExpr("display_name varchar(255)").
+			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("add column display_name: %w", err)
 		}
@@ -44,11 +47,14 @@ func init() {
 		// Theme is now handled client-side with localStorage
 
 		// Add share_email column
-		_, err = db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("share_email boolean NOT NULL DEFAULT false").Exec(ctx)
+		_, err = db.NewAddColumn().
+			Model((*m20241209083639_User)(nil)).
+			ColumnExpr("share_email boolean NOT NULL DEFAULT false").
+			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("add column share_email: %w", err)
 		}
-		
+
 		// Add work_type column
 		_, err = db.NewAddColumn().Model((*m20241209083639_User)(nil)).ColumnExpr("work_type varchar(100)").Exec(ctx)
 		if err != nil {

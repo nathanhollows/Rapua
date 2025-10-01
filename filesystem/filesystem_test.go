@@ -77,7 +77,7 @@ func TestFileServer(t *testing.T) {
 	filesystem.FileServer(r, "/", filesystem.Myfs{Dir: http.Dir(dir)})
 
 	// Test: get the file
-	req := httptest.NewRequest("GET", "/"+filename, nil)
+	req := httptest.NewRequest(http.MethodGet, "/"+filename, nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -85,7 +85,7 @@ func TestFileServer(t *testing.T) {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
 	}
 	// Test: Ensure redirect for missing trailing slash
-	req = httptest.NewRequest("GET", "/"+filename+"/", nil)
+	req = httptest.NewRequest(http.MethodGet, "/"+filename+"/", nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

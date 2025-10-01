@@ -15,7 +15,13 @@ type CheckInRepository interface {
 	FindCheckInByTeamAndLocation(ctx context.Context, teamCode string, locationID string) (*models.CheckIn, error)
 
 	// LogCheckIn logs a new check-in for a team at a location
-	LogCheckIn(ctx context.Context, team models.Team, location models.Location, mustCheckOut bool, validationRequired bool) (models.CheckIn, error)
+	LogCheckIn(
+		ctx context.Context,
+		team models.Team,
+		location models.Location,
+		mustCheckOut bool,
+		validationRequired bool,
+	) (models.CheckIn, error)
 	// LogCheckOut checks out a team from a location
 	LogCheckOut(ctx context.Context, team *models.Team, location *models.Location) (models.CheckIn, error)
 
@@ -36,7 +42,11 @@ func NewCheckInRepository(db *bun.DB) CheckInRepository {
 	}
 }
 
-func (r *checkInRepository) FindCheckInByTeamAndLocation(ctx context.Context, teamCode string, locationID string) (*models.CheckIn, error) {
+func (r *checkInRepository) FindCheckInByTeamAndLocation(
+	ctx context.Context,
+	teamCode string,
+	locationID string,
+) (*models.CheckIn, error) {
 	var checkIn models.CheckIn
 	err := r.db.NewSelect().Model(&checkIn).Where("team_code = ? AND location_id = ?", teamCode, locationID).Scan(ctx)
 	if err != nil {
@@ -51,7 +61,13 @@ func (r *checkInRepository) Update(ctx context.Context, checkIn *models.CheckIn)
 }
 
 // LogCheckIn logs a check in for a team at a location.
-func (r *checkInRepository) LogCheckIn(ctx context.Context, team models.Team, location models.Location, mustCheckOut bool, validationRequired bool) (models.CheckIn, error) {
+func (r *checkInRepository) LogCheckIn(
+	ctx context.Context,
+	team models.Team,
+	location models.Location,
+	mustCheckOut bool,
+	validationRequired bool,
+) (models.CheckIn, error) {
 	scan := &models.CheckIn{
 		TeamID:          team.Code,
 		LocationID:      location.ID,
@@ -75,7 +91,11 @@ func (r *checkInRepository) LogCheckIn(ctx context.Context, team models.Team, lo
 }
 
 // LogCheckOut logs a check out for a team at a location.
-func (r *checkInRepository) LogCheckOut(ctx context.Context, team *models.Team, location *models.Location) (models.CheckIn, error) {
+func (r *checkInRepository) LogCheckOut(
+	ctx context.Context,
+	team *models.Team,
+	location *models.Location,
+) (models.CheckIn, error) {
 	if team == nil {
 		return models.CheckIn{}, errors.New("team is required")
 	}
@@ -111,7 +131,12 @@ func (r *checkInRepository) LogCheckOut(ctx context.Context, team *models.Team, 
 }
 
 // DeleteByTeamCodes deletes all check-ins for the given teams.
-func (r *checkInRepository) DeleteByTeamCodes(ctx context.Context, tx *bun.Tx, instanceID string, teamCodes []string) error {
+func (r *checkInRepository) DeleteByTeamCodes(
+	ctx context.Context,
+	tx *bun.Tx,
+	instanceID string,
+	teamCodes []string,
+) error {
 	_, err := tx.NewDelete().
 		Model(&models.CheckIn{}).
 		Where("instance_id = ? AND team_code IN (?)", instanceID, bun.In(teamCodes)).

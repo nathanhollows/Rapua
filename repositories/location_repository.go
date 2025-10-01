@@ -83,7 +83,11 @@ func (r *locationRepository) GetByID(ctx context.Context, locationID string) (*m
 }
 
 // FindByInstance finds a location by instance and code.
-func (r *locationRepository) GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error) {
+func (r *locationRepository) GetByInstanceAndCode(
+	ctx context.Context,
+	instanceID string,
+	code string,
+) (*models.Location, error) {
 	var location models.Location
 	err := r.db.
 		NewSelect().

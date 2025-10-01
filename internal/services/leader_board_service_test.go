@@ -21,7 +21,7 @@ func setupLeaderboardService(t *testing.T) (*services.LeaderBoardService, func()
 	return leaderboardService, cleanup
 }
 
-// Helper function to create test teams with various states
+// Helper function to create test teams with various states.
 func createTestTeams() []models.Team {
 	baseTime := time.Now().Add(-time.Hour * 2)
 
@@ -56,7 +56,10 @@ func createTestTeams() []models.Team {
 			HasStarted: true,
 			CheckIns: []models.CheckIn{
 				{TimeIn: baseTime.Add(time.Minute * 5), TimeOut: baseTime.Add(time.Minute * 35)},
-				{TimeIn: baseTime.Add(time.Hour).Add(time.Minute * 5), TimeOut: baseTime.Add(time.Hour).Add(time.Minute * 25)},
+				{
+					TimeIn:  baseTime.Add(time.Hour).Add(time.Minute * 5),
+					TimeOut: baseTime.Add(time.Hour).Add(time.Minute * 25),
+				},
 				{TimeIn: baseTime.Add(time.Hour * 2), TimeOut: time.Time{}}, // Currently checked in
 			},
 		},
@@ -76,7 +79,10 @@ func createTestTeams() []models.Team {
 			HasStarted: true,
 			CheckIns: []models.CheckIn{
 				{TimeIn: baseTime.Add(time.Minute * 15), TimeOut: baseTime.Add(time.Minute * 45)},
-				{TimeIn: baseTime.Add(time.Hour).Add(time.Minute * 15), TimeOut: baseTime.Add(time.Hour).Add(time.Minute * 35)},
+				{
+					TimeIn:  baseTime.Add(time.Hour).Add(time.Minute * 15),
+					TimeOut: baseTime.Add(time.Hour).Add(time.Minute * 35),
+				},
 			},
 		},
 	}
@@ -234,14 +240,54 @@ func TestLeaderBoardService_ParseFunctions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{"ParseSortField_Valid", func(s string) interface{} { return services.ParseSortField(s) }, "points", services.SortByPoints},
-		{"ParseSortField_Invalid", func(s string) interface{} { return services.ParseSortField(s) }, "invalid", services.SortByRank},
-		{"ParseSortOrder_Asc", func(s string) interface{} { return services.ParseSortOrder(s) }, "asc", services.SortAsc},
-		{"ParseSortOrder_Desc", func(s string) interface{} { return services.ParseSortOrder(s) }, "desc", services.SortDesc},
-		{"ParseSortOrder_Invalid", func(s string) interface{} { return services.ParseSortOrder(s) }, "invalid", services.SortAsc},
-		{"ParseRankingScheme_Progress", func(s string) interface{} { return services.ParseRankingScheme(s) }, "progress", services.RankByProgress},
-		{"ParseRankingScheme_Points", func(s string) interface{} { return services.ParseRankingScheme(s) }, "points", services.RankByPoints},
-		{"ParseRankingScheme_Invalid", func(s string) interface{} { return services.ParseRankingScheme(s) }, "invalid", services.RankByProgress},
+		{
+			"ParseSortField_Valid",
+			func(s string) interface{} { return services.ParseSortField(s) },
+			"points",
+			services.SortByPoints,
+		},
+		{
+			"ParseSortField_Invalid",
+			func(s string) interface{} { return services.ParseSortField(s) },
+			"invalid",
+			services.SortByRank,
+		},
+		{
+			"ParseSortOrder_Asc",
+			func(s string) interface{} { return services.ParseSortOrder(s) },
+			"asc",
+			services.SortAsc,
+		},
+		{
+			"ParseSortOrder_Desc",
+			func(s string) interface{} { return services.ParseSortOrder(s) },
+			"desc",
+			services.SortDesc,
+		},
+		{
+			"ParseSortOrder_Invalid",
+			func(s string) interface{} { return services.ParseSortOrder(s) },
+			"invalid",
+			services.SortAsc,
+		},
+		{
+			"ParseRankingScheme_Progress",
+			func(s string) interface{} { return services.ParseRankingScheme(s) },
+			"progress",
+			services.RankByProgress,
+		},
+		{
+			"ParseRankingScheme_Points",
+			func(s string) interface{} { return services.ParseRankingScheme(s) },
+			"points",
+			services.RankByPoints,
+		},
+		{
+			"ParseRankingScheme_Invalid",
+			func(s string) interface{} { return services.ParseRankingScheme(s) },
+			"invalid",
+			services.RankByProgress,
+		},
 	}
 
 	for _, tc := range testCases {

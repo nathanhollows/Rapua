@@ -146,7 +146,7 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 
 			ctx := context.Background()
 			// Create instances for the given user
-			for i := 0; i < tc.count; i++ {
+			for range tc.count {
 				inst := &models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
@@ -213,7 +213,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 
 			ctx := context.Background()
 			// Create instances for the given user
-			for i := 0; i < tc.templateCount; i++ {
+			for range tc.templateCount {
 				inst := &models.Instance{
 					ID:         gofakeit.UUID(),
 					Name:       gofakeit.Word(),
@@ -223,7 +223,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 				err := repo.Create(ctx, inst)
 				assert.NoError(t, err)
 			}
-			for i := 0; i < tc.instanceCount; i++ {
+			for range tc.instanceCount {
 				inst := &models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
@@ -416,7 +416,7 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 
 			ctx := context.Background()
 			// Create some instances for this user
-			for i := 0; i < tc.count; i++ {
+			for range tc.count {
 				inst := models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),

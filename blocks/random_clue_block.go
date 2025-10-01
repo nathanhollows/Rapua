@@ -50,7 +50,7 @@ func (b *RandomClueBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// GetClue returns a deterministic random clue based on the team code
+// GetClue returns a deterministic random clue based on the team code.
 func (b *RandomClueBlock) GetClue(teamCode string) string {
 	if len(b.Clues) == 0 {
 		return "No clues available"

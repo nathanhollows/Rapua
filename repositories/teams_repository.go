@@ -133,7 +133,7 @@ func (r *teamRepository) GetByCode(ctx context.Context, code string) (*models.Te
 		}).
 		Limit(1).Scan(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("FindTeamByCode: %v", err)
+		return nil, fmt.Errorf("FindTeamByCode: %w", err)
 	}
 	return &team, nil
 }
@@ -182,7 +182,7 @@ func (r *teamRepository) LoadCheckIns(ctx context.Context, team *models.Team) er
 		Order("time_in DESC").
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadCheckIns: %v", err)
+		return fmt.Errorf("LoadCheckIns: %w", err)
 	}
 	return nil
 }
@@ -195,7 +195,7 @@ func (r *teamRepository) LoadBlockingLocation(ctx context.Context, team *models.
 		Where("ID = ?", team.MustCheckOut).
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadBlockingLocation: %v", err)
+		return fmt.Errorf("LoadBlockingLocation: %w", err)
 	}
 	return nil
 }
@@ -206,7 +206,7 @@ func (r *teamRepository) LoadMessages(ctx context.Context, team *models.Team) er
 		Order("created_at DESC").
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadNotifications: %v", err)
+		return fmt.Errorf("LoadNotifications: %w", err)
 	}
 	return nil
 }

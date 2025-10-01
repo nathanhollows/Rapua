@@ -9,8 +9,8 @@ import (
 
 type BrokerBlock struct {
 	BaseBlock
-	Prompt       string              `json:"prompt"`
-	DefaultInfo  string              `json:"default_info"`
+	Prompt           string            `json:"prompt"`
+	DefaultInfo      string            `json:"default_info"`
 	InformationTiers []InformationTier `json:"information_tiers"`
 }
 
@@ -66,44 +66,44 @@ func (b *BrokerBlock) UpdateBlockData(input map[string][]string) error {
 
 	// Parse information tiers from unnumbered arrays
 	b.InformationTiers = []InformationTier{}
-	
+
 	// Get the tier_points and tier_content arrays
 	pointsInputs, hasPoints := input["tier_points"]
 	contentInputs, hasContent := input["tier_content"]
-	
+
 	if hasPoints && hasContent {
 		// Process pairs in order - use the shorter array length to avoid index errors
 		maxTiers := len(pointsInputs)
 		if len(contentInputs) < maxTiers {
 			maxTiers = len(contentInputs)
 		}
-		
-		for i := 0; i < maxTiers; i++ {
+
+		for i := range maxTiers {
 			pointsStr := pointsInputs[i]
 			contentStr := contentInputs[i]
-			
+
 			// Skip if either field is empty
 			if pointsStr == "" || contentStr == "" {
 				continue
 			}
-			
+
 			points, err := strconv.Atoi(pointsStr)
 			if err != nil {
 				return errors.New("tier points must be integers")
 			}
-			
+
 			// Skip tiers with 0 or negative points (reserved for default)
 			if points <= 0 {
 				continue
 			}
-			
+
 			b.InformationTiers = append(b.InformationTiers, InformationTier{
 				PointsRequired: points,
 				Content:        contentStr,
 			})
 		}
 	}
-	
+
 	// Sort tiers by points required (ascending)
 	sort.Slice(b.InformationTiers, func(i, j int) bool {
 		return b.InformationTiers[i].PointsRequired < b.InformationTiers[j].PointsRequired
@@ -133,7 +133,7 @@ func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 		if err != nil {
 			return state, errors.New("points bid must be an integer")
 		}
-		
+
 		// Ensure non-negative bid
 		if pointsBid < 0 {
 			pointsBid = 0
@@ -151,7 +151,7 @@ func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 			// Find the best tier they can afford
 			bestTier := InformationTier{}
 			found := false
-			
+
 			for _, tier := range b.InformationTiers {
 				if pointsBid >= tier.PointsRequired {
 					bestTier = tier
@@ -160,7 +160,7 @@ func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 					break // Since tiers are sorted, we can stop here
 				}
 			}
-			
+
 			if found {
 				infoToProvide = bestTier.Content
 				actualPointsCharged = pointsBid // Charge exactly what they bid

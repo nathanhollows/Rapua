@@ -293,7 +293,7 @@ func TestBlockService_FindByLocationID(t *testing.T) {
 			defer cleanup()
 
 			// Setup: create tc.blockCount blocks (if locationID is not empty)
-			for i := 0; i < tc.blockCount; i++ {
+			for range tc.blockCount {
 				_, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
 				assert.NoError(t, err, "block creation should succeed in setup")
 			}
@@ -342,7 +342,7 @@ func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
 
 			if tc.locationID != "" {
 				// Create blocks
-				for i := 0; i < tc.blockCount; i++ {
+				for range tc.blockCount {
 					blk, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
 					assert.NoError(t, err)
 					if tc.stateCreated {
@@ -352,7 +352,11 @@ func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
 				}
 			}
 
-			blocksFound, states, err := svc.FindByLocationIDAndTeamCodeWithState(context.Background(), tc.locationID, tc.teamCode)
+			blocksFound, states, err := svc.FindByLocationIDAndTeamCodeWithState(
+				context.Background(),
+				tc.locationID,
+				tc.teamCode,
+			)
 			if tc.wantErr {
 				assert.Error(t, err)
 				assert.Empty(t, blocksFound)
@@ -362,7 +366,7 @@ func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
 				assert.Len(t, blocksFound, tc.blockCount)
 				if tc.stateCreated {
 					// We expect each block to have a PlayerState
-					assert.Equal(t, len(blocksFound), len(states), "states map should match blocks count")
+					assert.Len(t, states, len(blocksFound), "states map should match blocks count")
 				} else {
 					// Might have zero states if none were created
 					assert.Empty(t, states, "expected no states for this scenario")
@@ -413,7 +417,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, initialState.GetBlockID(), updated.GetBlockID())
-				assert.Equal(t, true, updated.IsComplete(), "Expected state to be updated to 'Complete'")
+				assert.True(t, updated.IsComplete(), "Expected state to be updated to 'Complete'")
 			}
 		})
 	}
@@ -449,7 +453,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 
 			// Create blocks
 			var ids []string
-			for i := 0; i < tc.blockCount; i++ {
+			for range tc.blockCount {
 				blk, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
 				assert.NoError(t, err)
 				ids = append(ids, blk.GetID())

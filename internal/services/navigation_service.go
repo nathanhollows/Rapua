@@ -22,7 +22,10 @@ type NavigationService struct {
 }
 
 // NewNavigationService creates a new instance of NavigationService.
-func NewNavigationService(locationRepo repositories.LocationRepository, teamRepo repositories.TeamRepository) *NavigationService {
+func NewNavigationService(
+	locationRepo repositories.LocationRepository,
+	teamRepo repositories.TeamRepository,
+) *NavigationService {
 	return &NavigationService{
 		locationRepo: locationRepo,
 		teamRepo:     teamRepo,

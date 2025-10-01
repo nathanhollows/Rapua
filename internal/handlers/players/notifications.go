@@ -24,7 +24,7 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 
 	if err != nil {
 		h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
-		http.Redirect(w, r, r.Header.Get("referer"), http.StatusSeeOther)
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 
 		return
 	}

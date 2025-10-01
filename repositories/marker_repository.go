@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v4/helpers"
@@ -50,7 +50,7 @@ func NewMarkerRepository(db *bun.DB) MarkerRepository {
 // Create saves or updates a marker in the database.
 func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) error {
 	if marker.Name == "" {
-		return fmt.Errorf("marker name is required")
+		return errors.New("marker name is required")
 	}
 	if marker.Code == "" {
 		// TODO: Remove magic number
@@ -65,13 +65,13 @@ func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) er
 // Update updates a marker in the database.
 func (r *markerRepository) Update(ctx context.Context, marker *models.Marker) error {
 	if marker == nil {
-		return fmt.Errorf("marker is required")
+		return errors.New("marker is required")
 	}
 	if marker.Code == "" {
-		return fmt.Errorf("marker code is required")
+		return errors.New("marker code is required")
 	}
 	if marker.Name == "" {
-		return fmt.Errorf("marker name is required")
+		return errors.New("marker name is required")
 	}
 
 	_, err := r.db.
@@ -114,12 +114,18 @@ func (r *markerRepository) GetByCode(ctx context.Context, code string) (*models.
 	return &marker, nil
 }
 
-func (r *markerRepository) FindNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error) {
+func (r *markerRepository) FindNotInInstance(
+	ctx context.Context,
+	instanceID string,
+	otherInstances []string,
+) ([]models.Marker, error) {
 	var markers []models.Marker
 	err := r.db.NewSelect().
 		Model(&markers).
-		Where("code IN (SELECT marker_id FROM locations WHERE instance_id IN (?))", bun.In(otherInstances)). // Markers used by otherInstances
-		Where("code NOT IN (SELECT marker_id FROM locations WHERE instance_id = ?)", instanceID).            // Exclude markers used by instanceID
+		Where("code IN (SELECT marker_id FROM locations WHERE instance_id IN (?))", bun.In(otherInstances)).
+		// Markers used by otherInstances
+		Where("code NOT IN (SELECT marker_id FROM locations WHERE instance_id = ?)", instanceID).
+		// Exclude markers used by instanceID
 		Order("name ASC").
 		Scan(ctx)
 	return markers, err
@@ -128,10 +134,10 @@ func (r *markerRepository) FindNotInInstance(ctx context.Context, instanceID str
 // UpdateCoords updates the latitude and longitude of a marker in the database.
 func (r *markerRepository) UpdateCoords(ctx context.Context, marker *models.Marker, lat, lng float64) error {
 	if marker == nil {
-		return fmt.Errorf("marker is required")
+		return errors.New("marker is required")
 	}
 	if marker.Code == "" {
-		return fmt.Errorf("marker code is required")
+		return errors.New("marker code is required")
 	}
 	marker.Lat = lat
 	marker.Lng = lng

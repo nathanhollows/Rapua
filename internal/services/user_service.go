@@ -11,7 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/security"
 )
 
-// Password-related errors
+// Password-related errors.
 var (
 	ErrPasswordsDoNotMatch  = errors.New("passwords do not match")
 	ErrIncorrectOldPassword = errors.New("current password is incorrect")
@@ -24,7 +24,10 @@ type UserService struct {
 	userRepo     repositories.UserRepository
 }
 
-func NewUserService(userRepository repositories.UserRepository, instanceRepository repositories.InstanceRepository) *UserService {
+func NewUserService(
+	userRepository repositories.UserRepository,
+	instanceRepository repositories.InstanceRepository,
+) *UserService {
 	return &UserService{
 		instanceRepo: instanceRepository,
 		userRepo:     userRepository,
@@ -57,7 +60,7 @@ func (s *UserService) UpdateUser(ctx context.Context, user *models.User) error {
 }
 
 // UpdateUserProfile updates a user's profile information
-// Only updates the fields that are present in the profile map
+// Only updates the fields that are present in the profile map.
 func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error {
 	// Update basic fields only if provided
 	if name, exists := profile["name"]; exists {
@@ -107,8 +110,12 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	return s.userRepo.GetByEmail(ctx, email)
 }
 
-// ChangePassword changes a user's password
-func (s *UserService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error {
+// ChangePassword changes a user's password.
+func (s *UserService) ChangePassword(
+	ctx context.Context,
+	user *models.User,
+	oldPassword, newPassword, confirmPassword string,
+) error {
 	// Make sure the user is using email/password authentication
 	if user.Provider != models.ProviderEmail {
 		return errors.New("cannot change password for SSO accounts")

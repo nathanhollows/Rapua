@@ -85,7 +85,7 @@ func TestBlockStateRepository(t *testing.T) {
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)
 				updatedState := result.(blocks.PlayerState)
-				assert.Equal(t, true, updatedState.IsComplete())
+				assert.True(t, updatedState.IsComplete())
 				assert.Equal(t, 100, updatedState.GetPointsAwarded())
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
@@ -138,7 +138,7 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 			setup: func() ([]blocks.PlayerState, error) {
 				blockID := gofakeit.UUID()
 				playerStates := make([]blocks.PlayerState, 3)
-				for i := 0; i < 3; i++ {
+				for i := range 3 {
 					state, _ := repo.NewBlockState(context.Background(), blockID, gofakeit.UUID())
 					ps, err := repo.Create(context.Background(), state)
 					playerStates[i] = ps
@@ -215,7 +215,7 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 			setup: func() ([]blocks.PlayerState, []string, error) {
 				teamCodes := []string{gofakeit.UUID(), gofakeit.UUID()}
 				playerStates := make([]blocks.PlayerState, 4)
-				for i := 0; i < 4; i++ {
+				for i := range 4 {
 					blockID := gofakeit.UUID()
 					state, _ := repo.NewBlockState(context.Background(), blockID, teamCodes[i%2])
 					ps, err := repo.Create(context.Background(), state)

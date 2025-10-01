@@ -2,12 +2,9 @@ package templates
 
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"strconv"
 	"sync"
-
-	"github.com/nathanhollows/Rapua/v4/helpers"
 )
 
 var cssVersion string
@@ -41,12 +38,4 @@ func filter[T any](items []T, fn func(T) bool) []T {
 		}
 	}
 	return filtered
-}
-
-func stringToMarkdown(s string) template.HTML {
-	md, err := helpers.MarkdownToHTML(s)
-	if err != nil {
-		return template.HTML(err.Error())
-	}
-	return template.HTML(md)
 }

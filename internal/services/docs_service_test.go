@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,8 +35,18 @@ func TestNewDocsService(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create test markdown files
-	createTempMarkdownFile(t, tempDir, "index.md", "---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.")
-	createTempMarkdownFile(t, tempDir, "getting-started.md", "---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.")
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"index.md",
+		"---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"getting-started.md",
+		"---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.",
+	)
 
 	docsService, err := services.NewDocsService(tempDir)
 	if err != nil {
@@ -56,9 +67,24 @@ func TestDocsService_GetPage(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create test markdown files
-	createTempMarkdownFile(t, tempDir, "index.md", "---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.")
-	createTempMarkdownFile(t, tempDir, "getting-started.md", "---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.")
-	createTempMarkdownFile(t, tempDir, "setup/index.md", "---\ntitle: Setup\norder: 1\n---\n# Setup Page\nInstructions for setup.")
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"index.md",
+		"---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"getting-started.md",
+		"---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"setup/index.md",
+		"---\ntitle: Setup\norder: 1\n---\n# Setup Page\nInstructions for setup.",
+	)
 
 	docsService, err := services.NewDocsService(tempDir)
 	if err != nil {
@@ -101,9 +127,24 @@ func TestDocsService_BuildHierarchy(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create test markdown files
-	createTempMarkdownFile(t, tempDir, "index.md", "---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.")
-	createTempMarkdownFile(t, tempDir, "setup/index.md", "---\ntitle: Setup\norder: 1\n---\n# Setup\nSetup instructions.")
-	createTempMarkdownFile(t, tempDir, "setup/details.md", "---\ntitle: Details\norder: 2\n---\n# Details\nDetailed setup information.")
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"index.md",
+		"---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"setup/index.md",
+		"---\ntitle: Setup\norder: 1\n---\n# Setup\nSetup instructions.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"setup/details.md",
+		"---\ntitle: Details\norder: 2\n---\n# Details\nDetailed setup information.",
+	)
 
 	docsService, err := services.NewDocsService(tempDir)
 	if err != nil {
@@ -141,8 +182,18 @@ func TestTrackPages(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create test markdown files
-	createTempMarkdownFile(t, tempDir, "index.md", "---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.")
-	createTempMarkdownFile(t, tempDir, "getting-started.md", "---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.")
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"index.md",
+		"---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"getting-started.md",
+		"---\ntitle: Getting Started\norder: 2\n---\n# Getting Started\nHow to get started.",
+	)
 
 	// Create a pre-existing known_pages.yaml with additional pages
 	knownPages := []string{
@@ -204,8 +255,18 @@ func TestRedirects(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create test markdown files
-	createTempMarkdownFile(t, tempDir, "index.md", "---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.")
-	createTempMarkdownFile(t, tempDir, "new-page.md", "---\ntitle: New Page\norder: 2\n---\n# New Page\nThis is a new page.")
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"index.md",
+		"---\ntitle: Home\norder: 1\n---\n# Home Page\nWelcome to the documentation.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"new-page.md",
+		"---\ntitle: New Page\norder: 2\n---\n# New Page\nThis is a new page.",
+	)
 
 	// Create a redirect_pages.yaml file
 	redirects := []services.RedirectEntry{
@@ -237,7 +298,8 @@ func TestRedirects(t *testing.T) {
 	}
 
 	// Verify it's a RedirectError
-	redirectErr, ok := err.(*services.RedirectError)
+	redirectErr := &services.RedirectError{}
+	ok := errors.As(err, &redirectErr)
 	if !ok {
 		t.Fatalf("expected RedirectError, got %T: %v", err, err)
 	}

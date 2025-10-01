@@ -28,7 +28,7 @@ type Heading struct {
 	ID    string
 }
 
-// RedirectEntry defines a redirection from one URL to another
+// RedirectEntry defines a redirection from one URL to another.
 type RedirectEntry struct {
 	From string `yaml:"from"`
 	To   string `yaml:"to"`
@@ -80,7 +80,7 @@ func NewDocsService(docsDir string) (*DocsService, error) {
 	return service, nil
 }
 
-// loadKnownPages loads the list of known pages from docs/.known_pages.yaml
+// loadKnownPages loads the list of known pages from docs/.known_pages.yaml.
 func (ds *DocsService) loadKnownPages() error {
 	knownPagesPath := filepath.Join(ds.DocsDir, ".known_pages.yaml")
 
@@ -101,7 +101,7 @@ func (ds *DocsService) loadKnownPages() error {
 	return nil
 }
 
-// loadMissingPages loads the existing missing pages from docs/missing_pages.yaml
+// loadMissingPages loads the existing missing pages from docs/missing_pages.yaml.
 func (ds *DocsService) loadMissingPages() error {
 	missingPagesPath := filepath.Join(ds.DocsDir, "missing_pages.yaml")
 
@@ -122,7 +122,7 @@ func (ds *DocsService) loadMissingPages() error {
 	return nil
 }
 
-// loadRedirects loads the redirect configuration from docs/redirect_pages.yaml
+// loadRedirects loads the redirect configuration from docs/redirect_pages.yaml.
 func (ds *DocsService) loadRedirects() error {
 	redirectPath := filepath.Join(ds.DocsDir, "redirect_pages.yaml")
 
@@ -143,7 +143,7 @@ func (ds *DocsService) loadRedirects() error {
 	return nil
 }
 
-// trackPages compares current pages with known pages and updates tracking files
+// trackPages compares current pages with known pages and updates tracking files.
 func (ds *DocsService) trackPages() error {
 	// Build list of current pages
 	currentPages := make(map[string]bool)
@@ -214,7 +214,7 @@ func (ds *DocsService) trackPages() error {
 	return nil
 }
 
-// collectPageURLs extracts URLs from the page tree
+// collectPageURLs extracts URLs from the page tree.
 func collectPageURLs(pages []*DocPage, result map[string]bool) {
 	for _, page := range pages {
 		result[page.URL] = true
@@ -443,7 +443,7 @@ func (ds *DocsService) GetPage(urlPath string) (*DocPage, error) {
 
 	parts := strings.Split(trimmedPath, "/")[1:] // Skip the empty string at index 0
 
-	var currentPages []*DocPage = ds.Pages
+	var currentPages = ds.Pages
 	var foundPage *DocPage
 
 	for _, part := range parts {
@@ -467,7 +467,7 @@ func (ds *DocsService) GetPage(urlPath string) (*DocPage, error) {
 	return nil, os.ErrNotExist
 }
 
-// RedirectError is a custom error type for signaling redirects
+// RedirectError is a custom error type for signaling redirects.
 type RedirectError struct {
 	RedirectTo string
 }

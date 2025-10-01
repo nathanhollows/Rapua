@@ -90,7 +90,12 @@ func NewAssetGenerator() AssetGenerator {
 	return &assetGenerator{}
 }
 
-func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error) {
+func (s *assetGenerator) CreateQRCodeImage(
+	ctx context.Context,
+	path string,
+	content string,
+	options ...QRCodeOption,
+) (err error) {
 	defaultOptions := &QRCodeOptions{
 		format:     "png",
 		foreground: "#000000",
@@ -113,12 +118,13 @@ func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, con
 	}
 	config := go_qr.NewQrCodeImgConfig(20, 2)
 
-	if defaultOptions.format == "png" {
+	switch defaultOptions.format {
+	case "png":
 		err := qr.PNG(config, path)
 		if err != nil {
 			return err
 		}
-	} else if defaultOptions.format == "svg" {
+	case "svg":
 		err := qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
 		if err != nil {
 			return err

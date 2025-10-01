@@ -91,7 +91,12 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				duplicatedInstance, err := svc.DuplicateInstance(context.Background(), tc.user, tc.instanceID, tc.newName)
+				duplicatedInstance, err := svc.DuplicateInstance(
+					context.Background(),
+					tc.user,
+					tc.instanceID,
+					tc.newName,
+				)
 				if tc.wantErr {
 					assert.Error(t, err)
 					assert.Nil(t, duplicatedInstance)

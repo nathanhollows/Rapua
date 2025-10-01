@@ -234,7 +234,7 @@ func TestRandomClueBlock_Distribution(t *testing.T) {
 	results := make(map[string]int)
 	numTeams := 100
 
-	for i := 0; i < numTeams; i++ {
+	for i := range numTeams {
 		teamCode := "team" + string(rune(i))
 		clue := block.GetClue(teamCode)
 		results[clue]++

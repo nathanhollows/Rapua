@@ -28,7 +28,10 @@ func (r *UploadsRepository) Create(ctx context.Context, upload *models.Upload) e
 	return err
 }
 
-func (r *UploadsRepository) SearchByCriteria(ctx context.Context, criteria map[string]string) ([]*models.Upload, error) {
+func (r *UploadsRepository) SearchByCriteria(
+	ctx context.Context,
+	criteria map[string]string,
+) ([]*models.Upload, error) {
 	var uploads []*models.Upload
 	query := r.db.NewSelect().Model(&uploads)
 

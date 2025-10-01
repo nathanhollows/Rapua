@@ -12,7 +12,7 @@ type LocationUpdateData struct {
 	Points    int
 }
 
-// LeaderBoardTeamData represents a team's data for leaderboard display
+// LeaderBoardTeamData represents a team's data for leaderboard display.
 type LeaderBoardTeamData struct {
 	ID           string
 	Code         string
@@ -27,7 +27,7 @@ type LeaderBoardTeamData struct {
 	CheckInCount int
 }
 
-// TeamStatus represents the current status of a team
+// TeamStatus represents the current status of a team.
 type TeamStatus string
 
 const (
@@ -37,7 +37,7 @@ const (
 	StatusFinished TeamStatus = "finished"
 )
 
-// SortField represents the field to sort by
+// SortField represents the field to sort by.
 type SortField string
 
 const (
@@ -50,7 +50,7 @@ const (
 	SortByStatus   SortField = "status"
 )
 
-// SortOrder represents the sort direction
+// SortOrder represents the sort direction.
 type SortOrder string
 
 const (
@@ -58,7 +58,7 @@ const (
 	SortDesc SortOrder = "desc"
 )
 
-// RankingScheme represents different ways to rank teams
+// RankingScheme represents different ways to rank teams.
 type RankingScheme string
 
 const (

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Function to check if an email is educational
+// Function to check if an email is educational.
 func IsEducationalEmailHeuristic(email string) bool {
 	// Validate the email format using net/mail
 	parsedEmail, err := mail.ParseAddress(email)

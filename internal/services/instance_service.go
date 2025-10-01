@@ -45,7 +45,11 @@ func NewInstanceService(
 }
 
 // CreateInstance implements InstanceService.
-func (s *instanceService) CreateInstance(ctx context.Context, name string, user *models.User) (*models.Instance, error) {
+func (s *instanceService) CreateInstance(
+	ctx context.Context,
+	name string,
+	user *models.User,
+) (*models.Instance, error) {
 	if name == "" {
 		return nil, errors.New("name cannot be empty")
 	}
@@ -75,7 +79,12 @@ func (s *instanceService) CreateInstance(ctx context.Context, name string, user 
 }
 
 // DuplicateInstance implements InstanceService.
-func (s *instanceService) DuplicateInstance(ctx context.Context, user *models.User, id string, name string) (*models.Instance, error) {
+func (s *instanceService) DuplicateInstance(
+	ctx context.Context,
+	user *models.User,
+	id string,
+	name string,
+) (*models.Instance, error) {
 	if user == nil {
 		return nil, ErrUserNotAuthenticated
 	}

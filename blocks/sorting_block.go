@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// SortingBlock is a quiz-type blcok that requires players to sort items in a specific order
+// SortingBlock is a quiz-type blcok that requires players to sort items in a specific order.
 type SortingBlock struct {
 	BaseBlock
 	Content       string        `json:"content"`
@@ -19,21 +19,21 @@ type SortingBlock struct {
 	ScoringScheme string        `json:"scoring_scheme"`
 }
 
-// SortingItem represents an individual item to be sorted
+// SortingItem represents an individual item to be sorted.
 type SortingItem struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Position    int    `json:"position"` // The correct position (1-based)
 }
 
-// Scoring schemes
+// Scoring schemes.
 const (
 	AllOrNothing            = "all_or_nothing"
 	CorrectItemCorrectPlace = "correct_item_correct_place"
 	RetryUntilCorrect       = "retry_until_correct"
 )
 
-// SortingPlayerData stores player progress
+// SortingPlayerData stores player progress.
 type SortingPlayerData struct {
 	PlayerOrder  []string `json:"player_order"`  // List of item IDs in player's submitted order
 	ShuffleOrder []string `json:"shuffle_order"` // Shuffled order shown to player initially
@@ -41,7 +41,7 @@ type SortingPlayerData struct {
 	IsCorrect    bool     `json:"is_correct"`    // Whether the current order is correct
 }
 
-// Basic Attributes Getters
+// Basic Attributes Getters.
 func (b *SortingBlock) GetName() string { return "Sorting" }
 
 func (b *SortingBlock) GetDescription() string {
@@ -67,7 +67,7 @@ func (b *SortingBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data Operations
+// Data Operations.
 func (b *SortingBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
@@ -130,7 +130,7 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// Validation and Points Calculation
+// Validation and Points Calculation.
 func (b *SortingBlock) RequiresValidation() bool { return true }
 
 func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
@@ -215,7 +215,7 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	return newState, nil
 }
 
-// orderIsCorrect checks if the submitted order perfectly matches the expected order
+// orderIsCorrect checks if the submitted order perfectly matches the expected order.
 func (b *SortingBlock) orderIsCorrect(playerOrder []string) bool {
 	if len(playerOrder) != len(b.Items) {
 		return false
@@ -238,7 +238,7 @@ func (b *SortingBlock) orderIsCorrect(playerOrder []string) bool {
 	return true
 }
 
-// calculateCorrectItemCorrectPlacePoints awards points for each correctly placed item
+// calculateCorrectItemCorrectPlacePoints awards points for each correctly placed item.
 func (b *SortingBlock) calculateCorrectItemCorrectPlacePoints(playerOrder []string) int {
 	if len(playerOrder) != len(b.Items) {
 		return 0
@@ -270,7 +270,7 @@ func (b *SortingBlock) calculateCorrectItemCorrectPlacePoints(playerOrder []stri
 }
 
 // deterministicShuffle creates a consistent shuffle of items based on a seed string
-// This ensures the same player always sees the same shuffle for a given block
+// This ensures the same player always sees the same shuffle for a given block.
 func deterministicShuffle(items []string, seed string) []string {
 	// Create a copy of the original items
 	result := make([]string, len(items))

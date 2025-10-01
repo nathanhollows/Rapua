@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -60,7 +61,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Successful authentication", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, password)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, testUser.ID, user.ID)
 		assert.Equal(t, testUser.Email, user.Email)
@@ -68,7 +69,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Empty email", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "", password)
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "email and password are required")
 		assert.Nil(t, user)
@@ -76,7 +77,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Empty password", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, "")
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "email and password are required")
 		assert.Nil(t, user)
@@ -84,7 +85,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Invalid email", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "nonexistent@example.com", password)
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
@@ -92,7 +93,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Invalid password", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, "wrongPassword")
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid email or password")
 		assert.Nil(t, user)
@@ -100,7 +101,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 
 	t.Run("Whitespace in email and password", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "  ", "  ")
-		
+
 		// Should pass validation (non-empty strings)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
@@ -116,18 +117,18 @@ func TestIdentityService_IsUserAuthenticated(t *testing.T) {
 	t.Skip("Session tests require proper session configuration with hash keys")
 
 	t.Run("User authenticated", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		session.Values["user_id"] = "test-user-id"
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -137,24 +138,24 @@ func TestIdentityService_IsUserAuthenticated(t *testing.T) {
 	})
 
 	t.Run("User not authenticated - no session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 
 		isAuthenticated := service.IsUserAuthenticated(req)
 		assert.False(t, isAuthenticated)
 	})
 
 	t.Run("User not authenticated - no user_id in session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -164,18 +165,18 @@ func TestIdentityService_IsUserAuthenticated(t *testing.T) {
 	})
 
 	t.Run("User not authenticated - empty user_id in session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		session.Values["user_id"] = ""
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -197,18 +198,18 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 	testUser := createTestUser(t, userRepo, email, password)
 
 	t.Run("Successful get authenticated user", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		session.Values["user_id"] = testUser.ID
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -220,7 +221,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 	})
 
 	t.Run("No session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 
 		user, err := service.GetAuthenticatedUser(req)
 		assert.Error(t, err)
@@ -228,17 +229,17 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 	})
 
 	t.Run("No user_id in session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -250,18 +251,18 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 	})
 
 	t.Run("Empty user_id in session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		session.Values["user_id"] = ""
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -273,18 +274,18 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 	})
 
 	t.Run("Non-existent user_id in session", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
 		session, err := sessions.Get(req, "admin")
 		require.NoError(t, err)
-		
+
 		session.Values["user_id"] = "non-existent-user"
 		err = session.Save(req, w)
 		require.NoError(t, err)
 
 		// Create new request with session cookie
-		req = httptest.NewRequest("GET", "/", nil)
+		req = httptest.NewRequest(http.MethodGet, "/", nil)
 		if cookies := w.Result().Cookies(); len(cookies) > 0 {
 			req.AddCookie(cookies[0])
 		}
@@ -320,7 +321,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 		}
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
-		
+
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, gothUser.Name, user.Name)
@@ -337,7 +338,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 		}
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
-		
+
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, gothUser.Name, user.Name)
@@ -354,7 +355,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 		}
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unsupported provider")
 		assert.Nil(t, user)
@@ -368,7 +369,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 		}
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
-		
+
 		// Should create user even with empty name/email
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
@@ -391,7 +392,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 		}
 
 		user, err := service.OAuthLogin(context.Background(), "google", gothUser)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, existingUser.ID, user.ID)
 		assert.Equal(t, existingUser.Email, user.Email)
@@ -406,7 +407,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 		}
 
 		user, err := service.OAuthLogin(context.Background(), "google", gothUser)
-		
+
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, newEmail, user.Email)
@@ -421,7 +422,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 		}
 
 		user, err := service.OAuthLogin(context.Background(), "unsupported", gothUser)
-		
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "creating user with OAuth")
 		assert.Nil(t, user)
@@ -433,7 +434,7 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 	defer cleanup()
 
 	email := gofakeit.Email()
-	
+
 	// Create a user with Google provider
 	user := &models.User{
 		ID:       uuid.New().String(),
@@ -445,7 +446,7 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 
 	t.Run("User found with OAuth provider", func(t *testing.T) {
 		foundUser, err := service.CheckUserRegisteredWithOAuth(context.Background(), "google", email)
-		
+
 		// This may error if the repository method doesn't exist
 		// The test validates the service calls the repository correctly
 		if err != nil {
@@ -457,8 +458,12 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		foundUser, err := service.CheckUserRegisteredWithOAuth(context.Background(), "google", "nonexistent@example.com")
-		
+		foundUser, err := service.CheckUserRegisteredWithOAuth(
+			context.Background(),
+			"google",
+			"nonexistent@example.com",
+		)
+
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "getting user by email and provider")
 		assert.Nil(t, foundUser)
@@ -471,24 +476,24 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 
 	email := gofakeit.Email()
 	token := uuid.New().String()
-	
+
 	// Create a user with email verification token
 	user := &models.User{
-		ID:                uuid.New().String(),
-		Email:             email,
-		EmailToken:        token,
-		EmailTokenExpiry:  sql.NullTime{Time: time.Now().Add(15 * time.Minute), Valid: true},
-		EmailVerified:     false,
-		Provider:          models.ProviderEmail,
+		ID:               uuid.New().String(),
+		Email:            email,
+		EmailToken:       token,
+		EmailTokenExpiry: sql.NullTime{Time: time.Now().Add(15 * time.Minute), Valid: true},
+		EmailVerified:    false,
+		Provider:         models.ProviderEmail,
 	}
 	err := userRepo.Create(context.Background(), user)
 	require.NoError(t, err)
 
 	t.Run("Successful email verification", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), token)
-		
+
 		assert.NoError(t, err)
-		
+
 		// Verify the user was updated
 		updatedUser, err := userRepo.GetByID(context.Background(), user.ID)
 		require.NoError(t, err)
@@ -499,34 +504,34 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 
 	t.Run("Invalid token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "invalid-token")
-		
+
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrInvalidToken, err)
 	})
 
 	t.Run("Empty token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "")
-		
+
 		assert.Error(t, err)
 		// Empty token may return either ErrInvalidToken or ErrTokenExpired depending on implementation
-		assert.True(t, err == services.ErrInvalidToken || err == services.ErrTokenExpired)
+		assert.True(t, errors.Is(err, services.ErrInvalidToken) || errors.Is(err, services.ErrTokenExpired))
 	})
 
 	// Create a user with expired token
 	expiredUser := &models.User{
-		ID:                uuid.New().String(),
-		Email:             gofakeit.Email(),
-		EmailToken:        "expired-token",
-		EmailTokenExpiry:  sql.NullTime{Time: time.Now().Add(-1 * time.Hour), Valid: true},
-		EmailVerified:     false,
-		Provider:          models.ProviderEmail,
+		ID:               uuid.New().String(),
+		Email:            gofakeit.Email(),
+		EmailToken:       "expired-token",
+		EmailTokenExpiry: sql.NullTime{Time: time.Now().Add(-1 * time.Hour), Valid: true},
+		EmailVerified:    false,
+		Provider:         models.ProviderEmail,
 	}
 	err = userRepo.Create(context.Background(), expiredUser)
 	require.NoError(t, err)
 
 	t.Run("Expired token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "expired-token")
-		
+
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrTokenExpired, err)
 	})
@@ -547,7 +552,7 @@ func TestIdentityService_SendEmailVerification(t *testing.T) {
 		require.NoError(t, err)
 
 		err = service.SendEmailVerification(context.Background(), user)
-		
+
 		// May error due to email service not being properly configured in tests
 		// But should not be the user already verified error
 		if err != nil {
@@ -572,7 +577,7 @@ func TestIdentityService_SendEmailVerification(t *testing.T) {
 		require.NoError(t, err)
 
 		err = service.SendEmailVerification(context.Background(), user)
-		
+
 		assert.Error(t, err)
 		assert.Equal(t, services.ErrUserAlreadyVerified, err)
 	})
@@ -585,14 +590,14 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 	t.Run("Very long email and password", func(t *testing.T) {
 		longEmail := ""
 		longPassword := ""
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			longEmail += "a"
 			longPassword += "b"
 		}
 		longEmail += "@example.com"
 
 		user, err := service.AuthenticateUser(context.Background(), longEmail, longPassword)
-		
+
 		// Should pass validation but fail on database lookup
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
@@ -604,7 +609,7 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 		password := "password123"
 
 		user, err := service.AuthenticateUser(context.Background(), unicodeEmail, password)
-		
+
 		// Should pass validation but fail on database lookup
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
@@ -616,7 +621,7 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 		specialPassword := "!@#$%^&*()_+-=[]{}|;':\",./<>?"
 
 		user, err := service.AuthenticateUser(context.Background(), email, specialPassword)
-		
+
 		// Should pass validation but fail on database lookup
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
@@ -633,11 +638,11 @@ func TestIdentityService_ContextCancellation(t *testing.T) {
 		cancel() // Cancel immediately
 
 		user, err := service.AuthenticateUser(ctx, gofakeit.Email(), "password")
-		
+
 		// Should handle cancelled context gracefully
 		if err != nil {
 			// May get validation error first, or context cancelled error
-			assert.True(t, errors.Is(err, context.Canceled) || 
+			assert.True(t, errors.Is(err, context.Canceled) ||
 				err.Error() == "email and password are required")
 		}
 		assert.Nil(t, user)
@@ -648,11 +653,11 @@ func TestIdentityService_ContextCancellation(t *testing.T) {
 		cancel() // Cancel immediately
 
 		err := service.VerifyEmail(ctx, "some-token")
-		
+
 		// Should handle cancelled context gracefully
 		if err != nil {
-			assert.True(t, errors.Is(err, context.Canceled) || 
-				err == services.ErrInvalidToken)
+			assert.True(t, errors.Is(err, context.Canceled) ||
+				errors.Is(err, services.ErrInvalidToken))
 		}
 	})
 }

@@ -263,7 +263,7 @@ func TestLocationService_FindByInstance(t *testing.T) {
 	t.Run("Find locations by instance", func(t *testing.T) {
 		instanceID := gofakeit.UUID()
 		locations := make([]string, 5)
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			location, err := service.CreateLocation(
 				context.Background(),
 				instanceID,

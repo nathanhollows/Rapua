@@ -6,17 +6,17 @@ import (
 	"slices"
 )
 
-// BlockContext represents where a block can be used
+// BlockContext represents where a block can be used.
 type BlockContext string
 
 const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
 	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
-	// ContextEnd     BlockContext = "end"     // End pages
+	// ContextEnd     BlockContext = "end"     // End pages.
 )
 
-// RegisteredBlock holds block metadata for the registry
+// RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
 	BlockType         string
 	Instance          Block
@@ -66,11 +66,11 @@ type BaseBlock struct {
 	Points     int             `json:"-"`
 }
 
-// Central block registry with context support
+// Central block registry with context support.
 var blockRegistry = make(map[string]*RegisteredBlock)
 var contextRegistry = make(map[BlockContext][]string)
 
-// registerBlock is an internal helper to register blocks with their contexts
+// registerBlock is an internal helper to register blocks with their contexts.
 func registerBlock(instance Block, contexts []BlockContext) {
 	registration := &RegisteredBlock{
 		BlockType:         instance.GetType(),
@@ -89,7 +89,7 @@ func registerBlock(instance Block, contexts []BlockContext) {
 	}
 }
 
-// Initialize block registry
+// Initialize block registry.
 func init() {
 	// Content blocks
 	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
@@ -112,7 +112,7 @@ func init() {
 
 // Public API functions
 
-// GetBlocksForContext returns block instances available for a specific context
+// GetBlocksForContext returns block instances available for a specific context.
 func GetBlocksForContext(context BlockContext) Blocks {
 	blockTypes := contextRegistry[context]
 	if blockTypes == nil {
@@ -129,7 +129,7 @@ func GetBlocksForContext(context BlockContext) Blocks {
 	return blocks
 }
 
-// CanBlockBeUsedInContext checks if a block type can be used in a specific context
+// CanBlockBeUsedInContext checks if a block type can be used in a specific context.
 func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
 	registration := blockRegistry[blockType]
 	if registration == nil {

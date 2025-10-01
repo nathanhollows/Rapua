@@ -32,7 +32,7 @@ func TestSortingBlock_GetterMethods(t *testing.T) {
 	// Test GetData method
 	data := block.GetData()
 	assert.NotNil(t, data)
-	
+
 	var unmarshaled SortingBlock
 	err := json.Unmarshal(data, &unmarshaled)
 	assert.NoError(t, err)
@@ -54,10 +54,10 @@ func TestSortingBlock_ParseData(t *testing.T) {
 			{ID: "id2", Description: "Item 2", Position: 2},
 		},
 	}
-	
+
 	data, err := json.Marshal(originalBlock)
 	assert.NoError(t, err)
-	
+
 	// Create a new block and set its Data field
 	newBlock := &SortingBlock{
 		BaseBlock: BaseBlock{
@@ -66,11 +66,11 @@ func TestSortingBlock_ParseData(t *testing.T) {
 			Data: data,
 		},
 	}
-	
+
 	// Parse the data
 	err = newBlock.ParseData()
 	assert.NoError(t, err)
-	
+
 	// Verify the parsed data
 	assert.Equal(t, "Test content", newBlock.Content)
 	assert.Equal(t, AllOrNothing, newBlock.ScoringScheme)
@@ -119,11 +119,11 @@ func TestSortingBlock_UpdateBlockData(t *testing.T) {
 		"sorting-items":    {"First item", "Second item"},
 		"sorting-item-ids": {"id1", "id2"},
 	}
-	
+
 	err = block.UpdateBlockData(input)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, block.Points)
-	
+
 	// Test with empty item descriptions (should be skipped)
 	block = &SortingBlock{
 		BaseBlock: BaseBlock{
@@ -136,13 +136,13 @@ func TestSortingBlock_UpdateBlockData(t *testing.T) {
 		"sorting-items":    {"First item", "", "Third item", ""},
 		"sorting-item-ids": {"id1", "id2", "id3", "id4"},
 	}
-	
+
 	err = block.UpdateBlockData(input)
 	assert.NoError(t, err)
 	assert.Len(t, block.Items, 2) // Only non-empty items should be included
 	assert.Equal(t, "id1", block.Items[0].ID)
 	assert.Equal(t, "id3", block.Items[1].ID)
-	
+
 	// Test with invalid points
 	block = &SortingBlock{
 		BaseBlock: BaseBlock{
@@ -156,7 +156,7 @@ func TestSortingBlock_UpdateBlockData(t *testing.T) {
 		"sorting-items":    {"First item", "Second item"},
 		"sorting-item-ids": {"id1", "id2"},
 	}
-	
+
 	err = block.UpdateBlockData(input)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "points must be an integer")
@@ -327,17 +327,17 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		assert.Equal(t, 2, playerData.Attempts) // Attempts should not increase
 		assert.True(t, playerData.IsCorrect)    // Still marked as correct
 	})
-	
+
 	t.Run("Missing sorting-item-order input", func(t *testing.T) {
 		block := createTestSortingBlock(AllOrNothing, 100)
 		state := &mockPlayerState{blockID: "block-id", playerID: "player-id"}
-		
+
 		// Test with empty input
 		input := map[string][]string{}
 		_, err := block.ValidatePlayerInput(state, input)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "sorting order is required")
-		
+
 		// Test with empty array
 		input = map[string][]string{
 			"sorting-item-order": {},
@@ -346,11 +346,11 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "sorting order is required")
 	})
-	
+
 	t.Run("Mismatched item count", func(t *testing.T) {
 		block := createTestSortingBlock(AllOrNothing, 100)
 		state := &mockPlayerState{blockID: "block-id", playerID: "player-id"}
-		
+
 		// Test with too few items
 		input := map[string][]string{
 			"sorting-item-order": {"id1", "id2"}, // Only 2 of 4 items
@@ -359,7 +359,7 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, newState.IsComplete())
 		assert.Equal(t, 0, newState.GetPointsAwarded()) // No points awarded for incomplete ordering
-		
+
 		// Test with too many items
 		input = map[string][]string{
 			"sorting-item-order": {"id1", "id2", "id3", "id4", "id5", "id6"}, // 6 items instead of 4
@@ -369,133 +369,133 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		assert.True(t, newState.IsComplete())
 		assert.Equal(t, 0, newState.GetPointsAwarded()) // No points awarded for incorrect ordering
 	})
-	
+
 	t.Run("Shuffle order initialization", func(t *testing.T) {
 		block := createTestSortingBlock(AllOrNothing, 100)
-		
+
 		// Test that shuffle order is initialized on first attempt
 		state := &mockPlayerState{blockID: "block-id", playerID: "player-id"}
 		input := map[string][]string{
 			"sorting-item-order": {"id1", "id2", "id3", "id4"},
 		}
-		
+
 		newState, err := block.ValidatePlayerInput(state, input)
 		assert.NoError(t, err)
-		
+
 		var playerData SortingPlayerData
 		err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 		assert.NoError(t, err)
 		assert.Len(t, playerData.ShuffleOrder, 4, "Shuffle order should be initialized with 4 items")
-		
+
 		// Test that same player+block gets the same shuffle order
 		state1 := &mockPlayerState{blockID: "block-1", playerID: "player-1"}
 		state2 := &mockPlayerState{blockID: "block-1", playerID: "player-1"} // Same player/block
-		
+
 		_, err = block.ValidatePlayerInput(state1, input)
 		assert.NoError(t, err)
 		_, err = block.ValidatePlayerInput(state2, input)
 		assert.NoError(t, err)
-		
+
 		var playerData1, playerData2 SortingPlayerData
 		err = json.Unmarshal(state1.GetPlayerData(), &playerData1)
 		assert.NoError(t, err)
 		err = json.Unmarshal(state2.GetPlayerData(), &playerData2)
 		assert.NoError(t, err)
-		
-		assert.Equal(t, playerData1.ShuffleOrder, playerData2.ShuffleOrder, 
+
+		assert.Equal(t, playerData1.ShuffleOrder, playerData2.ShuffleOrder,
 			"Same player+block should get same shuffle order")
-		
+
 		// Test that different players get different shuffle orders
 		state3 := &mockPlayerState{blockID: "block-1", playerID: "player-2"} // Different player
 		_, err = block.ValidatePlayerInput(state3, input)
 		assert.NoError(t, err)
-		
+
 		var playerData3 SortingPlayerData
 		err = json.Unmarshal(state3.GetPlayerData(), &playerData3)
 		assert.NoError(t, err)
-		
+
 		// This test could potentially fail with very small probability if the shuffle happens to be identical
 		// but with 4! = 24 possible orderings, it's unlikely
-		assert.NotEqual(t, playerData1.ShuffleOrder, playerData3.ShuffleOrder, 
+		assert.NotEqual(t, playerData1.ShuffleOrder, playerData3.ShuffleOrder,
 			"Different players should get different shuffle orders")
 	})
 }
 
 func TestSortingBlock_OrderIsCorrect(t *testing.T) {
 	block := createTestSortingBlock(AllOrNothing, 100)
-	
+
 	// Test correct order
 	correctOrder := []string{"id1", "id2", "id3", "id4"}
 	assert.True(t, block.orderIsCorrect(correctOrder))
-	
+
 	// Test incorrect orders
 	incorrectOrder1 := []string{"id2", "id1", "id3", "id4"} // Swapped first two
 	assert.False(t, block.orderIsCorrect(incorrectOrder1))
-	
+
 	incorrectOrder2 := []string{"id1", "id2", "id4", "id3"} // Swapped last two
 	assert.False(t, block.orderIsCorrect(incorrectOrder2))
-	
+
 	incorrectOrder3 := []string{"id4", "id3", "id2", "id1"} // Completely reversed
 	assert.False(t, block.orderIsCorrect(incorrectOrder3))
-	
+
 	// Test with missing items
 	tooFewItems := []string{"id1", "id2", "id3"} // Missing last item
 	assert.False(t, block.orderIsCorrect(tooFewItems))
-	
+
 	// Test with extra items
 	tooManyItems := []string{"id1", "id2", "id3", "id4", "id5"} // Extra item
 	assert.False(t, block.orderIsCorrect(tooManyItems))
-	
+
 	// Test with invalid item ID
-	invalidItemID := []string{"id1", "id2", "id3", "invalid-id"} 
+	invalidItemID := []string{"id1", "id2", "id3", "invalid-id"}
 	assert.False(t, block.orderIsCorrect(invalidItemID))
 }
 
 func TestSortingBlock_CalculateCorrectItemCorrectPlacePoints(t *testing.T) {
 	block := createTestSortingBlock(CorrectItemCorrectPlace, 100)
-	
+
 	// Test all correct - should get full points
 	allCorrect := []string{"id1", "id2", "id3", "id4"}
 	points := block.calculateCorrectItemCorrectPlacePoints(allCorrect)
 	assert.Equal(t, 100, points)
-	
+
 	// Test half correct (first two in correct position)
 	halfCorrect := []string{"id1", "id2", "id4", "id3"}
 	points = block.calculateCorrectItemCorrectPlacePoints(halfCorrect)
 	assert.Equal(t, 50, points)
-	
+
 	// Test one correct
 	oneCorrect := []string{"id1", "id3", "id4", "id2"}
 	points = block.calculateCorrectItemCorrectPlacePoints(oneCorrect)
 	assert.Equal(t, 25, points)
-	
+
 	// Test none correct
 	noneCorrect := []string{"id4", "id3", "id2", "id1"}
 	points = block.calculateCorrectItemCorrectPlacePoints(noneCorrect)
 	assert.Equal(t, 0, points)
-	
+
 	// Test with too few items
-	tooFew := []string{"id1", "id2"} 
+	tooFew := []string{"id1", "id2"}
 	points = block.calculateCorrectItemCorrectPlacePoints(tooFew)
 	assert.Equal(t, 0, points)
 }
 
 func TestDeterministicShuffle(t *testing.T) {
 	items := []string{"A", "B", "C", "D", "E"}
-	
+
 	// Same seed should produce the same shuffle
 	shuffle1 := deterministicShuffle(items, "test-seed-1")
 	shuffle2 := deterministicShuffle(items, "test-seed-1")
 	assert.Equal(t, shuffle1, shuffle2, "Same seed should produce same shuffle")
-	
+
 	// Test that the shuffle algorithm actually shuffles
 	// Just check that the ordering is different from the original
 	shuffled := deterministicShuffle(items, "test-seed-1")
 	assert.NotEqual(t, items, shuffled, "Shuffle should change the order")
-	
+
 	// Verify the shuffle contains all original items
 	assert.ElementsMatch(t, items, shuffle1, "Shuffle should contain all original items")
-	
+
 	// Verify that the original slice isn't modified
 	originalCopy := make([]string, len(items))
 	copy(originalCopy, items)
@@ -503,7 +503,7 @@ func TestDeterministicShuffle(t *testing.T) {
 	assert.Equal(t, originalCopy, items, "Original slice should not be modified")
 }
 
-// Helper function to create a test sorting block
+// Helper function to create a test sorting block.
 func createTestSortingBlock(scoringScheme string, points int) *SortingBlock {
 	return &SortingBlock{
 		BaseBlock: BaseBlock{

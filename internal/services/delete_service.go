@@ -167,14 +167,14 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("beginning transaction: %v", err)
+		return fmt.Errorf("beginning transaction: %w", err)
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				panic(fmt.Errorf("rolling back transaction: %v; %v", p, rollbackErr))
+				panic(fmt.Errorf("rolling back transaction: %v; %w", p, rollbackErr))
 			}
 			panic(p)
 		}
@@ -184,23 +184,23 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 	if err != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
+			return fmt.Errorf("rolling back transaction: %w; %w", err, rollbackErr)
 		}
-		return fmt.Errorf("deleting location: %v", err)
+		return fmt.Errorf("deleting location: %w", err)
 	}
 
 	err = s.markerRepo.DeleteUnused(ctx, tx)
 	if err != nil {
-		return fmt.Errorf("deleting unused markers: %v", err)
+		return fmt.Errorf("deleting unused markers: %w", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %v; %v", err, rollbackErr)
+			return fmt.Errorf("rolling back transaction: %w; %w", err, rollbackErr)
 		}
-		return fmt.Errorf("committing transaction: %v", err)
+		return fmt.Errorf("committing transaction: %w", err)
 	}
 
 	return nil
@@ -211,13 +211,13 @@ func (s *DeleteService) deleteLocation(ctx context.Context, tx *bun.Tx, location
 	// Delete all blocks and their states for this location
 	err := s.deleteBlocksByLocationID(ctx, tx, locationID)
 	if err != nil {
-		return fmt.Errorf("deleting blocks: %v", err)
+		return fmt.Errorf("deleting blocks: %w", err)
 	}
 
 	// Delete the location
 	err = s.locationRepo.Delete(ctx, tx, locationID)
 	if err != nil {
-		return fmt.Errorf("deleting location: %v", err)
+		return fmt.Errorf("deleting location: %w", err)
 	}
 
 	return nil
@@ -385,7 +385,7 @@ func (s *DeleteService) deleteBlocksByLocationID(ctx context.Context, tx *bun.Tx
 	// Delete all blocks (block states should cascade delete via database constraints)
 	err := s.blockRepo.DeleteByLocationID(ctx, tx, locationID)
 	if err != nil {
-		return fmt.Errorf("deleting blocks: %v", err)
+		return fmt.Errorf("deleting blocks: %w", err)
 	}
 
 	return nil

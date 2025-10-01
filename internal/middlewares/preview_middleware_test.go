@@ -27,7 +27,10 @@ func (d *dummyTeamService) GetTeamByCode(ctx context.Context, code string) (*mod
 // dummyInstanceService is a stub implementation of instanceService.
 type dummyInstanceService struct{}
 
-func (d *dummyInstanceService) GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
+func (d *dummyInstanceService) GetInstanceSettings(
+	ctx context.Context,
+	instanceID string,
+) (*models.InstanceSettings, error) {
 	return &models.InstanceSettings{
 		InstanceID:   instanceID,
 		EnablePoints: true,

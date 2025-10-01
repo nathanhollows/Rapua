@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// QuizBlock allows players to answer multiple choice questions
+// QuizBlock allows players to answer multiple choice questions.
 type QuizBlock struct {
 	BaseBlock
 	Question       string       `json:"question"`        // Markdown question text
@@ -20,7 +20,7 @@ type QuizBlock struct {
 	RetryEnabled   bool         `json:"retry_enabled"`   // Allow players to retry
 }
 
-// QuizOption represents an individual answer choice
+// QuizOption represents an individual answer choice.
 type QuizOption struct {
 	ID        string `json:"id"`         // Unique identifier
 	Text      string `json:"text"`       // Markdown answer text
@@ -28,14 +28,14 @@ type QuizOption struct {
 	Order     int    `json:"order"`      // Display order
 }
 
-// QuizPlayerData stores player progress
+// QuizPlayerData stores player progress.
 type QuizPlayerData struct {
 	SelectedOptions []string `json:"selected_options"` // List of selected option IDs
 	Attempts        int      `json:"attempts"`         // Number of submission attempts
 	IsCorrect       bool     `json:"is_correct"`       // Whether answer is correct
 }
 
-// Basic Attribute Getters
+// Basic Attribute Getters.
 func (b *QuizBlock) GetName() string { return "Quiz" }
 
 func (b *QuizBlock) GetDescription() string {
@@ -61,7 +61,7 @@ func (b *QuizBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data operations
+// Data operations.
 func (b *QuizBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
@@ -145,7 +145,7 @@ func (b *QuizBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// Validation and Points Calculation
+// Validation and Points Calculation.
 func (b *QuizBlock) RequiresValidation() bool {
 	return true
 }
@@ -224,7 +224,7 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	return newState, nil
 }
 
-// calculatePoints calculates points based on selected options
+// calculatePoints calculates points based on selected options.
 func (b *QuizBlock) calculatePoints(selectedOptions []string) (int, bool) {
 	if len(b.Options) == 0 {
 		return 0, false
@@ -277,7 +277,7 @@ func (b *QuizBlock) calculatePoints(selectedOptions []string) (int, bool) {
 	}
 }
 
-// shuffleOptions returns a shuffled copy of the options slice
+// shuffleOptions returns a shuffled copy of the options slice.
 func (b *QuizBlock) shuffleOptions() []QuizOption {
 	if !b.RandomizeOrder || len(b.Options) <= 1 {
 		return b.Options
@@ -295,12 +295,12 @@ func (b *QuizBlock) shuffleOptions() []QuizOption {
 	return shuffled
 }
 
-// GetShuffledOptions returns the options in shuffled order if randomization is enabled
+// GetShuffledOptions returns the options in shuffled order if randomization is enabled.
 func (b *QuizBlock) GetShuffledOptions() []QuizOption {
 	return b.shuffleOptions()
 }
 
-// NewQuizBlock creates a new quiz block instance
+// NewQuizBlock creates a new quiz block instance.
 func NewQuizBlock(base BaseBlock) *QuizBlock {
 	return &QuizBlock{
 		BaseBlock:      base,

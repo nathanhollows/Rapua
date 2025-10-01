@@ -42,7 +42,10 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 	if u, exists := input["URL"]; exists && len(u) > 0 {
 		u[0] = strings.TrimSpace(u[0])
 		// Regex: https://stackoverflow.com/a/6904504
-		_, err := regexp.MatchString(`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})`, u[0])
+		_, err := regexp.MatchString(
+			`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})`,
+			u[0],
+		)
 		if err != nil {
 			return errors.New("URL is not valid")
 		}
@@ -54,7 +57,7 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 			return errors.New("URL is not valid")
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK {
 			return errors.New("URL is not valid")
 		}
 

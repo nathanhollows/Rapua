@@ -106,7 +106,11 @@ func convertPlayerStateToModelData(state blocks.PlayerState) models.TeamBlockSta
 }
 
 // GetByBlockAndTeam fetches a specific team block state for a block and team.
-func (r *blockStateRepository) GetByBlockAndTeam(ctx context.Context, blockID string, teamCode string) (blocks.PlayerState, error) {
+func (r *blockStateRepository) GetByBlockAndTeam(
+	ctx context.Context,
+	blockID string,
+	teamCode string,
+) (blocks.PlayerState, error) {
 	var modelState models.TeamBlockState
 	err := r.db.NewSelect().
 		Model(&modelState).
@@ -155,7 +159,10 @@ func (r *blockStateRepository) Update(ctx context.Context, state blocks.PlayerSt
 }
 
 // NewBlockState creates a new block state.
-func (r *blockStateRepository) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (r *blockStateRepository) NewBlockState(
+	ctx context.Context,
+	blockID, teamCode string,
+) (blocks.PlayerState, error) {
 	state := &PlayerStateData{
 		blockID:       blockID,
 		playerID:      teamCode,

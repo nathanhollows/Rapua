@@ -403,7 +403,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 	}
 }
 
-// Integration tests
+// Integration tests.
 func TestGameScheduleService_Integration_CompleteWorkflow(t *testing.T) {
 	svc, cleanup := setupGameScheduleService(t)
 	defer cleanup()

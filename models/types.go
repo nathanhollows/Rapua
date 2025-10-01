@@ -75,7 +75,12 @@ func GetRouteStrategies() RouteStrategies {
 
 // GetNavigationDisplayModes returns a list of navigation methods.
 func GetNavigationDisplayModes() NavigationDisplayModes {
-	return []NavigationDisplayMode{NavigationDisplayMap, NavigationDisplayMapAndNames, NavigationDisplayNames, NavigationDisplayCustom}
+	return []NavigationDisplayMode{
+		NavigationDisplayMap,
+		NavigationDisplayMapAndNames,
+		NavigationDisplayNames,
+		NavigationDisplayCustom,
+	}
 }
 
 // GetGameStatuses returns a list of game statuses.
@@ -107,7 +112,7 @@ func (n RouteStrategy) Description() string {
 	}[n]
 }
 
-// Description returns the description of the NavigationDisplayMode
+// Description returns the description of the NavigationDisplayMode.
 func (n NavigationDisplayMode) Description() string {
 	return [...]string{
 		"Players are shown a map.",
@@ -127,7 +132,7 @@ func (g GameStatus) Description() string {
 	}[g]
 }
 
-// Parse RouteStrategy
+// Parse RouteStrategy.
 func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	switch s {
 	case "Random", "Randomised Route":
@@ -141,7 +146,7 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	}
 }
 
-// Parse NavigationDisplayMode
+// Parse NavigationDisplayMode.
 func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 	switch s {
 	case "Show Map", "Map Only":

@@ -21,10 +21,16 @@ func TestUpload_GetSizes(t *testing.T) {
 			output:    []models.ImageSize{{Breakpoint: 480, URL: "https://cdn.example.com/image"}},
 		},
 		{
-			name:      "Valid sizes",
-			input:     []models.ImageSize{{Breakpoint: 480, URL: "https://cdn.example.com/image-480.jpg"}, {Breakpoint: 1024, URL: "https://cdn.example.com/image-1024.jpg"}},
+			name: "Valid sizes",
+			input: []models.ImageSize{
+				{Breakpoint: 480, URL: "https://cdn.example.com/image-480.jpg"},
+				{Breakpoint: 1024, URL: "https://cdn.example.com/image-1024.jpg"},
+			},
 			expectErr: false,
-			output:    []models.ImageSize{{Breakpoint: 480, URL: "https://cdn.example.com/image-480.jpg"}, {Breakpoint: 1024, URL: "https://cdn.example.com/image-1024.jpg"}},
+			output: []models.ImageSize{
+				{Breakpoint: 480, URL: "https://cdn.example.com/image-480.jpg"},
+				{Breakpoint: 1024, URL: "https://cdn.example.com/image-1024.jpg"},
+			},
 		},
 		{
 			name:      "Empty size",

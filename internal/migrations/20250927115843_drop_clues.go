@@ -11,7 +11,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Migration models for this specific migration
+// Migration models for this specific migration.
 type m20250927115843_Clue struct {
 	bun.BaseModel `bun:"table:clues"`
 
@@ -31,14 +31,13 @@ type m20250927115843_Location struct {
 	InstanceID string `bun:"instance_id,notnull"`
 }
 
-// RandomClueBlockData represents the JSON structure for random_clue blocks
+// RandomClueBlockData represents the JSON structure for random_clue blocks.
 type m20250927115843_RandomClueBlockData struct {
 	Clues []string `json:"clues"`
 }
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-
 		// Get all clues grouped by location
 		var clues []m20250927115843_Clue
 		err := db.NewSelect().
@@ -96,7 +95,6 @@ func init() {
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-
 		// Get all random_clue blocks with nav context (these were created from clues)
 		var blocks []m20250926120511_Block
 		err := db.NewSelect().

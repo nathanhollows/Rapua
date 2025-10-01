@@ -78,7 +78,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 
 	// Keep track of attempts - tests that fail validation don't increment attempts
 	// Only successful validation (correct or incorrect but valid format) increments attempts
-	
+
 	// Test: Incorrect pincode (wrong digits)
 	// Each digit provided as separate input
 	// Expected behaviour: No error and no points awarded
@@ -138,6 +138,6 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	err = json.Unmarshal(newState.GetPlayerData(), &newPlayerData)
 	require.NoError(t, err)
 	assert.Equal(t, 1, newPlayerData.Attempts)
-	assert.Equal(t, 1, len(newPlayerData.Guesses))
+	assert.Len(t, newPlayerData.Guesses, 1)
 	assert.Equal(t, "1", newPlayerData.Guesses[0]) // First digit saved as guess
 }

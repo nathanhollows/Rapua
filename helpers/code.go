@@ -11,7 +11,7 @@ var symbols = []rune("ABCDEFGHJKLMNPRSTUVWXYZ")
 // NewCode generates an alpha string of easily recognisable characters.
 func NewCode(length int) string {
 	b := make([]rune, length)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		b[i] = symbols[rand.Intn(len(symbols))]
 	}
 	return string(b)

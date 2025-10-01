@@ -104,7 +104,21 @@ func TestBackwardCompatibility(t *testing.T) {
 	}
 
 	// Test that all registered block types can be created
-	expectedTypes := []string{"markdown", "alert", "button", "divider", "image", "youtube", "broker", "checklist", "clue", "answer", "pincode", "quiz_block", "sorting"}
+	expectedTypes := []string{
+		"markdown",
+		"alert",
+		"button",
+		"divider",
+		"image",
+		"youtube",
+		"broker",
+		"checklist",
+		"clue",
+		"answer",
+		"pincode",
+		"quiz_block",
+		"sorting",
+	}
 
 	for _, blockType := range expectedTypes {
 		baseBlock := BaseBlock{

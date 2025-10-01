@@ -30,7 +30,7 @@ func createTestTeamWithInstance(t *testing.T, navMode models.RouteStrategy, maxN
 
 	// Create locations with simple marker IDs for testing
 	locations := make([]models.Location, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		locations[i] = models.Location{
 			ID:         gofakeit.UUID(),
 			Name:       gofakeit.Name(),
@@ -117,7 +117,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 }
 
 // Test the core navigation logic using reflection to access private methods
-// Since GetNextLocations tries to load database relations, we'll test the core logic directly
+// Since GetNextLocations tries to load database relations, we'll test the core logic directly.
 func TestNavigationService_NavigationLogic(t *testing.T) {
 	service, cleanup := setupNavigationService(t)
 	defer cleanup()
@@ -158,13 +158,13 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 		// At least some locations should be valid
 		validCount := 0
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			valid, _ := service.IsValidLocation(context.Background(), team, fmt.Sprintf("MARKER%d", i))
 			if valid {
 				validCount++
 			}
 		}
-		assert.Greater(t, validCount, 0)
+		assert.Positive(t, validCount)
 		assert.LessOrEqual(t, validCount, 2) // Limited by MaxNextLocations
 	})
 
@@ -288,7 +288,7 @@ func TestNavigationService_RandomNavigation(t *testing.T) {
 		results1 := make([]bool, 3)
 		results2 := make([]bool, 3)
 
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			valid1, _ := service.IsValidLocation(context.Background(), team1, fmt.Sprintf("MARKER%d", i))
 			valid2, _ := service.IsValidLocation(context.Background(), team2, fmt.Sprintf("MARKER%d", i))
 			results1[i] = valid1
@@ -304,14 +304,14 @@ func TestNavigationService_RandomNavigation(t *testing.T) {
 
 		// Count how many locations are valid
 		validCount := 0
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			valid, _ := service.IsValidLocation(context.Background(), team, fmt.Sprintf("MARKER%d", i))
 			if valid {
 				validCount++
 			}
 		}
 		assert.LessOrEqual(t, validCount, 1)
-		assert.Greater(t, validCount, 0) // Should have at least one valid location
+		assert.Positive(t, validCount) // Should have at least one valid location
 	})
 }
 

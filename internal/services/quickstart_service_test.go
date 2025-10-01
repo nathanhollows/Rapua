@@ -41,12 +41,12 @@ func createTestInstanceForQuickstart(t *testing.T, dbc *bun.DB, dismissed bool) 
 
 func TestQuickstartService_DismissQuickstart(t *testing.T) {
 	testCases := []struct {
-		name               string
-		setupFn            func(dbc *bun.DB) (string, bool) // returns instanceID and whether it should exist
-		instanceID         string
-		wantErr            bool
-		expectedDismissed  bool
-		expectedName       string
+		name              string
+		setupFn           func(dbc *bun.DB) (string, bool) // returns instanceID and whether it should exist
+		instanceID        string
+		wantErr           bool
+		expectedDismissed bool
+		expectedName      string
 	}{
 		{
 			name: "Dismiss quickstart for existing instance",
@@ -161,7 +161,7 @@ func TestQuickstartService_DismissQuickstart_ValidationCases(t *testing.T) {
 	}
 }
 
-// Integration Tests
+// Integration Tests.
 func TestQuickstartService_Integration_DatabasePersistence(t *testing.T) {
 	svc, cleanup := setupQuickstartService(t)
 	defer cleanup()
@@ -185,7 +185,11 @@ func TestQuickstartService_Integration_DatabasePersistence(t *testing.T) {
 	// Verify persistence
 	fetchedInstance, err = instanceRepo.GetByID(context.Background(), instance.ID)
 	require.NoError(t, err)
-	assert.True(t, fetchedInstance.IsQuickStartDismissed, "Instance should have quickstart dismissed after service call")
+	assert.True(
+		t,
+		fetchedInstance.IsQuickStartDismissed,
+		"Instance should have quickstart dismissed after service call",
+	)
 }
 
 func TestQuickstartService_Integration_MultipleInstances(t *testing.T) {
@@ -254,7 +258,7 @@ func TestQuickstartService_Integration_ConcurrentAccess(t *testing.T) {
 	const numGoroutines = 10
 	errChan := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			err := svc.DismissQuickstart(context.Background(), instance.ID)
 			errChan <- err
@@ -263,7 +267,7 @@ func TestQuickstartService_Integration_ConcurrentAccess(t *testing.T) {
 
 	// Collect results
 	var successCount int
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		err := <-errChan
 		if err == nil {
 			successCount++
@@ -283,7 +287,7 @@ func TestQuickstartService_Integration_ConcurrentAccess(t *testing.T) {
 func TestQuickstartService_Integration_RepositoryError(t *testing.T) {
 	// This test would require mocking the repository to simulate database errors
 	// For now, we test with a malformed database connection scenario
-	
+
 	svc, cleanup := setupQuickstartService(t)
 	defer cleanup()
 
@@ -293,7 +297,7 @@ func TestQuickstartService_Integration_RepositoryError(t *testing.T) {
 	// Repository accepts the call and executes the update, even if no rows are affected
 }
 
-// Benchmark test
+// Benchmark test.
 func BenchmarkQuickstartService_DismissQuickstart(b *testing.B) {
 	svc, cleanup := setupQuickstartService(&testing.T{})
 	defer cleanup()
@@ -305,7 +309,7 @@ func BenchmarkQuickstartService_DismissQuickstart(b *testing.B) {
 	instance := createTestInstanceForQuickstart(&testing.T{}, dbc, false)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = svc.DismissQuickstart(context.Background(), instance.ID)
 	}
 }

@@ -31,7 +31,7 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 	// Create some check-ins
 	instanceID := gofakeit.UUID()
 	var teams []models.Team
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		team := models.Team{
 			Code:       strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4)),
 			InstanceID: instanceID,

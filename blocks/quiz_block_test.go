@@ -399,7 +399,7 @@ func TestNewQuizBlock(t *testing.T) {
 	block := NewQuizBlock(base)
 
 	assert.Equal(t, base, block.BaseBlock)
-	assert.Equal(t, "", block.Question)
+	assert.Empty(t, block.Question)
 	assert.Empty(t, block.Options)
 	assert.False(t, block.MultipleChoice)
 	assert.False(t, block.RandomizeOrder)
