@@ -34,6 +34,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 - **Breaking change:** Renamed `LocationID` to `OwnerID` on in `models.Blocks`.
 - **Breaking change:** Updated blocks repository interface to use owner-based methods instead of location-based methods. `Create` method now requires `blocks.BlockContext` parameter.
 - **Breaking change:** Blocks service methods migrated from location-based to owner-based paradigm (`FindByLocationID` → `FindByOwnerID`, `NewBlock` → `NewBlockWithOwnerAndContext`).
+- **Breaking change:** `db.MustOpen()` now requires a `slog.Logger` parameter for structured logging.
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
 - Updated notification message if a player tries to check out too early.
 - Cookie settings for easier scanning

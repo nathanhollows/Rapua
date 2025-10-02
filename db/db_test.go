@@ -2,11 +2,24 @@ package db_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/stretchr/testify/require"
 )
+
+func newTLogger(t *testing.T) *slog.Logger {
+	handler := slog.NewTextHandler(testWriter{t}, nil)
+	return slog.New(handler)
+}
+
+type testWriter struct{ t *testing.T }
+
+func (w testWriter) Write(p []byte) (int, error) {
+	w.t.Logf("%s", p)
+	return len(p), nil
+}
 
 // TestMustOpen_Sqlite3 ensures MustOpen successfully connects to an
 // in-memory SQLite DB when the required environment variables are set.
@@ -15,7 +28,7 @@ func TestMustOpen_Sqlite3(t *testing.T) {
 	t.Setenv("DB_TYPE", "sqlite3")
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 
-	dbc := db.MustOpen()
+	dbc := db.MustOpen(newTLogger(t))
 	require.NotNil(t, dbc, "Expected a non-nil *bun.DB from MustOpen")
 }
 
@@ -35,7 +48,9 @@ func TestMustOpen_UnsupportedDBType(t *testing.T) {
 		}
 	}()
 
-	db.MustOpen() // Should panic here
+	logger := slog.New(slog.NewTextHandler(testWriter{t}, nil))
+
+	db.MustOpen(logger) // Should panic here
 }
 
 // TestTransactor_BeginTx verifies that we can begin a transaction
@@ -44,7 +59,9 @@ func TestTransactor_BeginTx(t *testing.T) {
 	t.Setenv("DB_TYPE", "sqlite3")
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 
-	dbc := db.MustOpen()
+	logger := slog.New(slog.NewTextHandler(testWriter{t}, nil))
+
+	dbc := db.MustOpen(logger)
 	require.NotNil(t, dbc, "Expected a valid *bun.DB from MustOpen")
 
 	txr := db.NewTransactor(dbc)

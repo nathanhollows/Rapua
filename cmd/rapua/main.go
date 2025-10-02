@@ -3,7 +3,6 @@
 package main
 
 import (
-	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -34,7 +33,7 @@ func main() {
 		logger.Warn("could not load .env file", "error", err)
 	}
 
-	db := db.MustOpen()
+	db := db.MustOpen(logger)
 	defer db.Close()
 
 	// Initialize the migrator
@@ -85,7 +84,7 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 
 					defer func() {
 						if err := migrator.Unlock(c.Context); err != nil {
-							log.Printf("could not unlock: %v", err)
+							logger.Error("could not unlock", "error", err)
 						}
 					}()
 
@@ -111,7 +110,7 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 
 					defer func() {
 						if err := migrator.Unlock(c.Context); err != nil {
-							log.Printf("could not unlock: %v", err)
+							logger.Error("could not unlock", "error", err)
 						}
 					}()
 

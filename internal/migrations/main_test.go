@@ -2,6 +2,7 @@ package migrations_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -10,13 +11,25 @@ import (
 	"github.com/uptrace/bun/migrate"
 )
 
+func newTLogger(t *testing.T) *slog.Logger {
+	handler := slog.NewTextHandler(testWriter{t}, nil)
+	return slog.New(handler)
+}
+
+type testWriter struct{ t *testing.T }
+
+func (w testWriter) Write(p []byte) (int, error) {
+	w.t.Logf("%s", p)
+	return len(p), nil
+}
+
 // TestFullMigration ensures the full suite runs up and with without error.
 // This only tests the migrations, not the repository or service.
 // Repository and service tests should ensure the migrations are correct.
 func TestFullMigration(t *testing.T) {
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 	t.Setenv("DB_TYPE", "sqlite3")
-	db := db.MustOpen()
+	db := db.MustOpen(newTLogger(t))
 	ctx := context.Background()
 
 	// Setup the migrator
