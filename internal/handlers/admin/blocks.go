@@ -382,9 +382,9 @@ func (h *AdminHandler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 	blockOrder := r.Form["block_id"]
 
 	for _, blockID := range blockOrder {
-		access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
-		if err != nil {
-			h.handleError(w, r, "BlockReorder: checking access", "Could not reorder blocks", "error", err)
+		access, accessErr := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
+		if accessErr != nil {
+			h.handleError(w, r, "BlockReorder: checking access", "Could not reorder blocks", "error", accessErr)
 			return
 		}
 		if !access {

@@ -20,7 +20,14 @@ func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		}
 		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
 		if err != nil {
-			h.handleError(w, r, "ActivityTeamsOverview: loading team relations", "Error loading team relations", "Could not load data", err)
+			h.handleError(
+				w,
+				r,
+				"ActivityTeamsOverview: loading team relations",
+				"Error loading team relations",
+				"Could not load data",
+				err,
+			)
 			return
 		}
 	}
@@ -41,7 +48,14 @@ func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Requ
 	for i := range teams {
 		err := h.teamService.LoadRelation(r.Context(), &teams[i], "Scans")
 		if err != nil {
-			h.handleError(w, r, "ActivityTeamsOverview: loading team relations", "Error loading team relations", "Could not load data", err)
+			h.handleError(
+				w,
+				r,
+				"ActivityTeamsOverview: loading team relations",
+				"Error loading team relations",
+				"Could not load data",
+				err,
+			)
 			return
 		}
 	}
@@ -50,7 +64,7 @@ func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Requ
 	sortField := r.URL.Query().Get("sort")
 	sortOrder := r.URL.Query().Get("order")
 	rankingScheme := r.URL.Query().Get("ranking")
-	
+
 	// Set defaults if not provided
 	if sortField == "" {
 		sortField = "rank"
@@ -69,11 +83,19 @@ func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Requ
 		sortOrder,
 	)
 	if err != nil {
-		h.handleError(w, r, "ActivityTeamsOverview: getting leaderboard data", "Error getting leaderboard data", "Could not load data", err)
+		h.handleError(
+			w,
+			r,
+			"ActivityTeamsOverview: getting leaderboard data",
+			"Error getting leaderboard data",
+			"Could not load data",
+			err,
+		)
 		return
 	}
 
-	err = templates.ActivityTeamsTable(user.CurrentInstance.Settings, len(user.CurrentInstance.Locations), leaderboardData, sortField, sortOrder).Render(r.Context(), w)
+	err = templates.ActivityTeamsTable(user.CurrentInstance.Settings, len(user.CurrentInstance.Locations), leaderboardData, sortField, sortOrder).
+		Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("ActivityTeamsOverview: rendering template", "error", err)
 	}
@@ -111,14 +133,28 @@ func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
 	if err != nil {
 		if !errors.Is(err, services.ErrAllLocationsVisited) {
-			h.handleError(w, r, "TeamActivity: getting next locations", "Error getting next locations", "Could not load data", err)
+			h.handleError(
+				w,
+				r,
+				"TeamActivity: getting next locations",
+				"Error getting next locations",
+				"Could not load data",
+				err,
+			)
 			return
 		}
 	}
 
 	notifications, err := h.notificationService.GetNotifications(r.Context(), team.Code)
 	if err != nil {
-		h.handleError(w, r, "TeamActivity: getting notifications", "Error getting notifications", "Could not load data", err)
+		h.handleError(
+			w,
+			r,
+			"TeamActivity: getting notifications",
+			"Error getting notifications",
+			"Could not load data",
+			err,
+		)
 		return
 	}
 

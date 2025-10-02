@@ -2,7 +2,6 @@ package repositories_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -13,8 +12,8 @@ import (
 
 func setupDB(t *testing.T) (*bun.DB, func()) {
 	t.Helper()
-	os.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
-	os.Setenv("DB_TYPE", "sqlite3")
+	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
+	t.Setenv("DB_TYPE", "sqlite3")
 	db := db.MustOpen()
 	ctx := context.Background()
 

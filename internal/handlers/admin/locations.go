@@ -177,9 +177,9 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		access, err := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
-		if err != nil {
-			h.handleError(w, r, "LocationNewPost: checking marker access", "Error checking marker access", "error", err, "instance_id", user.CurrentInstanceID)
+		access, accessErr := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
+		if accessErr != nil {
+			h.handleError(w, r, "LocationNewPost: checking marker access", "Error checking marker access", "error", accessErr, "instance_id", user.CurrentInstanceID)
 			return
 		}
 		if !access {

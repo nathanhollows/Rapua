@@ -268,9 +268,9 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 		return nil, nil, err
 	}
 
-	playerStates := make([]blocks.PlayerState, len(states))
-	for i, state := range states {
-		playerStates[i] = convertModelToPlayerStateData(state)
+	playerStates := make([]blocks.PlayerState, 0, len(states)+len(foundBlocks))
+	for _, state := range states {
+		playerStates = append(playerStates, convertModelToPlayerStateData(state))
 	}
 
 	// Populate playerStates with empty states for blocks without a state
@@ -284,19 +284,19 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 		}
 		if !found {
 			if block.RequiresValidation() && teamCode != "" {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), teamCode)
-				if err != nil {
-					return nil, nil, err
+				newState, stateErr := r.stateRepo.NewBlockState(ctx, block.GetID(), teamCode)
+				if stateErr != nil {
+					return nil, nil, stateErr
 				}
-				newState, err = r.stateRepo.Create(ctx, newState)
-				if err != nil {
-					return nil, nil, err
+				newState, stateErr = r.stateRepo.Create(ctx, newState)
+				if stateErr != nil {
+					return nil, nil, stateErr
 				}
 				playerStates = append(playerStates, newState)
 			} else {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), "")
-				if err != nil {
-					return nil, nil, err
+				newState, stateErr := r.stateRepo.NewBlockState(ctx, block.GetID(), "")
+				if stateErr != nil {
+					return nil, nil, stateErr
 				}
 				playerStates = append(playerStates, newState)
 			}

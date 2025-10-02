@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -21,7 +22,7 @@ func (d *dummyTeamService) LoadRelation(ctx context.Context, t *models.Team, rel
 }
 
 func (d *dummyTeamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
-	return nil, nil
+	return nil, errors.New("team not found")
 }
 
 // dummyInstanceService is a stub implementation of instanceService.

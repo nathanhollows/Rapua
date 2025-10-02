@@ -49,7 +49,16 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	if r.Form.Has("routeStrategy") {
 		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("routeStrategy"))
+			h.handleError(
+				w,
+				r,
+				"Error parsing navigation mode",
+				"Error parsing navigation mode",
+				"error",
+				err,
+				"mode",
+				r.Form.Get("routeStrategy"),
+			)
 			return
 		}
 		user.CurrentInstance.Settings.RouteStrategy = mode
@@ -77,7 +86,8 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 
 	// Parse points
 	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
-	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") && r.Form.Get("enableBonusPoints") == "on"
+	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") &&
+		r.Form.Get("enableBonusPoints") == "on"
 
 	// Update the navigation settings
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)
@@ -110,7 +120,16 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 	if r.Form.Has("routeStrategy") {
 		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("routeStrategy"))
+			h.handleError(
+				w,
+				r,
+				"Error parsing navigation mode",
+				"Error parsing navigation mode",
+				"error",
+				err,
+				"mode",
+				r.Form.Get("routeStrategy"),
+			)
 			return
 		}
 		user.CurrentInstance.Settings.RouteStrategy = mode

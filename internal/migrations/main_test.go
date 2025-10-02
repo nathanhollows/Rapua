@@ -2,7 +2,6 @@ package migrations_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -15,8 +14,8 @@ import (
 // This only tests the migrations, not the repository or service.
 // Repository and service tests should ensure the migrations are correct.
 func TestFullMigration(t *testing.T) {
-	os.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
-	os.Setenv("DB_TYPE", "sqlite3")
+	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
+	t.Setenv("DB_TYPE", "sqlite3")
 	db := db.MustOpen()
 	ctx := context.Background()
 

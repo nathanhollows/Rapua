@@ -54,9 +54,9 @@ func MustOpen() *bun.DB {
 	case "sqlite3":
 		sqldb, err = sql.Open(sqliteshim.ShimName, dataSourceName)
 		db = bun.NewDB(sqldb, sqlitedialect.New())
-		_, err := sqldb.Exec("PRAGMA journal_mode=WAL;")
-		if err != nil {
-			log.Fatal(err)
+		_, pragmaErr := sqldb.ExecContext(context.Background(), "PRAGMA journal_mode=WAL;")
+		if pragmaErr != nil {
+			log.Fatal(pragmaErr)
 		}
 	default:
 		panic("unsupported DB_TYPE: " + driverName + ". Supported types are mysql and sqlite3")

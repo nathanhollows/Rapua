@@ -381,8 +381,8 @@ func TestTemplateService_Update(t *testing.T) {
 					assert.NoError(t, err)
 
 					// Verify the update
-					updated, err := svc.GetByID(context.Background(), template.ID)
-					assert.NoError(t, err)
+					updated, getErr := svc.GetByID(context.Background(), template.ID)
+					assert.NoError(t, getErr)
 					assert.Equal(t, "Updated Template", updated.Name)
 				}
 			})
@@ -478,8 +478,8 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 
 					// Extract and verify the share link
 					shareLinkID := extractShareLinkIDFromURL(url)
-					shareLink, err := svc.GetShareLink(context.Background(), shareLinkID)
-					assert.NoError(t, err)
+					shareLink, getErr := svc.GetShareLink(context.Background(), shareLinkID)
+					assert.NoError(t, getErr)
 					assert.Equal(t, tt.data.TemplateID, shareLink.TemplateID)
 					assert.Equal(t, tt.userID, shareLink.UserID)
 					assert.Equal(t, tt.data.MaxUses, shareLink.MaxUses)

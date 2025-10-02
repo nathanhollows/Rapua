@@ -78,8 +78,8 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 
 	// Check that the check-ins have been deleted
 	for _, team := range teams {
-		checkins, err := repo.FindCheckInByTeamAndLocation(ctx, team.Code, location.ID)
-		assert.ErrorIs(t, err, sql.ErrNoRows, "expected no check-ins to be found")
+		checkins, findErr := repo.FindCheckInByTeamAndLocation(ctx, team.Code, location.ID)
+		assert.ErrorIs(t, findErr, sql.ErrNoRows, "expected no check-ins to be found")
 		assert.Empty(t, checkins, "expected no check-ins to be found")
 	}
 }

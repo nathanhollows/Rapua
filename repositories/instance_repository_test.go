@@ -301,8 +301,8 @@ func TestInstanceRepository_Update(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				// Check that it's updated
-				updated, err := repo.GetByID(ctx, inst.ID)
-				assert.NoError(t, err)
+				updated, getErr := repo.GetByID(ctx, inst.ID)
+				assert.NoError(t, getErr)
 				assert.Equal(t, tc.updateName, updated.Name)
 			}
 		})
@@ -494,8 +494,8 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				instances, err := repo.FindByUserID(ctx, tc.instanceID)
-				assert.NoError(t, err)
+				instances, findErr := repo.FindByUserID(ctx, tc.instanceID)
+				assert.NoError(t, findErr)
 				for _, inst := range instances {
 					assert.True(t, inst.IsQuickStartDismissed, "quickstart should be dismissed")
 				}

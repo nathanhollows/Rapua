@@ -158,7 +158,9 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			h.logger.Error("sending email verification", "err", err)
-			c := templates.RegisterError("Your account was created, but an error occurred while trying to send the email verification. Please try again.")
+			c := templates.RegisterError(
+				"Your account was created, but an error occurred while trying to send the email verification. Please try again.",
+			)
 			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
@@ -200,7 +202,14 @@ func (h *PublicHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Reques
 	)
 	err := c.Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "ForgotPasswordPost: rendering template", "Error sending forgot password email", "error", err)
+		h.handleError(
+			w,
+			r,
+			"ForgotPasswordPost: rendering template",
+			"Error sending forgot password email",
+			"error",
+			err,
+		)
 	}
 }
 
@@ -317,7 +326,9 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Send a meta refresh to the verify email page
-	_, err = w.Write([]byte(`<html><head><meta http-equiv="refresh" content="2; url='/admin'"></head><body></body></html>`))
+	_, err = w.Write(
+		[]byte(`<html><head><meta http-equiv="refresh" content="2; url='/admin'"></head><body></body></html>`),
+	)
 	if err != nil {
 		h.handleError(w, r, "VerifyEmailWithToken: writing response", "Error verifying email", "error", err)
 	}
@@ -357,7 +368,14 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 			)
 			err := c.Render(r.Context(), w)
 			if err != nil {
-				h.handleError(w, r, "ResendEmailVerification: rendering template", "Error sending email verification", "error", err)
+				h.handleError(
+					w,
+					r,
+					"ResendEmailVerification: rendering template",
+					"Error sending email verification",
+					"error",
+					err,
+				)
 				return
 			}
 		}
@@ -369,7 +387,14 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 		)
 		err := c.Render(r.Context(), w)
 		if err != nil {
-			h.handleError(w, r, "ResendEmailVerification: rendering template", "Error sending email verification", "error", err)
+			h.handleError(
+				w,
+				r,
+				"ResendEmailVerification: rendering template",
+				"Error sending email verification",
+				"error",
+				err,
+			)
 			return
 		}
 	}
@@ -380,6 +405,13 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 	)
 	err = c.Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "ResendEmailVerification: rendering template", "Error sending email verification", "error", err)
+		h.handleError(
+			w,
+			r,
+			"ResendEmailVerification: rendering template",
+			"Error sending email verification",
+			"error",
+			err,
+		)
 	}
 }

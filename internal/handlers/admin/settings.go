@@ -112,22 +112,22 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 		}
 
 		// Call the service to change the password
-		err := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
-		if err != nil {
+		changeErr := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
+		if changeErr != nil {
 			var errorMessage string
 			switch {
-			case errors.Is(err, services.ErrIncorrectOldPassword):
+			case errors.Is(changeErr, services.ErrIncorrectOldPassword):
 				errorMessage = "Current password is incorrect"
-			case errors.Is(err, services.ErrPasswordsDoNotMatch):
+			case errors.Is(changeErr, services.ErrPasswordsDoNotMatch):
 				errorMessage = "New passwords do not match"
-			case errors.Is(err, services.ErrEmptyPassword):
+			case errors.Is(changeErr, services.ErrEmptyPassword):
 				errorMessage = "Password cannot be empty"
 			default:
 				errorMessage = "Failed to update password"
-				h.logger.Error("change password", "error", err.Error())
+				h.logger.Error("change password", "error", changeErr.Error())
 			}
 
-			h.handleError(w, r, "SettingsSecurityPost", errorMessage, err)
+			h.handleError(w, r, "SettingsSecurityPost", errorMessage, changeErr)
 			return
 		}
 

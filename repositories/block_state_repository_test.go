@@ -156,9 +156,9 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 
 				err = repo.DeleteByBlockID(context.Background(), tx, state[0].GetBlockID())
 				if err == nil {
-					err := tx.Commit()
-					if err != nil {
-						return nil, err
+					commitErr := tx.Commit()
+					if commitErr != nil {
+						return nil, commitErr
 					}
 				} else {
 					err2 := tx.Rollback()
@@ -170,13 +170,13 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 
 				// Check that the states have been deleted
 				for _, s := range state {
-					_, err := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
-					if err.Error() != "sql: no rows in result set" {
-						return nil, err
+					_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
+					if getErr.Error() != "sql: no rows in result set" {
+						return nil, getErr
 					}
 				}
 
-				return nil, nil
+				return "deletion verified", nil
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)
@@ -240,21 +240,21 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 					}
 					return nil, err
 				} else {
-					err := tx.Commit()
-					if err != nil {
-						return nil, err
+					commitErr := tx.Commit()
+					if commitErr != nil {
+						return nil, commitErr
 					}
 				}
 
 				// Check that the states have been deleted
 				for _, s := range state {
-					_, err := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
-					if err == nil || !errors.Is(err, sql.ErrNoRows) {
+					_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
+					if getErr == nil || !errors.Is(getErr, sql.ErrNoRows) {
 						return nil, errors.New("player state was not deleted")
 					}
 				}
 
-				return nil, nil
+				return "deletion verified", nil
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)

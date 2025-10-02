@@ -28,11 +28,7 @@ func createTempMarkdownFile(t *testing.T, dir, name, content string) string {
 }
 
 func TestNewDocsService(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create test markdown files
 	createTempMarkdownFile(
@@ -60,11 +56,7 @@ func TestNewDocsService(t *testing.T) {
 }
 
 func TestDocsService_GetPage(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create test markdown files
 	createTempMarkdownFile(
@@ -120,11 +112,7 @@ func TestDocsService_GetPage(t *testing.T) {
 }
 
 func TestDocsService_BuildHierarchy(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create test markdown files
 	createTempMarkdownFile(
@@ -175,11 +163,7 @@ func TestDocsService_BuildHierarchy(t *testing.T) {
 }
 
 func TestTrackPages(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create test markdown files
 	createTempMarkdownFile(
@@ -248,11 +232,7 @@ func TestTrackPages(t *testing.T) {
 }
 
 func TestRedirects(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create test markdown files
 	createTempMarkdownFile(
@@ -309,11 +289,7 @@ func TestRedirects(t *testing.T) {
 }
 
 func TestExtractHeadings(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "docs_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Create a markdown file with multiple headings
 	content := `---

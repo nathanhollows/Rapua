@@ -98,7 +98,12 @@ func (h *AdminHandler) FacilitatorLogin(w http.ResponseWriter, r *http.Request) 
 func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 	token, err := r.Cookie(facilitatorSessionCookie)
 	if err != nil {
-		h.handleError(w, r, "facilitator session expired", "Your session has expired. Please ask for another login link.")
+		h.handleError(
+			w,
+			r,
+			"facilitator session expired",
+			"Your session has expired. Please ask for another login link.",
+		)
 		h.redirect(w, r, "/")
 		return
 	}

@@ -2,7 +2,6 @@ package db_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -13,12 +12,8 @@ import (
 // in-memory SQLite DB when the required environment variables are set.
 func TestMustOpen_Sqlite3(t *testing.T) {
 	// Set env vars for sqlite3
-	os.Setenv("DB_TYPE", "sqlite3")
-	os.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
-	t.Cleanup(func() {
-		os.Unsetenv("DB_TYPE")
-		os.Unsetenv("DB_CONNECTION")
-	})
+	t.Setenv("DB_TYPE", "sqlite3")
+	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 
 	dbc := db.MustOpen()
 	require.NotNil(t, dbc, "Expected a non-nil *bun.DB from MustOpen")
@@ -31,12 +26,8 @@ func TestMustOpen_Sqlite3(t *testing.T) {
 
 // TestMustOpen_UnsupportedDBType tests panics on an unsupported DB_TYPE.
 func TestMustOpen_UnsupportedDBType(t *testing.T) {
-	os.Setenv("DB_TYPE", "someInvalidDriver")
-	os.Setenv("DB_CONNECTION", "fakeConnectionString")
-	t.Cleanup(func() {
-		os.Unsetenv("DB_TYPE")
-		os.Unsetenv("DB_CONNECTION")
-	})
+	t.Setenv("DB_TYPE", "someInvalidDriver")
+	t.Setenv("DB_CONNECTION", "fakeConnectionString")
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -50,12 +41,8 @@ func TestMustOpen_UnsupportedDBType(t *testing.T) {
 // TestTransactor_BeginTx verifies that we can begin a transaction
 // on a valid DB connection (in this case, an in-memory SQLite).
 func TestTransactor_BeginTx(t *testing.T) {
-	os.Setenv("DB_TYPE", "sqlite3")
-	os.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
-	t.Cleanup(func() {
-		os.Unsetenv("DB_TYPE")
-		os.Unsetenv("DB_CONNECTION")
-	})
+	t.Setenv("DB_TYPE", "sqlite3")
+	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 
 	dbc := db.MustOpen()
 	require.NotNil(t, dbc, "Expected a valid *bun.DB from MustOpen")

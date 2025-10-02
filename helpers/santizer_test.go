@@ -1,6 +1,10 @@
-package helpers
+package helpers_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/nathanhollows/Rapua/v4/helpers"
+)
 
 func TestSanitizeHTML(t *testing.T) {
 	tests := []struct {
@@ -23,7 +27,7 @@ func TestSanitizeHTML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := SanitizeHTML(tt.input)
+			got := helpers.SanitizeHTML(tt.input)
 			if string(got) != string(tt.want) {
 				t.Errorf("SanitizeHTML() = %v, want %v", string(got), string(tt.want))
 			}

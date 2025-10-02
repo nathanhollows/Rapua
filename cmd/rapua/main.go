@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -48,7 +47,7 @@ func main() {
 		Description: `An open-source platform for location-based games.`,
 		Version:     version,
 		Commands: []*cli.Command{
-			newDBCommand(migrator),
+			newDBCommand(migrator, logger),
 		},
 		Action: func(c *cli.Context) error {
 			// Default action: run the app
@@ -64,7 +63,7 @@ func main() {
 	}
 }
 
-func newDBCommand(migrator *migrate.Migrator) *cli.Command {
+func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command {
 	return &cli.Command{
 		Name:  "db",
 		Usage: "database migrations",
@@ -95,9 +94,9 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 						return err
 					}
 					if group.IsZero() {
-						fmt.Println("database is up-to-date")
+						logger.Info("database is up-to-date")
 					} else {
-						fmt.Printf("migrated to %s\n", group)
+						logger.Info("migrated", "group", group)
 					}
 					return nil
 				},
@@ -121,9 +120,9 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 						return err
 					}
 					if group.IsZero() {
-						fmt.Println("no migrations to rollback")
+						logger.Info("no migrations to rollback")
 					} else {
-						fmt.Printf("rolled back %s\n", group)
+						logger.Info("rolled back", "group", group)
 					}
 					return nil
 				},
@@ -136,9 +135,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("migrations: %s\n", ms)
-					fmt.Printf("unapplied migrations: %s\n", ms.Unapplied())
-					fmt.Printf("last migration group: %s\n", ms.LastGroup())
+					logger.Info("migration status", "migrations", ms, "unapplied", ms.Unapplied(), "last_group", ms.LastGroup())
 					return nil
 				},
 			},
@@ -151,7 +148,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("created migration %s (%s)\n", mf.Name, mf.Path)
+					logger.Info("created migration", "name", mf.Name, "path", mf.Path)
 					return nil
 				},
 			},

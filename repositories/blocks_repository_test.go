@@ -69,9 +69,9 @@ func TestBlockRepository(t *testing.T) {
 					}
 					t.Error(err)
 				} else {
-					err := tx.Commit()
-					if err != nil {
-						t.Error(err)
+					commitErr := tx.Commit()
+					if commitErr != nil {
+						t.Error(commitErr)
 					}
 				}
 			},
@@ -180,9 +180,9 @@ func TestBlockRepository(t *testing.T) {
 					}
 					t.Error(err)
 				} else {
-					err := tx.Commit()
-					if err != nil {
-						t.Error(err)
+					commitErr := tx.Commit()
+					if commitErr != nil {
+						t.Error(commitErr)
 					}
 				}
 			},
@@ -224,11 +224,11 @@ func TestBlockRepository(t *testing.T) {
 					}
 					return nil, err
 				} else {
-					err := tx.Commit()
-					if err != nil {
-						return nil, fmt.Errorf("committing transaction: %w", err)
+					commitErr := tx.Commit()
+					if commitErr != nil {
+						return nil, fmt.Errorf("committing transaction: %w", commitErr)
 					}
-					return nil, nil
+					return "deletion successful", nil
 				}
 			},
 			assertion: func(result interface{}, err error) {
@@ -307,13 +307,13 @@ func TestBlockRepository_Bulk(t *testing.T) {
 
 				for i, b := range block {
 					t.Logf("Checking block %d, ID: %s", i, b.GetID())
-					_, err := repo.GetByID(context.Background(), b.GetID())
-					if err != nil && err.Error() != "sql: no rows in result set" {
-						return nil, err
+					_, getErr := repo.GetByID(context.Background(), b.GetID())
+					if getErr != nil && getErr.Error() != "sql: no rows in result set" {
+						return nil, getErr
 					}
 				}
 
-				return nil, nil
+				return "bulk deletion verified", nil
 			},
 			assertion: func(result interface{}, err error) {
 				assert.NoError(t, err)

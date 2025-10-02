@@ -52,7 +52,7 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	path, content := h.assetGenerator.GetQRCodePathAndContent(action, id, "", extension)
 
 	// Check if the file already exists, if so serve it
-	if _, err := os.Stat(path); err == nil {
+	if _, statErr := os.Stat(path); statErr == nil {
 		if extension == "svg" {
 			w.Header().Set("Content-Type", "image/svg+xml")
 		} else {
@@ -142,16 +142,16 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 		path, content := h.assetGenerator.GetQRCodePathAndContent("in", location.MarkerID, location.Name, "png")
 
 		// Check if the file already exists, otherwise generate it
-		if _, err := os.Stat(path); err != nil {
+		if _, statErr := os.Stat(path); statErr != nil {
 			// Generate the QR code
-			err := h.assetGenerator.CreateQRCodeImage(
+			qrErr := h.assetGenerator.CreateQRCodeImage(
 				r.Context(),
 				path,
 				content,
 				h.assetGenerator.WithQRFormat("png"),
 			)
-			if err != nil {
-				h.logger.Error("GeneratePoster: Could not create posters", "error", err)
+			if qrErr != nil {
+				h.logger.Error("GeneratePoster: Could not create posters", "error", qrErr)
 				http.Error(w, "Could not create posters", http.StatusInternalServerError)
 				return
 			}
@@ -211,16 +211,16 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 	path, content := h.assetGenerator.GetQRCodePathAndContent("in", location.MarkerID, location.Name, "png")
 
 	// Check if the file already exists, otherwise generate it
-	if _, err := os.Stat(path); err != nil {
+	if _, statErr := os.Stat(path); statErr != nil {
 		// Generate the QR code
-		err := h.assetGenerator.CreateQRCodeImage(
+		qrErr := h.assetGenerator.CreateQRCodeImage(
 			r.Context(),
 			path,
 			content,
 			h.assetGenerator.WithQRFormat("png"),
 		)
-		if err != nil {
-			h.logger.Error("GeneratePoster: Could not create posters", "error", err)
+		if qrErr != nil {
+			h.logger.Error("GeneratePoster: Could not create posters", "error", qrErr)
 			http.Error(w, "Could not create posters", http.StatusInternalServerError)
 			return
 		}

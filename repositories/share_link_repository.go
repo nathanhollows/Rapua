@@ -45,7 +45,7 @@ func (r *ShareLinkRepository) Create(ctx context.Context, link *models.ShareLink
 		if err != nil && err.Error() != "sql: no rows in result set" {
 			return fmt.Errorf("failed to check for existing link: %w", err)
 		}
-		if existingLink != nil && existingLink.ID != "" {
+		if existingLink.ID != "" {
 			link.ID = existingLink.ID
 			return nil
 		}

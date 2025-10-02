@@ -1,11 +1,13 @@
 package blocks
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type YoutubeBlock struct {
@@ -52,7 +54,15 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 
 		// Confirm URL is valid
 		checkURL := "https://www.youtube.com/oembed?format=json&url=" + u[0]
-		resp, err := http.Get(checkURL)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, checkURL, nil)
+		if err != nil {
+			return errors.New("URL is not valid")
+		}
+
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return errors.New("URL is not valid")
 		}

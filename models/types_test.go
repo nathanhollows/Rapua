@@ -1,13 +1,14 @@
-package models
+package models_test
 
 import (
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStrArray_JSONEncoding(t *testing.T) {
-	arr := StrArray{"Park Entrance", "Old Tower", "River Bank"}
+	arr := models.StrArray{"Park Entrance", "Old Tower", "River Bank"}
 	jsonVal, err := arr.Value()
 	assert.NoError(t, err)
 
@@ -17,27 +18,27 @@ func TestStrArray_JSONEncoding(t *testing.T) {
 }
 
 func TestStrArray_JSONDecoding(t *testing.T) {
-	var arr StrArray
+	var arr models.StrArray
 
 	// Normal JSON case
 	err := arr.Scan(`["Park Entrance","Old Tower","River Bank"]`)
 	assert.NoError(t, err)
-	assert.Equal(t, StrArray{"Park Entrance", "Old Tower", "River Bank"}, arr)
+	assert.Equal(t, models.StrArray{"Park Entrance", "Old Tower", "River Bank"}, arr)
 
 	// Handles empty array
 	err = arr.Scan(`[]`)
 	assert.NoError(t, err)
-	assert.Equal(t, StrArray{}, arr)
+	assert.Equal(t, models.StrArray{}, arr)
 
 	// Handles nil case
 	err = arr.Scan(nil)
 	assert.NoError(t, err)
-	assert.Equal(t, StrArray{}, arr)
+	assert.Equal(t, models.StrArray{}, arr)
 
 	// Handles special characters
 	err = arr.Scan(`["This \"quote\" test","Line\nBreak","Tab\tTest"]`)
 	assert.NoError(t, err)
-	assert.Equal(t, StrArray{`This "quote" test`, "Line\nBreak", "Tab\tTest"}, arr)
+	assert.Equal(t, models.StrArray{`This "quote" test`, "Line\nBreak", "Tab\tTest"}, arr)
 
 	// Invalid JSON case
 	err = arr.Scan(`{bad json}`)
