@@ -383,7 +383,7 @@ func (s *DeleteService) deleteTeams(ctx context.Context, tx *bun.Tx, instanceID 
 // deleteBlocksByLocationID deletes all blocks for a location.
 func (s *DeleteService) deleteBlocksByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error {
 	// Delete all blocks (block states should cascade delete via database constraints)
-	err := s.blockRepo.DeleteByLocationID(ctx, tx, locationID)
+	err := s.blockRepo.DeleteByOwnerID(ctx, tx, locationID)
 	if err != nil {
 		return fmt.Errorf("deleting blocks: %w", err)
 	}

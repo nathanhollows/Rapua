@@ -157,8 +157,8 @@ func (s locationService) DuplicateLocation(
 		return models.Location{}, fmt.Errorf("saving location: %w", err)
 	}
 
-	// Copy the blocks using FindByLocationID to avoid duplication issues
-	originalBlocks, err := s.blockRepo.FindByLocationID(ctx, location.ID)
+	// Copy the blocks using FindByOwnerID to avoid duplication issues
+	originalBlocks, err := s.blockRepo.FindByOwnerID(ctx, location.ID)
 	if err != nil {
 		return models.Location{}, fmt.Errorf("finding blocks for duplication: %w", err)
 	}

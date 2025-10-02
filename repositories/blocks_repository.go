@@ -35,18 +35,10 @@ type BlockRepository interface {
 		ownerID string,
 		blockContext blocks.BlockContext,
 	) (blocks.Blocks, error)
-	// FindByLocationID fetches all blocks for a location (legacy method)
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
 	// FindBlocksAndStatesByOwnerIDAndTeamCode fetches blocks and their states by owner and team code
 	FindBlocksAndStatesByOwnerIDAndTeamCode(
 		ctx context.Context,
 		ownerID string,
-		teamCode string,
-	) ([]blocks.Block, []blocks.PlayerState, error)
-	// FindBlocksAndStatesByLocationIDAndTeamCode fetches blocks and their states by location and team code (legacy method)
-	FindBlocksAndStatesByLocationIDAndTeamCode(
-		ctx context.Context,
-		locationID string,
 		teamCode string,
 	) ([]blocks.Block, []blocks.PlayerState, error)
 
@@ -59,9 +51,6 @@ type BlockRepository interface {
 	// DeleteByOwnerID deletes all blocks associated with an owner ID
 	// Requires a transaction as related data will also need to be deleted
 	DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error
-	// DeleteByLocationID deletes all blocks associated with a location ID (legacy method)
-	// Requires a transaction as related data will also need to be deleted
-	DeleteByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
@@ -111,19 +100,6 @@ func (r *blockRepository) FindByOwnerIDAndContext(
 	return convertModelsToBlocks(modelBlocks)
 }
 
-// FindByLocationID fetches all blocks for a location (legacy method).
-func (r *blockRepository) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
-	modelBlocks := []models.Block{}
-	err := r.db.NewSelect().
-		Model(&modelBlocks).
-		Where("owner_id = ?", locationID).
-		Order("ordering ASC").
-		Scan(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return convertModelsToBlocks(modelBlocks)
-}
 
 // GetByID fetches a block by its ID.
 func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.Block, error) {
@@ -240,11 +216,6 @@ func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, owner
 	return err
 }
 
-// DeleteByLocationID deletes all blocks for a location (legacy method).
-func (r *blockRepository) DeleteByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error {
-	_, err := tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", locationID).Exec(ctx)
-	return err
-}
 
 // Reorder reorders the blocks.
 func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
@@ -335,79 +306,6 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 	return foundBlocks, playerStates, nil
 }
 
-// FindBlocksAndStatesByLocationIDAndTeamCode fetches all blocks for a location with their player states (legacy method).
-func (r *blockRepository) FindBlocksAndStatesByLocationIDAndTeamCode(
-	ctx context.Context,
-	locationID string,
-	teamCode string,
-) ([]blocks.Block, []blocks.PlayerState, error) {
-	if teamCode == "" {
-		return nil, nil, errors.New("team code must be set")
-	}
-
-	modelBlocks := []models.Block{}
-	states := []models.TeamBlockState{}
-
-	err := r.db.NewSelect().
-		Model(&modelBlocks).
-		Where("owner_id = ?", locationID).
-		Order("ordering ASC").
-		Scan(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = r.db.NewSelect().
-		Model(&states).
-		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ?", locationID)).
-		Where("team_code = ?", teamCode).
-		Scan(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	foundBlocks, err := convertModelsToBlocks(modelBlocks)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	playerStates := make([]blocks.PlayerState, len(states))
-	for i, state := range states {
-		playerStates[i] = convertModelToPlayerStateData(state)
-	}
-
-	// Populate playerStates with empty states for blocks without a state
-	for _, block := range foundBlocks {
-		found := false
-		for _, state := range playerStates {
-			if state.GetBlockID() == block.GetID() {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if block.RequiresValidation() && teamCode != "" {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), teamCode)
-				if err != nil {
-					return nil, nil, err
-				}
-				newState, err = r.stateRepo.Create(ctx, newState)
-				if err != nil {
-					return nil, nil, err
-				}
-				playerStates = append(playerStates, newState)
-			} else {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), "")
-				if err != nil {
-					return nil, nil, err
-				}
-				playerStates = append(playerStates, newState)
-			}
-		}
-	}
-
-	return foundBlocks, playerStates, nil
-}
 
 // GetBlockAndStateByBlockIDAndTeamCode fetches a block by its ID with the player state for a given team.
 func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(

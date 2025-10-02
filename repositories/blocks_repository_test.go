@@ -292,7 +292,7 @@ func TestBlockRepository_Bulk(t *testing.T) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
 				assert.NoError(t, err)
 
-				err = repo.DeleteByLocationID(context.Background(), tx, block[0].GetLocationID())
+				err = repo.DeleteByOwnerID(context.Background(), tx, block[0].GetLocationID())
 				if err != nil {
 					rollbackErr := tx.Rollback()
 					if rollbackErr != nil {

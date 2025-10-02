@@ -50,13 +50,6 @@ func (s *BlockService) FindByOwnerIDAndContext(
 	return s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
 }
 
-// FindByLocationID fetches all content blocks for a location (legacy method).
-func (s *BlockService) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
-	if locationID == "" {
-		return nil, errors.New("locationID cannot be empty")
-	}
-	return s.blockRepo.FindByLocationID(ctx, locationID)
-}
 
 // NewBlockWithOwnerAndContext creates a new block for an owner with specific context.
 func (s *BlockService) NewBlockWithOwnerAndContext(
@@ -92,34 +85,6 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	return newBlock, nil
 }
 
-// NewBlock creates a new block for a location (legacy method).
-func (s *BlockService) NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error) {
-	if locationID == "" {
-		return nil, errors.New("locationID cannot be empty")
-	}
-	if blockType == "" {
-		return nil, errors.New("blockType cannot be empty")
-	}
-	// Use the blocks package to create the appropriate block based on the type.
-	baseBlock := blocks.BaseBlock{
-		Type:       blockType,
-		LocationID: locationID,
-	}
-
-	// Let the blocks package handle the creation logic.
-	block, err := blocks.CreateFromBaseBlock(baseBlock)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create block of type %s: %w", blockType, err)
-	}
-
-	// Store the new block in the repository using default context.
-	newBlock, err := s.blockRepo.Create(ctx, block, locationID, blocks.ContextLocationContent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to store block of type %s: %w", blockType, err)
-	}
-
-	return newBlock, nil
-}
 
 // NewBlockState creates a new block state.
 func (s *BlockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
@@ -193,27 +158,6 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 	return foundBlocks, blockStates, nil
 }
 
-// FindByLocationIDAndTeamCodeWithState fetches blocks and their states by location and team code (legacy method).
-func (s *BlockService) FindByLocationIDAndTeamCodeWithState(
-	ctx context.Context,
-	locationID, teamCode string,
-) ([]blocks.Block, map[string]blocks.PlayerState, error) {
-	if locationID == "" {
-		return nil, nil, errors.New("locationID must be set")
-	}
-	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByLocationIDAndTeamCode(ctx, locationID, teamCode)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Create a map for easier lookup of block states by block ID
-	blockStates := make(map[string]blocks.PlayerState, len(states))
-	for _, state := range states {
-		blockStates[state.GetBlockID()] = state
-	}
-
-	return foundBlocks, blockStates, nil
-}
 
 func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
 	ctx context.Context,
@@ -245,7 +189,7 @@ func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 
 // CheckValidationRequiredForLocation checks if any blocks in a location require validation.
 func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
-	blocks, err := s.FindByLocationID(ctx, locationID)
+	blocks, err := s.FindByOwnerID(ctx, locationID)
 	if err != nil {
 		return false, err
 	}
@@ -264,7 +208,7 @@ func (s *BlockService) CheckValidationRequiredForCheckIn(
 	ctx context.Context,
 	locationID, teamCode string,
 ) (bool, error) {
-	blocks, state, err := s.FindByLocationIDAndTeamCodeWithState(ctx, locationID, teamCode)
+	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithState(ctx, locationID, teamCode)
 	if err != nil {
 		return false, err
 	}

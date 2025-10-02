@@ -236,7 +236,11 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blocks, blockStates, err := h.blockService.FindByLocationIDAndTeamCodeWithState(r.Context(), team.CheckIns[index].Location.ID, team.Code)
+	blocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithState(
+		r.Context(),
+		team.CheckIns[index].Location.ID,
+		team.Code,
+	)
 	if err != nil {
 		h.handleError(w, r, "CheckInView: getting blocks", "Error loading blocks", "error", err, "team", team.Code, "location", locationCode)
 		return
@@ -281,7 +285,7 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 		Location: location,
 	}
 
-	contentBlocks, err := h.blockService.FindByLocationID(r.Context(), location.ID)
+	contentBlocks, err := h.blockService.FindByOwnerID(r.Context(), location.ID)
 	if err != nil {
 		h.handleError(w, r, "LocationPreview: getting blocks", "Error getting blocks", "error", err)
 		return

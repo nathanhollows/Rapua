@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
@@ -143,7 +144,7 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Create a block
-		block, err := blockService.NewBlock(context.Background(), location.ID, "image")
+		block, err := blockService.NewBlockWithOwnerAndContext(context.Background(), location.ID, blocks.ContextLocationContent, "image")
 		assert.NoError(t, err)
 		t.Logf("Created block with ID: %s for location: %s", block.GetID(), location.ID)
 
@@ -159,13 +160,13 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify the block was created
-		blocksBeforeDuplicate, err := blockService.FindByLocationID(context.Background(), location.ID)
+		blocksBeforeDuplicate, err := blockService.FindByOwnerID(context.Background(), location.ID)
 		assert.NoError(t, err)
 		assert.Len(t, blocksBeforeDuplicate, 1)
 		t.Logf("Blocks before duplicate: %d", len(blocksBeforeDuplicate))
 
 		// Verify the blocks are accessible through the service
-		blocksAfterRelations, err := blockService.FindByLocationID(context.Background(), location.ID)
+		blocksAfterRelations, err := blockService.FindByOwnerID(context.Background(), location.ID)
 		assert.NoError(t, err)
 		t.Logf("Location blocks after service lookup: %d", len(blocksAfterRelations))
 
@@ -180,7 +181,7 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		assert.NotNil(t, checkLocation)
 
 		// Check that the blocks were duplicated
-		blocks, err := blockService.FindByLocationID(context.Background(), newLocation.ID)
+		blocks, err := blockService.FindByOwnerID(context.Background(), newLocation.ID)
 		assert.NoError(t, err)
 		t.Logf("Blocks found for new location %s: %d", newLocation.ID, len(blocks))
 		for i, bl := range blocks {

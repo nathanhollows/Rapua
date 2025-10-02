@@ -32,6 +32,8 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 - **Breaking change:** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
 - **Breaking change:** Renamed `NavigationMethod` and `NavigationMode` to `RouteStrategy` and `NavigationDisplayMode`. The original names were so bad I don't remember which one became which.
 - **Breaking change:** Renamed `LocationID` to `OwnerID` on in `models.Blocks`.
+- **Breaking change:** Updated blocks repository interface to use owner-based methods instead of location-based methods. `Create` method now requires `blocks.BlockContext` parameter.
+- **Breaking change:** Blocks service methods migrated from location-based to owner-based paradigm (`FindByLocationID` → `FindByOwnerID`, `NewBlock` → `NewBlockWithOwnerAndContext`).
 - Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
 - Updated notification message if a player tries to check out too early.
 - Cookie settings for easier scanning
@@ -46,9 +48,11 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 
 ### Removed
 
-- **Breaking change:** `ClueRepository`, `ClueService`, and all clue-related views and logic. 
+- **Breaking change:** `ClueRepository`, `ClueService`, and all clue-related views and logic.
 - **Breaking change:** `Locations.Blocks` relation. Only used in tests, so switched to service calls instead.
   - Clues are now automatically migrated to [Random Clue Blocks](/docs/user/blocks/random-clue) when the migration is run.
+- **Breaking change:** Legacy blocks repository methods: `FindByLocationID`, `FindBlocksAndStatesByLocationIDAndTeamCode`, `DeleteByLocationID`.
+- **Breaking change:** Legacy blocks service methods: `FindByLocationID`, `NewBlock`, `FindByLocationIDAndTeamCodeWithState`.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
 

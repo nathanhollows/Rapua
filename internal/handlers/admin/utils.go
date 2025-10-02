@@ -23,8 +23,13 @@ type AccessService interface {
 }
 
 type BlockService interface {
-	// NewBlock creates a new content block of the specified type for the given location
-	NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error)
+	// NewBlockWithOwnerAndContext creates a new content block for the given owner and context
+	NewBlockWithOwnerAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+		blockType string,
+	) (blocks.Block, error)
 	// NewBlockState creates a new player state for the given block and team
 	NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
 	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
@@ -34,12 +39,24 @@ type BlockService interface {
 	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
 	// GetBlockWithStateByBlockIDAndTeamCode fetches a block + its state
 	// for the given block ID and team
-	GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error)
-	// FindByLocationID fetches all content blocks for a location
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
-	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
-	// for the given location and team
-	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+	GetBlockWithStateByBlockIDAndTeamCode(
+		ctx context.Context,
+		blockID, teamCode string,
+	) (blocks.Block, blocks.PlayerState, error)
+	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context
+	FindByOwnerIDAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Blocks, error)
+	// FindByOwnerID fetches all content blocks for an owner
+	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
+	// FindByOwnerIDAndTeamCodeWithState fetches all blocks and their states
+	// for the given owner and team
+	FindByOwnerIDAndTeamCodeWithState(
+		ctx context.Context,
+		ownerID, teamCode string,
+	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
@@ -64,7 +81,12 @@ type DeleteService interface {
 }
 
 type FacilitatorService interface {
-	CreateFacilitatorToken(ctx context.Context, instanceID string, locations []string, duration time.Duration) (string, error)
+	CreateFacilitatorToken(
+		ctx context.Context,
+		instanceID string,
+		locations []string,
+		duration time.Duration,
+	) (string, error)
 	ValidateToken(ctx context.Context, token string) (*models.FacilitatorToken, error)
 	CleanupExpiredTokens(ctx context.Context) error
 }
@@ -117,7 +139,11 @@ type TeamService interface {
 	// GetTeamByCode returns a team by code
 	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
 	// GetTeamActivityOverview returns a list of teams and their activity
-	GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]services.TeamActivity, error)
+	GetTeamActivityOverview(
+		ctx context.Context,
+		instanceID string,
+		locations []models.Location,
+	) ([]services.TeamActivity, error)
 
 	// LoadRelation loads relations for a team
 	LoadRelation(ctx context.Context, team *models.Team, relation string) error
@@ -126,7 +152,12 @@ type TeamService interface {
 }
 
 type UploadService interface {
-	UploadFile(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, data services.UploadMetadata) (*models.Upload, error)
+	UploadFile(
+		ctx context.Context,
+		file multipart.File,
+		fileHeader *multipart.FileHeader,
+		data services.UploadMetadata,
+	) (*models.Upload, error)
 	Search(ctx context.Context, filters map[string]string) ([]*models.Upload, error)
 }
 
@@ -145,7 +176,14 @@ type UserService interface {
 
 type LeaderBoardService interface {
 	// GetLeaderBoardData returns sorted and ranked leaderboard data
-	GetLeaderBoardData(ctx context.Context, teams []models.Team, locationCount int, rankingScheme string, sortField string, sortOrder string) ([]services.LeaderBoardTeamData, error)
+	GetLeaderBoardData(
+		ctx context.Context,
+		teams []models.Team,
+		locationCount int,
+		rankingScheme string,
+		sortField string,
+		sortOrder string,
+	) ([]services.LeaderBoardTeamData, error)
 }
 
 type AdminHandler struct {
@@ -228,7 +266,13 @@ func (h AdminHandler) UserFromContext(ctx context.Context) *models.User {
 	return ctx.Value(contextkeys.UserKey).(*models.User)
 }
 
-func (h *AdminHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
+func (h *AdminHandler) handleError(
+	w http.ResponseWriter,
+	r *http.Request,
+	logMsg string,
+	flashMsg string,
+	params ...interface{},
+) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {

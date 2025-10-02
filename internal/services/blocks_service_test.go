@@ -22,7 +22,7 @@ func setupBlocksService(t *testing.T) (services.BlockService, func()) {
 	return *blocksService, cleanup
 }
 
-func TestBlockService_NewBlock(t *testing.T) {
+func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 	testCases := []struct {
 		name       string
 		locationID string
@@ -53,7 +53,7 @@ func TestBlockService_NewBlock(t *testing.T) {
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			blk, err := svc.NewBlock(context.Background(), tc.locationID, tc.blockType)
+			blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), tc.locationID, blocks.ContextLocationContent, tc.blockType)
 			if tc.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -165,7 +165,7 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 		{
 			name: "Valid existing block",
 			setupFn: func(svc services.BlockService) (string, error) {
-				blk, err := svc.NewBlock(context.Background(), gofakeit.UUID(), "markdown")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), gofakeit.UUID(), blocks.ContextLocationContent, "markdown")
 				if err != nil {
 					return "", err
 				}
@@ -212,7 +212,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 			name: "Valid block + state",
 			setupFn: func(svc services.BlockService) (string, string, error) {
 				// 1) Create block
-				blk, err := svc.NewBlock(context.Background(), gofakeit.UUID(), "checklist")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), gofakeit.UUID(), blocks.ContextLocationContent, "checklist")
 				if err != nil {
 					return "", "", err
 				}
@@ -230,7 +230,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 			name: "No state for team",
 			setupFn: func(svc services.BlockService) (string, string, error) {
 				// 1) Create block
-				blk, err := svc.NewBlock(context.Background(), gofakeit.UUID(), "checklist")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), gofakeit.UUID(), blocks.ContextLocationContent, "checklist")
 				if err != nil {
 					return "", "", err
 				}
@@ -260,7 +260,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 	}
 }
 
-func TestBlockService_FindByLocationID(t *testing.T) {
+func TestBlockService_FindByOwnerID(t *testing.T) {
 	testCases := []struct {
 		name       string
 		locationID string
@@ -294,11 +294,11 @@ func TestBlockService_FindByLocationID(t *testing.T) {
 
 			// Setup: create tc.blockCount blocks (if locationID is not empty)
 			for range tc.blockCount {
-				_, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
+				_, err := svc.NewBlockWithOwnerAndContext(context.Background(), tc.locationID, blocks.ContextLocationContent, "checklist")
 				assert.NoError(t, err, "block creation should succeed in setup")
 			}
 
-			blocksFound, err := svc.FindByLocationID(context.Background(), tc.locationID)
+			blocksFound, err := svc.FindByOwnerID(context.Background(), tc.locationID)
 			if tc.wantErr {
 				assert.Error(t, err)
 				assert.Empty(t, blocksFound)
@@ -310,7 +310,7 @@ func TestBlockService_FindByLocationID(t *testing.T) {
 	}
 }
 
-func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
+func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 	testCases := []struct {
 		name         string
 		locationID   string
@@ -343,7 +343,7 @@ func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
 			if tc.locationID != "" {
 				// Create blocks
 				for range tc.blockCount {
-					blk, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
+					blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), tc.locationID, blocks.ContextLocationContent, "checklist")
 					assert.NoError(t, err)
 					if tc.stateCreated {
 						_, err := svc.NewBlockState(context.Background(), blk.GetID(), tc.teamCode)
@@ -352,7 +352,7 @@ func TestBlockService_FindByLocationIDAndTeamCodeWithState(t *testing.T) {
 				}
 			}
 
-			blocksFound, states, err := svc.FindByLocationIDAndTeamCodeWithState(
+			blocksFound, states, err := svc.FindByOwnerIDAndTeamCodeWithState(
 				context.Background(),
 				tc.locationID,
 				tc.teamCode,
@@ -386,7 +386,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 			name: "Valid state update",
 			setupFn: func(svc services.BlockService) (blocks.PlayerState, error) {
 				// Create block
-				blk, err := svc.NewBlock(context.Background(), gofakeit.UUID(), "checklist")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), gofakeit.UUID(), blocks.ContextLocationContent, "checklist")
 				if err != nil {
 					return nil, err
 				}
@@ -454,7 +454,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 			// Create blocks
 			var ids []string
 			for range tc.blockCount {
-				blk, err := svc.NewBlock(context.Background(), tc.locationID, "checklist")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), tc.locationID, blocks.ContextLocationContent, "checklist")
 				assert.NoError(t, err)
 				ids = append(ids, blk.GetID())
 			}
@@ -490,7 +490,7 @@ func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
 			locationID: "LOC-VALID-0",
 			setupFn: func(svc services.BlockService, locID string) error {
 				// Create block(s) that do not require validation
-				_, err := svc.NewBlock(context.Background(), locID, "markdown")
+				_, err := svc.NewBlockWithOwnerAndContext(context.Background(), locID, blocks.ContextLocationContent, "markdown")
 				return err
 			},
 			wantVal: false,
@@ -500,7 +500,7 @@ func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
 			locationID: "LOC-VALID-1",
 			setupFn: func(svc services.BlockService, locID string) error {
 				// Create block(s) that do require validation
-				_, err := svc.NewBlock(context.Background(), locID, "checklist")
+				_, err := svc.NewBlockWithOwnerAndContext(context.Background(), locID, blocks.ContextLocationContent, "checklist")
 				return err
 			},
 			wantVal: true,
@@ -547,7 +547,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 			teamCode:   "TEAMCHK",
 			setupFn: func(svc services.BlockService, locID, team string) error {
 				// Create block that needs validation
-				blk, err := svc.NewBlock(context.Background(), locID, "checklist")
+				blk, err := svc.NewBlockWithOwnerAndContext(context.Background(), locID, blocks.ContextLocationContent, "checklist")
 				if err != nil {
 					return err
 				}
@@ -563,7 +563,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 			teamCode:   "TEAMCHK2",
 			setupFn: func(svc services.BlockService, locID, team string) error {
 				// Maybe a block that doesn't require validation at all
-				_, err := svc.NewBlock(context.Background(), locID, "markdown")
+				_, err := svc.NewBlockWithOwnerAndContext(context.Background(), locID, blocks.ContextLocationContent, "markdown")
 				return err
 			},
 			wantVal: false,
