@@ -30,8 +30,8 @@ func TestBlockStateRepository(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func() (blocks.PlayerState, error)
-		action      func(state blocks.PlayerState) (interface{}, error)
-		assertion   func(result interface{}, err error)
+		action      func(state blocks.PlayerState) (any, error)
+		assertion   func(result any, err error)
 		cleanupFunc func(state blocks.PlayerState)
 	}{
 		{
@@ -39,10 +39,10 @@ func TestBlockStateRepository(t *testing.T) {
 			setup: func() (blocks.PlayerState, error) {
 				return repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
 			},
-			action: func(state blocks.PlayerState) (interface{}, error) {
+			action: func(state blocks.PlayerState) (any, error) {
 				return repo.Create(context.Background(), state)
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			},
@@ -57,10 +57,10 @@ func TestBlockStateRepository(t *testing.T) {
 				state, _ := repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
 				return repo.Create(context.Background(), state)
 			},
-			action: func(state blocks.PlayerState) (interface{}, error) {
+			action: func(state blocks.PlayerState) (any, error) {
 				return repo.GetByBlockAndTeam(context.Background(), state.GetBlockID(), state.GetPlayerID())
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			},
@@ -76,13 +76,13 @@ func TestBlockStateRepository(t *testing.T) {
 				createdState, _ := repo.Create(context.Background(), state)
 				return createdState, nil
 			},
-			action: func(state blocks.PlayerState) (interface{}, error) {
+			action: func(state blocks.PlayerState) (any, error) {
 				state.SetPlayerData([]byte(`{"key":"value"}`))
 				state.SetComplete(true)
 				state.SetPointsAwarded(100)
 				return repo.Update(context.Background(), state)
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				updatedState := result.(blocks.PlayerState)
 				assert.True(t, updatedState.IsComplete())
@@ -99,10 +99,10 @@ func TestBlockStateRepository(t *testing.T) {
 				state, _ := repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
 				return repo.Create(context.Background(), state)
 			},
-			action: func(state blocks.PlayerState) (interface{}, error) {
+			action: func(state blocks.PlayerState) (any, error) {
 				return nil, repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 			},
 			cleanupFunc: func(state blocks.PlayerState) {},
@@ -129,8 +129,8 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func() ([]blocks.PlayerState, error)
-		action      func(state []blocks.PlayerState) (interface{}, error)
-		assertion   func(result interface{}, err error)
+		action      func(state []blocks.PlayerState) (any, error)
+		assertion   func(result any, err error)
 		cleanupFunc func(state []blocks.PlayerState)
 	}{
 		{
@@ -148,7 +148,7 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 				}
 				return playerStates, nil
 			},
-			action: func(state []blocks.PlayerState) (interface{}, error) {
+			action: func(state []blocks.PlayerState) (any, error) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
 				if err != nil {
 					return nil, err
@@ -178,7 +178,7 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 
 				return "deletion verified", nil
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 			},
 			// cleanup is what we're testing
@@ -206,8 +206,8 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func() ([]blocks.PlayerState, []string, error)
-		action      func(state []blocks.PlayerState, teamCodes []string) (interface{}, error)
-		assertion   func(result interface{}, err error)
+		action      func(state []blocks.PlayerState, teamCodes []string) (any, error)
+		assertion   func(result any, err error)
 		cleanupFunc func(state []blocks.PlayerState)
 	}{
 		{
@@ -226,7 +226,7 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 				}
 				return playerStates, teamCodes, nil
 			},
-			action: func(state []blocks.PlayerState, teamCodes []string) (interface{}, error) {
+			action: func(state []blocks.PlayerState, teamCodes []string) (any, error) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
 				if err != nil {
 					return nil, err
@@ -256,7 +256,7 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 
 				return "deletion verified", nil
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 			},
 			cleanupFunc: func(state []blocks.PlayerState) {},

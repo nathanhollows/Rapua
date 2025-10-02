@@ -31,8 +31,8 @@ func TestBlockRepository(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func() (blocks.Block, error)
-		action      func(block blocks.Block) (interface{}, error)
-		assertion   func(result interface{}, err error)
+		action      func(block blocks.Block) (any, error)
+		assertion   func(result any, err error)
 		cleanupFunc func(block blocks.Block)
 	}{
 		{
@@ -51,10 +51,10 @@ func TestBlockRepository(t *testing.T) {
 					blocks.ContextLocationContent,
 				)
 			},
-			action: func(block blocks.Block) (interface{}, error) {
+			action: func(block blocks.Block) (any, error) {
 				return repo.Create(context.Background(), block, gofakeit.UUID(), blocks.ContextLocationContent)
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			},
@@ -102,10 +102,10 @@ func TestBlockRepository(t *testing.T) {
 				)
 				return createdBlock, nil
 			},
-			action: func(block blocks.Block) (interface{}, error) {
+			action: func(block blocks.Block) (any, error) {
 				return repo.GetByID(context.Background(), block.GetID())
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			},
@@ -153,7 +153,7 @@ func TestBlockRepository(t *testing.T) {
 				)
 				return createdBlock, nil
 			},
-			action: func(block blocks.Block) (interface{}, error) {
+			action: func(block blocks.Block) (any, error) {
 				// This relies on the Image Block
 				// TODO: mock the block data
 				data := make(map[string][]string)
@@ -164,7 +164,7 @@ func TestBlockRepository(t *testing.T) {
 				}
 				return repo.Update(context.Background(), block)
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 				updatedBlock := result.(blocks.Block)
 				assert.JSONEq(t, `{"content":"/updated-url","caption":"","link":""}`, string(updatedBlock.GetData()))
@@ -213,7 +213,7 @@ func TestBlockRepository(t *testing.T) {
 				)
 				return createdBlock, nil
 			},
-			action: func(block blocks.Block) (interface{}, error) {
+			action: func(block blocks.Block) (any, error) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
 				assert.NoError(t, err)
 				err = repo.Delete(context.Background(), tx, block.GetID())
@@ -231,7 +231,7 @@ func TestBlockRepository(t *testing.T) {
 					return "deletion successful", nil
 				}
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 			},
 			cleanupFunc: func(block blocks.Block) {},
@@ -258,8 +258,8 @@ func TestBlockRepository_Bulk(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func() ([]blocks.Block, error)
-		action      func(block []blocks.Block) (interface{}, error)
-		assertion   func(result interface{}, err error)
+		action      func(block []blocks.Block) (any, error)
+		assertion   func(result any, err error)
 		cleanupFunc func(block []blocks.Block)
 	}{
 		{
@@ -288,7 +288,7 @@ func TestBlockRepository_Bulk(t *testing.T) {
 				}
 				return blockSet, nil
 			},
-			action: func(block []blocks.Block) (interface{}, error) {
+			action: func(block []blocks.Block) (any, error) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
 				assert.NoError(t, err)
 
@@ -315,7 +315,7 @@ func TestBlockRepository_Bulk(t *testing.T) {
 
 				return "bulk deletion verified", nil
 			},
-			assertion: func(result interface{}, err error) {
+			assertion: func(result any, err error) {
 				assert.NoError(t, err)
 			},
 			cleanupFunc: func(block []blocks.Block) {},

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Test that each registered block can be created from a base block.
@@ -22,7 +23,7 @@ func TestCreateFromBaseBlock(t *testing.T) {
 			}
 
 			newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.IsType(t, block, newBlock)
 			assert.Equal(t, block.GetType(), newBlock.GetType())
 			assert.Equal(t, "1", newBlock.GetID())
@@ -43,7 +44,7 @@ func TestCreateFromBaseBlockUnknownType(t *testing.T) {
 	}
 
 	newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, newBlock)
 }
 

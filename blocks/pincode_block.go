@@ -91,7 +91,7 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		if len(char) != 1 {
 			return state, errors.New("pincode must be a single character per input")
 		}
-		pincodeChars = pincodeChars + char
+		pincodeChars += char
 	}
 
 	newPlayerData := pincodeBlockData{}
@@ -110,7 +110,7 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		// Incorrect pincode, save player data and return an error
 		playerData, err := json.Marshal(newPlayerData)
 		if err != nil {
-			return state, errors.New("Error saving player data")
+			return state, errors.New("error saving player data")
 		}
 		state.SetPlayerData(playerData)
 		return state, nil
@@ -119,7 +119,7 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	// Correct pincode, update state to complete
 	playerData, err := json.Marshal(newPlayerData)
 	if err != nil {
-		return state, errors.New("Error saving player data")
+		return state, errors.New("error saving player data")
 	}
 	state.SetPlayerData(playerData)
 	state.SetComplete(true)

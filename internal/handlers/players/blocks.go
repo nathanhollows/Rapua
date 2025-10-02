@@ -2,6 +2,7 @@ package players
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
@@ -21,9 +22,7 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := make(map[string][]string)
-	for key, value := range r.Form {
-		data[key] = value
-	}
+	maps.Copy(data, r.PostForm)
 
 	state, block, err := h.checkInService.ValidateAndUpdateBlockState(r.Context(), *team, data)
 	if err != nil {

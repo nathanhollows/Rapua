@@ -40,31 +40,37 @@ func TestBlockContextFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			availableBlocks := GetBlocksForContext(tt.context)
-
-			// Check that expected blocks are present
-			for _, expectedBlock := range tt.expectedBlocks {
-				found := false
-				for _, availableBlock := range availableBlocks {
-					if availableBlock.GetType() == expectedBlock {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("Expected block '%s' not found in context '%s'", expectedBlock, tt.context)
-				}
-			}
-
-			// Check that unexpected blocks are not present
-			for _, unexpectedBlock := range tt.unexpectedBlocks {
-				for _, availableBlock := range availableBlocks {
-					if availableBlock.GetType() == unexpectedBlock {
-						t.Errorf("Unexpected block '%s' found in context '%s'", unexpectedBlock, tt.context)
-					}
-				}
-			}
+			checkExpectedBlocks(t, availableBlocks, tt.expectedBlocks, tt.context)
+			checkUnexpectedBlocks(t, availableBlocks, tt.unexpectedBlocks, tt.context)
 		})
 	}
+}
+
+func checkExpectedBlocks(t *testing.T, availableBlocks Blocks, expectedBlocks []string, context BlockContext) {
+	t.Helper()
+	for _, expectedBlock := range expectedBlocks {
+		if !blockTypeExists(availableBlocks, expectedBlock) {
+			t.Errorf("Expected block '%s' not found in context '%s'", expectedBlock, context)
+		}
+	}
+}
+
+func checkUnexpectedBlocks(t *testing.T, availableBlocks Blocks, unexpectedBlocks []string, context BlockContext) {
+	t.Helper()
+	for _, unexpectedBlock := range unexpectedBlocks {
+		if blockTypeExists(availableBlocks, unexpectedBlock) {
+			t.Errorf("Unexpected block '%s' found in context '%s'", unexpectedBlock, context)
+		}
+	}
+}
+
+func blockTypeExists(blocks Blocks, blockType string) bool {
+	for _, block := range blocks {
+		if block.GetType() == blockType {
+			return true
+		}
+	}
+	return false
 }
 
 func TestCanBlockBeUsedInContext(t *testing.T) {

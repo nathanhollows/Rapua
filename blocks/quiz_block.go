@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -35,7 +36,7 @@ type QuizPlayerData struct {
 	IsCorrect       bool     `json:"is_correct"`       // Whether answer is correct
 }
 
-// Basic Attribute Getters.
+// GetName returns the block type name.
 func (b *QuizBlock) GetName() string { return "Quiz" }
 
 func (b *QuizBlock) GetDescription() string {
@@ -61,91 +62,112 @@ func (b *QuizBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data operations.
+// ParseData parses the block data from JSON.
 func (b *QuizBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
 
 func (b *QuizBlock) UpdateBlockData(input map[string][]string) error {
-	// Parse points
-	pointsInput, ok := input["points"]
-	if ok && len(pointsInput[0]) > 0 {
-		points, err := strconv.Atoi(pointsInput[0])
-		if err != nil {
-			return errors.New("points must be an integer")
-		}
-		b.Points = points
-	} else {
-		b.Points = 0
+	if err := b.parsePoints(input); err != nil {
+		return err
 	}
 
-	// Update question
+	b.updateQuestion(input)
+	b.updateSettings(input)
+
+	if err := b.processOptions(input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *QuizBlock) parsePoints(input map[string][]string) error {
+	pointsInput, ok := input["points"]
+	if !ok || len(pointsInput[0]) == 0 {
+		b.Points = 0
+		return nil
+	}
+
+	points, err := strconv.Atoi(pointsInput[0])
+	if err != nil {
+		return errors.New("points must be an integer")
+	}
+	b.Points = points
+	return nil
+}
+
+func (b *QuizBlock) updateQuestion(input map[string][]string) {
 	if question, exists := input["question"]; exists && len(question) > 0 {
 		b.Question = question[0]
 	}
+}
 
-	// Update multiple choice setting
+func (b *QuizBlock) updateSettings(input map[string][]string) {
 	b.MultipleChoice = false
 	if multipleChoice, exists := input["multiple_choice"]; exists && len(multipleChoice) > 0 {
 		b.MultipleChoice = multipleChoice[0] == "on"
 	}
 
-	// Update randomize order setting
 	b.RandomizeOrder = false
 	if randomizeOrder, exists := input["randomize_order"]; exists && len(randomizeOrder) > 0 {
 		b.RandomizeOrder = randomizeOrder[0] == "on"
 	}
 
-	// Update retry enabled setting
 	b.RetryEnabled = false
 	if retryEnabled, exists := input["retry_enabled"]; exists && len(retryEnabled) > 0 {
 		b.RetryEnabled = retryEnabled[0] == "on"
 	}
+}
 
-	// Process options
+func (b *QuizBlock) processOptions(input map[string][]string) error {
 	b.Options = []QuizOption{}
 	optionTexts := input["option_text"]
 	optionCorrect := input["option_correct"]
 
 	for i, text := range optionTexts {
 		if strings.TrimSpace(text) == "" {
-			continue // Skip empty options
+			continue
 		}
 
-		option := QuizOption{
-			ID:        fmt.Sprintf("option_%d", i),
-			Text:      text,
-			IsCorrect: false,
-			Order:     i,
-		}
-
-		// Check if this option is marked as correct
-		for _, correctValue := range optionCorrect {
-			if correctValue == fmt.Sprintf("option_%d", i) {
-				option.IsCorrect = true
-				break
-			}
-		}
-
+		option := b.createOption(i, text, optionCorrect)
 		b.Options = append(b.Options, option)
 	}
 
-	// Validate that at least one option is marked as correct
-	hasCorrectOption := false
-	for _, option := range b.Options {
-		if option.IsCorrect {
-			hasCorrectOption = true
-			break
-		}
-	}
-	if len(b.Options) > 0 && !hasCorrectOption {
-		return errors.New("at least one option must be marked as correct")
-	}
-
-	return nil
+	return b.validateOptions()
 }
 
-// Validation and Points Calculation.
+func (b *QuizBlock) createOption(index int, text string, correctValues []string) QuizOption {
+	optionID := fmt.Sprintf("option_%d", index)
+	option := QuizOption{
+		ID:        optionID,
+		Text:      text,
+		IsCorrect: false,
+		Order:     index,
+	}
+
+	if slices.Contains(correctValues, optionID) {
+		option.IsCorrect = true
+	}
+
+	return option
+}
+
+func (b *QuizBlock) validateOptions() error {
+	if len(b.Options) == 0 {
+		return nil
+	}
+
+	for _, option := range b.Options {
+		if option.IsCorrect {
+			return nil
+		}
+	}
+
+	return errors.New("at least one option must be marked as correct")
+}
+
+// RequiresValidation returns whether this block requires player input validation.
 func (b *QuizBlock) RequiresValidation() bool {
 	return true
 }
@@ -165,17 +187,17 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	selectedOptions, exists := input["quiz_option"]
 	if !exists || len(selectedOptions) == 0 {
 		// For no selection, return the current state without changes but mark as having an attempt
-		var playerData QuizPlayerData
+		var noSelectionPlayerData QuizPlayerData
 		if state.GetPlayerData() != nil {
-			if err := json.Unmarshal(state.GetPlayerData(), &playerData); err != nil {
+			if err := json.Unmarshal(state.GetPlayerData(), &noSelectionPlayerData); err != nil {
 				return state, fmt.Errorf("failed to parse player data: %w", err)
 			}
 		}
-		playerData.Attempts++
-		playerData.SelectedOptions = []string{}
-		playerData.IsCorrect = false
+		noSelectionPlayerData.Attempts++
+		noSelectionPlayerData.SelectedOptions = []string{}
+		noSelectionPlayerData.IsCorrect = false
 
-		newPlayerData, err := json.Marshal(playerData)
+		newPlayerData, err := json.Marshal(noSelectionPlayerData)
 		if err != nil {
 			return state, fmt.Errorf("failed to save player data: %w", err)
 		}
@@ -201,24 +223,27 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	newState.SetPlayerData(newPlayerData)
 
 	// Mark as complete and award points
-	if b.RetryEnabled {
-		// For retry-enabled blocks, only mark complete if perfect score
-		if isCorrect {
-			newState.SetComplete(true)
-			newState.SetPointsAwarded(points)
-		} else {
-			newState.SetComplete(false)
-			// Award partial points for multiple choice even when not complete
-			if b.MultipleChoice {
-				newState.SetPointsAwarded(points)
-			} else {
-				newState.SetPointsAwarded(0)
-			}
-		}
-	} else {
+	if !b.RetryEnabled {
 		// For non-retry blocks, always complete and award calculated points
 		newState.SetComplete(true)
 		newState.SetPointsAwarded(points)
+		return newState, nil
+	}
+
+	// For retry-enabled blocks, only mark complete if perfect score
+	if isCorrect {
+		newState.SetComplete(true)
+		newState.SetPointsAwarded(points)
+		return newState, nil
+	}
+
+	// Not correct yet - don't mark complete
+	newState.SetComplete(false)
+	// Award partial points for multiple choice even when not complete
+	if b.MultipleChoice {
+		newState.SetPointsAwarded(points)
+	} else {
+		newState.SetPointsAwarded(0)
 	}
 
 	return newState, nil
@@ -261,20 +286,21 @@ func (b *QuizBlock) calculatePoints(selectedOptions []string) (int, bool) {
 		}
 
 		// Calculate proportional points: round(points * (correct/total))
+		const roundingOffset = 0.5
 		ratio := float64(correctAnswers) / float64(len(b.Options))
-		points := int(float64(b.Points)*ratio + 0.5) // +0.5 for rounding
+		points := int(float64(b.Points)*ratio + roundingOffset)
 
 		// Perfect score means all correct
 		isCorrect := correctAnswers == len(b.Options)
 
 		return points, isCorrect
-	} else {
-		// Single choice: all or nothing
-		if len(selectedOptions) == 1 && correctOptions[selectedOptions[0]] {
-			return b.Points, true
-		}
-		return 0, false
 	}
+
+	// Single choice: all or nothing
+	if len(selectedOptions) == 1 && correctOptions[selectedOptions[0]] {
+		return b.Points, true
+	}
+	return 0, false
 }
 
 // shuffleOptions returns a shuffled copy of the options slice.

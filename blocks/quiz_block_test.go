@@ -154,7 +154,7 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 	// Test no selection - should not error but mark as incomplete with 1 attempt
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 

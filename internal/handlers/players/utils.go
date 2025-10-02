@@ -159,7 +159,7 @@ func (h *PlayerHandler) handleError(
 	r *http.Request,
 	logMsg string,
 	flashMsg string,
-	params ...interface{},
+	params ...any,
 ) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)

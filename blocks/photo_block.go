@@ -93,7 +93,7 @@ func (b *PhotoBlock) ValidatePlayerInput(state PlayerState, input map[string][]s
 	// Correct photo, update state to complete
 	playerData, err := json.Marshal(newPlayerData)
 	if err != nil {
-		return state, errors.New("Error saving player data")
+		return state, errors.New("error saving player data")
 	}
 	state.SetPlayerData(playerData)
 	state.SetComplete(true)

@@ -66,9 +66,11 @@ type BaseBlock struct {
 	Points     int             `json:"-"`
 }
 
-// Central block registry with context support.
-var blockRegistry = make(map[string]*RegisteredBlock)
-var contextRegistry = make(map[BlockContext][]string)
+//nolint:gochecknoglobals // Central block registry pattern requires package-level state
+var (
+	blockRegistry   = make(map[string]*RegisteredBlock)
+	contextRegistry = make(map[BlockContext][]string)
+)
 
 // registerBlock is an internal helper to register blocks with their contexts.
 func registerBlock(instance Block, contexts []BlockContext) {
@@ -89,7 +91,7 @@ func registerBlock(instance Block, contexts []BlockContext) {
 	}
 }
 
-// Initialize block registry.
+//nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
 	// Content blocks
 	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
@@ -187,7 +189,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 	}
 }
 
-// Example constructor functions.
+// NewMarkdownBlock creates a new markdown block instance.
 func NewMarkdownBlock(base BaseBlock) *MarkdownBlock {
 	return &MarkdownBlock{
 		BaseBlock: base,

@@ -55,7 +55,7 @@ func (b *ButtonBlock) RequiresValidation() bool {
 	return false
 }
 
-func (b *ButtonBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *ButtonBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation required for ButtonBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil

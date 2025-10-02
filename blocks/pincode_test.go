@@ -41,7 +41,7 @@ func TestPincodeBlock_ParseData(t *testing.T) {
 	}
 
 	err := block.ParseData()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, prompt, block.Prompt)
 	assert.Equal(t, pincode, block.Pincode)
 }
@@ -57,7 +57,7 @@ func TestPincodeBlock_UpdateBlockData(t *testing.T) {
 		"points":  {points},
 	}
 	err := block.UpdateBlockData(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, prompt, block.Prompt)
 	assert.Equal(t, pincode, block.Pincode)
 	assert.Equal(t, points, strconv.Itoa(block.GetPoints()))
@@ -74,7 +74,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 		"points":  {points},
 	}
 	err := block.UpdateBlockData(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Keep track of attempts - tests that fail validation don't increment attempts
 	// Only successful validation (correct or incorrect but valid format) increments attempts
@@ -108,7 +108,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 		"pincode": {"1", "2", "3"},
 	}
 	state3 := &mockPlayerState{}
-	newState, err = block.ValidatePlayerInput(state3, input)
+	_, err = block.ValidatePlayerInput(state3, input)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pincode length does not match")
 
@@ -118,7 +118,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 		"pincode": {"12", "3", "4", "5", "6"},
 	}
 	state4 := &mockPlayerState{}
-	newState, err = block.ValidatePlayerInput(state4, input)
+	_, err = block.ValidatePlayerInput(state4, input)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pincode must be a single character per input")
 

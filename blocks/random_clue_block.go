@@ -69,7 +69,7 @@ func (b *RandomClueBlock) GetClue(teamCode string) string {
 
 func (b *RandomClueBlock) RequiresValidation() bool { return false }
 
-func (b *RandomClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *RandomClueBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation needed - this is a display-only block
 	state.SetComplete(true)
 	return state, nil

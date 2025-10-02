@@ -47,7 +47,7 @@ func (b *DividerBlock) RequiresValidation() bool {
 	return false
 }
 
-func (b *DividerBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *DividerBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation required for DividerBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil

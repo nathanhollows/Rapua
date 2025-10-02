@@ -128,65 +128,67 @@ func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 	}
 
 	// Check if player is trying to make a purchase
-	if pointsBidInput, exists := input["points_bid"]; exists && len(pointsBidInput) > 0 && pointsBidInput[0] != "" {
-		pointsBid, err := strconv.Atoi(pointsBidInput[0])
-		if err != nil {
-			return state, errors.New("points bid must be an integer")
-		}
-
-		// Ensure non-negative bid
-		if pointsBid < 0 {
-			pointsBid = 0
-		}
-
-		// Determine what information to provide
-		var infoToProvide string
-		var actualPointsCharged int
-
-		if pointsBid == 0 {
-			// Always provide default info for 0 points
-			infoToProvide = b.DefaultInfo
-			actualPointsCharged = 0
-		} else {
-			// Find the best tier they can afford
-			bestTier := InformationTier{}
-			found := false
-
-			for _, tier := range b.InformationTiers {
-				if pointsBid >= tier.PointsRequired {
-					bestTier = tier
-					found = true
-				} else {
-					break // Since tiers are sorted, we can stop here
-				}
-			}
-
-			if found {
-				infoToProvide = bestTier.Content
-				actualPointsCharged = pointsBid // Charge exactly what they bid
-			} else {
-				// They bid something but not enough for any tier
-				infoToProvide = b.DefaultInfo
-				actualPointsCharged = pointsBid // Still charge what they bid
-			}
-		}
-
-		// Update player data
-		playerData.PointsPaid = actualPointsCharged
-		playerData.InfoReceived = infoToProvide
-		playerData.HasPurchased = true
-
-		// Save updated player data
-		newPlayerData, err := json.Marshal(playerData)
-		if err != nil {
-			return state, errors.New("failed to save player data")
-		}
-		newState.SetPlayerData(newPlayerData)
-
-		// Mark as complete and deduct points
-		newState.SetComplete(true)
-		newState.SetPointsAwarded(-actualPointsCharged) // Deduct exactly what they bid
+	pointsBidInput, exists := input["points_bid"]
+	if !exists || len(pointsBidInput) == 0 || pointsBidInput[0] == "" {
+		return newState, nil
 	}
 
+	pointsBid, err := strconv.Atoi(pointsBidInput[0])
+	if err != nil {
+		return state, errors.New("points bid must be an integer")
+	}
+
+	// Ensure non-negative bid
+	if pointsBid < 0 {
+		pointsBid = 0
+	}
+
+	// Determine what information to provide
+	infoToProvide, actualPointsCharged := b.determineInfoAndCost(pointsBid)
+
+	// Update player data
+	playerData.PointsPaid = actualPointsCharged
+	playerData.InfoReceived = infoToProvide
+	playerData.HasPurchased = true
+
+	// Save updated player data
+	newPlayerData, err := json.Marshal(playerData)
+	if err != nil {
+		return state, errors.New("failed to save player data")
+	}
+	newState.SetPlayerData(newPlayerData)
+
+	// Mark as complete and deduct points
+	newState.SetComplete(true)
+	newState.SetPointsAwarded(-actualPointsCharged) // Deduct exactly what they bid
+
 	return newState, nil
+}
+
+// determineInfoAndCost determines what information to provide and the cost based on points bid.
+func (b *BrokerBlock) determineInfoAndCost(pointsBid int) (string, int) {
+	if pointsBid == 0 {
+		// Always provide default info for 0 points
+		return b.DefaultInfo, 0
+	}
+
+	// Find the best tier they can afford
+	bestTier := InformationTier{}
+	found := false
+
+	for _, tier := range b.InformationTiers {
+		if pointsBid >= tier.PointsRequired {
+			bestTier = tier
+			found = true
+		} else {
+			break // Since tiers are sorted, we can stop here
+		}
+	}
+
+	if found {
+		return bestTier.Content, pointsBid // Charge exactly what they bid
+	}
+
+	// They bid something but not enough for any tier
+	return b.DefaultInfo, pointsBid // Still charge what they bid
 }

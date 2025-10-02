@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"math/rand"
+	"math/rand/v2"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ type SortingPlayerData struct {
 	IsCorrect    bool     `json:"is_correct"`    // Whether the current order is correct
 }
 
-// Basic Attributes Getters.
+// GetName returns the block type name.
 func (b *SortingBlock) GetName() string { return "Sorting" }
 
 func (b *SortingBlock) GetDescription() string {
@@ -67,7 +67,7 @@ func (b *SortingBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data Operations.
+// ParseData parses the block data from JSON.
 func (b *SortingBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
@@ -130,18 +130,13 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// Validation and Points Calculation.
+// RequiresValidation returns whether this block requires player input validation.
 func (b *SortingBlock) RequiresValidation() bool { return true }
 
 func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
-	newState := state
-
-	// Parse player data from the existing state
-	var playerData SortingPlayerData
-	if state.GetPlayerData() != nil {
-		if err := json.Unmarshal(state.GetPlayerData(), &playerData); err != nil {
-			return state, fmt.Errorf("failed to parse player data: %w", err)
-		}
+	playerData, err := b.parsePlayerData(state)
+	if err != nil {
+		return state, err
 	}
 
 	// If the player already has a correct solution in RetryUntilCorrect mode, don't process further
@@ -149,12 +144,46 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		return state, nil
 	}
 
-	// Get player's ordering from input
-	itemOrder, exists := input["sorting-item-order"]
-	if !exists || len(itemOrder) == 0 {
-		return state, errors.New("sorting order is required")
+	itemOrder, err := b.getItemOrder(input)
+	if err != nil {
+		return state, err
 	}
 
+	playerData = b.updatePlayerData(playerData, itemOrder, state)
+	isCorrect := playerData.IsCorrect
+
+	newState, err := b.savePlayerData(state, playerData)
+	if err != nil {
+		return state, err
+	}
+
+	b.applyScoring(&newState, isCorrect, itemOrder)
+	return newState, nil
+}
+
+func (b *SortingBlock) parsePlayerData(state PlayerState) (SortingPlayerData, error) {
+	var playerData SortingPlayerData
+	if state.GetPlayerData() != nil {
+		if err := json.Unmarshal(state.GetPlayerData(), &playerData); err != nil {
+			return playerData, fmt.Errorf("failed to parse player data: %w", err)
+		}
+	}
+	return playerData, nil
+}
+
+func (b *SortingBlock) getItemOrder(input map[string][]string) ([]string, error) {
+	itemOrder, exists := input["sorting-item-order"]
+	if !exists || len(itemOrder) == 0 {
+		return nil, errors.New("sorting order is required")
+	}
+	return itemOrder, nil
+}
+
+func (b *SortingBlock) updatePlayerData(
+	playerData SortingPlayerData,
+	itemOrder []string,
+	state PlayerState,
+) SortingPlayerData {
 	// Initialize shuffle order if it doesn't exist
 	if len(playerData.ShuffleOrder) == 0 {
 		allItemIDs := make([]string, len(b.Items))
@@ -164,55 +193,57 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		playerData.ShuffleOrder = deterministicShuffle(allItemIDs, state.GetBlockID()+state.GetPlayerID())
 	}
 
-	// Update player data with new ordering and increment attempts
 	playerData.PlayerOrder = itemOrder
 	playerData.Attempts++
+	playerData.IsCorrect = b.orderIsCorrect(itemOrder)
 
-	// Check if the order is correct
-	isCorrect := b.orderIsCorrect(itemOrder)
-	playerData.IsCorrect = isCorrect
+	return playerData
+}
 
-	// Marshal updated player data
+func (b *SortingBlock) savePlayerData(state PlayerState, playerData SortingPlayerData) (PlayerState, error) {
 	newPlayerData, err := json.Marshal(playerData)
 	if err != nil {
 		return state, fmt.Errorf("failed to save player data: %w", err)
 	}
-	newState.SetPlayerData(newPlayerData)
+	state.SetPlayerData(newPlayerData)
+	return state, nil
+}
 
-	// Handle different scoring schemes
+func (b *SortingBlock) applyScoring(state *PlayerState, isCorrect bool, itemOrder []string) {
 	switch b.ScoringScheme {
 	case RetryUntilCorrect:
-		// For RetryUntilCorrect, only mark as complete when correct
-		if isCorrect {
-			newState.SetComplete(true)
-			newState.SetPointsAwarded(b.Points) // Award full points
-		} else {
-			newState.SetComplete(false)
-			newState.SetPointsAwarded(0)
-		}
+		b.applyRetryUntilCorrectScoring(state, isCorrect)
 	case AllOrNothing:
-		// For AllOrNothing, mark as complete regardless, but only award points if correct
-		newState.SetComplete(true)
-		if isCorrect {
-			newState.SetPointsAwarded(b.Points)
-		} else {
-			newState.SetPointsAwarded(0)
-		}
+		b.applyAllOrNothingScoring(state, isCorrect)
 	case CorrectItemCorrectPlace:
-		// For CorrectItemCorrectPlace, award partial points
-		newState.SetComplete(true)
-		newState.SetPointsAwarded(b.calculateCorrectItemCorrectPlacePoints(itemOrder))
+		b.applyCorrectItemCorrectPlaceScoring(state, itemOrder)
 	default:
-		// Default to all-or-nothing behavior
-		newState.SetComplete(true)
-		if isCorrect {
-			newState.SetPointsAwarded(b.Points)
-		} else {
-			newState.SetPointsAwarded(0)
-		}
+		b.applyAllOrNothingScoring(state, isCorrect)
 	}
+}
 
-	return newState, nil
+func (b *SortingBlock) applyRetryUntilCorrectScoring(state *PlayerState, isCorrect bool) {
+	if isCorrect {
+		(*state).SetComplete(true)
+		(*state).SetPointsAwarded(b.Points)
+	} else {
+		(*state).SetComplete(false)
+		(*state).SetPointsAwarded(0)
+	}
+}
+
+func (b *SortingBlock) applyAllOrNothingScoring(state *PlayerState, isCorrect bool) {
+	(*state).SetComplete(true)
+	if isCorrect {
+		(*state).SetPointsAwarded(b.Points)
+	} else {
+		(*state).SetPointsAwarded(0)
+	}
+}
+
+func (b *SortingBlock) applyCorrectItemCorrectPlaceScoring(state *PlayerState, itemOrder []string) {
+	(*state).SetComplete(true)
+	(*state).SetPointsAwarded(b.calculateCorrectItemCorrectPlacePoints(itemOrder))
 }
 
 // orderIsCorrect checks if the submitted order perfectly matches the expected order.
@@ -278,12 +309,13 @@ func deterministicShuffle(items []string, seed string) []string {
 
 	// Create a deterministic random number generator
 	h := fnv.New32a()
-	h.Write([]byte(seed))
-	r := rand.New(rand.NewSource(int64(h.Sum32())))
+	_, _ = h.Write([]byte(seed))
+	//nolint:gosec // Deterministic shuffle for game consistency, not cryptographic use
+	r := rand.New(rand.NewPCG(uint64(h.Sum32()), 0))
 
 	// Shuffle the items using Fisher-Yates algorithm
 	for i := len(result) - 1; i > 0; i-- {
-		j := r.Intn(i + 1)
+		j := r.IntN(i + 1)
 		result[i], result[j] = result[j], result[i]
 	}
 

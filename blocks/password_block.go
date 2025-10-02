@@ -82,11 +82,9 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 		return state, errors.New("answer is a required field")
 	}
 
-	var err error
 	newPlayerData := passwordBlockData{}
 	if state.GetPlayerData() != nil {
-		err := json.Unmarshal(state.GetPlayerData(), &newPlayerData)
-		if err != nil {
+		if err := json.Unmarshal(state.GetPlayerData(), &newPlayerData); err != nil {
 			return state, fmt.Errorf("parse player data: %w", err)
 		}
 	}
@@ -102,7 +100,7 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 		// Incorrect answer, save player data and return an error
 		playerData, err := json.Marshal(newPlayerData)
 		if err != nil {
-			return state, errors.New("Error saving player data")
+			return state, errors.New("error saving player data")
 		}
 		state.SetPlayerData(playerData)
 		return state, nil
@@ -111,7 +109,7 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 	// Correct answer, update state to complete
 	playerData, err := json.Marshal(newPlayerData)
 	if err != nil {
-		return state, errors.New("Error saving player data")
+		return state, errors.New("error saving player data")
 	}
 	state.SetPlayerData(playerData)
 	state.SetComplete(true)

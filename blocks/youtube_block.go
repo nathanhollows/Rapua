@@ -53,8 +53,9 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 		}
 
 		// Confirm URL is valid
+		const validationTimeout = 5 * time.Second
 		checkURL := "https://www.youtube.com/oembed?format=json&url=" + u[0]
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), validationTimeout)
 		defer cancel()
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, checkURL, nil)
@@ -85,7 +86,7 @@ func (b *YoutubeBlock) RequiresValidation() bool {
 	return false
 }
 
-func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation required for YoutubeBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil
