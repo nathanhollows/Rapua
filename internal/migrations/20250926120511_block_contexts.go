@@ -53,18 +53,20 @@ func init() {
 		// Add context column to blocks table
 		_, err := db.ExecContext(ctx, `
 			ALTER TABLE blocks
-			ADD COLUMN context VARCHAR(50) DEFAULT 'content';
-		`)
+			ADD COLUMN context VARCHAR(50) DEFAULT ?;
+		`,
+			blocks.ContextLocationContent,
+		)
 		if err != nil {
 			return fmt.Errorf("add context column to blocks: %w", err)
 		}
 
 		// Set all existing blocks to 'content' context
-		_, err = db.ExecContext(ctx, `
-			UPDATE blocks
-			SET context = 'location_content'
-			WHERE context IS NULL OR context = '';
-		`)
+		_, err = db.NewUpdate().
+			Model((*m20250926120511_Block)(nil)).
+			Set("context = ?", blocks.ContextLocationContent).
+			Where("context IS NULL OR context = ''").
+			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("set default context for existing blocks: %w", err)
 		}
