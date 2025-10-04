@@ -100,7 +100,6 @@ func (r *blockRepository) FindByOwnerIDAndContext(
 	return convertModelsToBlocks(modelBlocks)
 }
 
-
 // GetByID fetches a block by its ID.
 func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.Block, error) {
 	modelBlock := &models.Block{}
@@ -146,7 +145,11 @@ func (r *blockRepository) Create(
 // Update saves an existing block to the database.
 func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (blocks.Block, error) {
 	modelBlock := convertBlockToModel(block)
-	_, err := r.db.NewUpdate().Model(&modelBlock).WherePK().Exec(ctx)
+	_, err := r.db.NewUpdate().
+		Model(&modelBlock).
+		Column("data", "ordering", "points").
+		WherePK().
+		Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +218,6 @@ func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, owner
 	_, err := tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
 	return err
 }
-
 
 // Reorder reorders the blocks.
 func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
@@ -305,7 +307,6 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 
 	return foundBlocks, playerStates, nil
 }
-
 
 // GetBlockAndStateByBlockIDAndTeamCode fetches a block by its ID with the player state for a given team.
 func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(
