@@ -28,8 +28,14 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var nextData templates.NextParams
+	nextData.Team = *team
+	nextData.Settings = team.Instance.Settings
+	nextData.Locations = locations
+	nextData.Blocks = nil
+
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Next(*team, locations)
+	template := templates.Next(nextData)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
 		template = templates.Layout(template, "Next stops", team.Messages)
 	}

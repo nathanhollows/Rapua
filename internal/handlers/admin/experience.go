@@ -6,6 +6,7 @@ import (
 
 	admin "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 	players "github.com/nathanhollows/Rapua/v4/internal/templates/players"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
@@ -155,8 +156,14 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	var nextData templates.NextParams
+	nextData.Team = team
+	nextData.Settings = team.Instance.Settings
+	nextData.Locations = locations
+	nextData.Blocks = nil
+
 	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
-	err = players.Next(team, locations).Render(r.Context(), w)
+	err = players.Next(nextData).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering template", "error", err)
 	}

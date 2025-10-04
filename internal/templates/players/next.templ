@@ -2,10 +2,19 @@ package templates
 
 import (
 	"fmt"
+	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
-templ Next(team models.Team, locations []models.Location) {
+type NextParams struct {
+	Settings  models.InstanceSettings
+	Team      models.Team
+	Locations []models.Location
+	Blocks    []blocks.Block
+	States    map[string]blocks.PlayerState
+}
+
+templ Next(data NextParams) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-16 h-16 m-auto"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
 		<h2
@@ -13,27 +22,29 @@ templ Next(team models.Team, locations []models.Location) {
 		>
 			Next location
 		</h2>
-		if team.Instance.Settings.MustCheckOut && team.MustCheckOut != "" {
+		if data.Settings.MustCheckOut && data.Team.MustCheckOut != "" {
 			<div role="alert" class="alert alert-info mt-8">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
 				<span>
 					You must check out of your 
-					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", team.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
+					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", data.Team.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
 						current location
 					</a>
 					before you can check in to the next one.
 				</span>
 			</div>
 		} else {
-			switch team.Instance.Settings.NavigationDisplayMode {
+			switch data.Settings.NavigationDisplayMode {
 				case models.NavigationDisplayMap:
-					@showMap(locations)
+					@showMap(data.Locations)
 				case models.NavigationDisplayMapAndNames:
-					@showMapAndNames(team, locations)
+					@showMapAndNames(data.Settings, data.Locations)
 				case models.NavigationDisplayNames:
-					@showNames(team, locations)
+					@showNames(data.Settings, data.Locations)
 				case models.NavigationDisplayClues:
-					@showClues(team.Code, locations)
+					@showClues(data.Team.Code, data.Locations)
+				case models.NavigationDisplayCustom:
+					@showCustom(prepareCustomContentViewData(data))
 			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center mt-12">
@@ -42,7 +53,7 @@ templ Next(team models.Team, locations []models.Location) {
 				My Check-ins
 			</a>
 		</div>
-		@footer(team)
+		@footer(data.Team)
 	</div>
 }
 
@@ -65,7 +76,7 @@ templ showMap(locations []models.Location) {
 	@mapScript()
 }
 
-templ showMapAndNames(team models.Team, locations []models.Location) {
+templ showMapAndNames(settings models.InstanceSettings, locations []models.Location) {
 	<p class="text-center pb-5">
 		You may choose any of the following locations. Use the map below to help find where you want to go.
 	</p>
@@ -79,7 +90,7 @@ templ showMapAndNames(team models.Team, locations []models.Location) {
 				data-code={ location.MarkerID }
 			>{ location.Name }</em>
 			<!-- Show the number of teams visiting this location -->
-			if team.Instance.Settings.ShowTeamCount {
+			if settings.ShowTeamCount {
 				<br/>
 				<span class="badge badge-ghost">
 					{ fmt.Sprint(location.CurrentCount) } Teams Visiting
@@ -93,7 +104,7 @@ templ showMapAndNames(team models.Team, locations []models.Location) {
 	@mapScript()
 }
 
-templ showNames(team models.Team, locations []models.Location) {
+templ showNames(settings models.InstanceSettings, locations []models.Location) {
 	<p class="text-center pb-5">
 		You may choose any of the following locations. Use the map below to help
 		find where you want to go.
@@ -102,7 +113,7 @@ templ showNames(team models.Team, locations []models.Location) {
 		<p class="text-center pb-3">
 			<em>{ location.Name }</em>
 			<!-- Show the number of teams visiting this location -->
-			if team.Instance.Settings.ShowTeamCount {
+			if settings.ShowTeamCount {
 				<br/>
 				<span class="badge badge-ghost">
 					{ fmt.Sprint(location.CurrentCount) } Teams Visiting
@@ -134,6 +145,61 @@ templ showClues(seed string, locations []models.Location) {
 					// @templ.Raw(stringToMarkdown(chooseClue(seed, "").Content))
 				</blockquote>
 			</div>
+		}
+	}
+}
+
+type customContentViewData struct {
+	Settings            models.InstanceSettings
+	LocationsWithBlocks []locationWithBlocks
+}
+
+type locationWithBlocks struct {
+	Location models.Location
+	Blocks   []blocks.Block
+}
+
+func prepareCustomContentViewData(data NextParams) customContentViewData {
+	locationsWithBlocks := make([]locationWithBlocks, 0, len(data.Locations))
+	for _, location := range data.Locations {
+		lwb := locationWithBlocks{
+			Location: location,
+			Blocks:   make([]blocks.Block, 0),
+		}
+		for _, block := range data.Blocks {
+			if block.GetLocationID() == location.ID {
+				lwb.Blocks = append(lwb.Blocks, block)
+			}
+		}
+		locationsWithBlocks = append(locationsWithBlocks, lwb)
+	}
+	return customContentViewData{
+		Settings:            data.Settings,
+		LocationsWithBlocks: locationsWithBlocks,
+	}
+}
+
+templ showCustom(data customContentViewData) {
+	<div class="prose">
+		<p class="pb-5">
+			You may choose any of the following locations. Use the clues below to help
+			find where you want to go.
+		</p>
+	</div>
+	for i, locWithBlock := range data.LocationsWithBlocks {
+		if len(locWithBlock.Blocks) == 0 {
+			<div class="alert alert-success my-3">
+				<span>
+					<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlock.Location.Name }</em></strong> so we'll just tell you where it is!
+				</span>
+			</div>
+		} else {
+			<div class="divider my-5">Location { i + 1 }</div>
+			for _, block := range locWithBlock.Blocks {
+				if block.GetLocationID() != locWithBlock.Location.ID {
+					continue
+				}
+			}
 		}
 	}
 }
