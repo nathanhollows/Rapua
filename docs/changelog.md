@@ -49,7 +49,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 
 ### Removed
 
-- **Breaking change:** `ClueRepository`, `ClueService`, and all clue-related views and logic.
+- **Breaking change:** `Clues` models, repository, and service, views, and handlers.
 - **Breaking change:** `Locations.Blocks` relation. Only used in tests, so switched to service calls instead.
   - Clues are now automatically migrated to [Random Clue Blocks](/docs/user/blocks/random-clue) when the migration is run.
 - **Breaking change:** Legacy blocks repository methods: `FindByLocationID`, `FindBlocksAndStatesByLocationIDAndTeamCode`, `DeleteByLocationID`.
