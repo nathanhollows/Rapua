@@ -131,13 +131,13 @@ func randomClueAdmin(_ models.InstanceSettings, block blocks.RandomClueBlock) te
 				return templ_7745c5c3_Err
 			}
 		}
-		for i := 0; i < (2 - len(block.Clues)); i++ {
+		if len(block.Clues) == 0 {
 			templ_7745c5c3_Err = clueItem("").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><span class=\"label inline-block\">Each team is shown one randomly selected clue.</span></fieldset><template id=\"clue-item-template\"><label class=\"clue-item input flex flex-row items-top gap-2 h-auto join-item w-full\"><textarea name=\"clues\" class=\"w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent\" style=\"field-sizing: content;\" rows=\"1\" placeholder=\"Add a clue...\" autoComplete=\"off\" _=\"on keyup send updated to closest parent <form />\"></textarea> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip\" data-tip=\"Delete\" _=\"on click set :group to closest <form /> then remove closest parent <label/> then send trigger to :group\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><span class=\"label inline-block\">Each team is shown one randomly selected clue.</span></fieldset><template id=\"clue-item-template\"><label class=\"clue-item input flex flex-row items-top gap-2 h-auto join-item w-full\"><textarea name=\"clues\" class=\"w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent\" style=\"field-sizing: content;\" rows=\"1\" placeholder=\"Add a clue...\" autoComplete=\"off\" _=\"on keyup send updated to closest parent <form />\"></textarea> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip\" data-tip=\"Delete\" _=\"on click \n\t\t\t\t\t\tset :group to closest <form /> then \n\t\t\t\t\t\tremove closest parent <label/> then \n\t\t\t\t\t\tif :group.querySelectorAll('.clue-item').length == 0 then\n\t\t\t\t\t\t\tput #clue-item-template's innerHTML at the end of :group.querySelector('.clue-items')\n\t\t\t\t\t\tend then\n\t\t\t\t\t\tsend trigger to :group\n\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -173,7 +173,7 @@ func clueItem(clue string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(clue)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/random_clue.templ`, Line: 84, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/random_clue.templ`, Line: 92, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -186,13 +186,13 @@ func clueItem(clue string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(clue)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/random_clue.templ`, Line: 88, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/random_clue.templ`, Line: 96, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</textarea> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip delete\" data-tip=\"Delete\" _=\"on click set :group to closest <form /> then remove closest parent <label/> then send trigger to :group\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</textarea> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip delete\" data-tip=\"Delete\" _=\"on click \n\t\t\t\tset :group to closest <form /> then \n\t\t\t\tremove closest parent <label/> then \n\t\t\t\tif :group.querySelectorAll('.clue-item').length == 0 then\n\t\t\t\t\tput #clue-item-template's innerHTML at the end of :group.querySelector('.clue-items')\n\t\t\t\tend then\n\t\t\t\tsend trigger to :group\n\t\t\tend\n\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
