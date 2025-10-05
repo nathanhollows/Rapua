@@ -181,22 +181,30 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 
 templ showCustom(data customContentViewData) {
 	<div class="prose">
-		<p class="pb-5">
-			You may choose any of the following locations. Use the clues below to help
-			find where you want to go.
-		</p>
+		if len(data.LocationsWithBlocks) > 1 {
+			<p>
+				You may choose any of the following locations. Use the clues below to help
+				find where you want to go.
+			</p>
+		} else {
+			<p class="text-center pb-5">
+				Use the clues below to find your next location.
+			</p>
+		}
 	</div>
-	for i, locWithBlock := range data.LocationsWithBlocks {
-		if len(locWithBlock.Blocks) == 0 {
+	for i, locWithBlocks := range data.LocationsWithBlocks {
+		if len(data.LocationsWithBlocks) > 1 {
+			<div class="divider mb-5 mt-8">Location { i + 1 }</div>
+		}
+		if len(locWithBlocks.Blocks) == 0 {
 			<div class="alert alert-success my-3">
 				<span>
-					<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlock.Location.Name }</em></strong> so we'll just tell you where it is!
+					<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlocks.Location.Name }</em></strong> so we'll just tell you where it is!
 				</span>
 			</div>
 		} else {
-			<div class="divider my-5">Location { i + 1 }</div>
-			for _, block := range locWithBlock.Blocks {
-				if block.GetLocationID() != locWithBlock.Location.ID {
+			for _, block := range locWithBlocks.Blocks {
+				if block.GetLocationID() != locWithBlocks.Location.ID {
 					continue
 				}
 			}
