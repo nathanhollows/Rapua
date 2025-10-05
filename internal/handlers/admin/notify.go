@@ -5,7 +5,7 @@ import (
 )
 
 // NotifyAllPost sends a notification to all teams.
-func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -44,7 +44,7 @@ func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // NotifyTeamPost sends a notification to a specific team.
-func (h *AdminHandler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {

@@ -20,7 +20,7 @@ func setupRouter(
 	logger *slog.Logger,
 	publicHandler *public.PublicHandler,
 	playerHandler *players.PlayerHandler,
-	adminHandler *admin.AdminHandler,
+	adminHandler *admin.Handler,
 ) *chi.Mux {
 	// Get CSRF key from environment
 	csrfKey := os.Getenv("CSRF_KEY")
@@ -208,7 +208,7 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.NotFound(publicHandler.NotFound)
 }
 
-func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
+func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.AdminAuthMiddleware(adminHandler.GetIdentityService(), next)
@@ -329,7 +329,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 	})
 }
 
-func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
+func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/facilitator", func(r chi.Router) {
 		r.Get("/login/{token}", adminHandler.FacilitatorLogin)
 		r.Get("/dashboard", adminHandler.FacilitatorDashboard)

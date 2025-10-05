@@ -12,7 +12,7 @@ import (
 )
 
 // Locations shows admin the locations.
-func (h *AdminHandler) Locations(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	for i, location := range user.CurrentInstance.Locations {
@@ -41,7 +41,7 @@ func (h *AdminHandler) Locations(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNew shows the form to create a new location.
-func (h *AdminHandler) LocationNew(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	instances, err := h.instanceService.FindInstanceIDsForUser(r.Context(), user.ID)
@@ -79,7 +79,7 @@ func (h *AdminHandler) LocationNew(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNewPost handles creating a new location.
-func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -153,9 +153,25 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	marker := r.FormValue("marker")
-	var location models.Location
+	location, err := h.createLocationWithOrWithoutMarker(w, r, user, marker, lat, lng, points)
+	if err != nil {
+		return
+	}
+
+	h.redirect(w, r, "/admin/locations/"+location.MarkerID)
+}
+
+// createLocationWithOrWithoutMarker creates a location either from coordinates or from an existing marker.
+func (h *Handler) createLocationWithOrWithoutMarker(
+	w http.ResponseWriter,
+	r *http.Request,
+	user *models.User,
+	marker string,
+	lat, lng float64,
+	points int,
+) (models.Location, error) {
 	if marker == "" {
-		location, err = h.locationService.CreateLocation(
+		location, err := h.locationService.CreateLocation(
 			r.Context(),
 			user.CurrentInstanceID,
 			r.FormValue("name"),
@@ -174,34 +190,59 @@ func (h *AdminHandler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 				"instance_id",
 				user.CurrentInstanceID,
 			)
-			return
+			return models.Location{}, err
 		}
-	} else {
-		access, accessErr := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
-		if accessErr != nil {
-			h.handleError(w, r, "LocationNewPost: checking marker access", "Error checking marker access", "error", accessErr, "instance_id", user.CurrentInstanceID)
-			return
-		}
-		if !access {
-			h.handleError(w, r, "LocationNewPost: no access to marker", "You do not have access to this marker")
-			return
-		}
-		location, err = h.locationService.CreateLocationFromMarker(r.Context(), user.CurrentInstanceID, r.FormValue("name"), points, marker)
-		if err != nil {
-			h.handleError(w, r, "LocationNewPost: creating location from marker", "Error creating location from marker", "error", err, "instance_id", user.CurrentInstanceID)
-			return
-		}
+		return location, nil
 	}
 
-	h.redirect(w, r, "/admin/locations/"+location.MarkerID)
+	access, accessErr := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
+	if accessErr != nil {
+		h.handleError(
+			w,
+			r,
+			"LocationNewPost: checking marker access",
+			"Error checking marker access",
+			"error",
+			accessErr,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return models.Location{}, accessErr
+	}
+	if !access {
+		h.handleError(w, r, "LocationNewPost: no access to marker", "You do not have access to this marker")
+		return models.Location{}, accessErr
+	}
+
+	location, err := h.locationService.CreateLocationFromMarker(
+		r.Context(),
+		user.CurrentInstanceID,
+		r.FormValue("name"),
+		points,
+		marker,
+	)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"LocationNewPost: creating location from marker",
+			"Error creating location from marker",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return models.Location{}, err
+	}
+	return location, nil
 }
 
 // ReorderLocations handles reordering locations.
 // Returns a 200 status code if successful,
 // Otherwise, returns a 500 status code.
-func (h *AdminHandler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
 	// Check HTMX headers
-	if r.Header.Get("HX-Request") != "true" {
+	if r.Header.Get("Hx-Request") != "true" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
@@ -243,7 +284,7 @@ func (h *AdminHandler) ReorderLocations(w http.ResponseWriter, r *http.Request) 
 }
 
 // LocationEdit shows the form to edit a location.
-func (h *AdminHandler) LocationEdit(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
@@ -322,7 +363,7 @@ func (h *AdminHandler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationEditPost handles updating a location.
-func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.handleError(w, r, "LocationEditPost: parsing form", "Error parsing form", "error", err)
 		return
@@ -389,7 +430,7 @@ func (h *AdminHandler) LocationEditPost(w http.ResponseWriter, r *http.Request) 
 }
 
 // LocationDelete handles deleting a location.
-func (h *AdminHandler) LocationDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 	locationCode := chi.URLParam(r, "id")
 
 	user := h.UserFromContext(r.Context())

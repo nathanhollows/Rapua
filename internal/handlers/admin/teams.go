@@ -7,7 +7,7 @@ import (
 	admin "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
 
-func (h *AdminHandler) Teams(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Teams(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := admin.Teams(user.CurrentInstance.Teams)
@@ -18,7 +18,7 @@ func (h *AdminHandler) Teams(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AdminHandler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -73,7 +73,7 @@ func (h *AdminHandler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	err := r.ParseForm()
 	if err != nil {
@@ -97,15 +97,14 @@ func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, id := range teamID {
-		err := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id})
-		if err != nil {
+		if deleteErr := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id}); deleteErr != nil {
 			h.handleError(
 				w,
 				r,
 				"TeamsDelete deleting team",
 				"Error deleting team",
 				"error",
-				err,
+				deleteErr,
 				"instance_id",
 				user.CurrentInstanceID,
 				"team_id",
@@ -137,7 +136,7 @@ func (h *AdminHandler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Deleted team(s)")
 }
 
-func (h *AdminHandler) TeamsReset(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TeamsReset(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	err := r.ParseForm()
 	if err != nil {

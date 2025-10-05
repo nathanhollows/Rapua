@@ -11,27 +11,21 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
-// getTemplateByID retrieves a template by ID from various sources (param, form, direct).
-func (h *AdminHandler) getTemplateByID(
+// getTemplateByID retrieves a template by ID from various sources (param, form).
+func (h *Handler) getTemplateByID(
 	w http.ResponseWriter,
 	r *http.Request,
-	idOverride ...string,
 ) (*models.Instance, bool) {
 	var id string
 
-	// Check if an explicit ID was passed
-	if len(idOverride) > 0 && idOverride[0] != "" {
-		id = idOverride[0]
-	} else {
-		// Check form value (for POST requests)
-		if err := r.ParseForm(); err == nil {
-			id = r.Form.Get("id")
-		}
+	// Check form value (for POST requests)
+	if err := r.ParseForm(); err == nil {
+		id = r.Form.Get("id")
+	}
 
-		// Fallback to URL param if not found in form
-		if id == "" {
-			id = chi.URLParam(r, "id")
-		}
+	// Fallback to URL param if not found in form
+	if id == "" {
+		id = chi.URLParam(r, "id")
 	}
 
 	if id == "" {
@@ -49,7 +43,7 @@ func (h *AdminHandler) getTemplateByID(
 }
 
 // TemplatesCreate creates a new template, which is a type of instance.
-func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -110,7 +104,7 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // TemplatesLaunch launches an instance from a template.
-func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -160,7 +154,7 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 }
 
 // TemplatesLaunchFromLink launches an instance from a share link.
-func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	if err := r.ParseForm(); err != nil {
 		h.handleError(w, r, "TemplatesLaunchFromLink: parsing form", "Error parsing form", "error", err)
@@ -219,7 +213,7 @@ func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Re
 }
 
 // TemplatesDelete deletes a template.
-func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -290,7 +284,7 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 // Fragments //
 
 // TemplatesName retrieves the name of a template.
-func (h *AdminHandler) TemplatesName(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesName(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -303,8 +297,8 @@ func (h *AdminHandler) TemplatesName(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TemplatesName shows the form to edit the name of a template.
-func (h *AdminHandler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request) {
+// TemplatesNameEdit shows the form to edit the name of a template.
+func (h *Handler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -318,7 +312,7 @@ func (h *AdminHandler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request)
 }
 
 // TemplatesNameEditPost updates the name of a template.
-func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Fetch template, considering form data or URL param
@@ -363,7 +357,7 @@ func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (h *AdminHandler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -384,7 +378,7 @@ func (h *AdminHandler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesSharePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {

@@ -9,7 +9,7 @@ import (
 )
 
 // Settings displays the account settings page.
-func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(*user)
@@ -20,7 +20,7 @@ func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettingsProfile displays the account profile page.
-func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.SettingsProfile(*user).Render(r.Context(), w)
@@ -30,7 +30,7 @@ func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettingsProfilePost handles updating the user's profile settings.
-func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -60,7 +60,7 @@ func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Reques
 }
 
 // SettingsAppearance displays the account appearance settings page.
-func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.SettingsAppearance(*user).Render(r.Context(), w)
@@ -70,7 +70,7 @@ func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request
 }
 
 // SettingsSecurity displays the account security settings page.
-func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.SettingsSecurity(*user).Render(r.Context(), w)
@@ -80,7 +80,7 @@ func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) 
 }
 
 // SettingsBilling displays the account billing settings page.
-func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.SettingsBilling(*user).Render(r.Context(), w)
@@ -90,7 +90,7 @@ func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettingsSecurityPost handles updating security settings like password.
-func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -139,7 +139,7 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 }
 
 // DeleteAccount handles account deletion.
-func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()

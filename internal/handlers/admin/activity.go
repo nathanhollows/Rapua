@@ -11,7 +11,7 @@ import (
 )
 
 // Activity displays the activity tracker page.
-func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	for i := range user.CurrentInstance.Teams {
@@ -40,7 +40,7 @@ func (h *AdminHandler) Activity(w http.ResponseWriter, r *http.Request) {
 }
 
 // ActivityTeamsOverview displays the activity tracker page.
-func (h *AdminHandler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	teams := filterTeamsStarted(user.CurrentInstance.Teams)
@@ -113,7 +113,7 @@ func filterTeamsStarted(teams []models.Team) []models.Team {
 
 // TeamActivity displays the activity tracker page.
 // It accepts HTMX requests to update the team activity.
-func (h *AdminHandler) TeamActivity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	teamCode := chi.URLParam(r, "teamCode")

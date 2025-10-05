@@ -24,7 +24,7 @@ func Start(
 	logger *slog.Logger,
 	publicHandler *public.PublicHandler,
 	playerHandler *players.PlayerHandler,
-	adminHandler *admin.AdminHandler,
+	adminHandler *admin.Handler,
 ) {
 	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 

@@ -9,7 +9,7 @@ import (
 )
 
 // Instances shows admin the instances.
-func (h *AdminHandler) Instances(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Instances(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// We need to show both the instances and the templates
@@ -45,7 +45,7 @@ func (h *AdminHandler) Instances(w http.ResponseWriter, r *http.Request) {
 }
 
 // InstancesCreate creates a new instance.
-func (h *AdminHandler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -89,7 +89,7 @@ func (h *AdminHandler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // InstanceDuplicate duplicates an instance.
-func (h *AdminHandler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -135,7 +135,7 @@ func (h *AdminHandler) InstanceDuplicate(w http.ResponseWriter, r *http.Request)
 }
 
 // InstanceSwitch switches the current instance.
-func (h *AdminHandler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	instanceID := chi.URLParam(r, "id")
@@ -177,7 +177,7 @@ func (h *AdminHandler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 }
 
 // InstanceDelete deletes an instance.
-func (h *AdminHandler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {

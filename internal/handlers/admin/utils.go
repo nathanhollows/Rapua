@@ -186,7 +186,8 @@ type LeaderBoardService interface {
 	) ([]services.LeaderBoardTeamData, error)
 }
 
-type AdminHandler struct {
+// Handler provides admin functionality for managing game instances.
+type Handler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
 	assetGenerator          services.AssetGenerator
@@ -215,7 +216,7 @@ func NewAdminHandler(
 	assetGenerator services.AssetGenerator,
 	identityService IdentityService,
 	blockService BlockService,
-	DeleteService DeleteService,
+	deleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
@@ -230,14 +231,14 @@ func NewAdminHandler(
 	userService UserService,
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
-) *AdminHandler {
-	return &AdminHandler{
+) *Handler {
+	return &Handler{
 		logger:                  logger,
 		accessService:           accessService,
 		assetGenerator:          assetGenerator,
 		identityService:         identityService,
 		blockService:            blockService,
-		deleteService:           DeleteService,
+		deleteService:           deleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
 		instanceService:         instanceService,
@@ -256,22 +257,26 @@ func NewAdminHandler(
 }
 
 // GetIdentityService returns the IdentityService used by the handler.
-func (h *AdminHandler) GetIdentityService() IdentityService {
+func (h *Handler) GetIdentityService() IdentityService {
 	return h.identityService
 }
 
-// GetUserFromContext retrieves the user from the context.
-// User will always be in the context because the middleware.
-func (h AdminHandler) UserFromContext(ctx context.Context) *models.User {
-	return ctx.Value(contextkeys.UserKey).(*models.User)
+// UserFromContext retrieves the user from the context.
+// User will always be in the context because of the middleware.
+func (h *Handler) UserFromContext(ctx context.Context) *models.User {
+	user, ok := ctx.Value(contextkeys.UserKey).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
-func (h *AdminHandler) handleError(
+func (h *Handler) handleError(
 	w http.ResponseWriter,
 	r *http.Request,
 	logMsg string,
 	flashMsg string,
-	params ...interface{},
+	params ...any,
 ) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
@@ -280,7 +285,7 @@ func (h *AdminHandler) handleError(
 	}
 }
 
-func (h *AdminHandler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {
+func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {
 	err := templates.Toast(*flash.NewSuccess(flashMsg)).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering success template", "error", err)
@@ -289,9 +294,9 @@ func (h *AdminHandler) handleSuccess(w http.ResponseWriter, r *http.Request, fla
 
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests and redirects the user to the referer.
-func (h AdminHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", path)
+func (h *Handler) redirect(w http.ResponseWriter, r *http.Request, path string) {
+	if r.Header.Get("Hx-Request") == "true" {
+		w.Header().Set("Hx-Redirect", path)
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)

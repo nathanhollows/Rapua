@@ -13,7 +13,7 @@ import (
 )
 
 // BlockEdit shows the form to edit a block (legacy method).
-func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 	// Extract blockID from legacy URL structure
 	blockID := chi.URLParam(r, "blockID")
 
@@ -29,7 +29,7 @@ func (h *AdminHandler) BlockEdit(w http.ResponseWriter, r *http.Request) {
 }
 
 // BlockEditPost updates the block (legacy method).
-func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 	// Extract blockID from legacy URL structure
 	blockID := chi.URLParam(r, "blockID")
 
@@ -45,10 +45,13 @@ func (h *AdminHandler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // BlockCreate creates a new block using query parameters.
-func (h *AdminHandler) BlockCreate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, r, "BlockCreate: parsing form", "Could not create block", "error", err)
+		return
+	}
 
 	// Parse query parameters
 	ownerID := r.FormValue("owner")
@@ -129,7 +132,7 @@ func (h *AdminHandler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // BlockNewWithOwnerAndContextPost creates a new block with owner and context (legacy path-based parameters).
-func (h *AdminHandler) BlockNewWithOwnerAndContextPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockNewWithOwnerAndContextPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	ownerID := chi.URLParam(r, "owner")
@@ -171,7 +174,7 @@ func (h *AdminHandler) BlockNewWithOwnerAndContextPost(w http.ResponseWriter, r 
 }
 
 // BlockNewPost creates a new block for a location (legacy method).
-func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 	// Extract parameters from legacy URL structure
 	blockType := chi.URLParam(r, "type")
 	locationID := chi.URLParam(r, "location")
@@ -187,7 +190,7 @@ func (h *AdminHandler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // ReorderBlocks reorders the blocks (legacy method).
-func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 	// Add deprecation header
 	w.Header().Set("X-Deprecated", "Use POST /admin/blocks/reorder instead")
 
@@ -197,7 +200,7 @@ func (h *AdminHandler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
 
 // BlockGet retrieves a single block by ID.
 // GET /admin/blocks/{id}.
-func (h *AdminHandler) BlockGet(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockGet(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	blockID := chi.URLParam(r, "id")
@@ -230,7 +233,7 @@ func (h *AdminHandler) BlockGet(w http.ResponseWriter, r *http.Request) {
 
 // BlockUpdate updates a block.
 // PUT /admin/blocks/{id}.
-func (h *AdminHandler) BlockUpdate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockUpdate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	blockID := chi.URLParam(r, "id")
@@ -275,7 +278,7 @@ func (h *AdminHandler) BlockUpdate(w http.ResponseWriter, r *http.Request) {
 
 // BlockDelete deletes a block by ID.
 // DELETE /admin/blocks/{id}.
-func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	blockID := chi.URLParam(r, "id")
@@ -318,7 +321,7 @@ func (h *AdminHandler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 
 // BlockList lists blocks with optional filtering.
 // GET /admin/blocks?owner={uuid}&context={context}.
-func (h *AdminHandler) BlockList(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Parse query parameters
@@ -370,7 +373,7 @@ func (h *AdminHandler) BlockList(w http.ResponseWriter, r *http.Request) {
 
 // BlockReorder reorders blocks.
 // POST /admin/blocks/reorder.
-func (h *AdminHandler) BlockReorder(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
