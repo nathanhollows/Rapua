@@ -221,17 +221,23 @@ func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, owner
 
 // Reorder reorders the blocks.
 func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
+	values := make([]struct {
+		ID       string `bun:"id"`
+		Ordering int    `bun:"ordering"`
+	}, len(blockIDs))
 	for i, blockID := range blockIDs {
-		_, err := r.db.NewUpdate().
-			Model(&models.Block{}).
-			Set("ordering = ?", i).
-			Where("id = ?", blockID).
-			Exec(ctx)
-		if err != nil {
-			return err
-		}
+		values[i].ID = blockID
+		values[i].Ordering = i
 	}
-	return nil
+	vals := r.db.NewValues(&values)
+	_, err := r.db.NewUpdate().
+		With("_data", vals).
+		Model((*models.Block)(nil)).
+		TableExpr("_data").
+		Set("ordering = _data.ordering").
+		Where("block.id = _data.id").
+		Exec(ctx)
+	return err
 }
 
 // FindBlocksAndStatesByOwnerIDAndTeamCode fetches all blocks for an owner with their player states.
