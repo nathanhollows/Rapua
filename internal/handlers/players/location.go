@@ -70,7 +70,14 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.CheckInView(team.Instance.Settings, team.CheckIns[index], blocks, blockStates)
+	data := templates.CheckInViewData{
+		Settings: team.Instance.Settings,
+		Scan:     team.CheckIns[index],
+		Blocks:   blocks,
+		States:   blockStates,
+	}
+
+	c := templates.CheckInView(data)
 	err = templates.Layout(c, team.CheckIns[index].Location.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering checkin view", "error", err.Error())
@@ -124,7 +131,14 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = templates.CheckInView(team.Instance.Settings, scan, contentBlocks, blockStates).Render(r.Context(), w)
+	data := templates.CheckInViewData{
+		Settings: team.Instance.Settings,
+		Scan:     scan,
+		Blocks:   contentBlocks,
+		States:   blockStates,
+	}
+
+	err = templates.CheckInView(data).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("LocationPreview: rendering template", "error", err)
 	}
