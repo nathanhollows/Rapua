@@ -537,18 +537,16 @@ templ deleteBlockModal() {
 				element.addEventListener('click', confirmDeleteBlock);
 			  }
 
-			  // Add listener to #blocks for new blocks
-			  elements = ["blocks", "nav-blocks"];
-			  for (const id of elements) {
-				  if (document.getElementById(id)) {
-					document.getElementById(id).addEventListener("htmx:afterSwap", function (event) {
+			  // Add listener to .blocks for new blocks, (class not id)
+			  elements = document.getElementsByClassName("blocks");
+			  for (const el of elements) {
+				  el.addEventListener("htmx:afterSwap", function (event) {
 					  for (const element of document.querySelectorAll('.block-delete')) {
 						element.addEventListener('click', confirmDeleteBlock);
 					  }
-					});
-				  }
+				  });
 			  }
-			  });
+		});
 		</script>
 }
 
@@ -670,7 +668,7 @@ templ EditLocation(data EditLocationData) {
 					<div class="block">
 						<div tabindex="0" role="button" class="btn btn-sm btn-outline">
 							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-							Change clue type
+							Add a clue
 						</div>
 					</div>
 					<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
@@ -684,7 +682,7 @@ templ EditLocation(data EditLocationData) {
 										<form
 											class="indicator w-full"
 											hx-post="/admin/blocks/"
-											hx-target="#nav-blocks"
+											hx-target="next .blocks"
 											hx-swap="beforeend"
 										>
 											<input type="hidden" name="owner" value={ data.Location.ID }/>
@@ -711,7 +709,7 @@ templ EditLocation(data EditLocationData) {
 										<form
 											class="indicator w-full"
 											hx-post="/admin/blocks/"
-											hx-target="#nav-blocks"
+											hx-target="next .blocks"
 											hx-swap="beforeend"
 										>
 											<input type="hidden" name="owner" value={ data.Location.ID }/>
@@ -734,8 +732,7 @@ templ EditLocation(data EditLocationData) {
 				</div>
 			</div>
 			<div
-				id="nav-blocks"
-				class="flex flex-col gap-5"
+				class="blocks flex flex-col gap-5"
 			>
 				for _, block := range data.NavigationBlocks {
 					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
@@ -762,11 +759,11 @@ templ EditLocation(data EditLocationData) {
 											<form
 												class="indicator w-full"
 												hx-post="/admin/blocks/"
-												hx-target="#blocks"
+												hx-target="next .blocks"
 												hx-swap="beforeend"
 											>
 												<input type="hidden" name="owner" value={ data.Location.ID }/>
-												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationContent }/>
 												<input type="hidden" name="type" value={ block.GetType() }/>
 												<button
 													type="submit"
@@ -789,7 +786,7 @@ templ EditLocation(data EditLocationData) {
 											<form
 												class="indicator w-full"
 												hx-post="/admin/blocks/"
-												hx-target="#blocks"
+												hx-target="next .blocks"
 												hx-swap="beforeend"
 											>
 												<input type="hidden" name="owner" value={ data.Location.ID }/>
@@ -812,8 +809,7 @@ templ EditLocation(data EditLocationData) {
 					</div>
 				</div>
 				<div
-					id="blocks"
-					class="flex flex-col gap-5"
+					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.ContentBlocks {
 						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.ContentBlocks) < 4)
@@ -873,7 +869,7 @@ templ EditLocation(data EditLocationData) {
 					<div
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
-						hx-trigger="load, htmx:afterRequest from:#blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
+						hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
 						hx-swap="innerHTML"
 					></div>
