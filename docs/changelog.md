@@ -44,6 +44,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 - Check in view now displays correct icons and long location names no longer look crowded.
 - Check out logic for tracking players at each location no longer triggers twice.
 - [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
+- Minor [Broker block](/docs/user/blocks/broker) style fixes.
 - Minor [Checklist block](/docs/user/blocks/checklist) style fixes.
 - Minor [Sorting block](/docs/user/blocks/sorting) style fixes.
 

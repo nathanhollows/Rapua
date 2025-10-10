@@ -42,8 +42,6 @@ templ Next(data NextParams) {
 					@showMapAndNames(data.Settings, data.Locations)
 				case models.NavigationDisplayNames:
 					@showNames(data.Settings, data.Locations)
-				case models.NavigationDisplayClues:
-					@showClues(data.Team.Code, data.Locations)
 				case models.NavigationDisplayCustom:
 					@showCustom(prepareCustomContentViewData(data))
 			}
@@ -124,32 +122,6 @@ templ showNames(settings models.InstanceSettings, locations []models.Location) {
 	}
 }
 
-templ showClues(seed string, locations []models.Location) {
-	<p class="text-center pb-5">
-		Solve a clue to find the next location. 
-		<br/>
-		Each clue is for a different location.
-	</p>
-	for _, location := range locations {
-		// TODO: FIX THIS
-		if true {
-			<div>
-				<div class="alert alert-secondary my-3">
-					<span>
-						<strong>Freebie!</strong> There are no clues for <em>{ location.Name }</em>
-					</span>
-				</div>
-			</div>
-		} else {
-			<div class="prose">
-				<blockquote class="m-1 font-normal not-italic">
-					// @templ.Raw(stringToMarkdown(chooseClue(seed, "").Content))
-				</blockquote>
-			</div>
-		}
-	}
-}
-
 type customContentViewData struct {
 	Settings            models.InstanceSettings
 	LocationsWithBlocks []locationWithBlocks
@@ -204,25 +176,27 @@ templ showCustom(data customContentViewData) {
 		}
 	</div>
 	for i, locWithBlocks := range data.LocationsWithBlocks {
-		if len(data.LocationsWithBlocks) > 1 {
-			<div class="divider my-12 m-auto w-1/2">{ i + 1 }</div>
-		}
-		if len(locWithBlocks.Blocks) == 0 {
-			<div class="alert alert-success my-3">
-				<span>
-					<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlocks.Location.Name }</em></strong> so we'll just tell you where it is!
-				</span>
-			</div>
-		} else {
-			<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
-				for _, block := range locWithBlocks.Blocks {
-					if block.GetLocationID() != locWithBlocks.Location.ID {
-						continue
+		<div class="pb-12">
+			if len(data.LocationsWithBlocks) > 1 {
+				<div class="divider my-8 m-auto w-1/2">{ i + 1 }</div>
+			}
+			if len(locWithBlocks.Blocks) == 0 {
+				<div class="alert alert-success my-3">
+					<span>
+						<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlocks.Location.Name }</em></strong> so we'll just tell you where it is!
+					</span>
+				</div>
+			} else {
+				<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+					for _, block := range locWithBlocks.Blocks {
+						if block.GetLocationID() != locWithBlocks.Location.ID {
+							continue
+						}
+						@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
 					}
-					@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
-				}
-			</div>
-		}
+				</div>
+			}
+		</div>
 	}
 }
 
