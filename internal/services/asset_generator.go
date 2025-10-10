@@ -16,6 +16,11 @@ import (
 	go_qr "github.com/piglig/go-qr"
 )
 
+const (
+	svgFormat string = "svg"
+	pngFormat string = "png"
+)
+
 type PDFPage struct {
 	LocationName string
 	URL          string
@@ -97,7 +102,7 @@ func (s *assetGenerator) CreateQRCodeImage(
 	options ...QRCodeOption,
 ) (err error) {
 	defaultOptions := &QRCodeOptions{
-		format:     "png",
+		format:     pngFormat,
 		foreground: "#000000",
 		background: "#ffffff",
 	}
@@ -108,7 +113,7 @@ func (s *assetGenerator) CreateQRCodeImage(
 	}
 
 	// Validate the options
-	if defaultOptions.format != "png" && defaultOptions.format != "svg" {
+	if defaultOptions.format != pngFormat && defaultOptions.format != svgFormat {
 		return fmt.Errorf("unsupported format: %s", defaultOptions.format)
 	}
 
@@ -119,12 +124,12 @@ func (s *assetGenerator) CreateQRCodeImage(
 	config := go_qr.NewQrCodeImgConfig(20, 2)
 
 	switch defaultOptions.format {
-	case "png":
+	case pngFormat:
 		err := qr.PNG(config, path)
 		if err != nil {
 			return err
 		}
-	case "svg":
+	case svgFormat:
 		err := qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
 		if err != nil {
 			return err
@@ -224,7 +229,7 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	pdf.Cell(40, 70, page.LocationName)
 
 	// Add the QR code
-	if page.ImagePath[len(page.ImagePath)-3:] == "png" {
+	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {
 		pdf.Image(page.ImagePath, 50, 90, 110, 110, false, "", 0, "")
 	}
 

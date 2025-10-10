@@ -24,12 +24,12 @@ func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	metadata := services.UploadMetadata{}
-
-	metadata.InstanceID = r.Form.Get("instance_id")
-	metadata.TeamID = r.Form.Get("team_id")
-	metadata.BlockID = r.Form.Get("block_id")
-	metadata.LocationID = r.Form.Get("location_id")
+	metadata := services.UploadMetadata{
+		InstanceID: r.Form.Get("instance_id"),
+		TeamID:     r.Form.Get("team_id"),
+		BlockID:    r.Form.Get("block_id"),
+		LocationID: r.Form.Get("location_id"),
+	}
 
 	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)
 	if err != nil {

@@ -53,7 +53,7 @@ func Start(
 	logger.Info("Server started", "addr", os.Getenv("SERVER_ADDR"))
 	<-killSig
 
-	slog.Info("Shutting down server")
+	logger.Info("Shutting down server")
 
 	// Create a context with a timeout for the shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -61,7 +61,7 @@ func Start(
 
 	// Shutdown the server
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server shutdown failed", "error", err)
+		logger.Error("Server shutdown failed", "error", err)
 	}
 
 	logger.Info("Server shutdown complete")

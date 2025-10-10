@@ -219,45 +219,62 @@ func (s *LeaderBoardService) GetDefaultSortForRankingScheme(scheme string) strin
 	parsedScheme := ParseRankingScheme(scheme)
 	switch parsedScheme {
 	case RankByPoints:
-		return "points"
+		return string(SortByPoints)
 	case RankByProgress:
-		return "progress"
+		return string(SortByProgress)
 	default:
-		return "rank"
+		return string(SortByRank)
 	}
 }
 
 // GetSupportedRankingSchemes returns all supported ranking schemes.
 func (s *LeaderBoardService) GetSupportedRankingSchemes() []string {
-	return []string{"progress", "points", "completion", "time_to_first", "time_to_last"}
+	return []string{
+		string(RankByProgress),
+		string(RankByPoints),
+		string(RankByCompletion),
+		string(RankByTimeToFirst),
+		string(RankByTimeToLast),
+	}
 }
 
 // GetSupportedSortFields returns all supported sort fields.
 func (s *LeaderBoardService) GetSupportedSortFields() []string {
-	return []string{"rank", "code", "name", "points", "last_seen", "progress", "status"}
+	return []string{
+		string(SortByRank),
+		string(SortByCode),
+		string(SortByName),
+		string(SortByPoints),
+		string(SortByLastSeen),
+		string(SortByProgress),
+		string(SortByStatus),
+	}
 }
 
 // GetSupportedSortOrders returns all supported sort orders.
 func (s *LeaderBoardService) GetSupportedSortOrders() []string {
-	return []string{"asc", "desc"}
+	return []string{
+		string(SortAsc),
+		string(SortDesc),
+	}
 }
 
 // ParseSortField parses a string to SortField.
 func ParseSortField(field string) SortField {
 	switch field {
-	case "rank":
+	case string(SortByRank):
 		return SortByRank
-	case "code":
+	case string(SortByCode):
 		return SortByCode
-	case "name":
+	case string(SortByName):
 		return SortByName
-	case "points":
+	case string(SortByPoints):
 		return SortByPoints
-	case "last_seen":
+	case string(SortByLastSeen):
 		return SortByLastSeen
-	case "progress":
+	case string(SortByProgress):
 		return SortByProgress
-	case "status":
+	case string(SortByStatus):
 		return SortByStatus
 	default:
 		return SortByRank
@@ -267,9 +284,9 @@ func ParseSortField(field string) SortField {
 // ParseSortOrder parses a string to SortOrder.
 func ParseSortOrder(order string) SortOrder {
 	switch order {
-	case "desc":
+	case string(SortDesc):
 		return SortDesc
-	case "asc":
+	case string(SortAsc):
 		return SortAsc
 	default:
 		return SortAsc
@@ -279,15 +296,15 @@ func ParseSortOrder(order string) SortOrder {
 // ParseRankingScheme parses a string to RankingScheme.
 func ParseRankingScheme(scheme string) RankingScheme {
 	switch scheme {
-	case "points":
+	case string(RankByPoints):
 		return RankByPoints
-	case "progress":
+	case string(RankByProgress):
 		return RankByProgress
-	case "time_to_first":
+	case string(RankByTimeToFirst):
 		return RankByTimeToFirst
-	case "time_to_last":
+	case string(RankByTimeToLast):
 		return RankByTimeToLast
-	case "completion":
+	case string(RankByCompletion):
 		return RankByCompletion
 	default:
 		return RankByProgress
