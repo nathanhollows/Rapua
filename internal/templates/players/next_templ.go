@@ -11,6 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v4/blocks"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
@@ -55,7 +56,7 @@ func Next(data NextParams) templ.Component {
 			var templ_7745c5c3_Var2 templ.SafeURL
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/checkins/", data.Team.BlockingLocation.MarkerID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 30, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 31, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -143,7 +144,7 @@ func showMap(locations []models.Location) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lat))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 71, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 72, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -156,7 +157,7 @@ func showMap(locations []models.Location) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lng))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 72, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 73, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -169,7 +170,7 @@ func showMap(locations []models.Location) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 73, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 74, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -221,7 +222,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lat))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 87, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 88, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -234,7 +235,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lng))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 88, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 89, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -247,7 +248,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 89, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 90, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -260,7 +261,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 90, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 91, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -273,7 +274,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 91, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 92, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -291,7 +292,7 @@ func showMapAndNames(settings models.InstanceSettings, locations []models.Locati
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.CurrentCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 96, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 97, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -352,7 +353,7 @@ func showNames(settings models.InstanceSettings, locations []models.Location) te
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 114, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 115, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -370,7 +371,7 @@ func showNames(settings models.InstanceSettings, locations []models.Location) te
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.CurrentCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 119, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 120, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -428,7 +429,7 @@ func showClues(seed string, locations []models.Location) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 138, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 139, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -457,6 +458,7 @@ type customContentViewData struct {
 type locationWithBlocks struct {
 	Location models.Location
 	Blocks   []blocks.Block
+	States   map[string]blocks.PlayerState
 }
 
 func prepareCustomContentViewData(data NextParams) customContentViewData {
@@ -472,6 +474,15 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 			}
 		}
 		locationsWithBlocks = append(locationsWithBlocks, lwb)
+	}
+	for i, lwb := range locationsWithBlocks {
+		lwb.States = make(map[string]blocks.PlayerState)
+		for _, block := range lwb.Blocks {
+			if state, ok := data.States[block.GetID()]; ok {
+				lwb.States[block.GetID()] = state
+			}
+		}
+		locationsWithBlocks[i] = lwb
 	}
 	return customContentViewData{
 		Settings:            data.Settings,
@@ -521,14 +532,14 @@ func showCustom(data customContentViewData) templ.Component {
 		}
 		for i, locWithBlocks := range data.LocationsWithBlocks {
 			if len(data.LocationsWithBlocks) > 1 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"divider mb-5 mt-8\">Location ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"divider my-12 m-auto w-1/2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i + 1)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 197, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 208, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -551,7 +562,7 @@ func showCustom(data customContentViewData) templ.Component {
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(locWithBlocks.Location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 202, Col: 108}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/next.templ`, Line: 213, Col: 108}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -562,13 +573,29 @@ func showCustom(data customContentViewData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div class=\"mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 				for _, block := range locWithBlocks.Blocks {
 					if block.GetLocationID() != locWithBlocks.Location.ID {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "continue")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "continue")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()]).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
 			}
 		}
@@ -597,7 +624,7 @@ func mapScript() templ.Component {
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<script>\n(function () {\n  let map; // Store the map instance globally within the IIFE\n  let markerArray = []; // Store the markers array globally within the IIFE\n\n  function initializeMap() {\n\tconst locations = document.querySelectorAll('.location-name');\n\t// Calculate the center and zoom level based on the locations\n\tlet coords = [170.5111643, -45.8650509];\n\tlet zoom = 17;\n\tfor (let i = 0; i < locations.length; i++) {\n\t\tlat = parseFloat(locations[i].dataset.lat);\n\t\tlng = parseFloat(locations[i].dataset.lng);\n\t\tif (lat !== 0 && lng !== 0) {\n\t\t\tcoords = [lng, lat];\n\t\t\tbreak;\n\t\t}\n\t}\n\t\n    // Clear any existing markers\n    markerArray.forEach(marker => marker.remove());\n    markerArray = [];\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine the style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map-next',\n      style: style,\n      center: coords,\n      zoom: zoom,\n\t  cooperativeGestures: true,\n    });\n\n    // Find and loop through .location-name elements to create markers\n    document.querySelectorAll('.location-name').forEach(function(location) {\n      const marker = new mapboxgl.Marker()\n        .setLngLat([location.dataset.lng, location.dataset.lat])\n\t  if (location.dataset.name) marker\n        .setPopup(new mapboxgl.Popup() // Add popups\n\t    .setHTML('<h3>' + location.dataset.name + '</h3>'));\n\t  marker._element.id = \"marker-\"+location.dataset.code;\n      markerArray.push(marker);\n    });\n\n    // Sort markers by latitude\n    markerArray.sort(function(a, b) {\n      // If northern hemisphere, sort by descending latitude\n      return a.getLngLat().lat < 0\n        ? b.getLngLat().lat - a.getLngLat().lat\n        : a.getLngLat().lat - b.getLngLat().lat;\n    });\n\n    // Add markers to the map\n    markerArray.forEach(marker => marker.addTo(map));\n\n    // Fit the map to the bounds of the markers\n\tif (markerArray.length > 1) {\n\t\tconst bounds = new mapboxgl.LngLatBounds();\n\t\tmarkerArray.forEach(marker => {\n\t\t  bounds.extend(marker.getLngLat());\n\t\t});\n\n\t\tmap.fitBounds(bounds, { padding: 50 });\n\t}\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, markerArray);\n  }\n\n  // Initialize the map on page load\n  initializeMap();\n\n\t// Event listener for span click/tap\n\tdocument.querySelectorAll('.location-name').forEach(function(span) {\n\t  span.addEventListener('click', function() {\n\t\tconst id = \"marker-\"+span.dataset.code; // Get the id from the clicked span\n\t\tconst marker = document.getElementById(id); // Find the marker by id\n\n\t\tif (marker) {\n\t\t  // Open the popup for the marker\n\t\t  marker.click();\n\t\t} else {\n\t\t  console.error('Marker not found for id:', id);\n\t\t}\n\t  });\n\t});\n\n})();\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<script>\n(function () {\n  let map; // Store the map instance globally within the IIFE\n  let markerArray = []; // Store the markers array globally within the IIFE\n\n  function initializeMap() {\n\tconst locations = document.querySelectorAll('.location-name');\n\t// Calculate the center and zoom level based on the locations\n\tlet coords = [170.5111643, -45.8650509];\n\tlet zoom = 17;\n\tfor (let i = 0; i < locations.length; i++) {\n\t\tlat = parseFloat(locations[i].dataset.lat);\n\t\tlng = parseFloat(locations[i].dataset.lng);\n\t\tif (lat !== 0 && lng !== 0) {\n\t\t\tcoords = [lng, lat];\n\t\t\tbreak;\n\t\t}\n\t}\n\t\n    // Clear any existing markers\n    markerArray.forEach(marker => marker.remove());\n    markerArray = [];\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine the style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map-next',\n      style: style,\n      center: coords,\n      zoom: zoom,\n\t  cooperativeGestures: true,\n    });\n\n    // Find and loop through .location-name elements to create markers\n    document.querySelectorAll('.location-name').forEach(function(location) {\n      const marker = new mapboxgl.Marker()\n        .setLngLat([location.dataset.lng, location.dataset.lat])\n\t  if (location.dataset.name) marker\n        .setPopup(new mapboxgl.Popup() // Add popups\n\t    .setHTML('<h3>' + location.dataset.name + '</h3>'));\n\t  marker._element.id = \"marker-\"+location.dataset.code;\n      markerArray.push(marker);\n    });\n\n    // Sort markers by latitude\n    markerArray.sort(function(a, b) {\n      // If northern hemisphere, sort by descending latitude\n      return a.getLngLat().lat < 0\n        ? b.getLngLat().lat - a.getLngLat().lat\n        : a.getLngLat().lat - b.getLngLat().lat;\n    });\n\n    // Add markers to the map\n    markerArray.forEach(marker => marker.addTo(map));\n\n    // Fit the map to the bounds of the markers\n\tif (markerArray.length > 1) {\n\t\tconst bounds = new mapboxgl.LngLatBounds();\n\t\tmarkerArray.forEach(marker => {\n\t\t  bounds.extend(marker.getLngLat());\n\t\t});\n\n\t\tmap.fitBounds(bounds, { padding: 50 });\n\t}\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, markerArray);\n  }\n\n  // Initialize the map on page load\n  initializeMap();\n\n\t// Event listener for span click/tap\n\tdocument.querySelectorAll('.location-name').forEach(function(span) {\n\t  span.addEventListener('click', function() {\n\t\tconst id = \"marker-\"+span.dataset.code; // Get the id from the clicked span\n\t\tconst marker = document.getElementById(id); // Find the marker by id\n\n\t\tif (marker) {\n\t\t  // Open the popup for the marker\n\t\t  marker.click();\n\t\t} else {\n\t\t  console.error('Marker not found for id:', id);\n\t\t}\n\t  });\n\t});\n\n})();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

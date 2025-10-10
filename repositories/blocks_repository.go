@@ -41,6 +41,13 @@ type BlockRepository interface {
 		ownerID string,
 		teamCode string,
 	) ([]blocks.Block, []blocks.PlayerState, error)
+	// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks and their states by owner, team code, and context
+	FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+		ctx context.Context,
+		ownerID string,
+		teamCode string,
+		blockContext blocks.BlockContext,
+	) ([]blocks.Block, []blocks.PlayerState, error)
 
 	// Update updates an existing block
 	Update(ctx context.Context, block blocks.Block) (blocks.Block, error)
@@ -240,7 +247,8 @@ func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error 
 	return err
 }
 
-// FindBlocksAndStatesByOwnerIDAndTeamCode fetches all blocks for an owner with their player states.
+// FindBlocksAndStatesByOwnerIDAndTeamCode fetches all blocks for an owner with their existing player states.
+// Does not create missing states - that's the service layer's responsibility.
 func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 	ctx context.Context,
 	ownerID string,
@@ -276,39 +284,55 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 		return nil, nil, err
 	}
 
-	playerStates := make([]blocks.PlayerState, 0, len(states)+len(foundBlocks))
+	playerStates := make([]blocks.PlayerState, 0, len(states))
 	for _, state := range states {
 		playerStates = append(playerStates, convertModelToPlayerStateData(state))
 	}
 
-	// Populate playerStates with empty states for blocks without a state
-	for _, block := range foundBlocks {
-		found := false
-		for _, state := range playerStates {
-			if state.GetBlockID() == block.GetID() {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if block.RequiresValidation() && teamCode != "" {
-				newState, stateErr := r.stateRepo.NewBlockState(ctx, block.GetID(), teamCode)
-				if stateErr != nil {
-					return nil, nil, stateErr
-				}
-				newState, stateErr = r.stateRepo.Create(ctx, newState)
-				if stateErr != nil {
-					return nil, nil, stateErr
-				}
-				playerStates = append(playerStates, newState)
-			} else {
-				newState, stateErr := r.stateRepo.NewBlockState(ctx, block.GetID(), "")
-				if stateErr != nil {
-					return nil, nil, stateErr
-				}
-				playerStates = append(playerStates, newState)
-			}
-		}
+	return foundBlocks, playerStates, nil
+}
+
+// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks for an owner with specific context and their existing player states.
+// Does not create missing states - that's the service layer's responsibility.
+func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+	ctx context.Context,
+	ownerID string,
+	teamCode string,
+	blockContext blocks.BlockContext,
+) ([]blocks.Block, []blocks.PlayerState, error) {
+	if teamCode == "" {
+		return nil, nil, errors.New("team code must be set")
+	}
+
+	modelBlocks := []models.Block{}
+	states := []models.TeamBlockState{}
+
+	err := r.db.NewSelect().
+		Model(&modelBlocks).
+		Where("owner_id = ? AND context = ?", ownerID, blockContext).
+		Order("ordering ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = r.db.NewSelect().
+		Model(&states).
+		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ? AND context = ?", ownerID, blockContext)).
+		Where("team_code = ?", teamCode).
+		Scan(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	foundBlocks, err := convertModelsToBlocks(modelBlocks)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	playerStates := make([]blocks.PlayerState, 0, len(states))
+	for _, state := range states {
+		playerStates = append(playerStates, convertModelToPlayerStateData(state))
 	}
 
 	return foundBlocks, playerStates, nil

@@ -50,7 +50,6 @@ func (s *BlockService) FindByOwnerIDAndContext(
 	return s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
 }
 
-
 // NewBlockWithOwnerAndContext creates a new block for an owner with specific context.
 func (s *BlockService) NewBlockWithOwnerAndContext(
 	ctx context.Context,
@@ -84,7 +83,6 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 
 	return newBlock, nil
 }
-
 
 // NewBlockState creates a new block state.
 func (s *BlockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
@@ -137,6 +135,7 @@ func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) err
 }
 
 // FindByOwnerIDAndTeamCodeWithState fetches blocks and their states by owner and team code.
+// Creates missing states for blocks that require validation.
 func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 	ctx context.Context,
 	ownerID, teamCode string,
@@ -150,14 +149,98 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 	}
 
 	// Create a map for easier lookup of block states by block ID
-	blockStates := make(map[string]blocks.PlayerState, len(states))
+	blockStates := make(map[string]blocks.PlayerState, len(foundBlocks))
 	for _, state := range states {
 		blockStates[state.GetBlockID()] = state
+	}
+
+	// Populate missing states
+	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, teamCode)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return foundBlocks, blockStates, nil
 }
 
+// FindByOwnerIDAndTeamCodeWithStateAndContext fetches blocks and their states by owner, team code, and context.
+// Creates missing states for blocks that require validation.
+func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
+	ctx context.Context,
+	ownerID, teamCode string,
+	blockContext blocks.BlockContext,
+) ([]blocks.Block, map[string]blocks.PlayerState, error) {
+	if ownerID == "" {
+		return nil, nil, errors.New("ownerID must be set")
+	}
+	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+		ctx,
+		ownerID,
+		teamCode,
+		blockContext,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create a map for easier lookup of block states by block ID
+	blockStates := make(map[string]blocks.PlayerState, len(foundBlocks))
+	for _, state := range states {
+		blockStates[state.GetBlockID()] = state
+	}
+
+	// Populate missing states
+	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, teamCode)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return foundBlocks, blockStates, nil
+}
+
+func (s *BlockService) populateMissingStates(
+	ctx context.Context,
+	blocks blocks.Blocks,
+	existingStates map[string]blocks.PlayerState,
+	teamCode string,
+) (map[string]blocks.PlayerState, error) {
+	// Populate missing states - service layer responsibility
+	for _, block := range blocks {
+		if _, exists := existingStates[block.GetID()]; exists {
+			continue
+		}
+
+		newState, stateErr := s.createStateForBlock(ctx, block, teamCode)
+		if stateErr != nil {
+			return nil, stateErr
+		}
+		existingStates[block.GetID()] = newState
+	}
+	return existingStates, nil
+}
+
+func (s *BlockService) createStateForBlock(
+	ctx context.Context,
+	block blocks.Block,
+	teamCode string,
+) (blocks.PlayerState, error) {
+	// Create new state based on block validation requirements
+	if block.RequiresValidation() && teamCode != "" {
+		// Persist state for validation-required blocks
+		newState, err := s.NewBlockState(ctx, block.GetID(), teamCode)
+		if err != nil {
+			return nil, fmt.Errorf("creating block state for %s: %w", block.GetID(), err)
+		}
+		return newState, nil
+	}
+
+	// Mock state for non-validation blocks
+	newState, err := s.NewMockBlockState(ctx, block.GetID(), "")
+	if err != nil {
+		return nil, fmt.Errorf("creating mock block state for %s: %w", block.GetID(), err)
+	}
+	return newState, nil
+}
 
 func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
 	ctx context.Context,
@@ -174,7 +257,7 @@ func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
 	return s.blockRepo.GetBlockAndStateByBlockIDAndTeamCode(ctx, blockID, teamCode)
 }
 
-// Convert block to model.
+// ConvertBlockToModel converts a block to its model representation.
 func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),

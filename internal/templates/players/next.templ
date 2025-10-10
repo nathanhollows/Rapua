@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v4/blocks"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
@@ -157,6 +158,7 @@ type customContentViewData struct {
 type locationWithBlocks struct {
 	Location models.Location
 	Blocks   []blocks.Block
+	States   map[string]blocks.PlayerState
 }
 
 func prepareCustomContentViewData(data NextParams) customContentViewData {
@@ -172,6 +174,15 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 			}
 		}
 		locationsWithBlocks = append(locationsWithBlocks, lwb)
+	}
+	for i, lwb := range locationsWithBlocks {
+		lwb.States = make(map[string]blocks.PlayerState)
+		for _, block := range lwb.Blocks {
+			if state, ok := data.States[block.GetID()]; ok {
+				lwb.States[block.GetID()] = state
+			}
+		}
+		locationsWithBlocks[i] = lwb
 	}
 	return customContentViewData{
 		Settings:            data.Settings,
@@ -194,7 +205,7 @@ templ showCustom(data customContentViewData) {
 	</div>
 	for i, locWithBlocks := range data.LocationsWithBlocks {
 		if len(data.LocationsWithBlocks) > 1 {
-			<div class="divider mb-5 mt-8">Location { i + 1 }</div>
+			<div class="divider my-12 m-auto w-1/2">{ i + 1 }</div>
 		}
 		if len(locWithBlocks.Blocks) == 0 {
 			<div class="alert alert-success my-3">
@@ -203,11 +214,14 @@ templ showCustom(data customContentViewData) {
 				</span>
 			</div>
 		} else {
-			for _, block := range locWithBlocks.Blocks {
-				if block.GetLocationID() != locWithBlocks.Location.ID {
-					continue
+			<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+				for _, block := range locWithBlocks.Blocks {
+					if block.GetLocationID() != locWithBlocks.Location.ID {
+						continue
+					}
+					@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
 				}
-			}
+			</div>
 		}
 	}
 }

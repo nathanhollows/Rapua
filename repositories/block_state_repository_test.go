@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupBlockStateRepo(t *testing.T) (repositories.BlockStateRepository, db.Transactor, func()) {
@@ -43,12 +44,12 @@ func TestBlockStateRepository(t *testing.T) {
 				return repo.Create(context.Background(), state)
 			},
 			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
 				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -61,12 +62,12 @@ func TestBlockStateRepository(t *testing.T) {
 				return repo.GetByBlockAndTeam(context.Background(), state.GetBlockID(), state.GetPlayerID())
 			},
 			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
 				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -83,14 +84,14 @@ func TestBlockStateRepository(t *testing.T) {
 				return repo.Update(context.Background(), state)
 			},
 			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				updatedState := result.(blocks.PlayerState)
 				assert.True(t, updatedState.IsComplete())
 				assert.Equal(t, 100, updatedState.GetPointsAwarded())
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
 				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -102,17 +103,17 @@ func TestBlockStateRepository(t *testing.T) {
 			action: func(state blocks.PlayerState) (any, error) {
 				return nil, repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
 			},
-			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+			assertion: func(_ any, err error) {
+				require.NoError(t, err)
 			},
-			cleanupFunc: func(state blocks.PlayerState) {},
+			cleanupFunc: func(_ blocks.PlayerState) {},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			state, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			result, err := tt.action(state)
 			tt.assertion(result, err)
 			if tt.cleanupFunc != nil {
@@ -120,6 +121,16 @@ func TestBlockStateRepository(t *testing.T) {
 			}
 		})
 	}
+}
+
+func verifyStatesDeleted(repo repositories.BlockStateRepository, states []blocks.PlayerState) error {
+	for _, s := range states {
+		_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
+		if getErr.Error() != "sql: no rows in result set" {
+			return getErr
+		}
+	}
+	return nil
 }
 
 func TestBlockStateRepository_Bulk(t *testing.T) {
@@ -155,41 +166,35 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 				}
 
 				err = repo.DeleteByBlockID(context.Background(), tx, state[0].GetBlockID())
-				if err == nil {
-					commitErr := tx.Commit()
-					if commitErr != nil {
-						return nil, commitErr
-					}
-				} else {
-					err2 := tx.Rollback()
-					if err2 != nil {
+				if err != nil {
+					if err2 := tx.Rollback(); err2 != nil {
 						return nil, err2
 					}
 					return nil, err
 				}
 
-				// Check that the states have been deleted
-				for _, s := range state {
-					_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
-					if getErr.Error() != "sql: no rows in result set" {
-						return nil, getErr
-					}
+				if commitErr := tx.Commit(); commitErr != nil {
+					return nil, commitErr
+				}
+
+				if verifyErr := verifyStatesDeleted(repo, state); verifyErr != nil {
+					return nil, verifyErr
 				}
 
 				return "deletion verified", nil
 			},
-			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+			assertion: func(_ any, err error) {
+				require.NoError(t, err)
 			},
 			// cleanup is what we're testing
-			cleanupFunc: func(state []blocks.PlayerState) {},
+			cleanupFunc: func(_ []blocks.PlayerState) {},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			state, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			result, err := tt.action(state)
 			tt.assertion(result, err)
 			if tt.cleanupFunc != nil {
@@ -197,6 +202,16 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 			}
 		})
 	}
+}
+
+func verifyStatesDeletedWithCheck(repo repositories.BlockStateRepository, states []blocks.PlayerState) error {
+	for _, s := range states {
+		_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
+		if getErr == nil || !errors.Is(getErr, sql.ErrNoRows) {
+			return errors.New("player state was not deleted")
+		}
+	}
+	return nil
 }
 
 func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
@@ -234,39 +249,33 @@ func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
 
 				err = repo.DeleteByTeamCodes(context.Background(), tx, teamCodes)
 				if err != nil {
-					err2 := tx.Rollback()
-					if err2 != nil {
+					if err2 := tx.Rollback(); err2 != nil {
 						return nil, err2
 					}
 					return nil, err
-				} else {
-					commitErr := tx.Commit()
-					if commitErr != nil {
-						return nil, commitErr
-					}
 				}
 
-				// Check that the states have been deleted
-				for _, s := range state {
-					_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
-					if getErr == nil || !errors.Is(getErr, sql.ErrNoRows) {
-						return nil, errors.New("player state was not deleted")
-					}
+				if commitErr := tx.Commit(); commitErr != nil {
+					return nil, commitErr
+				}
+
+				if verifyErr := verifyStatesDeletedWithCheck(repo, state); verifyErr != nil {
+					return nil, verifyErr
 				}
 
 				return "deletion verified", nil
 			},
-			assertion: func(result any, err error) {
-				assert.NoError(t, err)
+			assertion: func(_ any, err error) {
+				require.NoError(t, err)
 			},
-			cleanupFunc: func(state []blocks.PlayerState) {},
+			cleanupFunc: func(_ []blocks.PlayerState) {},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			state, teamCodes, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			result, err := tt.action(state, teamCodes)
 			tt.assertion(result, err)
 			if tt.cleanupFunc != nil {

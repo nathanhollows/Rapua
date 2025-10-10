@@ -18,13 +18,18 @@ import (
 type BlockService interface {
 	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
 	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
-	// FindByOwnerID fetches all content blocks for an owner
-	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
-	// FindByOwnerIDAndTeamCodeWithState fetches all blocks and their states
-	// for the given owner and team
-	FindByOwnerIDAndTeamCodeWithState(
+	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context
+	FindByOwnerIDAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Blocks, error)
+	// FindByOwnerIDAndTeamCodeWithStateAndContext fetches all blocks and their states
+	// for the given owner, team, and context
+	FindByOwnerIDAndTeamCodeWithStateAndContext(
 		ctx context.Context,
 		ownerID, teamCode string,
+		blockContext blocks.BlockContext,
 	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 }
 
