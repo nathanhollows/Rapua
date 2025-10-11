@@ -453,9 +453,9 @@ func passwordAdmin(settings models.InstanceSettings, block blocks.PasswordBlock)
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID))
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 161, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/password.templ`, Line: 161, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {

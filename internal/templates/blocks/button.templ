@@ -36,7 +36,6 @@ templ buttonAdmin(_ models.InstanceSettings, block blocks.ButtonBlock) {
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup or change from:(#form-%s input) delay:1000ms, change from:(#form-%s select) delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
-		hx-indicator={ fmt.Sprintf("#block-%s .loading", block.ID) }
 	>
 		<div class="grid grid-col-1 md:grid-cols-2 gap-5">
 			@TextInputField(buttonTextInput.SetValue(block.Text))

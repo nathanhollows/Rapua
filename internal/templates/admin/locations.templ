@@ -52,7 +52,6 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			hx-post="/admin/locations/reorder"
 			hx-trigger="end"
 			hx-swap="none"
-			hx-indicator=".htmx-indicator"
 			hx-include="[name='location']"
 			if settings.RouteStrategy == models.RouteStrategyOrdered {
 				class="list rounded-lg shadow sortable"
@@ -163,7 +162,7 @@ templ LocationsIndex(settings models.InstanceSettings, locations []models.Locati
 			for _, location := range locations {
 				<li
 					class="location-item list-row hover:bg-base-200 transition-colors"
-					hx-include="none"
+					hx-include="this"
 					data-order={ fmt.Sprint(location.Order) }
 					data-clues="true"
 					data-marker={ fmt.Sprint(location.Marker.Lat != 0) }
@@ -493,8 +492,6 @@ type EditLocationData struct {
 	NavigationBlocks blocks.Blocks
 }
 
-var deleteModalHandle = templ.NewOnceHandle()
-
 templ deleteBlockModal() {
 	<dialog id="confirm_delete_block" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
@@ -519,35 +516,35 @@ templ deleteBlockModal() {
 		</div>
 	</dialog>
 	<script>
-		// AFter the page has loaded
-		document.addEventListener("DOMContentLoaded", function() {
-			  // Delete block confirmation dialog
-			  function confirmDeleteBlock(event) {
-				modal = document.getElementById("confirm_delete_block");
-				url = "/admin/blocks/" + event.currentTarget.dataset.block;
-				btn = modal.querySelector("button.btn-error")
-				btn.setAttribute("hx-delete", url);
-				btn.setAttribute("hx-swap", "outerHTML");
-				btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
-				modal.showModal();
-				htmx.process(modal);
-			  }
+function attachDeleteBlockHandlers() {
+  // Delete block confirmation dialog
+  function confirmDeleteBlock(event) {
+    const modal = document.getElementById("confirm_delete_block");
+    const url = "/admin/blocks/" + event.currentTarget.dataset.block;
+    const btn = modal.querySelector("button.btn-error");
+    btn.setAttribute("hx-delete", url);
+    btn.setAttribute("hx-swap", "outerHTML");
+    btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
+    modal.showModal();
+    htmx.process(modal);
+  }
 
-			  for (const element of document.querySelectorAll('.block-delete')) {
-				element.addEventListener('click', confirmDeleteBlock);
-			  }
+  // Attach click handlers to delete buttons
+  document.querySelectorAll('.block-delete').forEach(el => {
+    // Avoid double binding
+    if (!el.dataset.listenerAttached) {
+      el.addEventListener('click', confirmDeleteBlock);
+      el.dataset.listenerAttached = "true";
+    }
+  });
+}
 
-			  // Add listener to .blocks for new blocks, (class not id)
-			  elements = document.getElementsByClassName("blocks");
-			  for (const el of elements) {
-				  el.addEventListener("htmx:afterSwap", function (event) {
-					  for (const element of document.querySelectorAll('.block-delete')) {
-						element.addEventListener('click', confirmDeleteBlock);
-					  }
-				  });
-			  }
-		});
-		</script>
+// Run after page load
+document.addEventListener("DOMContentLoaded", attachDeleteBlockHandlers);
+
+// Run after any HTMX content load or swap
+document.body.addEventListener('htmx:load', attachDeleteBlockHandlers);
+</script>
 }
 
 templ EditLocation(data EditLocationData) {
@@ -615,7 +612,7 @@ templ EditLocation(data EditLocationData) {
 			<form
 				id="edit-location"
 				hx-post={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
-				hx-trigger="click, savelocation delay:500ms, keyup changed from:[form=edit-location] delay:500ms"
+				hx-trigger="click, savelocation delay:500ms, keyup from:[form=edit-location] delay:500ms"
 				hx-swap="none"
 			>
 				<button
@@ -659,9 +656,7 @@ templ EditLocation(data EditLocationData) {
 				}
 			</div>
 			<!-- Delete modal -->
-			@deleteModalHandle.Once() {
-				@deleteBlockModal()
-			}
+			@deleteBlockModal()
 			<!-- Clues -->
 			<div class="divider mt-5 mb-10">
 				<div class="dropdown dropdown-center">
