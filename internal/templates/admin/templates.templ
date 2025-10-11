@@ -519,27 +519,6 @@ templ ShareLinkCopyModal(url string) {
 				This link lets anyone preview the template and create a new game from it.
 			</p>
 		</fieldset>
-		<div class="join w-full">
-			<input
-				id="facilitator_link"
-				class="input join-item w-full"
-				value={ url }
-			/>
-			<button
-				class="btn btn-outline join-item"
-				_="on click
-				    set link to #facilitator_link's value
-						writeText(link) on navigator.clipboard
-						set copyText to my innerHTML
-						set my textContent to 'Copied!'
-						wait 1.5s
-						set my innerHTML to copyText
-					"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
-				Copy Link
-			</button>
-		</div>
 		<div class="modal-action">
 			<form method="dialog">
 				<!-- if there is a button in form, it will close the modal -->
