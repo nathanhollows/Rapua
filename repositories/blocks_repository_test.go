@@ -970,6 +970,161 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 	})
 }
 
+func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
+	repo, _, transactor, cleanup := setupBlockRepo(t)
+	defer cleanup()
+
+	t.Run("Sequential ordering for same owner and context", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		ctx := blocks.ContextLocationContent
+
+		// Create 5 blocks for the same owner and context
+		createdBlocks := make([]blocks.Block, 5)
+		for i := range 5 {
+			block, err := repo.Create(
+				context.Background(),
+				blocks.NewMarkdownBlock(blocks.BaseBlock{
+					LocationID: ownerID,
+					Type:       "markdown",
+					Points:     i * 10,
+				}),
+				ownerID,
+				ctx,
+			)
+			require.NoError(t, err)
+			createdBlocks[i] = block
+
+			// Verify ordering matches expected sequence (0, 1, 2, 3, 4)
+			assert.Equal(t, i, block.GetOrder(), "Block %d should have ordering %d", i, i)
+		}
+
+		// Verify ordering is correct when retrieving all blocks
+		foundBlocks, err := repo.FindByOwnerIDAndContext(context.Background(), ownerID, ctx)
+		require.NoError(t, err)
+		assert.Len(t, foundBlocks, 5)
+
+		for i, block := range foundBlocks {
+			assert.Equal(t, i, block.GetOrder(), "Retrieved block at index %d should have ordering %d", i, i)
+			assert.Equal(t, createdBlocks[i].GetID(), block.GetID())
+		}
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(context.Background(), &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(context.Background(), tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("Separate ordering sequences for different contexts", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+
+		// Create 3 blocks for ContextLocationContent
+		contentBlocks := make([]blocks.Block, 3)
+		for i := range 3 {
+			block, err := repo.Create(
+				context.Background(),
+				blocks.NewMarkdownBlock(blocks.BaseBlock{
+					LocationID: ownerID,
+					Type:       "markdown",
+					Points:     10,
+				}),
+				ownerID,
+				blocks.ContextLocationContent,
+			)
+			require.NoError(t, err)
+			contentBlocks[i] = block
+			assert.Equal(t, i, block.GetOrder(), "Content block %d should have ordering %d", i, i)
+		}
+
+		// Create 2 blocks for ContextLocationClues
+		clueBlocks := make([]blocks.Block, 2)
+		for i := range 2 {
+			block, err := repo.Create(
+				context.Background(),
+				blocks.NewClueBlock(blocks.BaseBlock{
+					LocationID: ownerID,
+					Type:       "clue",
+					Points:     5,
+				}),
+				ownerID,
+				blocks.ContextLocationClues,
+			)
+			require.NoError(t, err)
+			clueBlocks[i] = block
+			// Should start from 0 again for different context
+			assert.Equal(t, i, block.GetOrder(), "Clue block %d should have ordering %d", i, i)
+		}
+
+		// Verify ordering is maintained for each context
+		foundContent, err := repo.FindByOwnerIDAndContext(context.Background(), ownerID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+		assert.Len(t, foundContent, 3)
+		for i := range foundContent {
+			assert.Equal(t, i, foundContent[i].GetOrder())
+		}
+
+		foundClues, err := repo.FindByOwnerIDAndContext(context.Background(), ownerID, blocks.ContextLocationClues)
+		require.NoError(t, err)
+		assert.Len(t, foundClues, 2)
+		for i := range foundClues {
+			assert.Equal(t, i, foundClues[i].GetOrder())
+		}
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(context.Background(), &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(context.Background(), tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("Ordering continues after existing blocks", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		ctx := blocks.ContextLocationContent
+
+		// Create 2 initial blocks
+		_, err := repo.Create(
+			context.Background(),
+			blocks.NewMarkdownBlock(blocks.BaseBlock{
+				LocationID: ownerID,
+				Type:       "markdown",
+				Points:     10,
+			}),
+			ownerID,
+			ctx,
+		)
+		require.NoError(t, err)
+
+		_, err = repo.Create(
+			context.Background(),
+			blocks.NewMarkdownBlock(blocks.BaseBlock{
+				LocationID: ownerID,
+				Type:       "markdown",
+				Points:     20,
+			}),
+			ownerID,
+			ctx,
+		)
+		require.NoError(t, err)
+
+		// Create a third block - should get ordering 2
+		thirdBlock, err := repo.Create(
+			context.Background(),
+			blocks.NewMarkdownBlock(blocks.BaseBlock{
+				LocationID: ownerID,
+				Type:       "markdown",
+				Points:     30,
+			}),
+			ownerID,
+			ctx,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, 2, thirdBlock.GetOrder(), "Third block should have ordering 2")
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(context.Background(), &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(context.Background(), tx, ownerID)
+		_ = tx.Commit()
+	})
+}
+
 func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()

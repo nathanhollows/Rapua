@@ -141,7 +141,19 @@ func (r *blockRepository) Create(
 		Points:             block.GetPoints(),
 		ValidationRequired: block.RequiresValidation(),
 	}
-	_, err := r.db.NewInsert().Model(&modelBlock).Exec(ctx)
+
+	count, err := r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		Where("owner_id = ? AND context = ?", ownerID, blockContext).
+		Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	modelBlock.Ordering = count
+
+	// Insert into database
+
+	_, err = r.db.NewInsert().Model(&modelBlock).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
