@@ -265,7 +265,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-indicator=\".loading\" hx-swap=\"innerHTML\">See activity</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-swap=\"innerHTML\">See activity</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

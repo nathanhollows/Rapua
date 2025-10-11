@@ -12,6 +12,7 @@
 - /docs/index
 - /docs/user/blocks/alert
 - /docs/user/blocks/broker
+- /docs/user/blocks/button
 - /docs/user/blocks/checklist
 - /docs/user/blocks/clue
 - /docs/user/blocks/divider
@@ -20,6 +21,7 @@
 - /docs/user/blocks/password
 - /docs/user/blocks/pincode
 - /docs/user/blocks/quiz
+- /docs/user/blocks/random-clue
 - /docs/user/blocks/sorting
 - /docs/user/blocks/text
 - /docs/user/blocks/youtube

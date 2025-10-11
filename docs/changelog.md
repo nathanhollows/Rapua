@@ -6,7 +6,60 @@ order: 100
 
 # Changelog
 
-## 4.3.0 (2025-10-09)
+## 5.0.0 (12-10-2025)
+
+v5.0.0 is a *major* release with big architectural changes to improve security, maintainability, and extensibility.
+
+The most exciting change is the ability to use blocks in multiple contexts, not just on location pages. For example, clues have been replaced with blocks which means all sorts of content can be used as clues, not just text.
+
+### Added
+
+- New [Button Block](/docs/user/blocks/button) that allows admins to add styled buttons to their game.
+- New [Random Clue Block](/docs/user/blocks/random-clue) that shows different players random clues from a set.
+- Block context system allows blocks to be used in multiple settings, not just location pages.
+  - This sets up the foundation for editing the start and end pages for custom rules and messages.
+  - Also sets the foundation for using content blocks as clues.
+  - A registry means developers can now fetch all blocks registered for a certain type of use. Supports multiple contexts per block.
+  - Implemented `GetBlocksForContext()` and `CanBlockBeUsedInContext()` API functions for context-aware block management
+  - All new `admin/blocks` views and handlers support context-aware block management and replace the old routes.
+- Documentation tests now cover mandatory YAML frontmatter for all docs. Files with no yaml or missing `title` or `order` fields will break the docs service.
+- Added `MustCheckOut` field to instance settings table and added migration.
+- CSRF protection using gorilla/csrf middleware with session-based tokens and environment-configurable keys.
+
+### Changed
+
+- **Breaking change:** Removed `CompletionMethods` in favour of a `MustCheckOut` flag. The old field was obsolete with the addition of blocks.
+- **Breaking change:** Removed `GetRegisteredBlocks` from blocks package in favour of context system.
+- **Breaking change:** Renamed `NavigationMethod` and `NavigationMode` to `RouteStrategy` and `NavigationDisplayMode`. The original names were so bad I don't remember which one became which.
+- **Breaking change:** Renamed `LocationID` to `OwnerID` on in `models.Blocks`.
+- **Breaking change:** Updated blocks repository interface to use owner-based methods instead of location-based methods. `Create` method now requires `blocks.BlockContext` parameter.
+- **Breaking change:** Blocks service methods migrated from location-based to owner-based paradigm (`FindByLocationID` → `FindByOwnerID`, `NewBlock` → `NewBlockWithOwnerAndContext`).
+- **Breaking change:** `db.MustOpen()` now requires a `slog.Logger` parameter for structured logging.
+- Checking out now happens via a button at the bottom of the location page, instead of a separate check out qr code/link.
+- Updated notification message if a player tries to check out too early.
+- Cookie settings for easier scanning
+
+### Fixed
+
+- New blocks are always saved in order, fixes [#75](https://github.com/nathanhollows/Rapua/issues/75).
+- Check in view now displays correct icons and long location names no longer look crowded.
+- Check out logic for tracking players at each location no longer triggers twice.
+- [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
+- Minor [Broker block](/docs/user/blocks/broker) style fixes.
+- Minor [Checklist block](/docs/user/blocks/checklist) style fixes.
+- Minor [Sorting block](/docs/user/blocks/sorting) style fixes.
+
+### Removed
+
+- **Breaking change:** `Clues` models, repository, and service, views, and handlers. Fixes [#73](https://github.com/nathanhollows/Rapua/issues/73) by default.
+- **Breaking change:** `Locations.Blocks` relation. Only used in tests, so switched to service calls instead.
+  - Clues are now automatically migrated to [Random Clue Blocks](/docs/user/blocks/random-clue) when the migration is run.
+- **Breaking change:** Legacy blocks repository methods: `FindByLocationID`, `FindBlocksAndStatesByLocationIDAndTeamCode`, `DeleteByLocationID`.
+- **Breaking change:** Legacy blocks service methods: `FindByLocationID`, `NewBlock`, `FindByLocationIDAndTeamCodeWithState`.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.4.0)
+
+## 4.3.0 (2025-09-09)
 
 ### Added
 

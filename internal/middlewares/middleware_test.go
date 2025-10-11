@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// discardWriter implements io.Writer but discards all writes
+// discardWriter implements io.Writer but discards all writes.
 type discardWriter struct{}
 
 func (dw *discardWriter) Write(p []byte) (n int, err error) {
@@ -47,7 +47,7 @@ func TestHtmxOnlyMiddleware(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a request
-			req, err := http.NewRequest("GET", "/test", nil)
+			req, err := http.NewRequest(http.MethodGet, "/test", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

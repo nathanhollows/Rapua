@@ -10,7 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
-// MockAuthService is a mock implementation of AuthenticatedUserGetter
+// MockAuthService is a mock implementation of AuthenticatedUserGetter.
 type MockAuthService struct {
 	user *models.User
 	err  error
@@ -20,7 +20,7 @@ func (m *MockAuthService) GetAuthenticatedUser(r *http.Request) (*models.User, e
 	return m.user, m.err
 }
 
-// Dummy handler to simulate the next handler in the middleware chain
+// Dummy handler to simulate the next handler in the middleware chain.
 func dummyHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

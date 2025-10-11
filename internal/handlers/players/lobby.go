@@ -18,7 +18,7 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 	err = h.teamService.LoadRelations(r.Context(), team)
 	if err != nil {
 		h.logger.Error("loading check ins", "error", err.Error())
-		http.Redirect(w, r, r.Header.Get("referer"), http.StatusFound)
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
 

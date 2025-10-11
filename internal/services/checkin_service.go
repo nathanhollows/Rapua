@@ -92,11 +92,10 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	}
 
 	// Calculate the points to award
-	mustCheckOut := team.Instance.Settings.CompletionMethod == models.CheckInAndOut
 	var pointsForCheckInRecord int
 	var bonusPoints int
 
-	if mustCheckOut {
+	if team.Instance.Settings.MustCheckOut {
 		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
 		if location.Instance.Settings.EnableBonusPoints {
 			// Calculate bonus points based on visit count
@@ -116,7 +115,6 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		// Award bonus points to team immediately
 		team.Points += bonusPoints
 		team.MustCheckOut = location.ID
-
 	} else {
 		// Check-in-only mode: full points awarded immediately
 		if location.Instance.Settings.EnableBonusPoints {
@@ -143,7 +141,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	locationForCheckIn.Points = pointsForCheckInRecord
 
 	// Log the check in with the correct points
-	_, err = s.checkIn(ctx, *team, locationForCheckIn, mustCheckOut, validationRequired)
+	_, err = s.checkIn(ctx, *team, locationForCheckIn, team.Instance.Settings.MustCheckOut, validationRequired)
 	if err != nil {
 		return fmt.Errorf("logging scan: %w", err)
 	}
@@ -215,11 +213,6 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 		return fmt.Errorf("updating team points: %w", err)
 	}
 
-	err = s.locationStatsService.DecrementVisitors(ctx, location)
-	if err != nil {
-		return fmt.Errorf("decrementing visitor stats: %w", err)
-	}
-
 	return nil
 }
 
@@ -244,7 +237,13 @@ func (s *CheckInService) CompleteBlocks(ctx context.Context, teamCode string, lo
 }
 
 // CheckIn logs a check in for a team at a location.
-func (s *CheckInService) checkIn(ctx context.Context, team models.Team, location models.Location, mustCheckOut bool, validationRequired bool) (models.CheckIn, error) {
+func (s *CheckInService) checkIn(
+	ctx context.Context,
+	team models.Team,
+	location models.Location,
+	mustCheckOut bool,
+	validationRequired bool,
+) (models.CheckIn, error) {
 	scan, err := s.checkInRepo.LogCheckIn(ctx, team, location, mustCheckOut, validationRequired)
 	if err != nil {
 		return models.CheckIn{}, fmt.Errorf("logging check in: %w", err)
@@ -253,7 +252,11 @@ func (s *CheckInService) checkIn(ctx context.Context, team models.Team, location
 }
 
 // CheckOut logs a check out for a team at a location.
-func (s *CheckInService) checkOut(ctx context.Context, team *models.Team, location *models.Location) (models.CheckIn, error) {
+func (s *CheckInService) checkOut(
+	ctx context.Context,
+	team *models.Team,
+	location *models.Location,
+) (models.CheckIn, error) {
 	scan, err := s.checkInRepo.LogCheckOut(ctx, team, location)
 	if err != nil {
 		return models.CheckIn{}, fmt.Errorf("checking out: %w", err)
@@ -280,7 +283,11 @@ func (s *CheckInService) checkOut(ctx context.Context, team *models.Team, locati
 	return scan, nil
 }
 
-func (s *CheckInService) ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error) {
+func (s *CheckInService) ValidateAndUpdateBlockState(
+	ctx context.Context,
+	team models.Team,
+	data map[string][]string,
+) (blocks.PlayerState, blocks.Block, error) {
 	blockID := data["block"][0]
 	if blockID == "" {
 		return nil, nil, errors.New("blockID must be set")
@@ -349,7 +356,11 @@ func (s *CheckInService) ValidateAndUpdateBlockState(ctx context.Context, team m
 		}
 
 		// Update the check in all blocks have been completed
-		unfinishedCheckIn, err := s.blockService.CheckValidationRequiredForCheckIn(ctx, block.GetLocationID(), team.Code)
+		unfinishedCheckIn, err := s.blockService.CheckValidationRequiredForCheckIn(
+			ctx,
+			block.GetLocationID(),
+			team.Code,
+		)
 		if err != nil {
 			return nil, nil, fmt.Errorf("checking if validation is required: %w", err)
 		}

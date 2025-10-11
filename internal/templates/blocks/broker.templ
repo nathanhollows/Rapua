@@ -24,10 +24,10 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
 				>
 					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="form-control w-full max-w-xs">
-						<label class="label">
-							<span class="label-text">How many points do you offer?</span>
-						</label>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">
+							How many points do you offer?
+						</legend>
 						<div class="join">
 							<input
 								name="points_bid"
@@ -35,6 +35,7 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 								min="0"
 								placeholder="0"
 								class="input input-warning join-item w-full max-w-xs"
+								value="0"
 								required
 							/>
 							<button
@@ -44,7 +45,7 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 								Make Offer
 							</button>
 						</div>
-					</div>
+					</fieldset>
 				</form>
 			}
 		</div>
@@ -60,18 +61,19 @@ templ brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBl
 		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
 		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			@templ.Raw(stringToMarkdown(block.Prompt))
-			<div class="mt-0 mb-0 divider divider-warning">Information received</div>
 			@brokerPlayerComplete(block, data)
 		</div>
 	</div>
 }
 
 templ brokerPlayerComplete(block blocks.BrokerBlock, data blocks.PlayerState) {
-	<div>
-		<!-- Parse the player data to show the purchased information -->
-		@templ.Raw(stringToMarkdown(getBrokerInfoReceived(data)))
-	</div>
+	@templ.Raw(stringToMarkdown(block.Prompt))
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">
+			You offered { fmt.Sprint(-data.GetPointsAwarded()) } points and received:
+		</legend>
+	</fieldset>
+	@templ.Raw(stringToMarkdown(getBrokerInfoReceived(data)))
 }
 
 // getBrokerInfoReceived extracts the purchased information from broker block player data
@@ -130,7 +132,7 @@ var brokerInformationTierTextarea = TextareaParams{
 templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, resubmit delay:500ms", block.ID) }
 		hx-swap="none"
 		_="

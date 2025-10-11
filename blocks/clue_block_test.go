@@ -122,7 +122,7 @@ func TestClueBlock_UpdateBlockData_InvalidPoints(t *testing.T) {
 	}
 
 	err := block.UpdateBlockData(input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "points must be an integer")
 }
 
@@ -204,8 +204,8 @@ func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 			// Check that player data is updated when clue is revealed
 			if tt.expectedComplete {
 				var playerData clueBlockData
-				err := json.Unmarshal(newState.GetPlayerData(), &playerData)
-				require.NoError(t, err)
+				unmarshalErr := json.Unmarshal(newState.GetPlayerData(), &playerData)
+				require.NoError(t, unmarshalErr)
 				assert.True(t, playerData.IsRevealed)
 			}
 		})
@@ -261,7 +261,7 @@ func TestClueBlock_ValidatePlayerInput_InvalidPlayerData(t *testing.T) {
 	}
 
 	_, err := block.ValidatePlayerInput(initialState, input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse player data")
 }
 
@@ -287,4 +287,3 @@ func TestClueBlock_GetData(t *testing.T) {
 	assert.Equal(t, "Description", unmarshaled.DescriptionText)
 	assert.Equal(t, "Custom Label", unmarshaled.ButtonLabel)
 }
-

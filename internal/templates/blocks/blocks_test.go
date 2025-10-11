@@ -12,7 +12,7 @@ func TestBlocks_MethodsExist(t *testing.T) {
 	instanceSettings := models.InstanceSettings{}
 	// This tests that all blocks have matching views
 	// This does *not* test for correctness of the views
-	for _, block := range blocks.GetRegisteredBlocks() {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 		template := templates.RenderAdminEdit(instanceSettings, block)
 		if template == nil {
 			t.Errorf("Block %s is missing a RenderAdminEdit view", block.GetName())
@@ -30,7 +30,7 @@ func TestBlocks_MethodsExist(t *testing.T) {
 
 		template = templates.RenderPlayerUpdate(instanceSettings, block, nil)
 		if template == nil {
-			t.Errorf("Block %s is missing a RenderPlayerEdit view", block.GetName())
+			t.Errorf("Block %s is missing a RenderPlayerUpdate view", block.GetName())
 		}
 	}
 }

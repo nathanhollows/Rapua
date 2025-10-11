@@ -2,7 +2,7 @@ package services_test
 
 import (
 	"context"
-	"os"
+	"log/slog"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -11,11 +11,23 @@ import (
 	"github.com/uptrace/bun/migrate"
 )
 
+func newTLogger(t *testing.T) *slog.Logger {
+	handler := slog.NewTextHandler(testWriter{t}, nil)
+	return slog.New(handler)
+}
+
+type testWriter struct{ t *testing.T }
+
+func (w testWriter) Write(p []byte) (int, error) {
+	w.t.Logf("%s", p)
+	return len(p), nil
+}
+
 func setupDB(t *testing.T) (*bun.DB, func()) {
 	t.Helper()
-	os.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
-	os.Setenv("DB_TYPE", "sqlite3")
-	db := db.MustOpen()
+	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
+	t.Setenv("DB_TYPE", "sqlite3")
+	db := db.MustOpen(newTLogger(t))
 	ctx := context.Background()
 
 	migrator := migrate.NewMigrator(db, migrations.Migrations)

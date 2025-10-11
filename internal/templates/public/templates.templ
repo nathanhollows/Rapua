@@ -54,7 +54,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<input type="hidden" name="instanceID" value={ fmt.Sprint(link.TemplateID) }/>
 								<select
 									id="pages"
-									class="select select-sm select w-56 md:w-96 mx-auto text-ellipsis"
+									class="select select-sm w-56 md:w-96 mx-auto text-ellipsis"
 									_="
 										on load
 										set :hash to window.location.hash
@@ -265,13 +265,13 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<strong>{ fmt.Sprint(len(link.Template.Locations)) }</strong> locations
 							</li>
 							<li>
-								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.NavigationMode.Description() }>
-									{ link.Template.Settings.NavigationMode.String() }
+								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.RouteStrategy.Description() }>
+									{ link.Template.Settings.RouteStrategy.String() }
 								</span>
 							</li>
 							<li>
-								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.NavigationMethod.Description() }>
-									{ link.Template.Settings.NavigationMethod.String() }
+								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.NavigationDisplayMode.Description() }>
+									{ link.Template.Settings.NavigationDisplayMode.String() }
 								</span>
 							</li>
 							if link.Template.Settings.EnablePoints {

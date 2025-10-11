@@ -10,7 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
 )
 
-// mockAuthChecker is a test implementation of AuthChecker
+// mockAuthChecker is a test implementation of AuthChecker.
 type mockAuthChecker struct {
 	isAuthenticated bool
 }

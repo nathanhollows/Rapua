@@ -2,10 +2,10 @@ package contextkeys
 
 import "context"
 
-// ContextKey defines typed context keys to prevent key collisions
+// ContextKey defines typed context keys to prevent key collisions.
 type ContextKey string
 
-// Predefined context keys for the application
+// Predefined context keys for the application.
 const (
 	UserKey    ContextKey = "user"
 	TeamKey    ContextKey = "team"
@@ -13,12 +13,12 @@ const (
 	StatusKey  ContextKey = "status"
 )
 
-// UserStatus represents the current status of the application
+// UserStatus represents the current status of the application.
 type UserStatus struct {
 	IsAdminLoggedIn bool `json:"is_admin_logged_in"`
 }
 
-// DefaultuserStatus returns a new ApplicationStatus with default (false) values
+// DefaultuserStatus returns a new ApplicationStatus with default (false) values.
 func DefaultuserStatus() UserStatus {
 	return UserStatus{
 		IsAdminLoggedIn: false,
@@ -26,7 +26,7 @@ func DefaultuserStatus() UserStatus {
 }
 
 // GetUserStatus retrieves the application status from the context
-// If no status is found, it returns a default status
+// If no status is found, it returns a default status.
 func GetUserStatus(ctx context.Context) UserStatus {
 	if ctx == nil {
 		return DefaultuserStatus()
@@ -41,7 +41,7 @@ func GetUserStatus(ctx context.Context) UserStatus {
 }
 
 // WithUserStatus adds application status to the context
-// If the provided context is nil, it creates a new context
+// If the provided context is nil, it creates a new context.
 func WithUserStatus(ctx context.Context, status UserStatus) context.Context {
 	if ctx == nil {
 		ctx = context.Background()

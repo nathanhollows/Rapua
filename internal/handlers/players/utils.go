@@ -18,17 +18,29 @@ import (
 type BlockService interface {
 	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
 	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
-	// FindByLocationID fetches all content blocks for a location
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
-	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
-	// for the given location and team
-	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context
+	FindByOwnerIDAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Blocks, error)
+	// FindByOwnerIDAndTeamCodeWithStateAndContext fetches all blocks and their states
+	// for the given owner, team, and context
+	FindByOwnerIDAndTeamCodeWithStateAndContext(
+		ctx context.Context,
+		ownerID, teamCode string,
+		blockContext blocks.BlockContext,
+	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 }
 
 type CheckInService interface {
 	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
 	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
-	ValidateAndUpdateBlockState(ctx context.Context, team models.Team, data map[string][]string) (blocks.PlayerState, blocks.Block, error)
+	ValidateAndUpdateBlockState(
+		ctx context.Context,
+		team models.Team,
+		data map[string][]string,
+	) (blocks.PlayerState, blocks.Block, error)
 }
 
 type InstanceSettingsService interface {
@@ -122,8 +134,8 @@ func (h PlayerHandler) getTeamFromContext(ctx context.Context) (*models.Team, er
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests.
 func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", path)
+	if r.Header.Get("Hx-Request") == "true" {
+		w.Header().Set("Hx-Redirect", path)
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
@@ -136,6 +148,9 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	}
 	session.Values["team"] = teamCode
 	session.Options.Path = "/"
+	session.Options.HttpOnly = true
+	session.Options.SameSite = http.SameSiteLaxMode
+	session.Options.Secure = true
 	err = session.Save(r, w)
 	if err != nil {
 		return fmt.Errorf("saving session: %w", err)
@@ -144,21 +159,13 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	return nil
 }
 
-// invalidateSession invalidates the current session.
-func invalidateSession(r *http.Request, w http.ResponseWriter) error {
-	session, err := sessions.Get(r, "scanscout")
-	if err != nil {
-		return fmt.Errorf("getting session: %w", err)
-	}
-	session.Options.MaxAge = -1
-	err = session.Save(r, w)
-	if err != nil {
-		return fmt.Errorf("saving session: %w", err)
-	}
-	return nil
-}
-
-func (h *PlayerHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
+func (h *PlayerHandler) handleError(
+	w http.ResponseWriter,
+	r *http.Request,
+	logMsg string,
+	flashMsg string,
+	params ...any,
+) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {

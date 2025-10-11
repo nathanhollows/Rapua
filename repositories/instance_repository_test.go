@@ -146,7 +146,7 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 
 			ctx := context.Background()
 			// Create instances for the given user
-			for i := 0; i < tc.count; i++ {
+			for range tc.count {
 				inst := &models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
@@ -213,7 +213,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 
 			ctx := context.Background()
 			// Create instances for the given user
-			for i := 0; i < tc.templateCount; i++ {
+			for range tc.templateCount {
 				inst := &models.Instance{
 					ID:         gofakeit.UUID(),
 					Name:       gofakeit.Word(),
@@ -223,7 +223,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 				err := repo.Create(ctx, inst)
 				assert.NoError(t, err)
 			}
-			for i := 0; i < tc.instanceCount; i++ {
+			for range tc.instanceCount {
 				inst := &models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
@@ -301,8 +301,8 @@ func TestInstanceRepository_Update(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				// Check that it's updated
-				updated, err := repo.GetByID(ctx, inst.ID)
-				assert.NoError(t, err)
+				updated, getErr := repo.GetByID(ctx, inst.ID)
+				assert.NoError(t, getErr)
 				assert.Equal(t, tc.updateName, updated.Name)
 			}
 		})
@@ -416,7 +416,7 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 
 			ctx := context.Background()
 			// Create some instances for this user
-			for i := 0; i < tc.count; i++ {
+			for range tc.count {
 				inst := models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
@@ -494,8 +494,8 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				instances, err := repo.FindByUserID(ctx, tc.instanceID)
-				assert.NoError(t, err)
+				instances, findErr := repo.FindByUserID(ctx, tc.instanceID)
+				assert.NoError(t, findErr)
 				for _, inst := range instances {
 					assert.True(t, inst.IsQuickStartDismissed, "quickstart should be dismissed")
 				}

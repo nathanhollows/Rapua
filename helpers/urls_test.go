@@ -1,8 +1,9 @@
-package helpers
+package helpers_test
 
 import (
-	"os"
 	"testing"
+
+	"github.com/nathanhollows/Rapua/v4/helpers"
 )
 
 func TestURL(t *testing.T) {
@@ -52,8 +53,8 @@ func TestURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set the site URL
-			os.Setenv("SITE_URL", tt.site)
-			got := URL(tt.patterns...)
+			t.Setenv("SITE_URL", tt.site)
+			got := helpers.URL(tt.patterns...)
 			if got != tt.want {
 				t.Errorf("URL() = %v, want %v", got, tt.want)
 			}

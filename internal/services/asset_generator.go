@@ -16,6 +16,11 @@ import (
 	go_qr "github.com/piglig/go-qr"
 )
 
+const (
+	svgFormat string = "svg"
+	pngFormat string = "png"
+)
+
 type PDFPage struct {
 	LocationName string
 	URL          string
@@ -33,7 +38,6 @@ type PDFData struct {
 
 type QRCodeOptions struct {
 	format     string
-	scanType   string
 	foreground string
 	background string
 }
@@ -62,7 +66,6 @@ type AssetGenerator interface {
 	// CreateQRCodeImage creates a QR code image with the given options
 	// Supported options are:
 	// - WithQRFormat(format string), where format is "png" or "svg"
-	// - WithScanType(scanType string), where scanType is "in" or "out"
 	// - WithForeground(color string), where color is a hex color code
 	// - WithBackground(color string), where color is a hex color code
 	CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error)
@@ -92,10 +95,14 @@ func NewAssetGenerator() AssetGenerator {
 	return &assetGenerator{}
 }
 
-func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error) {
+func (s *assetGenerator) CreateQRCodeImage(
+	ctx context.Context,
+	path string,
+	content string,
+	options ...QRCodeOption,
+) (err error) {
 	defaultOptions := &QRCodeOptions{
-		format:     "png",
-		scanType:   "in",
+		format:     pngFormat,
 		foreground: "#000000",
 		background: "#ffffff",
 	}
@@ -106,7 +113,7 @@ func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, con
 	}
 
 	// Validate the options
-	if defaultOptions.format != "png" && defaultOptions.format != "svg" {
+	if defaultOptions.format != pngFormat && defaultOptions.format != svgFormat {
 		return fmt.Errorf("unsupported format: %s", defaultOptions.format)
 	}
 
@@ -116,12 +123,13 @@ func (s *assetGenerator) CreateQRCodeImage(ctx context.Context, path string, con
 	}
 	config := go_qr.NewQrCodeImgConfig(20, 2)
 
-	if defaultOptions.format == "png" {
+	switch defaultOptions.format {
+	case pngFormat:
 		err := qr.PNG(config, path)
 		if err != nil {
 			return err
 		}
-	} else if defaultOptions.format == "svg" {
+	case svgFormat:
 		err := qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
 		if err != nil {
 			return err
@@ -221,7 +229,7 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	pdf.Cell(40, 70, page.LocationName)
 
 	// Add the QR code
-	if page.ImagePath[len(page.ImagePath)-3:] == "png" {
+	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {
 		pdf.Image(page.ImagePath, 50, 90, 110, 110, false, "", 0, "")
 	}
 
@@ -243,12 +251,7 @@ func (s *assetGenerator) GetQRCodePathAndContent(action, id, name, extension str
 	name = strings.Trim(name, " ")
 	re := regexp.MustCompile(`[^\d\p{Latin} -]`)
 	name = re.ReplaceAllString(name, "")
-	if action == "in" {
-		content = content + "/s/" + id
-		path = path + extension + "/" + id + " " + name + "." + extension
-	} else {
-		content = content + "/o/" + id
-		path = path + extension + "/" + id + " " + name + " Check Out." + extension
-	}
+	content = content + "/s/" + id
+	path = path + extension + "/" + id + " " + name + "." + extension
 	return path, content
 }

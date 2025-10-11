@@ -20,7 +20,7 @@ type TemplateService interface {
 	GetShareLink(ctx context.Context, id string) (*models.ShareLink, error)
 }
 
-// IdentityService handles all authentication operations
+// IdentityService handles all authentication operations.
 type IdentityService interface {
 	// Core authentication
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
@@ -74,7 +74,13 @@ func NewPublicHandler(
 	}
 }
 
-func (h *PublicHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
+func (h *PublicHandler) handleError(
+	w http.ResponseWriter,
+	r *http.Request,
+	logMsg string,
+	flashMsg string,
+	params ...interface{},
+) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
@@ -92,7 +98,7 @@ func (h *PublicHandler) redirect(w http.ResponseWriter, r *http.Request, path st
 	http.Redirect(w, r, path, http.StatusFound)
 }
 
-// GetIdentityService returns the identity service for use in middleware
+// GetIdentityService returns the identity service for use in middleware.
 func (h *PublicHandler) GetIdentityService() IdentityService {
 	return h.identityService
 }

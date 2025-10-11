@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/gorilla/csrf"
 	"github.com/nathanhollows/Rapua/v4/filesystem"
 	admin "github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
@@ -15,18 +16,43 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
 )
 
+const (
+	compressLevel = 5
+	csrfKeyLength = 32
+)
+
 func setupRouter(
 	logger *slog.Logger,
 	publicHandler *public.PublicHandler,
 	playerHandler *players.PlayerHandler,
-	adminHandler *admin.AdminHandler,
+	adminHandler *admin.Handler,
 ) *chi.Mux {
+	// Get CSRF key from environment
+	csrfKey := os.Getenv("CSRF_KEY")
+	if csrfKey == "" {
+		logger.Warn("CSRF_KEY not set, using default key - CHANGE IN PRODUCTION")
+		csrfKey = "temp-32-byte-long-auth-key-here"
+	}
+	if len(csrfKey) != csrfKeyLength {
+		logger.Warn("CSRF_KEY should be exactly 32 bytes", "length", len(csrfKey))
+	}
+
+	// CSRF protection middleware
+	CSRF := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(os.Getenv("IS_PROD") == "1"), // Use secure cookies in production
+		csrf.CookieName("csrf"),
+		csrf.FieldName("csrf"),
+		csrf.Path("/"),
+	)
+
 	router := chi.NewRouter()
 
-	router.Use(middleware.Compress(5))
+	router.Use(middleware.Compress(compressLevel))
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
+	router.Use(CSRF)
 
 	setupPublicRoutes(router, publicHandler)
 	setupPlayerRoutes(router, playerHandler)
@@ -58,9 +84,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the next available locations
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+			)
 		})
 		r.Get("/", playerHandler.Next)
 		r.Post("/", playerHandler.Next)
@@ -68,9 +97,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+			)
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
@@ -78,9 +110,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+			)
 		})
 		r.Get("/", playerHandler.Lobby)
 		r.Post("/team-name", playerHandler.SetTeamName)
@@ -117,9 +152,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(playerHandler.GetTeamService(), playerHandler.GetInstanceSettingsService(),
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)))
+					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+			)
 		})
 		r.Get("/", playerHandler.MyCheckins)
 		r.Get("/{id}", playerHandler.CheckInView)
@@ -175,7 +213,7 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.NotFound(publicHandler.NotFound)
 }
 
-func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
+func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.AdminAuthMiddleware(adminHandler.GetIdentityService(), next)
@@ -207,18 +245,18 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
 			r.Get("/poster/{id}.pdf", adminHandler.GeneratePoster)
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
-			// Blocks
-			r.Route("/{location}/blocks", func(r chi.Router) {
-				// r.Get("/", adminHandler.Blocks)
-				// r.Post("/", adminHandler.BlocksPost)
-				r.Post("/reorder", adminHandler.ReorderBlocks)
-				r.Post("/new/{type}", adminHandler.BlockNewPost)
-				r.Get("/{blockID}/edit", adminHandler.BlockEdit)
-				r.Post("/{blockID}/update", adminHandler.BlockEditPost)
-				r.Delete("/{blockID}/delete", adminHandler.BlockDelete)
-			})
 		})
 
+		// RESTful blocks API
+		r.Route("/blocks", func(r chi.Router) {
+			// Primary RESTful endpoints
+			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
+			r.Get("/", adminHandler.BlockList)            // GET /admin/blocks?owner=uuid&context=ctx
+			r.Get("/{id}", adminHandler.BlockGet)         // GET /admin/blocks/{id}
+			r.Put("/{id}", adminHandler.BlockUpdate)      // PUT /admin/blocks/{id}
+			r.Delete("/{id}", adminHandler.BlockDelete)   // DELETE /admin/blocks/{id}
+			r.Post("/reorder", adminHandler.BlockReorder) // POST /admin/blocks/reorder
+		})
 		r.Route("/teams", func(r chi.Router) {
 			r.Get("/", adminHandler.Teams)
 			r.Post("/add", adminHandler.TeamsAdd)
@@ -296,7 +334,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
 	})
 }
 
-func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.AdminHandler) {
+func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/facilitator", func(r chi.Router) {
 		r.Get("/login/{token}", adminHandler.FacilitatorLogin)
 		r.Get("/dashboard", adminHandler.FacilitatorDashboard)

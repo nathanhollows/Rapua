@@ -11,23 +11,21 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
-// getTemplateByID retrieves a template by ID from various sources (param, form, direct).
-func (h *AdminHandler) getTemplateByID(w http.ResponseWriter, r *http.Request, idOverride ...string) (*models.Instance, bool) {
+// getTemplateByID retrieves a template by ID from various sources (param, form).
+func (h *Handler) getTemplateByID(
+	w http.ResponseWriter,
+	r *http.Request,
+) (*models.Instance, bool) {
 	var id string
 
-	// Check if an explicit ID was passed
-	if len(idOverride) > 0 && idOverride[0] != "" {
-		id = idOverride[0]
-	} else {
-		// Check form value (for POST requests)
-		if err := r.ParseForm(); err == nil {
-			id = r.Form.Get("id")
-		}
+	// Check form value (for POST requests)
+	if err := r.ParseForm(); err == nil {
+		id = r.Form.Get("id")
+	}
 
-		// Fallback to URL param if not found in form
-		if id == "" {
-			id = chi.URLParam(r, "id")
-		}
+	// Fallback to URL param if not found in form
+	if id == "" {
+		id = chi.URLParam(r, "id")
 	}
 
 	if id == "" {
@@ -45,7 +43,7 @@ func (h *AdminHandler) getTemplateByID(w http.ResponseWriter, r *http.Request, i
 }
 
 // TemplatesCreate creates a new template, which is a type of instance.
-func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -67,7 +65,16 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 
 	_, err := h.templateService.CreateFromInstance(r.Context(), user.ID, id, name)
 	if err != nil {
-		h.handleError(w, r, "TemplateCreate: creating instance", "Error creating instance", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"TemplateCreate: creating instance",
+			"Error creating instance",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -83,12 +90,21 @@ func (h *AdminHandler) TemplatesCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	err = templates.Templates(gameTemplates).Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"Instances: rendering template",
+			"Error rendering template",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 	}
 }
 
 // TemplatesLaunch launches an instance from a template.
-func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -114,7 +130,16 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 	// Create a new instance from the template
 	newGame, err := h.templateService.LaunchInstance(r.Context(), user.ID, id, name, regen)
 	if err != nil {
-		h.handleError(w, r, "TemplatesLaunch: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
+		h.handleError(
+			w,
+			r,
+			"TemplatesLaunch: creating instance",
+			"Error creating instance",
+			"error",
+			err,
+			"user_id",
+			user.ID,
+		)
 		return
 	}
 
@@ -129,7 +154,7 @@ func (h *AdminHandler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 }
 
 // TemplatesLaunchFromLink launches an instance from a share link.
-func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	if err := r.ParseForm(); err != nil {
 		h.handleError(w, r, "TemplatesLaunchFromLink: parsing form", "Error parsing form", "error", err)
@@ -164,7 +189,16 @@ func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Re
 	// Create a new instance from the template
 	newGame, err := h.templateService.LaunchInstanceFromShareLink(r.Context(), user.ID, linkID, name, regen)
 	if err != nil {
-		h.handleError(w, r, "TemplatesLaunchFromLink: creating instance", "Error creating instance", "error", err, "user_id", user.ID)
+		h.handleError(
+			w,
+			r,
+			"TemplatesLaunchFromLink: creating instance",
+			"Error creating instance",
+			"error",
+			err,
+			"user_id",
+			user.ID,
+		)
 		return
 	}
 
@@ -179,7 +213,7 @@ func (h *AdminHandler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Re
 }
 
 // TemplatesDelete deletes a template.
-func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -195,13 +229,31 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 
 	template, err := h.templateService.GetByID(r.Context(), id)
 	if err != nil {
-		h.handleError(w, r, "TemplateDelete: getting template", "Error getting template", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"TemplateDelete: getting template",
+			"Error getting template",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
 	err = h.deleteService.DeleteInstance(r.Context(), user.ID, template.ID)
 	if err != nil {
-		h.handleError(w, r, "InstanceDelete: deleting instance", "Error deleting instance", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"InstanceDelete: deleting instance",
+			"Error deleting instance",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 	} else {
 		err = templates.Toast(*flash.NewSuccess("Template deleted")).Render(r.Context(), w)
 		if err != nil {
@@ -216,14 +268,23 @@ func (h *AdminHandler) TemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	err = templates.Templates(gameTemplates).Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "Instances: rendering template", "Error rendering template", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"Instances: rendering template",
+			"Error rendering template",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 	}
 }
 
 // Fragments //
 
 // TemplatesName retrieves the name of a template.
-func (h *AdminHandler) TemplatesName(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesName(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -236,8 +297,8 @@ func (h *AdminHandler) TemplatesName(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TemplatesName shows the form to edit the name of a template.
-func (h *AdminHandler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request) {
+// TemplatesNameEdit shows the form to edit the name of a template.
+func (h *Handler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -251,7 +312,7 @@ func (h *AdminHandler) TemplatesNameEdit(w http.ResponseWriter, r *http.Request)
 }
 
 // TemplatesNameEditPost updates the name of a template.
-func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Fetch template, considering form data or URL param
@@ -261,7 +322,16 @@ func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "TemplateNameEditPost: parsing form", "Error parsing form", "error", err, "user_id", user.ID)
+		h.handleError(
+			w,
+			r,
+			"TemplateNameEditPost: parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"user_id",
+			user.ID,
+		)
 		_ = templates.TemplateNameEdit(*template).Render(r.Context(), w)
 		return
 	}
@@ -287,7 +357,7 @@ func (h *AdminHandler) TemplatesNameEditPost(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (h *AdminHandler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	template, ok := h.getTemplateByID(w, r)
 	if !ok {
@@ -295,11 +365,20 @@ func (h *AdminHandler) TemplatesShare(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := templates.TemplateShareModal(*template).Render(r.Context(), w); err != nil {
-		h.handleError(w, r, "TemplateShare: rendering template", "Error rendering template", "error", err, "user_id", user.ID)
+		h.handleError(
+			w,
+			r,
+			"TemplateShare: rendering template",
+			"Error rendering template",
+			"error",
+			err,
+			"user_id",
+			user.ID,
+		)
 	}
 }
 
-func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TemplatesSharePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -313,7 +392,16 @@ func (h *AdminHandler) TemplatesSharePost(w http.ResponseWriter, r *http.Request
 		var err error
 		uses, err = strconv.Atoi(usesStr)
 		if err != nil {
-			h.handleError(w, r, "TemplateSharePost: parsing uses", "Error parsing uses", "error", err, "user_id", user.ID)
+			h.handleError(
+				w,
+				r,
+				"TemplateSharePost: parsing uses",
+				"Error parsing uses",
+				"error",
+				err,
+				"user_id",
+				user.ID,
+			)
 			return
 		}
 	}

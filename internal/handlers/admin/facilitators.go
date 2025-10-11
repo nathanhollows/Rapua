@@ -12,8 +12,14 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
+const (
+	hoursPerDay  = 24
+	daysPerWeek  = 7
+	daysPerMonth = 30
+)
+
 // FacilitatorShowModal renders the modal for creating a facilitator token.
-func (h *AdminHandler) FacilitatorShowModal(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacilitatorShowModal(w http.ResponseWriter, r *http.Request) {
 	err := templates.FacilitatorLinkModal().Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "rendering template", "Error rendering template", "error", err)
@@ -21,7 +27,7 @@ func (h *AdminHandler) FacilitatorShowModal(w http.ResponseWriter, r *http.Reque
 }
 
 // FacilitatorCreateTokenLink creates a new one-click login link for a facilitators.
-func (h *AdminHandler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -35,13 +41,13 @@ func (h *AdminHandler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http
 	case "hour":
 		duration = time.Hour
 	case "day":
-		duration = 24 * time.Hour
+		duration = hoursPerDay * time.Hour
 	case "week":
-		duration = 7 * 24 * time.Hour
+		duration = daysPerWeek * hoursPerDay * time.Hour
 	case "month":
-		duration = 30 * 24 * time.Hour
+		duration = daysPerMonth * hoursPerDay * time.Hour
 	default:
-		duration = 24 * time.Hour
+		duration = hoursPerDay * time.Hour
 	}
 
 	var locations []string
@@ -66,7 +72,7 @@ func (h *AdminHandler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http
 const facilitatorSessionCookie = "rapua_facilitator"
 
 // FacilitatorLogin accepts a token and creates a session cookie.
-func (h *AdminHandler) FacilitatorLogin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacilitatorLogin(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 	if token == "" {
 		http.Error(w, "Missing token", http.StatusBadRequest)
@@ -95,10 +101,15 @@ func (h *AdminHandler) FacilitatorLogin(w http.ResponseWriter, r *http.Request) 
 }
 
 // FacilitatorDashboard renders the facilitator dashboard.
-func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 	token, err := r.Cookie(facilitatorSessionCookie)
 	if err != nil {
-		h.handleError(w, r, "facilitator session expired", "Your session has expired. Please ask for another login link.")
+		h.handleError(
+			w,
+			r,
+			"facilitator session expired",
+			"Your session has expired. Please ask for another login link.",
+		)
 		h.redirect(w, r, "/")
 		return
 	}
@@ -116,19 +127,7 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var filteredLocations []models.Location
-	if len(facToken.Locations) == 0 {
-		filteredLocations = locations
-	} else {
-		for _, loc := range facToken.Locations {
-			for _, l := range locations {
-				if l.ID == loc {
-					filteredLocations = append(filteredLocations, l)
-					break
-				}
-			}
-		}
-	}
+	filteredLocations := h.filterLocationsForToken(locations, facToken)
 
 	// Team activity overview
 	overview, err := h.teamService.GetTeamActivityOverview(r.Context(), facToken.InstanceID, filteredLocations)
@@ -137,47 +136,31 @@ func (h *AdminHandler) FacilitatorDashboard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Create a single simple struct that passes []:
-	// - Number of visited teams
-	// - Number of teams currently visiting
-	// - Average time spent (where applicable)
-	// Is addressable by location name
-	type LocationOverview struct {
-		VisitedTeams     int
-		VisitingTeams    int
-		AverageTimeSpent float64
-	}
-
-	locs := make(map[string]LocationOverview)
-	for _, loc := range filteredLocations {
-		visited := 0
-		visiting := 0
-		averageTime := 0.0
-		locs[loc.Name] = LocationOverview{VisitedTeams: visited, VisitingTeams: visiting, AverageTimeSpent: averageTime}
-	}
-	for _, team := range overview {
-		for _, loc := range team.Locations {
-			if loc.Visited {
-				locs[loc.Location.Name] = LocationOverview{
-					VisitedTeams:     locs[loc.Location.Name].VisitedTeams + 1,
-					VisitingTeams:    locs[loc.Location.Name].VisitingTeams,
-					AverageTimeSpent: locs[loc.Location.Name].AverageTimeSpent + loc.Duration,
-				}
-			}
-			if loc.Visiting {
-				locs[loc.Location.Name] = LocationOverview{
-					VisitedTeams:     locs[loc.Location.Name].VisitedTeams,
-					VisitingTeams:    locs[loc.Location.Name].VisitingTeams + 1,
-					AverageTimeSpent: locs[loc.Location.Name].AverageTimeSpent,
-				}
-			}
-		}
-	}
-
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	c := templates.FacilitatorDashboard(locations, overview)
 	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("Activity: rendering template", "error", err)
 	}
+}
+
+// filterLocationsForToken filters locations based on the facilitator token permissions.
+func (h *Handler) filterLocationsForToken(
+	locations []models.Location,
+	token *models.FacilitatorToken,
+) []models.Location {
+	if len(token.Locations) == 0 {
+		return locations
+	}
+
+	var filtered []models.Location
+	for _, allowedID := range token.Locations {
+		for _, loc := range locations {
+			if loc.ID == allowedID {
+				filtered = append(filtered, loc)
+				break
+			}
+		}
+	}
+	return filtered
 }

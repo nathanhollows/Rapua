@@ -79,12 +79,12 @@ func (b *ImageBlock) parseURL(input map[string][]string) (string, error) {
 	return parsedURL.String(), nil
 }
 
-// Validation and Points Calculation.
+// RequiresValidation returns whether this block requires player input validation.
 func (b *ImageBlock) RequiresValidation() bool {
 	return false
 }
 
-func (b *ImageBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *ImageBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation required for ImageBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil

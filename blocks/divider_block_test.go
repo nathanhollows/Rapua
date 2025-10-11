@@ -37,7 +37,7 @@ func TestDividerBlock_ParseData(t *testing.T) {
 
 	err := block.ParseData()
 	require.NoError(t, err)
-	assert.Equal(t, "", block.Title)
+	assert.Empty(t, block.Title)
 }
 
 func TestDividerBlock_UpdateBlockData(t *testing.T) {

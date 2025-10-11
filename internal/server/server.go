@@ -17,6 +17,13 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/handlers/public"
 )
 
+const (
+	writeTimeout    = 2 * time.Minute
+	readTimeout     = 1 * time.Minute
+	readHeadTimeout = 10 * time.Second
+	shutdownTimeout = 5 * time.Second
+)
+
 var router *chi.Mux
 var server *http.Server
 
@@ -24,7 +31,7 @@ func Start(
 	logger *slog.Logger,
 	publicHandler *public.PublicHandler,
 	playerHandler *players.PlayerHandler,
-	adminHandler *admin.AdminHandler,
+	adminHandler *admin.Handler,
 ) {
 	router = setupRouter(logger, publicHandler, playerHandler, adminHandler)
 
@@ -35,9 +42,9 @@ func Start(
 	server = &http.Server{
 		Addr:              os.Getenv("SERVER_ADDR"),
 		Handler:           router,
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       1 * time.Minute,
-		WriteTimeout:      2 * time.Minute,
+		ReadHeaderTimeout: readHeadTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
 	}
 
 	go func() {
@@ -53,15 +60,15 @@ func Start(
 	logger.Info("Server started", "addr", os.Getenv("SERVER_ADDR"))
 	<-killSig
 
-	slog.Info("Shutting down server")
+	logger.Info("Shutting down server")
 
 	// Create a context with a timeout for the shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	// Shutdown the server
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server shutdown failed", "error", err)
+		logger.Error("Server shutdown failed", "error", err)
 	}
 
 	logger.Info("Server shutdown complete")

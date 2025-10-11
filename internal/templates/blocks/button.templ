@@ -1,0 +1,77 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v4/models"
+)
+
+templ buttonPlayer(_ models.InstanceSettings, block blocks.ButtonBlock) {
+	if block.Link != "" && block.Text != "" {
+		<div class="text-center">
+			<a
+				href={ templ.SafeURL(block.Link) }
+				class={ fmt.Sprintf("btn btn-%s", block.Variant) }
+				target="_blank"
+			>
+				<span>
+					{ block.Text }
+				</span>
+			</a>
+		</div>
+	}
+}
+
+var buttonTextInput = TextInputParams{
+	Name:         "text",
+	Title:        "Button Text",
+	Placeholder:  "Click here",
+	Required:     true,
+	ExtraClasses: "w-full",
+}
+
+templ buttonAdmin(_ models.InstanceSettings, block blocks.ButtonBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup or change from:(#form-%s input) delay:1000ms, change from:(#form-%s select) delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		<div class="grid grid-col-1 md:grid-cols-2 gap-5">
+			@TextInputField(buttonTextInput.SetValue(block.Text))
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Style</legend>
+				<select
+					id={ fmt.Sprintf("variant-%s", block.ID) }
+					name="variant"
+					class="select w-full"
+				>
+					for variant, label := range block.GetVariants() {
+						<option
+							value={ variant }
+							if block.Variant == variant {
+								selected
+							}
+						>{ label }</option>
+					}
+				</select>
+			</fieldset>
+		</div>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">URL</legend>
+			<label class="input validator w-full">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link-icon lucide-link w-4 h-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+				<input
+					type="url"
+					name="link"
+					required
+					placeholder="https://"
+					value={ block.Link }
+					pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9\-].*[a-zA-Z0-9])?\.)+[a-zA-Z].*$"
+					title="Must be valid URL"
+				/>
+			</label>
+			<p class="validator-hint">Must be valid URL</p>
+		</fieldset>
+	</form>
+}

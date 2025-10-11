@@ -6,11 +6,12 @@ import (
 
 	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Test that each registered block can be created from a base block.
 func TestCreateFromBaseBlock(t *testing.T) {
-	for _, block := range blocks.GetRegisteredBlocks() {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
 			baseBlock := blocks.BaseBlock{
 				ID:         "1",
@@ -22,7 +23,7 @@ func TestCreateFromBaseBlock(t *testing.T) {
 			}
 
 			newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.IsType(t, block, newBlock)
 			assert.Equal(t, block.GetType(), newBlock.GetType())
 			assert.Equal(t, "1", newBlock.GetID())
@@ -43,7 +44,7 @@ func TestCreateFromBaseBlockUnknownType(t *testing.T) {
 	}
 
 	newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, newBlock)
 }
 
@@ -54,7 +55,7 @@ func TestBlockUniqueness(t *testing.T) {
 	icons := make(map[string]bool)
 	descriptions := make(map[string]bool)
 
-	for _, block := range blocks.GetRegisteredBlocks() {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 		t.Run("block uniqueness", func(t *testing.T) {
 			assert.False(t, types[block.GetType()], "duplicate type: "+block.GetType())
 			types[block.GetType()] = true

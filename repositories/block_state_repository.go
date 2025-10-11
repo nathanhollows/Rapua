@@ -24,7 +24,7 @@ type BlockStateRepository interface {
 	Update(ctx context.Context, block blocks.PlayerState) (blocks.PlayerState, error)
 
 	// Delete deletes a player state by block ID and team code
-	Delete(ctx context.Context, block_id string, team_code string) error
+	Delete(ctx context.Context, blockID string, teamCode string) error
 	// DeleteByBlockID deletes all player states for a block
 	// Requires a transaction as this implies a cascade delete
 	DeleteByBlockID(ctx context.Context, tx *bun.Tx, blockID string) error
@@ -106,7 +106,11 @@ func convertPlayerStateToModelData(state blocks.PlayerState) models.TeamBlockSta
 }
 
 // GetByBlockAndTeam fetches a specific team block state for a block and team.
-func (r *blockStateRepository) GetByBlockAndTeam(ctx context.Context, blockID string, teamCode string) (blocks.PlayerState, error) {
+func (r *blockStateRepository) GetByBlockAndTeam(
+	ctx context.Context,
+	blockID string,
+	teamCode string,
+) (blocks.PlayerState, error) {
 	var modelState models.TeamBlockState
 	err := r.db.NewSelect().
 		Model(&modelState).
@@ -155,7 +159,10 @@ func (r *blockStateRepository) Update(ctx context.Context, state blocks.PlayerSt
 }
 
 // NewBlockState creates a new block state.
-func (r *blockStateRepository) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (r *blockStateRepository) NewBlockState(
+	_ context.Context,
+	blockID, teamCode string,
+) (blocks.PlayerState, error) {
 	state := &PlayerStateData{
 		blockID:       blockID,
 		playerID:      teamCode,
@@ -167,11 +174,11 @@ func (r *blockStateRepository) NewBlockState(ctx context.Context, blockID, teamC
 }
 
 // Delete removes a team block state from the database by its ID.
-func (r *blockStateRepository) Delete(ctx context.Context, block_id string, team_code string) error {
+func (r *blockStateRepository) Delete(ctx context.Context, blockID string, teamCode string) error {
 	_, err := r.db.NewDelete().
 		Model(&models.TeamBlockState{}).
-		Where("block_id = ?", block_id).
-		Where("team_code = ?", team_code).
+		Where("block_id = ?", blockID).
+		Where("team_code = ?", teamCode).
 		Exec(ctx)
 	if err != nil {
 		return err

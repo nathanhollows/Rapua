@@ -25,7 +25,11 @@ func NewNotificationService(
 }
 
 // SendNotification sends a notification to a team.
-func (s *NotificationService) SendNotification(ctx context.Context, teamCode string, content string) (models.Notification, error) {
+func (s *NotificationService) SendNotification(
+	ctx context.Context,
+	teamCode string,
+	content string,
+) (models.Notification, error) {
 	notification := models.Notification{
 		TeamCode: teamCode,
 		Content:  content,

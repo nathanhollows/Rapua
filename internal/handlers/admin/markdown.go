@@ -9,7 +9,7 @@ import (
 )
 
 // PreviewMarkdown takes markdown from a form and renders it for htmx.
-func (h *AdminHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var m map[string]string
 	err := decoder.Decode(&m)
@@ -18,9 +18,16 @@ func (h *AdminHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	md, err := helpers.MarkdownToHTML(m["markdown"])
+	md, err := helpers.MarkdownToHTML(m["markdown"], h.logger)
 	if err != nil {
-		h.handleError(w, r, "markdown preview: converting string to markdown", "Error converting markdown", "error", err)
+		h.handleError(
+			w,
+			r,
+			"markdown preview: converting string to markdown",
+			"Error converting markdown",
+			"error",
+			err,
+		)
 		return
 	}
 

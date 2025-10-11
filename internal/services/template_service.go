@@ -34,7 +34,10 @@ func NewTemplateService(
 }
 
 // CreateFromInstance creates a new template from an existing instance.
-func (s *TemplateService) CreateFromInstance(ctx context.Context, userID, instanceID, name string) (*models.Instance, error) {
+func (s *TemplateService) CreateFromInstance(
+	ctx context.Context,
+	userID, instanceID, name string,
+) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
@@ -103,7 +106,11 @@ func (s *TemplateService) CreateFromInstance(ctx context.Context, userID, instan
 }
 
 // LaunchInstance creates a new instance from a template.
-func (s *TemplateService) LaunchInstance(ctx context.Context, userID, templateID, name string, regen_location_codes bool) (*models.Instance, error) {
+func (s *TemplateService) LaunchInstance(
+	ctx context.Context,
+	userID, templateID, name string,
+	regen_location_codes bool,
+) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
@@ -158,7 +165,12 @@ func (s *TemplateService) LaunchInstance(ctx context.Context, userID, templateID
 }
 
 // LaunchInstanceFromShareLink creates a new instance from a share link.
-func (s *TemplateService) LaunchInstanceFromShareLink(ctx context.Context, userID, shareLinkID string, name string, regen bool) (*models.Instance, error) {
+func (s *TemplateService) LaunchInstanceFromShareLink(
+	ctx context.Context,
+	userID, shareLinkID string,
+	name string,
+	regen bool,
+) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}

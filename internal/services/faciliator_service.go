@@ -32,7 +32,12 @@ func (s *FacilitatorService) generateToken() string {
 }
 
 // CreateFacilitatorToken generates and stores a facilitator access token.
-func (s *FacilitatorService) CreateFacilitatorToken(ctx context.Context, instanceID string, locations []string, duration time.Duration) (string, error) {
+func (s *FacilitatorService) CreateFacilitatorToken(
+	ctx context.Context,
+	instanceID string,
+	locations []string,
+	duration time.Duration,
+) (string, error) {
 	token := s.generateToken()
 	expiry := time.Now().Add(duration)
 

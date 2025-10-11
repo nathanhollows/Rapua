@@ -6,12 +6,12 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
 )
 
-// Interface for IsUserAuthenticated
+// Interface for IsUserAuthenticated.
 type AuthChecker interface {
 	IsUserAuthenticated(r *http.Request) bool
 }
 
-// AuthStatusMiddleware determines and sets application-wide status
+// AuthStatusMiddleware determines and sets application-wide status.
 func AuthStatusMiddleware(authService AuthChecker, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status := contextkeys.UserStatus{

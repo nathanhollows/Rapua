@@ -7,15 +7,25 @@ import (
 	"github.com/nathanhollows/Rapua/v4/helpers"
 	"github.com/nathanhollows/Rapua/v4/internal/flash"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v4/models"
 )
 
 // StartGame starts the game immediately.
-func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) StartGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := h.gameScheduleService.Start(r.Context(), &user.CurrentInstance)
 	if err != nil {
-		h.handleError(w, r, "starting game", "Error starting game", "Could not start game", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"starting game",
+			"Error starting game",
+			"Could not start game",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -27,12 +37,21 @@ func (h *AdminHandler) StartGame(w http.ResponseWriter, r *http.Request) {
 }
 
 // StopGame stops the game immediately.
-func (h *AdminHandler) StopGame(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) StopGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := h.gameScheduleService.Stop(r.Context(), &user.CurrentInstance)
 	if err != nil {
-		h.handleError(w, r, "stopping game", "Error stopping game", "Could not stop game", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"stopping game",
+			"Error stopping game",
+			"Could not stop game",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -43,8 +62,8 @@ func (h *AdminHandler) StopGame(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ScheduleGame schedules the game to start and/or end at a specific time.
-func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
+// ScheduleGame schedules the game to start and/or end at specified times.
+func (h *Handler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -53,48 +72,97 @@ func (h *AdminHandler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var sTime, eTime time.Time
-	if r.Form.Get("set_start") != "" {
-		startDate := r.Form.Get("utc_start_date")
-		startTime := r.Form.Get("utc_start_time")
-		if startDate == "" || startTime == "" {
-			h.handleError(w, r, "ScheduleGame: missing start date or time", "Error parsing start date and time", "Start date and time are required", nil, "instance_id", user.CurrentInstanceID)
-			return
-		}
-		sTime, err = helpers.ParseDateTime(startDate, startTime)
-		if err != nil {
-			h.handleError(w, r, "ScheduleGame: parsing start date and time", "Error parsing start date and time", "Could not parse date and time", err, "instance_id", user.CurrentInstanceID)
-			return
-		}
+	sTime, ok := h.parseScheduleTime(w, r, user, "start", "set_start", "utc_start_date", "utc_start_time")
+	if !ok {
+		return
 	}
 
-	if r.Form.Get("set_end") != "" {
-		endDate := r.Form.Get("utc_end_date")
-		endTime := r.Form.Get("utc_end_time")
-		if endDate == "" || endTime == "" {
-			h.handleError(w, r, "ScheduleGame: missing end date or time", "Error parsing end date and time", "End date and time are required", nil, "instance_id", user.CurrentInstanceID)
-			return
-		}
-		eTime, err = helpers.ParseDateTime(endDate, endTime)
-		if err != nil {
-			h.handleError(w, r, "ScheduleGame: parsing end date and time", "Error parsing end date and time", "Could not parse date and time", err, "instance_id", user.CurrentInstanceID)
-			return
-		}
+	eTime, ok := h.parseScheduleTime(w, r, user, "end", "set_end", "utc_end_date", "utc_end_time")
+	if !ok {
+		return
 	}
 
 	if sTime.After(eTime) && !eTime.IsZero() {
-		h.handleError(w, r, "ScheduleGame: start time after end time", "Error scheduling game", "Start time must be before end time", nil, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"ScheduleGame: start time after end time",
+			"Error scheduling game",
+			"Start time must be before end time",
+			nil,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
 	err = h.gameScheduleService.ScheduleGame(r.Context(), &user.CurrentInstance, sTime, eTime)
 	if err != nil {
-		h.handleError(w, r, "ScheduleGame: scheduling game", "Error scheduling game", "Could not schedule game", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"ScheduleGame: scheduling game",
+			"Error scheduling game",
+			"Could not schedule game",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
-	err = templates.GameScheduleStatus(user.CurrentInstance, *flash.NewSuccess("Schedule updated!")).Render(r.Context(), w)
+	err = templates.GameScheduleStatus(user.CurrentInstance, *flash.NewSuccess("Schedule updated!")).
+		Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("ScheduleGame: rendering template", "error", err)
 	}
+}
+
+// parseScheduleTime parses and validates a schedule time from form values.
+func (h *Handler) parseScheduleTime(
+	w http.ResponseWriter,
+	r *http.Request,
+	user *models.User,
+	timeType string,
+	setFlag string,
+	dateParam string,
+	timeParam string,
+) (time.Time, bool) {
+	if r.Form.Get(setFlag) == "" {
+		return time.Time{}, true
+	}
+
+	date := r.Form.Get(dateParam)
+	timeValue := r.Form.Get(timeParam)
+
+	if date == "" || timeValue == "" {
+		h.handleError(
+			w,
+			r,
+			"ScheduleGame: missing "+timeType+" date or time",
+			"Error parsing "+timeType+" date and time",
+			timeType+" date and time are required",
+			nil,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return time.Time{}, false
+	}
+
+	parsedTime, err := helpers.ParseDateTime(date, timeValue)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"ScheduleGame: parsing "+timeType+" date and time",
+			"Error parsing "+timeType+" date and time",
+			"Could not parse date and time",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return time.Time{}, false
+	}
+
+	return parsedTime, true
 }

@@ -79,8 +79,6 @@ func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.In
 		Model(instance).
 		Where("id = ?", id).
 		Relation("Locations").
-		Relation("Locations.Blocks").
-		Relation("Locations.Clues").
 		Relation("Settings").
 		Relation("ShareLinks").
 		Scan(ctx)
@@ -118,12 +116,6 @@ func (r *instanceRepository) FindTemplates(ctx context.Context, userID string) (
 func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) error {
 	// Delete instance
 	_, err := tx.NewDelete().Model(&models.Instance{}).Where("id = ?", id).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Delete Clues
-	_, err = tx.NewDelete().Model(&models.Clue{}).Where("instance_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}

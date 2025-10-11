@@ -16,7 +16,7 @@ templ youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) {
 
 templ youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) {
 	<form
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("submit, keyup change from:#url-%s delay:500ms", block.ID) }
 		hx-swap="none"
 	>

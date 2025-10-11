@@ -1,6 +1,10 @@
-package helpers
+package helpers_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/nathanhollows/Rapua/v4/helpers"
+)
 
 func TestNewCode(t *testing.T) {
 	tests := []struct {
@@ -18,7 +22,7 @@ func TestNewCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code := NewCode(tt.length)
+			code := helpers.NewCode(tt.length)
 			if len(code) != tt.length {
 				t.Errorf("NewCode() = %v, want %v", len(code), tt.length)
 			}

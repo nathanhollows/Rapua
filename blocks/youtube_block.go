@@ -1,11 +1,13 @@
 package blocks
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type YoutubeBlock struct {
@@ -42,19 +44,31 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 	if u, exists := input["URL"]; exists && len(u) > 0 {
 		u[0] = strings.TrimSpace(u[0])
 		// Regex: https://stackoverflow.com/a/6904504
-		_, err := regexp.MatchString(`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})`, u[0])
+		_, err := regexp.MatchString(
+			`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})`,
+			u[0],
+		)
 		if err != nil {
 			return errors.New("URL is not valid")
 		}
 
 		// Confirm URL is valid
+		const validationTimeout = 5 * time.Second
 		checkURL := "https://www.youtube.com/oembed?format=json&url=" + u[0]
-		resp, err := http.Get(checkURL)
+		ctx, cancel := context.WithTimeout(context.Background(), validationTimeout)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, checkURL, nil)
+		if err != nil {
+			return errors.New("URL is not valid")
+		}
+
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return errors.New("URL is not valid")
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK {
 			return errors.New("URL is not valid")
 		}
 
@@ -72,7 +86,7 @@ func (b *YoutubeBlock) RequiresValidation() bool {
 	return false
 }
 
-func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string) (PlayerState, error) {
 	// No validation required for YoutubeBlock; mark as complete
 	state.SetComplete(true)
 	return state, nil

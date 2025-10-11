@@ -105,7 +105,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<li>settings</li>
 			</ul>
 			<p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p>
-			<form method="post" action="/admin/instances/duplicate">
+			<form hx-post="/admin/instances/duplicate">
 				<input type="hidden" name="id" value=""/>
 				<fieldset class="fieldset not-prose">
 					<legend class="fieldset-legend">New game name</legend>

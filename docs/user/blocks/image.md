@@ -1,7 +1,7 @@
 ---
 title: "Image Block"
 sidebar: true
-order: 6
+order: 7
 ---
 
 # Image Block

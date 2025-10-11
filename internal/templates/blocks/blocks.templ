@@ -47,6 +47,12 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonAdmin(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomClueAdmin(settings, *b)
 	}
 	return nil
 }
@@ -92,6 +98,12 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonPlayer(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomCluePlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -137,6 +149,12 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)
+	case "button":
+		b := block.(*blocks.ButtonBlock)
+		return buttonPlayer(settings, *b)
+	case "random_clue":
+		b := block.(*blocks.RandomClueBlock)
+		return randomCluePlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -189,10 +207,11 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-up-btn"
 						data-tip="Move up"
 						onclick="moveblock(event, 'up')"
-						hx-post={ fmt.Sprint("/admin/locations/", block.GetLocationID(), "/blocks/reorder") }
+						hx-post={ fmt.Sprint("/admin/blocks/reorder") }
+						hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
 						hx-trigger="click delay:400ms"
 						hx-swap="none"
-						hx-include="[name=block_id]"
+						hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
 						:disabled="{ block.IsFirst() }"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-up w-3 h-3"><path d="M8 6L12 2L16 6"></path><path d="M12 2V22"></path></svg>
@@ -202,10 +221,11 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-down-btn"
 						data-tip="Move down"
 						onclick="moveblock(event, 'down')"
-						hx-post={ fmt.Sprint("/admin/locations/", block.GetLocationID(), "/blocks/reorder") }
+						hx-post={ fmt.Sprint("/admin/blocks/reorder") }
+						hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
 						hx-trigger="click delay:400ms"
 						hx-swap="none"
-						hx-include="[name=block_id]"
+						hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-down w-3 h-3"><path d="M8 18L12 22L16 18"></path><path d="M12 2V22"></path></svg>
 					</button>

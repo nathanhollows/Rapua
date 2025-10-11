@@ -31,7 +31,7 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 	// Create some check-ins
 	instanceID := gofakeit.UUID()
 	var teams []models.Team
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		team := models.Team{
 			Code:       strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4)),
 			InstanceID: instanceID,
@@ -78,8 +78,8 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 
 	// Check that the check-ins have been deleted
 	for _, team := range teams {
-		checkins, err := repo.FindCheckInByTeamAndLocation(ctx, team.Code, location.ID)
-		assert.ErrorIs(t, err, sql.ErrNoRows, "expected no check-ins to be found")
+		checkins, findErr := repo.FindCheckInByTeamAndLocation(ctx, team.Code, location.ID)
+		assert.ErrorIs(t, findErr, sql.ErrNoRows, "expected no check-ins to be found")
 		assert.Empty(t, checkins, "expected no check-ins to be found")
 	}
 }

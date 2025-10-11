@@ -7,7 +7,7 @@ import (
 )
 
 // Quickstart shows the quickstart bar.
-func (h *AdminHandler) Quickstart(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Quickstart(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.QuickstartBar(user.CurrentInstance).Render(r.Context(), w)
@@ -17,7 +17,7 @@ func (h *AdminHandler) Quickstart(w http.ResponseWriter, r *http.Request) {
 }
 
 // DismissQuickstart dismisses the quickstart.
-func (h *AdminHandler) DismissQuickstart(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DismissQuickstart(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := h.quickstartService.DismissQuickstart(r.Context(), user.CurrentInstanceID)

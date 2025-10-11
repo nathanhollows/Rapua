@@ -403,7 +403,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 	}
 }
 
-// Integration tests
+// Integration tests.
 func TestGameScheduleService_Integration_CompleteWorkflow(t *testing.T) {
 	svc, cleanup := setupGameScheduleService(t)
 	defer cleanup()
@@ -505,4 +505,3 @@ func TestGameScheduleService_Integration_EdgeCases(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, equalTime.Unix(), instance.EndTime.Time.Unix())
 }
-

@@ -108,7 +108,7 @@ templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data 
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			// Render question
 			@templ.Raw(stringToMarkdown(block.Question))
-			if !data.IsComplete() || (block.RetryEnabled && data.IsComplete()) {
+			if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
 				<form
 					id={ fmt.Sprintf("quiz-form-%s", block.ID) }
 					hx-post="/blocks/validate"
@@ -266,7 +266,7 @@ var quizQuestionTextarea = TextareaParams{
 templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>

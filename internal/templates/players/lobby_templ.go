@@ -248,8 +248,8 @@ func instructions(instance models.InstanceSettings) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		switch instance.NavigationMode.String() {
-		case "Random":
+		switch instance.RouteStrategy {
+		case models.RouteStrategyRandom:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<li>You will be shown <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -267,7 +267,7 @@ func instructions(instance models.InstanceSettings) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if instance.NavigationMethod.String() == "Show Clues" {
+			if instance.NavigationDisplayMode == models.NavigationDisplayClues {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<li>Solve <strong>a clue</strong> to find the next location.</li><li>Each clue is for a <strong>different</strong> location.</li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -282,12 +282,12 @@ func instructions(instance models.InstanceSettings) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case "Free Roam":
+		case models.RouteStrategyFreeRoam:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<li>Follow the locations in any order.</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if instance.NavigationMethod.String() == "Show Clues" {
+			if instance.NavigationDisplayMode == models.NavigationDisplayClues {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<li>Solve a clue to find the next location.</li><li>Each clue is for a <em>different</em> location.</li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

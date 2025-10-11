@@ -355,7 +355,6 @@ templ teamItem(team models.Team, classes string) {
 					hx-get={ fmt.Sprintf("/admin/activity/team/%s", team.Code) }
 					hx-target="#team_modal .modal-box"
 					hx-trigger="click"
-					hx-indicator=".loading"
 					hx-swap="innerHTML"
 				>
 					See activity

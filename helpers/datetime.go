@@ -17,7 +17,16 @@ func ParseDateTime(dateString, timeString string) (time.Time, error) {
 	}
 
 	// Combine date and time
-	return time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.UTC().Location()), nil
+	return time.Date(
+		d.Year(),
+		d.Month(),
+		d.Day(),
+		t.Hour(),
+		t.Minute(),
+		t.Second(),
+		t.Nanosecond(),
+		t.UTC().Location(),
+	), nil
 }
 
 // ParseDate parses a date from a string.
@@ -33,11 +42,18 @@ func ParseDate(date string) (time.Time, error) {
 
 // ParseTime parses a time from a string.
 func ParseTime(timeString string) (time.Time, error) {
+	const (
+		shortTimeLen   = 2
+		mediumTimeLen  = 5
+		secondsSuffix  = ":00"
+		fullTimeSuffix = ":00:00"
+	)
+
 	switch len(timeString) {
-	case 5:
-		timeString += ":00"
-	case 2:
-		timeString += ":00:00"
+	case mediumTimeLen:
+		timeString += secondsSuffix
+	case shortTimeLen:
+		timeString += fullTimeSuffix
 	}
 
 	// Parse time

@@ -22,7 +22,10 @@ type NavigationService struct {
 }
 
 // NewNavigationService creates a new instance of NavigationService.
-func NewNavigationService(locationRepo repositories.LocationRepository, teamRepo repositories.TeamRepository) *NavigationService {
+func NewNavigationService(
+	locationRepo repositories.LocationRepository,
+	teamRepo repositories.TeamRepository,
+) *NavigationService {
 	return &NavigationService{
 		locationRepo: locationRepo,
 		teamRepo:     teamRepo,
@@ -191,12 +194,12 @@ func (s *NavigationService) determineNextLocations(ctx context.Context, team *mo
 	}
 
 	// Determine the next locations based on the navigation mode
-	switch team.Instance.Settings.NavigationMode {
-	case models.OrderedNav:
+	switch team.Instance.Settings.RouteStrategy {
+	case models.RouteStrategyOrdered:
 		return s.getOrderedLocations(ctx, team)
-	case models.RandomNav:
+	case models.RouteStrategyRandom:
 		return s.getRandomLocations(ctx, team)
-	case models.FreeRoamNav:
+	case models.RouteStrategyFreeRoam:
 		return s.getFreeRoamLocations(ctx, team)
 	}
 

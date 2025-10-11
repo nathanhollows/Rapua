@@ -23,8 +23,13 @@ type AccessService interface {
 }
 
 type BlockService interface {
-	// NewBlock creates a new content block of the specified type for the given location
-	NewBlock(ctx context.Context, locationID string, blockType string) (blocks.Block, error)
+	// NewBlockWithOwnerAndContext creates a new content block for the given owner and context
+	NewBlockWithOwnerAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+		blockType string,
+	) (blocks.Block, error)
 	// NewBlockState creates a new player state for the given block and team
 	NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
 	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
@@ -34,12 +39,24 @@ type BlockService interface {
 	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
 	// GetBlockWithStateByBlockIDAndTeamCode fetches a block + its state
 	// for the given block ID and team
-	GetBlockWithStateByBlockIDAndTeamCode(ctx context.Context, blockID, teamCode string) (blocks.Block, blocks.PlayerState, error)
-	// FindByLocationID fetches all content blocks for a location
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
-	// FindByLocationIDAndTeamCodeWithState fetches all blocks and their states
-	// for the given location and team
-	FindByLocationIDAndTeamCodeWithState(ctx context.Context, locationID, teamCode string) ([]blocks.Block, map[string]blocks.PlayerState, error)
+	GetBlockWithStateByBlockIDAndTeamCode(
+		ctx context.Context,
+		blockID, teamCode string,
+	) (blocks.Block, blocks.PlayerState, error)
+	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context
+	FindByOwnerIDAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Blocks, error)
+	// FindByOwnerID fetches all content blocks for an owner
+	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
+	// FindByOwnerIDAndTeamCodeWithState fetches all blocks and their states
+	// for the given owner and team
+	FindByOwnerIDAndTeamCodeWithState(
+		ctx context.Context,
+		ownerID, teamCode string,
+	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
@@ -54,10 +71,6 @@ type BlockService interface {
 	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
 }
 
-type ClueService interface {
-	UpdateClues(ctx context.Context, location *models.Location, clues []string, clueIDs []string) error
-}
-
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteInstance(ctx context.Context, userID, instanceID string) error
@@ -68,7 +81,12 @@ type DeleteService interface {
 }
 
 type FacilitatorService interface {
-	CreateFacilitatorToken(ctx context.Context, instanceID string, locations []string, duration time.Duration) (string, error)
+	CreateFacilitatorToken(
+		ctx context.Context,
+		instanceID string,
+		locations []string,
+		duration time.Duration,
+	) (string, error)
 	ValidateToken(ctx context.Context, token string) (*models.FacilitatorToken, error)
 	CleanupExpiredTokens(ctx context.Context) error
 }
@@ -121,7 +139,11 @@ type TeamService interface {
 	// GetTeamByCode returns a team by code
 	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
 	// GetTeamActivityOverview returns a list of teams and their activity
-	GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]services.TeamActivity, error)
+	GetTeamActivityOverview(
+		ctx context.Context,
+		instanceID string,
+		locations []models.Location,
+	) ([]services.TeamActivity, error)
 
 	// LoadRelation loads relations for a team
 	LoadRelation(ctx context.Context, team *models.Team, relation string) error
@@ -130,7 +152,12 @@ type TeamService interface {
 }
 
 type UploadService interface {
-	UploadFile(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, data services.UploadMetadata) (*models.Upload, error)
+	UploadFile(
+		ctx context.Context,
+		file multipart.File,
+		fileHeader *multipart.FileHeader,
+		data services.UploadMetadata,
+	) (*models.Upload, error)
 	Search(ctx context.Context, filters map[string]string) ([]*models.Upload, error)
 }
 
@@ -149,16 +176,23 @@ type UserService interface {
 
 type LeaderBoardService interface {
 	// GetLeaderBoardData returns sorted and ranked leaderboard data
-	GetLeaderBoardData(ctx context.Context, teams []models.Team, locationCount int, rankingScheme string, sortField string, sortOrder string) ([]services.LeaderBoardTeamData, error)
+	GetLeaderBoardData(
+		ctx context.Context,
+		teams []models.Team,
+		locationCount int,
+		rankingScheme string,
+		sortField string,
+		sortOrder string,
+	) ([]services.LeaderBoardTeamData, error)
 }
 
-type AdminHandler struct {
+// Handler provides admin functionality for managing game instances.
+type Handler struct {
 	logger                  *slog.Logger
 	accessService           AccessService
 	assetGenerator          services.AssetGenerator
 	identityService         IdentityService
 	blockService            BlockService
-	clueService             ClueService
 	deleteService           DeleteService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
@@ -182,8 +216,7 @@ func NewAdminHandler(
 	assetGenerator services.AssetGenerator,
 	identityService IdentityService,
 	blockService BlockService,
-	clueService ClueService,
-	DeleteService DeleteService,
+	deleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
 	instanceService services.InstanceService,
@@ -198,15 +231,14 @@ func NewAdminHandler(
 	userService UserService,
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
-) *AdminHandler {
-	return &AdminHandler{
+) *Handler {
+	return &Handler{
 		logger:                  logger,
 		accessService:           accessService,
 		assetGenerator:          assetGenerator,
 		identityService:         identityService,
 		blockService:            blockService,
-		clueService:             clueService,
-		deleteService:           DeleteService,
+		deleteService:           deleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
 		instanceService:         instanceService,
@@ -225,17 +257,27 @@ func NewAdminHandler(
 }
 
 // GetIdentityService returns the IdentityService used by the handler.
-func (h *AdminHandler) GetIdentityService() IdentityService {
+func (h *Handler) GetIdentityService() IdentityService {
 	return h.identityService
 }
 
-// GetUserFromContext retrieves the user from the context.
-// User will always be in the context because the middleware.
-func (h AdminHandler) UserFromContext(ctx context.Context) *models.User {
-	return ctx.Value(contextkeys.UserKey).(*models.User)
+// UserFromContext retrieves the user from the context.
+// User will always be in the context because of the middleware.
+func (h *Handler) UserFromContext(ctx context.Context) *models.User {
+	user, ok := ctx.Value(contextkeys.UserKey).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
-func (h *AdminHandler) handleError(w http.ResponseWriter, r *http.Request, logMsg string, flashMsg string, params ...interface{}) {
+func (h *Handler) handleError(
+	w http.ResponseWriter,
+	r *http.Request,
+	logMsg string,
+	flashMsg string,
+	params ...any,
+) {
 	h.logger.Error(logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
@@ -243,7 +285,7 @@ func (h *AdminHandler) handleError(w http.ResponseWriter, r *http.Request, logMs
 	}
 }
 
-func (h *AdminHandler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {
+func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {
 	err := templates.Toast(*flash.NewSuccess(flashMsg)).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering success template", "error", err)
@@ -252,9 +294,9 @@ func (h *AdminHandler) handleSuccess(w http.ResponseWriter, r *http.Request, fla
 
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests and redirects the user to the referer.
-func (h AdminHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", path)
+func (h *Handler) redirect(w http.ResponseWriter, r *http.Request, path string) {
+	if r.Header.Get("Hx-Request") == "true" {
+		w.Header().Set("Hx-Redirect", path)
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)

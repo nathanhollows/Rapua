@@ -7,7 +7,7 @@ import (
 )
 
 func stringToMarkdown(s string) template.HTML {
-	md, err := helpers.MarkdownToHTML(s)
+	md, err := helpers.MarkdownToHTML(s, nil)
 	if err != nil {
 		return template.HTML(err.Error())
 	}

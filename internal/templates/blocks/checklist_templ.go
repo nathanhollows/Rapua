@@ -252,14 +252,14 @@ func checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBloc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update"))
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/blocks/", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 83, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 83, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -292,7 +292,7 @@ func checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBloc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"form-control w-full\"><div class=\"label font-bold flex justify-between\">Checklist Items <button class=\"btn btn-outline btn-sm my-2\" type=\"button\" onclick=\"addChecklistItem(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add Item</button></div><div id=\"checklist-items\" class=\"checklist-admin flex flex-col join join-vertical bg-base-100 w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend justify-start w-full\">Checklist Items <button class=\"btn btn-outline btn-sm my-2 ml-auto\" type=\"button\" onclick=\"addChecklistItem(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-plus w-5 h-5\"><path d=\"M11 12H3\"></path><path d=\"M16 6H3\"></path><path d=\"M16 18H3\"></path><path d=\"M18 9v6\"></path><path d=\"M21 12h-6\"></path></svg> Add Item</button></legend><div id=\"checklist-items\" class=\"checklist-admin flex flex-col join join-vertical bg-base-100 w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -308,7 +308,7 @@ func checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBloc
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div></div></form><script>\n\n\tfunction addChecklistItem(event) {\n\t\tevent.preventDefault();\n\t\tconst checklistContainer = document.getElementById('checklist-items');\n\t\tconst newItem = document.createElement('label');\n\t\tnewItem.classList.add('checklist-item', 'input', 'bg-base-100', 'flex', 'flex-row', 'items-top', 'gap-2', 'h-auto', 'join-item');\n\n    newItem.innerHTML = `\n        <textarea\n            name=\"checklist-items\"\n            class=\"w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent\"\n            rows=\"1\"\n            placeholder=\"Checklist item description...\"\n            autoComplete=\"off\"\n        ></textarea>\n        <input type=\"hidden\" name=\"checklist-item-ids\" value=\"\" />\n        <div class=\"flex gap-1 mt-2\">\n            <span class=\"join join-horizontal\">\n                <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move up\" onclick=\"moveChecklistItemUp(event)\">\n                    <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg>\n                </button>\n                <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move down\" onclick=\"moveChecklistItemDown(event)\">\n                    <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg>\n                </button>\n            </span>\n            <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex\" data-tip=\"Delete\" onclick=\"removeChecklistItem(event)\">\n                <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg>\n            </button>\n        </div>\n    `;\n    checklistContainer.appendChild(newItem);\n}\n\nfunction removeChecklistItem(event) {\n\tevent.preventDefault();\n\tconst item = event.target.closest('.checklist-item');\n\titem.remove();\n}\n\nfunction moveChecklistItemUp(event) {\n    event.preventDefault();\n    const item = event.target.closest('.checklist-item');\n    const previousItem = item.previousElementSibling;\n    if (previousItem && previousItem.classList.contains('checklist-item')) {\n        item.parentNode.insertBefore(item, previousItem);\n    }\n}\n\nfunction moveChecklistItemDown(event) {\n    event.preventDefault();\n    const item = event.target.closest('.checklist-item');\n    const nextItem = item.nextElementSibling;\n    if (nextItem && nextItem.classList.contains('checklist-item')) {\n        item.parentNode.insertBefore(nextItem, item);\n    }\n}\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div></fieldset></form><script>\n\n\tfunction addChecklistItem(event) {\n\t\tevent.preventDefault();\n\t\tconst checklistContainer = document.getElementById('checklist-items');\n\t\tconst newItem = document.createElement('label');\n\t\tnewItem.classList.add('w-full', 'checklist-item', 'input', 'bg-transparent', 'flex', 'flex-row', 'items-start', 'gap-2', 'h-auto', 'join-item');\n\n    newItem.innerHTML = `\n        <textarea\n            name=\"checklist-items\"\n            class=\"w-full textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent\"\n            rows=\"1\"\n            placeholder=\"Checklist item description...\"\n            autoComplete=\"off\"\n        ></textarea>\n        <input type=\"hidden\" name=\"checklist-item-ids\" value=\"\" />\n        <div class=\"flex gap-1 mt-2\">\n\t\t\t<button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move up\" onclick=\"moveChecklistItemUp(event)\">\n\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg>\n\n\t\t\t</button>\n\t\t\t<button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move down\" onclick=\"moveChecklistItemDown(event)\">\n\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg>\n\t\t\t</button>\n            <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex\" data-tip=\"Delete\" onclick=\"removeChecklistItem(event)\">\n                <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg>\n            </button>\n        </div>\n    `;\n    checklistContainer.appendChild(newItem);\n}\n\nfunction removeChecklistItem(event) {\n\tevent.preventDefault();\n\tconst item = event.target.closest('.checklist-item');\n\titem.remove();\n}\n\nfunction moveChecklistItemUp(event) {\n    event.preventDefault();\n    const item = event.target.closest('.checklist-item');\n    const previousItem = item.previousElementSibling;\n    if (previousItem && previousItem.classList.contains('checklist-item')) {\n        item.parentNode.insertBefore(item, previousItem);\n    }\n}\n\nfunction moveChecklistItemDown(event) {\n    event.preventDefault();\n    const item = event.target.closest('.checklist-item');\n    const nextItem = item.nextElementSibling;\n    if (nextItem && nextItem.classList.contains('checklist-item')) {\n        item.parentNode.insertBefore(nextItem, item);\n    }\n}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -344,7 +344,7 @@ func checklistItem(item blocks.ChecklistItem) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 173, Col: 130}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 172, Col: 130}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -379,7 +379,7 @@ func checklistItem(item blocks.ChecklistItem) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 179, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 178, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -392,7 +392,7 @@ func checklistItem(item blocks.ChecklistItem) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 183, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 182, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -405,7 +405,7 @@ func checklistItem(item blocks.ChecklistItem) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 188, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 187, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {

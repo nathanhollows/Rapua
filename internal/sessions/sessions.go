@@ -26,6 +26,7 @@ func Start() {
 	authStore.Options.SameSite = http.SameSiteLaxMode
 	authStore.Options.HttpOnly = true
 	authStore.Options.Secure = true
+	//nolint:reassign
 	gothic.Store = authStore
 	goth.UseProviders(
 		google.New(
@@ -62,7 +63,7 @@ func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
 
 	session.Values["team"] = team.Code
 	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
+	session.Options.SameSite = http.SameSiteLaxMode
 
 	return session, nil
 }
@@ -76,7 +77,7 @@ func NewFromUser(r *http.Request, user models.User) (*sessions.Session, error) {
 
 	session.Values["user_id"] = user.ID
 	session.Options.Secure = true
-	session.Options.SameSite = http.SameSiteStrictMode
+	session.Options.SameSite = http.SameSiteLaxMode
 
 	return session, nil
 }

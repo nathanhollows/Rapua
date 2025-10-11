@@ -12,6 +12,10 @@ import (
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
+const (
+	teamCodeLength = 4
+)
+
 type TeamService struct {
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
@@ -67,11 +71,11 @@ func (s *TeamService) AddTeams(ctx context.Context, instanceID string, count int
 		size := min(s.batchSize, count-i)
 		teams := make([]models.Team, 0, size)
 
-		for j := 0; j < size; j++ {
+		for range size {
 			var team models.Team
 			for {
 				// TODO: Remove magic number
-				code := helpers.NewCode(4)
+				code := helpers.NewCode(teamCodeLength)
 				team = models.Team{
 					Code:       code,
 					InstanceID: instanceID,
@@ -112,7 +116,11 @@ func (s *TeamService) GetTeamByCode(ctx context.Context, code string) (*models.T
 }
 
 // GetTeamActivityOverview returns a list of teams and their activity.
-func (s *TeamService) GetTeamActivityOverview(ctx context.Context, instanceID string, locations []models.Location) ([]TeamActivity, error) {
+func (s *TeamService) GetTeamActivityOverview(
+	ctx context.Context,
+	instanceID string,
+	locations []models.Location,
+) ([]TeamActivity, error) {
 	teams, err := s.teamRepo.FindAll(ctx, instanceID)
 	if err != nil {
 		return nil, err

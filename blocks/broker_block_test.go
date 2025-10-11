@@ -70,12 +70,12 @@ func TestBrokerBlock_UpdateBlockData(t *testing.T) {
 
 	err := block.UpdateBlockData(input)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 0, block.Points) // Broker blocks always have 0 completion bonus
 	assert.Equal(t, "Merchant greeting", block.Prompt)
 	assert.Equal(t, "Basic response", block.DefaultInfo)
 	assert.Len(t, block.InformationTiers, 2)
-	
+
 	// Verify tiers are sorted by points
 	assert.Equal(t, 10, block.InformationTiers[0].PointsRequired)
 	assert.Equal(t, "First tier info", block.InformationTiers[0].Content)
@@ -86,13 +86,13 @@ func TestBrokerBlock_UpdateBlockData(t *testing.T) {
 func TestBrokerBlock_UpdateBlockData_IgnoresNegativeTiers(t *testing.T) {
 	block := BrokerBlock{}
 	input := map[string][]string{
-		"tier_points":  {"0", "-5", "10"},   // First two should be ignored
+		"tier_points":  {"0", "-5", "10"}, // First two should be ignored
 		"tier_content": {"Zero tier", "Negative tier", "Valid tier"},
 	}
 
 	err := block.UpdateBlockData(input)
 	require.NoError(t, err)
-	
+
 	// Should only have the valid tier
 	assert.Len(t, block.InformationTiers, 1)
 	assert.Equal(t, 10, block.InformationTiers[0].PointsRequired)
@@ -109,28 +109,28 @@ func TestBrokerBlock_ValidatePlayerInput(t *testing.T) {
 		name                string
 		block               BrokerBlock
 		pointsBid           string
-		expectedPoints      int  // What they should be charged (negative = deducted)
+		expectedPoints      int // What they should be charged (negative = deducted)
 		expectedComplete    bool
 		expectedInfoContent string
 	}{
 		{
 			name: "zero points gets default info",
 			block: BrokerBlock{
-				BaseBlock: BaseBlock{Points: 0}, // No completion bonus
+				BaseBlock:   BaseBlock{Points: 0}, // No completion bonus
 				DefaultInfo: "Basic info",
 				InformationTiers: []InformationTier{
 					{PointsRequired: 10, Content: "Premium info"},
 				},
 			},
 			pointsBid:           "0",
-			expectedPoints:      0,  // No points charged or awarded
+			expectedPoints:      0, // No points charged or awarded
 			expectedComplete:    true,
 			expectedInfoContent: "Basic info",
 		},
 		{
 			name: "bid meets tier requirement",
 			block: BrokerBlock{
-				BaseBlock: BaseBlock{Points: 0},
+				BaseBlock:   BaseBlock{Points: 0},
 				DefaultInfo: "Basic info",
 				InformationTiers: []InformationTier{
 					{PointsRequired: 10, Content: "Tier 1 info"},
@@ -145,7 +145,7 @@ func TestBrokerBlock_ValidatePlayerInput(t *testing.T) {
 		{
 			name: "bid exceeds highest tier",
 			block: BrokerBlock{
-				BaseBlock: BaseBlock{Points: 0},
+				BaseBlock:   BaseBlock{Points: 0},
 				DefaultInfo: "Basic info",
 				InformationTiers: []InformationTier{
 					{PointsRequired: 10, Content: "Tier 1 info"},
@@ -160,7 +160,7 @@ func TestBrokerBlock_ValidatePlayerInput(t *testing.T) {
 		{
 			name: "bid insufficient for any tier",
 			block: BrokerBlock{
-				BaseBlock: BaseBlock{Points: 0},
+				BaseBlock:   BaseBlock{Points: 0},
 				DefaultInfo: "Not enough payment",
 				InformationTiers: []InformationTier{
 					{PointsRequired: 15, Content: "Premium info"},
@@ -186,10 +186,10 @@ func TestBrokerBlock_ValidatePlayerInput(t *testing.T) {
 
 			newState, err := tt.block.ValidatePlayerInput(initialState, input)
 			require.NoError(t, err)
-			
+
 			assert.Equal(t, tt.expectedComplete, newState.IsComplete())
 			assert.Equal(t, tt.expectedPoints, newState.GetPointsAwarded())
-			
+
 			// Verify player data is set correctly
 			var playerData brokerBlockData
 			err = json.Unmarshal(newState.GetPlayerData(), &playerData)
@@ -203,13 +203,13 @@ func TestBrokerBlock_ValidatePlayerInput(t *testing.T) {
 func TestBrokerBlock_ValidatePlayerInput_InvalidBid(t *testing.T) {
 	block := BrokerBlock{}
 	state := &mockPlayerState{blockID: "block-1", playerID: "player-1"}
-	
+
 	input := map[string][]string{
 		"points_bid": {"invalid"},
 	}
 
 	_, err := block.ValidatePlayerInput(state, input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "points bid must be an integer")
 }
 
@@ -218,17 +218,17 @@ func TestBrokerBlock_ValidatePlayerInput_NegativeBid(t *testing.T) {
 		DefaultInfo: "Default response",
 	}
 	state := &mockPlayerState{blockID: "block-1", playerID: "player-1"}
-	
+
 	input := map[string][]string{
 		"points_bid": {"-10"},
 	}
 
 	newState, err := block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
-	
+
 	// Negative bids should be treated as 0
 	assert.Equal(t, 0, newState.GetPointsAwarded())
-	
+
 	var playerData brokerBlockData
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 	require.NoError(t, err)
@@ -250,7 +250,7 @@ func TestBrokerBlock_GetData(t *testing.T) {
 
 	data := block.GetData()
 	assert.NotNil(t, data)
-	
+
 	// Verify we can unmarshal the data
 	var unmarshaled BrokerBlock
 	err := json.Unmarshal(data, &unmarshaled)

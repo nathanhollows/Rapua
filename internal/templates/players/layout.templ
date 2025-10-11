@@ -29,7 +29,7 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 			<script src="/static/js/mapbox-satellite-view.js"></script>
 			<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
 		</head>
-		<body class="h-full">
+		<body class="h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
 			<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">

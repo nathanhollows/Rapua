@@ -1,8 +1,10 @@
-package helpers
+package helpers_test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/nathanhollows/Rapua/v4/helpers"
 )
 
 func TestParseDate(t *testing.T) {
@@ -29,7 +31,7 @@ func TestParseDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseDate(tt.date)
+			got, err := helpers.ParseDate(tt.date)
 			if !got.Equal(tt.want) {
 				t.Errorf("ParseDate() = %v, want %v", got, tt.want)
 			}
@@ -75,7 +77,7 @@ func TestParseTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseTime(tt.time)
+			got, err := helpers.ParseTime(tt.time)
 			if !got.Equal(tt.want) {
 				t.Errorf("ParseTime() = %v, want %v", got, tt.want)
 			}
@@ -121,7 +123,7 @@ func TestParseDateTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseDateTime(tt.date, tt.time)
+			got, err := helpers.ParseDateTime(tt.date, tt.time)
 			if !got.Equal(tt.want) {
 				t.Errorf("ParseDateTime() = %v, want %v", got, tt.want)
 			}
