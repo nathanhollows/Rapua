@@ -19,7 +19,7 @@ The random clue block uses a deterministic algorithm to select a clue based on t
 
 ## Preview
 
-<iframe class="w-full aspect-[4/3]" src="/static/images/docs/user/blocks/block-random-clue-preview.mp4" frameborder="0" allowfullscreen></iframe>
+![](/static/images/docs/user/blocks/block-random-clue.webp)
 
 ## Best Practices
 

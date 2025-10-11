@@ -66,8 +66,8 @@ Customize the gameplay experience.
 
 1. Open the [Experience](/admin/experience) tab under your instance.  
 2. Adjust the following options:  
-   - **Navigation Method:** How will participants know where to go? Choose from map, list, or clues.
-   - **Navigation Mode:** How will participants move between locations? Select free movement, random selection, or guided paths.
+   - **Route Strategy:** How will participants move between locations? Select free movement, random selection, or guided paths.
+   - **Navigation Display:** How will participants know where to go? Choose from map, list, or clues.
    - **Enable Points:**: Enable or disable scoring mechanisms (optional).  
 3. Save your changes.
 

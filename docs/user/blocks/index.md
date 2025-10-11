@@ -6,9 +6,11 @@ order: 20
 
 # Content blocks
 
-Rapua has 14 content blocks that you can use to create engaging games.
+Rapua has a content block system that allows you to add different types of content to your game, whether static information, interactive challenges, or clues for participants to solve.
 
-![Iterative blocks are marked with an `Interative` badge.](/static/images/docs/user/blocks/block-picker.webp)
+Some blocks are for clues only (e.g. Random Clue Block), while others can be used anywhere.
+
+![](/static/images/docs/user/blocks/block-picker.webp)
 
 ## Static blocks
 
