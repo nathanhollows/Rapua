@@ -6,7 +6,7 @@ order: 100
 
 # Changelog
 
-## 5.0.0
+## 5.0.0 (12-10-2025)
 
 v5.0.0 is a *major* release with big architectural changes to improve security, maintainability, and extensibility.
 
