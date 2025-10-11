@@ -16,6 +16,11 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
 )
 
+const (
+	compressLevel = 5
+	csrfKeyLength = 32
+)
+
 func setupRouter(
 	logger *slog.Logger,
 	publicHandler *public.PublicHandler,
@@ -28,7 +33,7 @@ func setupRouter(
 		logger.Warn("CSRF_KEY not set, using default key - CHANGE IN PRODUCTION")
 		csrfKey = "temp-32-byte-long-auth-key-here"
 	}
-	if len(csrfKey) != 32 {
+	if len(csrfKey) != csrfKeyLength {
 		logger.Warn("CSRF_KEY should be exactly 32 bytes", "length", len(csrfKey))
 	}
 
@@ -43,7 +48,7 @@ func setupRouter(
 
 	router := chi.NewRouter()
 
-	router.Use(middleware.Compress(5))
+	router.Use(middleware.Compress(compressLevel))
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)

@@ -10,6 +10,10 @@ import (
 	"github.com/uptrace/bun"
 )
 
+const (
+	markerCodeLength = 5
+)
+
 type MarkerRepository interface {
 	// Create a new marker in the database
 	Create(ctx context.Context, marker *models.Marker) error
@@ -53,8 +57,7 @@ func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) er
 		return errors.New("marker name is required")
 	}
 	if marker.Code == "" {
-		// TODO: Remove magic number
-		marker.Code = helpers.NewCode(5)
+		marker.Code = helpers.NewCode(markerCodeLength)
 		_, err := r.db.NewInsert().Model(marker).Exec(ctx)
 		return err
 	}

@@ -12,6 +12,10 @@ import (
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
+const (
+	teamCodeLength = 4
+)
+
 type TeamService struct {
 	teamRepo       repositories.TeamRepository
 	checkInRepo    repositories.CheckInRepository
@@ -71,7 +75,7 @@ func (s *TeamService) AddTeams(ctx context.Context, instanceID string, count int
 			var team models.Team
 			for {
 				// TODO: Remove magic number
-				code := helpers.NewCode(4)
+				code := helpers.NewCode(teamCodeLength)
 				team = models.Team{
 					Code:       code,
 					InstanceID: instanceID,
