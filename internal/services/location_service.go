@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
@@ -157,39 +156,11 @@ func (s locationService) DuplicateLocation(
 		return models.Location{}, fmt.Errorf("saving location: %w", err)
 	}
 
-	// Copy the blocks using FindByOwnerID to avoid duplication issues
-	originalBlocks, err := s.blockRepo.FindByOwnerID(ctx, location.ID)
+	// Duplicate all blocks from old location to new location
+	// This preserves all block properties including context
+	err = s.blockRepo.DuplicateBlocksByOwner(ctx, location.ID, newLocation.ID)
 	if err != nil {
-		return models.Location{}, fmt.Errorf("finding blocks for duplication: %w", err)
-	}
-
-	for _, originalBlock := range originalBlocks {
-		// Create a new base block with the original block's data but new location ID
-		baseBlock := blocks.BaseBlock{
-			LocationID: newLocation.ID,
-			Type:       originalBlock.GetType(),
-			Data:       originalBlock.GetData(),
-			Order:      originalBlock.GetOrder(),
-			Points:     originalBlock.GetPoints(),
-		}
-
-		// Create a new block instance from the base block
-		newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
-		if err != nil {
-			return models.Location{}, fmt.Errorf("creating duplicate block: %w", err)
-		}
-
-		// Parse the data to populate the block's content fields
-		err = newBlock.ParseData()
-		if err != nil {
-			return models.Location{}, fmt.Errorf("parsing block data: %w", err)
-		}
-
-		// Save the new block with location content context
-		_, err = s.blockRepo.Create(ctx, newBlock, newLocation.ID, blocks.ContextLocationContent)
-		if err != nil {
-			return models.Location{}, fmt.Errorf("saving block: %w", err)
-		}
+		return models.Location{}, fmt.Errorf("duplicating blocks: %w", err)
 	}
 
 	return newLocation, nil

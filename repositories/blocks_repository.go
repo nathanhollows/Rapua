@@ -61,6 +61,10 @@ type BlockRepository interface {
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
+
+	// DuplicateBlocksByOwner duplicates all blocks from oldOwnerID to newOwnerID
+	// Preserves all block properties including context, ordering, points, etc.
+	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
 }
 
 type blockRepository struct {
@@ -369,4 +373,49 @@ func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(
 	}
 
 	return block, state, nil
+}
+
+// DuplicateBlocksByOwner duplicates all blocks from one owner to another.
+// This is more efficient than fetching, converting to domain, and recreating blocks
+// because it preserves all fields (including context) at the model layer.
+func (r *blockRepository) DuplicateBlocksByOwner(
+	ctx context.Context,
+	oldOwnerID, newOwnerID string,
+) error {
+	// Fetch all blocks for the old owner
+	var originalBlocks []models.Block
+	err := r.db.NewSelect().
+		Model(&originalBlocks).
+		Where("owner_id = ?", oldOwnerID).
+		Scan(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Nothing to duplicate
+	if len(originalBlocks) == 0 {
+		return nil
+	}
+
+	// Create new blocks with new IDs and owner
+	newBlocks := make([]models.Block, len(originalBlocks))
+	for i, original := range originalBlocks {
+		newBlocks[i] = models.Block{
+			ID:                 uuid.New().String(),
+			OwnerID:            newOwnerID,
+			Type:               original.Type,
+			Context:            original.Context,
+			Data:               original.Data,
+			Ordering:           original.Ordering,
+			Points:             original.Points,
+			ValidationRequired: original.ValidationRequired,
+		}
+	}
+
+	// Bulk insert all blocks
+	_, err = r.db.NewInsert().
+		Model(&newBlocks).
+		Exec(ctx)
+
+	return err
 }

@@ -969,3 +969,173 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 		_ = tx.Commit()
 	})
 }
+
+func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
+	repo, _, transactor, cleanup := setupBlockRepo(t)
+	defer cleanup()
+
+	tests := []struct {
+		name        string
+		setupFn     func() (string, string, error)
+		assertion   func(oldOwnerID, newOwnerID string)
+		cleanupFunc func(oldOwnerID, newOwnerID string)
+	}{
+		{
+			name: "Duplicate blocks with different contexts",
+			setupFn: func() (string, string, error) {
+				oldOwnerID := gofakeit.UUID()
+				newOwnerID := gofakeit.UUID()
+
+				// Create blocks with different contexts
+				_, err := repo.Create(
+					context.Background(),
+					blocks.NewMarkdownBlock(blocks.BaseBlock{
+						LocationID: oldOwnerID,
+						Type:       "markdown",
+						Points:     10,
+					}),
+					oldOwnerID,
+					blocks.ContextLocationContent,
+				)
+				if err != nil {
+					return "", "", err
+				}
+
+				_, err = repo.Create(
+					context.Background(),
+					blocks.NewClueBlock(blocks.BaseBlock{
+						LocationID: oldOwnerID,
+						Type:       "clue",
+						Points:     5,
+					}),
+					oldOwnerID,
+					blocks.ContextLocationClues,
+				)
+				if err != nil {
+					return "", "", err
+				}
+
+				return oldOwnerID, newOwnerID, nil
+			},
+			assertion: func(oldOwnerID, newOwnerID string) {
+				// Duplicate blocks
+				err := repo.DuplicateBlocksByOwner(context.Background(), oldOwnerID, newOwnerID)
+				require.NoError(t, err)
+
+				// Verify old blocks still exist
+				oldBlocks, err := repo.FindByOwnerID(context.Background(), oldOwnerID)
+				require.NoError(t, err)
+				assert.Len(t, oldBlocks, 2)
+
+				// Verify new blocks were created
+				newBlocks, err := repo.FindByOwnerID(context.Background(), newOwnerID)
+				require.NoError(t, err)
+				assert.Len(t, newBlocks, 2)
+
+				// Verify context is preserved for content blocks
+				contentBlocks, err := repo.FindByOwnerIDAndContext(
+					context.Background(),
+					newOwnerID,
+					blocks.ContextLocationContent,
+				)
+				require.NoError(t, err)
+				assert.Len(t, contentBlocks, 1)
+				assert.Equal(t, "markdown", contentBlocks[0].GetType())
+
+				// Verify context is preserved for clue blocks
+				clueBlocks, err := repo.FindByOwnerIDAndContext(
+					context.Background(),
+					newOwnerID,
+					blocks.ContextLocationClues,
+				)
+				require.NoError(t, err)
+				assert.Len(t, clueBlocks, 1)
+				assert.Equal(t, "clue", clueBlocks[0].GetType())
+			},
+			cleanupFunc: func(oldOwnerID, newOwnerID string) {
+				tx, _ := transactor.BeginTx(context.Background(), &sql.TxOptions{})
+				_ = repo.DeleteByOwnerID(context.Background(), tx, oldOwnerID)
+				_ = repo.DeleteByOwnerID(context.Background(), tx, newOwnerID)
+				_ = tx.Commit()
+			},
+		},
+		{
+			name: "Duplicate empty owner",
+			setupFn: func() (string, string, error) {
+				oldOwnerID := gofakeit.UUID()
+				newOwnerID := gofakeit.UUID()
+				return oldOwnerID, newOwnerID, nil
+			},
+			assertion: func(oldOwnerID, newOwnerID string) {
+				err := repo.DuplicateBlocksByOwner(context.Background(), oldOwnerID, newOwnerID)
+				require.NoError(t, err)
+
+				newBlocks, err := repo.FindByOwnerID(context.Background(), newOwnerID)
+				require.NoError(t, err)
+				assert.Len(t, newBlocks, 0)
+			},
+			cleanupFunc: func(_, _ string) {},
+		},
+		{
+			name: "Preserve all block properties",
+			setupFn: func() (string, string, error) {
+				oldOwnerID := gofakeit.UUID()
+				newOwnerID := gofakeit.UUID()
+
+				// Create a block with specific properties
+				_, err := repo.Create(
+					context.Background(),
+					blocks.NewMarkdownBlock(blocks.BaseBlock{
+						LocationID: oldOwnerID,
+						Type:       "markdown",
+						Points:     25,
+						Order:      3,
+					}),
+					oldOwnerID,
+					blocks.ContextLocationContent,
+				)
+				if err != nil {
+					return "", "", err
+				}
+
+				return oldOwnerID, newOwnerID, nil
+			},
+			assertion: func(oldOwnerID, newOwnerID string) {
+				err := repo.DuplicateBlocksByOwner(context.Background(), oldOwnerID, newOwnerID)
+				require.NoError(t, err)
+
+				oldBlocks, err := repo.FindByOwnerID(context.Background(), oldOwnerID)
+				require.NoError(t, err)
+
+				newBlocks, err := repo.FindByOwnerID(context.Background(), newOwnerID)
+				require.NoError(t, err)
+				require.Len(t, newBlocks, 1)
+
+				// Verify properties are preserved
+				assert.Equal(t, oldBlocks[0].GetType(), newBlocks[0].GetType())
+				assert.Equal(t, oldBlocks[0].GetPoints(), newBlocks[0].GetPoints())
+				assert.Equal(t, oldBlocks[0].GetOrder(), newBlocks[0].GetOrder())
+
+				// Verify IDs are different (new blocks created)
+				assert.NotEqual(t, oldBlocks[0].GetID(), newBlocks[0].GetID())
+				assert.NotEqual(t, oldBlocks[0].GetLocationID(), newBlocks[0].GetLocationID())
+			},
+			cleanupFunc: func(oldOwnerID, newOwnerID string) {
+				tx, _ := transactor.BeginTx(context.Background(), &sql.TxOptions{})
+				_ = repo.DeleteByOwnerID(context.Background(), tx, oldOwnerID)
+				_ = repo.DeleteByOwnerID(context.Background(), tx, newOwnerID)
+				_ = tx.Commit()
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldOwnerID, newOwnerID, err := tt.setupFn()
+			require.NoError(t, err)
+
+			tt.assertion(oldOwnerID, newOwnerID)
+			tt.cleanupFunc(oldOwnerID, newOwnerID)
+		})
+	}
+}
