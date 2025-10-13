@@ -5,12 +5,12 @@ import (
 	"strconv"
 
 	admin "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	players "github.com/nathanhollows/Rapua/v4/internal/templates/players"
+	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
-// Show the form to edit the navigation settings.
-func (h *AdminHandler) Experience(w http.ResponseWriter, r *http.Request) {
+// Experience shows the game settings page.
+func (h *Handler) Experience(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	locations, err := h.locationService.FindByInstance(r.Context(), user.CurrentInstanceID)
@@ -26,8 +26,8 @@ func (h *AdminHandler) Experience(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Update the navigation settings.
-func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
+// ExperiencePost handles the form submission for updating game settings.
+func (h *Handler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -36,33 +36,39 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the navigation method
-	if r.Form.Has("navigationMethod") {
-		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
+	if r.Form.Has("navigationDisplayMode") {
+		method, err := models.ParseNavigationDisplayMode(r.Form.Get("navigationDisplayMode"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMethod = method
+		user.CurrentInstance.Settings.NavigationDisplayMode = method
 	}
 
 	// Parse the navigation mode
-	if r.Form.Has("navigationMode") {
-		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
+	if r.Form.Has("routeStrategy") {
+		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
+			h.handleError(
+				w,
+				r,
+				"Error parsing navigation mode",
+				"Error parsing navigation mode",
+				"error",
+				err,
+				"mode",
+				r.Form.Get("routeStrategy"),
+			)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMode = mode
+		user.CurrentInstance.Settings.RouteStrategy = mode
 	}
 
 	// Parse the completion method
-	if r.Form.Has("completionMethod") {
-		completionMethod, err := models.ParseCompletionMethod(r.Form.Get("completionMethod"))
-		if err != nil {
-			h.handleError(w, r, "Error parsing completion method", "Error parsing completion method", "error", err)
-			return
-		}
-		user.CurrentInstance.Settings.CompletionMethod = completionMethod
+	if r.Form.Has("mustCheckOut") {
+		user.CurrentInstance.Settings.MustCheckOut = true
+	} else {
+		user.CurrentInstance.Settings.MustCheckOut = false
 	}
 
 	// Parse the maximum number of next locations
@@ -80,7 +86,8 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 
 	// Parse points
 	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
-	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") && r.Form.Get("enableBonusPoints") == "on"
+	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") &&
+		r.Form.Get("enableBonusPoints") == "on"
 
 	// Update the navigation settings
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)
@@ -92,8 +99,8 @@ func (h *AdminHandler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Settings updated")
 }
 
-// Show a player preview for navigation.
-func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request) {
+// ExperiencePreview shows a preview of the next locations based on the current settings.
+func (h *Handler) ExperiencePreview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -101,22 +108,31 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if r.Form.Has("navigationMethod") {
-		method, err := models.ParseNavigationMethod(r.Form.Get("navigationMethod"))
+	if r.Form.Has("navigationDisplayMode") {
+		method, err := models.ParseNavigationDisplayMode(r.Form.Get("navigationDisplayMode"))
 		if err != nil {
 			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMethod = method
+		user.CurrentInstance.Settings.NavigationDisplayMode = method
 	}
 
-	if r.Form.Has("navigationMode") {
-		mode, err := models.ParseNavigationMode(r.Form.Get("navigationMode"))
+	if r.Form.Has("routeStrategy") {
+		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
 		if err != nil {
-			h.handleError(w, r, "Error parsing navigation mode", "Error parsing navigation mode", "error", err, "mode", r.Form.Get("navigationMode"))
+			h.handleError(
+				w,
+				r,
+				"Error parsing navigation mode",
+				"Error parsing navigation mode",
+				"error",
+				err,
+				"mode",
+				r.Form.Get("routeStrategy"),
+			)
 			return
 		}
-		user.CurrentInstance.Settings.NavigationMode = mode
+		user.CurrentInstance.Settings.RouteStrategy = mode
 	}
 
 	if r.Form.Has("maxLocations") {
@@ -139,8 +155,14 @@ func (h *AdminHandler) ExperiencePreview(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	var nextData templates.NextParams
+	nextData.Team = team
+	nextData.Settings = team.Instance.Settings
+	nextData.Locations = locations
+	nextData.Blocks = nil
+
 	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
-	err = players.Next(team, locations).Render(r.Context(), w)
+	err = templates.Next(nextData).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering template", "error", err)
 	}

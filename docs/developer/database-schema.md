@@ -285,14 +285,14 @@ The schema maintains indexes on all primary keys and foreign key relationships t
 
 The database uses several enum types implemented as integers:
 
-1. **NavigationMode**:
-   - Controls how players navigate between locations
+1. **RouteStrategy**:
+   - Controls how the next location is chosen for a player.
 
-2. **NavigationMethod**:
-   - Determines what method players use to find locations
+2. **NavigationDisplayMode**:
+   - Determines what method players use to find locations.
 
 3. **CompletionMethod**:
    - How location completion is determined (all blocks, specific blocks, etc.)
 
 4. **GameStatus**:
-   - Represents game states: Closed, Scheduled, Active
+   - Represents game states: Closed, Scheduled, Active.

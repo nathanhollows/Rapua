@@ -20,7 +20,6 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	transactor := db.NewTransactor(dbc)
 
 	// Initialize repositories
-	clueRepo := repositories.NewClueRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
@@ -35,7 +34,7 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 
 	// Initialize services
 	markerService := services.NewMarkerService(markerRepo)
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
 	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	instanceService := services.NewInstanceService(
@@ -170,7 +169,13 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := svc.LaunchInstanceFromShareLink(context.Background(), tt.userID, tt.shareLinkID, tt.instanceName, tt.regen)
+				_, err := svc.LaunchInstanceFromShareLink(
+					context.Background(),
+					tt.userID,
+					tt.shareLinkID,
+					tt.instanceName,
+					tt.regen,
+				)
 				if tt.wantErr {
 					assert.Error(t, err)
 				} else {
@@ -293,7 +298,14 @@ func TestTemplateService_Update(t *testing.T) {
 		}{
 			{
 				"Valid Update",
-				&models.Instance{ID: template.ID, CreatedAt: time.Now(), UpdatedAt: time.Now(), Name: "Updated Template", UserID: user.ID, IsTemplate: true},
+				&models.Instance{
+					ID:         template.ID,
+					CreatedAt:  time.Now(),
+					UpdatedAt:  time.Now(),
+					Name:       "Updated Template",
+					UserID:     user.ID,
+					IsTemplate: true,
+				},
 				false,
 			},
 			{
@@ -322,8 +334,8 @@ func TestTemplateService_Update(t *testing.T) {
 					assert.NoError(t, err)
 
 					// Verify the update
-					updated, err := svc.GetByID(context.Background(), template.ID)
-					assert.NoError(t, err)
+					updated, getErr := svc.GetByID(context.Background(), template.ID)
+					assert.NoError(t, getErr)
 					assert.Equal(t, "Updated Template", updated.Name)
 				}
 			})
@@ -419,8 +431,8 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 
 					// Extract and verify the share link
 					shareLinkID := extractShareLinkIDFromURL(url)
-					shareLink, err := svc.GetShareLink(context.Background(), shareLinkID)
-					assert.NoError(t, err)
+					shareLink, getErr := svc.GetShareLink(context.Background(), shareLinkID)
+					assert.NoError(t, getErr)
 					assert.Equal(t, tt.data.TemplateID, shareLink.TemplateID)
 					assert.Equal(t, tt.userID, shareLink.UserID)
 					assert.Equal(t, tt.data.MaxUses, shareLink.MaxUses)
@@ -429,16 +441,16 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 					// Verify expiration date
 					switch tt.data.Validity {
 					case "always":
-						assert.False(t, shareLink.ExpiresAt != bun.NullTime{})
+						assert.Equal(t, shareLink.ExpiresAt, bun.NullTime{})
 					case "day":
-						assert.True(t, shareLink.ExpiresAt != bun.NullTime{})
+						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
 						// Allow 1 second tolerance for test execution time
 						assert.WithinDuration(t, time.Now().AddDate(0, 0, 1), shareLink.ExpiresAt.Time, 1*time.Second)
 					case "week":
-						assert.True(t, shareLink.ExpiresAt != bun.NullTime{})
+						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
 						assert.WithinDuration(t, time.Now().AddDate(0, 0, 7), shareLink.ExpiresAt.Time, 1*time.Second)
 					case "month":
-						assert.True(t, shareLink.ExpiresAt != bun.NullTime{})
+						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
 						assert.WithinDuration(t, time.Now().AddDate(0, 1, 0), shareLink.ExpiresAt.Time, 1*time.Second)
 					}
 				}
@@ -447,7 +459,7 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 	})
 }
 
-// Helper function to extract share link ID from URL
+// Helper function to extract share link ID from URL.
 func extractShareLinkIDFromURL(url string) string {
 	parts := strings.Split(url, "/templates/")
 	if len(parts) != 2 {

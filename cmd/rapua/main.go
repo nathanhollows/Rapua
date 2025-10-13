@@ -3,8 +3,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -38,14 +36,14 @@ func main() {
 	)
 	slog.SetDefault(logger)
 
-	log.Printf("Rapua %s starting...\n", version)
+	logger.Info("starting application", "version", version)
 
 	// Load environment variables
 	if err := godotenv.Load(".env"); err != nil {
 		logger.Warn("could not load .env file", "error", err)
 	}
 
-	db := db.MustOpen()
+	db := db.MustOpen(logger)
 	defer db.Close()
 
 	// Initialize the migrator
@@ -58,7 +56,7 @@ func main() {
 		Description: `An open-source platform for location-based games.`,
 		Version:     version,
 		Commands: []*cli.Command{
-			newDBCommand(migrator),
+			newDBCommand(migrator, logger),
 		},
 		Action: func(c *cli.Context) error {
 			// Default action: run the app
@@ -74,7 +72,7 @@ func main() {
 	}
 }
 
-func newDBCommand(migrator *migrate.Migrator) *cli.Command {
+func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command {
 	return &cli.Command{
 		Name:  "db",
 		Usage: "database migrations",
@@ -96,7 +94,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 
 					defer func() {
 						if err := migrator.Unlock(c.Context); err != nil {
-							log.Printf("could not unlock: %v", err)
+							logger.Error("could not unlock", "error", err)
 						}
 					}()
 
@@ -105,9 +103,9 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 						return err
 					}
 					if group.IsZero() {
-						fmt.Println("database is up-to-date")
+						logger.Info("database is up-to-date")
 					} else {
-						fmt.Printf("migrated to %s\n", group)
+						logger.Info("migrated", "group", group)
 					}
 					return nil
 				},
@@ -122,7 +120,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 
 					defer func() {
 						if err := migrator.Unlock(c.Context); err != nil {
-							log.Printf("could not unlock: %v", err)
+							logger.Error("could not unlock", "error", err)
 						}
 					}()
 
@@ -131,9 +129,9 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 						return err
 					}
 					if group.IsZero() {
-						fmt.Println("no migrations to rollback")
+						logger.Info("no migrations to rollback")
 					} else {
-						fmt.Printf("rolled back %s\n", group)
+						logger.Info("rolled back", "group", group)
 					}
 					return nil
 				},
@@ -146,9 +144,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("migrations: %s\n", ms)
-					fmt.Printf("unapplied migrations: %s\n", ms.Unapplied())
-					fmt.Printf("last migration group: %s\n", ms.LastGroup())
+					logger.Info("migration status", "migrations", ms, "unapplied", ms.Unapplied(), "last_group", ms.LastGroup())
 					return nil
 				},
 			},
@@ -161,7 +157,7 @@ func newDBCommand(migrator *migrate.Migrator) *cli.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("created migration %s (%s)\n", mf.Name, mf.Path)
+					logger.Info("created migration", "name", mf.Name, "path", mf.Path)
 					return nil
 				},
 			},
@@ -213,7 +209,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		blockRepo,
 		blockStateRepo,
 		checkInRepo,
-		clueRepo,
 		instanceRepo,
 		instanceSettingsRepo,
 		locationRepo,
@@ -225,12 +220,18 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	clueService := services.NewClueService(clueRepo, locationRepo)
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
-	checkInService := services.NewCheckInService(checkInRepo, locationRepo, teamRepo, locationStatsService, navigationService, blockService)
+	checkInService := services.NewCheckInService(
+		checkInRepo,
+		locationRepo,
+		teamRepo,
+		locationStatsService,
+		navigationService,
+		blockService,
+	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo)

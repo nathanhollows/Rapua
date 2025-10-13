@@ -11,7 +11,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Game scheduling errors
+// Game scheduling errors.
 var (
 	ErrGameAlreadyActive = errors.New("game is already active")
 	ErrGameAlreadyClosed = errors.New("game is already closed")
@@ -71,7 +71,12 @@ func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.I
 	return nil
 }
 
-func (s *GameScheduleService) ScheduleGame(ctx context.Context, instance *models.Instance, start time.Time, endTime time.Time) error {
+func (s *GameScheduleService) ScheduleGame(
+	ctx context.Context,
+	instance *models.Instance,
+	start time.Time,
+	endTime time.Time,
+) error {
 	if start.After(endTime) {
 		return ErrStartAfterEnd
 	}

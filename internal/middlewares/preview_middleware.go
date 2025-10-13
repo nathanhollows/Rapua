@@ -50,7 +50,13 @@ func PreviewMiddleware(teamService teamService, instanceService instanceService,
 		// Load the instance settings separately to avoid team-related queries
 		settings, err := instanceService.GetInstanceSettings(r.Context(), team.InstanceID)
 		if err != nil {
-			slog.Error("preview middleware: failed to load instance settings", "err", err, "instanceID", team.InstanceID)
+			slog.Error(
+				"preview middleware: failed to load instance settings",
+				"err",
+				err,
+				"instanceID",
+				team.InstanceID,
+			)
 			// Fall back to default settings if loading fails
 			settings = &models.InstanceSettings{
 				InstanceID:   team.InstanceID,

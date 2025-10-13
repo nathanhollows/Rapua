@@ -13,7 +13,11 @@ import (
 
 type mockUploadStorage struct{}
 
-func (m *mockUploadStorage) Upload(ctx context.Context, file multipart.File, filename string) (map[string]string, string, error) {
+func (m *mockUploadStorage) Upload(
+	ctx context.Context,
+	file multipart.File,
+	filename string,
+) (map[string]string, string, error) {
 	if filename == "error.jpg" {
 		return nil, "", errors.New("storage upload error")
 	}
@@ -66,7 +70,10 @@ func TestUploadService_UploadFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fileHeader := &multipart.FileHeader{Filename: tt.filename, Header: map[string][]string{"Content-Type": {tt.fileType}}}
+			fileHeader := &multipart.FileHeader{
+				Filename: tt.filename,
+				Header:   map[string][]string{"Content-Type": {tt.fileType}},
+			}
 			result, err := svc.UploadFile(context.Background(), nil, fileHeader, services.UploadMetadata{})
 
 			if tt.expectErr {

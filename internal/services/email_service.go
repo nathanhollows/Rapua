@@ -30,7 +30,13 @@ func (s EmailService) SendContactEmail(ctx context.Context, name, contactEmail, 
 	<p>%v</p>
 	`
 
-	message := mail.NewSingleEmail(sentFrom, subject, sentTo, content, fmt.Sprintf(htmlTemplate, name, contactEmail, content))
+	message := mail.NewSingleEmail(
+		sentFrom,
+		subject,
+		sentTo,
+		content,
+		fmt.Sprintf(htmlTemplate, name, contactEmail, content),
+	)
 
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	_, err := client.Send(message)

@@ -36,8 +36,17 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 
 	err = h.teamService.StartPlaying(r.Context(), teamCode)
 	if err != nil {
-		if err == services.ErrTeamNotFound {
-			h.handleError(w, r, "PlayPost: starting game", "Team not found: "+teamCode, "Cannot start game with this team code", err, "teamCode", teamCode)
+		if errors.Is(err, services.ErrTeamNotFound) {
+			h.handleError(
+				w,
+				r,
+				"PlayPost: starting game",
+				"Team not found: "+teamCode,
+				"Cannot start game with this team code",
+				err,
+				"teamCode",
+				teamCode,
+			)
 			return
 		}
 		if errors.Is(err, services.ErrInsufficientCredits) {
@@ -47,13 +56,31 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		h.handleError(w, r, "PlayPost: starting game", "Error joining game", "Could not start game", err, "teamCode", teamCode)
+		h.handleError(
+			w,
+			r,
+			"PlayPost: starting game",
+			"Error joining game",
+			"Could not start game",
+			err,
+			"teamCode",
+			teamCode,
+		)
 		return
 	}
 
 	err = h.startSession(w, r, teamCode)
 	if err != nil {
-		h.handleError(w, r, "HomePost: starting session", "Error joining session. Please try again.", "error", err, "team", teamCode)
+		h.handleError(
+			w,
+			r,
+			"HomePost: starting session",
+			"Error joining session. Please try again.",
+			"error",
+			err,
+			"team",
+			teamCode,
+		)
 		return
 	}
 

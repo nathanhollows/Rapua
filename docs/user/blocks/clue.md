@@ -1,7 +1,7 @@
 ---
 title: "Clue Block"
 sidebar: true
-order: 4
+order: 5
 ---
 
 # Clue Block

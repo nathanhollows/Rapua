@@ -202,7 +202,7 @@ type m20241209083639_User struct {
 }
 
 func init() {
-	var models = []interface{}{
+	var models = []any{
 		(*m20241209083639_Notification)(nil),
 		(*m20241209083639_InstanceSettings)(nil),
 		(*m20241209083639_Block)(nil),

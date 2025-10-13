@@ -11,17 +11,43 @@ import (
 )
 
 type BlockRepository interface {
-	// Create creates a new block for a location
-	Create(ctx context.Context, block blocks.Block, locationID string) (blocks.Block, error)
+	// Create creates a new block for an owner with specific context
+	Create(
+		ctx context.Context,
+		block blocks.Block,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Block, error)
 
 	// GetByID fetches a block by its ID
 	GetByID(ctx context.Context, blockID string) (blocks.Block, error)
 	// GetBlockAndStateByBlockIDAndTeamCode fetches a block and its state by block ID and team code
-	GetBlockAndStateByBlockIDAndTeamCode(ctx context.Context, blockID string, teamCode string) (blocks.Block, blocks.PlayerState, error)
-	// FindByLocationID fetches all blocks for a location
-	FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error)
-	// FindBlocksAndStatesByLocationIDAndTeamCode fetches blocks and their states by location and team code
-	FindBlocksAndStatesByLocationIDAndTeamCode(ctx context.Context, locationID string, teamCode string) ([]blocks.Block, []blocks.PlayerState, error)
+	GetBlockAndStateByBlockIDAndTeamCode(
+		ctx context.Context,
+		blockID string,
+		teamCode string,
+	) (blocks.Block, blocks.PlayerState, error)
+	// FindByOwnerID fetches all blocks for an owner (context agnostic)
+	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
+	// FindByOwnerIDAndContext fetches all blocks for an owner with specific context
+	FindByOwnerIDAndContext(
+		ctx context.Context,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Blocks, error)
+	// FindBlocksAndStatesByOwnerIDAndTeamCode fetches blocks and their states by owner and team code
+	FindBlocksAndStatesByOwnerIDAndTeamCode(
+		ctx context.Context,
+		ownerID string,
+		teamCode string,
+	) ([]blocks.Block, []blocks.PlayerState, error)
+	// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks and their states by owner, team code, and context
+	FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+		ctx context.Context,
+		ownerID string,
+		teamCode string,
+		blockContext blocks.BlockContext,
+	) ([]blocks.Block, []blocks.PlayerState, error)
 
 	// Update updates an existing block
 	Update(ctx context.Context, block blocks.Block) (blocks.Block, error)
@@ -29,12 +55,16 @@ type BlockRepository interface {
 	// Delete deletes a block by its ID
 	// Requires a transaction as related data will also need to be deleted
 	Delete(ctx context.Context, tx *bun.Tx, blockID string) error
-	// DeleteByLocationID deletes all blocks associated with a location ID
+	// DeleteByOwnerID deletes all blocks associated with an owner ID
 	// Requires a transaction as related data will also need to be deleted
-	DeleteByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error
+	DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
+
+	// DuplicateBlocksByOwner duplicates all blocks from oldOwnerID to newOwnerID
+	// Preserves all block properties including context, ordering, points, etc.
+	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
 }
 
 type blockRepository struct {
@@ -49,12 +79,30 @@ func NewBlockRepository(db *bun.DB, stateRepo BlockStateRepository) BlockReposit
 	}
 }
 
-// FindByLocationID fetches all blocks for a location.
-func (r *blockRepository) FindByLocationID(ctx context.Context, locationID string) (blocks.Blocks, error) {
+// FindByOwnerID fetches all blocks for an owner (context agnostic).
+func (r *blockRepository) FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error) {
 	modelBlocks := []models.Block{}
 	err := r.db.NewSelect().
 		Model(&modelBlocks).
-		Where("location_id = ?", locationID).
+		Where("owner_id = ?", ownerID).
+		Order("ordering ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertModelsToBlocks(modelBlocks)
+}
+
+// FindByOwnerIDAndContext fetches all blocks for an owner with specific context.
+func (r *blockRepository) FindByOwnerIDAndContext(
+	ctx context.Context,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) (blocks.Blocks, error) {
+	modelBlocks := []models.Block{}
+	err := r.db.NewSelect().
+		Model(&modelBlocks).
+		Where("owner_id = ? AND context = ?", ownerID, blockContext).
 		Order("ordering ASC").
 		Scan(ctx)
 	if err != nil {
@@ -77,17 +125,35 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 }
 
 // Create saves a new block to the database.
-func (r *blockRepository) Create(ctx context.Context, block blocks.Block, locationID string) (blocks.Block, error) {
+func (r *blockRepository) Create(
+	ctx context.Context,
+	block blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) (blocks.Block, error) {
 	modelBlock := models.Block{
 		ID:                 uuid.New().String(),
-		LocationID:         locationID,
+		OwnerID:            ownerID,
 		Type:               block.GetType(),
+		Context:            blockContext,
 		Data:               block.GetData(),
 		Ordering:           block.GetOrder(),
 		Points:             block.GetPoints(),
 		ValidationRequired: block.RequiresValidation(),
 	}
-	_, err := r.db.NewInsert().Model(&modelBlock).Exec(ctx)
+
+	count, err := r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		Where("owner_id = ? AND context = ?", ownerID, blockContext).
+		Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	modelBlock.Ordering = count
+
+	// Insert into database
+
+	_, err = r.db.NewInsert().Model(&modelBlock).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +168,11 @@ func (r *blockRepository) Create(ctx context.Context, block blocks.Block, locati
 // Update saves an existing block to the database.
 func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (blocks.Block, error) {
 	modelBlock := convertBlockToModel(block)
-	_, err := r.db.NewUpdate().Model(&modelBlock).WherePK().Exec(ctx)
+	_, err := r.db.NewUpdate().
+		Model(&modelBlock).
+		Column("data", "ordering", "points").
+		WherePK().
+		Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +188,9 @@ func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (block
 func convertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		LocationID:         block.GetLocationID(),
+		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
 		Type:               block.GetType(),
+		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),
 		Points:             block.GetPoints(),
@@ -143,7 +214,7 @@ func convertModelToBlock(model *models.Block) (blocks.Block, error) {
 	// Convert model to block
 	newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
 		ID:         model.ID,
-		LocationID: model.LocationID,
+		LocationID: model.OwnerID, // Map OwnerID to LocationID for backward compatibility
 		Type:       model.Type,
 		Data:       model.Data,
 		Order:      model.Ordering,
@@ -165,29 +236,40 @@ func (r *blockRepository) Delete(ctx context.Context, tx *bun.Tx, blockID string
 	return err
 }
 
-// DeleteByLocationID deletes all blocks for a location.
-func (r *blockRepository) DeleteByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error {
-	_, err := tx.NewDelete().Model(&models.Block{}).Where("location_id = ?", locationID).Exec(ctx)
+// DeleteByOwnerID deletes all blocks for an owner.
+func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error {
+	_, err := tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
 	return err
 }
 
 // Reorder reorders the blocks.
 func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
+	values := make([]struct {
+		ID       string `bun:"id"`
+		Ordering int    `bun:"ordering"`
+	}, len(blockIDs))
 	for i, blockID := range blockIDs {
-		_, err := r.db.NewUpdate().
-			Model(&models.Block{}).
-			Set("ordering = ?", i).
-			Where("id = ?", blockID).
-			Exec(ctx)
-		if err != nil {
-			return err
-		}
+		values[i].ID = blockID
+		values[i].Ordering = i
 	}
-	return nil
+	vals := r.db.NewValues(&values)
+	_, err := r.db.NewUpdate().
+		With("_data", vals).
+		Model((*models.Block)(nil)).
+		TableExpr("_data").
+		Set("ordering = _data.ordering").
+		Where("block.id = _data.id").
+		Exec(ctx)
+	return err
 }
 
-// FindBlocksAndStatesByLocationIDAndTeamCode fetches all blocks for a location with their player states.
-func (r *blockRepository) FindBlocksAndStatesByLocationIDAndTeamCode(ctx context.Context, locationID string, teamCode string) ([]blocks.Block, []blocks.PlayerState, error) {
+// FindBlocksAndStatesByOwnerIDAndTeamCode fetches all blocks for an owner with their existing player states.
+// Does not create missing states - that's the service layer's responsibility.
+func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
+	ctx context.Context,
+	ownerID string,
+	teamCode string,
+) ([]blocks.Block, []blocks.PlayerState, error) {
 	if teamCode == "" {
 		return nil, nil, errors.New("team code must be set")
 	}
@@ -197,7 +279,7 @@ func (r *blockRepository) FindBlocksAndStatesByLocationIDAndTeamCode(ctx context
 
 	err := r.db.NewSelect().
 		Model(&modelBlocks).
-		Where("location_id = ?", locationID).
+		Where("owner_id = ?", ownerID).
 		Order("ordering ASC").
 		Scan(ctx)
 	if err != nil {
@@ -206,7 +288,7 @@ func (r *blockRepository) FindBlocksAndStatesByLocationIDAndTeamCode(ctx context
 
 	err = r.db.NewSelect().
 		Model(&states).
-		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("location_id = ?", locationID)).
+		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ?", ownerID)).
 		Where("team_code = ?", teamCode).
 		Scan(ctx)
 	if err != nil {
@@ -218,46 +300,66 @@ func (r *blockRepository) FindBlocksAndStatesByLocationIDAndTeamCode(ctx context
 		return nil, nil, err
 	}
 
-	playerStates := make([]blocks.PlayerState, len(states))
-	for i, state := range states {
-		playerStates[i] = convertModelToPlayerStateData(state)
+	playerStates := make([]blocks.PlayerState, 0, len(states))
+	for _, state := range states {
+		playerStates = append(playerStates, convertModelToPlayerStateData(state))
 	}
 
-	// Populate playerStates with empty states for blocks without a state
-	for _, block := range foundBlocks {
-		found := false
-		for _, state := range playerStates {
-			if state.GetBlockID() == block.GetID() {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if block.RequiresValidation() && teamCode != "" {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), teamCode)
-				if err != nil {
-					return nil, nil, err
-				}
-				newState, err = r.stateRepo.Create(ctx, newState)
-				if err != nil {
-					return nil, nil, err
-				}
-				playerStates = append(playerStates, newState)
-			} else {
-				newState, err := r.stateRepo.NewBlockState(ctx, block.GetID(), "")
-				if err != nil {
-					return nil, nil, err
-				}
-				playerStates = append(playerStates, newState)
-			}
-		}
+	return foundBlocks, playerStates, nil
+}
+
+// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks for an owner with specific context and their existing player states.
+// Does not create missing states - that's the service layer's responsibility.
+func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+	ctx context.Context,
+	ownerID string,
+	teamCode string,
+	blockContext blocks.BlockContext,
+) ([]blocks.Block, []blocks.PlayerState, error) {
+	if teamCode == "" {
+		return nil, nil, errors.New("team code must be set")
+	}
+
+	modelBlocks := []models.Block{}
+	states := []models.TeamBlockState{}
+
+	err := r.db.NewSelect().
+		Model(&modelBlocks).
+		Where("owner_id = ? AND context = ?", ownerID, blockContext).
+		Order("ordering ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = r.db.NewSelect().
+		Model(&states).
+		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ? AND context = ?", ownerID, blockContext)).
+		Where("team_code = ?", teamCode).
+		Scan(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	foundBlocks, err := convertModelsToBlocks(modelBlocks)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	playerStates := make([]blocks.PlayerState, 0, len(states))
+	for _, state := range states {
+		playerStates = append(playerStates, convertModelToPlayerStateData(state))
 	}
 
 	return foundBlocks, playerStates, nil
 }
 
 // GetBlockAndStateByBlockIDAndTeamCode fetches a block by its ID with the player state for a given team.
-func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(ctx context.Context, blockID string, teamCode string) (blocks.Block, blocks.PlayerState, error) {
+func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(
+	ctx context.Context,
+	blockID string,
+	teamCode string,
+) (blocks.Block, blocks.PlayerState, error) {
 	modelBlock := models.Block{}
 	err := r.db.NewSelect().
 		Model(&modelBlock).
@@ -283,4 +385,49 @@ func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(ctx context.Conte
 	}
 
 	return block, state, nil
+}
+
+// DuplicateBlocksByOwner duplicates all blocks from one owner to another.
+// This is more efficient than fetching, converting to domain, and recreating blocks
+// because it preserves all fields (including context) at the model layer.
+func (r *blockRepository) DuplicateBlocksByOwner(
+	ctx context.Context,
+	oldOwnerID, newOwnerID string,
+) error {
+	// Fetch all blocks for the old owner
+	var originalBlocks []models.Block
+	err := r.db.NewSelect().
+		Model(&originalBlocks).
+		Where("owner_id = ?", oldOwnerID).
+		Scan(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Nothing to duplicate
+	if len(originalBlocks) == 0 {
+		return nil
+	}
+
+	// Create new blocks with new IDs and owner
+	newBlocks := make([]models.Block, len(originalBlocks))
+	for i, original := range originalBlocks {
+		newBlocks[i] = models.Block{
+			ID:                 uuid.New().String(),
+			OwnerID:            newOwnerID,
+			Type:               original.Type,
+			Context:            original.Context,
+			Data:               original.Data,
+			Ordering:           original.Ordering,
+			Points:             original.Points,
+			ValidationRequired: original.ValidationRequired,
+		}
+	}
+
+	// Bulk insert all blocks
+	_, err = r.db.NewInsert().
+		Model(&newBlocks).
+		Exec(ctx)
+
+	return err
 }

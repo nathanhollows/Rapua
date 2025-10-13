@@ -23,16 +23,16 @@ func setupInstanceSettingsService(t *testing.T) (*services.InstanceSettingsServi
 
 func createTestInstanceSettings(t *testing.T) *models.InstanceSettings {
 	t.Helper()
-	
+
 	return &models.InstanceSettings{
-		InstanceID:        gofakeit.UUID(),
-		NavigationMode:    models.FreeRoamNav,
-		CompletionMethod:  models.CheckInOnly,
-		NavigationMethod:  models.ShowMap,
-		ShowTeamCount:     false,
-		MaxNextLocations:  3,
-		EnablePoints:      true,
-		EnableBonusPoints: false,
+		InstanceID:            gofakeit.UUID(),
+		RouteStrategy:         models.RouteStrategyFreeRoam,
+		MustCheckOut:          gofakeit.Bool(),
+		NavigationDisplayMode: models.NavigationDisplayMap,
+		ShowTeamCount:         false,
+		MaxNextLocations:      3,
+		EnablePoints:          true,
+		EnableBonusPoints:     false,
 	}
 }
 
@@ -103,40 +103,17 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 	t.Run("Save settings with various navigation modes", func(t *testing.T) {
 		testCases := []struct {
 			name string
-			mode models.NavigationMode
+			mode models.RouteStrategy
 		}{
-			{"FreeRoamNav", models.FreeRoamNav},
-			{"OrderedNav", models.OrderedNav},
-			{"RandomNav", models.RandomNav},
+			{"FreeRoamNav", models.RouteStrategyFreeRoam},
+			{"OrderedNav", models.RouteStrategyOrdered},
+			{"RandomNav", models.RouteStrategyRandom},
 		}
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				settings := createTestInstanceSettings(t)
-				settings.NavigationMode = tc.mode
-
-				err := service.SaveSettings(context.Background(), settings)
-				// Validation should pass, might fail on database operations
-				if err != nil {
-					assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-				}
-			})
-		}
-	})
-
-	t.Run("Save settings with various completion methods", func(t *testing.T) {
-		testCases := []struct {
-			name   string
-			method models.CompletionMethod
-		}{
-			{"CheckInOnly", models.CheckInOnly},
-			{"CheckInAndOut", models.CheckInAndOut},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				settings := createTestInstanceSettings(t)
-				settings.CompletionMethod = tc.method
+				settings.RouteStrategy = tc.mode
 
 				err := service.SaveSettings(context.Background(), settings)
 				// Validation should pass, might fail on database operations
@@ -150,18 +127,18 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 	t.Run("Save settings with various navigation methods", func(t *testing.T) {
 		testCases := []struct {
 			name   string
-			method models.NavigationMethod
+			method models.NavigationDisplayMode
 		}{
-			{"ShowMap", models.ShowMap},
-			{"ShowMapAndNames", models.ShowMapAndNames},
-			{"ShowNames", models.ShowNames},
-			{"ShowClues", models.ShowClues},
+			{"ShowMap", models.NavigationDisplayMap},
+			{"ShowMapAndNames", models.NavigationDisplayMapAndNames},
+			{"ShowNames", models.NavigationDisplayNames},
+			{"ShowClues", models.NavigationDisplayClues},
 		}
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				settings := createTestInstanceSettings(t)
-				settings.NavigationMethod = tc.method
+				settings.NavigationDisplayMode = tc.method
 
 				err := service.SaveSettings(context.Background(), settings)
 				// Validation should pass, might fail on database operations
@@ -174,7 +151,7 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 
 	t.Run("Save settings with boolean flags", func(t *testing.T) {
 		testCases := []struct {
-			name string
+			name   string
 			modify func(*models.InstanceSettings)
 		}{
 			{"ShowTeamCount true", func(s *models.InstanceSettings) { s.ShowTeamCount = true }},
@@ -218,7 +195,7 @@ func TestInstanceSettingsService_ValidationLogic(t *testing.T) {
 	t.Run("Validation edge cases", func(t *testing.T) {
 		// Test the boundary condition for MaxNextLocations
 		settings := createTestInstanceSettings(t)
-		
+
 		// Test exactly -1 (should fail)
 		settings.MaxNextLocations = -1
 		err := service.SaveSettings(context.Background(), settings)

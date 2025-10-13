@@ -18,7 +18,14 @@ func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
 	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
 	if err != nil {
 		if !errors.Is(err, services.ErrAllLocationsVisited) {
-			h.handleError(w, r, "Next: getting next locations", "Error getting next locations", "Could not load data", err)
+			h.handleError(
+				w,
+				r,
+				"Next: getting next locations",
+				"Error getting next locations",
+				"Could not load data",
+				err,
+			)
 			return
 		}
 	}

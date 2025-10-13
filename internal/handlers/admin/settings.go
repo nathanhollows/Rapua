@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // Settings displays the account settings page.
-func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(templates.SettingsProfile(*user))
@@ -20,7 +21,7 @@ func (h *AdminHandler) Settings(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettingsProfile displays the account profile page.
-func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(templates.SettingsProfile(*user))
@@ -30,8 +31,8 @@ func (h *AdminHandler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SettingsProfilePost handles updating the user's profile settings
-func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
+// SettingsProfilePost handles updating the user's profile settings.
+func (h *Handler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -61,7 +62,7 @@ func (h *AdminHandler) SettingsProfilePost(w http.ResponseWriter, r *http.Reques
 }
 
 // SettingsAppearance displays the account appearance settings page.
-func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(templates.SettingsAppearance(*user))
@@ -72,7 +73,7 @@ func (h *AdminHandler) SettingsAppearance(w http.ResponseWriter, r *http.Request
 }
 
 // SettingsSecurity displays the account security settings page.
-func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(templates.SettingsSecurity(*user))
@@ -83,7 +84,7 @@ func (h *AdminHandler) SettingsSecurity(w http.ResponseWriter, r *http.Request) 
 }
 
 // SettingsBilling displays the account billing settings page.
-func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := templates.SettingsBilling(*user).Render(r.Context(), w)
@@ -92,8 +93,8 @@ func (h *AdminHandler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SettingsSecurityPost handles updating security settings like password
-func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
+// SettingsSecurityPost handles updating security settings like password.
+func (h *Handler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -115,22 +116,22 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 		}
 
 		// Call the service to change the password
-		err := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
-		if err != nil {
+		changeErr := h.userService.ChangePassword(r.Context(), user, oldPassword, newPassword, confirmPassword)
+		if changeErr != nil {
 			var errorMessage string
-			switch err {
-			case services.ErrIncorrectOldPassword:
+			switch {
+			case errors.Is(changeErr, services.ErrIncorrectOldPassword):
 				errorMessage = "Current password is incorrect"
-			case services.ErrPasswordsDoNotMatch:
+			case errors.Is(changeErr, services.ErrPasswordsDoNotMatch):
 				errorMessage = "New passwords do not match"
-			case services.ErrEmptyPassword:
+			case errors.Is(changeErr, services.ErrEmptyPassword):
 				errorMessage = "Password cannot be empty"
 			default:
 				errorMessage = "Failed to update password"
-				h.logger.Error("change password", "error", err.Error())
+				h.logger.Error("change password", "error", changeErr.Error())
 			}
 
-			h.handleError(w, r, "SettingsSecurityPost", errorMessage, err)
+			h.handleError(w, r, "SettingsSecurityPost", errorMessage, changeErr)
 			return
 		}
 
@@ -141,8 +142,8 @@ func (h *AdminHandler) SettingsSecurityPost(w http.ResponseWriter, r *http.Reque
 	h.handleSuccess(w, r, "Security settings updated!")
 }
 
-// DeleteAccount handles account deletion
-func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+// DeleteAccount handles account deletion.
+func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -167,7 +168,7 @@ func (h *AdminHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettingsCreditUsage displays the user's credit usage data.
-func (h *AdminHandler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	var recurring = 10
@@ -212,7 +213,7 @@ func (h *AdminHandler) SettingsCreditUsage(w http.ResponseWriter, r *http.Reques
 }
 
 // SettingsCreditUsageChart displays the credit usage chart data.
-func (h *AdminHandler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()

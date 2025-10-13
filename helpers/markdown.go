@@ -12,7 +12,7 @@ import (
 )
 
 // MarkdownToHTML converts a string to markdown.
-func MarkdownToHTML(s string) (template.HTML, error) {
+func MarkdownToHTML(s string, logger *slog.Logger) (template.HTML, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.Strikethrough,
@@ -30,9 +30,12 @@ func MarkdownToHTML(s string) (template.HTML, error) {
 
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(s), &buf); err != nil {
-		slog.Error("converting markdown to HTML", "err", err)
+		if logger != nil {
+			logger.Error("converting markdown to HTML", "err", err)
+		}
 		return template.HTML("Error rendering markdown to HTML"), err
 	}
 
+	// #nosec G203 - SanitizeHTML uses bluemonday to sanitize, safe from XSS
 	return template.HTML(SanitizeHTML(buf.Bytes())), nil
 }

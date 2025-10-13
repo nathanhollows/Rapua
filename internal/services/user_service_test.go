@@ -206,12 +206,12 @@ func TestUpdateUserProfile(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Update the profile
-			err = service.UpdateUserProfile(context.Background(), currentUser, tc.profile)
-			assert.NoError(t, err)
+			updateErr := service.UpdateUserProfile(context.Background(), currentUser, tc.profile)
+			assert.NoError(t, updateErr)
 
 			// Retrieve the updated user
-			updatedUser, err := service.GetUserByEmail(context.Background(), email)
-			assert.NoError(t, err)
+			updatedUser, getErr := service.GetUserByEmail(context.Background(), email)
+			assert.NoError(t, getErr)
 
 			// Validate fields
 			tc.validate(t, updatedUser)
@@ -247,8 +247,8 @@ func TestChangePassword(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify the password was changed in the database
-		updatedUser, err := service.GetUserByEmail(context.Background(), email)
-		assert.NoError(t, err)
+		updatedUser, getErr := service.GetUserByEmail(context.Background(), email)
+		assert.NoError(t, getErr)
 		assert.NotEqual(t, oldHashedPassword, updatedUser.Password)
 	})
 
@@ -312,11 +312,11 @@ func TestUserService_SwitchInstance(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				err := service.SwitchInstance(context.Background(), tc.user, tc.instanceID)
+				switchErr := service.SwitchInstance(context.Background(), tc.user, tc.instanceID)
 				if tc.wantErr {
-					assert.Error(t, err)
+					assert.Error(t, switchErr)
 				} else {
-					assert.NoError(t, err)
+					assert.NoError(t, switchErr)
 					assert.Equal(t, tc.instanceID, tc.user.CurrentInstanceID)
 				}
 			})

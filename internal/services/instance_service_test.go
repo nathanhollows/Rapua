@@ -20,7 +20,6 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
-	clueRepo := repositories.NewClueRepository(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
@@ -33,7 +32,7 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 
 	// Initialize services
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
-	locationService := services.NewLocationService(clueRepo, locationRepo, markerRepo, blockRepo, markerService)
+	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
@@ -97,7 +96,12 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				duplicatedInstance, err := svc.DuplicateInstance(context.Background(), tc.user, tc.instanceID, tc.newName)
+				duplicatedInstance, err := svc.DuplicateInstance(
+					context.Background(),
+					tc.user,
+					tc.instanceID,
+					tc.newName,
+				)
 				if tc.wantErr {
 					assert.Error(t, err)
 					assert.Nil(t, duplicatedInstance)

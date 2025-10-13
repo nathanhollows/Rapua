@@ -8,8 +8,10 @@ import (
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
 )
 
-func (h *AdminHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(100 << 20) // 100MB max
+const maxUploadSize = 100 << 20 // 100MB
+
+func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(maxUploadSize)
 	if err != nil {
 		h.handleError(w, r, "UploadMedia", "File too large", "error", err)
 		return
@@ -22,12 +24,12 @@ func (h *AdminHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	metadata := services.UploadMetadata{}
-
-	metadata.InstanceID = r.Form.Get("instance_id")
-	metadata.TeamID = r.Form.Get("team_id")
-	metadata.BlockID = r.Form.Get("block_id")
-	metadata.LocationID = r.Form.Get("location_id")
+	metadata := services.UploadMetadata{
+		InstanceID: r.Form.Get("instance_id"),
+		TeamID:     r.Form.Get("team_id"),
+		BlockID:    r.Form.Get("block_id"),
+		LocationID: r.Form.Get("location_id"),
+	}
 
 	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)
 	if err != nil {
@@ -36,16 +38,15 @@ func (h *AdminHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Form.Get("context") == "image_block" {
-		err := templates.ImageAdminUpload(*media).Render(r.Context(), w)
-		if err != nil {
-			h.handleError(w, r, "UploadMedia", "Failed to render template", "error", err)
+		if renderErr := templates.ImageAdminUpload(*media).Render(r.Context(), w); renderErr != nil {
+			h.handleError(w, r, "UploadMedia", "Failed to render template", "error", renderErr)
 		}
 	}
 
 	h.handleSuccess(w, r, "File uploaded")
 }
 
-func (h *AdminHandler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "Couldn't search images", "Failed to parse form", "error", err)
@@ -80,5 +81,7 @@ func (h *AdminHandler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(uploads)
 	if err != nil {
 		h.handleError(w, r, "Couldn't search images", "Failed to encode response", "error", err)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
 	}
 }

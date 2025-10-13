@@ -9,13 +9,18 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 )
 
+const (
+	pngExtension = "png"
+	svgExtension = "svg"
+)
+
 // QRCode handles the generation of QR codes for the current instance.
-func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) QRCode(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Extract parameters from the URL
 	extension := chi.URLParam(r, "extension")
-	if extension != "png" && extension != "svg" {
+	if extension != pngExtension && extension != svgExtension {
 		h.logger.Error("QRCodeHandler: Invalid extension provided")
 		http.Error(w, "Invalid extension provided", http.StatusNotFound)
 		return
@@ -52,8 +57,8 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 	path, content := h.assetGenerator.GetQRCodePathAndContent(action, id, "", extension)
 
 	// Check if the file already exists, if so serve it
-	if _, err := os.Stat(path); err == nil {
-		if extension == "svg" {
+	if _, statErr := os.Stat(path); statErr == nil {
+		if extension == svgExtension {
 			w.Header().Set("Content-Type", "image/svg+xml")
 		} else {
 			w.Header().Set("Content-Type", "image/png")
@@ -77,9 +82,9 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 
 	// Serve the generated QR code
 	switch extension {
-	case "svg":
+	case svgExtension:
 		w.Header().Set("Content-Type", "image/svg+xml")
-	case "png":
+	case pngExtension:
 		w.Header().Set("Content-Type", "image/png")
 	default:
 		http.Error(w, "Invalid extension provided", http.StatusNotFound)
@@ -89,37 +94,31 @@ func (h *AdminHandler) QRCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // GenerateQRCodeArchive generates a zip file containing all the QR codes for the current instance.
-func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	var paths []string
-	actions := []string{"in"}
-	if user.CurrentInstance.Settings.CompletionMethod == models.CheckInAndOut {
-		actions = []string{"in", "out"}
-	}
 	for _, location := range user.CurrentInstance.Locations {
-		for _, extension := range []string{"png", "svg"} {
-			for _, action := range actions {
-				path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, extension)
-				paths = append(paths, path)
+		for _, extension := range []string{pngExtension, svgExtension} {
+			path, content := h.assetGenerator.GetQRCodePathAndContent("in", location.MarkerID, location.Name, extension)
+			paths = append(paths, path)
 
-				// Check if the file already exists, otherwise generate it
-				if _, err := os.Stat(path); err == nil {
-					continue
-				}
+			// Check if the file already exists, otherwise generate it
+			if _, err := os.Stat(path); err == nil {
+				continue
+			}
 
-				// Generate the QR code
-				err := h.assetGenerator.CreateQRCodeImage(
-					r.Context(),
-					path,
-					content,
-					h.assetGenerator.WithQRFormat(extension),
-				)
-				if err != nil {
-					h.logger.Error("QRCodeHandler: Could not create QR code", "error", err)
-					http.Error(w, "Could not create QR code", http.StatusInternalServerError)
-					return
-				}
+			// Generate the QR code
+			err := h.assetGenerator.CreateQRCodeImage(
+				r.Context(),
+				path,
+				content,
+				h.assetGenerator.WithQRFormat(extension),
+			)
+			if err != nil {
+				h.logger.Error("QRCodeHandler: Could not create QR code", "error", err)
+				http.Error(w, "Could not create QR code", http.StatusInternalServerError)
+				return
 			}
 		}
 	}
@@ -132,11 +131,13 @@ func (h *AdminHandler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Requ
 	}
 
 	http.ServeFile(w, r, path)
-	os.Remove(path)
+	if removeErr := os.Remove(path); removeErr != nil {
+		h.logger.Warn("Failed to remove temporary file", "path", path, "error", removeErr)
+	}
 }
 
 // GeneratePosters generates a PDF file containing all the QR codes for the current instance.
-func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	pdfData := services.PDFData{
@@ -144,40 +145,31 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 		Pages:        services.PDFPages{},
 	}
 
-	actions := []string{"in"}
-	if user.CurrentInstance.Settings.CompletionMethod == models.CheckInAndOut {
-		actions = []string{"in", "out"}
-	}
 	for _, location := range user.CurrentInstance.Locations {
-		for _, action := range actions {
-			path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+		path, content := h.assetGenerator.GetQRCodePathAndContent("in", location.MarkerID, location.Name, pngExtension)
 
-			// Check if the file already exists, otherwise generate it
-			if _, err := os.Stat(path); err != nil {
-				// Generate the QR code
-				err := h.assetGenerator.CreateQRCodeImage(
-					r.Context(),
-					path,
-					content,
-					h.assetGenerator.WithQRFormat("png"),
-				)
-				if err != nil {
-					h.logger.Error("GeneratePoster: Could not create posters", "error", err)
-					http.Error(w, "Could not create posters", http.StatusInternalServerError)
-					return
-				}
+		// Check if the file already exists, otherwise generate it
+		if _, statErr := os.Stat(path); statErr != nil {
+			// Generate the QR code
+			qrErr := h.assetGenerator.CreateQRCodeImage(
+				r.Context(),
+				path,
+				content,
+				h.assetGenerator.WithQRFormat(pngExtension),
+			)
+			if qrErr != nil {
+				h.logger.Error("GeneratePoster: Could not create posters", "error", qrErr)
+				http.Error(w, "Could not create posters", http.StatusInternalServerError)
+				return
 			}
-
-			page := services.PDFPage{
-				LocationName: location.Name,
-				ImagePath:    path,
-				URL:          content,
-			}
-			if action == "out" {
-				page.Background = []int{255, 216, 216}
-			}
-			pdfData.Pages = append(pdfData.Pages, page)
 		}
+
+		page := services.PDFPage{
+			LocationName: location.Name,
+			ImagePath:    path,
+			URL:          content,
+		}
+		pdfData.Pages = append(pdfData.Pages, page)
 	}
 	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
 	if err != nil {
@@ -189,11 +181,13 @@ func (h *AdminHandler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+user.CurrentInstance.Name+" posters.pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
 	http.ServeFile(w, r, path)
-	os.Remove(path)
+	if removeErr := os.Remove(path); removeErr != nil {
+		h.logger.Warn("Failed to remove temporary file", "path", path, "error", removeErr)
+	}
 }
 
 // GeneratePoster generates a poster for the given location.
-func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	id := chi.URLParam(r, "id")
@@ -223,39 +217,31 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		Pages:        services.PDFPages{},
 	}
 
-	actions := []string{"in"}
-	if user.CurrentInstance.Settings.CompletionMethod == models.CheckInAndOut {
-		actions = []string{"in", "out"}
-	}
-	for _, action := range actions {
-		path, content := h.assetGenerator.GetQRCodePathAndContent(action, location.MarkerID, location.Name, "png")
+	path, content := h.assetGenerator.GetQRCodePathAndContent("in", location.MarkerID, location.Name, pngExtension)
 
-		// Check if the file already exists, otherwise generate it
-		if _, err := os.Stat(path); err != nil {
-			// Generate the QR code
-			err := h.assetGenerator.CreateQRCodeImage(
-				r.Context(),
-				path,
-				content,
-				h.assetGenerator.WithQRFormat("png"),
-			)
-			if err != nil {
-				h.logger.Error("GeneratePoster: Could not create posters", "error", err)
-				http.Error(w, "Could not create posters", http.StatusInternalServerError)
-				return
-			}
+	// Check if the file already exists, otherwise generate it
+	if _, statErr := os.Stat(path); statErr != nil {
+		// Generate the QR code
+		qrErr := h.assetGenerator.CreateQRCodeImage(
+			r.Context(),
+			path,
+			content,
+			h.assetGenerator.WithQRFormat(pngExtension),
+		)
+		if qrErr != nil {
+			h.logger.Error("GeneratePoster: Could not create posters", "error", qrErr)
+			http.Error(w, "Could not create posters", http.StatusInternalServerError)
+			return
 		}
-
-		page := services.PDFPage{
-			LocationName: location.Name,
-			ImagePath:    path,
-			URL:          content,
-		}
-		if action == "out" {
-			page.Background = []int{255, 216, 216}
-		}
-		pdfData.Pages = append(pdfData.Pages, page)
 	}
+
+	page := services.PDFPage{
+		LocationName: location.Name,
+		ImagePath:    path,
+		URL:          content,
+	}
+
+	pdfData.Pages = append(pdfData.Pages, page)
 	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
 	if err != nil {
 		h.logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
@@ -263,8 +249,11 @@ func (h *AdminHandler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+user.CurrentInstance.Name+" - "+location.Name+" poster.pdf\"")
+	w.Header().
+		Set("Content-Disposition", "attachment; filename=\""+user.CurrentInstance.Name+" - "+location.Name+" poster.pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
 	http.ServeFile(w, r, path)
-	os.Remove(path)
+	if removeErr := os.Remove(path); removeErr != nil {
+		h.logger.Warn("Failed to remove temporary file", "path", path, "error", removeErr)
+	}
 }

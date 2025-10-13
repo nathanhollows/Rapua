@@ -154,7 +154,7 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 													Complete!
 												</span>
 											} else {
-												if location.Instance.Settings.CompletionMethod == models.CheckInAndOut {
+												if location.Instance.Settings.MustCheckOut {
 													if location.CurrentCount > 0 {
 														<span class="badge badge-accent whitespace-nowrap">
 															{ fmt.Sprintf("%d", location.CurrentCount) } Currently Visiting

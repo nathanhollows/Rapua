@@ -184,7 +184,7 @@ var pincodeUnlockedContentTextarea = TextareaParams{
 templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
 		hx-swap="none"
 	>

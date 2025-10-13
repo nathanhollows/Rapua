@@ -24,12 +24,12 @@ type Myfs struct {
 func (m Myfs) Open(name string) (result http.File, err error) {
 	f, err := m.Dir.Open(name)
 	if err != nil {
-		return
+		return result, err
 	}
 
 	fi, err := f.Stat()
 	if err != nil {
-		return
+		return result, err
 	}
 
 	if fi.IsDir() {
@@ -46,7 +46,7 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 	}
 
 	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
 		path += "/"
 	}
 	path += "*"

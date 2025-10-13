@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,10 +26,10 @@ func NewShareLinkRepository(db *bun.DB) ShareLinkRepository {
 func (r *ShareLinkRepository) Create(ctx context.Context, link *models.ShareLink) error {
 	// Sanity check the link
 	if link == nil {
-		return fmt.Errorf("link is required")
+		return errors.New("link is required")
 	}
 	if link.TemplateID == "" {
-		return fmt.Errorf("template ID is required")
+		return errors.New("template ID is required")
 	}
 
 	// If the link has no expiration date and no max uses, we first search for an existing link
@@ -44,7 +45,7 @@ func (r *ShareLinkRepository) Create(ctx context.Context, link *models.ShareLink
 		if err != nil && err.Error() != "sql: no rows in result set" {
 			return fmt.Errorf("failed to check for existing link: %w", err)
 		}
-		if existingLink != nil && existingLink.ID != "" {
+		if existingLink.ID != "" {
 			link.ID = existingLink.ID
 			return nil
 		}
@@ -68,8 +69,6 @@ func (r *ShareLinkRepository) GetByID(ctx context.Context, id string) (*models.S
 		Relation("Template").
 		Relation("Template.Settings").
 		Relation("Template.Locations").
-		Relation("Template.Locations.Blocks").
-		Relation("Template.Locations.Clues").
 		Relation("Template.Locations.Marker").
 		Scan(ctx)
 	return link, err
@@ -86,7 +85,7 @@ func (r *ShareLinkRepository) Use(ctx context.Context, link *models.ShareLink) e
 		return err
 	}
 	if rows, _ := res.RowsAffected(); rows == 0 {
-		return fmt.Errorf("link is expired or has reached its maximum uses")
+		return errors.New("link is expired or has reached its maximum uses")
 	}
 	return nil
 }

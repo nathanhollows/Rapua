@@ -89,7 +89,12 @@ var clueButtonTextInput = TextInputParams{
 }
 
 templ clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) {
-	<form id={ fmt.Sprintf("form-%s", block.ID) } hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") } hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID) } hx-swap="none">
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
 		if settings.EnablePoints {
 			@adminPointCostField(block.Points)
 		}

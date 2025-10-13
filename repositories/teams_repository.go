@@ -80,16 +80,13 @@ func (r *teamRepository) UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx
 
 // Reset wipes a team's progress for re-use.
 func (r *teamRepository) Reset(ctx context.Context, tx *bun.Tx, instanceID string, teamCodes []string) error {
-	res, err := tx.NewUpdate().Model(&models.Team{}).
+	_, err := tx.NewUpdate().Model(&models.Team{}).
 		Set("name = ''").
 		Set("has_started = false").
 		Set("must_scan_out = ''").
 		Set("points = 0").
 		Where("instance_id = ? AND code IN (?)", instanceID, bun.In(teamCodes)).
 		Exec(ctx)
-	if i, _ := res.RowsAffected(); i == 0 {
-		fmt.Println("No teams found to reset")
-	}
 	return err
 }
 
@@ -147,7 +144,7 @@ func (r *teamRepository) GetByCode(ctx context.Context, code string) (*models.Te
 		}).
 		Limit(1).Scan(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("FindTeamByCode: %v", err)
+		return nil, fmt.Errorf("FindTeamByCode: %w", err)
 	}
 	return &team, nil
 }
@@ -200,7 +197,7 @@ func (r *teamRepository) LoadInstance(ctx context.Context, team *models.Team) er
 	}
 
 	if len(team.Instance.Locations) == 0 {
-		query = query.Relation("Locations.Blocks")
+		query = query.Relation("Locations")
 	}
 
 	return query.Scan(ctx)
@@ -214,7 +211,7 @@ func (r *teamRepository) LoadCheckIns(ctx context.Context, team *models.Team) er
 		Order("time_in DESC").
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadCheckIns: %v", err)
+		return fmt.Errorf("LoadCheckIns: %w", err)
 	}
 	return nil
 }
@@ -227,7 +224,7 @@ func (r *teamRepository) LoadBlockingLocation(ctx context.Context, team *models.
 		Where("ID = ?", team.MustCheckOut).
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadBlockingLocation: %v", err)
+		return fmt.Errorf("LoadBlockingLocation: %w", err)
 	}
 	return nil
 }
@@ -238,7 +235,7 @@ func (r *teamRepository) LoadMessages(ctx context.Context, team *models.Team) er
 		Order("created_at DESC").
 		Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("LoadNotifications: %v", err)
+		return fmt.Errorf("LoadNotifications: %w", err)
 	}
 	return nil
 }

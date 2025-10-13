@@ -25,7 +25,11 @@ func NewLocalStorage(basePath string) services.UploadStorage {
 }
 
 // Upload saves the file to the local storage.
-func (s *LocalStorage) Upload(ctx context.Context, file multipart.File, filename string) (map[string]string, string, error) {
+func (s *LocalStorage) Upload(
+	ctx context.Context,
+	file multipart.File,
+	filename string,
+) (map[string]string, string, error) {
 	select {
 	case <-ctx.Done():
 		return nil, "", fmt.Errorf("context cancelled: %w", ctx.Err())

@@ -70,7 +70,10 @@ func (r *instanceSettingsRepository) Delete(ctx context.Context, tx *bun.Tx, ins
 }
 
 // GetByInstanceID retrieves instance settings by instance ID.
-func (r *instanceSettingsRepository) GetByInstanceID(ctx context.Context, instanceID string) (*models.InstanceSettings, error) {
+func (r *instanceSettingsRepository) GetByInstanceID(
+	ctx context.Context,
+	instanceID string,
+) (*models.InstanceSettings, error) {
 	if instanceID == "" {
 		return nil, errors.New("instance ID is required")
 	}

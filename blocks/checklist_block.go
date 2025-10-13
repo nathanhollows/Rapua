@@ -43,7 +43,7 @@ type checklistPlayerData struct {
 
 // Ensure ChecklistBlock implements the Block interface
 
-// Basic Attributes Getters.
+// GetName returns the block type name.
 func (b *ChecklistBlock) GetName() string { return "Checklist" }
 
 func (b *ChecklistBlock) GetDescription() string {
@@ -69,7 +69,7 @@ func (b *ChecklistBlock) GetData() json.RawMessage {
 	return data
 }
 
-// Data Operations.
+// ParseData parses the block data from JSON.
 func (b *ChecklistBlock) ParseData() error {
 	return json.Unmarshal(b.Data, b)
 }
@@ -120,7 +120,7 @@ func (b *ChecklistBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
-// Validation and Points Calculation.
+// RequiresValidation returns whether this block requires player input validation.
 func (b *ChecklistBlock) RequiresValidation() bool { return true }
 
 func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {

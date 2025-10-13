@@ -324,5 +324,10 @@ func TestTeamRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
 	// Insert the same teams again to trigger unique constraint error
 	err = repo.InsertBatch(ctx, sampleTeams)
 	assert.Error(t, err, "expected unique constraint error when inserting duplicate batch of teams")
-	assert.Contains(t, err.Error(), "UNIQUE constraint", "expected error message to indicate unique constraint violation")
+	assert.Contains(
+		t,
+		err.Error(),
+		"UNIQUE constraint",
+		"expected error message to indicate unique constraint violation",
+	)
 }

@@ -1,10 +1,12 @@
 package templates
 
+import "fmt"
+
 templ AuthLayout(contents templ.Component, title string, authed bool) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@publicHeader(title)
-		<body class="h-screen flex flex-col">
+		<body class="h-screen flex flex-col" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			if title != "Verify Email" {
 				@authNav(title, authed)
 			}

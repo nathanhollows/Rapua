@@ -8,19 +8,19 @@ import (
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
-// LeaderBoardService handles team ranking and leaderboard logic
+// LeaderBoardService handles team ranking and leaderboard logic.
 type LeaderBoardService struct {
 	teamRepo repositories.TeamRepository
 }
 
-// NewLeaderBoardService creates a new LeaderBoardService
+// NewLeaderBoardService creates a new LeaderBoardService.
 func NewLeaderBoardService(teamRepo repositories.TeamRepository) *LeaderBoardService {
 	return &LeaderBoardService{
 		teamRepo: teamRepo,
 	}
 }
 
-// GetLeaderBoardData returns sorted and ranked leaderboard data
+// GetLeaderBoardData returns sorted and ranked leaderboard data.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	ctx context.Context,
 	teams []models.Team,
@@ -54,7 +54,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 	return leaderBoardData, nil
 }
 
-// convertTeamToLeaderBoardData converts a models.Team to LeaderBoardTeamData
+// convertTeamToLeaderBoardData converts a models.Team to LeaderBoardTeamData.
 func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Team, locationCount int) LeaderBoardTeamData {
 	checkInCount := len(team.CheckIns)
 
@@ -87,7 +87,7 @@ func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Team, loca
 	}
 }
 
-// determineTeamStatus determines the current status of a team
+// determineTeamStatus determines the current status of a team.
 func (s *LeaderBoardService) determineTeamStatus(team models.Team, locationCount int) TeamStatus {
 	if team.MustCheckOut != "" {
 		return StatusOnsite
@@ -105,7 +105,7 @@ func (s *LeaderBoardService) determineTeamStatus(team models.Team, locationCount
 }
 
 // applyRanking applies ranking based on the specified scheme
-// All ranking schemes use earliest last check-in time as tiebreaker to ensure no tied ranks
+// All ranking schemes use earliest last check-in time as tiebreaker to ensure no tied ranks.
 func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme RankingScheme, locationCount int) {
 	switch scheme {
 	case RankByProgress:
@@ -125,7 +125,7 @@ func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme Ran
 	}
 }
 
-// rankByProgress ranks teams by their progress (number of check-ins)
+// rankByProgress ranks teams by their progress (number of check-ins).
 func (s *LeaderBoardService) rankByProgress(data []LeaderBoardTeamData) {
 	// Sort by progress descending, then by last seen ascending (earlier is better)
 	sort.Slice(data, func(i, j int) bool {
@@ -142,7 +142,7 @@ func (s *LeaderBoardService) rankByProgress(data []LeaderBoardTeamData) {
 	}
 }
 
-// rankByPoints ranks teams by their points
+// rankByPoints ranks teams by their points.
 func (s *LeaderBoardService) rankByPoints(data []LeaderBoardTeamData) {
 	// Sort by points descending, then by last seen ascending (earlier is better)
 	sort.Slice(data, func(i, j int) bool {
@@ -159,7 +159,7 @@ func (s *LeaderBoardService) rankByPoints(data []LeaderBoardTeamData) {
 	}
 }
 
-// rankByCompletion ranks teams by completion status, then by progress
+// rankByCompletion ranks teams by completion status, then by progress.
 func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData, locationCount int) {
 	// Sort by completion status, then by progress, then by last seen ascending (earlier is better)
 	sort.Slice(data, func(i, j int) bool {
@@ -183,7 +183,7 @@ func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData, locati
 	}
 }
 
-// sortLeaderBoardData sorts the leaderboard data by the specified field and order
+// sortLeaderBoardData sorts the leaderboard data by the specified field and order.
 func (s *LeaderBoardService) sortLeaderBoardData(data []LeaderBoardTeamData, field SortField, order SortOrder) {
 	sort.Slice(data, func(i, j int) bool {
 		var result bool
@@ -214,80 +214,97 @@ func (s *LeaderBoardService) sortLeaderBoardData(data []LeaderBoardTeamData, fie
 	})
 }
 
-// GetDefaultSortForRankingScheme returns the default sort field for a ranking scheme
+// GetDefaultSortForRankingScheme returns the default sort field for a ranking scheme.
 func (s *LeaderBoardService) GetDefaultSortForRankingScheme(scheme string) string {
 	parsedScheme := ParseRankingScheme(scheme)
 	switch parsedScheme {
 	case RankByPoints:
-		return "points"
+		return string(SortByPoints)
 	case RankByProgress:
-		return "progress"
+		return string(SortByProgress)
 	default:
-		return "rank"
+		return string(SortByRank)
 	}
 }
 
-// GetSupportedRankingSchemes returns all supported ranking schemes
+// GetSupportedRankingSchemes returns all supported ranking schemes.
 func (s *LeaderBoardService) GetSupportedRankingSchemes() []string {
-	return []string{"progress", "points", "completion", "time_to_first", "time_to_last"}
+	return []string{
+		string(RankByProgress),
+		string(RankByPoints),
+		string(RankByCompletion),
+		string(RankByTimeToFirst),
+		string(RankByTimeToLast),
+	}
 }
 
-// GetSupportedSortFields returns all supported sort fields
+// GetSupportedSortFields returns all supported sort fields.
 func (s *LeaderBoardService) GetSupportedSortFields() []string {
-	return []string{"rank", "code", "name", "points", "last_seen", "progress", "status"}
+	return []string{
+		string(SortByRank),
+		string(SortByCode),
+		string(SortByName),
+		string(SortByPoints),
+		string(SortByLastSeen),
+		string(SortByProgress),
+		string(SortByStatus),
+	}
 }
 
-// GetSupportedSortOrders returns all supported sort orders
+// GetSupportedSortOrders returns all supported sort orders.
 func (s *LeaderBoardService) GetSupportedSortOrders() []string {
-	return []string{"asc", "desc"}
+	return []string{
+		string(SortAsc),
+		string(SortDesc),
+	}
 }
 
-// ParseSortField parses a string to SortField
+// ParseSortField parses a string to SortField.
 func ParseSortField(field string) SortField {
 	switch field {
-	case "rank":
+	case string(SortByRank):
 		return SortByRank
-	case "code":
+	case string(SortByCode):
 		return SortByCode
-	case "name":
+	case string(SortByName):
 		return SortByName
-	case "points":
+	case string(SortByPoints):
 		return SortByPoints
-	case "last_seen":
+	case string(SortByLastSeen):
 		return SortByLastSeen
-	case "progress":
+	case string(SortByProgress):
 		return SortByProgress
-	case "status":
+	case string(SortByStatus):
 		return SortByStatus
 	default:
 		return SortByRank
 	}
 }
 
-// ParseSortOrder parses a string to SortOrder
+// ParseSortOrder parses a string to SortOrder.
 func ParseSortOrder(order string) SortOrder {
 	switch order {
-	case "desc":
+	case string(SortDesc):
 		return SortDesc
-	case "asc":
+	case string(SortAsc):
 		return SortAsc
 	default:
 		return SortAsc
 	}
 }
 
-// ParseRankingScheme parses a string to RankingScheme
+// ParseRankingScheme parses a string to RankingScheme.
 func ParseRankingScheme(scheme string) RankingScheme {
 	switch scheme {
-	case "points":
+	case string(RankByPoints):
 		return RankByPoints
-	case "progress":
+	case string(RankByProgress):
 		return RankByProgress
-	case "time_to_first":
+	case string(RankByTimeToFirst):
 		return RankByTimeToFirst
-	case "time_to_last":
+	case string(RankByTimeToLast):
 		return RankByTimeToLast
-	case "completion":
+	case string(RankByCompletion):
 		return RankByCompletion
 	default:
 		return RankByProgress

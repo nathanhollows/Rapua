@@ -1,9 +1,10 @@
-package models
+package models_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun"
 )
 
@@ -12,55 +13,55 @@ func TestInstance_GetStatus(t *testing.T) {
 		name      string
 		startTime bun.NullTime
 		endTime   bun.NullTime
-		want      GameStatus
+		want      models.GameStatus
 	}{
 		{
 			name:      "Closed - No Times",
 			startTime: bun.NullTime{},
 			endTime:   bun.NullTime{},
-			want:      Closed,
+			want:      models.Closed,
 		},
 		{
 			name:      "Closed - End Time Only",
 			startTime: bun.NullTime{},
 			endTime:   bun.NullTime{Time: time.Now().Add(-time.Hour)},
-			want:      Closed,
+			want:      models.Closed,
 		},
 		{
 			name:      "Closed - End Time in Past",
 			startTime: bun.NullTime{Time: time.Now().Add(-2 * time.Hour)},
 			endTime:   bun.NullTime{Time: time.Now().Add(-time.Hour)},
-			want:      Closed,
+			want:      models.Closed,
 		},
 		{
 			name:      "Scheduled - Start Time Only",
 			startTime: bun.NullTime{Time: time.Now().Add(time.Hour)},
 			endTime:   bun.NullTime{},
-			want:      Scheduled,
+			want:      models.Scheduled,
 		},
 		{
 			name:      "Scheduled - Start Time in Future",
 			startTime: bun.NullTime{Time: time.Now().Add(time.Hour)},
 			endTime:   bun.NullTime{Time: time.Now().Add(2 * time.Hour)},
-			want:      Scheduled,
+			want:      models.Scheduled,
 		},
 		{
 			name:      "Active - Start Time in Past, End Time in Future",
 			startTime: bun.NullTime{Time: time.Now().Add(-time.Hour)},
 			endTime:   bun.NullTime{Time: time.Now().Add(time.Hour)},
-			want:      Active,
+			want:      models.Active,
 		},
 		{
 			name:      "Active - Start Time in Past, No End Time",
 			startTime: bun.NullTime{Time: time.Now().Add(-time.Hour)},
 			endTime:   bun.NullTime{},
-			want:      Active,
+			want:      models.Active,
 		},
 		{
 			name:      "Closed - No Start Time, End Time in Past",
 			startTime: bun.NullTime{},
 			endTime:   bun.NullTime{Time: time.Now().Add(-time.Hour)},
-			want:      Closed,
+			want:      models.Closed,
 		},
 	}
 
@@ -68,7 +69,7 @@ func TestInstance_GetStatus(t *testing.T) {
 		t.Run(
 			tt.name,
 			func(t *testing.T) {
-				instance := &Instance{
+				instance := &models.Instance{
 					StartTime: tt.startTime,
 					EndTime:   tt.endTime,
 				}

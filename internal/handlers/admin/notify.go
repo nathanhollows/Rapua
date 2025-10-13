@@ -5,11 +5,20 @@ import (
 )
 
 // NotifyAllPost sends a notification to all teams.
-func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "NotifyAllPost parsing form", "Error parsing form", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"NotifyAllPost parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -18,7 +27,16 @@ func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	// Send the notification
 	err := h.notificationService.SendNotificationToAllTeams(r.Context(), user.CurrentInstanceID, content)
 	if err != nil {
-		h.handleError(w, r, "NotifyAllPost sending notification", "Error sending notification", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"NotifyAllPost sending notification",
+			"Error sending notification",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -26,11 +44,20 @@ func (h *AdminHandler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // NotifyTeamPost sends a notification to a specific team.
-func (h *AdminHandler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "NotifyTeamPost parsing form", "Error parsing form", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"NotifyTeamPost parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 
@@ -40,7 +67,16 @@ func (h *AdminHandler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 	// Send the notification
 	_, err := h.notificationService.SendNotification(r.Context(), teamCode, content)
 	if err != nil {
-		h.handleError(w, r, "NotifyTeamPost sending notification", "Error sending notification", "error", err, "instance_id", user.CurrentInstanceID)
+		h.handleError(
+			w,
+			r,
+			"NotifyTeamPost sending notification",
+			"Error sending notification",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		return
 	}
 

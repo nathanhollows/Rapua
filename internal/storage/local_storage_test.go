@@ -18,7 +18,7 @@ type mockFile struct {
 	reader *strings.Reader
 }
 
-// mockMultipartFile creates a mock multipart.File for testing
+// mockMultipartFile creates a mock multipart.File for testing.
 func mockMultipartFile(content string) multipart.File {
 	return &mockFile{reader: strings.NewReader(content)}
 }
@@ -121,7 +121,7 @@ func TestLocalStorage_Concurrency(t *testing.T) {
 	storage := storage.NewLocalStorage(basePath)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()

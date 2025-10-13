@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/uptrace/bun"
@@ -36,14 +36,15 @@ func (t *transactor) BeginTx(ctx context.Context, opts *sql.TxOptions) (*bun.Tx,
 	return &tx, nil
 }
 
-func MustOpen() *bun.DB {
+func MustOpen(logger *slog.Logger) *bun.DB {
 	var sqldb *sql.DB
 	var err error
 	var db *bun.DB
 
 	dataSourceName := os.Getenv("DB_CONNECTION")
 	if dataSourceName == "" {
-		log.Fatal("DB_CONNECTION not set. Please set DB_CONNECTION in the environment")
+		logger.Error("DB_CONNECTION not set. Please set DB_CONNECTION in the environment")
+		os.Exit(1)
 	}
 
 	driverName := os.Getenv("DB_TYPE")
@@ -54,9 +55,10 @@ func MustOpen() *bun.DB {
 	case "sqlite3":
 		sqldb, err = sql.Open(sqliteshim.ShimName, dataSourceName)
 		db = bun.NewDB(sqldb, sqlitedialect.New())
-		_, err := sqldb.Exec("PRAGMA journal_mode=WAL;")
-		if err != nil {
-			log.Fatal(err)
+		_, pragmaErr := sqldb.ExecContext(context.Background(), "PRAGMA journal_mode=WAL;")
+		if pragmaErr != nil {
+			logger.Error("set PRAGMA journal_mode=WAL", slog.String("error", pragmaErr.Error()))
+			os.Exit(1)
 		}
 	default:
 		panic("unsupported DB_TYPE: " + driverName + ". Supported types are mysql and sqlite3")

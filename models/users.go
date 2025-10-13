@@ -7,16 +7,16 @@ import (
 type User struct {
 	baseModel
 
-	ID               string       `bun:"id,unique,pk,type:varchar(36)"`
-	Name             string       `bun:"name,type:varchar(255)"`
+	ID               string         `bun:"id,unique,pk,type:varchar(36)"`
+	Name             string         `bun:"name,type:varchar(255)"`
 	DisplayName      sql.NullString `bun:"display_name,type:varchar(255),nullzero"`
-	Email            string       `bun:"email,unique,pk"`
-	EmailVerified    bool         `bun:"email_verified,type:boolean"`
-	EmailToken       string       `bun:"email_token,type:varchar(36)"`
-	EmailTokenExpiry sql.NullTime `bun:"email_token_expiry,nullzero"`
-	Password         string       `bun:"password,type:varchar(255)"`
-	Provider         Provider     `bun:"provider,type:varchar(255)"`
-	ShareEmail       bool         `bun:"share_email,type:boolean,notnull,default:false"`
+	Email            string         `bun:"email,unique,pk"`
+	EmailVerified    bool           `bun:"email_verified,type:boolean"`
+	EmailToken       string         `bun:"email_token,type:varchar(36)"`
+	EmailTokenExpiry sql.NullTime   `bun:"email_token_expiry,nullzero"`
+	Password         string         `bun:"password,type:varchar(255)"`
+	Provider         Provider       `bun:"provider,type:varchar(255)"`
+	ShareEmail       bool           `bun:"share_email,type:boolean,notnull,default:false"`
 	WorkType         sql.NullString `bun:"work_type,type:varchar(100),nullzero"`
 	FreeCredits      int            `bun:"free_credits,type:int,default:10"` // Credits for team starts
 	PaidCredits      int            `bun:"paid_credits,type:int,default:0"`  // Purchased credits

@@ -37,7 +37,10 @@ func init() {
 			return fmt.Errorf("20250219013821_templates.go: add column is_template: %w", err)
 		}
 
-		_, err = db.NewAddColumn().Model((*m20250219013821_Instance)(nil)).ColumnExpr("template_id varchar(36)").Exec(ctx)
+		_, err = db.NewAddColumn().
+			Model((*m20250219013821_Instance)(nil)).
+			ColumnExpr("template_id varchar(36)").
+			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("20250219013821_templates.go: add column template_id: %w", err)
 		}

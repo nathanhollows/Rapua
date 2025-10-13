@@ -91,7 +91,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 			class="w-full"
 		}
 		id={ fmt.Sprintf("form-%s", block.ID) }
-		hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("submit, htmx:afterSettle from:(#form-%s-upload), keyup change from:(#form-%s input) delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
 		_={ fmt.Sprintf(`on htmx:afterSettle from #form-%s-upload

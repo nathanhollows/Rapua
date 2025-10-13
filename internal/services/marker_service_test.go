@@ -31,7 +31,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		
+
 		// Validation should pass - may succeed or fail depending on database state
 		if err != nil {
 			// If there's an error, it shouldn't be from our validation rules
@@ -170,7 +170,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{gofakeit.UUID(), gofakeit.UUID()}
 
 		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		
+
 		// May succeed or fail depending on database state, but validation should pass
 		if err != nil {
 			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
@@ -213,7 +213,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{gofakeit.UUID()}
 
 		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		
+
 		// Should pass validation
 		if err != nil {
 			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
@@ -232,7 +232,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		}
 
 		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		
+
 		// Should pass validation
 		if err != nil {
 			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
@@ -248,7 +248,7 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 
 	t.Run("Coordinate precision", func(t *testing.T) {
 		name := gofakeit.Name()
-		
+
 		// Test very precise coordinates
 		lat := 45.123456789
 		lng := -122.987654321
@@ -279,7 +279,7 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 	t.Run("Very long marker name", func(t *testing.T) {
 		// Test with a very long name
 		longName := ""
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			longName += "a"
 		}
 		lat := gofakeit.Latitude()
