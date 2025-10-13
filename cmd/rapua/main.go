@@ -25,7 +25,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v4.4.0"
+const version = "v5.1.0"
 
 func main() {
 	logger := slog.New(
@@ -172,7 +172,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
-	clueRepo := repositories.NewClueRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
@@ -288,7 +287,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		assetGenerator,
 		identityService,
 		blockService,
-		clueService,
 		creditService,
 		deleteService,
 		facilitatorService,
