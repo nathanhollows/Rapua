@@ -26,6 +26,9 @@ type CreditRepository interface {
 	UpdateCredits(ctx context.Context, userID string, freeCredits int, paidCredits int) error
 	// UpdateCreditsWithTx updates a user's credit balance within a transaction.
 	UpdateCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCredits int, paidCredits int) error
+
+	// TryDeductOneCredit atomically deducts one credit from free first, then paid. Returns ErrInsufficientCredits if not possible.
+	TryDeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error
 }
 
 type CreditService struct {
@@ -124,31 +127,17 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 
 // DeductCreditForTeamStart handles credit deduction and team start logging within a transaction.
 func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, instanceID string) error {
-	// Step 1: Check if user has sufficient credits
-	freeBalance, paidBalance, err := s.GetCreditBalance(ctx, userID)
+	// Step 1: Atomically deduct one credit (free first, then paid)
+	err := s.creditRepo.TryDeductOneCreditWithTx(ctx, tx, userID)
 	if err != nil {
-		return nil
-	}
-
-	if freeBalance+paidBalance < 1 {
-		return ErrInsufficientCredits
-	}
-
-	// Step 2: Calculate new credit balances (deduct from free credits first)
-	var newFreeCredits, newPaidCredits int
-	if freeBalance > 0 {
-		newFreeCredits = freeBalance - 1
-		newPaidCredits = paidBalance
-	} else {
-		newFreeCredits = freeBalance
-		newPaidCredits = paidBalance - 1
-	}
-	// Step 3: Update credits using the transaction
-	err = s.creditRepo.UpdateCreditsWithTx(ctx, tx, userID, newFreeCredits, newPaidCredits)
-	if err != nil {
+		// Convert repository error to service error for consistency
+		if err.Error() == "insufficient credits to start team" {
+			return ErrInsufficientCredits
+		}
 		return err
 	}
-	// Step 4: Log the team start
+
+	// Step 2: Log the team start
 	log := &models.TeamStartLog{
 		ID:         uuid.New().String(),
 		CreatedAt:  time.Now(),
@@ -156,8 +145,7 @@ func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *
 		TeamID:     teamID,
 		InstanceID: instanceID,
 	}
-	err = s.teamStartLogRepo.CreateWithTx(ctx, tx, log)
-	return err
+	return s.teamStartLogRepo.CreateWithTx(ctx, tx, log)
 }
 
 // DeductCredits checks if a user has enough credits and deducts them if they do.

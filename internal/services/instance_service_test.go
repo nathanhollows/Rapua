@@ -47,7 +47,7 @@ func TestInstanceService(t *testing.T) {
 	svc, userService, cleanup := setupInstanceService(t)
 	defer cleanup()
 
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
+	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentInstanceID: "instance123"}
 	err := userService.CreateUser(context.Background(), user, "password")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, user.ID)

@@ -149,7 +149,7 @@ func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx conte
 		Order("created_at DESC").
 		Limit(1).
 		Scan(ctx)
-	
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No adjustments found, return nil (not an error)
@@ -157,6 +157,36 @@ func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx conte
 		}
 		return nil, err
 	}
-	
+
 	return &adjustment.CreatedAt, nil
+}
+
+// TryDeductOneCreditWithTx atomically deducts one credit, preferring free credits over paid credits.
+// Returns an error if the user doesn't have sufficient credits.
+func (r *CreditRepository) TryDeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error {
+	// Use a single atomic UPDATE with conditional logic
+	// The CASE statement evaluates free_credits at the start of the UPDATE
+	result, err := tx.NewUpdate().
+		Model(&models.User{}).
+		Set("free_credits = CASE WHEN free_credits > 0 THEN free_credits - 1 ELSE free_credits END").
+		Set("paid_credits = CASE WHEN free_credits = 0 AND paid_credits > 0 THEN paid_credits - 1 ELSE paid_credits END").
+		Where("id = ? AND (free_credits > 0 OR paid_credits > 0)", userID).
+		Exec(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	// Check if any rows were affected (meaning user had sufficient credits)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		// No rows were updated, meaning user doesn't have sufficient credits
+		return errors.New("insufficient credits to start team")
+	}
+
+	return nil
 }

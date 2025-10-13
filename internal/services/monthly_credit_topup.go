@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -100,6 +101,11 @@ func (s *MonthlyCreditTopupService) hasTopUpAlreadyHappenedThisMonth(ctx context
 	return false, nil
 }
 
+const (
+	MaxRetries = 3
+	RetryDelay = time.Second * 2
+)
+
 func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, creditLimit int, isEducator bool) error {
 	var userType string
 	if isEducator {
@@ -109,31 +115,76 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 	}
 
 	for currentCredits := 0; currentCredits < creditLimit; currentCredits++ {
-		tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-
 		creditsToAdd := creditLimit - currentCredits
 		reason := fmt.Sprintf("Monthly free credit top-up for %s: %d credits added", userType, creditsToAdd)
 
-		// Bulk update credit update notices and create adjustment logs
-		err = s.creditRepo.BulkUpdateCreditUpdateNotices(ctx, tx, currentCredits, creditLimit, isEducator, reason)
+		// Retry logic for this credit level
+		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
 		if err != nil {
-			return err
+			// Log the failure but continue with next credit level to avoid partial failures
+			log.Printf("Failed to process credits for %s users with %d credits after %d retries: %v",
+				userType, currentCredits, MaxRetries, err)
+
+			// For now, we continue processing other credit levels even if one fails
+			// In a production system, you might want to implement more sophisticated error handling
+			continue
+		}
+	}
+
+	return nil
+}
+
+func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(ctx context.Context, currentCredits, creditLimit int, isEducator bool, reason, userType string) error {
+	var lastErr error
+
+	for attempt := 1; attempt <= MaxRetries; attempt++ {
+		err := s.processUserCreditsAtLevel(ctx, currentCredits, creditLimit, isEducator, reason)
+		if err == nil {
+			return nil // Success
 		}
 
-		// Bulk update credits for all users with currentCredits, topping up to creditLimit
-		err = s.creditRepo.BulkUpdateCredits(ctx, tx, currentCredits, creditLimit, isEducator)
-		if err != nil {
-			return err
-		}
+		lastErr = err
 
-		// Commit the transaction
-		if err := tx.Commit(); err != nil {
-			return err
+		// Log the retry attempt
+		log.Printf("Attempt %d/%d failed for %s users with %d credits: %v",
+			attempt, MaxRetries, userType, currentCredits, err)
+
+		// Don't wait after the last attempt
+		if attempt < MaxRetries {
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("context cancelled during retry: %w", ctx.Err())
+			case <-time.After(RetryDelay * time.Duration(attempt)): // Exponential backoff
+				// Continue to next attempt
+			}
 		}
+	}
+
+	return fmt.Errorf("failed after %d attempts: %w", MaxRetries, lastErr)
+}
+
+func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(ctx context.Context, currentCredits, creditLimit int, isEducator bool, reason string) error {
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Bulk update credit update notices and create adjustment logs
+	err = s.creditRepo.BulkUpdateCreditUpdateNotices(ctx, tx, currentCredits, creditLimit, isEducator, reason)
+	if err != nil {
+		return fmt.Errorf("failed to update credit notices: %w", err)
+	}
+
+	// Bulk update credits for all users with currentCredits, topping up to creditLimit
+	err = s.creditRepo.BulkUpdateCredits(ctx, tx, currentCredits, creditLimit, isEducator)
+	if err != nil {
+		return fmt.Errorf("failed to bulk update credits: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

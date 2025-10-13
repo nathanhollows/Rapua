@@ -290,7 +290,8 @@ func TestUserService_SwitchInstance(t *testing.T) {
 	service, instanceRepo, cleanup := setupUserService(t)
 	defer cleanup()
 
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
+	email := gofakeit.Email()
+	user := &models.User{Email: email, Password: "password", CurrentInstanceID: "instance123"}
 	err := service.CreateUser(context.Background(), user, "password")
 	assert.NoError(t, err)
 
