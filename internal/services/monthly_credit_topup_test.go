@@ -289,7 +289,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 	// Find the monthly top-up adjustment
 	var monthlyAdjustment *models.CreditAdjustments
 	for _, adj := range adjustments {
-		if strings.Contains(adj.Reason, "Monthly free credit top-up for regular user") {
+		if strings.Contains(adj.Reason, models.CreditAdjustmentReasonPrefixMonthlyTopup) {
 			monthlyAdjustment = &adj
 			break
 		}
@@ -297,7 +297,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 
 	require.NotNil(t, monthlyAdjustment, "Monthly top-up adjustment should be logged")
 	assert.Greater(t, monthlyAdjustment.Credits, 0, "Adjustment should have positive credit amount")
-	assert.Contains(t, monthlyAdjustment.Reason, "regular user", "Reason should specify user type")
+	assert.Contains(t, monthlyAdjustment.Reason, "credits added", "Reason should specify credits added")
 }
 
 func TestMonthlyCreditTopupService_ErrorHandling_RetryLogic(t *testing.T) {

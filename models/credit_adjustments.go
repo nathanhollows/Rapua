@@ -10,3 +10,10 @@ type CreditAdjustments struct {
 	Credits int    `bun:"credits,type:int,notnull"`
 	Reason  string `bun:"reason,type:varchar(255),notnull"`
 }
+
+// Credit adjustment reason prefixes
+const (
+	CreditAdjustmentReasonPrefixMigration     = "Migration"
+	CreditAdjustmentReasonPrefixMonthlyTopup  = "Monthly free credit top-up"
+	CreditAdjustmentReasonPrefixPurchase      = "Purchase"
+)

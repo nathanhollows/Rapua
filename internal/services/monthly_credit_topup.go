@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nathanhollows/Rapua/v4/db"
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun"
 )
 
@@ -66,39 +67,23 @@ func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
 }
 
 func (s *MonthlyCreditTopupService) hasTopUpAlreadyHappenedThisMonth(ctx context.Context) (bool, error) {
-	// Check for recent regular user top-ups
-	regularUserPrefix := "Monthly free credit top-up for regular user"
-	lastRegularTopUp, err := s.creditRepo.GetMostRecentCreditAdjustmentByReasonPrefix(ctx, regularUserPrefix)
+	// Check for recent monthly top-ups (both regular user and educator use same prefix)
+	lastTopUp, err := s.creditRepo.GetMostRecentCreditAdjustmentByReasonPrefix(ctx, models.CreditAdjustmentReasonPrefixMonthlyTopup)
 	if err != nil {
 		return false, err
 	}
 
-	// Check for recent educator top-ups
-	educatorPrefix := "Monthly free credit top-up for educator"
-	lastEducatorTopUp, err := s.creditRepo.GetMostRecentCreditAdjustmentByReasonPrefix(ctx, educatorPrefix)
-	if err != nil {
-		return false, err
+	// If no top-up found, it hasn't happened this month
+	if lastTopUp == nil {
+		return false, nil
 	}
 
+	// Check if the most recent top-up happened this month
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
+	lastYear, lastMonth, _ := lastTopUp.Date()
 
-	// Check if either regular user or educator top-up happened this month
-	if lastRegularTopUp != nil {
-		lastYear, lastMonth, _ := lastRegularTopUp.Date()
-		if lastYear == currentYear && lastMonth == currentMonth {
-			return true, nil
-		}
-	}
-
-	if lastEducatorTopUp != nil {
-		lastYear, lastMonth, _ := lastEducatorTopUp.Date()
-		if lastYear == currentYear && lastMonth == currentMonth {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return lastYear == currentYear && lastMonth == currentMonth, nil
 }
 
 const (
@@ -107,16 +92,14 @@ const (
 )
 
 func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, creditLimit int, isEducator bool) error {
-	var userType string
+	userType := "regular user"
 	if isEducator {
 		userType = "educator"
-	} else {
-		userType = "regular user"
 	}
 
 	for currentCredits := 0; currentCredits < creditLimit; currentCredits++ {
 		creditsToAdd := creditLimit - currentCredits
-		reason := fmt.Sprintf("Monthly free credit top-up for %s: %d credits added", userType, creditsToAdd)
+		reason := fmt.Sprintf("%s: %d credits added", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditsToAdd)
 
 		// Retry logic for this credit level
 		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
