@@ -16,4 +16,6 @@ const (
 	CreditAdjustmentReasonPrefixMigration     = "Migration"
 	CreditAdjustmentReasonPrefixMonthlyTopup  = "Monthly free credit top-up"
 	CreditAdjustmentReasonPrefixPurchase      = "Purchase"
+	CreditAdjustmentReasonPrefixAdmin         = "Admin"
+	CreditAdjustmentReasonPrefixGift          = "Gift"
 )

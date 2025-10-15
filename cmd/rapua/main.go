@@ -3,9 +3,13 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -18,6 +22,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/internal/sessions"
 	"github.com/nathanhollows/Rapua/v4/internal/storage"
+	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
@@ -43,11 +48,10 @@ func main() {
 		logger.Warn("could not load .env file", "error", err)
 	}
 
-	db := db.MustOpen(logger)
-	defer db.Close()
+	dbc := db.MustOpen(logger)
 
 	// Initialize the migrator
-	migrator := migrate.NewMigrator(db, migrations.Migrations)
+	migrator := migrate.NewMigrator(dbc, migrations.Migrations)
 
 	// Define CLI app for migrations
 	app := &cli.App{
@@ -57,16 +61,19 @@ func main() {
 		Version:     version,
 		Commands: []*cli.Command{
 			newDBCommand(migrator, logger),
+			newCreditsCommand(dbc, logger),
 		},
-		Action: func(c *cli.Context) error {
+		Action: func(_ *cli.Context) error {
 			// Default action: run the app
-			runApp(logger, db)
+			runApp(logger, dbc)
 			return nil
 		},
 	}
 
 	// Run CLI or app
-	if err := app.Run(os.Args); err != nil {
+	err := app.Run(os.Args)
+	_ = dbc.Close() // Ensure Close happens before Exit
+	if err != nil {
 		logger.Error("application error", "error", err)
 		os.Exit(1)
 	}
@@ -144,7 +151,10 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 					if err != nil {
 						return err
 					}
-					logger.Info("migration status", "migrations", ms, "unapplied", ms.Unapplied(), "last_group", ms.LastGroup())
+					logger.Info("migration status",
+						"migrations", ms,
+						"unapplied", ms.Unapplied(),
+						"last_group", ms.LastGroup())
 					return nil
 				},
 			},
@@ -158,6 +168,140 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 						return err
 					}
 					logger.Info("created migration", "name", mf.Name, "path", mf.Path)
+					return nil
+				},
+			},
+		},
+	}
+}
+
+// addCreditsParams contains parameters for adding credits to a user.
+type addCreditsParams struct {
+	Email        string
+	Credits      int
+	Prefix       string
+	CustomReason string
+}
+
+// addCreditsToUser adds credits to a user account with the given parameters.
+func addCreditsToUser(
+	ctx context.Context,
+	params addCreditsParams,
+	creditService *services.CreditService,
+	userRepo repositories.UserRepository,
+) error {
+	// Validate prefix
+	var reasonPrefix string
+	switch params.Prefix {
+	case "Admin":
+		reasonPrefix = models.CreditAdjustmentReasonPrefixAdmin
+	case "Gift":
+		reasonPrefix = models.CreditAdjustmentReasonPrefixGift
+	default:
+		return fmt.Errorf("invalid prefix %q: must be 'Admin' or 'Gift'", params.Prefix)
+	}
+
+	// Validate amount
+	if params.Credits <= 0 {
+		return errors.New("amount must be greater than 0")
+	}
+
+	// Build reason
+	reason := reasonPrefix
+	if params.CustomReason != "" {
+		reason = fmt.Sprintf("%s: %s", reasonPrefix, params.CustomReason)
+	}
+
+	// Find user by email
+	user, err := userRepo.GetByEmail(ctx, params.Email)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	// Add credits with retry for SQLITE_BUSY
+	const (
+		maxRetries       = 3
+		retryDelayMillis = 100
+	)
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err = creditService.AddCredits(ctx, user.ID, 0, params.Credits, reason)
+		if err == nil {
+			return nil
+		}
+
+		if attempt < maxRetries && strings.Contains(err.Error(), "database is locked") {
+			time.Sleep(time.Millisecond * retryDelayMillis * time.Duration(attempt))
+			continue
+		}
+
+		return fmt.Errorf("failed to add credits: %w", err)
+	}
+
+	return errors.New("failed after maximum retries")
+}
+
+func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
+	return &cli.Command{
+		Name:  "credits",
+		Usage: "manage user credits",
+		Subcommands: []*cli.Command{
+			{
+				Name:      "add",
+				Usage:     "add credits to a user (use --prefix=Admin or --prefix=Gift, defaults to Admin)",
+				ArgsUsage: "<email> <amount> [reason]",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "prefix",
+						Usage: "reason prefix: Admin or Gift",
+						Value: "Admin",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					//nolint:mnd // Magic number for argument count
+					if c.NArg() < 2 {
+						return errors.New("usage: rapua credits add <email> <amount> [reason]")
+					}
+
+					// Parse arguments
+					email := c.Args().Get(0)
+					amountStr := c.Args().Get(1)
+					//nolint:mnd // Magic number for argument count
+					customReason := c.Args().Get(2)
+					prefix := c.String("prefix")
+
+					var credits int
+					if _, err := fmt.Sscanf(amountStr, "%d", &credits); err != nil {
+						return fmt.Errorf("invalid amount %q: must be a number", amountStr)
+					}
+
+					// Initialize services (lazy)
+					ctx := c.Context
+					creditRepo := repositories.NewCreditRepository(dbc)
+					teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+					userRepo := repositories.NewUserRepository(dbc)
+					transactor := db.NewTransactor(dbc)
+					creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+
+					// Call testable function
+					params := addCreditsParams{
+						Email:        email,
+						Credits:      credits,
+						Prefix:       prefix,
+						CustomReason: customReason,
+					}
+
+					err := addCreditsToUser(ctx, params, creditService, userRepo)
+					if err != nil {
+						return err
+					}
+
+					// Get updated user for logging
+					user, _ := userRepo.GetByEmail(ctx, email)
+					logger.Info("credits added successfully",
+						"user", email,
+						"amount", credits,
+						"new_balance", user.PaidCredits)
+
 					return nil
 				},
 			},
@@ -240,7 +384,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		teamStartLogRepo,
 		userRepo,
 	)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(
+		transactor,
+		teamRepo,
+		checkInRepo,
+		creditService,
+		blockStateRepo,
+		locationRepo,
+	)
 	leaderBoardService := services.NewLeaderBoardService(teamRepo)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
@@ -316,7 +467,7 @@ func initialiseFolders(logger *slog.Logger) {
 
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {
-			if err = os.MkdirAll(folder, 0755); err != nil {
+			if err = os.MkdirAll(folder, 0750); err != nil {
 				logger.Error("could not create directory", "folder", folder, "error", err)
 				os.Exit(1)
 			}
