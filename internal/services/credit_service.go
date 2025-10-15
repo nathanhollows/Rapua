@@ -73,6 +73,9 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 		return errors.New("must add at least one credit")
 	}
 
+	// Save the amount being added before we overwrite the variables
+	creditsAdded := freeCredits + paidCredits
+
 	// Start a transaction to ensure atomicity
 	tx, err := s.transactor.BeginTx(ctx, nil)
 	if err != nil {
@@ -102,7 +105,7 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 		ID:        uuid.New().String(),
 		CreatedAt: time.Now(),
 		UserID:    userID,
-		Credits:   freeCredits + paidCredits,
+		Credits:   creditsAdded,
 		Reason:    reason,
 	}
 	err = s.creditRepo.CreateCreditAdjustmentWithTx(ctx, tx, adjustment)

@@ -297,7 +297,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 
 	require.NotNil(t, monthlyAdjustment, "Monthly top-up adjustment should be logged")
 	assert.Greater(t, monthlyAdjustment.Credits, 0, "Adjustment should have positive credit amount")
-	assert.Contains(t, monthlyAdjustment.Reason, "credits added", "Reason should specify credits added")
+	assert.Contains(t, monthlyAdjustment.Reason, "topped up to", "Reason should specify topped up to target")
 }
 
 func TestMonthlyCreditTopupService_ErrorHandling_RetryLogic(t *testing.T) {

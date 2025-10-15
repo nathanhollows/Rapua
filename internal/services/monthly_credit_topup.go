@@ -98,8 +98,7 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 	}
 
 	for currentCredits := 0; currentCredits < creditLimit; currentCredits++ {
-		creditsToAdd := creditLimit - currentCredits
-		reason := fmt.Sprintf("%s: %d credits added", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditsToAdd)
+		reason := fmt.Sprintf("%s: topped up to %d", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditLimit)
 
 		// Retry logic for this credit level
 		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
