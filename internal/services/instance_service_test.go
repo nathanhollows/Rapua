@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupInstanceService(t *testing.T) (services.InstanceService, services.UserService, func()) {
@@ -48,7 +49,7 @@ func TestInstanceService(t *testing.T) {
 
 	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentInstanceID: "instance123"}
 	err := userService.CreateUser(context.Background(), user, "password")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, user.ID)
 
 	t.Run("CreateInstance", func(t *testing.T) {
@@ -67,10 +68,10 @@ func TestInstanceService(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				instance, err := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
 				if tc.wantErr {
-					assert.Error(t, err)
+					require.Error(t, err)
 					assert.Nil(t, instance)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.NotNil(t, instance)
 					assert.Equal(t, tc.instanceName, instance.Name)
 				}
@@ -103,10 +104,10 @@ func TestInstanceService(t *testing.T) {
 					tc.newName,
 				)
 				if tc.wantErr {
-					assert.Error(t, err)
+					require.Error(t, err)
 					assert.Nil(t, duplicatedInstance)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.NotNil(t, duplicatedInstance)
 					assert.Equal(t, tc.newName, duplicatedInstance.Name)
 				}
@@ -131,7 +132,7 @@ func TestInstanceService(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				ids, err := svc.FindInstanceIDsForUser(context.Background(), tc.userID)
 				if tc.wantErr {
-					assert.Error(t, err)
+					require.Error(t, err)
 					assert.Nil(t, ids)
 				}
 			})
@@ -155,7 +156,7 @@ func TestInstanceService(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				instances, err := svc.FindByUserID(context.Background(), tc.userID)
 				if tc.wantErr {
-					assert.Error(t, err)
+					require.Error(t, err)
 					assert.Nil(t, instances)
 				}
 			})

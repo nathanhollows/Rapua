@@ -18,7 +18,7 @@ func NewTeamStartLogRepository(db *bun.DB) *TeamStartLogRepository {
 	}
 }
 
-// GetByUserID returns all team start logs for a user
+// GetByUserID returns all team start logs for a user.
 func (r *TeamStartLogRepository) GetByUserID(ctx context.Context, userID string) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
@@ -32,7 +32,7 @@ func (r *TeamStartLogRepository) GetByUserID(ctx context.Context, userID string)
 	return logs, nil
 }
 
-// GetByUserIDWithTimeframe returns team start logs for a user within a timeframe
+// GetByUserIDWithTimeframe returns team start logs for a user within a timeframe.
 func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(ctx context.Context, userID string, startTime, endTime time.Time) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
@@ -48,7 +48,7 @@ func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(ctx context.Context, u
 	return logs, nil
 }
 
-// GetByUserIDAndInstanceID returns team start logs for a user and specific instance
+// GetByUserIDAndInstanceID returns team start logs for a user and specific instance.
 func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(ctx context.Context, userID, instanceID string) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
@@ -63,7 +63,7 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(ctx context.Context, u
 	return logs, nil
 }
 
-// GetByUserIDAndInstanceIDWithTimeframe returns team start logs for a user and instance within a timeframe
+// GetByUserIDAndInstanceIDWithTimeframe returns team start logs for a user and instance within a timeframe.
 func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(ctx context.Context, userID, instanceID string, startTime, endTime time.Time) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
@@ -80,7 +80,7 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(ctx conte
 	return logs, nil
 }
 
-// Create saves a new team start log entry
+// Create saves a new team start log entry.
 func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, log *models.TeamStartLog) error {
 	_, err := tx.NewInsert().Model(log).Exec(ctx)
 	return err

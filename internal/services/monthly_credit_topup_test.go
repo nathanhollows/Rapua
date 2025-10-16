@@ -26,7 +26,7 @@ func setupMonthlyCreditTopupService(t *testing.T) (services.MonthlyCreditTopupSe
 
 	// Create test users in the database
 	ctx := context.Background()
-	
+
 	// Regular user with 3 credits
 	regularUser := &models.User{
 		ID:          "user-regular-3",
@@ -38,7 +38,7 @@ func setupMonthlyCreditTopupService(t *testing.T) (services.MonthlyCreditTopupSe
 	}
 	userRepo.Create(ctx, regularUser)
 
-	// Regular user with 5 credits  
+	// Regular user with 5 credits
 	regularUser2 := &models.User{
 		ID:          "user-regular-5",
 		Email:       "regular5@example.com",
@@ -71,7 +71,7 @@ func TestMonthlyCreditTopupService_TopUpCredits_FirstRun(t *testing.T) {
 
 	// Run the top-up process
 	err := service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify that all users were topped up correctly
 	// This should have updated:
@@ -87,11 +87,11 @@ func TestMonthlyCreditTopupService_TopUpCredits_AlreadyProcessedThisMonth(t *tes
 
 	// Run the top-up process once
 	err := service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Run it again immediately - should be skipped due to idempotency
 	err = service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should not fail, just skip processing
 }
@@ -120,9 +120,9 @@ func TestMonthlyCreditTopupService_TopUpCredits_EdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.action()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -154,7 +154,7 @@ func TestMonthlyCreditTopupService_TopUpCredits_ValidateUsersBeforeAfter(t *test
 
 	// Run the top-up process
 	err = service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify users were topped up correctly
 	user1After, err := userRepo.GetByID(ctx, "user-regular-3")
@@ -188,7 +188,7 @@ func TestMonthlyCreditTopupService_TopUpCredits_IdempotencyCheck(t *testing.T) {
 
 	// Run top-up first time
 	err := service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Get credit balances after first run
 	user1After1, err := userRepo.GetByID(ctx, "user-regular-3")
@@ -202,7 +202,7 @@ func TestMonthlyCreditTopupService_TopUpCredits_IdempotencyCheck(t *testing.T) {
 
 	// Run top-up second time (should be skipped due to idempotency)
 	err = service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Get credit balances after second run
 	user1After2, err := userRepo.GetByID(ctx, "user-regular-3")
@@ -254,7 +254,7 @@ func TestMonthlyCreditTopupService_TopUpCredits_UsersWithMaxCredits(t *testing.T
 
 	// Run the top-up process
 	err = service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify users with max credits are unchanged
 	maxRegularAfter, err := userRepo.GetByID(ctx, "user-max-regular")
@@ -279,7 +279,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 
 	// Run the top-up process
 	err := service.TopUpCredits(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check that credit adjustments were logged for topped-up users
 	adjustments, err := creditRepo.GetCreditAdjustmentsByUserID(ctx, "user-regular-3")
@@ -314,7 +314,7 @@ func TestMonthlyCreditTopupService_ErrorHandling_RetryLogic(t *testing.T) {
 
 	// The service should handle errors gracefully and not panic
 	// Even if individual operations fail, the overall process should complete
-	assert.NoError(t, err, "Service should handle individual failures gracefully")
+	require.NoError(t, err, "Service should handle individual failures gracefully")
 }
 
 func TestMonthlyCreditTopupService_ContextCancellation(t *testing.T) {
@@ -334,3 +334,4 @@ func TestMonthlyCreditTopupService_ContextCancellation(t *testing.T) {
 		t.Logf("Service handled context cancellation: %v", err)
 	}
 }
+

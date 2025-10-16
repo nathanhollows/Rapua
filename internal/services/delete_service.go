@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/repositories"
@@ -94,7 +94,7 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	defer func() {
 		if p := recover(); p != nil {
 			err := tx.Rollback()
-			log.Printf("recovered from panic, rolling back transaction: %v", err)
+			slog.Error("transaction", "error", err)
 			panic(p)
 		}
 	}()

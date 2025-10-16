@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v4/db"
@@ -104,8 +104,7 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
 		if err != nil {
 			// Log the failure but continue with next credit level to avoid partial failures
-			log.Printf("Failed to process credits for %s users with %d credits after %d retries: %v",
-				userType, currentCredits, MaxRetries, err)
+			slog.Error("processing user credits with retry", "user_type", userType, "current_credits", currentCredits, "error", err)
 
 			// For now, we continue processing other credit levels even if one fails
 			// In a production system, you might want to implement more sophisticated error handling
@@ -128,8 +127,7 @@ func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(ctx context.Cont
 		lastErr = err
 
 		// Log the retry attempt
-		log.Printf("Attempt %d/%d failed for %s users with %d credits: %v",
-			attempt, MaxRetries, userType, currentCredits, err)
+		slog.Error("retrying credit top-up", "attempt", attempt, "user_type", userType, "current_credits", currentCredits, "error", err)
 
 		// Don't wait after the last attempt
 		if attempt < MaxRetries {

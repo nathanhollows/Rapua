@@ -9,6 +9,12 @@ import (
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
 
+const (
+	DefaultPageSize = 25
+	FreeCredits     = 10
+	EducatorCredits = 50
+)
+
 // Settings displays the account settings page.
 func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
@@ -171,14 +177,14 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	var recurring = 10
+	var recurring = FreeCredits
 	if user.IsEducator {
-		recurring = 50
+		recurring = EducatorCredits
 	}
 
 	topupFilter := services.CreditAdjustmentFilter{
 		UserID: user.ID,
-		Limit:  25,
+		Limit:  DefaultPageSize,
 		Offset: 0,
 	}
 	topups, err := h.creditService.GetCreditAdjustments(r.Context(), topupFilter)

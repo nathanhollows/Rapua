@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupFacilitatorService(t *testing.T) (services.FacilitatorService, func()) {
@@ -25,12 +26,12 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 
 	// Create a new facilitator token
 	token, err := service.CreateFacilitatorToken(ctx, "game123", []string{"Park", "Tower"}, 24*time.Hour)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
 	// Validate the generated token
 	facToken, err := service.ValidateToken(ctx, token)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, facToken)
 	assert.Equal(t, "game123", facToken.InstanceID)
 	assert.ElementsMatch(t, []string{"Park", "Tower"}, facToken.Locations)
@@ -43,11 +44,11 @@ func TestFacilitatorService_ExpiredToken(t *testing.T) {
 
 	// Create a token that expires immediately
 	token, err := service.CreateFacilitatorToken(ctx, "gameExpired", []string{"Lab"}, -1*time.Second)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Validate expired token
 	facToken, err := service.ValidateToken(ctx, token)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, facToken)
 }
 
@@ -58,7 +59,7 @@ func TestFacilitatorService_CleanupExpiredTokens(t *testing.T) {
 
 	// Create expired token
 	token, err := service.CreateFacilitatorToken(ctx, "gameX", []string{"Castle"}, -24*time.Hour)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
 	// Create valid token
@@ -66,15 +67,15 @@ func TestFacilitatorService_CleanupExpiredTokens(t *testing.T) {
 
 	// Cleanup expired tokens
 	err = service.CleanupExpiredTokens(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check expired token is gone
 	expiredToken, err := service.ValidateToken(ctx, "gameX")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, expiredToken)
 
 	// Check valid token still exists
 	validTokenData, err := service.ValidateToken(ctx, validToken)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, validTokenData)
 }

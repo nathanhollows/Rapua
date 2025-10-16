@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupMarkerService(t *testing.T) (*services.MarkerService, func()) {
@@ -51,7 +52,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), "", lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "name cannot be empty")
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -62,7 +63,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLatitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -73,7 +74,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLatitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -84,7 +85,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := -181.0 // Invalid
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLongitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -95,7 +96,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := 181.0 // Invalid
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLongitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -183,7 +184,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{gofakeit.UUID(), gofakeit.UUID()}
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), "", otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "instanceID cannot be empty")
 		assert.Nil(t, markers)
 	})
@@ -193,7 +194,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{}
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})
@@ -203,7 +204,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		var otherInstances []string = nil
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})

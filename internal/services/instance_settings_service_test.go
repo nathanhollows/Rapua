@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupInstanceSettingsService(t *testing.T) (*services.InstanceSettingsService, func()) {
@@ -44,13 +45,13 @@ func TestInstanceSettingsService_GetInstanceSettings(t *testing.T) {
 		// This test would require creating settings in the database first
 		// For now, we'll test the error cases
 		settings, err := service.GetInstanceSettings(context.Background(), "nonexistent-id")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, settings)
 	})
 
 	t.Run("Empty instance ID", func(t *testing.T) {
 		settings, err := service.GetInstanceSettings(context.Background(), "")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, settings)
 		assert.Contains(t, err.Error(), "instance ID cannot be empty")
 	})
@@ -75,7 +76,7 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 
 	t.Run("Save nil settings", func(t *testing.T) {
 		err := service.SaveSettings(context.Background(), nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "settings cannot be nil")
 	})
 
@@ -84,7 +85,7 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 		settings.MaxNextLocations = -1
 
 		err := service.SaveSettings(context.Background(), settings)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "max next locations cannot be negative")
 	})
 
@@ -199,7 +200,7 @@ func TestInstanceSettingsService_ValidationLogic(t *testing.T) {
 		// Test exactly -1 (should fail)
 		settings.MaxNextLocations = -1
 		err := service.SaveSettings(context.Background(), settings)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "max next locations cannot be negative")
 
 		// Test exactly 0 (should pass validation)

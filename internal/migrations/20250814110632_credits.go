@@ -123,8 +123,9 @@ func init() {
 					ID:        uuid.New().String(),
 					CreatedAt: time.Now(),
 					UserID:    user.ID,
-					Credits:   500,
-					Reason:    "Migration: Thank you gift for being an early Rapua user",
+					//nolint:mnd // 500 is the thank you gift amount
+					Credits: 500,
+					Reason:  "Migration: Thank you gift for being an early Rapua user",
 				}
 			}
 

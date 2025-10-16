@@ -17,6 +17,10 @@ import (
 	"github.com/nathanhollows/Rapua/v4/security"
 )
 
+const (
+	emailTokenExpiryDuration = 15 * time.Minute
+)
+
 var (
 	ErrSessionNotFound     = errors.New("session not found")
 	ErrInvalidToken        = errors.New("invalid token")
@@ -212,7 +216,7 @@ func (s *AuthService) SendEmailVerification(ctx context.Context, user *models.Us
 	token := uuid.New().String()
 	user.EmailToken = token
 	user.EmailTokenExpiry = sql.NullTime{
-		Time:  time.Now().Add(15 * time.Minute),
+		Time:  time.Now().Add(emailTokenExpiryDuration),
 		Valid: true,
 	}
 

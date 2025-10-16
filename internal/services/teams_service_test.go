@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTeamsService(t *testing.T) (services.TeamService, func()) {
@@ -47,7 +48,7 @@ func TestTeamService_Functions(t *testing.T) {
 				return teamService.AddTeams(context.Background(), instanceID, count)
 			},
 			assertion: func(result []models.Team, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, result, 3)
 			},
 		},
@@ -56,7 +57,7 @@ func TestTeamService_Functions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			instanceID, count, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			result, err := tt.action(instanceID, count)
 			tt.assertion(result, err)
@@ -73,10 +74,10 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 
 	instanceID := "test-instance"
 	teams, err := teamService.AddTeams(context.Background(), instanceID, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, teams, 1)
 
 	team, err := teamService.GetTeamByCode(context.Background(), teams[0].Code)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, teams[0].Code, team.Code)
 }

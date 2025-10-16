@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockUploadStorage struct{}
@@ -77,10 +78,10 @@ func TestUploadService_UploadFile(t *testing.T) {
 			result, err := svc.UploadFile(context.Background(), nil, fileHeader, services.UploadMetadata{})
 
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, result)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 				assert.Equal(t, "https://cdn.example.com/"+tt.filename, result.OriginalURL)
 			}
@@ -129,9 +130,9 @@ func TestUploadService_Search(t *testing.T) {
 			_, err := svc.Search(context.Background(), tt.filters)
 
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

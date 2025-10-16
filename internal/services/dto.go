@@ -2,6 +2,14 @@ package services
 
 import "time"
 
+const (
+	always = "always"
+	day    = "day"
+	week   = "week"
+	month  = "month"
+	year   = "year"
+)
+
 // LocationData is the data required to update a new location. Blank
 // fields are ignored, with the exception of Clues and ClueIDs which
 // are always required.

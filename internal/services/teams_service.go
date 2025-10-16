@@ -21,6 +21,7 @@ type TeamCreditService interface {
 
 const (
 	teamCodeLength = 4
+	batchSize      = 100
 )
 
 type TeamService struct {
@@ -49,7 +50,7 @@ func NewTeamService(
 		creditService:  creditService,
 		blockStateRepo: bsr,
 		locationRepo:   lr,
-		batchSize:      100,
+		batchSize:      batchSize,
 	}
 }
 

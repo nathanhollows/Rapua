@@ -46,7 +46,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 	}
 
 	// Apply ranking based on the specified scheme
-	s.applyRanking(leaderBoardData, parsedRankingScheme, locationCount)
+	s.applyRanking(leaderBoardData, parsedRankingScheme)
 
 	// Sort the data based on the specified field and order
 	s.sortLeaderBoardData(leaderBoardData, parsedSortField, parsedSortOrder)
@@ -106,14 +106,14 @@ func (s *LeaderBoardService) determineTeamStatus(team models.Team, locationCount
 
 // applyRanking applies ranking based on the specified scheme
 // All ranking schemes use earliest last check-in time as tiebreaker to ensure no tied ranks.
-func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme RankingScheme, locationCount int) {
+func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme RankingScheme) {
 	switch scheme {
 	case RankByProgress:
 		s.rankByProgress(data)
 	case RankByPoints:
 		s.rankByPoints(data)
 	case RankByCompletion:
-		s.rankByCompletion(data, locationCount)
+		s.rankByCompletion(data)
 	case RankByTimeToFirst:
 		// TODO: Implement when we have check-in times
 		s.rankByProgress(data) // Fallback for now
@@ -160,7 +160,7 @@ func (s *LeaderBoardService) rankByPoints(data []LeaderBoardTeamData) {
 }
 
 // rankByCompletion ranks teams by completion status, then by progress.
-func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData, locationCount int) {
+func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData) {
 	// Sort by completion status, then by progress, then by last seen ascending (earlier is better)
 	sort.Slice(data, func(i, j int) bool {
 		iFinished := data[i].Status == StatusFinished

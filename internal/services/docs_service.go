@@ -10,6 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultMissingOrder = 9999
+)
+
 // DocPage represents a single documentation page.
 type DocPage struct {
 	Title    string
@@ -373,7 +377,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 			Title: key,
 			Path:  strings.Join(parts[:depth+1], "/"),
 			URL:   "/docs/" + strings.Join(parts[:depth+1], "/"),
-			Order: 9999, // Default order for directories without specified order
+			Order: defaultMissingOrder,
 		}
 		if depth == len(parts)-1 {
 			// Leaf node

@@ -11,11 +11,11 @@ type CreditAdjustments struct {
 	Reason  string `bun:"reason,type:varchar(255),notnull"`
 }
 
-// Credit adjustment reason prefixes
+// Credit adjustment reason prefixes.
 const (
-	CreditAdjustmentReasonPrefixMigration     = "Migration"
-	CreditAdjustmentReasonPrefixMonthlyTopup  = "Monthly free credit top-up"
-	CreditAdjustmentReasonPrefixPurchase      = "Purchase"
-	CreditAdjustmentReasonPrefixAdmin         = "Admin"
-	CreditAdjustmentReasonPrefixGift          = "Gift"
+	CreditAdjustmentReasonPrefixMigration    = "Migration"
+	CreditAdjustmentReasonPrefixMonthlyTopup = "Monthly free credit top-up"
+	CreditAdjustmentReasonPrefixPurchase     = "Purchase"
+	CreditAdjustmentReasonPrefixAdmin        = "Admin"
+	CreditAdjustmentReasonPrefixGift         = "Gift"
 )

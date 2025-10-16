@@ -330,13 +330,13 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 	}
 
 	switch data.Validity {
-	case "always":
+	case always:
 		shareLink.ExpiresAt = bun.NullTime{}
-	case "day":
+	case day:
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, 1)}
-	case "week":
+	case week:
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, 7)}
-	case "month":
+	case month:
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 1, 0)}
 	default:
 		return "", errors.New("data.Validity cannot be empty")

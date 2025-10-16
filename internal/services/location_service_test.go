@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupLocationService(t *testing.T) (services.LocationService, *services.MarkerService, func()) {
@@ -36,7 +37,7 @@ func TestLocationService_CreateLocation(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, location.ID)
 	})
 
@@ -48,7 +49,7 @@ func TestLocationService_CreateLocation(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Create location with invalid name", func(t *testing.T) {
@@ -59,7 +60,7 @@ func TestLocationService_CreateLocation(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -72,7 +73,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 		gofakeit.Name(),
 		gofakeit.Latitude(),
 		gofakeit.Longitude())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("Create location from marker", func(t *testing.T) {
 		location, err := service.CreateLocationFromMarker(
@@ -81,7 +82,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			marker.Code)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, location.ID)
 	})
 
@@ -92,7 +93,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			marker.Code)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Create location from marker with invalid name", func(t *testing.T) {
@@ -102,7 +103,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 			"",
 			gofakeit.Number(0, 100),
 			marker.Code)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Create location from marker with invalid marker code", func(t *testing.T) {
@@ -112,7 +113,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			"")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -141,11 +142,11 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Create a block
 		block, err := blockService.NewBlockWithOwnerAndContext(context.Background(), location.ID, blocks.ContextLocationContent, "image")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		t.Logf("Created block with ID: %s for location: %s", block.GetID(), location.ID)
 
 		// Add some content to the block to test duplication
@@ -157,32 +158,32 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 
 		// Save the updated block with content
 		block, err = blockService.UpdateBlock(context.Background(), block, blockData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify the block was created
 		blocksBeforeDuplicate, err := blockService.FindByOwnerID(context.Background(), location.ID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, blocksBeforeDuplicate, 1)
 		t.Logf("Blocks before duplicate: %d", len(blocksBeforeDuplicate))
 
 		// Verify the blocks are accessible through the service
 		blocksAfterRelations, err := blockService.FindByOwnerID(context.Background(), location.ID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		t.Logf("Location blocks after service lookup: %d", len(blocksAfterRelations))
 
 		// Duplicate the location
 		newLocation, err := locationService.DuplicateLocation(context.Background(), location, gofakeit.UUID())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEqual(t, location.ID, newLocation.ID)
 
 		// Check that the location was duplicated
 		checkLocation, err := locationService.GetByID(context.Background(), newLocation.ID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, checkLocation)
 
 		// Check that the blocks were duplicated
 		blocks, err := blockService.FindByOwnerID(context.Background(), newLocation.ID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		t.Logf("Blocks found for new location %s: %d", newLocation.ID, len(blocks))
 		for i, bl := range blocks {
 			t.Logf("Block %d: ID=%s, Type=%s", i, bl.GetID(), bl.GetType())
@@ -219,16 +220,16 @@ func TestLocationService_GetByID(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		checkLocation, err := service.GetByID(context.Background(), location.ID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, checkLocation)
 	})
 
 	t.Run("Get location by ID with invalid ID", func(t *testing.T) {
 		_, err := service.GetByID(context.Background(), "")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -244,16 +245,16 @@ func TestLocationService_GetByInstanceAndCode(t *testing.T) {
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
 			gofakeit.Number(0, 100))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		checkLocation, err := service.GetByInstanceAndCode(context.Background(), location.InstanceID, location.MarkerID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, checkLocation)
 	})
 
 	t.Run("Get location by instance and code with invalid instance ID", func(t *testing.T) {
 		_, err := service.GetByInstanceAndCode(context.Background(), "", gofakeit.UUID())
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -272,18 +273,18 @@ func TestLocationService_FindByInstance(t *testing.T) {
 				gofakeit.Latitude(),
 				gofakeit.Longitude(),
 				gofakeit.Number(0, 100))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			locations[i] = location.ID
 		}
 
 		foundLocations, err := service.FindByInstance(context.Background(), instanceID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, foundLocations, 5)
 	})
 
 	t.Run("Find locations by instance with invalid instance ID", func(t *testing.T) {
 		locs, err := service.FindByInstance(context.Background(), "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, locs)
 	})
 }

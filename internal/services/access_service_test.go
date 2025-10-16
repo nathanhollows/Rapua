@@ -8,6 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type AccessService interface {
@@ -44,7 +45,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, instanceID)
 
 		// Should not error with valid inputs
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess) // Expected false since no instances exist for user
 	})
 
@@ -53,7 +54,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), "", instanceID)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrUserNotAuthenticated, err)
 		assert.False(t, canAccess)
 	})
@@ -63,7 +64,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "instance ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -71,7 +72,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 	t.Run("Both empty user and instance ID", func(t *testing.T) {
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), "", "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrUserNotAuthenticated, err)
 		assert.False(t, canAccess)
 	})
@@ -85,8 +86,8 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 		canAccess1, err1 := service.CanAdminAccessInstance(context.Background(), userID, instanceID1)
 		canAccess2, err2 := service.CanAdminAccessInstance(context.Background(), userID, instanceID2)
 
-		assert.NoError(t, err1)
-		assert.NoError(t, err2)
+		require.NoError(t, err1)
+		require.NoError(t, err2)
 		assert.False(t, canAccess1)
 		assert.False(t, canAccess2)
 	})
@@ -98,7 +99,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), "   ", instanceID)
 
 		// Should pass validation (non-empty string)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 	})
 
@@ -109,7 +110,7 @@ func TestAccessService_CanAdminAccessInstance(t *testing.T) {
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, "   ")
 
 		// Should pass validation (non-empty string)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 	})
 }
@@ -126,8 +127,8 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		// May error due to location not existing, but shouldn't be validation error
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		} else {
 			assert.False(t, canAccess)
 		}
@@ -138,7 +139,7 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessLocation(context.Background(), "", locationID)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -148,7 +149,7 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessLocation(context.Background(), userID, "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "location ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -156,7 +157,7 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 	t.Run("Both empty user and location ID", func(t *testing.T) {
 		canAccess, err := service.CanAdminAccessLocation(context.Background(), "", "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -169,8 +170,8 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		// Should error due to location not existing in database
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -182,7 +183,7 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		// Should pass validation (non-empty string)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -194,7 +195,7 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 
 		// Should pass validation (non-empty string)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -211,7 +212,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, markerID)
 
 		// Should not error with valid inputs
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess) // Expected false since no markers exist for user
 	})
 
@@ -220,7 +221,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), "", markerID)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -230,7 +231,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "marker ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -238,7 +239,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 	t.Run("Both empty user and marker ID", func(t *testing.T) {
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), "", "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -250,7 +251,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, markerID)
 
 		// Should not error - UserOwnsMarker should return false for non-existent marker
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 	})
 
@@ -260,7 +261,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), "   ", markerID)
 
 		// Should pass validation (non-empty string)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 	})
 
@@ -270,7 +271,7 @@ func TestAccessService_CanAdminAccessMarker(t *testing.T) {
 		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, "   ")
 
 		// Should pass validation (non-empty string)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 	})
 }
@@ -287,8 +288,8 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		// May error due to block not existing, but shouldn't be validation error
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		} else {
 			assert.False(t, canAccess)
 		}
@@ -299,7 +300,7 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessBlock(context.Background(), "", blockID)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -309,7 +310,7 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		canAccess, err := service.CanAdminAccessBlock(context.Background(), userID, "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "block ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -317,7 +318,7 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 	t.Run("Both empty user and block ID", func(t *testing.T) {
 		canAccess, err := service.CanAdminAccessBlock(context.Background(), "", "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user ID cannot be empty")
 		assert.False(t, canAccess)
 	})
@@ -330,8 +331,8 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		// Should error due to block not existing in database
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -343,7 +344,7 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		// Should pass validation (non-empty string)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "user ID cannot be empty")
+			require.NotContains(t, err.Error(), "user ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -355,7 +356,7 @@ func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 
 		// Should pass validation (non-empty string)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -374,25 +375,25 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 
 		// Test with very long instance ID
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, longID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		// Test with very long location ID
 		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, longID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 
 		// Test with very long marker ID
 		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, longID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		// Test with very long block ID
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, longID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -403,22 +404,22 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 
 		// Test with special characters
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, specialID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, specialID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, specialID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, specialID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -429,22 +430,22 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 
 		// Test with unicode characters
 		canAccess, err := service.CanAdminAccessInstance(context.Background(), userID, unicodeID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, unicodeID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "location ID cannot be empty")
+			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, unicodeID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, unicodeID)
 		if err != nil {
-			assert.NotContains(t, err.Error(), "block ID cannot be empty")
+			require.NotContains(t, err.Error(), "block ID cannot be empty")
 		}
 		assert.False(t, canAccess)
 	})
@@ -495,7 +496,7 @@ func TestAccessService_ConcurrentAccess(t *testing.T) {
 		for range 10 {
 			canAccess := <-results
 			err := <-errors
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.False(t, canAccess)
 		}
 	})
