@@ -16,7 +16,14 @@ type CreditTopupRepository interface {
 	// BulkUpdateCredits updates user credit balances
 	BulkUpdateCredits(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool) error
 	// BulkUpdateCreditUpdateNotices updates credit update notices and creates adjustment logs
-	BulkUpdateCreditUpdateNotices(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool, reason string) error
+	BulkUpdateCreditUpdateNotices(
+		ctx context.Context,
+		tx *bun.Tx,
+		has int,
+		needs int,
+		isEducator bool,
+		reason string,
+	) error
 	// GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix
 	GetMostRecentCreditAdjustmentByReasonPrefix(ctx context.Context, reasonPrefix string) (*time.Time, error)
 }
@@ -38,7 +45,7 @@ func NewMonthlyCreditTopupService(
 
 const (
 	RegularUserFreeCredits = 10
-	EducatorFreeCredits    = 50
+	EducatorFreeCredits    = 25
 )
 
 func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
@@ -68,7 +75,10 @@ func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
 
 func (s *MonthlyCreditTopupService) hasTopUpAlreadyHappenedThisMonth(ctx context.Context) (bool, error) {
 	// Check for recent monthly top-ups (both regular user and educator use same prefix)
-	lastTopUp, err := s.creditRepo.GetMostRecentCreditAdjustmentByReasonPrefix(ctx, models.CreditAdjustmentReasonPrefixMonthlyTopup)
+	lastTopUp, err := s.creditRepo.GetMostRecentCreditAdjustmentByReasonPrefix(
+		ctx,
+		models.CreditAdjustmentReasonPrefixMonthlyTopup,
+	)
 	if err != nil {
 		return false, err
 	}
@@ -97,14 +107,22 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 		userType = "educator"
 	}
 
-	for currentCredits := 0; currentCredits < creditLimit; currentCredits++ {
+	for currentCredits := range creditLimit {
 		reason := fmt.Sprintf("%s: topped up to %d", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditLimit)
 
 		// Retry logic for this credit level
 		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
 		if err != nil {
 			// Log the failure but continue with next credit level to avoid partial failures
-			slog.Error("processing user credits with retry", "user_type", userType, "current_credits", currentCredits, "error", err)
+			slog.Error(
+				"processing user credits with retry",
+				"user_type",
+				userType,
+				"current_credits",
+				currentCredits,
+				"error",
+				err,
+			)
 
 			// For now, we continue processing other credit levels even if one fails
 			// In a production system, you might want to implement more sophisticated error handling
@@ -115,7 +133,12 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 	return nil
 }
 
-func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(ctx context.Context, currentCredits, creditLimit int, isEducator bool, reason, userType string) error {
+func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(
+	ctx context.Context,
+	currentCredits, creditLimit int,
+	isEducator bool,
+	reason, userType string,
+) error {
 	var lastErr error
 
 	for attempt := 1; attempt <= MaxRetries; attempt++ {
@@ -127,7 +150,17 @@ func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(ctx context.Cont
 		lastErr = err
 
 		// Log the retry attempt
-		slog.Error("retrying credit top-up", "attempt", attempt, "user_type", userType, "current_credits", currentCredits, "error", err)
+		slog.Error(
+			"retrying credit top-up",
+			"attempt",
+			attempt,
+			"user_type",
+			userType,
+			"current_credits",
+			currentCredits,
+			"error",
+			err,
+		)
 
 		// Don't wait after the last attempt
 		if attempt < MaxRetries {
@@ -143,12 +176,17 @@ func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(ctx context.Cont
 	return fmt.Errorf("failed after %d attempts: %w", MaxRetries, lastErr)
 }
 
-func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(ctx context.Context, currentCredits, creditLimit int, isEducator bool, reason string) error {
+func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(
+	ctx context.Context,
+	currentCredits, creditLimit int,
+	isEducator bool,
+	reason string,
+) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Bulk update credit update notices and create adjustment logs
 	err = s.creditRepo.BulkUpdateCreditUpdateNotices(ctx, tx, currentCredits, creditLimit, isEducator, reason)

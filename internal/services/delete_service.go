@@ -66,7 +66,7 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 		if p := recover(); p != nil {
 			err := tx.Rollback()
 			if err != nil {
-				fmt.Println("failed to rollback transaction:", err)
+				slog.Error("transaction", "error", err)
 			}
 			panic(p)
 		}
@@ -238,7 +238,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 		if p := recover(); p != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+				slog.Error("transaction", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -294,7 +294,7 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 		if p := recover(); p != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+				slog.Error("transaction", "error", rollbackErr)
 			}
 			panic(p)
 		}

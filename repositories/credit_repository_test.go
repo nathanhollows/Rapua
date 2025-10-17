@@ -2,6 +2,7 @@ package repositories_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -42,7 +43,7 @@ func createTestUser(t *testing.T, db *bun.DB, freeCredits, paidCredits int) mode
 	return user
 }
 
-func TestCreditRepo_UpdateCredits(t *testing.T) {
+func TestCreditRepo_AddCreditsWithTx(t *testing.T) {
 	repo, db, cleanup := setupCreditRepo(t)
 	defer cleanup()
 
@@ -51,9 +52,16 @@ func TestCreditRepo_UpdateCredits(t *testing.T) {
 	// Create a test user with initial credits
 	user := createTestUser(t, db, 10, 5)
 
-	// Update credits
-	err := repo.UpdateCredits(ctx, user.ID, 8, 3)
-	assert.NoError(t, err)
+	// Add credits using a transaction
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.AddCreditsWithTx(ctx, &tx, user.ID, 5, 3)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
 
 	// Verify credits were updated by querying the database directly
 	var updatedUser models.User
@@ -63,37 +71,49 @@ func TestCreditRepo_UpdateCredits(t *testing.T) {
 		Scan(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, 8, updatedUser.FreeCredits)
-	assert.Equal(t, 3, updatedUser.PaidCredits)
+	assert.Equal(t, 15, updatedUser.FreeCredits)
+	assert.Equal(t, 8, updatedUser.PaidCredits)
 }
 
-func TestCreditRepo_UpdateCredits_NonExistentUser(t *testing.T) {
-	repo, _, cleanup := setupCreditRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Try to update credits for non-existent user
-	err := repo.UpdateCredits(ctx, gofakeit.UUID(), 10, 5)
-
-	// Should not return an error but should not affect any rows
-	assert.NoError(t, err)
-}
-
-func TestCreditRepo_UpdateCredits_ZeroCredits(t *testing.T) {
+func TestCreditRepo_AddCreditsWithTx_NonExistentUser(t *testing.T) {
 	repo, db, cleanup := setupCreditRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	// Create a test user with initial credits
+	// Try to add credits for non-existent user
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.AddCreditsWithTx(ctx, &tx, gofakeit.UUID(), 10, 5)
+
+	// Should return an error for non-existent user
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "user not found")
+}
+
+func TestCreditRepo_DeductOneCreditWithTx_FreeCreditsFirst(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create a test user with both free and paid credits
 	user := createTestUser(t, db, 5, 3)
 
-	// Update to zero credits
-	err := repo.UpdateCredits(ctx, user.ID, 0, 0)
-	assert.NoError(t, err)
+	// Deduct one credit using a transaction
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
 
-	// Verify credits were zeroed
+	err = repo.DeductOneCreditWithTx(ctx, &tx, user.ID)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify free credits were deducted first
 	var updatedUser models.User
 	err = db.NewSelect().
 		Model(&updatedUser).
@@ -101,24 +121,40 @@ func TestCreditRepo_UpdateCredits_ZeroCredits(t *testing.T) {
 		Scan(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, 0, updatedUser.FreeCredits)
-	assert.Equal(t, 0, updatedUser.PaidCredits)
+	assert.Equal(t, 4, updatedUser.FreeCredits, "Free credits should be deducted first")
+	assert.Equal(t, 3, updatedUser.PaidCredits, "Paid credits should remain unchanged")
 }
 
-func TestCreditRepo_UpdateCredits_NegativeCredits(t *testing.T) {
+func TestCreditRepo_DeductOneCreditWithTx_PaidCreditsWhenFreeIsZero(t *testing.T) {
 	repo, db, cleanup := setupCreditRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	// Create a test user with initial credits
-	user := createTestUser(t, db, 5, 3)
+	// Create a test user (will get default 10 free credits)
+	user := createTestUser(t, db, 10, 0)
 
-	// Try to set negative credits - this should fail due to database constraints
-	err := repo.UpdateCredits(ctx, user.ID, -1, -2)
-	assert.Error(t, err)
+	// Manually set to 0 free credits and 3 paid credits
+	_, err := db.NewUpdate().
+		Model(&models.User{}).
+		Set("free_credits = ?", 0).
+		Set("paid_credits = ?", 3).
+		Where("id = ?", user.ID).
+		Exec(ctx)
+	require.NoError(t, err)
 
-	// Verify credits were NOT changed due to constraint violation
+	// Deduct one credit using a transaction
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.DeductOneCreditWithTx(ctx, &tx, user.ID)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify paid credits were deducted
 	var updatedUser models.User
 	err = db.NewSelect().
 		Model(&updatedUser).
@@ -126,51 +162,41 @@ func TestCreditRepo_UpdateCredits_NegativeCredits(t *testing.T) {
 		Scan(ctx)
 	require.NoError(t, err)
 
-	// Credits should remain unchanged
-	assert.Equal(t, 5, updatedUser.FreeCredits)
-	assert.Equal(t, 3, updatedUser.PaidCredits)
+	assert.Equal(t, 0, updatedUser.FreeCredits, "Free credits should remain zero")
+	assert.Equal(t, 2, updatedUser.PaidCredits, "Paid credits should be deducted")
 }
 
-func TestCreditRepo_UpdateCredits_MultipleUsers(t *testing.T) {
+func TestCreditRepo_DeductOneCreditWithTx_InsufficientCredits(t *testing.T) {
 	repo, db, cleanup := setupCreditRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	// Create multiple test users
-	user1 := createTestUser(t, db, 10, 5)
-	user2 := createTestUser(t, db, 20, 15)
+	// Create a test user (will get default 10 free credits)
+	user := createTestUser(t, db, 10, 0)
 
-	// Update credits for first user
-	err := repo.UpdateCredits(ctx, user1.ID, 8, 3)
-	assert.NoError(t, err)
-
-	// Update credits for second user
-	err = repo.UpdateCredits(ctx, user2.ID, 18, 13)
-	assert.NoError(t, err)
-
-	// Verify both users were updated correctly
-	var updatedUser1, updatedUser2 models.User
-
-	err = db.NewSelect().
-		Model(&updatedUser1).
-		Where("id = ?", user1.ID).
-		Scan(ctx)
+	// Manually set to 0 credits
+	_, err := db.NewUpdate().
+		Model(&models.User{}).
+		Set("free_credits = ?", 0).
+		Set("paid_credits = ?", 0).
+		Where("id = ?", user.ID).
+		Exec(ctx)
 	require.NoError(t, err)
 
-	err = db.NewSelect().
-		Model(&updatedUser2).
-		Where("id = ?", user2.ID).
-		Scan(ctx)
+	// Try to deduct one credit using a transaction
+	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
+	defer tx.Rollback()
 
-	assert.Equal(t, 8, updatedUser1.FreeCredits)
-	assert.Equal(t, 3, updatedUser1.PaidCredits)
-	assert.Equal(t, 18, updatedUser2.FreeCredits)
-	assert.Equal(t, 13, updatedUser2.PaidCredits)
+	err = repo.DeductOneCreditWithTx(ctx, &tx, user.ID)
+
+	// Should return an error for insufficient credits
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "insufficient credits")
 }
 
-func TestCreditRepo_UpdateCredits_ConcurrentUpdates(t *testing.T) {
+func TestCreditRepo_CreateCreditAdjustmentWithTx(t *testing.T) {
 	repo, db, cleanup := setupCreditRepo(t)
 	defer cleanup()
 
@@ -179,38 +205,247 @@ func TestCreditRepo_UpdateCredits_ConcurrentUpdates(t *testing.T) {
 	// Create a test user
 	user := createTestUser(t, db, 10, 5)
 
-	// Simulate concurrent updates
-	done := make(chan bool, 2)
+	// Create a credit adjustment using a transaction
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
 
-	go func() {
-		err := repo.UpdateCredits(ctx, user.ID, 8, 3)
-		assert.NoError(t, err)
-		done <- true
-	}()
+	adjustment := &models.CreditAdjustments{
+		ID:      gofakeit.UUID(),
+		UserID:  user.ID,
+		Credits: 5,
+		Reason:  "Test adjustment",
+	}
 
-	go func() {
-		err := repo.UpdateCredits(ctx, user.ID, 6, 1)
-		assert.NoError(t, err)
-		done <- true
-	}()
-
-	// Wait for both goroutines to complete
-	<-done
-	<-done
-
-	// Verify that one of the updates succeeded (last writer wins)
-	var updatedUser models.User
-	err := db.NewSelect().
-		Model(&updatedUser).
-		Where("id = ?", user.ID).
-		Scan(ctx)
+	err = repo.CreateCreditAdjustmentWithTx(ctx, &tx, adjustment)
 	require.NoError(t, err)
 
-	// Should be one of the two update values
-	assert.True(t,
-		(updatedUser.FreeCredits == 8 && updatedUser.PaidCredits == 3) ||
-			(updatedUser.FreeCredits == 6 && updatedUser.PaidCredits == 1))
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify the adjustment was created
+	adjustments, err := repo.GetCreditAdjustmentsByUserID(ctx, user.ID)
+	require.NoError(t, err)
+	require.Len(t, adjustments, 1)
+	assert.Equal(t, 5, adjustments[0].Credits)
+	assert.Equal(t, "Test adjustment", adjustments[0].Reason)
 }
 
-// TestCreditRepo_TryDeductOneCreditWithTx - removed due to database default value conflicts
-// The TryDeductOneCreditWithTx method is thoroughly tested through service-level integration tests
+func TestCreditRepo_GetCreditAdjustmentsByUserIDWithPagination(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create a test user
+	user := createTestUser(t, db, 10, 5)
+
+	// Create multiple adjustments
+	for i := 1; i <= 5; i++ {
+		tx, err := db.BeginTx(ctx, nil)
+		require.NoError(t, err)
+
+		adjustment := &models.CreditAdjustments{
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			Credits: i,
+			Reason:  fmt.Sprintf("Adjustment %d", i),
+		}
+
+		err = repo.CreateCreditAdjustmentWithTx(ctx, &tx, adjustment)
+		require.NoError(t, err)
+		err = tx.Commit()
+		require.NoError(t, err)
+	}
+
+	testCases := []struct {
+		name          string
+		limit         int
+		offset        int
+		expectedCount int
+	}{
+		{
+			name:          "First page with limit 2",
+			limit:         2,
+			offset:        0,
+			expectedCount: 2,
+		},
+		{
+			name:          "Second page with limit 2",
+			limit:         2,
+			offset:        2,
+			expectedCount: 2,
+		},
+		{
+			name:          "Last page with remaining records",
+			limit:         2,
+			offset:        4,
+			expectedCount: 1,
+		},
+		{
+			name:          "Page beyond available records",
+			limit:         10,
+			offset:        10,
+			expectedCount: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			adjustments, err := repo.GetCreditAdjustmentsByUserIDWithPagination(ctx, user.ID, tc.limit, tc.offset)
+			require.NoError(t, err)
+			assert.Len(t, adjustments, tc.expectedCount)
+		})
+	}
+}
+
+func TestCreditRepo_BulkUpdateCredits(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create multiple users with 10 free credits each
+	var userIDs []string
+	for range 3 {
+		user := createTestUser(t, db, 10, 0)
+		userIDs = append(userIDs, user.ID)
+	}
+
+	// Create one user with different credits
+	differentUser := createTestUser(t, db, 5, 0)
+
+	// Bulk update users with 10 free credits to 15 free credits
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.BulkUpdateCredits(ctx, &tx, 10, 15, false)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify the bulk update affected the right users
+	for _, userID := range userIDs {
+		var user models.User
+		err = db.NewSelect().
+			Model(&user).
+			Where("id = ?", userID).
+			Scan(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, 15, user.FreeCredits, "User should have updated credits")
+	}
+
+	// Verify the user with different credits was not affected
+	var unchangedUser models.User
+	err = db.NewSelect().
+		Model(&unchangedUser).
+		Where("id = ?", differentUser.ID).
+		Scan(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 5, unchangedUser.FreeCredits, "User with different credits should be unchanged")
+}
+
+func TestCreditRepo_BulkUpdateCreditUpdateNotices(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create multiple users with 10 free credits each
+	var userIDs []string
+	for range 3 {
+		user := createTestUser(t, db, 10, 0)
+		userIDs = append(userIDs, user.ID)
+	}
+
+	// Bulk create credit adjustments for users with 10 credits
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.BulkUpdateCreditUpdateNotices(ctx, &tx, 10, 15, false, "Monthly top-up")
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify each user got a credit adjustment record
+	for _, userID := range userIDs {
+		adjustments, err := repo.GetCreditAdjustmentsByUserID(ctx, userID)
+		require.NoError(t, err)
+		require.Len(t, adjustments, 1)
+		assert.Equal(t, 5, adjustments[0].Credits, "Adjustment should show difference (15-10=5)")
+		assert.Equal(t, "Monthly top-up", adjustments[0].Reason)
+	}
+}
+
+func TestCreditRepo_GetMostRecentCreditAdjustmentByReasonPrefix(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create a test user
+	user := createTestUser(t, db, 10, 5)
+
+	// Create adjustments with different reasons at different times
+	reasons := []string{
+		"Monthly top-up 2025-01",
+		"Monthly top-up 2025-02",
+		"Purchase: 10 credits",
+	}
+
+	for _, reason := range reasons {
+		tx, err := db.BeginTx(ctx, nil)
+		require.NoError(t, err)
+
+		adjustment := &models.CreditAdjustments{
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			Credits: 5,
+			Reason:  reason,
+		}
+
+		err = repo.CreateCreditAdjustmentWithTx(ctx, &tx, adjustment)
+		require.NoError(t, err)
+		err = tx.Commit()
+		require.NoError(t, err)
+	}
+
+	testCases := []struct {
+		name         string
+		reasonPrefix string
+		expectFound  bool
+	}{
+		{
+			name:         "Find monthly top-up",
+			reasonPrefix: "Monthly top-up",
+			expectFound:  true,
+		},
+		{
+			name:         "Find purchase",
+			reasonPrefix: "Purchase",
+			expectFound:  true,
+		},
+		{
+			name:         "No match for non-existent prefix",
+			reasonPrefix: "Refund",
+			expectFound:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			timestamp, err := repo.GetMostRecentCreditAdjustmentByReasonPrefix(ctx, tc.reasonPrefix)
+			require.NoError(t, err)
+
+			if tc.expectFound {
+				require.NotNil(t, timestamp, "Should find a matching adjustment")
+			} else {
+				assert.Nil(t, timestamp, "Should not find a matching adjustment")
+			}
+		})
+	}
+}

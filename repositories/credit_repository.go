@@ -21,31 +21,32 @@ func NewCreditRepository(db *bun.DB) *CreditRepository {
 	}
 }
 
-func (r *CreditRepository) UpdateCredits(ctx context.Context, userID string, freeCredits int, paidCredits int) error {
-	if freeCredits < 0 || paidCredits < 0 {
-		return errors.New("credits cannot be negative")
-	}
-	_, err := r.db.NewUpdate().
+// AddCreditsWithTx atomically increments credits without a read-modify-write cycle.
+// This prevents lost updates from concurrent operations.
+func (r *CreditRepository) AddCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCreditsToAdd int, paidCreditsToAdd int) error {
+	result, err := tx.NewUpdate().
 		Model(&models.User{}).
-		Set("free_credits = ?, paid_credits = ?", freeCredits, paidCredits).
+		Set("free_credits = free_credits + ?", freeCreditsToAdd).
+		Set("paid_credits = paid_credits + ?", paidCreditsToAdd).
 		Where("id = ?", userID).
 		Exec(ctx)
-	return err
-}
-
-func (r *CreditRepository) UpdateCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCredits int, paidCredits int) error {
-	if freeCredits < 0 || paidCredits < 0 {
-		return errors.New("credits cannot be negative")
+	if err != nil {
+		return err
 	}
-	_, err := tx.NewUpdate().
-		Model(&models.User{}).
-		Set("free_credits = ?, paid_credits = ?", freeCredits, paidCredits).
-		Where("id = ?", userID).
-		Exec(ctx)
-	return err
+
+	// Check if any rows were affected (user must exist)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
 }
 
-// GetCreditAdjustmentsByUserID returns all credit adjustments for a user
+// GetCreditAdjustmentsByUserID returns all credit adjustments for a user.
 func (r *CreditRepository) GetCreditAdjustmentsByUserID(ctx context.Context, userID string) ([]models.CreditAdjustments, error) {
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
@@ -59,7 +60,7 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserID(ctx context.Context, use
 	return adjustments, nil
 }
 
-// GetCreditAdjustmentsByUserIDWithPagination returns credit adjustments for a user with pagination
+// GetCreditAdjustmentsByUserIDWithPagination returns credit adjustments for a user with pagination.
 func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(ctx context.Context, userID string, limit, offset int) ([]models.CreditAdjustments, error) {
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
@@ -75,7 +76,7 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(ctx contex
 	return adjustments, nil
 }
 
-// SaveCreditAdjustment saves a new credit adjustment record
+// SaveCreditAdjustment saves a new credit adjustment record.
 func (r *CreditRepository) CreateCreditAdjustmentWithTx(ctx context.Context, tx *bun.Tx, adjustment *models.CreditAdjustments) error {
 	if adjustment.UserID == "" {
 		return errors.New("userID is required for credit adjustment")
@@ -135,11 +136,11 @@ func (r *CreditRepository) BulkUpdateCreditUpdateNotices(ctx context.Context, tx
 	_, err = tx.NewInsert().
 		Model(&adjustments).
 		Exec(ctx)
-	
+
 	return err
 }
 
-// GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix
+// GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix.
 func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx context.Context, reasonPrefix string) (*time.Time, error) {
 	var adjustment models.CreditAdjustments
 	err := r.db.NewSelect().
@@ -153,6 +154,7 @@ func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx conte
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No adjustments found, return nil (not an error)
+			//nolint:nilnil // Returning nil, nil is intentional here - nil time indicates no record found, nil error indicates no error occurred
 			return nil, nil
 		}
 		return nil, err
@@ -161,9 +163,9 @@ func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx conte
 	return &adjustment.CreatedAt, nil
 }
 
-// TryDeductOneCreditWithTx atomically deducts one credit, preferring free credits over paid credits.
+// DeductOneCreditWithTx atomically deducts one credit, preferring free credits over paid credits.
 // Returns an error if the user doesn't have sufficient credits.
-func (r *CreditRepository) TryDeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error {
+func (r *CreditRepository) DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error {
 	// Use a single atomic UPDATE with conditional logic
 	// The CASE statement evaluates free_credits at the start of the UPDATE
 	result, err := tx.NewUpdate().

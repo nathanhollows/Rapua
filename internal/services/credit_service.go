@@ -20,16 +20,23 @@ type CreditRepository interface {
 	// GetCreditAdjustmentsByUserID returns all credit adjustments for a user.
 	GetCreditAdjustmentsByUserID(ctx context.Context, userID string) ([]models.CreditAdjustments, error)
 	// GetCreditAdjustmentsByUserIDWithPagination returns credit adjustments for a user with pagination.
-	GetCreditAdjustmentsByUserIDWithPagination(ctx context.Context, userID string, limit, offset int) ([]models.CreditAdjustments, error)
+	GetCreditAdjustmentsByUserIDWithPagination(
+		ctx context.Context,
+		userID string,
+		limit, offset int,
+	) ([]models.CreditAdjustments, error)
 
-	// UpdateCredits updates a user's credit balance.
-	UpdateCredits(ctx context.Context, userID string, freeCredits int, paidCredits int) error
-	// UpdateCreditsWithTx updates a user's credit balance within a transaction.
-	UpdateCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCredits int, paidCredits int) error
+	// AddCreditsWithTx atomically increments credits without read-modify-write to prevent lost updates.
+	AddCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCreditsToAdd int, paidCreditsToAdd int) error
 
 	// TryDeductOneCredit atomically deducts one credit from free first, then paid. Returns ErrInsufficientCredits if not possible.
-	TryDeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error
+	DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error
 }
+
+const (
+	// daysInWeek is the number of days in a week.
+	daysInWeek = 7
+)
 
 type CreditService struct {
 	transactor       db.Transactor
@@ -53,7 +60,10 @@ func NewCreditService(
 }
 
 // GetCreditBalance retrieves the credit balance for a user.
-func (s *CreditService) GetCreditBalance(ctx context.Context, userID string) (freeCredits int, paidCredits int, err error) {
+func (s *CreditService) GetCreditBalance(
+	ctx context.Context,
+	userID string,
+) (freeCredits int, paidCredits int, err error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return 0, 0, err
@@ -62,7 +72,15 @@ func (s *CreditService) GetCreditBalance(ctx context.Context, userID string) (fr
 }
 
 // AddCredits adds credits to a user's account with a reason for the addition.
-func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredits, paidCredits int, reason string) error {
+func (s *CreditService) AddCredits(
+	ctx context.Context,
+	userID string,
+	freeCredits, paidCredits int,
+	reason string,
+) error {
+	if reason == "" {
+		return errors.New("reason is required")
+	}
 	if freeCredits > 0 && paidCredits > 0 {
 		return errors.New("cannot add both free and paid credits at the same time")
 	}
@@ -73,7 +91,7 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 		return errors.New("must add at least one credit")
 	}
 
-	// Save the amount being added before we overwrite the variables
+	// Save the amount being added
 	creditsAdded := freeCredits + paidCredits
 
 	// Start a transaction to ensure atomicity
@@ -81,21 +99,11 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 	if err != nil {
 		return err
 	}
+	defer func() { _ = tx.Rollback() }()
 
-	// Get current credit balance
-	freeCreditsCurrent, paidCreditsCurrent, err := s.GetCreditBalance(ctx, userID)
-	if err != nil {
-		txErr := tx.Rollback()
-		if txErr != nil {
-			return txErr
-		}
-		return err
-	}
-
-	// Add credits to the user's account
-	freeCredits += freeCreditsCurrent
-	paidCredits += paidCreditsCurrent
-	err = s.creditRepo.UpdateCreditsWithTx(ctx, tx, userID, freeCredits, paidCredits)
+	// Use atomic UPDATE to avoid lost updates from concurrent operations
+	// This increments the credits directly in the database without a read-modify-write cycle
+	err = s.creditRepo.AddCreditsWithTx(ctx, tx, userID, freeCredits, paidCredits)
 	if err != nil {
 		return err
 	}
@@ -129,9 +137,13 @@ func (s *CreditService) AddCredits(ctx context.Context, userID string, freeCredi
 }
 
 // DeductCreditForTeamStart handles credit deduction and team start logging within a transaction.
-func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, instanceID string) error {
+func (s *CreditService) DeductCreditForTeamStartWithTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	userID, teamID, instanceID string,
+) error {
 	// Step 1: Atomically deduct one credit (free first, then paid)
-	err := s.creditRepo.TryDeductOneCreditWithTx(ctx, tx, userID)
+	err := s.creditRepo.DeductOneCreditWithTx(ctx, tx, userID)
 	if err != nil {
 		// Convert repository error to service error for consistency
 		if err.Error() == "insufficient credits to start team" {
@@ -151,41 +163,7 @@ func (s *CreditService) DeductCreditForTeamStartWithTx(ctx context.Context, tx *
 	return s.teamStartLogRepo.CreateWithTx(ctx, tx, log)
 }
 
-// DeductCredits checks if a user has enough credits and deducts them if they do.
-func (s *CreditService) DeductCredits(ctx context.Context, userID string, credits int) (bool, error) {
-	if credits < 0 {
-		return false, nil // Cannot deduct negative credits
-	}
-
-	free, paid, err := s.GetCreditBalance(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-
-	if free+paid < credits {
-		return false, nil // Not enough credits
-	}
-
-	if free >= credits {
-		// If the user has enough free credits, deduct from free credits.
-		free -= credits
-	} else {
-		// If not enough free credits, deduct from paid credits.
-		credits -= free
-		free = 0
-		paid -= credits
-	}
-
-	// Deduct the credits from the user's account.
-	err = s.creditRepo.UpdateCredits(ctx, userID, free, paid)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil // Credits successfully deducted
-}
-
-// TeamStartLogFilter defines filtering options for team start logs
+// TeamStartLogFilter defines filtering options for team start logs.
 type TeamStartLogFilter struct {
 	UserID     string
 	InstanceID string
@@ -194,15 +172,18 @@ type TeamStartLogFilter struct {
 	GroupBy    string
 }
 
-// CreditAdjustmentFilter defines filtering options for credit adjustments
+// CreditAdjustmentFilter defines filtering options for credit adjustments.
 type CreditAdjustmentFilter struct {
 	UserID string
 	Limit  int
 	Offset int
 }
 
-// GetCreditAdjustments returns credit adjustments based on filter criteria with pagination
-func (s *CreditService) GetCreditAdjustments(ctx context.Context, filter CreditAdjustmentFilter) ([]models.CreditAdjustments, error) {
+// GetCreditAdjustments returns credit adjustments based on filter criteria with pagination.
+func (s *CreditService) GetCreditAdjustments(
+	ctx context.Context,
+	filter CreditAdjustmentFilter,
+) ([]models.CreditAdjustments, error) {
 	// Set default limit if not specified
 	limit := filter.Limit
 	if limit <= 0 {
@@ -218,20 +199,23 @@ func (s *CreditService) GetCreditAdjustments(ctx context.Context, filter CreditA
 	return s.creditRepo.GetCreditAdjustmentsByUserID(ctx, filter.UserID)
 }
 
-// TeamStartSummary represents aggregated team start data for a time period
+// TeamStartSummary represents aggregated team start data for a time period.
 type TeamStartSummary struct {
 	Date  time.Time `json:"date"`
 	Count int       `json:"count"`
 	Ratio float64   `json:"ratio,omitempty"` // Optional ratio for percentage calculations
 }
 
-// GetTeamStartLogsSummary returns team start logs aggregated by time periods with zero-filling
-func (s *CreditService) GetTeamStartLogsSummary(ctx context.Context, filter TeamStartLogFilter) ([]TeamStartSummary, error) {
+// GetTeamStartLogsSummary returns team start logs aggregated by time periods with zero-filling.
+func (s *CreditService) GetTeamStartLogsSummary(
+	ctx context.Context,
+	filter TeamStartLogFilter,
+) ([]TeamStartSummary, error) {
 	// Validate GroupBy parameter
 	if filter.GroupBy == "" {
-		filter.GroupBy = "day" // Default to daily grouping
+		filter.GroupBy = day // Default to daily grouping
 	}
-	if filter.GroupBy != "day" && filter.GroupBy != "week" && filter.GroupBy != "month" && filter.GroupBy != "year" {
+	if filter.GroupBy != day && filter.GroupBy != week && filter.GroupBy != month && filter.GroupBy != year {
 		return nil, errors.New("groupBy must be one of: day, week, month, year")
 	}
 
@@ -256,7 +240,7 @@ func (s *CreditService) GetTeamStartLogsSummary(ctx context.Context, filter Team
 	return values, nil
 }
 
-// calculateScaledRatios scales the ratios based on the maximum count in the summary data
+// calculateScaledRatios scales the ratios based on the maximum count in the summary data.
 func (s *CreditService) calculateScaledRatios(summaryData []TeamStartSummary) []TeamStartSummary {
 	if len(summaryData) == 0 {
 		return summaryData // No data to scale
@@ -284,14 +268,23 @@ func (s *CreditService) calculateScaledRatios(summaryData []TeamStartSummary) []
 	return summaryData
 }
 
-// getTeamStartLogsFiltered gets team start logs based on filter criteria
-func (s *CreditService) getTeamStartLogsFiltered(ctx context.Context, filter TeamStartLogFilter) ([]models.TeamStartLog, error) {
+// getTeamStartLogsFiltered gets team start logs based on filter criteria.
+func (s *CreditService) getTeamStartLogsFiltered(
+	ctx context.Context,
+	filter TeamStartLogFilter,
+) ([]models.TeamStartLog, error) {
 	hasInstanceFilter := filter.InstanceID != ""
 	hasTimeFilter := !filter.StartTime.IsZero() && !filter.EndTime.IsZero()
 
 	switch {
 	case hasInstanceFilter && hasTimeFilter:
-		return s.teamStartLogRepo.GetByUserIDAndInstanceIDWithTimeframe(ctx, filter.UserID, filter.InstanceID, filter.StartTime, filter.EndTime)
+		return s.teamStartLogRepo.GetByUserIDAndInstanceIDWithTimeframe(
+			ctx,
+			filter.UserID,
+			filter.InstanceID,
+			filter.StartTime,
+			filter.EndTime,
+		)
 	case hasInstanceFilter:
 		return s.teamStartLogRepo.GetByUserIDAndInstanceID(ctx, filter.UserID, filter.InstanceID)
 	case hasTimeFilter:
@@ -301,8 +294,11 @@ func (s *CreditService) getTeamStartLogsFiltered(ctx context.Context, filter Tea
 	}
 }
 
-// determineTimeRange calculates appropriate start/end times if not provided
-func (s *CreditService) determineTimeRange(filter TeamStartLogFilter, logs []models.TeamStartLog) (time.Time, time.Time) {
+// determineTimeRange calculates appropriate start/end times if not provided.
+func (s *CreditService) determineTimeRange(
+	filter TeamStartLogFilter,
+	logs []models.TeamStartLog,
+) (time.Time, time.Time) {
 	// If time range is specified, use it
 	if !filter.StartTime.IsZero() && !filter.EndTime.IsZero() {
 		return filter.StartTime, filter.EndTime
@@ -320,18 +316,18 @@ func (s *CreditService) determineTimeRange(filter TeamStartLogFilter, logs []mod
 
 	// Add padding based on groupBy
 	switch filter.GroupBy {
-	case "year":
+	case year:
 		return earliest.AddDate(-1, 0, 0), latest.AddDate(1, 0, 0)
-	case "month":
+	case month:
 		return earliest.AddDate(0, -1, 0), latest.AddDate(0, 1, 0)
-	case "week":
-		return earliest.AddDate(0, 0, -7), latest.AddDate(0, 0, 7)
+	case week:
+		return earliest.AddDate(0, 0, -daysInWeek), latest.AddDate(0, 0, daysInWeek)
 	default: // day
 		return earliest.AddDate(0, 0, -1), latest.AddDate(0, 0, 1)
 	}
 }
 
-// groupTeamStartLogs groups logs by time period
+// groupTeamStartLogs groups logs by time period.
 func (s *CreditService) groupTeamStartLogs(logs []models.TeamStartLog, groupBy string) map[string]int {
 	grouped := make(map[string]int)
 
@@ -343,14 +339,14 @@ func (s *CreditService) groupTeamStartLogs(logs []models.TeamStartLog, groupBy s
 	return grouped
 }
 
-// formatDateKey formats a date according to the groupBy parameter
+// formatDateKey formats a date according to the groupBy parameter.
 func (s *CreditService) formatDateKey(t time.Time, groupBy string) string {
 	switch groupBy {
-	case "year":
+	case year:
 		return t.Format("2006")
-	case "month":
+	case month:
 		return t.Format("2006-01")
-	case "week":
+	case week:
 		// Use Monday of the week as the key
 		year, week := t.ISOWeek()
 		return fmt.Sprintf("%d-W%02d", year, week)
@@ -359,8 +355,12 @@ func (s *CreditService) formatDateKey(t time.Time, groupBy string) string {
 	}
 }
 
-// fillZeroValues creates a complete time series with zero values for missing periods
-func (s *CreditService) fillZeroValues(groupedData map[string]int, startTime, endTime time.Time, groupBy string) []TeamStartSummary {
+// fillZeroValues creates a complete time series with zero values for missing periods.
+func (s *CreditService) fillZeroValues(
+	groupedData map[string]int,
+	startTime, endTime time.Time,
+	groupBy string,
+) []TeamStartSummary {
 	var result []TeamStartSummary
 
 	current := s.truncateToGroupBy(startTime, groupBy)
@@ -381,14 +381,14 @@ func (s *CreditService) fillZeroValues(groupedData map[string]int, startTime, en
 	return result
 }
 
-// truncateToGroupBy truncates a time to the start of the specified period
+// truncateToGroupBy truncates a time to the start of the specified period.
 func (s *CreditService) truncateToGroupBy(t time.Time, groupBy string) time.Time {
 	switch groupBy {
-	case "year":
+	case year:
 		return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
-	case "month":
+	case month:
 		return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-	case "week":
+	case week:
 		// Go to Monday of the week
 		weekday := int(t.Weekday())
 		if weekday == 0 { // Sunday
@@ -401,15 +401,15 @@ func (s *CreditService) truncateToGroupBy(t time.Time, groupBy string) time.Time
 	}
 }
 
-// addPeriod adds one period to a time based on groupBy
+// addPeriod adds one period to a time based on groupBy.
 func (s *CreditService) addPeriod(t time.Time, groupBy string) time.Time {
 	switch groupBy {
-	case "year":
+	case year:
 		return t.AddDate(1, 0, 0)
-	case "month":
+	case month:
 		return t.AddDate(0, 1, 0)
-	case "week":
-		return t.AddDate(0, 0, 7)
+	case week:
+		return t.AddDate(0, 0, daysInWeek)
 	default: // day
 		return t.AddDate(0, 0, 1)
 	}

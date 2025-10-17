@@ -54,7 +54,7 @@ func setupMonthlyCreditTopupService(t *testing.T) (services.MonthlyCreditTopupSe
 		ID:          "user-educator-30",
 		Email:       "educator30@example.com",
 		Name:        "Educator 30",
-		FreeCredits: 30,
+		FreeCredits: services.EducatorFreeCredits / 2, // (to test top-up)
 		PaidCredits: 0,
 		IsEducator:  true,
 	}
@@ -72,11 +72,6 @@ func TestMonthlyCreditTopupService_TopUpCredits_FirstRun(t *testing.T) {
 	// Run the top-up process
 	err := service.TopUpCredits(ctx)
 	require.NoError(t, err)
-
-	// Verify that all users were topped up correctly
-	// This should have updated:
-	// - Regular users with <10 credits should be topped up to 10
-	// - Educators with <50 credits should be topped up to 50
 }
 
 func TestMonthlyCreditTopupService_TopUpCredits_AlreadyProcessedThisMonth(t *testing.T) {
@@ -165,11 +160,11 @@ func TestMonthlyCreditTopupService_TopUpCredits_ValidateUsersBeforeAfter(t *test
 	require.NoError(t, err)
 
 	// Regular users should be topped up to 10 credits
-	assert.Equal(t, services.RegularUserFreeCredits, user1After.FreeCredits, "user-regular-3 should be topped up to 10")
-	assert.Equal(t, services.RegularUserFreeCredits, user2After.FreeCredits, "user-regular-5 should be topped up to 10")
+	assert.Equal(t, services.RegularUserFreeCredits, user1After.FreeCredits, "user-regular-3 should be topped up")
+	assert.Equal(t, services.RegularUserFreeCredits, user2After.FreeCredits, "user-regular-5 should be topped up")
 
 	// Educator should be topped up to 50 credits
-	assert.Equal(t, services.EducatorFreeCredits, educatorAfter.FreeCredits, "educator should be topped up to 50")
+	assert.Equal(t, services.EducatorFreeCredits, educatorAfter.FreeCredits, "educator should be topped up")
 
 	t.Logf("Initial credits: regular-3=%d, regular-5=%d, educator=%d",
 		initialCredits["user-regular-3"], initialCredits["user-regular-5"], initialCredits["user-educator-30"])
@@ -218,7 +213,12 @@ func TestMonthlyCreditTopupService_TopUpCredits_IdempotencyCheck(t *testing.T) {
 	assert.Equal(t, firstRunCredits, secondRunCredits, "Credits should not change on second run due to idempotency")
 
 	// No new credit adjustments should be created
-	assert.Equal(t, firstRunAdjustmentCount, secondRunAdjustmentCount, "No new adjustments should be created on second run")
+	assert.Equal(
+		t,
+		firstRunAdjustmentCount,
+		secondRunAdjustmentCount,
+		"No new adjustments should be created on second run",
+	)
 }
 
 func TestMonthlyCreditTopupService_TopUpCredits_UsersWithMaxCredits(t *testing.T) {
@@ -262,8 +262,18 @@ func TestMonthlyCreditTopupService_TopUpCredits_UsersWithMaxCredits(t *testing.T
 	maxEducatorAfter, err := userRepo.GetByID(ctx, "user-max-educator")
 	require.NoError(t, err)
 
-	assert.Equal(t, services.RegularUserFreeCredits, maxRegularAfter.FreeCredits, "Max regular user should remain unchanged")
-	assert.Equal(t, services.EducatorFreeCredits, maxEducatorAfter.FreeCredits, "Max educator user should remain unchanged")
+	assert.Equal(
+		t,
+		services.RegularUserFreeCredits,
+		maxRegularAfter.FreeCredits,
+		"Max regular user should remain unchanged",
+	)
+	assert.Equal(
+		t,
+		services.EducatorFreeCredits,
+		maxEducatorAfter.FreeCredits,
+		"Max educator user should remain unchanged",
+	)
 }
 
 // TestMonthlyCreditTopupService_TopUpCredits_MixedCreditLevels removed due to test isolation issues
@@ -284,7 +294,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 	// Check that credit adjustments were logged for topped-up users
 	adjustments, err := creditRepo.GetCreditAdjustmentsByUserID(ctx, "user-regular-3")
 	require.NoError(t, err)
-	assert.Greater(t, len(adjustments), 0, "Credit adjustments should be logged for user-regular-3")
+	assert.NotEmpty(t, adjustments, "Credit adjustments should be logged for user-regular-3")
 
 	// Find the monthly top-up adjustment
 	var monthlyAdjustment *models.CreditAdjustments
@@ -296,7 +306,7 @@ func TestMonthlyCreditTopupService_CreditAdjustmentLogging(t *testing.T) {
 	}
 
 	require.NotNil(t, monthlyAdjustment, "Monthly top-up adjustment should be logged")
-	assert.Greater(t, monthlyAdjustment.Credits, 0, "Adjustment should have positive credit amount")
+	assert.Positive(t, monthlyAdjustment.Credits, "Adjustment should have positive credit amount")
 	assert.Contains(t, monthlyAdjustment.Reason, "topped up to", "Reason should specify topped up to target")
 }
 
@@ -334,4 +344,3 @@ func TestMonthlyCreditTopupService_ContextCancellation(t *testing.T) {
 		t.Logf("Service handled context cancellation: %v", err)
 	}
 }
-
