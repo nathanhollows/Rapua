@@ -5,12 +5,13 @@ import (
 
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStrArray_JSONEncoding(t *testing.T) {
 	arr := models.StrArray{"Park Entrance", "Old Tower", "River Bank"}
 	jsonVal, err := arr.Value()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Expected JSON format
 	expected := `["Park Entrance","Old Tower","River Bank"]`
@@ -22,25 +23,25 @@ func TestStrArray_JSONDecoding(t *testing.T) {
 
 	// Normal JSON case
 	err := arr.Scan(`["Park Entrance","Old Tower","River Bank"]`)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, models.StrArray{"Park Entrance", "Old Tower", "River Bank"}, arr)
 
 	// Handles empty array
 	err = arr.Scan(`[]`)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, models.StrArray{}, arr)
 
 	// Handles nil case
 	err = arr.Scan(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, models.StrArray{}, arr)
 
 	// Handles special characters
 	err = arr.Scan(`["This \"quote\" test","Line\nBreak","Tab\tTest"]`)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, models.StrArray{`This "quote" test`, "Line\nBreak", "Tab\tTest"}, arr)
 
 	// Invalid JSON case
 	err = arr.Scan(`{bad json}`)
-	assert.Error(t, err)
+	require.Error(t, err)
 }

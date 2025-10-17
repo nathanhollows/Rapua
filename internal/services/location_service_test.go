@@ -145,7 +145,12 @@ func TestLocationService_DuplicateLocation(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create a block
-		block, err := blockService.NewBlockWithOwnerAndContext(context.Background(), location.ID, blocks.ContextLocationContent, "image")
+		block, err := blockService.NewBlockWithOwnerAndContext(
+			context.Background(),
+			location.ID,
+			blocks.ContextLocationContent,
+			"image",
+		)
 		require.NoError(t, err)
 		t.Logf("Created block with ID: %s for location: %s", block.GetID(), location.ID)
 

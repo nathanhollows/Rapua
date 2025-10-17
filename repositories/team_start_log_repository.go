@@ -33,7 +33,11 @@ func (r *TeamStartLogRepository) GetByUserID(ctx context.Context, userID string)
 }
 
 // GetByUserIDWithTimeframe returns team start logs for a user within a timeframe.
-func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(ctx context.Context, userID string, startTime, endTime time.Time) ([]models.TeamStartLog, error) {
+func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(
+	ctx context.Context,
+	userID string,
+	startTime, endTime time.Time,
+) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
@@ -49,7 +53,10 @@ func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(ctx context.Context, u
 }
 
 // GetByUserIDAndInstanceID returns team start logs for a user and specific instance.
-func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(ctx context.Context, userID, instanceID string) ([]models.TeamStartLog, error) {
+func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(
+	ctx context.Context,
+	userID, instanceID string,
+) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
@@ -64,7 +71,11 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(ctx context.Context, u
 }
 
 // GetByUserIDAndInstanceIDWithTimeframe returns team start logs for a user and instance within a timeframe.
-func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(ctx context.Context, userID, instanceID string, startTime, endTime time.Time) ([]models.TeamStartLog, error) {
+func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(
+	ctx context.Context,
+	userID, instanceID string,
+	startTime, endTime time.Time,
+) ([]models.TeamStartLog, error) {
 	var logs []models.TeamStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
@@ -83,5 +94,14 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(ctx conte
 // Create saves a new team start log entry.
 func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, log *models.TeamStartLog) error {
 	_, err := tx.NewInsert().Model(log).Exec(ctx)
+	return err
+}
+
+// DeleteByUserID deletes all team start logs for a user within a transaction.
+func (r *TeamStartLogRepository) DeleteByUserID(ctx context.Context, tx *bun.Tx, userID string) error {
+	_, err := tx.NewDelete().
+		Model(&models.TeamStartLog{}).
+		Where("user_id = ?", userID).
+		Exec(ctx)
 	return err
 }

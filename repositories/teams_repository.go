@@ -161,10 +161,10 @@ func (r *teamRepository) GetUserIDByCode(ctx context.Context, code string) (stri
 		Where("teams.code = ?", code)
 	err := q.Scan(ctx)
 	if err != nil {
-		return "", fmt.Errorf("GetUserIDByCode: %v", err)
+		return "", fmt.Errorf("GetUserIDByCode: %w", err)
 	}
-	return instance.UserID, nil
 
+	return instance.UserID, nil
 }
 
 // InsertBatch inserts a batch of teams and returns an error if there's a unique constraint conflict.

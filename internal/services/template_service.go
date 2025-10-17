@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v4/helpers"
@@ -51,7 +50,7 @@ func (s *TemplateService) CreateFromInstance(
 
 	oldInstance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
-		return nil, fmt.Errorf("finding instance: %w", err)
+		return nil, errors.New("finding instance: " + err.Error())
 	}
 	if oldInstance == nil {
 		return nil, errors.New("instance not found")
@@ -67,7 +66,7 @@ func (s *TemplateService) CreateFromInstance(
 
 	locations, err := s.locationService.FindByInstance(ctx, oldInstance.ID)
 	if err != nil {
-		return nil, fmt.Errorf("finding locations: %w", err)
+		return nil, errors.New("finding locations: " + err.Error())
 	}
 
 	if name == "" {
@@ -84,14 +83,14 @@ func (s *TemplateService) CreateFromInstance(
 	}
 
 	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, fmt.Errorf("creating instance: %w", err)
+		return nil, errors.New("creating instance: " + err.Error())
 	}
 
 	// Copy locations
 	for _, location := range locations {
 		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
 		if err != nil {
-			return nil, fmt.Errorf("duplicating location: %w", err)
+			return nil, errors.New("duplicating location: " + err.Error())
 		}
 	}
 
@@ -99,7 +98,7 @@ func (s *TemplateService) CreateFromInstance(
 	settings := oldInstance.Settings
 	settings.InstanceID = newInstance.ID
 	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, fmt.Errorf("creating settings: %w", err)
+		return nil, errors.New("creating settings: " + err.Error())
 	}
 
 	return newInstance, nil
@@ -109,7 +108,7 @@ func (s *TemplateService) CreateFromInstance(
 func (s *TemplateService) LaunchInstance(
 	ctx context.Context,
 	userID, templateID, name string,
-	regen_location_codes bool,
+	regenLocationCodes bool,
 ) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
@@ -120,7 +119,7 @@ func (s *TemplateService) LaunchInstance(
 
 	template, err := s.instanceRepo.GetByID(ctx, templateID)
 	if err != nil {
-		return nil, fmt.Errorf("finding template: %w", err)
+		return nil, errors.New("finding template: " + err.Error())
 	}
 
 	if template.UserID != userID {
@@ -133,7 +132,7 @@ func (s *TemplateService) LaunchInstance(
 
 	locations, err := s.locationService.FindByInstance(ctx, template.ID)
 	if err != nil {
-		return nil, fmt.Errorf("finding locations: %w", err)
+		return nil, errors.New("finding locations: " + err.Error())
 	}
 
 	newInstance := &models.Instance{
@@ -143,14 +142,14 @@ func (s *TemplateService) LaunchInstance(
 	}
 
 	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, fmt.Errorf("creating instance: %w", err)
+		return nil, errors.New("creating instance: " + err.Error())
 	}
 
 	// Copy locations
 	for _, location := range locations {
 		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
 		if err != nil {
-			return nil, fmt.Errorf("duplicating location: %w", err)
+			return nil, errors.New("duplicating location: " + err.Error())
 		}
 	}
 
@@ -158,7 +157,7 @@ func (s *TemplateService) LaunchInstance(
 	settings := template.Settings
 	settings.InstanceID = newInstance.ID
 	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, fmt.Errorf("creating settings: %w", err)
+		return nil, errors.New("creating settings: " + err.Error())
 	}
 
 	return newInstance, nil
@@ -182,7 +181,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	}
 	shareLink, err := s.shareLinkRepo.GetByID(ctx, shareLinkID)
 	if err != nil {
-		return nil, fmt.Errorf("finding share link: %w", err)
+		return nil, errors.New("finding share link: " + err.Error())
 	}
 
 	// Thankfully this checks the expiration date and max uses
@@ -196,7 +195,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 
 	template, err := s.instanceRepo.GetByID(ctx, shareLink.TemplateID)
 	if err != nil {
-		return nil, fmt.Errorf("finding template: %w", err)
+		return nil, errors.New("finding template: " + err.Error())
 	}
 	if template == nil {
 		return nil, errors.New("template not found")
@@ -209,7 +208,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	}
 	locations, err := s.locationService.FindByInstance(ctx, template.ID)
 	if err != nil {
-		return nil, fmt.Errorf("finding locations: %w", err)
+		return nil, errors.New("finding locations: " + err.Error())
 	}
 	newInstance := &models.Instance{
 		Name:       name,
@@ -217,20 +216,20 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 		IsTemplate: false,
 	}
 	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, fmt.Errorf("creating instance: %w", err)
+		return nil, errors.New("creating instance: " + err.Error())
 	}
 	// Copy locations
 	for _, location := range locations {
 		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
 		if err != nil {
-			return nil, fmt.Errorf("duplicating location: %w", err)
+			return nil, errors.New("duplicating location: " + err.Error())
 		}
 	}
 	// Copy settings
 	settings := template.Settings
 	settings.InstanceID = newInstance.ID
 	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, fmt.Errorf("creating settings: %w", err)
+		return nil, errors.New("creating settings: " + err.Error())
 	}
 	// Increment the used count
 	shareLink.UsedCount++
@@ -238,7 +237,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now()}
 	}
 	if err := s.shareLinkRepo.Use(ctx, shareLink); err != nil {
-		return nil, fmt.Errorf("updating share link: %w", err)
+		return nil, errors.New("updating share link: " + err.Error())
 	}
 
 	return newInstance, nil
@@ -248,7 +247,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Instance, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("finding instance: %w", err)
+		return nil, errors.New("finding instance: " + err.Error())
 	}
 	if !instance.IsTemplate {
 		return nil, errors.New("instance is not a template")
@@ -260,7 +259,7 @@ func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Insta
 func (s *TemplateService) GetShareLink(ctx context.Context, id string) (*models.ShareLink, error) {
 	shareLink, err := s.shareLinkRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("finding share link: %w", err)
+		return nil, errors.New("finding share link: " + err.Error())
 	}
 	return shareLink, nil
 }
@@ -272,7 +271,7 @@ func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Ins
 	}
 	instances, err := s.instanceRepo.FindTemplates(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("finding templates: %w", err)
+		return nil, errors.New("finding instances: " + err.Error())
 	}
 	return instances, nil
 }
@@ -291,7 +290,7 @@ func (s *TemplateService) Update(ctx context.Context, instance *models.Instance)
 
 	err := s.instanceRepo.Update(ctx, instance)
 	if err != nil {
-		return fmt.Errorf("updating instance: %w", err)
+		return errors.New("updating instance: " + err.Error())
 	}
 	return nil
 }
@@ -314,7 +313,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 
 	instance, err := s.instanceRepo.GetByID(ctx, data.TemplateID)
 	if err != nil {
-		return "", fmt.Errorf("finding instance: %w", err)
+		return "", errors.New("finding instance: " + err.Error())
 	}
 
 	if instance.UserID != userID {
@@ -344,7 +343,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 
 	err = s.shareLinkRepo.Create(ctx, shareLink)
 	if err != nil {
-		return "", fmt.Errorf("creating share link: %w", err)
+		return "", errors.New("creating share link: " + err.Error())
 	}
 
 	url := helpers.URL("/templates/" + shareLink.ID)

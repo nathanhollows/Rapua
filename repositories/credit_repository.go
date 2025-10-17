@@ -23,7 +23,13 @@ func NewCreditRepository(db *bun.DB) *CreditRepository {
 
 // AddCreditsWithTx atomically increments credits without a read-modify-write cycle.
 // This prevents lost updates from concurrent operations.
-func (r *CreditRepository) AddCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCreditsToAdd int, paidCreditsToAdd int) error {
+func (r *CreditRepository) AddCreditsWithTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	userID string,
+	freeCreditsToAdd int,
+	paidCreditsToAdd int,
+) error {
 	result, err := tx.NewUpdate().
 		Model(&models.User{}).
 		Set("free_credits = free_credits + ?", freeCreditsToAdd).
@@ -47,7 +53,10 @@ func (r *CreditRepository) AddCreditsWithTx(ctx context.Context, tx *bun.Tx, use
 }
 
 // GetCreditAdjustmentsByUserID returns all credit adjustments for a user.
-func (r *CreditRepository) GetCreditAdjustmentsByUserID(ctx context.Context, userID string) ([]models.CreditAdjustments, error) {
+func (r *CreditRepository) GetCreditAdjustmentsByUserID(
+	ctx context.Context,
+	userID string,
+) ([]models.CreditAdjustments, error) {
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
 		Model(&adjustments).
@@ -61,7 +70,11 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserID(ctx context.Context, use
 }
 
 // GetCreditAdjustmentsByUserIDWithPagination returns credit adjustments for a user with pagination.
-func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(ctx context.Context, userID string, limit, offset int) ([]models.CreditAdjustments, error) {
+func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(
+	ctx context.Context,
+	userID string,
+	limit, offset int,
+) ([]models.CreditAdjustments, error) {
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
 		Model(&adjustments).
@@ -77,7 +90,11 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(ctx contex
 }
 
 // SaveCreditAdjustment saves a new credit adjustment record.
-func (r *CreditRepository) CreateCreditAdjustmentWithTx(ctx context.Context, tx *bun.Tx, adjustment *models.CreditAdjustments) error {
+func (r *CreditRepository) CreateCreditAdjustmentWithTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	adjustment *models.CreditAdjustments,
+) error {
 	if adjustment.UserID == "" {
 		return errors.New("userID is required for credit adjustment")
 	}
@@ -93,7 +110,13 @@ func (r *CreditRepository) CreateCreditAdjustmentWithTx(ctx context.Context, tx 
 	return err
 }
 
-func (r *CreditRepository) BulkUpdateCredits(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool) error {
+func (r *CreditRepository) BulkUpdateCredits(
+	ctx context.Context,
+	tx *bun.Tx,
+	has int,
+	needs int,
+	isEducator bool,
+) error {
 	_, err := tx.NewUpdate().
 		Model(&models.User{}).
 		Set("free_credits = ?", needs).
@@ -102,7 +125,14 @@ func (r *CreditRepository) BulkUpdateCredits(ctx context.Context, tx *bun.Tx, ha
 	return err
 }
 
-func (r *CreditRepository) BulkUpdateCreditUpdateNotices(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool, reason string) error {
+func (r *CreditRepository) BulkUpdateCreditUpdateNotices(
+	ctx context.Context,
+	tx *bun.Tx,
+	has int,
+	needs int,
+	isEducator bool,
+	reason string,
+) error {
 	// First, get all users that need top-up
 	var users []struct {
 		ID string `bun:"id"`
@@ -141,7 +171,10 @@ func (r *CreditRepository) BulkUpdateCreditUpdateNotices(ctx context.Context, tx
 }
 
 // GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix.
-func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(ctx context.Context, reasonPrefix string) (*time.Time, error) {
+func (r *CreditRepository) GetMostRecentCreditAdjustmentByReasonPrefix(
+	ctx context.Context,
+	reasonPrefix string,
+) (*time.Time, error) {
 	var adjustment models.CreditAdjustments
 	err := r.db.NewSelect().
 		Model(&adjustment).

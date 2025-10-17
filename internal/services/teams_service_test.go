@@ -24,7 +24,14 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 	creditRepo := repositories.NewCreditRepository(dbc)
 	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
-	teamService := services.NewTeamService(transactor, teamRepo, checkinRepo, creditService, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(
+		transactor,
+		teamRepo,
+		checkinRepo,
+		creditService,
+		blockStateRepo,
+		locationRepo,
+	)
 
 	return *teamService, cleanup
 }

@@ -10,7 +10,7 @@ const (
 	year   = "year"
 )
 
-// LocationData is the data required to update a new location. Blank
+// LocationUpdateData is the data required to update a new location. Blank
 // fields are ignored, with the exception of Clues and ClueIDs which
 // are always required.
 type LocationUpdateData struct {

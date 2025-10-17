@@ -5,6 +5,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpload_GetSizes(t *testing.T) {
@@ -45,15 +46,15 @@ func TestUpload_GetSizes(t *testing.T) {
 			upload := models.Upload{}
 			for _, size := range tt.input {
 				err := upload.AddSize(size.Breakpoint, size.URL)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			result, err := upload.GetSizes()
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, result)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.output, result)
 			}
 		})
@@ -95,14 +96,14 @@ func TestUpload_AddSize(t *testing.T) {
 			upload := models.Upload{}
 			for _, size := range tt.initial {
 				err := upload.AddSize(size.Breakpoint, size.URL)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			err := upload.AddSize(tt.breakpoint, tt.url)
 
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				result, _ := upload.GetSizes()
 				assert.Equal(t, tt.final, result)
 			}

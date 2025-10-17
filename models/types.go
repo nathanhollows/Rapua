@@ -132,7 +132,7 @@ func (g GameStatus) Description() string {
 	}[g]
 }
 
-// Parse RouteStrategy.
+// ParseRouteStrategy returns a RouteStrategy from a string.
 func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	switch s {
 	case "Random", "Randomised Route":
@@ -146,7 +146,7 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	}
 }
 
-// Parse NavigationDisplayMode.
+// ParseNavigationDisplayMode returns a NavigationDisplayMode from a string.
 func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 	switch s {
 	case "Show Map", "Map Only":
@@ -164,7 +164,7 @@ func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 	}
 }
 
-// Parse GameStatus.
+// ParseGameStatus returns a GameStatus from a string.
 func ParseGameStatus(s string) (GameStatus, error) {
 	switch s {
 	case "Scheduled":

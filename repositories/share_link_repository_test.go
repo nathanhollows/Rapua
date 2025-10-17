@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 )
 
@@ -53,9 +54,9 @@ func TestShareLinkRepository_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.Create(context.Background(), tt.link)
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, tt.link.ID) // Ensure ID was generated
 			}
 		})
@@ -80,7 +81,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				return link
 			},
 			action: func(link *models.ShareLink) error {
@@ -108,7 +109,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				return link
 			},
 			action: func(link *models.ShareLink) error {
@@ -124,9 +125,9 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 			link := tt.setup()
 			err := tt.action(link)
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -150,7 +151,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				return link
 			},
 			action: func(link *models.ShareLink) error {
@@ -175,7 +176,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				return link
 			},
 			action: func(link *models.ShareLink) error {
@@ -190,13 +191,13 @@ func TestShareLinkRepository_Use(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			link := tt.setup()
 			if err := tt.action(link); err != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 			err := tt.action(link)
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupCheckinRepo(t *testing.T) (repositories.CheckInRepository, db.Transactor, func()) {
@@ -50,7 +51,7 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 
 	for _, team := range teams {
 		checkin, err := repo.LogCheckIn(ctx, team, location, gofakeit.Bool(), gofakeit.Bool())
-		assert.NoError(t, err, "expected no error when saving check-in")
+		require.NoError(t, err, "expected no error when saving check-in")
 		assert.NotEmpty(t, checkin.TimeIn, "expected check-in to have a time in")
 	}
 
@@ -61,7 +62,7 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 		if rollbackErr != nil {
 			t.Fatalf("failed to rollback transaction: %v", rollbackErr)
 		}
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 
 	err = repo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
@@ -70,16 +71,16 @@ func TestCheckInRepository_DeleteByTeamCodes(t *testing.T) {
 		if rollbackErr != nil {
 			t.Fatalf("failed to rollback transaction: %v", rollbackErr)
 		}
-		assert.NoError(t, err, "expected no error when resetting team")
+		require.NoError(t, err, "expected no error when resetting team")
 	} else {
 		err = tx.Commit()
-		assert.NoError(t, err, "expected no error when committing transaction")
+		require.NoError(t, err, "expected no error when committing transaction")
 	}
 
 	// Check that the check-ins have been deleted
 	for _, team := range teams {
 		checkins, findErr := repo.FindCheckInByTeamAndLocation(ctx, team.Code, location.ID)
-		assert.ErrorIs(t, findErr, sql.ErrNoRows, "expected no check-ins to be found")
+		require.ErrorIs(t, findErr, sql.ErrNoRows, "expected no check-ins to be found")
 		assert.Empty(t, checkins, "expected no check-ins to be found")
 	}
 }

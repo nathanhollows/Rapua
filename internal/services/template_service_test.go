@@ -37,7 +37,14 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
-	teamService := services.NewTeamService(transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo)
+	teamService := services.NewTeamService(
+		transactor,
+		teamRepo,
+		checkInRepo,
+		creditService,
+		blockStateRepo,
+		locationRepo,
+	)
 	instanceService := services.NewInstanceService(
 		locationService, *teamService, instanceRepo, instanceSettingsRepo,
 	)
@@ -442,16 +449,16 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 					// Verify expiration date
 					switch tt.data.Validity {
 					case "always":
-						assert.Equal(t, shareLink.ExpiresAt, bun.NullTime{})
+						assert.Equal(t, bun.NullTime{}, shareLink.ExpiresAt)
 					case "day":
-						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
+						assert.NotEqual(t, bun.NullTime{}, shareLink.ExpiresAt)
 						// Allow 1 second tolerance for test execution time
 						assert.WithinDuration(t, time.Now().AddDate(0, 0, 1), shareLink.ExpiresAt.Time, 1*time.Second)
 					case "week":
-						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
+						assert.NotEqual(t, bun.NullTime{}, shareLink.ExpiresAt)
 						assert.WithinDuration(t, time.Now().AddDate(0, 0, 7), shareLink.ExpiresAt.Time, 1*time.Second)
 					case "month":
-						assert.NotEqual(t, shareLink.ExpiresAt, bun.NullTime{})
+						assert.NotEqual(t, bun.NullTime{}, shareLink.ExpiresAt)
 						assert.WithinDuration(t, time.Now().AddDate(0, 1, 0), shareLink.ExpiresAt.Time, 1*time.Second)
 					}
 				}

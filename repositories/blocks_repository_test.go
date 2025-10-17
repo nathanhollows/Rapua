@@ -860,7 +860,7 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 
 	t.Run("Get non-existent block", func(t *testing.T) {
 		_, err := repo.GetByID(context.Background(), "non-existent-id")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Update non-existent block", func(t *testing.T) {
@@ -875,7 +875,7 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 		// Update returns no error for non-existent blocks in current implementation
 		// This is a potential improvement area
 		if err != nil {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	})
 
@@ -885,7 +885,7 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 		_ = tx.Rollback() // Rollback immediately
 
 		err = repo.Delete(context.Background(), tx, "some-id")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Reorder with empty slice", func(t *testing.T) {
@@ -1227,7 +1227,7 @@ func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 
 				newBlocks, err := repo.FindByOwnerID(context.Background(), newOwnerID)
 				require.NoError(t, err)
-				assert.Len(t, newBlocks, 0)
+				assert.Empty(t, newBlocks)
 			},
 			cleanupFunc: func(_, _ string) {},
 		},

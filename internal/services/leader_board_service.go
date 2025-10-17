@@ -222,6 +222,8 @@ func (s *LeaderBoardService) GetDefaultSortForRankingScheme(scheme string) strin
 		return string(SortByPoints)
 	case RankByProgress:
 		return string(SortByProgress)
+	case RankByCompletion, RankByTimeToFirst, RankByTimeToLast:
+		return string(SortByRank)
 	default:
 		return string(SortByRank)
 	}

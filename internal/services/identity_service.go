@@ -103,7 +103,7 @@ func (s *AuthService) GetAuthenticatedUser(r *http.Request) (*models.User, error
 	return user, nil
 }
 
-// Check if the system allows google login (env var set).
+// AllowGoogleLogin checks if Google OAuth provider is configured.
 func (s *AuthService) AllowGoogleLogin() bool {
 	provider, err := goth.GetProvider("google")
 	return err == nil && provider != nil
@@ -205,7 +205,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 	return nil
 }
 
-// SendVerificationEmail sends a verification email to the user.
+// SendEmailVerification sends a verification email to the user.
 func (s *AuthService) SendEmailVerification(ctx context.Context, user *models.User) error {
 	// If the user is already verified, return an error
 	if user.EmailVerified {

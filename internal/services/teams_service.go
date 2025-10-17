@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -238,19 +237,19 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 
 	userID, err := s.teamRepo.GetUserIDByCode(ctx, teamCode)
 	if err != nil {
-		return fmt.Errorf("getting user ID for team %s: %w", teamCode, err)
+		return errors.New("getting user ID for team: " + err.Error())
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
+		return errors.New("beginning transaction: " + err.Error())
 	}
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
 			err := tx.Rollback()
 			if err != nil {
-				fmt.Println("failed to rollback transaction:", err)
+				panic("rolling back transaction after panic: " + err.Error())
 			}
 			panic(p)
 		}
@@ -260,18 +259,18 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {
-			return fmt.Errorf("rolling back transaction after credit deduction error: %w", txErr)
+			panic("rolling back transaction after credit deduction failure: " + txErr.Error())
 		}
-		return fmt.Errorf("deducting credit for team start: %w", err)
+		return errors.New("deducting credit for team start: " + err.Error())
 	}
 
 	err = s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {
-			return fmt.Errorf("rolling back transaction after updating team start: %w", txErr)
+			return errors.New("rolling back transaction after team start update failure: " + txErr.Error())
 		}
-		return fmt.Errorf("updating team start status: %w", err)
+		return errors.New("updating team as started: " + err.Error())
 	}
 
 	return tx.Commit()

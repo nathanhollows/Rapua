@@ -2,7 +2,6 @@ package services_test
 
 import (
 	"archive/zip"
-	"context"
 	"os"
 	"testing"
 
@@ -72,7 +71,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := assetGen.CreateQRCodeImage(context.Background(), tt.path, tt.content, tt.options...)
+			err := assetGen.CreateQRCodeImage(tt.path, tt.content, tt.options...)
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("Expected error: %v, got: %v", tt.expectErr, err)
@@ -144,7 +143,10 @@ func TestCreateArchive(t *testing.T) {
 
 			// Execute
 			err := os.MkdirAll("assets/codes", 0755)
-			archivePath, err := assetGen.CreateArchive(context.Background(), tt.files)
+			if err != nil {
+				t.Fatalf("Failed to create assets directory: %v", err)
+			}
+			archivePath, err := assetGen.CreateArchive(tt.files)
 
 			// Check expectation
 			if (err != nil) != tt.expectErr {

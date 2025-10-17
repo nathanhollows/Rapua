@@ -13,7 +13,8 @@ type CreditAdjustments struct {
 
 // Credit adjustment reason prefixes.
 const (
-	CreditAdjustmentReasonPrefixMigration    = "Migration"
+	CreditAdjustmentReasonPrefixMigration = "Migration"
+	//nolint:gosec // String is not sensitive
 	CreditAdjustmentReasonPrefixMonthlyTopup = "Monthly free credit top-up"
 	CreditAdjustmentReasonPrefixPurchase     = "Purchase"
 	CreditAdjustmentReasonPrefixAdmin        = "Admin"

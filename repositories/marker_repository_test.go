@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 )
 
@@ -47,11 +48,11 @@ func TestMarkerRepository_Create(t *testing.T) {
 				return repo.Create(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -63,11 +64,11 @@ func TestMarkerRepository_Create(t *testing.T) {
 				return repo.Create(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.Error(t, err)
+				require.Error(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -83,11 +84,11 @@ func TestMarkerRepository_Create(t *testing.T) {
 				return repo.Create(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.Error(t, err)
+				require.Error(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -102,11 +103,11 @@ func TestMarkerRepository_Create(t *testing.T) {
 				return repo.Create(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 	}
@@ -114,7 +115,7 @@ func TestMarkerRepository_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			marker, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = tt.action(marker)
 			tt.assertion(err)
@@ -134,10 +135,10 @@ func TestMarkerRepository_GetByCode(t *testing.T) {
 		Name: gofakeit.Name(),
 	}
 	err := repo.Create(context.Background(), &marker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	foundMarker, err := repo.GetByCode(context.Background(), marker.Code)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, marker, *foundMarker)
 }
 
@@ -173,11 +174,11 @@ func TestMarkerRepository_Update(t *testing.T) {
 				return repo.Update(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -189,7 +190,7 @@ func TestMarkerRepository_Update(t *testing.T) {
 				return repo.Update(context.Background(), &marker)
 			},
 			assertion: func(err error) {
-				assert.Error(t, err)
+				require.Error(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				// No cleanup needed as marker was not created
@@ -200,7 +201,7 @@ func TestMarkerRepository_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			marker, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = tt.action(marker)
 			tt.assertion(err)
@@ -246,11 +247,11 @@ func TestMarkerRepository_UpdateCoords(t *testing.T) {
 				return err
 			},
 			assertion: func(marker models.Marker, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				err := repo.Delete(context.Background(), marker.Code)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -262,7 +263,7 @@ func TestMarkerRepository_UpdateCoords(t *testing.T) {
 				return repo.UpdateCoords(context.Background(), &marker, gofakeit.Latitude(), gofakeit.Longitude())
 			},
 			assertion: func(marker models.Marker, err error) {
-				assert.Error(t, err)
+				require.Error(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				// No cleanup needed as marker was not created
@@ -273,7 +274,7 @@ func TestMarkerRepository_UpdateCoords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			marker, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = tt.action(marker)
 			tt.assertion(marker, err)
@@ -312,7 +313,7 @@ func TestMarkerRepository_Delete(t *testing.T) {
 				return repo.Delete(context.Background(), markerCode)
 			},
 			assertion: func(err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
 				// No cleanup needed as marker is deleted
@@ -323,7 +324,7 @@ func TestMarkerRepository_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			marker, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = tt.action(marker.Code)
 			tt.assertion(err)
@@ -367,7 +368,7 @@ func TestMarkerRepository_DeleteUnused(t *testing.T) {
 				return repo.DeleteUnused(context.Background(), tx)
 			},
 			assertion: func(err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			cleanupFunc: func() {
 				// Assume the function deletes all unused markers
@@ -379,7 +380,7 @@ func TestMarkerRepository_DeleteUnused(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tx, err := tt.setup()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = tt.action(tx)
 			tt.assertion(err)
@@ -388,7 +389,7 @@ func TestMarkerRepository_DeleteUnused(t *testing.T) {
 				tt.cleanupFunc()
 			}
 			rollbackErr := tx.Rollback() // Assuming rollback for test isolation
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		})
 	}
 }

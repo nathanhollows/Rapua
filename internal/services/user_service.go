@@ -79,7 +79,8 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, 
 
 	// Handle work type if provided
 	if workType, exists := profile["work_type"]; exists {
-		if workType == "other" {
+		switch workType {
+		case "other":
 			otherWorkType, hasOther := profile["other_work_type"]
 			if hasOther && otherWorkType != "" {
 				user.WorkType.String = otherWorkType
@@ -87,11 +88,11 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, 
 			} else {
 				user.WorkType.Valid = false
 			}
-		} else if workType != "" {
+		case "":
+			user.WorkType.Valid = false
+		default:
 			user.WorkType.String = workType
 			user.WorkType.Valid = true
-		} else {
-			user.WorkType.Valid = false
 		}
 	}
 

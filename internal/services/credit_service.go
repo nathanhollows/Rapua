@@ -136,7 +136,7 @@ func (s *CreditService) AddCredits(
 	return nil
 }
 
-// DeductCreditForTeamStart handles credit deduction and team start logging within a transaction.
+// DeductCreditForTeamStartWithTx handles credit deduction and team start logging within a transaction.
 func (s *CreditService) DeductCreditForTeamStartWithTx(
 	ctx context.Context,
 	tx *bun.Tx,
