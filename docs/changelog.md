@@ -17,6 +17,10 @@ order: 100
   - Includes 500 credits for all existing users.
 - Job scheduler
   - Monthly job includes topping all users up with free credits.
+  - Stale credit purchase clean up job
+- [Privacy](/privacy) and [Terms and Conditions](/terms) updates to reflect billing and integrations.
+
+
 
 ### Changed
 
