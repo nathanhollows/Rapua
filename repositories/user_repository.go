@@ -62,6 +62,7 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 			"current_instance_id",
 			"share_email",
 			"work_type",
+			"stripe_customer_id",
 			"updated_at").
 		WherePK().
 		Exec(ctx)
