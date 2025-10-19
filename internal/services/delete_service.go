@@ -25,6 +25,9 @@ type DeleteService struct {
 	markerRepo           repositories.MarkerRepository
 	teamRepo             repositories.TeamRepository
 	userRepo             repositories.UserRepository
+	creditRepo           *repositories.CreditRepository
+	creditPurchaseRepo   *repositories.CreditPurchaseRepository
+	teamStartLogRepo     *repositories.TeamStartLogRepository
 }
 
 // NewDeleteService creates a new DeleteService with the provided dependencies.
@@ -39,6 +42,9 @@ func NewDeleteService(
 	markerRepo repositories.MarkerRepository,
 	teamRepo repositories.TeamRepository,
 	userRepo repositories.UserRepository,
+	creditRepo *repositories.CreditRepository,
+	creditPurchaseRepo *repositories.CreditPurchaseRepository,
+	teamStartLogRepo *repositories.TeamStartLogRepository,
 ) *DeleteService {
 	return &DeleteService{
 		transactor:           transactor,
@@ -51,6 +57,9 @@ func NewDeleteService(
 		markerRepo:           markerRepo,
 		teamRepo:             teamRepo,
 		userRepo:             userRepo,
+		creditRepo:           creditRepo,
+		creditPurchaseRepo:   creditPurchaseRepo,
+		teamStartLogRepo:     teamStartLogRepo,
 	}
 }
 
@@ -405,6 +414,22 @@ func (s *DeleteService) deleteUser(ctx context.Context, tx *bun.Tx, userID strin
 		if err != nil {
 			return fmt.Errorf("deleting instance %s: %w", instance.ID, err)
 		}
+	}
+
+	// Delete credit-related data
+	err = s.teamStartLogRepo.DeleteByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting team start logs: %w", err)
+	}
+
+	err = s.creditPurchaseRepo.DeleteByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting credit purchases: %w", err)
+	}
+
+	err = s.creditRepo.DeleteCreditAdjustmentsByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting credit adjustments: %w", err)
 	}
 
 	// Delete the user
