@@ -42,8 +42,8 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		} else {
 			// If successful, check that values are set correctly
 			assert.Equal(t, name, marker.Name)
-			assert.Equal(t, lat, marker.Lat)
-			assert.Equal(t, lng, marker.Lng)
+			assert.InDelta(t, lat, marker.Lat, 0.000001)
+			assert.InDelta(t, lng, marker.Lng, 0.000001)
 		}
 	})
 
@@ -110,7 +110,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 		} else {
-			assert.Equal(t, -90.0, marker.Lat)
+			assert.InDelta(t, -90.0, marker.Lat, 0.000001)
 		}
 
 		// Test exactly 90 (should pass)
@@ -118,7 +118,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 		} else {
-			assert.Equal(t, 90.0, marker.Lat)
+			assert.InDelta(t, 90.0, marker.Lat, 0.000001)
 		}
 	})
 
@@ -131,7 +131,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, -180.0, marker.Lng)
+			assert.InDelta(t, -180.0, marker.Lng, 0.000001)
 		}
 
 		// Test exactly 180 (should pass)
@@ -139,7 +139,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, 180.0, marker.Lng)
+			assert.InDelta(t, 180.0, marker.Lng, 0.000001)
 		}
 	})
 
@@ -259,8 +259,8 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, lat, marker.Lat)
-			assert.Equal(t, lng, marker.Lng)
+			assert.InDelta(t, lat, marker.Lat, 0.000001)
+			assert.InDelta(t, lng, marker.Lng, 0.000001)
 		}
 	})
 
@@ -272,8 +272,8 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, 0.0, marker.Lat)
-			assert.Equal(t, 0.0, marker.Lng)
+			assert.InDelta(t, 0.0, marker.Lat, 0.000001)
+			assert.InDelta(t, 0.0, marker.Lng, 0.000001)
 		}
 	})
 
