@@ -138,7 +138,7 @@ You agree to indemnify and hold harmless Rapua and its operator from any claims,
 
 ### Governing law
 
-These Terms and Conditions are governed by the laws of **New Zealand**. Any disputes will be resolved in New Zealand courts.
+These Terms and Conditions are governed by the laws of New Zealand. Any disputes will be resolved in New Zealand courts.
 
 ### Changes to these terms and conditions
 
