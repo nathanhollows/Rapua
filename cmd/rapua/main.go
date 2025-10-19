@@ -378,6 +378,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo)
+	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
 	creditService := services.NewCreditService(
 		transactor,
 		creditRepo,
@@ -408,6 +409,11 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		"Monthly Credit Top-Up",
 		monthlyCreditTopupJob.TopUpCredits,
 		scheduler.NextFirstOfMonth,
+	)
+	jobs.AddJob(
+		"Stale Credit Purchase Cleanup",
+		staleCreditCleanupService.CleanupStalePurchases,
+		scheduler.NextDaily,
 	)
 	jobs.Start()
 
