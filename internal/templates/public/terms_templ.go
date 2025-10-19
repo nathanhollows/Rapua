@@ -23,7 +23,7 @@ const terms = `
 
 ---
 
-## Acceptance of terms (The long version )
+## The long version:
 
 By accessing and using Rapua, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the service.
 
@@ -180,7 +180,7 @@ func Terms() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p class=\"text-sm text-gray-600 mt-8\">Last updated:  ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p class=\"text-sm opacity-50 mt-8\">Last updated:  ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -193,7 +193,7 @@ func Terms() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p></div></section><style>\n\t\th1 a, h2 a, h3 a, h4 a, h5 a, h6 a {\n\t\t\tdisplay: none;\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

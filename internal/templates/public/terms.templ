@@ -15,7 +15,7 @@ const terms = `
 
 ---
 
-## Acceptance of terms (The long version )
+## The long version:
 
 By accessing and using Rapua, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the service.
 
@@ -147,10 +147,15 @@ templ Terms() {
 	<section id="terms" class="container max-w-7xl mx-auto px-4 py-8">
 		<div class="prose mx-auto pb-5">
 			@templ.Raw(stringToMarkdown(terms))
-			<p class="text-sm text-gray-600 mt-8">
+			<p class="text-sm opacity-50 mt-8">
 				Last updated: 
 				{ lastUpdatedStr }
 			</p>
 		</div>
 	</section>
+	<style>
+		h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+			display: none;
+		}
+	</style>
 }
