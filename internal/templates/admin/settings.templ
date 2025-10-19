@@ -66,20 +66,17 @@ templ Settings(contents templ.Component) {
 						Credit Usage
 					</a>
 				</li>
-				<!--
 				<li>
 					<a
-						hx-get="/admin/settings/billing"
-						_="on click
-		remove .active from <li a />
-		add .active to me
-		"
+						href="/admin/settings/billing"
+						_="init if document.title.includes('Billing') then
+							add .menu-active to me
+						end"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign-icon lucide-dollar-sign"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 						Billing
 					</a>
 				</li>
--->
 			</ul>
 			<section id="settings" class="w-full order-3">
 				@contents
@@ -445,58 +442,4 @@ templ SettingsSecurity(user models.User) {
 			</form>
 		</div>
 	</dialog>
-}
-
-templ SettingsBilling(user models.User) {
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Your plan</h2>
-				<div class="prose">
-					<p>You are currently on the <strong>Free Plan</strong>.</p>
-					<p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p>
-					<button
-						type="button"
-						class="btn btn-primary"
-						_="on click
-							fetch '/admin/settings/billing/upgrade' {method: 'POST'}
-								then if(it.ok) call window.location.href = '/admin/settings/billing/checkout'
-						"
-					>Upgrade to Pro</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Order history</h2>
-				<table class="table w-full">
-					<thead>
-						<tr>
-							<th>Date</th>
-							<th>Amount</th>
-							<th>Plan</th>
-							<th>Receipt</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td colspan="4" class="text-center py-4">No orders yet</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Payment method</h2>
-				<div class="prose">
-					<p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p>
-				</div>
-			</div>
-		</div>
-	</div>
 }

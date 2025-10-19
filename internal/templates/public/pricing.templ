@@ -1,5 +1,10 @@
 package templates
 
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v4/config"
+)
+
 templ Pricing() {
 	<!-- Decorative Background Elements -->
 	<div class="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 dark:bg-accent/10 rounded-full blur-3xl"></div>
@@ -30,12 +35,16 @@ templ Pricing() {
 					</div>
 					<div class="flex flex-row justify-around w-full md:w-8/12 mx-auto text-center space-y-4 mb-6">
 						<div>
-							<div class="text-4xl font-bold mb-1">10</div>
+							<div class="text-4xl font-bold mb-1">
+								{ config.RegularUserFreeCredits() }
+							</div>
 							<div class="text-base-content/80">For all users</div>
 						</div>
 						<div class="divider divider-horizontal my-2">OR</div>
 						<div>
-							<div class="text-4xl font-bold mb-1">25</div>
+							<div class="text-4xl font-bold mb-1">
+								{ config.EducatorFreeCredits() }
+							</div>
 							<div class="text-base-content/80">For Educators</div>
 						</div>
 					</div>
@@ -71,7 +80,9 @@ templ Pricing() {
 						<h2 class="text-2xl font-bold mb-2">Extra Credits</h2>
 					</div>
 					<div class="text-center mb-6">
-						<div class="text-5xl font-bold mb-2">$0.35</div>
+						<div class="text-5xl font-bold mb-2">
+							${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) }
+						</div>
 						<div class="text-base-content/80 mb-2">per credit</div>
 					</div>
 					<div class="space-y-2 mt-auto">
@@ -111,7 +122,7 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">What is a credit?</div>
 					<div class="collapse-content prose">
 						<p>
-							Think of a credit as a ticket for one team to join your game. When the first player from a team enters their team code, that's when the system deducts a credit from your account - it's the moment their team officially starts playing.
+							Think of a credit as a ticket for one team to join game. When the first player in a team enters their team code to start playing, the system deducts a credit from your account.
 						</p>
 					</div>
 				</div>
@@ -120,22 +131,19 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">When do my credits top up?</div>
 					<div class="collapse-content prose">
 						<p>
-							Everyone's free credits on the first day of each month (UTC time). You'll get 10 credits if you're a regular user, or 25 if you're an educator.
+							Free credits top-up on the first day of each month (NZT time).
 						</p>
 					</div>
 				</div>
 				<div class="collapse bg-base-200 border-base-300 border">
 					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Do credits pile up over time?</div>
+					<div class="collapse-title font-semibold">Do credits accrue over time?</div>
 					<div class="collapse-content prose">
 						<p>
-							Here's how it works: free credits don't accumulate, but paid credits do.
+							Free credits don't accumulate. The system will only top up free credits based on what you actually used. So if you used 6 free credits this month, the system tops you back up by 6 back the next month.
 						</p>
 						<p>
-							For free credits, I only top you up based on what you actually used. So if you used 6 credits this month, I'll add 6 back next month (up to your monthly allowance).
-						</p>
-						<p>
-							Paid credits never expire and stack up. Buy 12 now and 12 later? You'll have 24 total. I always use your free credits first, then dip into your paid ones.
+							Paid credits, on the other hand, never expire and will stay in your account until you use them.
 						</p>
 					</div>
 				</div>
@@ -153,7 +161,7 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">What happens if I run out of credits?</div>
 					<div class="collapse-content prose">
 						<p>
-							No drama - teams just can't start playing until you have credits again. Players will see a friendly error message, and I'll give you a heads up when you log in so you're not caught off guard.
+							Teams can't start playing until you have credits again. Players will see a friendly error message, and the system will give you a heads up when you log in so you're not caught off guard.
 						</p>
 					</div>
 				</div>
@@ -162,7 +170,7 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">How do I qualify for educator credits?</div>
 					<div class="collapse-content prose">
 						<p>
-							Just sign up with your work email address and I'll automatically detect if you're at an educational institution. If the system doesn't pick it up, <a href="/contact" class="link">get in touch</a> and I'll sort it out.
+							Sign up with your work email address and Rapua will automatically detect if you're at an educational institution. If the system doesn't pick it up, <a href="/contact" class="link">get in touch</a> and I'll sort it out.
 						</p>
 						<p>
 							Educators include anyone working at schools, museums, universities, zoos, or art galleries.
@@ -183,7 +191,7 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">Is there a minimum purchase?</div>
 					<div class="collapse-content prose">
 						<p>
-							The minimum purchase is 3 credits ($1.05 NZD). Any less and I lose money in transaction fees.
+							The minimum purchase is 3 credits (${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100*3) } NZD). This is so I don't lose money in transaction fees.
 						</p>
 					</div>
 				</div>
@@ -192,7 +200,7 @@ templ Pricing() {
 					<div class="collapse-title font-semibold">Do you offer bulk discounts?</div>
 					<div class="collapse-content prose">
 						<p>
-							Nope. At $0.35 NZD per credit, it's already pretty fair. I'd rather keep the pricing simple and transparent than have complicated tiers and discounts.
+							No. At ${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) } NZD per credit, it's already pretty fair. 
 						</p>
 					</div>
 				</div>

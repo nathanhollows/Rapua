@@ -5,14 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v4/config"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
 
 const (
 	DefaultPageSize = 25
-	FreeCredits     = 10
-	EducatorCredits = 50
 )
 
 // Settings displays the account settings page.
@@ -93,9 +92,10 @@ func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsBilling(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsBilling(*user))
+	err := templates.Layout(c, *user, "Settings", "Billing").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account billing page", "error", err.Error())
+		h.logger.Error("rendering account page", "error", err.Error())
 	}
 }
 
@@ -177,9 +177,9 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	var recurring = FreeCredits
+	var recurring = config.RegularUserFreeCredits()
 	if user.IsEducator {
-		recurring = EducatorCredits
+		recurring = config.EducatorFreeCredits()
 	}
 
 	topupFilter := services.CreditAdjustmentFilter{

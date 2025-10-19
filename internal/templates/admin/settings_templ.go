@@ -34,7 +34,7 @@ func Settings(contents templ.Component) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><ul class=\"menu rounded-box w-80 h-min gap-1\" hx-boost=\"true\"><li><h2 class=\"menu-title\">Settings</h2></li><li><a href=\"/admin/settings/profile\" _=\"init if document.title.includes('Profile') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round-icon lucide-circle-user-round\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Profile</a></li><li><a href=\"/admin/settings/appearance\" _=\"init if document.title.includes('Appearance') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-palette-icon lucide-palette\"><path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"></path><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"></circle></svg> Appearance</a></li><li><a href=\"/admin/settings/security\" _=\"init if document.title.includes('Security') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-lock-icon lucide-user-lock\"><circle cx=\"10\" cy=\"7\" r=\"4\"></circle><path d=\"M10.3 15H7a4 4 0 0 0-4 4v2\"></path><path d=\"M15 15.5V14a2 2 0 0 1 4 0v1.5\"></path><rect width=\"8\" height=\"5\" x=\"13\" y=\"16\" rx=\".899\"></rect></svg> Security</a></li><li><h2 class=\"menu-title\">Billing</h2></li><li><a href=\"/admin/settings/credits\" _=\"init if document.title.includes('Credit') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column\"><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\"></line><line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\"></line><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\"></line></svg> Credit Usage</a></li><!--\n\t\t\t\t<li>\n\t\t\t\t\t<a\n\t\t\t\t\t\thx-get=\"/admin/settings/billing\"\n\t\t\t\t\t\t_=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"\n\t\t\t\t\t>\n\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign-icon lucide-dollar-sign\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg>\n\t\t\t\t\t\tBilling\n\t\t\t\t\t</a>\n\t\t\t\t</li>\n--></ul><section id=\"settings\" class=\"w-full order-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><ul class=\"menu rounded-box w-80 h-min gap-1\" hx-boost=\"true\"><li><h2 class=\"menu-title\">Settings</h2></li><li><a href=\"/admin/settings/profile\" _=\"init if document.title.includes('Profile') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round-icon lucide-circle-user-round\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Profile</a></li><li><a href=\"/admin/settings/appearance\" _=\"init if document.title.includes('Appearance') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-palette-icon lucide-palette\"><path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"></path><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"></circle></svg> Appearance</a></li><li><a href=\"/admin/settings/security\" _=\"init if document.title.includes('Security') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-lock-icon lucide-user-lock\"><circle cx=\"10\" cy=\"7\" r=\"4\"></circle><path d=\"M10.3 15H7a4 4 0 0 0-4 4v2\"></path><path d=\"M15 15.5V14a2 2 0 0 1 4 0v1.5\"></path><rect width=\"8\" height=\"5\" x=\"13\" y=\"16\" rx=\".899\"></rect></svg> Security</a></li><li><h2 class=\"menu-title\">Billing</h2></li><li><a href=\"/admin/settings/credits\" _=\"init if document.title.includes('Credit') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column\"><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\"></line><line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\"></line><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\"></line></svg> Credit Usage</a></li><li><a href=\"/admin/settings/billing\" _=\"init if document.title.includes('Billing') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign-icon lucide-dollar-sign\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg> Billing</a></li></ul><section id=\"settings\" class=\"w-full order-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -78,7 +78,7 @@ func SettingsProfile(user models.User) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 109, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 106, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.DisplayName.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 120, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 117, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -200,7 +200,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.WorkType.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 198, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 195, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -266,7 +266,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 242, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 239, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -279,7 +279,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 253, Col: 136}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 250, Col: 136}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +298,7 @@ func SettingsAppearance(user models.User) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(theme)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 261, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 258, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -347,7 +347,7 @@ func SettingsSecurity(user models.User) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 314, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 311, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -365,7 +365,7 @@ func SettingsSecurity(user models.User) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 397, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 394, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -377,35 +377,6 @@ func SettingsSecurity(user models.User) templ.Component {
 			}
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><!-- Delete Account Section --><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Delete your account</h2><div class=\"prose\"><p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p><p>This is an irreversible process.</p><button type=\"button\" class=\"btn btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">Delete my account</button></div></div></div></div><dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete your account</h3><p class=\"pt-4\">You are about to delete your account. Doing this will wipe all data including:</p><ul><li>games</li><li>historical play data</li><li>any uploaded media</li><li>templates</li></ul><p>This action cannot be undone. If you choose to register again, you will start with a clean slate.</p><p>Please enter your email address to confirm:</p><form hx-delete=\"/admin/settings/delete-account\" hx-swap=\"none\"><input type=\"email\" name=\"confirm-email\" class=\"input w-full\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		return nil
-	})
-}
-
-func SettingsBilling(user models.User) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Your plan</h2><div class=\"prose\"><p>You are currently on the <strong>Free Plan</strong>.</p><p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p><button type=\"button\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\tfetch '/admin/settings/billing/upgrade' {method: 'POST'}\n\t\t\t\t\t\t\t\tthen if(it.ok) call window.location.href = '/admin/settings/billing/checkout'\n\t\t\t\t\t\t\">Upgrade to Pro</button></div></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Order history</h2><table class=\"table w-full\"><thead><tr><th>Date</th><th>Amount</th><th>Plan</th><th>Receipt</th></tr></thead> <tbody><tr><td colspan=\"4\" class=\"text-center py-4\">No orders yet</td></tr></tbody></table></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Payment method</h2><div class=\"prose\"><p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
