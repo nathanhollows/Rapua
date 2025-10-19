@@ -115,12 +115,13 @@ func (r *CreditRepository) BulkUpdateCredits(
 	tx *bun.Tx,
 	has int,
 	needs int,
-	isEducator bool,
 ) error {
+	// Update users to their monthly credit limit
 	_, err := tx.NewUpdate().
 		Model(&models.User{}).
-		Set("free_credits = ?", needs).
-		Where("free_credits = ? AND is_educator = ?", has, isEducator).
+		Set("free_credits = monthly_credit_limit").
+		Where("free_credits = ?", has).
+		Where("monthly_credit_limit = ?", needs).
 		Exec(ctx)
 	return err
 }
@@ -130,7 +131,6 @@ func (r *CreditRepository) BulkUpdateCreditUpdateNotices(
 	tx *bun.Tx,
 	has int,
 	needs int,
-	isEducator bool,
 	reason string,
 ) error {
 	// First, get all users that need top-up
@@ -140,7 +140,8 @@ func (r *CreditRepository) BulkUpdateCreditUpdateNotices(
 	err := tx.NewSelect().
 		Model(&models.User{}).
 		Column("id").
-		Where("free_credits = ? AND is_educator = ?", has, isEducator).
+		Where("free_credits = ?", has).
+		Where("monthly_credit_limit = ?", needs).
 		Scan(ctx, &users)
 	if err != nil {
 		return err
@@ -224,4 +225,13 @@ func (r *CreditRepository) DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx
 	}
 
 	return nil
+}
+
+// DeleteCreditAdjustmentsByUserID deletes all credit adjustments for a user within a transaction.
+func (r *CreditRepository) DeleteCreditAdjustmentsByUserID(ctx context.Context, tx *bun.Tx, userID string) error {
+	_, err := tx.NewDelete().
+		Model(&models.CreditAdjustments{}).
+		Where("user_id = ?", userID).
+		Exec(ctx)
+	return err
 }

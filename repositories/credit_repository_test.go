@@ -26,12 +26,12 @@ func createTestUser(t *testing.T, db *bun.DB, freeCredits, paidCredits int) mode
 	t.Helper()
 
 	user := models.User{
-		ID:          gofakeit.UUID(),
-		Name:        gofakeit.Name(),
-		Email:       gofakeit.Email(),
-		FreeCredits: freeCredits,
-		PaidCredits: paidCredits,
-		IsEducator:  false,
+		ID:                 gofakeit.UUID(),
+		Name:               gofakeit.Name(),
+		Email:              gofakeit.Email(),
+		FreeCredits:        freeCredits,
+		PaidCredits:        paidCredits,
+		MonthlyCreditLimit: freeCredits, // Default to freeCredits for testing
 	}
 
 	// Insert user directly into database for testing
@@ -305,22 +305,40 @@ func TestCreditRepo_BulkUpdateCredits(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create multiple users with 10 free credits each
+	// Create multiple users with 10 free credits and monthly_credit_limit of 15
 	var userIDs []string
 	for range 3 {
-		user := createTestUser(t, db, 10, 0)
+		user := models.User{
+			ID:                 gofakeit.UUID(),
+			Name:               gofakeit.Name(),
+			Email:              gofakeit.Email(),
+			FreeCredits:        10,
+			PaidCredits:        0,
+			MonthlyCreditLimit: 15,
+		}
+		_, err := db.NewInsert().Model(&user).Exec(ctx)
+		require.NoError(t, err)
 		userIDs = append(userIDs, user.ID)
 	}
 
-	// Create one user with different credits
-	differentUser := createTestUser(t, db, 5, 0)
+	// Create one user with different credits and limit
+	differentUser := models.User{
+		ID:                 gofakeit.UUID(),
+		Name:               gofakeit.Name(),
+		Email:              gofakeit.Email(),
+		FreeCredits:        5,
+		PaidCredits:        0,
+		MonthlyCreditLimit: 10,
+	}
+	_, err := db.NewInsert().Model(&differentUser).Exec(ctx)
+	require.NoError(t, err)
 
-	// Bulk update users with 10 free credits to 15 free credits
+	// Bulk update users with 10 free credits to their monthly_credit_limit of 15
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	err = repo.BulkUpdateCredits(ctx, &tx, 10, 15, false)
+	err = repo.BulkUpdateCredits(ctx, &tx, 10, 15)
 	require.NoError(t, err)
 
 	err = tx.Commit()
@@ -334,10 +352,10 @@ func TestCreditRepo_BulkUpdateCredits(t *testing.T) {
 			Where("id = ?", userID).
 			Scan(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, 15, user.FreeCredits, "User should have updated credits")
+		assert.Equal(t, 15, user.FreeCredits, "User should be topped up to monthly_credit_limit")
 	}
 
-	// Verify the user with different credits was not affected
+	// Verify the user with different credits/limit was not affected
 	var unchangedUser models.User
 	err = db.NewSelect().
 		Model(&unchangedUser).
@@ -353,19 +371,28 @@ func TestCreditRepo_BulkUpdateCreditUpdateNotices(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create multiple users with 10 free credits each
+	// Create multiple users with 10 free credits and monthly_credit_limit of 15
 	var userIDs []string
 	for range 3 {
-		user := createTestUser(t, db, 10, 0)
+		user := models.User{
+			ID:                 gofakeit.UUID(),
+			Name:               gofakeit.Name(),
+			Email:              gofakeit.Email(),
+			FreeCredits:        10,
+			PaidCredits:        0,
+			MonthlyCreditLimit: 15,
+		}
+		_, err := db.NewInsert().Model(&user).Exec(ctx)
+		require.NoError(t, err)
 		userIDs = append(userIDs, user.ID)
 	}
 
-	// Bulk create credit adjustments for users with 10 credits
+	// Bulk create credit adjustments for users with 10 credits and limit of 15
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	err = repo.BulkUpdateCreditUpdateNotices(ctx, &tx, 10, 15, false, "Monthly top-up")
+	err = repo.BulkUpdateCreditUpdateNotices(ctx, &tx, 10, 15, "Monthly top-up")
 	require.NoError(t, err)
 
 	err = tx.Commit()
@@ -448,4 +475,95 @@ func TestCreditRepo_GetMostRecentCreditAdjustmentByReasonPrefix(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreditRepo_DeleteCreditAdjustmentsByUserID(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create two users
+	user1 := createTestUser(t, db, 10, 5)
+	user2 := createTestUser(t, db, 10, 5)
+
+	// Create adjustments for both users
+	adjustments1 := []models.CreditAdjustments{
+		{
+			ID:      gofakeit.UUID(),
+			UserID:  user1.ID,
+			Credits: 5,
+			Reason:  "Adjustment 1 for user 1",
+		},
+		{
+			ID:      gofakeit.UUID(),
+			UserID:  user1.ID,
+			Credits: 10,
+			Reason:  "Adjustment 2 for user 1",
+		},
+	}
+
+	adjustment2 := &models.CreditAdjustments{
+		ID:      gofakeit.UUID(),
+		UserID:  user2.ID,
+		Credits: 15,
+		Reason:  "Adjustment for user 2",
+	}
+
+	// Insert all adjustments
+	for _, adj := range adjustments1 {
+		tx, err := db.BeginTx(ctx, nil)
+		require.NoError(t, err)
+		err = repo.CreateCreditAdjustmentWithTx(ctx, &tx, &adj)
+		require.NoError(t, err)
+		err = tx.Commit()
+		require.NoError(t, err)
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	err = repo.CreateCreditAdjustmentWithTx(ctx, &tx, adjustment2)
+	require.NoError(t, err)
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Delete adjustments for user1
+	tx, err = db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.DeleteCreditAdjustmentsByUserID(ctx, &tx, user1.ID)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify user1's adjustments were deleted
+	user1Adjustments, err := repo.GetCreditAdjustmentsByUserID(ctx, user1.ID)
+	require.NoError(t, err)
+	assert.Empty(t, user1Adjustments, "User1's adjustments should be deleted")
+
+	// Verify user2's adjustments still exist
+	user2Adjustments, err := repo.GetCreditAdjustmentsByUserID(ctx, user2.ID)
+	require.NoError(t, err)
+	assert.Len(t, user2Adjustments, 1, "User2's adjustments should still exist")
+	assert.Equal(t, adjustment2.ID, user2Adjustments[0].ID)
+}
+
+func TestCreditRepo_DeleteCreditAdjustmentsByUserID_EmptyResult(t *testing.T) {
+	repo, db, cleanup := setupCreditRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Delete for non-existent user should not error
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	err = repo.DeleteCreditAdjustmentsByUserID(ctx, &tx, "nonexistent-user")
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
 }
