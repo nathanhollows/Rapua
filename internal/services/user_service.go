@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nathanhollows/Rapua/v4/config"
+	"github.com/nathanhollows/Rapua/v4/helpers"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/nathanhollows/Rapua/v4/security"
@@ -50,6 +52,12 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User, passwor
 
 	// Generate UUID for user
 	user.ID = uuid.New().String()
+
+	// Set monthly credit limit based on email
+	user.MonthlyCreditLimit = config.GetFreeCreditsForEmail(user.Email, helpers.IsEducationalEmailHeuristic)
+
+	// Set initial free credits to the monthly limit
+	user.FreeCredits = user.MonthlyCreditLimit
 
 	return s.userRepo.Create(ctx, user)
 }

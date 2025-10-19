@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v4/config"
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/uptrace/bun"
@@ -14,14 +15,13 @@ import (
 
 type CreditTopupRepository interface {
 	// BulkUpdateCredits updates user credit balances
-	BulkUpdateCredits(ctx context.Context, tx *bun.Tx, has int, needs int, isEducator bool) error
+	BulkUpdateCredits(ctx context.Context, tx *bun.Tx, has int, needs int) error
 	// BulkUpdateCreditUpdateNotices updates credit update notices and creates adjustment logs
 	BulkUpdateCreditUpdateNotices(
 		ctx context.Context,
 		tx *bun.Tx,
 		has int,
 		needs int,
-		isEducator bool,
 		reason string,
 	) error
 	// GetMostRecentCreditAdjustmentByReasonPrefix returns the most recent credit adjustment with reason starting with prefix
@@ -43,11 +43,6 @@ func NewMonthlyCreditTopupService(
 	}
 }
 
-const (
-	RegularUserFreeCredits = 10
-	EducatorFreeCredits    = 25
-)
-
 func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
 	// Check if monthly top-up already happened this month
 	alreadyProcessed, err := s.hasTopUpAlreadyHappenedThisMonth(ctx)
@@ -60,14 +55,34 @@ func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
 		return nil
 	}
 
-	// Process regular users (up to 10 credits)
-	if err := s.processUserCredits(ctx, RegularUserFreeCredits, false); err != nil {
-		return err
+	// Process top-ups for each distinct monthly credit limit
+	// This replaces the old regular/educator distinction with flexible per-user limits
+	limits := []int{
+		config.RegularUserFreeCredits(),
+		config.EducatorFreeCredits(),
 	}
 
-	// Process educators (up to 50 credits)
-	if err := s.processUserCredits(ctx, EducatorFreeCredits, true); err != nil {
-		return err
+	// Add any custom domain credit limits
+	customDomains := config.CustomDomains()
+	for _, limit := range customDomains {
+		// Avoid duplicates
+		isDuplicate := false
+		for _, existing := range limits {
+			if existing == limit {
+				isDuplicate = true
+				break
+			}
+		}
+		if !isDuplicate {
+			limits = append(limits, limit)
+		}
+	}
+
+	// Process users for each credit limit
+	for _, creditLimit := range limits {
+		if err := s.processUserCredits(ctx, creditLimit, false); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -101,23 +116,18 @@ const (
 	RetryDelay = time.Second * 2
 )
 
-func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, creditLimit int, isEducator bool) error {
-	userType := "regular user"
-	if isEducator {
-		userType = "educator"
-	}
-
+func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, creditLimit int, _ bool) error {
 	for currentCredits := range creditLimit {
 		reason := fmt.Sprintf("%s: topped up to %d", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditLimit)
 
 		// Retry logic for this credit level
-		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, isEducator, reason, userType)
+		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, reason, fmt.Sprintf("limit=%d", creditLimit))
 		if err != nil {
 			// Log the failure but continue with next credit level to avoid partial failures
 			slog.Error(
 				"processing user credits with retry",
-				"user_type",
-				userType,
+				"credit_limit",
+				creditLimit,
 				"current_credits",
 				currentCredits,
 				"error",
@@ -136,13 +146,12 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(
 	ctx context.Context,
 	currentCredits, creditLimit int,
-	isEducator bool,
 	reason, userType string,
 ) error {
 	var lastErr error
 
 	for attempt := 1; attempt <= MaxRetries; attempt++ {
-		err := s.processUserCreditsAtLevel(ctx, currentCredits, creditLimit, isEducator, reason)
+		err := s.processUserCreditsAtLevel(ctx, currentCredits, creditLimit, reason)
 		if err == nil {
 			return nil // Success
 		}
@@ -179,7 +188,6 @@ func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(
 func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(
 	ctx context.Context,
 	currentCredits, creditLimit int,
-	isEducator bool,
 	reason string,
 ) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -189,13 +197,13 @@ func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(
 	defer func() { _ = tx.Rollback() }()
 
 	// Bulk update credit update notices and create adjustment logs
-	err = s.creditRepo.BulkUpdateCreditUpdateNotices(ctx, tx, currentCredits, creditLimit, isEducator, reason)
+	err = s.creditRepo.BulkUpdateCreditUpdateNotices(ctx, tx, currentCredits, creditLimit, reason)
 	if err != nil {
 		return fmt.Errorf("failed to update credit notices: %w", err)
 	}
 
 	// Bulk update credits for all users with currentCredits, topping up to creditLimit
-	err = s.creditRepo.BulkUpdateCredits(ctx, tx, currentCredits, creditLimit, isEducator)
+	err = s.creditRepo.BulkUpdateCredits(ctx, tx, currentCredits, creditLimit)
 	if err != nil {
 		return fmt.Errorf("failed to bulk update credits: %w", err)
 	}

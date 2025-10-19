@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v4/config"
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/models"
@@ -29,34 +30,34 @@ func setupMonthlyCreditTopupService(t *testing.T) (services.MonthlyCreditTopupSe
 
 	// Regular user with 3 credits
 	regularUser := &models.User{
-		ID:          "user-regular-3",
-		Email:       "regular3@example.com",
-		Name:        "Regular User 3",
-		FreeCredits: 3,
-		PaidCredits: 0,
-		IsEducator:  false,
+		ID:                 "user-regular-3",
+		Email:              "regular3@example.com",
+		Name:               "Regular User 3",
+		FreeCredits:        3,
+		PaidCredits:        0,
+		MonthlyCreditLimit: config.RegularUserFreeCredits(),
 	}
 	userRepo.Create(ctx, regularUser)
 
 	// Regular user with 5 credits
 	regularUser2 := &models.User{
-		ID:          "user-regular-5",
-		Email:       "regular5@example.com",
-		Name:        "Regular User 5",
-		FreeCredits: 5,
-		PaidCredits: 0,
-		IsEducator:  false,
+		ID:                 "user-regular-5",
+		Email:              "regular5@example.com",
+		Name:               "Regular User 5",
+		FreeCredits:        5,
+		PaidCredits:        0,
+		MonthlyCreditLimit: config.RegularUserFreeCredits(),
 	}
 	userRepo.Create(ctx, regularUser2)
 
-	// Educator with 30 credits
+	// Educator with half their monthly limit
 	educator := &models.User{
-		ID:          "user-educator-30",
-		Email:       "educator30@example.com",
-		Name:        "Educator 30",
-		FreeCredits: services.EducatorFreeCredits / 2, // (to test top-up)
-		PaidCredits: 0,
-		IsEducator:  true,
+		ID:                 "user-educator-30",
+		Email:              "educator30@example.com",
+		Name:               "Educator 30",
+		FreeCredits:        config.EducatorFreeCredits() / 2, // (to test top-up)
+		PaidCredits:        0,
+		MonthlyCreditLimit: config.EducatorFreeCredits(),
 	}
 	userRepo.Create(ctx, educator)
 
@@ -160,11 +161,11 @@ func TestMonthlyCreditTopupService_TopUpCredits_ValidateUsersBeforeAfter(t *test
 	require.NoError(t, err)
 
 	// Regular users should be topped up to 10 credits
-	assert.Equal(t, services.RegularUserFreeCredits, user1After.FreeCredits, "user-regular-3 should be topped up")
-	assert.Equal(t, services.RegularUserFreeCredits, user2After.FreeCredits, "user-regular-5 should be topped up")
+	assert.Equal(t, config.RegularUserFreeCredits(), user1After.FreeCredits, "user-regular-3 should be topped up")
+	assert.Equal(t, config.RegularUserFreeCredits(), user2After.FreeCredits, "user-regular-5 should be topped up")
 
-	// Educator should be topped up to 50 credits
-	assert.Equal(t, services.EducatorFreeCredits, educatorAfter.FreeCredits, "educator should be topped up")
+	// Educator should be topped up to 25 credits
+	assert.Equal(t, config.EducatorFreeCredits(), educatorAfter.FreeCredits, "educator should be topped up")
 
 	t.Logf("Initial credits: regular-3=%d, regular-5=%d, educator=%d",
 		initialCredits["user-regular-3"], initialCredits["user-regular-5"], initialCredits["user-educator-30"])
@@ -231,23 +232,23 @@ func TestMonthlyCreditTopupService_TopUpCredits_UsersWithMaxCredits(t *testing.T
 
 	// Create users who already have max credits
 	maxRegularUser := &models.User{
-		ID:          "user-max-regular",
-		Email:       "maxregular@example.com",
-		Name:        "Max Regular User",
-		FreeCredits: services.RegularUserFreeCredits, // Already at max
-		PaidCredits: 0,
-		IsEducator:  false,
+		ID:                 "user-max-regular",
+		Email:              "maxregular@example.com",
+		Name:               "Max Regular User",
+		FreeCredits:        config.RegularUserFreeCredits(), // Already at max
+		PaidCredits:        0,
+		MonthlyCreditLimit: config.RegularUserFreeCredits(),
 	}
 	err := userRepo.Create(ctx, maxRegularUser)
 	require.NoError(t, err)
 
 	maxEducatorUser := &models.User{
-		ID:          "user-max-educator",
-		Email:       "maxeducator@example.com",
-		Name:        "Max Educator User",
-		FreeCredits: services.EducatorFreeCredits, // Already at max
-		PaidCredits: 0,
-		IsEducator:  true,
+		ID:                 "user-max-educator",
+		Email:              "maxeducator@example.com",
+		Name:               "Max Educator User",
+		FreeCredits:        config.EducatorFreeCredits(), // Already at max
+		PaidCredits:        0,
+		MonthlyCreditLimit: config.EducatorFreeCredits(),
 	}
 	err = userRepo.Create(ctx, maxEducatorUser)
 	require.NoError(t, err)
@@ -264,13 +265,13 @@ func TestMonthlyCreditTopupService_TopUpCredits_UsersWithMaxCredits(t *testing.T
 
 	assert.Equal(
 		t,
-		services.RegularUserFreeCredits,
+		config.RegularUserFreeCredits(),
 		maxRegularAfter.FreeCredits,
 		"Max regular user should remain unchanged",
 	)
 	assert.Equal(
 		t,
-		services.EducatorFreeCredits,
+		config.EducatorFreeCredits(),
 		maxEducatorAfter.FreeCredits,
 		"Max educator user should remain unchanged",
 	)

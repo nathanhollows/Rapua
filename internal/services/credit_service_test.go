@@ -50,7 +50,6 @@ func TestCreditService_GetCreditBalance(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -68,7 +67,6 @@ func TestCreditService_GetCreditBalance(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 2,
 					PaidCredits: 3,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -135,7 +133,6 @@ func TestCreditService_AddCredits(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 2,
 					PaidCredits: 1,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -154,7 +151,6 @@ func TestCreditService_AddCredits(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 2,
 					PaidCredits: 1,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -173,7 +169,6 @@ func TestCreditService_AddCredits(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -192,7 +187,6 @@ func TestCreditService_AddCredits(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -211,7 +205,6 @@ func TestCreditService_AddCredits(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -268,7 +261,6 @@ func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -286,7 +278,6 @@ func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 0,
 					PaidCredits: 3,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -338,7 +329,6 @@ func TestCreditService_GetCreditAdjustments(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				svc.AddCredits(context.Background(), user.ID, 5, 0, "Test adjustment 1")
@@ -361,7 +351,6 @@ func TestCreditService_GetCreditAdjustments(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				svc.AddCredits(context.Background(), user.ID, 5, 0, "Test adjustment 1")
@@ -425,7 +414,6 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -442,7 +430,6 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -459,7 +446,6 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -476,7 +462,6 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -493,7 +478,6 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -548,7 +532,6 @@ func TestCreditService_AddCredits_ValidationEdgeCases(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -568,7 +551,6 @@ func TestCreditService_AddCredits_ValidationEdgeCases(t *testing.T) {
 					Name:        gofakeit.Name(),
 					FreeCredits: 5,
 					PaidCredits: 10,
-					IsEducator:  false,
 				}
 				userRepo.Create(context.Background(), user)
 				return user.ID
@@ -625,7 +607,6 @@ func TestCreditService_DeductCreditForTeamStart_InsufficientCredits(t *testing.T
 		Name:        gofakeit.Name(),
 		FreeCredits: 10,
 		PaidCredits: 0,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -661,7 +642,6 @@ func TestCreditService_DeductCreditForTeamStart_ConcurrentAccess(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 1,
 		PaidCredits: 0,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -757,7 +737,6 @@ func TestCreditService_GetCreditAdjustments_Pagination(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 5,
 		PaidCredits: 10,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -829,7 +808,6 @@ func TestCreditService_TransactionRollback(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 5,
 		PaidCredits: 10,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)

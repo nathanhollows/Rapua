@@ -35,7 +35,6 @@ func TestCreditService_ConcurrentTeamStarts_100Users(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 50,
 		PaidCredits: 50,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -123,7 +122,6 @@ func TestCreditService_PerformanceUnder50ms(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: numOperations,
 		PaidCredits: 0,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -179,7 +177,6 @@ func TestCreditService_EdgeCase_ExactlyZeroCredits(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 10,
 		PaidCredits: 0,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -231,7 +228,6 @@ func TestCreditService_ConcurrentMixedOperations(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 100,
 		PaidCredits: 0,
-		IsEducator:  false,
 	}
 	require.NoError(t, userRepo.Create(ctx, user))
 
@@ -324,7 +320,6 @@ func TestCreditService_StressTest_250Operations(t *testing.T) {
 		Name:        gofakeit.Name(),
 		FreeCredits: 150,
 		PaidCredits: 100,
-		IsEducator:  false,
 	}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
@@ -398,7 +393,6 @@ func TestCreditService_RaceCondition_SingleCredit(t *testing.T) {
 			Name:        gofakeit.Name(),
 			FreeCredits: 1,
 			PaidCredits: 0,
-			IsEducator:  false,
 		}
 		err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
