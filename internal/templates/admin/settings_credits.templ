@@ -10,8 +10,8 @@ import (
 )
 
 templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.TeamStartSummary) {
-	<div class="flex gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md mt-12">
-		<div class="grid h-fit px-5 flex-grow">
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-4 mt-12">
+		<div class="grid h-fit flex-grow">
 			<div class="stats">
 				<div class="stat">
 					<div class="stat-figure text-secondary">
@@ -50,9 +50,9 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 			</div>
 		</div>
 	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="">
 				<h2 class="font-bold pb-5 flex justify-between">
 					Credit Usage
 					<form
@@ -74,9 +74,9 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 			</div>
 		</div>
 	</div>
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="">
 				<h2 class="font-bold pb-5 flex justify-between">
 					Credit Top-ups
 					<button class="btn btn-sm btn-primary" onclick="topup_modal.showModal()">Top up</button>
@@ -105,6 +105,14 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 						}
 					</tbody>
 				</table>
+			</div>
+		</div>
+	</div>
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="">
+			<h2 class="font-bold pb-5">Payment method</h2>
+			<div class="prose">
+				<p>All payments are handled securely via Stripe.</p>
 			</div>
 		</div>
 	</div>
@@ -339,8 +347,8 @@ templ CreditUsageYear(usage []services.TeamStartSummary) {
 }
 
 templ CreditPurchaseSuccess(user models.User, sessionID string) {
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
 			<div class="my-5">
 				<div class="alert alert-success">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
@@ -366,8 +374,8 @@ templ CreditPurchaseSuccess(user models.User, sessionID string) {
 }
 
 templ CreditPurchaseCancel(user models.User) {
-	<div class="flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12">
-		<div class="grid h-fit px-5 flex-grow">
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
 			<div class="my-5">
 				<div class="alert alert-warning">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
@@ -389,60 +397,6 @@ templ CreditPurchaseCancel(user models.User) {
 					<a href="/admin" class="btn btn-ghost">
 						Return to Dashboard
 					</a>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
-templ SettingsBilling(user models.User) {
-	<div class="flex gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Your plan</h2>
-				<div class="prose">
-					<p>You are currently on the <strong>Free Plan</strong>.</p>
-					<p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p>
-					<button
-						type="button"
-						class="btn btn-primary"
-						_="on click
-							fetch '/admin/settings/billing/upgrade' {method: 'POST'}
-								then if(it.ok) call window.location.href = '/admin/settings/billing/checkout'
-						"
-					>Upgrade to Pro</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="flex gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Order history</h2>
-				<table class="table w-full">
-					<thead>
-						<tr>
-							<th>Date</th>
-							<th>Amount</th>
-							<th>Plan</th>
-							<th>Receipt</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td colspan="4" class="text-center py-4">No orders yet</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
-	<div class="flex gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md mt-12">
-		<div class="grid h-fit px-5 flex-grow">
-			<div class="my-5">
-				<h2 class="font-bold pb-5">Payment method</h2>
-				<div class="prose">
-					<p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p>
 				</div>
 			</div>
 		</div>

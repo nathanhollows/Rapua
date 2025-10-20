@@ -15,13 +15,7 @@ const (
 
 // Settings displays the account settings page.
 func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	c := templates.Settings(templates.SettingsProfile(*user))
-	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
-	}
+	h.SettingsProfile(w, r)
 }
 
 // SettingsProfile displays the account profile page.
@@ -29,7 +23,7 @@ func (h *Handler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := templates.Settings(templates.SettingsProfile(*user))
-	err := templates.Layout(c, *user, "Settings", "Appearance").Render(r.Context(), w)
+	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
 	}
@@ -82,17 +76,6 @@ func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 
 	c := templates.Settings(templates.SettingsSecurity(*user))
 	err := templates.Layout(c, *user, "Settings", "Security").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
-	}
-}
-
-// SettingsBilling displays the account billing settings page.
-func (h *Handler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	c := templates.Settings(templates.SettingsBilling(*user))
-	err := templates.Layout(c, *user, "Settings", "Billing").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
 	}
@@ -206,7 +189,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 		topups,
 		usage,
 	))
-	err = templates.Layout(c, *user, "Settings", "Credit Usage").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Settings", "Credit Usage & Billing").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
 	}
