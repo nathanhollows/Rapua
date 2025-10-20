@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/config"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
@@ -177,11 +176,6 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	var recurring = config.RegularUserFreeCredits()
-	if user.IsEducator {
-		recurring = config.EducatorFreeCredits()
-	}
-
 	topupFilter := services.CreditAdjustmentFilter{
 		UserID: user.ID,
 		Limit:  DefaultPageSize,
@@ -208,7 +202,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(templates.SettingsCreditUsage(
 		user.FreeCredits,
 		user.PaidCredits,
-		recurring,
+		user.MonthlyCreditLimit,
 		topups,
 		usage,
 	))
