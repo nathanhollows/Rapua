@@ -317,6 +317,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
+	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
@@ -358,6 +359,9 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		markerRepo,
 		teamRepo,
 		userRepo,
+		creditRepo,
+		creditPurchaseRepo,
+		teamStartLogRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
@@ -384,6 +388,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditRepo,
 		teamStartLogRepo,
 		userRepo,
+	)
+	stripeService := services.NewStripeService(
+		transactor,
+		creditService,
+		creditPurchaseRepo,
+		userRepo,
+		logger,
 	)
 	teamService := services.NewTeamService(
 		transactor,
@@ -445,6 +456,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		identityService,
 		blockService,
 		creditService,
+		creditPurchaseRepo,
 		deleteService,
 		facilitatorService,
 		gameScheduleService,
@@ -460,6 +472,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		userService,
 		quickstartService,
 		leaderBoardService,
+		stripeService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)

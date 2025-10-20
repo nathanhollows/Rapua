@@ -199,6 +199,7 @@ type Handler struct {
 	identityService         IdentityService
 	blockService            BlockService
 	creditService           CreditService
+	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
@@ -214,6 +215,7 @@ type Handler struct {
 	userService             UserService
 	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
+	stripeService           StripeService
 }
 
 func NewAdminHandler(
@@ -223,6 +225,7 @@ func NewAdminHandler(
 	identityService IdentityService,
 	blockService BlockService,
 	creditService CreditService,
+	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
@@ -238,6 +241,7 @@ func NewAdminHandler(
 	userService UserService,
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
+	stripeService StripeService,
 ) *Handler {
 	return &Handler{
 		logger:                  logger,
@@ -246,6 +250,7 @@ func NewAdminHandler(
 		identityService:         identityService,
 		blockService:            blockService,
 		creditService:           creditService,
+		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
@@ -261,6 +266,7 @@ func NewAdminHandler(
 		userService:             userService,
 		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
+		stripeService:           stripeService,
 	}
 }
 
