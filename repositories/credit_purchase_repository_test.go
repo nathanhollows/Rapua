@@ -3,6 +3,7 @@ package repositories_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"testing"
 	"time"
 
@@ -213,9 +214,9 @@ func TestCreditPurchaseRepo_GetByStripeSessionID_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	retrieved, err := repo.GetByStripeSessionID(ctx, "nonexistent-session")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved)
+	_, err := repo.GetByStripeSessionID(ctx, "nonexistent-session")
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, sql.ErrNoRows))
 }
 
 func TestCreditPurchaseRepo_GetByID(t *testing.T) {
@@ -434,13 +435,13 @@ func TestCreditPurchaseRepo_DeleteByUserID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify user's purchases were deleted
-	retrieved1, err := repo.GetByID(ctx, purchase1.ID)
-	require.NoError(t, err)
-	assert.Nil(t, retrieved1)
+	_, err = repo.GetByID(ctx, purchase1.ID)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, sql.ErrNoRows))
 
-	retrieved2, err := repo.GetByID(ctx, purchase2.ID)
-	require.NoError(t, err)
-	assert.Nil(t, retrieved2)
+	_, err = repo.GetByID(ctx, purchase2.ID)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, sql.ErrNoRows))
 
 	// Verify other user's purchase still exists
 	otherRetrieved, err := repo.GetByID(ctx, otherPurchase.ID)

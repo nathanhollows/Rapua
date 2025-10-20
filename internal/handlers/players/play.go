@@ -50,7 +50,8 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, services.ErrInsufficientCredits) {
-			err := templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).Render(r.Context(), w)
+			err := templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).
+				Render(r.Context(), w)
 			if err != nil {
 				h.logger.Error("rendering template", "error", err)
 			}

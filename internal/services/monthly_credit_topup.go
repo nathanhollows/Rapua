@@ -121,7 +121,13 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 		reason := fmt.Sprintf("%s: topped up to %d", models.CreditAdjustmentReasonPrefixMonthlyTopup, creditLimit)
 
 		// Retry logic for this credit level
-		err := s.processUserCreditsWithRetry(ctx, currentCredits, creditLimit, reason, fmt.Sprintf("limit=%d", creditLimit))
+		err := s.processUserCreditsWithRetry(
+			ctx,
+			currentCredits,
+			creditLimit,
+			reason,
+			fmt.Sprintf("limit=%d", creditLimit),
+		)
 		if err != nil {
 			// Log the failure but continue with next credit level to avoid partial failures
 			slog.Error(

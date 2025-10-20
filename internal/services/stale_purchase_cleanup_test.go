@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"testing"
 	"time"
@@ -14,7 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupStalePurchaseCleanupService(t *testing.T) (services.StalePurchaseCleanupService, *repositories.CreditPurchaseRepository, func()) {
+func setupStalePurchaseCleanupService(
+	t *testing.T,
+) (services.StalePurchaseCleanupService, *repositories.CreditPurchaseRepository, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
@@ -76,9 +79,9 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_DeletesStalePending(t
 	require.NoError(t, err)
 
 	// Verify the stale purchase was deleted
-	retrieved, err := purchaseRepo.GetByID(ctx, "purchase-stale-pending")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Stale pending purchase should be deleted")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-stale-pending")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Stale pending purchase should be deleted")
 }
 
 func TestStalePurchaseCleanupService_CleanupStalePurchases_DeletesStaleFailed(t *testing.T) {
@@ -106,9 +109,9 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_DeletesStaleFailed(t 
 	require.NoError(t, err)
 
 	// Verify the stale purchase was deleted
-	retrieved, err := purchaseRepo.GetByID(ctx, "purchase-stale-failed")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Stale failed purchase should be deleted")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-stale-failed")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Stale failed purchase should be deleted")
 }
 
 func TestStalePurchaseCleanupService_CleanupStalePurchases_PreservesRecentPending(t *testing.T) {
@@ -237,16 +240,16 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_MixedScenario(t *test
 	require.NoError(t, err)
 
 	// Verify stale purchases were deleted
-	retrieved, err := purchaseRepo.GetByID(ctx, "purchase-stale-pending-1")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Stale pending purchase should be deleted")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-stale-pending-1")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Stale pending purchase should be deleted")
 
-	retrieved, err = purchaseRepo.GetByID(ctx, "purchase-stale-failed-1")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Stale failed purchase should be deleted")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-stale-failed-1")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Stale failed purchase should be deleted")
 
 	// Verify preserved purchases still exist
-	retrieved, err = purchaseRepo.GetByID(ctx, "purchase-recent-pending-1")
+	retrieved, err := purchaseRepo.GetByID(ctx, "purchase-recent-pending-1")
 	require.NoError(t, err, "Recent pending purchase should be preserved")
 	assert.NotNil(t, retrieved)
 
@@ -299,9 +302,9 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_EdgeCases(t *testing.
 	assert.NotNil(t, retrieved, "Purchase just under 7 days old should be preserved")
 
 	// Verify the purchase just over 7 days old is deleted
-	retrieved, err = purchaseRepo.GetByID(ctx, "purchase-boundary-deleted")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Purchase just over 7 days old should be deleted")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-boundary-deleted")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Purchase just over 7 days old should be deleted")
 }
 
 func TestStalePurchaseCleanupService_CleanupStalePurchases_IdempotencyCheck(t *testing.T) {
@@ -329,9 +332,9 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_IdempotencyCheck(t *t
 	require.NoError(t, err)
 
 	// Verify purchase was deleted
-	retrieved, err := purchaseRepo.GetByID(ctx, "purchase-stale-idempotent")
-	require.NoError(t, err)
-	assert.Nil(t, retrieved, "Stale purchase should be deleted after first run")
+	_, err = purchaseRepo.GetByID(ctx, "purchase-stale-idempotent")
+	require.Error(t, err)
+	require.ErrorIs(t, err, sql.ErrNoRows, "Stale purchase should be deleted after first run")
 
 	// Run cleanup second time (should be idempotent, no errors)
 	err = service.CleanupStalePurchases(ctx)

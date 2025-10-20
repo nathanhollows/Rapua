@@ -499,4 +499,3 @@ func TestScheduler_RapidFireJobs(t *testing.T) {
 	// Should have executed many times
 	assert.Greater(t, count, 10, "job should execute rapidly multiple times")
 }
-

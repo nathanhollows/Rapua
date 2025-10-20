@@ -11,6 +11,9 @@ import (
 
 const (
 	DefaultPageSize = 25
+	day             = "day"
+	week            = "week"
+	month           = "month"
 )
 
 // Settings displays the account settings page.
@@ -174,7 +177,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 		UserID:    user.ID,
 		StartTime: time.Now().AddDate(0, 0, -6), // Last year
 		EndTime:   time.Now(),
-		GroupBy:   "day",
+		GroupBy:   day,
 	}
 	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
 	if err != nil {
@@ -206,18 +209,18 @@ func (h *Handler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Reques
 	}
 
 	var start, end time.Time
-	groupBy := "day"
+	groupBy := day
 	switch r.FormValue("period") {
-	case "week":
+	case week:
 		start = time.Now().AddDate(0, 0, -6) // Last week
 		end = time.Now()
-	case "month":
+	case month:
 		start = time.Now().AddDate(0, -1, 0) // Last month
 		end = time.Now()
 	case "year":
 		start = time.Now().AddDate(-1, 1, 0) // Last year
 		end = time.Now()
-		groupBy = "month"
+		groupBy = month
 	default:
 		h.handleError(w, r, "SettingsCreditUsageChart", "Invalid period specified", nil)
 		return

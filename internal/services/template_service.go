@@ -334,7 +334,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 	case day:
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, 1)}
 	case week:
-		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, 7)}
+		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 0, daysInWeek)}
 	case month:
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now().AddDate(0, 1, 0)}
 	default:

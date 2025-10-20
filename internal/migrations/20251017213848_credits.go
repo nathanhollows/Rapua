@@ -90,26 +90,41 @@ func init() {
 			}
 
 			// Create the CreditPurchases table for Stripe integration.
-			_, err = db.NewCreateTable().Model(&m20251017213848_CreditPurchase{}).IfNotExists().Exec(context.Background())
+			_, err = db.NewCreateTable().
+				Model(&m20251017213848_CreditPurchase{}).
+				IfNotExists().
+				Exec(context.Background())
 			if err != nil {
 				return fmt.Errorf("create CreditPurchases table: %w", err)
 			}
 
 			// Add the FreeCredits, PaidCredits, and MonthlyCreditLimit fields to the User struct.
 			// Ignore duplicate column errors if columns already exist
-			_, err = db.NewAddColumn().Model((*m20251017213848_User)(nil)).ColumnExpr("free_credits int default 10").Exec(ctx)
+			_, err = db.NewAddColumn().
+				Model((*m20251017213848_User)(nil)).
+				ColumnExpr("free_credits int default 10").
+				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add FreeCredits column: %w", err)
 			}
-			_, err = db.NewAddColumn().Model((*m20251017213848_User)(nil)).ColumnExpr("paid_credits int default 0").Exec(ctx)
+			_, err = db.NewAddColumn().
+				Model((*m20251017213848_User)(nil)).
+				ColumnExpr("paid_credits int default 0").
+				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add PaidCredits column: %w", err)
 			}
-			_, err = db.NewAddColumn().Model((*m20251017213848_User)(nil)).ColumnExpr("monthly_credit_limit int default 10").Exec(ctx)
+			_, err = db.NewAddColumn().
+				Model((*m20251017213848_User)(nil)).
+				ColumnExpr("monthly_credit_limit int default 10").
+				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add MonthlyCreditLimit column: %w", err)
 			}
-			_, err = db.NewAddColumn().Model((*m20251017213848_User)(nil)).ColumnExpr("stripe_customer_id varchar(255)").Exec(ctx)
+			_, err = db.NewAddColumn().
+				Model((*m20251017213848_User)(nil)).
+				ColumnExpr("stripe_customer_id varchar(255)").
+				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add StripeCustomerID column: %w", err)
 			}

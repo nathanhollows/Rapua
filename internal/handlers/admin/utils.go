@@ -79,8 +79,14 @@ type BlockService interface {
 }
 
 type CreditService interface {
-	GetCreditAdjustments(ctx context.Context, filter services.CreditAdjustmentFilter) ([]models.CreditAdjustments, error)
-	GetTeamStartLogsSummary(ctx context.Context, filter services.TeamStartLogFilter) ([]services.TeamStartSummary, error)
+	GetCreditAdjustments(
+		ctx context.Context,
+		filter services.CreditAdjustmentFilter,
+	) ([]models.CreditAdjustments, error)
+	GetTeamStartLogsSummary(
+		ctx context.Context,
+		filter services.TeamStartLogFilter,
+	) ([]services.TeamStartSummary, error)
 }
 
 type DeleteService interface {

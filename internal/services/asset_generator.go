@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	base10 = 10
+
 	svgFormat string = "svg"
 	pngFormat string = "png"
 
@@ -153,8 +155,8 @@ func (s *assetGenerator) CreateArchive(paths []string) (path string, err error) 
 		randomCodeLength,
 	) + "-" + strconv.FormatInt(
 		time.Now().UnixNano(),
-		//nolint:mnd // base 10
-		10,
+
+		base10,
 	) + ".zip"
 	archive, err := os.Create(path)
 	if err != nil {
@@ -209,8 +211,12 @@ func (s *assetGenerator) CreatePDF(data PDFData) (path string, err error) {
 		s.addPage(pdf, page, data.InstanceName)
 	}
 
-	//nolint:mnd // base 10
-	path = "assets/codes/" + helpers.NewCode(randomCodeLength) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".pdf"
+	path = "assets/codes/" + helpers.NewCode(
+		randomCodeLength,
+	) + "-" + strconv.FormatInt(
+		time.Now().UnixNano(),
+		base10,
+	) + ".pdf"
 	err = pdf.OutputFileAndClose(path)
 	if err != nil {
 		return "", err

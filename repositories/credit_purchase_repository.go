@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -83,9 +82,6 @@ func (r *CreditPurchaseRepository) GetByStripeSessionID(
 		Where("stripe_session_id = ?", sessionID).
 		Scan(ctx)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &purchase, nil
@@ -99,9 +95,6 @@ func (r *CreditPurchaseRepository) GetByID(ctx context.Context, id string) (*mod
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &purchase, nil
