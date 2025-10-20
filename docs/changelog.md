@@ -13,14 +13,14 @@ order: 100
 - Simple credit system so Rapua can be self-sufficient. See [Pricing](/pricing) for details.
   - One credit = one new team starting play.
   - No tiered features.
+  - Payments via Stripe.
 - Migration scripts for new tables.
   - Includes 500 credits for all existing users.
 - Config package to manage environment variables and configuration settings.
-- Job scheduler
+- [Job scheduler](/docs/developer/job-scheduler) to manage recurring tasks.
   - Monthly job includes topping all users up with free credits.
   - Stale credit purchase clean up job
 - [Privacy](/privacy) and [Terms and Conditions](/terms) updates to reflect billing and integrations.
-
 
 ### Changed
 
