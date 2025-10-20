@@ -57,6 +57,13 @@ type BlockService interface {
 		ctx context.Context,
 		ownerID, teamCode string,
 	) ([]blocks.Block, map[string]blocks.PlayerState, error)
+	// FindByOwnerIDAndTeamCodeWithStateAndContext fetches all blocks and their states
+	// for the given owner, team, and context
+	FindByOwnerIDAndTeamCodeWithStateAndContext(
+		ctx context.Context,
+		ownerID, teamCode string,
+		blockContext blocks.BlockContext,
+	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
