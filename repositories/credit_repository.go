@@ -60,8 +60,9 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserID(
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
 		Model(&adjustments).
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
+		Relation("CreditPurchase").
+		Where("credit_adjustments.user_id = ?", userID).
+		Order("credit_adjustments.created_at DESC").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -78,8 +79,9 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(
 	var adjustments []models.CreditAdjustments
 	err := r.db.NewSelect().
 		Model(&adjustments).
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
+		Relation("CreditPurchase").
+		Where("credit_adjustments.user_id = ?", userID).
+		Order("credit_adjustments.created_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Scan(ctx)

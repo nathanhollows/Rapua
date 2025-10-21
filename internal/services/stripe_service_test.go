@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 
 func setupStripeService(
 	t *testing.T,
-) (*services.StripeService, repositories.UserRepository, *repositories.CreditPurchaseRepository, func()) {
+) (*services.StripeService, repositories.UserRepository, *repositories.CreditPurchaseRepository, db.Transactor, *repositories.CreditRepository, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
@@ -32,7 +33,7 @@ func setupStripeService(
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, purchaseRepo, userRepo, newTLogger(t))
 
-	return stripeService, userRepo, purchaseRepo, cleanup
+	return stripeService, userRepo, purchaseRepo, transactor, creditRepo, cleanup
 }
 
 func TestStripeService_CreateCheckoutSession_ValidInputs(t *testing.T) {
@@ -65,7 +66,7 @@ func TestStripeService_CreateCheckoutSession_ValidInputs(t *testing.T) {
 				t.Skip("Stripe not configured")
 			}
 
-			svc, userRepo, purchaseRepo, cleanup := setupStripeService(t)
+			svc, userRepo, purchaseRepo, _, _, cleanup := setupStripeService(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -130,7 +131,7 @@ func TestStripeService_CreateCheckoutSession_InvalidCredits(t *testing.T) {
 				t.Skip("Stripe not configured")
 			}
 
-			svc, userRepo, _, cleanup := setupStripeService(t)
+			svc, userRepo, _, _, _, cleanup := setupStripeService(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -154,7 +155,7 @@ func TestStripeService_CreateCheckoutSession_StripeCustomerCreation(t *testing.T
 		t.Skip("Stripe not configured")
 	}
 
-	svc, userRepo, _, cleanup := setupStripeService(t)
+	svc, userRepo, _, _, _, cleanup := setupStripeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -196,7 +197,7 @@ func TestStripeService_ProcessWebhook_CheckoutSessionCompleted(t *testing.T) {
 		t.Skip("Stripe not configured")
 	}
 
-	_, userRepo, purchaseRepo, cleanup := setupStripeService(t)
+	_, userRepo, purchaseRepo, _, _, cleanup := setupStripeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -244,7 +245,7 @@ func TestStripeService_ProcessWebhook_IdempotentProcessing(t *testing.T) {
 		t.Skip("Stripe not configured")
 	}
 
-	_, userRepo, purchaseRepo, cleanup := setupStripeService(t)
+	_, userRepo, purchaseRepo, _, _, cleanup := setupStripeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -316,6 +317,101 @@ func TestStripeService_PurchaseAmountCalculation(t *testing.T) {
 			assert.Equal(t, tc.expectedAmount, amount)
 		})
 	}
+}
+
+func TestStripeService_CreditAdjustmentPurchaseLink(t *testing.T) {
+	// This test verifies that credit adjustments created from purchases
+	// are properly linked via the CreditPurchaseID field
+	_, userRepo, purchaseRepo, transactor, creditRepo, cleanup := setupStripeService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create user
+	user := &models.User{
+		ID:          gofakeit.UUID(),
+		Email:       gofakeit.Email(),
+		Name:        gofakeit.Name(),
+		FreeCredits: 10,
+		PaidCredits: 0,
+	}
+	err := userRepo.Create(ctx, user)
+	require.NoError(t, err)
+
+	// Create pending purchase
+	purchase := &models.CreditPurchase{
+		ID:              gofakeit.UUID(),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		UserID:          user.ID,
+		Credits:         25,
+		AmountPaid:      models.CalculatePurchaseAmount(25),
+		StripeSessionID: "cs_test_" + gofakeit.UUID(),
+		StripeCustomerID: sql.NullString{
+			String: "cus_test_" + gofakeit.UUID(),
+			Valid:  true,
+		},
+		Status: models.CreditPurchaseStatusPending,
+	}
+	err = purchaseRepo.Create(ctx, purchase)
+	require.NoError(t, err)
+
+	// Simulate the handleCheckoutSessionCompleted logic directly
+	// Start transaction
+	tx, err := transactor.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer func() { _ = tx.Rollback() }()
+
+	// Add credits to user account
+	reason := fmt.Sprintf("%s: via Stripe", models.CreditAdjustmentReasonPrefixPurchase)
+
+	err = creditRepo.AddCreditsWithTx(ctx, tx, purchase.UserID, 0, purchase.Credits)
+	require.NoError(t, err)
+
+	// Create credit adjustment with purchase link
+	adjustment := &models.CreditAdjustments{
+		ID:               gofakeit.UUID(),
+		CreatedAt:        time.Now(),
+		UserID:           purchase.UserID,
+		Credits:          purchase.Credits,
+		Reason:           reason,
+		CreditPurchaseID: sql.NullString{String: purchase.ID, Valid: true},
+	}
+	err = creditRepo.CreateCreditAdjustmentWithTx(ctx, tx, adjustment)
+	require.NoError(t, err)
+
+	// Update purchase status
+	err = purchaseRepo.UpdateStatusWithTx(ctx, tx, purchase.ID, models.CreditPurchaseStatusCompleted)
+	require.NoError(t, err)
+
+	// Commit transaction
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	// Verify the credit adjustment was created with proper link
+	adjustments, err := creditRepo.GetCreditAdjustmentsByUserID(ctx, user.ID)
+	require.NoError(t, err)
+	require.Len(t, adjustments, 1)
+
+	adj := adjustments[0]
+	assert.Equal(t, purchase.UserID, adj.UserID)
+	assert.Equal(t, purchase.Credits, adj.Credits)
+	assert.True(t, adj.CreditPurchaseID.Valid, "CreditPurchaseID should be set")
+	assert.Equal(t, purchase.ID, adj.CreditPurchaseID.String)
+
+	// Verify the relationship is loaded
+	assert.NotNil(t, adj.CreditPurchase, "CreditPurchase relationship should be loaded")
+	if adj.CreditPurchase != nil {
+		assert.Equal(t, purchase.ID, adj.CreditPurchase.ID)
+		assert.Equal(t, purchase.Credits, adj.CreditPurchase.Credits)
+		assert.Equal(t, models.CreditPurchaseStatusCompleted, adj.CreditPurchase.Status)
+	}
+
+	// Verify user credits were updated
+	updatedUser, err := userRepo.GetByID(ctx, user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 10, updatedUser.FreeCredits, "Free credits should remain unchanged")
+	assert.Equal(t, 25, updatedUser.PaidCredits, "Paid credits should be added")
 }
 
 // Helper function to check if Stripe is configured.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,12 +14,13 @@ import (
 )
 
 type m20251017213848_CreditAdjustments struct {
-	bun.BaseModel `bun:"table:credit_adjustments"`
-	ID            string    `bun:"id,unique,pk,type:varchar(36)"`
-	CreatedAt     time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UserID        string    `bun:"user_id,notnull,type:varchar(36)"`
-	Credits       int       `bun:"credits,type:int,notnull"`
-	Reason        string    `bun:"reason,type:varchar(255),notnull"`
+	bun.BaseModel    `bun:"table:credit_adjustments"`
+	ID               string         `bun:"id,unique,pk,type:varchar(36)"`
+	CreatedAt        time.Time      `bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UserID           string         `bun:"user_id,notnull,type:varchar(36)"`
+	Credits          int            `bun:"credits,type:int,notnull"`
+	Reason           string         `bun:"reason,type:varchar(255),notnull"`
+	CreditPurchaseID sql.NullString `bun:"credit_purchase_id,type:varchar(36),nullzero"`
 }
 
 type m20251017213848_TeamStartLog struct {
@@ -129,11 +131,25 @@ func init() {
 				return fmt.Errorf("add StripeCustomerID column: %w", err)
 			}
 
+			// Add credit_purchase_id column to CreditAdjustments table (ignore duplicate column error)
+			_, err = db.NewAddColumn().
+				Model((*m20251017213848_CreditAdjustments)(nil)).
+				ColumnExpr("credit_purchase_id varchar(36)").
+				Exec(ctx)
+			if err != nil && !isDuplicateColumnError(err) {
+				return fmt.Errorf("add CreditPurchaseID column: %w", err)
+			}
+
 			// Create indexes for lookups.
 			_, err = db.NewCreateIndex().Model((*m20251017213848_CreditAdjustments)(nil)).
 				Index("idx_credit_adjustments_user_id").Column("user_id").Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("create index idx_credit_adjustments_user_id: %w", err)
+			}
+			_, err = db.NewCreateIndex().Model((*m20251017213848_CreditAdjustments)(nil)).
+				Index("idx_credit_adjustments_purchase_id").Column("credit_purchase_id").Exec(ctx)
+			if err != nil && !isDuplicateIndexError(err) {
+				return fmt.Errorf("create index idx_credit_adjustments_purchase_id: %w", err)
 			}
 			_, err = db.NewCreateIndex().Model((*m20251017213848_TeamStartLog)(nil)).
 				Index("idx_team_start_log_user_id").Column("user_id").Exec(ctx)
@@ -264,4 +280,20 @@ func init() {
 
 			return nil
 		})
+}
+
+// Helper functions to check for duplicate column/index errors
+func isDuplicateColumnError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "duplicate column name")
+}
+
+func isDuplicateIndexError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "already exists") ||
+		strings.Contains(err.Error(), "duplicate key name")
 }

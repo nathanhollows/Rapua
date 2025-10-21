@@ -314,11 +314,12 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 
 	// Log credit adjustment
 	adjustment := &models.CreditAdjustments{
-		ID:        uuid.New().String(),
-		CreatedAt: time.Now(),
-		UserID:    purchase.UserID,
-		Credits:   purchase.Credits,
-		Reason:    reason,
+		ID:               uuid.New().String(),
+		CreatedAt:        time.Now(),
+		UserID:           purchase.UserID,
+		Credits:          purchase.Credits,
+		Reason:           reason,
+		CreditPurchaseID: sql.NullString{String: purchase.ID, Valid: true},
 	}
 	err = s.creditService.creditRepo.CreateCreditAdjustmentWithTx(ctx, tx, adjustment)
 	if err != nil {
