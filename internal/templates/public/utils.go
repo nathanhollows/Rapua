@@ -15,7 +15,6 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
-	"go.abhg.dev/goldmark/anchor"
 )
 
 var cssVersion string
@@ -56,10 +55,6 @@ func markdownToHTML(s string) (template.HTML, error) {
 			extension.Strikethrough,
 			extension.Linkify,
 			extension.Typographer,
-			&anchor.Extender{
-				Texter:   anchor.Text("#"),
-				Position: anchor.Before,
-			},
 			enclave.New(
 				&enclave.Config{},
 			),
