@@ -23,6 +23,7 @@ order: 100
 
 - Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now, with a fresh new look.
 - Indicator on the games and template page to show which game is currently selected and active.
+- The [Experience Settings](/admin/experience) page is now much easier to read and nicer to look at.
 
 ### Fixed
 

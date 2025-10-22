@@ -70,7 +70,7 @@ func (s *StrArray) Scan(value any) error {
 
 // GetRouteStrategies returns a list of navigation modes.
 func GetRouteStrategies() RouteStrategies {
-	return []RouteStrategy{RouteStrategyRandom, RouteStrategyFreeRoam, RouteStrategyOrdered}
+	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandom}
 }
 
 // GetNavigationDisplayModes returns a list of navigation methods.
@@ -95,7 +95,7 @@ func (n RouteStrategy) String() string {
 
 // String returns the string representation of the NavigationDisplayMode.
 func (n NavigationDisplayMode) String() string {
-	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Content"}[n]
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues"}[n]
 }
 
 // String returns the string representation of the GameStatus.
@@ -157,7 +157,7 @@ func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 		return NavigationDisplayNames, nil
 	case "Show Clues", "Clue-Based":
 		return NavigationDisplayClues, nil
-	case "Custom Content":
+	case "Custom Content", "Custom Clues":
 		return NavigationDisplayCustom, nil
 	default:
 		return NavigationDisplayMap, errors.New("invalid NavigationDisplayMode")
