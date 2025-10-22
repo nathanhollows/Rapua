@@ -34,27 +34,27 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"hero min-h-80 bg-gradient-to-br from-primary/30 to-primary/10\"><div class=\"w-full items-start max-w-7xl hero-content flex-col p-8\"><div class=\"badge badge-secondary -mb-3\">Template</div><h1 class=\"text-5xl font-black\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"w-full max-w-7xl m-auto p-7\"><div class=\"border border-primary/40 bg-gradient-to-br from-primary/40 to-primary/10 rounded-3xl p-16 relative overflow-hidden w-full pb-20\"><!-- Decorative Background --><div class=\"absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32\"></div><div class=\"absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-48 translate-y-48\"></div><div class=\"relative z-10\"><div class=\"badge badge-primary\">Template</div><h1 class=\"text-5xl font-black\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 13, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 17, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1></div></div><div class=\"max-w-7xl m-auto px-4 md:px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8\"><main class=\"w-full h-full\" _=\"on load wait 1s set my.style.height to my.offsetHeight + 'px'\"><section class=\"w-full max-w-full grow flex flex-col h-full\"><h2 class=\"pb-4 font-semibold tracking-wider\">Preview</h2><div class=\"mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-2xl md:shadow-xl\"><div class=\"mockup-browser-toolbar\"><div class=\"flex gap-2 mx-auto\"><button id=\"back\" class=\"btn btn-sm btn-circle btn-ghost btn-disabled\" _=\"\n\t\t\t\t\t\t\t\t\ton change from <select /> or load\n\t\t\t\t\t\t\t\t\t\tif its value is not 'lobby' then remove .btn-disabled from me\n\t\t\t\t\t\t\t\t\t\telse add .btn-disabled to me \n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click \n\t\t\t\t\t\t\t\t\t  set sel to #pages \n\t\t\t\t\t\t\t\t\t  set i to sel.selectedIndex - 1\n\t\t\t\t\t\t\t\t\t  repeat while i >= 0 and sel.options[i].disabled \n\t\t\t\t\t\t\t\t\t\tdecrement i\n\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t  if i >= 0 then \n\t\t\t\t\t\t\t\t\t\tset sel.selectedIndex to i\n\t\t\t\t\t\t\t\t\t\ttrigger change on sel\n\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left-icon lucide-arrow-left\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg></button><form hx-swap=\"innerHTML\" hx-target=\"#preview\" hx-vals=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1></div></div></section><div class=\"max-w-7xl m-auto px-4 md:px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8\"><main class=\"w-full h-full\" _=\"on load wait 1s set my.style.height to my.offsetHeight + 'px'\"><section class=\"w-full max-w-full grow flex flex-col h-full -mt-9\"><h2 class=\"pb-4 font-semibold tracking-wider\">Preview</h2><div class=\"mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-2xl md:shadow-xl\"><div class=\"mockup-browser-toolbar\"><div class=\"flex gap-2 mx-auto\"><button id=\"back\" class=\"btn btn-sm btn-circle btn-ghost btn-disabled\" _=\"\n\t\t\t\t\t\t\t\t\ton change from <select /> or load\n\t\t\t\t\t\t\t\t\t\tif its value is not 'lobby' then remove .btn-disabled from me\n\t\t\t\t\t\t\t\t\t\telse add .btn-disabled to me \n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click \n\t\t\t\t\t\t\t\t\t  set sel to #pages \n\t\t\t\t\t\t\t\t\t  set i to sel.selectedIndex - 1\n\t\t\t\t\t\t\t\t\t  repeat while i >= 0 and sel.options[i].disabled \n\t\t\t\t\t\t\t\t\t\tdecrement i\n\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t  if i >= 0 then \n\t\t\t\t\t\t\t\t\t\tset sel.selectedIndex to i\n\t\t\t\t\t\t\t\t\t\ttrigger change on sel\n\t\t\t\t\t\t\t\t\t  end\n\t\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left-icon lucide-arrow-left\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg></button><form hx-swap=\"innerHTML\" hx-target=\"#preview\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 52, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 57, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -67,7 +67,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(link.TemplateID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 54, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 59, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -85,7 +85,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", location.MarkerID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 115, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 120, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -98,7 +98,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 116, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 121, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -116,7 +116,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lat))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 133, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 138, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -129,7 +129,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lng))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 134, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 139, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -147,7 +147,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 136, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 141, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -165,7 +165,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 169, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 174, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -176,7 +176,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if authed {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a class=\"btn btn-accent btn-lg group tooltip inline-flex items-center\" onclick=\"launch_template_modal.showModal()\" data-tip=\"Create a new game using this template.\">Launch <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a class=\"btn btn-primary btn-lg group tooltip inline-flex items-center\" onclick=\"launch_template_modal.showModal()\" data-tip=\"Create a new game using this template.\">Launch <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -193,7 +193,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(link.CreatedAt.Format("2 Jan 2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 203, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 208, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -211,7 +211,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(link.ExpiresAt.Format("2 Jan 2006"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 211, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 216, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -244,7 +244,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d launches left.", link.UsedCount, link.MaxUses))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 233, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 238, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -259,7 +259,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(" %d launch left", link.MaxUses))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 237, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 242, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -269,7 +269,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(" %d launches left", link.MaxUses))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 239, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 244, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -280,7 +280,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d launch left", link.MaxUses-link.UsedCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 242, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 247, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -299,7 +299,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(link.Template.Locations)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 265, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 270, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -312,7 +312,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.RouteStrategy.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 268, Col: 131}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 273, Col: 131}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -325,7 +325,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.RouteStrategy.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 269, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 274, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -338,7 +338,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationDisplayMode.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 273, Col: 139}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 278, Col: 139}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -351,7 +351,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Settings.NavigationDisplayMode.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 274, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 279, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -388,33 +388,33 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if authed {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<!-- Launch template modal --> <dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p>You are about to launch a new game from the <code id=\"launch-template-name\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<!-- Launch template modal --> <dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p class=\"text-wrap\">You are about to launch a new game from the <code id=\"launch-template-name\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(link.Template.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 311, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 316, Col: 121}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</code> template.</p><form hx-post=\"/admin/templates/launch-from-link\" hx-swap=\"none\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">What is the name of the new game?</span></div><input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"> <input type=\"hidden\" name=\"link\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</code> template.</p><form hx-post=\"/admin/templates/launch-from-link\" hx-swap=\"none\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Game name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can edit this later on.</p><input type=\"hidden\" name=\"link\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(link.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 318, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 322, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"></label><p>Your new game will be ready to use right away. Once you launch it, you'll be automatically taken to the admin dashboard.</p><!-- TODO --><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"></fieldset><!-- TODO --><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

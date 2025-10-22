@@ -6,20 +6,25 @@ import (
 )
 
 templ TemplatePeview(link models.ShareLink, authed bool) {
-	<div class="hero min-h-80 bg-gradient-to-br from-primary/30 to-primary/10">
-		<div class="w-full items-start max-w-7xl hero-content flex-col p-8">
-			<div class="badge badge-secondary -mb-3">Template</div>
-			<h1 class="text-5xl font-black">
-				{ link.Template.Name }
-			</h1>
+	<section class="w-full max-w-7xl m-auto p-7">
+		<div class="border border-primary/40 bg-gradient-to-br from-primary/40 to-primary/10 rounded-3xl p-16 relative overflow-hidden w-full pb-20">
+			<!-- Decorative Background -->
+			<div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
+			<div class="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-48 translate-y-48"></div>
+			<div class="relative z-10">
+				<div class="badge badge-primary">Template</div>
+				<h1 class="text-5xl font-black">
+					{ link.Template.Name }
+				</h1>
+			</div>
 		</div>
-	</div>
+	</section>
 	<div class="max-w-7xl m-auto px-4 md:px-8 pt-8 w-full grid md:grid-cols-[1fr_24rem] gap-8">
 		<main
 			class="w-full h-full"
 			_="on load wait 1s set my.style.height to my.offsetHeight + 'px'"
 		>
-			<section class="w-full max-w-full grow flex flex-col h-full">
+			<section class="w-full max-w-full grow flex flex-col h-full -mt-9">
 				<h2 class="pb-4 font-semibold tracking-wider">Preview</h2>
 				<div class="mockup-browser border-base-300 border w-full flex-grow flex flex-col shadow-2xl md:shadow-xl">
 					<div class="mockup-browser-toolbar">
@@ -177,7 +182,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 		<aside id="sidebar" class="flex flex-col gap-5 md:w-96 h-min">
 			if authed {
 				<a
-					class="btn btn-accent btn-lg group tooltip inline-flex items-center"
+					class="btn btn-primary btn-lg group tooltip inline-flex items-center"
 					onclick="launch_template_modal.showModal()"
 					data-tip="Create a new game using this template."
 				>
@@ -308,18 +313,14 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 		<dialog id="launch_template_modal" class="modal modal-bottom sm:modal-middle">
 			<div class="modal-box prose overflow-y-visible">
 				<h3 class="text-lg font-bold">Launch a new game</h3>
-				<p>You are about to launch a new game from the <code id="launch-template-name">{ link.Template.Name }</code> template.</p>
+				<p class="text-wrap">You are about to launch a new game from the <code id="launch-template-name">{ link.Template.Name }</code> template.</p>
 				<form hx-post="/admin/templates/launch-from-link" hx-swap="none">
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">What is the name of the new game?</span>
-						</div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Game name</legend>
 						<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+						<p class="label">You can edit this later on.</p>
 						<input type="hidden" name="link" value={ fmt.Sprint(link.ID) }/>
-					</label>
-					<p>
-						Your new game will be ready to use right away. Once you launch it, you'll be automatically taken to the admin dashboard.
-					</p>
+					</fieldset>
 					<!-- TODO -->
 					<div class="form-control my-5 hidden">
 						<label class="label cursor-pointer">
