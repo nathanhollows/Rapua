@@ -24,10 +24,10 @@
   --color-info-content: oklch(17.652% 0.018 212.846);
   --color-success: oklch(87.099% 0.219 148.024);
   --color-success-content: oklch(17.419% 0.043 148.024);
-  --color-warning: oklch(75.46% 0.183 5.895);
-  --color-warning-content: oklch(15.46% 0.183 5.895);
-  --color-error: oklch(75.46% 0.183 61.425);
-  --color-error-content: oklch(15.46% 0.183 61.425);
+  --color-error: oklch(75.46% 0.183 5.895);
+  --color-error-content: oklch(15.46% 0.183 5.895);
+  --color-warning: oklch(75.46% 0.183 61.425);
+  --color-warning-content: oklch(15.46% 0.183 61.425);
   --radius-selector: 1rem;
   --radius-field: 1rem;
   --radius-box: 1rem;
@@ -59,10 +59,10 @@
   --color-info-content: oklch(17.652% 0.018 212.846);
   --color-success: oklch(87.099% 0.219 148.024);
   --color-success-content: oklch(17.419% 0.043 148.024);
-  --color-warning: oklch(75.46% 0.183 5.895);
-  --color-warning-content: oklch(15.46% 0.183 5.895);
-  --color-error: oklch(75.46% 0.183 61.425);
-  --color-error-content: oklch(15.46% 0.183 61.425);
+  --color-error: oklch(75.46% 0.183 5.895);
+  --color-error-content: oklch(15.46% 0.183 5.895);
+  --color-warning: oklch(75.46% 0.183 61.425);
+  --color-warning-content: oklch(15.46% 0.183 61.425);
   --radius-selector: 1rem;
   --radius-field: 1rem;
   --radius-box: 1rem;
@@ -406,10 +406,6 @@ p.label {
 }
 
 /* Docs */
-.anchor {
-  @apply no-underline opacity-50 hover:opacity-100 transition-opacity;
-}
-
 .mockup-browser .mockup-browser-toolbar {
   @apply bg-base-300 py-3 my-0;
 
