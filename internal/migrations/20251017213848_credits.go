@@ -131,15 +131,6 @@ func init() {
 				return fmt.Errorf("add StripeCustomerID column: %w", err)
 			}
 
-			// Add credit_purchase_id column to CreditAdjustments table (ignore duplicate column error)
-			_, err = db.NewAddColumn().
-				Model((*m20251017213848_CreditAdjustments)(nil)).
-				ColumnExpr("credit_purchase_id varchar(36)").
-				Exec(ctx)
-			if err != nil && !isDuplicateColumnError(err) {
-				return fmt.Errorf("add CreditPurchaseID column: %w", err)
-			}
-
 			// Create indexes for lookups.
 			_, err = db.NewCreateIndex().Model((*m20251017213848_CreditAdjustments)(nil)).
 				Index("idx_credit_adjustments_user_id").Column("user_id").Exec(ctx)
