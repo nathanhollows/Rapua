@@ -29,6 +29,7 @@ order: 100
 
 - Template share link dialog no longer has duplicate URL field.
 - Experience preview now shows content blocks correctly.
+- Erroneous error appearing when launching a game from a template.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
 
