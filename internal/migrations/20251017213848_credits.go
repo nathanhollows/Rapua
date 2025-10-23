@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -139,7 +138,7 @@ func init() {
 			}
 			_, err = db.NewCreateIndex().Model((*m20251017213848_CreditAdjustments)(nil)).
 				Index("idx_credit_adjustments_purchase_id").Column("credit_purchase_id").Exec(ctx)
-			if err != nil && !isDuplicateIndexError(err) {
+			if err != nil {
 				return fmt.Errorf("create index idx_credit_adjustments_purchase_id: %w", err)
 			}
 			_, err = db.NewCreateIndex().Model((*m20251017213848_TeamStartLog)(nil)).
@@ -271,20 +270,4 @@ func init() {
 
 			return nil
 		})
-}
-
-// Helper functions to check for duplicate column/index errors
-func isDuplicateColumnError(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "duplicate column name")
-}
-
-func isDuplicateIndexError(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "already exists") ||
-		strings.Contains(err.Error(), "duplicate key name")
 }
