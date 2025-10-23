@@ -6,23 +6,23 @@ order: 100
 
 # Changelog
 
-## 5.1.0
+## 5.1.0 (2025-10-23)
+
+Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 team start per game. That's it. No tiers. No limits. No bulk discounts. A single rate for each team. Users get additional monthly credits for free. Educators get a bit more. Easy.
 
 ### Added
 
 - Simple credit system so Rapua can be self-sufficient. See [Pricing](/pricing) for details.
-- [Privacy](/privacy) and [Terms and Conditions](/terms) updates to reflect billing and integrations.
-- Migration scripts for new tables.
-  - Includes 500 credits for all existing users.
+- [Privacy](/privacy) updated with minor clarifying edits and [Terms and Conditions](/terms) created.
 - Config package to manage environment variables and configuration settings.
 - [Job scheduler](/docs/developer/job-scheduler) to manage recurring tasks.
   - Monthly job includes topping all users up with free credits.
   - Stale credit purchase clean up job
+- Indicators on the games and template page to show which game is currently selected and active.
 
 ### Changed
 
-- Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now, with a fresh new look.
-- Indicator on the games and template page to show which game is currently selected and active.
+- Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now.
 - The [Experience Settings](/admin/experience) page is now much easier to read and nicer to look at.
 
 ### Fixed
