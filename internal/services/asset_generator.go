@@ -2,7 +2,6 @@ package services
 
 import (
 	"archive/zip"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -17,8 +16,20 @@ import (
 )
 
 const (
+	base10 = 10
+
 	svgFormat string = "svg"
 	pngFormat string = "png"
+
+	pageWidth        = 210.0
+	pageHeight       = 297.0
+	randomCodeLength = 10
+
+	locationNameFontSize = 20.0
+	gameNameFontSize     = 28.0
+
+	qrCodeScale  = 20
+	qrCodeBorder = 2
 )
 
 type PDFPage struct {
@@ -44,19 +55,19 @@ type QRCodeOptions struct {
 
 type QRCodeOption func(*QRCodeOptions)
 
-func (_ *assetGenerator) WithQRFormat(format string) QRCodeOption {
+func (*assetGenerator) WithQRFormat(format string) QRCodeOption {
 	return func(o *QRCodeOptions) {
 		o.format = strings.ToLower(format)
 	}
 }
 
-func (_ *assetGenerator) WithQRForeground(color string) QRCodeOption {
+func (*assetGenerator) WithQRForeground(color string) QRCodeOption {
 	return func(o *QRCodeOptions) {
 		o.foreground = color
 	}
 }
 
-func (_ *assetGenerator) WithQRBackground(color string) QRCodeOption {
+func (*assetGenerator) WithQRBackground(color string) QRCodeOption {
 	return func(o *QRCodeOptions) {
 		o.background = color
 	}
@@ -68,7 +79,7 @@ type AssetGenerator interface {
 	// - WithQRFormat(format string), where format is "png" or "svg"
 	// - WithForeground(color string), where color is a hex color code
 	// - WithBackground(color string), where color is a hex color code
-	CreateQRCodeImage(ctx context.Context, path string, content string, options ...QRCodeOption) (err error)
+	CreateQRCodeImage(path string, content string, options ...QRCodeOption) (err error)
 	// WithQRFormat sets the format of the QR code
 	// Supported formats are "png" and "svg"
 	WithQRFormat(format string) QRCodeOption
@@ -81,10 +92,10 @@ type AssetGenerator interface {
 	// Returns the path to the archive
 	// Accepts a list of paths to files to add to the archive
 	// Accepts an optional list of filenames to use for the files in the archive
-	CreateArchive(ctx context.Context, paths []string) (path string, err error)
+	CreateArchive(paths []string) (path string, err error)
 	// CreatePDF creates a PDF document from the given data
 	// Returns the path to the PDF
-	CreatePDF(ctx context.Context, data PDFData) (string, error)
+	CreatePDF(data PDFData) (string, error)
 	// GetQRCodePathAndContent returns the path and content for a QR code
 	GetQRCodePathAndContent(action, id, name, extension string) (string, string)
 }
@@ -96,7 +107,6 @@ func NewAssetGenerator() AssetGenerator {
 }
 
 func (s *assetGenerator) CreateQRCodeImage(
-	ctx context.Context,
 	path string,
 	content string,
 	options ...QRCodeOption,
@@ -121,7 +131,7 @@ func (s *assetGenerator) CreateQRCodeImage(
 	if err != nil {
 		return fmt.Errorf("encoding text: %w", err)
 	}
-	config := go_qr.NewQrCodeImgConfig(20, 2)
+	config := go_qr.NewQrCodeImgConfig(qrCodeScale, qrCodeBorder)
 
 	switch defaultOptions.format {
 	case pngFormat:
@@ -139,9 +149,15 @@ func (s *assetGenerator) CreateQRCodeImage(
 	return nil
 }
 
-func (s *assetGenerator) CreateArchive(ctx context.Context, paths []string) (path string, err error) {
+func (s *assetGenerator) CreateArchive(paths []string) (path string, err error) {
 	// Create the file
-	path = "assets/codes/" + helpers.NewCode(10) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".zip"
+	path = "assets/codes/" + helpers.NewCode(
+		randomCodeLength,
+	) + "-" + strconv.FormatInt(
+		time.Now().UnixNano(),
+
+		base10,
+	) + ".zip"
 	archive, err := os.Create(path)
 	if err != nil {
 		return "", fmt.Errorf("could not create archive: %w", err)
@@ -184,7 +200,7 @@ func (s *assetGenerator) CreateArchive(ctx context.Context, paths []string) (pat
 	return path, nil
 }
 
-func (s *assetGenerator) CreatePDF(ctx context.Context, data PDFData) (path string, err error) {
+func (s *assetGenerator) CreatePDF(data PDFData) (path string, err error) {
 	// Set up the document
 	pdf := fpdf.New(fpdf.OrientationPortrait, fpdf.UnitMillimeter, fpdf.PageSizeA4, "")
 	pdf.AddUTF8Font("ArchivoBlack", "", "./assets/fonts/ArchivoBlack-Regular.ttf")
@@ -192,13 +208,15 @@ func (s *assetGenerator) CreatePDF(ctx context.Context, data PDFData) (path stri
 
 	// Add pages
 	for _, page := range data.Pages {
-		err := s.addPage(pdf, page, data.InstanceName)
-		if err != nil {
-			return "", err
-		}
+		s.addPage(pdf, page, data.InstanceName)
 	}
 
-	path = "assets/codes/" + helpers.NewCode(10) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".pdf"
+	path = "assets/codes/" + helpers.NewCode(
+		randomCodeLength,
+	) + "-" + strconv.FormatInt(
+		time.Now().UnixNano(),
+		base10,
+	) + ".pdf"
 	err = pdf.OutputFileAndClose(path)
 	if err != nil {
 		return "", err
@@ -207,25 +225,27 @@ func (s *assetGenerator) CreatePDF(ctx context.Context, data PDFData) (path stri
 	return path, nil
 }
 
-func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName string) error {
+func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName string) {
 	pdf.AddPage()
 	// Set the background color
 	if len(page.Background) == 3 {
 		pdf.SetFillColor(page.Background[0], page.Background[1], page.Background[2])
-		pdf.Rect(0, 0, 210, 297, "F")
+		pdf.Rect(0, 0, pageWidth, pageHeight, "F")
 	}
 
 	// Add the instance name
-	pdf.SetFont("ArchivoBlack", "", 28)
+	pdf.SetFont("ArchivoBlack", "", gameNameFontSize)
 	title := strings.ToUpper(instanceName)
 	pdf.SetY(32)
-	pdf.SetX((210 - pdf.GetStringWidth(title)) / 2)
+	//nolint:mnd // centered
+	pdf.SetX((pageWidth - pdf.GetStringWidth(title)) / 2)
 	pdf.Cell(130, 32, title)
 
 	// Add the location name
-	pdf.SetFont("OpenSans", "", 20)
+	pdf.SetFont("OpenSans", "", locationNameFontSize)
 	pdf.SetY(40)
-	pdf.SetX((210 - pdf.GetStringWidth(page.LocationName)) / 2)
+	//nolint:mnd // centered
+	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2)
 	pdf.Cell(40, 70, page.LocationName)
 
 	// Add the QR code
@@ -239,10 +259,9 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	scanText = strings.ReplaceAll(scanText, "http://", "")
 	scanText = strings.ReplaceAll(scanText, "www.", "")
 	pdf.SetY(180)
-	pdf.SetX((210 - pdf.GetStringWidth(scanText)) / 2)
+	//nolint:mnd // centered
+	pdf.SetX((pageWidth - pdf.GetStringWidth(scanText)) / 2)
 	pdf.Cell(40, 70, scanText)
-
-	return nil
 }
 
 func (s *assetGenerator) GetQRCodePathAndContent(action, id, name, extension string) (string, string) {

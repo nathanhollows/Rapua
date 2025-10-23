@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/nathanhollows/Rapua/v4/internal/flash"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v4/models"
@@ -32,9 +33,8 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	teamCode := r.FormValue("team")
-	teamName := r.FormValue("customTeamName")
 
-	err = h.teamService.StartPlaying(r.Context(), teamCode, teamName)
+	err = h.teamService.StartPlaying(r.Context(), teamCode)
 	if err != nil {
 		if errors.Is(err, services.ErrTeamNotFound) {
 			h.handleError(
@@ -47,6 +47,14 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 				"teamCode",
 				teamCode,
 			)
+			return
+		}
+		if errors.Is(err, services.ErrInsufficientCredits) {
+			err := templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).
+				Render(r.Context(), w)
+			if err != nil {
+				h.logger.Error("rendering template", "error", err)
+			}
 			return
 		}
 		h.handleError(

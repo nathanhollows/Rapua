@@ -1,0 +1,413 @@
+package templates	
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v4/config"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
+	"github.com/nathanhollows/Rapua/v4/models"
+	"math"
+	"time"
+)
+
+templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.TeamStartSummary) {
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-4 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="stats">
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check-icon lucide-badge-check w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m9 12 2 2 4-4"></path></svg>
+					</div>
+					<div class="stat-title">Free Credits</div>
+					<div class="stat-value">
+						{ fmt.Sprint(freeCredits) }
+					</div>
+					<div class="stat-desc">Refreshed monthly</div>
+				</div>
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-dollar-sign-icon lucide-badge-dollar-sign w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 18V6"></path></svg>
+					</div>
+					<div class="stat-title">Paid Credits</div>
+					<div class="stat-value">
+						{ fmt.Sprint(paidCredits) }
+					</div>
+					<div class="stat-actions">
+						@CreditTopupModal()
+					</div>
+				</div>
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw-icon lucide-refresh-cw w-6 h-6"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+					</div>
+					<div class="stat-title">Free monthly credits</div>
+					<div class="stat-value">
+						{ fmt.Sprint(recurring) }
+					</div>
+					<div class="stat-desc">
+						Tops up in { fmt.Sprint(math.Round(time.Date(time.Now().Year(), time.Now().Month()+1, 1, 0, 0, 0, 0, time.Local).Sub(time.Now()).Hours() / 24)) } days
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="">
+				<h2 class="font-bold pb-5 flex justify-between">
+					Credit Usage
+					<form
+						class="join"
+						hx-get="/admin/settings/credits/chart"
+						hx-target="#my-chart"
+						hx-swap="innerHTML"
+						hx-trigger="change"
+					>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="week" checked aria-label="Week" autocomplete="off"/>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="month" aria-label="Month" autocomplete="off"/>
+						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="year" aria-label="Year" autocomplete="off"/>
+					</form>
+				</h2>
+				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"/>
+				<div id="my-chart">
+					@CreditUsageChart(usage, "week")
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="">
+				<h2 class="font-bold pb-5 flex justify-between">
+					Credit Top-ups
+					<button class="btn btn-sm btn-primary" onclick="topup_modal.showModal()">Top up</button>
+				</h2>
+				<table class="table">
+					<!-- head -->
+					<thead>
+						<tr>
+							<th align="right">Qty</th>
+							<th>Reason</th>
+							<th>Date</th>
+							<th>Invoice</th>
+						</tr>
+					</thead>
+					<tbody>
+						<!-- row 1 -->
+						for _, row := range topups {
+							<tr>
+								<th align="right">{ fmt.Sprint(row.Credits) }</th>
+								<td>
+									{ row.Reason }
+								</td>
+								<td>
+									{ row.CreatedAt.Format("2006-01-02") }
+								</td>
+								<td>
+									if row.CreditPurchase != nil && row.CreditPurchase.ReceiptURL.Valid {
+										<a href={ templ.SafeURL(row.CreditPurchase.ReceiptURL.String) } target="_blank" rel="noopener noreferrer" class="link link-primary">
+											View Invoice
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link inline w-4 h-4 ml-1"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+										</a>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="">
+			<h2 class="font-bold pb-5">Payment method</h2>
+			<div class="prose">
+				<p>All payments are handled securely via Stripe.</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ CreditTopupModal() {
+	<!-- Open the modal using ID.showModal() method -->
+	<button class="btn btn-xs btn-primary" onclick="topup_modal.showModal()">Top up</button>
+	<dialog id="topup_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">Top Up Credits</h3>
+			<p class="py-4 text-sm text-base-content/70 text-wrap">
+				Purchase credits to start more teams. Credits never expire and can be used anytime.
+			</p>
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">How many credits do you need?</legend>
+				<input
+					id="credit_amount"
+					type="number"
+					min="1"
+					max="1000"
+					class="input w-full"
+					value="10"
+					data-cost={ fmt.Sprint(float32(config.CreditPriceCents()) / 100) }
+					_="on change or keyup
+					set #cost's innerHTML to Number.parseFloat(my value * @data-cost).toFixed(2)
+				"
+				/>
+				<p class="label justify-between">
+					<span class="text-base-content text-sm">
+						<strong>Total: </strong> $<span id="cost">{ float32(config.CreditPriceCents())/10 }</span>
+					</span>
+					<span class="text-base-content/60 text-xs">${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) } per credit</span>
+				</p>
+			</fieldset>
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Cancel</button>
+				</form>
+				<button
+					class="btn btn-primary"
+					id="purchase_button"
+					hx-post="/admin/credits/purchase/create-session"
+					hx-vals='js:{credits: document.getElementById("credit_amount").value}'
+					hx-swap="none"
+					_="on htmx:afterRequest
+						if detail.xhr.status == 200
+							set response to JSON.parse(detail.xhr.responseText)
+							if response.url
+								window.location.href = response.url
+							end
+						else
+							alert('Failed to create checkout session. Please try again.')
+						end
+					"
+				>
+					Purchase Credits
+				</button>
+			</div>
+			<form method="dialog">
+				<button
+					class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+				>✕</button>
+			</form>
+		</div>
+	</dialog>
+}
+
+templ CreditUsageWeek(usage []services.TeamStartSummary, period string) {
+	<table class="charts-css column show-labels data-spacing-5 data-center">
+		<caption>Team Starts by Day</caption>
+		<thead>
+			<tr>
+				<th scope="col">Date </th>
+				<th scope="col">Count </th>
+			</tr>
+		</thead>
+		<tbody class="!aspect-[3/1]">
+			for _, row := range usage {
+				<tr>
+					<th scope="row">
+						switch period {
+							case "week":
+								<span class="inline sm:hidden font-normal">
+									{ row.Date.Format("Mon") }
+								</span>
+								<span class="hidden sm:inline font-normal">
+									{ row.Date.Format("Mon 2") }
+								</span>
+							case "month":
+								<span class="font-normal text-sm">
+									{ row.Date.Format("02/01") }
+								</span>
+							case "year":
+								<span class="inline sm:hidden font-normal">
+									{ row.Date.Format("Mon") }
+								</span>
+								<span class="hidden sm:inline font-normal">
+									{ row.Date.Format("Mon 2") }
+								</span>
+							default:
+								<span class="inline sm:hidden font-normal">
+									{ row.Date.Format("Mon") }
+								</span>
+								<span class="hidden sm:inline font-normal">
+									{ row.Date.Format("Mon 2") }
+								</span>
+						}
+					</th>
+					<td
+						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+						style="--size: 0"
+						_="init set my style to @data-ratio"
+						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+					>
+						if row.Ratio > 0 {
+							<span class="data text-info-content">
+								{ fmt.Sprint(row.Count) }
+							</span>
+						}
+						<span class="tooltip">
+							{ fmt.Sprint(row.Count) } credits used 
+							<br/>
+							{ row.Date.Format("2006-01-02") }
+						</span>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+templ CreditUsageChart(usage []services.TeamStartSummary, period string) {
+	<table class="charts-css column show-labels data-spacing-5 data-center">
+		<caption>Team Starts by Day</caption>
+		<thead>
+			<tr>
+				<th scope="col">Date </th>
+				<th scope="col">Count </th>
+			</tr>
+		</thead>
+		<tbody class="!aspect-[3/1]">
+			for i, row := range usage {
+				<tr>
+					<th scope="row">
+						switch period {
+							case "week":
+								<span class="inline sm:hidden font-normal">
+									{ row.Date.Format("Mon") }
+								</span>
+								<span class="hidden sm:inline font-normal">
+									{ row.Date.Format("Mon 2") }
+								</span>
+							case "month":
+								if i % 3 == 0 {
+									<span class="font-normal overflow-visible block w-max">
+										{ row.Date.Format("02 Jan") }
+									</span>
+								}
+							case "year":
+								<span class="font-normal">
+									{ row.Date.Format("Jan") }
+								</span>
+							default:
+								<span class="inline sm:hidden font-normal">
+									{ row.Date.Format("Mon") }
+								</span>
+								<span class="hidden sm:inline font-normal">
+									{ row.Date.Format("Mon 2") }
+								</span>
+						}
+					</th>
+					<td
+						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+						style="--size: 0"
+						_="init set my style to @data-ratio"
+						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+					>
+						if row.Ratio > 0 {
+							<span class="data text-info-content">
+								{ fmt.Sprint(row.Count) }
+							</span>
+						}
+						<span class="tooltip">
+							{ fmt.Sprint(row.Count) } credits used 
+							<br/>
+							{ row.Date.Format("2006-01-02") }
+						</span>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+templ CreditUsageYear(usage []services.TeamStartSummary) {
+	<table class="charts-css column show-labels data-spacing-5 data-center">
+		<caption>Team Starts by Day</caption>
+		<thead>
+			<tr>
+				<th scope="col">Month </th>
+				<th scope="col">Count </th>
+			</tr>
+		</thead>
+		<tbody class="!aspect-[3/1]">
+			for _, row := range usage {
+				<tr>
+					<th scope="row">
+						{ row.Date.Format("Jan") }
+					</th>
+					<td
+						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+						style="--size: 0"
+						_="init set my style to @data-ratio"
+						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+					>
+						if row.Ratio > 0 {
+							<span class="data text-info-content">
+								{ fmt.Sprint(row.Count) }
+							</span>
+						}
+						<span class="tooltip">
+							{ fmt.Sprint(row.Count) } credits used
+							<br/>
+							{ row.Date.Format("2006-01-02") }
+						</span>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+templ CreditPurchaseSuccess(user models.User, sessionID string) {
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="my-5">
+				<div class="alert alert-success">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					<div>
+						<h3 class="font-bold">Payment Successful!</h3>
+						<div class="text-sm">Your credits have been added to your account.</div>
+					</div>
+				</div>
+				<div class="prose mt-6">
+					<p>Thank you for your purchase! Your credits are now available and ready to use.</p>
+					<p class="text-sm text-base-content/70">Session ID: { sessionID }</p>
+				</div>
+				<div class="mt-6">
+					<a href="/admin/settings/credits" class="btn btn-primary">
+						View Credit Balance
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ CreditPurchaseCancel(user models.User) {
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="grid h-fit flex-grow">
+			<div class="my-5">
+				<div class="alert alert-warning">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+					</svg>
+					<div>
+						<h3 class="font-bold">Purchase Cancelled</h3>
+						<div class="text-sm">Your credit purchase was cancelled.</div>
+					</div>
+				</div>
+				<div class="prose mt-6">
+					<p>No charges have been made to your account.</p>
+					<p>If you cancelled by mistake, you can try purchasing credits again.</p>
+				</div>
+				<div class="mt-6 flex gap-3">
+					<a href="/admin/settings/credits" class="btn btn-primary">
+						Try Again
+					</a>
+					<a href="/admin" class="btn btn-ghost">
+						Return to Dashboard
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+}

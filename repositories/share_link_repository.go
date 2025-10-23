@@ -78,7 +78,7 @@ func (r *ShareLinkRepository) GetByID(ctx context.Context, id string) (*models.S
 func (r *ShareLinkRepository) Use(ctx context.Context, link *models.ShareLink) error {
 	res, err := r.db.NewUpdate().Model(link).
 		Set("used_count = used_count + 1").
-		Where("expires_at > ? AND (max_uses = 0 OR used_count < max_uses)", time.Now()).
+		Where("(expires_at > ? OR expires_at IS NULL) AND (max_uses = 0 OR used_count < max_uses)", time.Now()).
 		WherePK().
 		Exec(ctx)
 	if err != nil {

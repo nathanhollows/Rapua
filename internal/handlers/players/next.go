@@ -39,26 +39,28 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 	allBlocks := make([]blocks.Block, 0)
 	allStates := make(map[string]blocks.PlayerState)
 
-	for _, location := range locations {
-		locationBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
-			r.Context(),
-			location.ID,
-			team.Code,
-			blocks.ContextLocationClues,
-		)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"Next: getting navigation blocks",
-				"Error loading navigation clues",
-				"Could not load navigation clues",
-				err,
+	if team.Instance.Settings.NavigationDisplayMode == models.NavigationDisplayCustom {
+		for _, location := range locations {
+			locationBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+				r.Context(),
+				location.ID,
+				team.Code,
+				blocks.ContextLocationClues,
 			)
-			return
+			if err != nil {
+				h.handleError(
+					w,
+					r,
+					"Next: getting navigation blocks",
+					"Error loading navigation clues",
+					"Could not load navigation clues",
+					err,
+				)
+				return
+			}
+			allBlocks = append(allBlocks, locationBlocks...)
+			maps.Copy(allStates, blockStates)
 		}
-		allBlocks = append(allBlocks, locationBlocks...)
-		maps.Copy(allStates, blockStates)
 	}
 
 	nextData := templates.NextParams{

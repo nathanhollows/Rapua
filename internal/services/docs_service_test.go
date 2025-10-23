@@ -11,7 +11,7 @@ import (
 )
 
 // Helper function to create temporary markdown files for testing.
-func createTempMarkdownFile(t *testing.T, dir, name, content string) string {
+func createTempMarkdownFile(t *testing.T, dir, name, content string) {
 	filePath := filepath.Join(dir, name)
 
 	// Ensure directory exists if creating a file in a subdirectory
@@ -24,7 +24,6 @@ func createTempMarkdownFile(t *testing.T, dir, name, content string) string {
 	if err != nil {
 		t.Fatalf("failed to create temp markdown file: %v", err)
 	}
-	return filePath
 }
 
 func TestNewDocsService(t *testing.T) {

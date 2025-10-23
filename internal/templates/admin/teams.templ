@@ -6,7 +6,7 @@ import (
 )
 
 templ TeamsTable(teams []models.Team) {
-	<div id="teams-list" class="join join-vertical w-full px-5 rounded-lg">
+	<ul class="list rounded-lg mx-5">
 		<div class="flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item">
 			<!-- Select all -->
 			<input
@@ -114,45 +114,42 @@ templ TeamsTable(teams []models.Team) {
 			</div>
 			<div id="team-filters" class="flex flex-grow flex-row justify-between">
 				<!-- Active/Inactive count -->
-				<div class="flex gap-3 items-center flex-row">
-					<a
-						href="#"
-						class="font-bold text-base-content text-sm"
-						_="on click
-						if I do not match .opacity-60 and (next <a/>) matches .opacity-60
-							remove .opacity-60 from next <a/>
-							remove .hidden from <.team-item.inactive/>
-						else
-							add .opacity-60 to next <a/>
-							remove .opacity-60 from me
-							remove .hidden from <.team-item.active/>
-							add .hidden to <.team-item.inactive/>
-						end"
-					>
-						<span _="on htmx:afterSettle from body set my textContent to <.team-item.active/>'s length">
-							{ fmt.Sprint(len(filter(teams, func(team models.Team) bool { return team.HasStarted }))) }
-						</span>
-						Active
-					</a>
-					<a
-						href="#"
-						class="font-bold text-sm"
-						_="on click
-						if I do not match .opacity-60 and (previous <a/>) matches .opacity-60
-							remove .opacity-60 from previous <a/>
-							remove .hidden from <.team-item.active/>
-						else
-							add .opacity-60 to previous <a/>
-							remove .opacity-60 from me
-							remove .hidden from <.team-item.inactive/>
-							add .hidden to <.team-item.active/>
-						end"
-					>
-						<span _="on htmx:afterSettle from body or htmx:afterRequest from #delete-confirm wait 0.5s set my textContent to <.team-item.inactive/>'s length">
-							{ fmt.Sprint(len(filter(teams, func(team models.Team) bool { return !team.HasStarted }))) }
-						</span>
-						Inactive
-					</a>
+				<div class="filter">
+					<input
+						class="btn btn-sm filter-reset"
+						type="radio"
+						name="activefilter"
+						aria-label="All"
+						_="
+							on click remove .hidden from <.team-item/>
+						"
+					/>
+					<input
+						class="btn btn-sm"
+						type="radio"
+						name="activefilter"
+						aria-label="Active Only"
+						_="
+						on change
+							if my checked
+								remove .hidden from <.team-item/>
+								add .hidden to <.team-item.inactive/>
+							end
+						"
+					/>
+					<input
+						class="btn btn-sm"
+						type="radio"
+						name="activefilter"
+						aria-label="Inactive Only"
+						_="
+						on change
+							if my checked
+								remove .hidden from <.team-item/>
+								add .hidden to <.team-item.active/>
+							end
+						"
+					/>
 				</div>
 				<div class="flex flex-row gap-2">
 					<button
@@ -175,17 +172,45 @@ templ TeamsTable(teams []models.Team) {
 						Copy Codes
 					</button>
 					<!-- Search -->
-					<label class="input input-sm flex items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<label class="input input-sm flex items-center gap-2 w-60">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 						<input
+							id="search-teams"
 							type="text"
 							class="grow"
 							placeholder="Search"
-							_="on input 
-							show .team-item
-								when its textContent.toLowerCase().normalize('NFD')
-								contains my value.toLowerCase().normalize('NFD')"
+							_="
+							init send input to me
+							on input 
+								show .team-item
+									when its textContent.toLowerCase().normalize('NFD')
+									contains my value.toLowerCase().normalize('NFD')
+								if my value's length > 0 then
+									remove .invisible from #clear-search
+								else
+									add .invisible to #clear-search
+								end
+							end
+							"
 						/>
+						<button
+							id="clear-search"
+							role="button"
+							class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+							type="reset"
+							_="
+								init if #search-teams's value's length > 0 then
+									remove .invisible from me
+								end
+								on click
+									set #search-teams's value to ''
+									add .invisible to me
+									send input to #search-teams
+								end
+							"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+						</button>
 					</label>
 				</div>
 			</div>
@@ -196,6 +221,8 @@ templ TeamsTable(teams []models.Team) {
 		for _, team := range filter(teams, func(team models.Team) bool { return !team.HasStarted }) {
 			@teamItem(team, "inactive")
 		}
+	</ul>
+	<div id="teams-list" class="join join-vertical w-full px-5 rounded-lg">
 		<div
 			if len(teams) == 0 {
 				class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
@@ -239,6 +266,7 @@ templ TeamsTable(teams []models.Team) {
 				<li>the team name</li>
 				<li>all related check-ins, points, activity progress, and media</li>
 			</ul>
+			<p>Credits are not restored if a team is reset.</p>
 			<p>Only the team code will be kept. This action cannot be undone.</p>
 			<form
 				hx-post="/admin/teams/reset"
@@ -271,6 +299,7 @@ templ TeamsTable(teams []models.Team) {
 				<li>activity progress</li>
 				<li>any uploaded media</li>
 			</ul>
+			<p>Credits are not restored if a team is deleted.</p>
 			<p>This action cannot be undone.</p>
 			<form
 				hx-delete="/admin/teams/delete"
@@ -295,9 +324,7 @@ templ TeamsList(teams []models.Team) {
 }
 
 templ teamItem(team models.Team, classes string) {
-	<div
-		class={ fmt.Sprint("team-item flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors ", classes) }
-	>
+	<li class={ fmt.Sprint("team-item list-row hover:bg-base-200 transition-colors justify-between flex ", classes) }>
 		<div class="flex flex-row items-center gap-3 grow">
 			<input
 				name="team-checkbox"
@@ -361,11 +388,10 @@ templ teamItem(team models.Team, classes string) {
 				</button>
 			}
 		</div>
-	</div>
-	@teamModal()
+	</li>
 }
 
-templ Teams(teams []models.Team) {
+templ Teams(teams []models.Team, credits int) {
 	<span class="hidden bg-danger text-danger-content border-error border-warning"></span>
 	<div class="flex gap-3 flex-row justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
@@ -388,6 +414,23 @@ templ Teams(teams []models.Team) {
 				</div>
 			</div>
 		</h1>
+		<a
+			href="/admin/settings/credits"
+			if credits <= 0 {
+				class="badge badge-soft badge-error tooltip tooltip-bottom"
+				data-tip="No credits remaining! New teams won't be able to start playing."
+			}
+			else
+			if credits >= 5 {
+				class="badge badge-soft badge-info tooltip tooltip-bottom"
+				data-tip="Each team start costs one credit. Credits do not affect how many team codes you can generate."
+			} else {
+				class="badge badge-soft badge-warning tooltip tooltip-bottom"
+				data-tip="Low on credits! Each team start costs one credit. Credits do not affect how many team codes you can generate."
+			}
+		>
+			{ fmt.Sprint(credits) } credits remaining
+		</a>
 		<div class="flex gap-3">
 			<button
 				class="btn btn-secondary"
@@ -439,4 +482,5 @@ templ Teams(teams []models.Team) {
 			</form>
 		</div>
 	</dialog>
+	@teamModal()
 }

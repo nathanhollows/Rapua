@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/nathanhollows/Rapua/v4/db"
 	"github.com/nathanhollows/Rapua/v4/repositories"
@@ -25,6 +25,9 @@ type DeleteService struct {
 	markerRepo           repositories.MarkerRepository
 	teamRepo             repositories.TeamRepository
 	userRepo             repositories.UserRepository
+	creditRepo           *repositories.CreditRepository
+	creditPurchaseRepo   *repositories.CreditPurchaseRepository
+	teamStartLogRepo     *repositories.TeamStartLogRepository
 }
 
 // NewDeleteService creates a new DeleteService with the provided dependencies.
@@ -39,6 +42,9 @@ func NewDeleteService(
 	markerRepo repositories.MarkerRepository,
 	teamRepo repositories.TeamRepository,
 	userRepo repositories.UserRepository,
+	creditRepo *repositories.CreditRepository,
+	creditPurchaseRepo *repositories.CreditPurchaseRepository,
+	teamStartLogRepo *repositories.TeamStartLogRepository,
 ) *DeleteService {
 	return &DeleteService{
 		transactor:           transactor,
@@ -51,6 +57,9 @@ func NewDeleteService(
 		markerRepo:           markerRepo,
 		teamRepo:             teamRepo,
 		userRepo:             userRepo,
+		creditRepo:           creditRepo,
+		creditPurchaseRepo:   creditPurchaseRepo,
+		teamStartLogRepo:     teamStartLogRepo,
 	}
 }
 
@@ -66,7 +75,7 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 		if p := recover(); p != nil {
 			err := tx.Rollback()
 			if err != nil {
-				fmt.Println("failed to rollback transaction:", err)
+				slog.Error("transaction", "error", err)
 			}
 			panic(p)
 		}
@@ -94,7 +103,7 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	defer func() {
 		if p := recover(); p != nil {
 			err := tx.Rollback()
-			log.Printf("recovered from panic, rolling back transaction: %v", err)
+			slog.Error("transaction", "error", err)
 			panic(p)
 		}
 	}()
@@ -238,7 +247,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 		if p := recover(); p != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+				slog.Error("transaction", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -294,7 +303,7 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 		if p := recover(); p != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				fmt.Printf("rolling back transaction: %v\n", rollbackErr)
+				slog.Error("transaction", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -405,6 +414,22 @@ func (s *DeleteService) deleteUser(ctx context.Context, tx *bun.Tx, userID strin
 		if err != nil {
 			return fmt.Errorf("deleting instance %s: %w", instance.ID, err)
 		}
+	}
+
+	// Delete credit-related data
+	err = s.teamStartLogRepo.DeleteByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting team start logs: %w", err)
+	}
+
+	err = s.creditPurchaseRepo.DeleteByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting credit purchases: %w", err)
+	}
+
+	err = s.creditRepo.DeleteCreditAdjustmentsByUserID(ctx, tx, userID)
+	if err != nil {
+		return fmt.Errorf("deleting credit adjustments: %w", err)
 	}
 
 	// Delete the user

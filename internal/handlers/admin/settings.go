@@ -3,27 +3,30 @@ package admin
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 )
 
+const (
+	DefaultPageSize = 25
+	day             = "day"
+	week            = "week"
+	month           = "month"
+)
+
 // Settings displays the account settings page.
 func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	c := templates.Settings(*user)
-	err := templates.Layout(c, *user, "Settings", "Account Settings").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
-	}
+	h.SettingsProfile(w, r)
 }
 
 // SettingsProfile displays the account profile page.
 func (h *Handler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsProfile(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsProfile(*user))
+	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering account page", "error", err.Error())
 	}
@@ -63,9 +66,10 @@ func (h *Handler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsAppearance(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsAppearance(*user))
+	err := templates.Layout(c, *user, "Settings", "Appearance").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account appearance page", "error", err.Error())
+		h.logger.Error("rendering account page", "error", err.Error())
 	}
 }
 
@@ -73,19 +77,10 @@ func (h *Handler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := templates.SettingsSecurity(*user).Render(r.Context(), w)
+	c := templates.Settings(templates.SettingsSecurity(*user))
+	err := templates.Layout(c, *user, "Settings", "Security").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account security page", "error", err.Error())
-	}
-}
-
-// SettingsBilling displays the account billing settings page.
-func (h *Handler) SettingsBilling(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	err := templates.SettingsBilling(*user).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering account billing page", "error", err.Error())
+		h.logger.Error("rendering account page", "error", err.Error())
 	}
 }
 
@@ -161,4 +156,92 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/logout")
+}
+
+// SettingsCreditUsage displays the user's credit usage data.
+func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	topupFilter := services.CreditAdjustmentFilter{
+		UserID: user.ID,
+		Limit:  DefaultPageSize,
+		Offset: 0,
+	}
+	topups, err := h.creditService.GetCreditAdjustments(r.Context(), topupFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsage: get credit adjustments", "Failed to retrieve credit adjustments", err)
+		return
+	}
+
+	usageFilter := services.TeamStartLogFilter{
+		UserID:    user.ID,
+		StartTime: time.Now().AddDate(0, 0, -6), // Last year
+		EndTime:   time.Now(),
+		GroupBy:   day,
+	}
+	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsage: get team start logs", "Failed to retrieve team start logs", err)
+		return
+	}
+
+	c := templates.Settings(templates.SettingsCreditUsage(
+		user.FreeCredits,
+		user.PaidCredits,
+		user.MonthlyCreditLimit,
+		topups,
+		usage,
+	))
+	err = templates.Layout(c, *user, "Settings", "Credit Usage & Billing").Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("rendering account page", "error", err.Error())
+	}
+}
+
+// SettingsCreditUsageChart displays the credit usage chart data.
+func (h *Handler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: parse form", "Failed to parse form data", err)
+		return
+	}
+
+	var start, end time.Time
+	groupBy := day
+	switch r.FormValue("period") {
+	case week:
+		start = time.Now().AddDate(0, 0, -6) // Last week
+		end = time.Now()
+	case month:
+		start = time.Now().AddDate(0, -1, 0) // Last month
+		end = time.Now()
+	case "year":
+		start = time.Now().AddDate(-1, 1, 0) // Last year
+		end = time.Now()
+		groupBy = month
+	default:
+		h.handleError(w, r, "SettingsCreditUsageChart", "Invalid period specified", nil)
+		return
+	}
+
+	usageFilter := services.TeamStartLogFilter{
+		UserID:    user.ID,
+		StartTime: start,
+		EndTime:   end,
+		GroupBy:   groupBy,
+	}
+
+	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: get team start logs", "Failed to retrieve team start logs", err)
+		return
+	}
+
+	err = templates.CreditUsageChart(usage, r.FormValue("period")).Render(r.Context(), w)
+	if err != nil {
+		h.handleError(w, r, "SettingsCreditUsageChart: render chart", "Failed to render credit usage chart", err)
+		return
+	}
 }

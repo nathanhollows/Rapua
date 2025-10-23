@@ -15,6 +15,7 @@ require (
 	github.com/markbates/goth v1.80.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/microcosm-cc/bluemonday v1.0.27
+	github.com/phsym/console-slog v0.3.1
 	github.com/piglig/go-qr v0.2.5
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/uptrace/bun v1.2.1
@@ -46,6 +47,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	github.com/stripe/stripe-go/v83 v83.0.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect

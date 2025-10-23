@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupUserService(t *testing.T) (services.UserService, repositories.InstanceRepository, func()) {
@@ -34,7 +35,7 @@ func TestCreateUser(t *testing.T) {
 	}
 	err := service.CreateUser(context.Background(), user, password)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, user.ID)
 	assert.NotEqual(t, password, user.Password) // Ensure password is transformed/hashed
 }
@@ -51,7 +52,7 @@ func TestCreateUser_PasswordsDoNotMatch(t *testing.T) {
 	}
 	err := service.CreateUser(context.Background(), user, "differentPassword")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, services.ErrPasswordsDoNotMatch, err)
 }
 
@@ -67,11 +68,11 @@ func TestGetUserByEmail(t *testing.T) {
 		Password: password,
 	}
 	err := service.CreateUser(context.Background(), user, password)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	retrievedUser, err := service.GetUserByEmail(context.Background(), email)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, user.Email, retrievedUser.Email)
 	assert.Equal(t, user.ID, retrievedUser.ID)
 }
@@ -88,16 +89,16 @@ func TestUpdateUser(t *testing.T) {
 		Password: password,
 	}
 	err := service.CreateUser(context.Background(), user, password)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	newName := gofakeit.Name()
 	user.Name = newName
 	err = service.UpdateUser(context.Background(), user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	retrievedUser, err := service.GetUserByEmail(context.Background(), email)
 	assert.NotEmpty(t, retrievedUser.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, newName, retrievedUser.Name)
 }
 
@@ -120,7 +121,7 @@ func TestUpdateUserProfile(t *testing.T) {
 	user.WorkType.Valid = true
 
 	err := service.CreateUser(context.Background(), user, password)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test cases
 	testCases := []struct {
@@ -203,15 +204,15 @@ func TestUpdateUserProfile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Get a fresh copy of the user for each test
 			currentUser, err := service.GetUserByEmail(context.Background(), email)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Update the profile
 			updateErr := service.UpdateUserProfile(context.Background(), currentUser, tc.profile)
-			assert.NoError(t, updateErr)
+			require.NoError(t, updateErr)
 
 			// Retrieve the updated user
 			updatedUser, getErr := service.GetUserByEmail(context.Background(), email)
-			assert.NoError(t, getErr)
+			require.NoError(t, getErr)
 
 			// Validate fields
 			tc.validate(t, updatedUser)
@@ -234,39 +235,39 @@ func TestChangePassword(t *testing.T) {
 		Provider: models.ProviderEmail,
 	}
 	err := service.CreateUser(context.Background(), user, oldPassword)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Retrieve user to get the hashed password
 	retrievedUser, err := service.GetUserByEmail(context.Background(), email)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	oldHashedPassword := retrievedUser.Password
 
 	// Test cases
 	t.Run("Successful password change", func(t *testing.T) {
 		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, newPassword)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify the password was changed in the database
 		updatedUser, getErr := service.GetUserByEmail(context.Background(), email)
-		assert.NoError(t, getErr)
+		require.NoError(t, getErr)
 		assert.NotEqual(t, oldHashedPassword, updatedUser.Password)
 	})
 
 	t.Run("Incorrect old password", func(t *testing.T) {
 		err = service.ChangePassword(context.Background(), retrievedUser, "wrongPassword", newPassword, newPassword)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrIncorrectOldPassword, err)
 	})
 
 	t.Run("Passwords don't match", func(t *testing.T) {
 		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, newPassword, "differentPassword")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrPasswordsDoNotMatch, err)
 	})
 
 	t.Run("Empty new password", func(t *testing.T) {
 		err = service.ChangePassword(context.Background(), retrievedUser, oldPassword, "", "")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrEmptyPassword, err)
 	})
 
@@ -277,11 +278,11 @@ func TestChangePassword(t *testing.T) {
 		Provider: models.ProviderGoogle,
 	}
 	err = service.CreateUser(context.Background(), googleUser, "not-used-for-google")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("Google user cannot change password", func(t *testing.T) {
 		err = service.ChangePassword(context.Background(), googleUser, "any-password", newPassword, newPassword)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot change password for SSO accounts")
 	})
 }
@@ -290,12 +291,13 @@ func TestUserService_SwitchInstance(t *testing.T) {
 	service, instanceRepo, cleanup := setupUserService(t)
 	defer cleanup()
 
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
+	email := gofakeit.Email()
+	user := &models.User{Email: email, Password: "password", CurrentInstanceID: "instance123"}
 	err := service.CreateUser(context.Background(), user, "password")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = instanceRepo.Create(context.Background(), &models.Instance{ID: "instance789", Name: "Game1", UserID: user.ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("SwitchInstance", func(t *testing.T) {
 		tests := []struct {
@@ -313,9 +315,9 @@ func TestUserService_SwitchInstance(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				switchErr := service.SwitchInstance(context.Background(), tc.user, tc.instanceID)
 				if tc.wantErr {
-					assert.Error(t, switchErr)
+					require.Error(t, switchErr)
 				} else {
-					assert.NoError(t, switchErr)
+					require.NoError(t, switchErr)
 					assert.Equal(t, tc.instanceID, tc.user.CurrentInstanceID)
 				}
 			})

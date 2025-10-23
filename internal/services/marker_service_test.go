@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupMarkerService(t *testing.T) (*services.MarkerService, func()) {
@@ -41,8 +42,8 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		} else {
 			// If successful, check that values are set correctly
 			assert.Equal(t, name, marker.Name)
-			assert.Equal(t, lat, marker.Lat)
-			assert.Equal(t, lng, marker.Lng)
+			assert.InDelta(t, lat, marker.Lat, 0.000001)
+			assert.InDelta(t, lng, marker.Lng, 0.000001)
 		}
 	})
 
@@ -51,7 +52,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), "", lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "name cannot be empty")
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -62,7 +63,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLatitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -73,7 +74,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := gofakeit.Longitude()
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLatitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -84,7 +85,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := -181.0 // Invalid
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLongitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -95,7 +96,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		lng := 181.0 // Invalid
 
 		marker, err := service.CreateMarker(context.Background(), name, lat, lng)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidLongitude, err)
 		assert.Equal(t, models.Marker{}, marker)
 	})
@@ -109,7 +110,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 		} else {
-			assert.Equal(t, -90.0, marker.Lat)
+			assert.InDelta(t, -90.0, marker.Lat, 0.000001)
 		}
 
 		// Test exactly 90 (should pass)
@@ -117,7 +118,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 		} else {
-			assert.Equal(t, 90.0, marker.Lat)
+			assert.InDelta(t, 90.0, marker.Lat, 0.000001)
 		}
 	})
 
@@ -130,7 +131,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, -180.0, marker.Lng)
+			assert.InDelta(t, -180.0, marker.Lng, 0.000001)
 		}
 
 		// Test exactly 180 (should pass)
@@ -138,7 +139,7 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 		if err != nil {
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, 180.0, marker.Lng)
+			assert.InDelta(t, 180.0, marker.Lng, 0.000001)
 		}
 	})
 
@@ -183,7 +184,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{gofakeit.UUID(), gofakeit.UUID()}
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), "", otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "instanceID cannot be empty")
 		assert.Nil(t, markers)
 	})
@@ -193,7 +194,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		otherInstances := []string{}
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})
@@ -203,7 +204,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 		var otherInstances []string = nil
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})
@@ -258,8 +259,8 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, lat, marker.Lat)
-			assert.Equal(t, lng, marker.Lng)
+			assert.InDelta(t, lat, marker.Lat, 0.000001)
+			assert.InDelta(t, lng, marker.Lng, 0.000001)
 		}
 	})
 
@@ -271,8 +272,8 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 			assert.NotEqual(t, services.ErrInvalidLatitude, err)
 			assert.NotEqual(t, services.ErrInvalidLongitude, err)
 		} else {
-			assert.Equal(t, 0.0, marker.Lat)
-			assert.Equal(t, 0.0, marker.Lng)
+			assert.InDelta(t, 0.0, marker.Lat, 0.000001)
+			assert.InDelta(t, 0.0, marker.Lng, 0.000001)
 		}
 	})
 

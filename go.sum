@@ -71,6 +71,8 @@ github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwX
 github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB5OBs92Dimizgw2cA=
 github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
+github.com/phsym/console-slog v0.3.1 h1:Fuzcrjr40xTc004S9Kni8XfNsk+qrptQmyR+wZw9/7A=
+github.com/phsym/console-slog v0.3.1/go.mod h1:oJskjp/X6e6c0mGpfP8ELkfKUsrkDifYRAqJQgmdDS0=
 github.com/piglig/go-qr v0.2.5 h1:cMoND6IUrlSAbNUNvwCpG3yx2RPvoK5xkI6PyJuNsuU=
 github.com/piglig/go-qr v0.2.5/go.mod h1:funyXL4IdgMPcbICoVm1XweMtZy7Px3kyITTENkmA5w=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
@@ -89,6 +91,8 @@ github.com/sendgrid/sendgrid-go v3.16.0+incompatible h1:i8eE6IMkiCy7vusSdacHHSBU
 github.com/sendgrid/sendgrid-go v3.16.0+incompatible/go.mod h1:QRQt+LX/NmgVEvmdRw0VT/QgUn499+iza2FnDca9fg8=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stripe/stripe-go/v83 v83.0.1 h1:HvUXOw0AcjYJ9zUTN5XW+k7HvkM1AY9zxbpOFN9bhRA=
+github.com/stripe/stripe-go/v83 v83.0.1/go.mod h1:nRyDcLrJtwPPQUnKAFs9Bt1NnQvNhNiF6V19XHmPISE=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc h1:9lRDQMhESg+zvGYmW5DyG0UqvY96Bu5QYsTLvCHdrgo=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc/go.mod h1:bciPuU6GHm1iF1pBvUfxfsH0Wmnc2VbpgvbI9ZWuIRs=
 github.com/uptrace/bun v1.2.1 h1:2ENAcfeCfaY5+2e7z5pXrzFKy3vS8VXvkCag6N2Yzfk=

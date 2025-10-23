@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTeamRepo(t *testing.T) (repositories.TeamRepository, db.Transactor, func()) {
@@ -35,10 +36,10 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 	}
 
 	err := repo.InsertBatch(ctx, []models.Team{*sampleTeam})
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	team, err := repo.GetByCode(ctx, sampleTeam.Code)
-	assert.NoError(t, err, "expected no error when finding team")
+	require.NoError(t, err, "expected no error when finding team")
 	assert.NotEmpty(t, team.ID, "expected team to have an ID")
 
 	// Check that teams with duplicate codes are not allowed
@@ -48,21 +49,21 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 	}
 
 	err = repo.InsertBatch(ctx, []models.Team{*sampleTeam, *sampleTeam})
-	assert.Error(t, err, "expected error when saving teams with duplicate codes")
+	require.Error(t, err, "expected error when saving teams with duplicate codes")
 
 	// Cleanup
 	for _, team := range []models.Team{*sampleTeam} {
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 
 		err = repo.Delete(ctx, tx, team.InstanceID, team.Code)
 		if err != nil {
 			rollbackErr := tx.Rollback()
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			assert.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, err, "expected no error when deleting team")
 		} else {
 			err := tx.Commit()
-			assert.NoError(t, err, "expected no error when committing transaction")
+			require.NoError(t, err, "expected no error when committing transaction")
 		}
 	}
 }
@@ -80,31 +81,31 @@ func TestTeamRepository_InsertAndUpdate(t *testing.T) {
 
 	// Insert team first
 	err := repo.InsertBatch(ctx, []models.Team{*sampleTeam})
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	// Check that the team was saved
 	team, err := repo.GetByCode(ctx, sampleTeam.Code)
-	assert.NoError(t, err, "expected no error when finding team")
+	require.NoError(t, err, "expected no error when finding team")
 
 	// Update the team
 	err = repo.Update(ctx, team)
-	assert.NoError(t, err, "expected no error when updating team")
+	require.NoError(t, err, "expected no error when updating team")
 
 	// Cleanup
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 
 	if err := repo.Delete(ctx, tx, sampleTeam.InstanceID, sampleTeam.Code); err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when deleting team")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when deleting team")
 	} else {
 		err := tx.Commit()
-		assert.NoError(t, err, "expected no error when committing transaction")
+		require.NoError(t, err, "expected no error when committing transaction")
 	}
 }
 
@@ -121,22 +122,22 @@ func TestTeamRepository_Delete(t *testing.T) {
 
 	// Insert team first
 	err := repo.Update(ctx, &sampleTeam[0])
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	// Now delete it
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	if err := repo.Delete(ctx, tx, sampleTeam[0].InstanceID, sampleTeam[0].Code); err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when deleting team")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when deleting team")
 	} else {
 		err := tx.Commit()
-		assert.NoError(t, err, "expected no error when committing transaction")
+		require.NoError(t, err, "expected no error when committing transaction")
 	}
 }
 
@@ -153,24 +154,24 @@ func TestTeamRepository_Reset(t *testing.T) {
 
 	// Insert team first
 	err := repo.Update(ctx, &sampleTeam[0])
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	// Now delete it
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	if err := repo.Reset(ctx, tx, sampleTeam[0].InstanceID, []string{sampleTeam[0].Code}); err != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		}
-		assert.NoError(t, err, "expected no error when resetting team")
+		require.NoError(t, err, "expected no error when resetting team")
 	} else {
 		err := tx.Commit()
-		assert.NoError(t, err, "expected no error when committing transaction")
+		require.NoError(t, err, "expected no error when committing transaction")
 	}
 }
 
@@ -195,29 +196,29 @@ func TestTeamRepository_FindAll(t *testing.T) {
 
 	// Insert teams first
 	err := repo.InsertBatch(ctx, sampleTeams)
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	teams, err := repo.FindAll(ctx, instanceID)
-	assert.NoError(t, err, "expected no error when finding all teams")
+	require.NoError(t, err, "expected no error when finding all teams")
 	assert.Len(t, teams, len(sampleTeams), "expected correct number of teams to be found")
 
 	// Cleanup
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
 		if err := repo.Delete(ctx, tx, instanceID, team.Code); err != nil {
 			rollbackErr := tx.Rollback()
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			assert.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, err, "expected no error when deleting team")
 			break
 		}
 	}
 	err = tx.Commit()
-	assert.NoError(t, err, "expected no error when committing transaction")
+	require.NoError(t, err, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_FindAllWithScans(t *testing.T) {
@@ -242,29 +243,29 @@ func TestTeamRepository_FindAllWithScans(t *testing.T) {
 	// Insert teams first
 
 	err := repo.InsertBatch(ctx, sampleTeams)
-	assert.NoError(t, err, "expected no error when saving team")
+	require.NoError(t, err, "expected no error when saving team")
 
 	teams, err := repo.FindAllWithScans(ctx, instanceID)
-	assert.NoError(t, err, "expected no error when finding all teams with scans")
+	require.NoError(t, err, "expected no error when finding all teams with scans")
 	assert.Len(t, teams, len(sampleTeams), "expected correct number of teams to be found")
 
 	// Cleanup
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
 		if err := repo.Delete(ctx, tx, instanceID, team.Code); err != nil {
 			rollbackErr := tx.Rollback()
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			assert.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, err, "expected no error when deleting team")
 			break
 		}
 	}
 	err = tx.Commit()
-	assert.NoError(t, err, "expected no error when committing transaction")
+	require.NoError(t, err, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_InsertBatch(t *testing.T) {
@@ -285,31 +286,31 @@ func TestTeamRepository_InsertBatch(t *testing.T) {
 		},
 	}
 	err := repo.InsertBatch(ctx, sampleTeams)
-	assert.NoError(t, err, "expected no error when inserting batch of teams")
+	require.NoError(t, err, "expected no error when inserting batch of teams")
 
 	// Check that the teams were saved
 	for _, team := range sampleTeams {
 		_, err = repo.GetByCode(ctx, team.Code)
-		assert.NoError(t, err, "expected no error when finding team")
+		require.NoError(t, err, "expected no error when finding team")
 	}
 
 	// Cleanup
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
-		assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		assert.NoError(t, err, "expected no error when starting transaction")
+		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range sampleTeams {
 		if err := repo.Delete(ctx, tx, team.InstanceID, team.Code); err != nil {
 			rollbackErr := tx.Rollback()
-			assert.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			assert.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
+			require.NoError(t, err, "expected no error when deleting team")
 			break
 		}
 	}
 	err = tx.Commit()
-	assert.NoError(t, err, "expected no error when committing transaction")
+	require.NoError(t, err, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
@@ -319,11 +320,11 @@ func TestTeamRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
 
 	sampleTeams := []models.Team{{Code: "team1"}, {Code: "team2"}}
 	err := repo.InsertBatch(ctx, sampleTeams)
-	assert.NoError(t, err, "expected no error when inserting batch of teams")
+	require.NoError(t, err, "expected no error when inserting batch of teams")
 
 	// Insert the same teams again to trigger unique constraint error
 	err = repo.InsertBatch(ctx, sampleTeams)
-	assert.Error(t, err, "expected unique constraint error when inserting duplicate batch of teams")
+	require.Error(t, err, "expected unique constraint error when inserting duplicate batch of teams")
 	assert.Contains(
 		t,
 		err.Error(),

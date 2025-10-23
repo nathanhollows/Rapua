@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupNavigationService(t *testing.T) (*services.NavigationService, func()) {
@@ -67,7 +68,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 		validMarkerID := "MARKER0" // First location
 
 		valid, err := service.IsValidLocation(context.Background(), team, validMarkerID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 	})
 
@@ -75,7 +76,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 		team := createTestTeamWithInstance(t, models.RouteStrategyFreeRoam, 3)
 
 		valid, err := service.IsValidLocation(context.Background(), team, "INVALID")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 		assert.Contains(t, err.Error(), "not a valid next location")
 	})
@@ -85,12 +86,12 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 		// First location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		// Second location should be invalid
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 
@@ -102,7 +103,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 		}
 
 		valid, err := service.IsValidLocation(context.Background(), team, "ANY")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 
@@ -111,7 +112,7 @@ func TestNavigationService_IsValidLocation(t *testing.T) {
 
 		// Test with lowercase and spaces
 		valid, err := service.IsValidLocation(context.Background(), team, "  marker0  ")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 	})
 }
@@ -127,15 +128,15 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 		// Test using IsValidLocation which uses the core logic without loading relations
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER2")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 	})
 
@@ -144,12 +145,12 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 		// Only first location should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		// Second location should not be valid yet
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 
@@ -181,7 +182,7 @@ func TestNavigationService_NavigationLogic(t *testing.T) {
 
 		// No location should be valid when all are visited
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 		assert.Contains(t, err.Error(), "all locations visited")
 	})
@@ -233,16 +234,16 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 
 		// Only the location with order 1 should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		// Other locations should not be valid
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER2")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 
@@ -251,7 +252,7 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 
 		// First location (order 0) should be valid
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		// Visit first location
@@ -262,12 +263,12 @@ func TestNavigationService_OrderedNavigation(t *testing.T) {
 
 		// Second location (order 1) should now be valid
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, valid)
 
 		// First location should no longer be valid (already visited)
 		valid, err = service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 }
@@ -323,7 +324,7 @@ func TestNavigationService_EdgeCases(t *testing.T) {
 		team := createTestTeamWithInstance(t, 999, 3) // Invalid mode
 
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 		assert.Contains(t, err.Error(), "invalid navigation mode")
 	})
@@ -343,7 +344,7 @@ func TestNavigationService_EdgeCases(t *testing.T) {
 		}
 
 		valid, err := service.IsValidLocation(context.Background(), team, "MARKER0")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, valid)
 	})
 }

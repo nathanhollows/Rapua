@@ -34,33 +34,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"teams-list\" class=\"join join-vertical w-full px-5 rounded-lg\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse \n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"flex gap-3 items-center flex-row\"><a href=\"#\" class=\"font-bold text-base-content text-sm\" _=\"on click\n\t\t\t\t\t\tif I do not match .opacity-60 and (next <a/>) matches .opacity-60\n\t\t\t\t\t\t\tremove .opacity-60 from next <a/>\n\t\t\t\t\t\t\tremove .hidden from <.team-item.inactive/>\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .opacity-60 to next <a/>\n\t\t\t\t\t\t\tremove .opacity-60 from me\n\t\t\t\t\t\t\tremove .hidden from <.team-item.active/>\n\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\tend\"><span _=\"on htmx:afterSettle from body set my textContent to <.team-item.active/>'s length\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(filter(teams, func(team models.Team) bool { return team.HasStarted }))))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 133, Col: 95}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> Active</a> <a href=\"#\" class=\"font-bold text-sm\" _=\"on click\n\t\t\t\t\t\tif I do not match .opacity-60 and (previous <a/>) matches .opacity-60\n\t\t\t\t\t\t\tremove .opacity-60 from previous <a/>\n\t\t\t\t\t\t\tremove .hidden from <.team-item.active/>\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .opacity-60 to previous <a/>\n\t\t\t\t\t\t\tremove .opacity-60 from me\n\t\t\t\t\t\t\tremove .hidden from <.team-item.inactive/>\n\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\tend\"><span _=\"on htmx:afterSettle from body or htmx:afterRequest from #delete-confirm wait 0.5s set my textContent to <.team-item.inactive/>'s length\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(filter(teams, func(team models.Team) bool { return !team.HasStarted }))))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 152, Col: 96}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> Inactive</a></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"on input \n\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<ul class=\"list rounded-lg mx-5\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse \n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"filter\"><input class=\"btn btn-sm filter-reset\" type=\"radio\" name=\"activefilter\" aria-label=\"All\" _=\"\n\t\t\t\t\t\t\ton click remove .hidden from <.team-item/>\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Active Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Inactive Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-5 h-5\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\ton input \n\t\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"> <button id=\"clear-search\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\tinit if #search-teams's value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\tset #search-teams's value to ''\n\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\tsend input to #search-teams\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -76,22 +50,22 @@ func TeamsTable(teams []models.Team) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</ul><div id=\"teams-list\" class=\"join join-vertical w-full px-5 rounded-lg\"><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(teams) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " _=\"on htmx:afterSettle from body\n\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div><dialog id=\"confirm_reset_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Reset teams</h3><p class=\"pt-4\">You are about to reset  <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all related data including:</p><ul><li>the team name</li><li>all related check-ins, points, activity progress, and media</li></ul><p>Only the team code will be kept. This action cannot be undone.</p><form hx-post=\"/admin/teams/reset\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_reset_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-warning\" onclick=\"confirm_reset_modal.close()\">Reset</button></div></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete teams</h3><p class=\"pt-4\">You are about to delete <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all data including:</p><ul><li>the team</li><li>check-ins</li><li>activity progress</li><li>any uploaded media</li></ul><p>This action cannot be undone.</p><form hx-delete=\"/admin/teams/delete\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button id=\"delete-confirm\" type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " _=\"on htmx:afterSettle from body\n\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div><dialog id=\"confirm_reset_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Reset teams</h3><p class=\"pt-4\">You are about to reset  <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all related data including:</p><ul><li>the team name</li><li>all related check-ins, points, activity progress, and media</li></ul><p>Credits are not restored if a team is reset.</p><p>Only the team code will be kept. This action cannot be undone.</p><form hx-post=\"/admin/teams/reset\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_reset_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-warning\" onclick=\"confirm_reset_modal.close()\">Reset</button></div></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete teams</h3><p class=\"pt-4\">You are about to delete <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all data including:</p><ul><li>the team</li><li>check-ins</li><li>activity progress</li><li>any uploaded media</li></ul><p>Credits are not restored if a team is deleted.</p><p>This action cannot be undone.</p><form hx-delete=\"/admin/teams/delete\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button id=\"delete-confirm\" type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -115,9 +89,9 @@ func TeamsList(teams []models.Team) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var4 == nil {
-			templ_7745c5c3_Var4 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, team := range teams {
@@ -146,57 +120,75 @@ func teamItem(team models.Team, classes string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var6 = []any{fmt.Sprint("team-item flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors ", classes)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+		var templ_7745c5c3_Var4 = []any{fmt.Sprint("team-item list-row hover:bg-base-200 transition-colors justify-between flex ", classes)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<li class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var4).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><div class=\"flex flex-row items-center gap-3 grow\"><input name=\"team-checkbox\" type=\"checkbox\" class=\"team-checkbox checkbox checkbox-sm checkbox-primary\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><div class=\"flex flex-row items-center gap-3 grow\"><input name=\"team-checkbox\" type=\"checkbox\" class=\"team-checkbox checkbox checkbox-sm checkbox-primary\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 306, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 333, Col: 21}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" _=\"on htmx:afterRequest from #delete-confirm\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tadd .bg-danger .text-danger-content to closest .team-item\n\t\t\t\t\t\ttransition opacity to 0 then\n\t\t\t\t\t\tremove the closest .team-item\n\t\t\t\t\tend\n\t\t\t\t\ton input or change\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tremove .bg-transparent from closest .team-item\n\t\t\t\t\t\t\tadd .bg-base-200 to closest .team-item\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to closest .team-item\n\t\t\t\t\t\t\tremove .bg-base-200 from closest .team-item\n\t\t\t\t\t\tend\n\t\t\t\t\"><!-- Location code --><div class=\"tooltip cursor-pointer\" data-tip=\"Click to copy\" _=\"on click \n\t\t\t\t\twriteText(my textContent) on navigator.clipboard\n\t\t\t\t\tset @data-tip to 'Copied!'\n\t\t\t\t\twait 2s\n\t\t\t\t\tset @data-tip to 'Click to copy'\n\t\t\t\t\t\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" _=\"on htmx:afterRequest from #delete-confirm\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tadd .bg-danger .text-danger-content to closest .team-item\n\t\t\t\t\t\ttransition opacity to 0 then\n\t\t\t\t\t\tremove the closest .team-item\n\t\t\t\t\tend\n\t\t\t\t\ton input or change\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tremove .bg-transparent from closest .team-item\n\t\t\t\t\t\t\tadd .bg-base-200 to closest .team-item\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to closest .team-item\n\t\t\t\t\t\t\tremove .bg-base-200 from closest .team-item\n\t\t\t\t\t\tend\n\t\t\t\t\"><!-- Location code --><div class=\"tooltip cursor-pointer\" data-tip=\"Click to copy\" _=\"on click \n\t\t\t\t\twriteText(my textContent) on navigator.clipboard\n\t\t\t\t\tset @data-tip to 'Copied!'\n\t\t\t\t\twait 2s\n\t\t\t\t\tset @data-tip to 'Click to copy'\n\t\t\t\t\t\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.HasStarted {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"team-code badge badge-success badge-outline font-mono tracking-wider\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span class=\"team-code badge badge-success badge-outline font-mono tracking-wider\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 335, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 362, Col: 99}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"team-code badge font-mono tracking-wider\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 364, Col: 71}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -204,77 +196,55 @@ func teamItem(team models.Team, classes string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"team-code badge font-mono tracking-wider\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 337, Col: 71}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><!-- Location name -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><!-- Location name -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Name == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<em class=\"flex-grow opacity-50\">No name set</em> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<em class=\"flex-grow opacity-50\">No name set</em> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a class=\"flex-grow\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a class=\"flex-grow\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 349, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 376, Col: 16}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if team.HasStarted {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<button class=\"btn btn-xs\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<button class=\"btn btn-xs\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/activity/team/%s", team.Code))
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/activity/team/%s", team.Code))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 355, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 382, Col: 63}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-swap=\"innerHTML\">See activity</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" hx-target=\"#team_modal .modal-box\" hx-trigger=\"click\" hx-swap=\"innerHTML\">See activity</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = teamModal().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -282,7 +252,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 	})
 }
 
-func Teams(teams []models.Team) templ.Component {
+func Teams(teams []models.Team, credits int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -298,12 +268,50 @@ func Teams(teams []models.Team) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"hidden bg-danger text-danger-content border-error border-warning\"></span><div class=\"flex gap-3 flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Teams<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewbox=\"0 0 24 24\" fill=\"none\" stroke=\"currentcolor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m12 16v-4\"></path><path d=\"m12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Teams</h2><p>Teams can play individually or as a group sharing a single device with a unique team code.</p><p>Progress is tracked collectively for each team, whether played by an individual or a group.</p><p>Team codes are randomly generated. Players can set their own team names when they start playing.</p></div></div></div></h1><div class=\"flex gap-3\"><button class=\"btn btn-secondary\" onclick=\"add_teams_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg> Add teams</button></div></div><div id=\"teams-table\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"hidden bg-danger text-danger-content border-error border-warning\"></span><div class=\"flex gap-3 flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Teams<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewbox=\"0 0 24 24\" fill=\"none\" stroke=\"currentcolor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m12 16v-4\"></path><path d=\"m12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Teams</h2><p>Teams can play individually or as a group sharing a single device with a unique team code.</p><p>Progress is tracked collectively for each team, whether played by an individual or a group.</p><p>Team codes are randomly generated. Players can set their own team names when they start playing.</p></div></div></div></h1><a href=\"/admin/settings/credits\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if credits <= 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"badge badge-soft badge-error tooltip tooltip-bottom\" data-tip=\"No credits remaining! New teams won't be able to start playing.\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " else")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if credits >= 5 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " class=\"badge badge-soft badge-info tooltip tooltip-bottom\" data-tip=\"Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " class=\"badge badge-soft badge-warning tooltip tooltip-bottom\" data-tip=\"Low on credits! Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, ">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(credits))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 432, Col: 24}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " credits remaining</a><div class=\"flex gap-3\"><button class=\"btn btn-secondary\" onclick=\"add_teams_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg> Add teams</button></div></div><div id=\"teams-table\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -311,7 +319,11 @@ func Teams(teams []models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div><!-- Modal for adding teams --><dialog id=\"add_teams_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"font-bold text-lg\">Quick add teams</h3><p class=\"py-4\">How many teams would you like to add?</p><form hx-post=\"/admin/teams/add\" hx-target=\"#teams-list\" hx-swap=\"beforeend swap:0.5s\" class=\"join flex flex-row w-full\"><input name=\"count\" type=\"number\" id=\"count\" class=\"input join-item flex-grow\" placeholder=\"1+\" min=\"1\" step=\"1\" value=\"10\"> <button class=\"btn btn-primary join-item\" onclick=\"add_teams_modal.close()\">Add Teams</button></form><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Nevermind</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><!-- Modal for adding teams --><dialog id=\"add_teams_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"font-bold text-lg\">Quick add teams</h3><p class=\"py-4\">How many teams would you like to add?</p><form hx-post=\"/admin/teams/add\" hx-target=\"#teams-list\" hx-swap=\"beforeend swap:0.5s\" class=\"join flex flex-row w-full\"><input name=\"count\" type=\"number\" id=\"count\" class=\"input join-item flex-grow\" placeholder=\"1+\" min=\"1\" step=\"1\" value=\"10\"> <button class=\"btn btn-primary join-item\" onclick=\"add_teams_modal.close()\">Add Teams</button></form><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Nevermind</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = teamModal().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

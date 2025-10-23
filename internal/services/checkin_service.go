@@ -11,6 +11,12 @@ import (
 	"github.com/nathanhollows/Rapua/v4/repositories"
 )
 
+const (
+	bonusFirstVisit  = 1.0
+	bonusSecondVisit = 0.5
+	bonusThirdVisit  = 0.2
+)
+
 type LocationStatsService interface {
 	IncrementVisitors(ctx context.Context, location *models.Location) error
 	DecrementVisitors(ctx context.Context, location *models.Location) error
@@ -102,10 +108,16 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 			switch location.TotalVisits {
 			case 0:
 				bonusPoints = location.Points // First visit gets +100% bonus (2x total)
+
 			case 1:
-				bonusPoints = int(float64(location.Points) * 0.5) // Second visit gets +50% bonus (1.5x total)
+				bonusPoints = int(
+					float64(location.Points) * bonusSecondVisit,
+				) // Second visit gets +50% bonus (1.5x total)
+			//nolint:mnd // Magic numbers for bonus multipliers
 			case 2:
-				bonusPoints = int(float64(location.Points) * 0.2) // Third visit gets +20% bonus (1.2x total)
+				bonusPoints = int(
+					float64(location.Points) * bonusThirdVisit,
+				) // Third visit gets +20% bonus (1.2x total)
 			default:
 				bonusPoints = 0 // No bonus for later visits
 			}
@@ -121,11 +133,13 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 			// Calculate total points with bonus
 			switch location.TotalVisits {
 			case 0:
-				pointsForCheckInRecord = location.Points * 2 // First visit gets double points
+				pointsForCheckInRecord = location.Points * (1 + bonusFirstVisit) // First visit gets double points
+
 			case 1:
-				pointsForCheckInRecord = int(float64(location.Points) * 1.5) // Second visit gets 1.5x points
+				pointsForCheckInRecord = int(float64(location.Points) * (1 + bonusSecondVisit)) // Second visit gets 1.5x points
+			//nolint:mnd // Magic numbers for bonus multipliers
 			case 2:
-				pointsForCheckInRecord = int(float64(location.Points) * 1.2) // Third visit gets 1.2x points
+				pointsForCheckInRecord = int(float64(location.Points) * (1 + bonusThirdVisit)) // Third visit gets 1.2x points
 			default:
 				pointsForCheckInRecord = location.Points // Regular points for all other visits
 			}

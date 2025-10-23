@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupUserRepo(t *testing.T) (repositories.UserRepository, db.Transactor, func()) {
@@ -36,8 +37,8 @@ func TestUserRepository_Create(t *testing.T) {
 	}
 
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, user.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, user.ID)
 }
 
 func TestUserRepository_GetUserByEmail(t *testing.T) {
@@ -53,11 +54,11 @@ func TestUserRepository_GetUserByEmail(t *testing.T) {
 		Provider: "local",
 	}
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test GetUserByEmail
 	fetchedUser, err := repo.GetByEmail(ctx, user.Email)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, user.Email, fetchedUser.Email)
 	assert.Equal(t, user.Name, fetchedUser.Name)
 }
@@ -75,7 +76,7 @@ func TestUserRepository_Update(t *testing.T) {
 		Provider: "local",
 	}
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Update user
 
@@ -107,14 +108,14 @@ func TestUserRepository_Update(t *testing.T) {
 	user.CurrentInstanceID = newCurrentInstanceID
 
 	err = repo.Update(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify update
 	fetchedUser, err := repo.GetByEmail(ctx, user.Email)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, newName, fetchedUser.Name)
 	assert.Equal(t, newEmailToken, fetchedUser.EmailToken)
-	assert.NotEqual(t, user.EmailTokenExpiry, fetchedUser.EmailTokenExpiry)
+	require.NotEqual(t, user.EmailTokenExpiry, fetchedUser.EmailTokenExpiry)
 	assert.Equal(t, newEmailVerified, fetchedUser.EmailVerified)
 	assert.Equal(t, newPassword, fetchedUser.Password)
 	assert.Equal(t, newCurrentInstanceID, fetchedUser.CurrentInstanceID)
@@ -133,11 +134,11 @@ func TestUserRepository_FindUserByID(t *testing.T) {
 		Provider: "local",
 	}
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test FindUserByID
 	fetchedUser, err := repo.GetByID(ctx, user.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, user.ID, fetchedUser.ID)
 	assert.Equal(t, user.Email, fetchedUser.Email)
 }
@@ -155,11 +156,11 @@ func TestUserRepository_GetUserByEmailAndProvider(t *testing.T) {
 		Provider: "local",
 	}
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test GetUserByEmailAndProvider
 	fetchedUser, err := repo.GetByEmailAndProvider(ctx, user.Email, "local")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, user.Email, fetchedUser.Email)
 	assert.Equal(t, user.Provider, fetchedUser.Provider)
 }
@@ -177,7 +178,7 @@ func TestUserRepository_Delete(t *testing.T) {
 		Provider: "local",
 	}
 	err := repo.Create(ctx, user)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Delete user
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -185,13 +186,13 @@ func TestUserRepository_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = repo.Delete(ctx, tx, user.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 
 	// Verify user is deleted
 	fetchedUser, err := repo.GetByEmail(ctx, user.Email)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, fetchedUser)
 }

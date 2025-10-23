@@ -62,7 +62,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 	t.Run("Successful authentication", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, password)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testUser.ID, user.ID)
 		assert.Equal(t, testUser.Email, user.Email)
 	})
@@ -70,7 +70,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 	t.Run("Empty email", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "", password)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "email and password are required")
 		assert.Nil(t, user)
 	})
@@ -78,7 +78,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 	t.Run("Empty password", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "email and password are required")
 		assert.Nil(t, user)
 	})
@@ -86,7 +86,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 	t.Run("Invalid email", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "nonexistent@example.com", password)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
 	})
@@ -94,7 +94,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 	t.Run("Invalid password", func(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, "wrongPassword")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid email or password")
 		assert.Nil(t, user)
 	})
@@ -103,7 +103,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), "  ", "  ")
 
 		// Should pass validation (non-empty strings)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
 	})
@@ -215,7 +215,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 		}
 
 		user, err := service.GetAuthenticatedUser(req)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testUser.ID, user.ID)
 		assert.Equal(t, testUser.Email, user.Email)
 	})
@@ -224,7 +224,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 
 		user, err := service.GetAuthenticatedUser(req)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, user)
 	})
 
@@ -245,7 +245,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 		}
 
 		user, err := service.GetAuthenticatedUser(req)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 		assert.Nil(t, user)
 	})
@@ -268,7 +268,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 		}
 
 		user, err := service.GetAuthenticatedUser(req)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 		assert.Nil(t, user)
 	})
@@ -291,7 +291,7 @@ func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
 		}
 
 		user, err := service.GetAuthenticatedUser(req)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, user)
 	})
 }
@@ -322,7 +322,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, gothUser.Name, user.Name)
 		assert.Equal(t, gothUser.Email, user.Email)
@@ -339,7 +339,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, gothUser.Name, user.Name)
 		assert.Equal(t, gothUser.Email, user.Email)
@@ -356,7 +356,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unsupported provider")
 		assert.Nil(t, user)
 	})
@@ -371,7 +371,7 @@ func TestIdentityService_CreateUserWithOAuth(t *testing.T) {
 		user, err := service.CreateUserWithOAuth(context.Background(), gothUser)
 
 		// Should create user even with empty name/email
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, models.ProviderGoogle, user.Provider)
 	})
@@ -393,7 +393,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 
 		user, err := service.OAuthLogin(context.Background(), "google", gothUser)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, existingUser.ID, user.ID)
 		assert.Equal(t, existingUser.Email, user.Email)
 	})
@@ -408,7 +408,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 
 		user, err := service.OAuthLogin(context.Background(), "google", gothUser)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
 		assert.Equal(t, newEmail, user.Email)
 		assert.Equal(t, models.ProviderGoogle, user.Provider)
@@ -423,7 +423,7 @@ func TestIdentityService_OAuthLogin(t *testing.T) {
 
 		user, err := service.OAuthLogin(context.Background(), "unsupported", gothUser)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "creating user with OAuth")
 		assert.Nil(t, user)
 	})
@@ -464,7 +464,7 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 			"nonexistent@example.com",
 		)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "getting user by email and provider")
 		assert.Nil(t, foundUser)
 	})
@@ -492,7 +492,7 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 	t.Run("Successful email verification", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), token)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify the user was updated
 		updatedUser, err := userRepo.GetByID(context.Background(), user.ID)
@@ -505,14 +505,14 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 	t.Run("Invalid token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "invalid-token")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrInvalidToken, err)
 	})
 
 	t.Run("Empty token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		// Empty token may return either ErrInvalidToken or ErrTokenExpired depending on implementation
 		assert.True(t, errors.Is(err, services.ErrInvalidToken) || errors.Is(err, services.ErrTokenExpired))
 	})
@@ -532,7 +532,7 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 	t.Run("Expired token", func(t *testing.T) {
 		err := service.VerifyEmail(context.Background(), "expired-token")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrTokenExpired, err)
 	})
 }
@@ -578,7 +578,7 @@ func TestIdentityService_SendEmailVerification(t *testing.T) {
 
 		err = service.SendEmailVerification(context.Background(), user)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, services.ErrUserAlreadyVerified, err)
 	})
 }
@@ -599,7 +599,7 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), longEmail, longPassword)
 
 		// Should pass validation but fail on database lookup
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
 	})
@@ -611,7 +611,7 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), unicodeEmail, password)
 
 		// Should pass validation but fail on database lookup
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
 	})
@@ -623,7 +623,7 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 		user, err := service.AuthenticateUser(context.Background(), email, specialPassword)
 
 		// Should pass validation but fail on database lookup
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "error getting user by email")
 		assert.Nil(t, user)
 	})

@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupLocationStatsService(t *testing.T) (services.LocationStatsService, func()) {
@@ -37,14 +38,14 @@ func TestLocationStatsService_IncrementVisitors(t *testing.T) {
 		}
 
 		err := service.IncrementVisitors(context.Background(), location)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 6, location.TotalVisits)
 		assert.Equal(t, 3, location.CurrentCount)
 	})
 
 	t.Run("Increment visitors with nil location", func(t *testing.T) {
 		err := service.IncrementVisitors(context.Background(), nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "location cannot be nil")
 	})
 
@@ -60,7 +61,7 @@ func TestLocationStatsService_IncrementVisitors(t *testing.T) {
 		}
 
 		err := service.IncrementVisitors(context.Background(), location)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 1, location.TotalVisits)
 		assert.Equal(t, 1, location.CurrentCount)
 	})
@@ -82,14 +83,14 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		}
 
 		err := service.DecrementVisitors(context.Background(), location)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 5, location.TotalVisits) // TotalVisits should not change
 		assert.Equal(t, 2, location.CurrentCount)
 	})
 
 	t.Run("Decrement visitors with nil location", func(t *testing.T) {
 		err := service.DecrementVisitors(context.Background(), nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "location cannot be nil")
 	})
 
@@ -105,7 +106,7 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		}
 
 		err := service.DecrementVisitors(context.Background(), location)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "current count cannot be negative")
 		assert.Equal(t, 0, location.CurrentCount) // Should remain unchanged
 	})
@@ -122,7 +123,7 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		}
 
 		err := service.DecrementVisitors(context.Background(), location)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 5, location.TotalVisits) // TotalVisits should not change
 		assert.Equal(t, 0, location.CurrentCount)
 	})

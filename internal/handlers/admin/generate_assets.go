@@ -69,7 +69,6 @@ func (h *Handler) QRCode(w http.ResponseWriter, r *http.Request) {
 
 	// Generate the QR code
 	err = h.assetGenerator.CreateQRCodeImage(
-		r.Context(),
 		path,
 		content,
 		h.assetGenerator.WithQRFormat(extension),
@@ -110,7 +109,6 @@ func (h *Handler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Request) 
 
 			// Generate the QR code
 			err := h.assetGenerator.CreateQRCodeImage(
-				r.Context(),
 				path,
 				content,
 				h.assetGenerator.WithQRFormat(extension),
@@ -123,7 +121,7 @@ func (h *Handler) GenerateQRCodeArchive(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	path, err := h.assetGenerator.CreateArchive(r.Context(), paths)
+	path, err := h.assetGenerator.CreateArchive(paths)
 	if err != nil {
 		h.logger.Error("QR codes could not be zipped", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "QR codes could not be zipped", http.StatusInternalServerError)
@@ -152,7 +150,6 @@ func (h *Handler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 		if _, statErr := os.Stat(path); statErr != nil {
 			// Generate the QR code
 			qrErr := h.assetGenerator.CreateQRCodeImage(
-				r.Context(),
 				path,
 				content,
 				h.assetGenerator.WithQRFormat(pngExtension),
@@ -171,7 +168,7 @@ func (h *Handler) GeneratePosters(w http.ResponseWriter, r *http.Request) {
 		}
 		pdfData.Pages = append(pdfData.Pages, page)
 	}
-	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
+	path, err := h.assetGenerator.CreatePDF(pdfData)
 	if err != nil {
 		h.logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "Posters could not be generated", http.StatusInternalServerError)
@@ -223,7 +220,6 @@ func (h *Handler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 	if _, statErr := os.Stat(path); statErr != nil {
 		// Generate the QR code
 		qrErr := h.assetGenerator.CreateQRCodeImage(
-			r.Context(),
 			path,
 			content,
 			h.assetGenerator.WithQRFormat(pngExtension),
@@ -242,7 +238,7 @@ func (h *Handler) GeneratePoster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pdfData.Pages = append(pdfData.Pages, page)
-	path, err := h.assetGenerator.CreatePDF(r.Context(), pdfData)
+	path, err := h.assetGenerator.CreatePDF(pdfData)
 	if err != nil {
 		h.logger.Error("Posters could not be generated", "error", err, "instance", user.CurrentInstanceID)
 		http.Error(w, "Posters could not be generated", http.StatusInternalServerError)

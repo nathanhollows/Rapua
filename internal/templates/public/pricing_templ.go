@@ -8,6 +8,11 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v4/config"
+)
+
 func Pricing() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -29,7 +34,72 @@ func Pricing() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Why Section --><section id=\"why\" class=\"container max-w-2xl mx-auto px-4 py-8 prose\"><h1 class=\"text-center mb-8\">Pay what you want</h1><p>I built Rapua to empower educators, communicators, and communities with the tools they need to create engaging, educational experiences. I believe in making the platform accessible to everyone, which is why Rapua is <strong>free for all educators and communicators</strong>—no strings attached.</p><p>However, if you believe in the project and want to help me continue to create and maintain these tools, I invite you to contribute what you can. Your support, no matter the amount, helps keep Rapua thriving.</p><div class=\"text-center\"><a href=\"https://buy.stripe.com/aEUeYd2XZcGx3Pq4gg\" class=\"btn btn-accent min-w-80 mt-5 mx-auto mb-0\">Contribute</a><p class=\"text-sm text-center opacity-60 mt-3\">All payments are processed securely through Stripe.</p></div></section><!-- Costs --><section class=\"flex flex-col gap-5 items-center max-w-5xl mx-auto\"><!-- Title --><h1 class=\"font-bold text-3xl mb-8\">Where your contribution goes</h1><div>Your support helps keep Rapua free and thriving for educators and communicators.</div><div class=\"grid grid-cols-1 md:grid-cols-3 items-start px-2 gap-8\"><div class=\"flex flex-col gap-5 bg-base-200 rounded-box p-8 shadow-lg outline outline-info\"><div class=\"flex flex-col gap-4 text-center\"><h2 class=\"text-xl\">Server Costs</h2><h1 class=\"text-5xl font-bold\">$300/yr</h1><span class=\"text-sm\">Show your support and keep Rapua accessible to all.</span></div></div><div class=\"flex flex-col gap-5 bg-base-200 rounded-box p-8 shadow-lg outline outline-info\"><div class=\"flex flex-col gap-4 text-center\"><h2 class=\"text-xl\">Development</h2><h1 class=\"text-5xl font-bold\">300 hrs</h1><span class=\"text-sm font-bold\">(And counting)</span> <span class=\"text-sm\">Helps me continue to build and improve Rapua for you.</span></div></div><div class=\"flex flex-col gap-5 bg-base-200 rounded-box p-8 shadow-lg outline outline-info\"><div class=\"flex flex-col gap-4 text-center\"><h2 class=\"text-xl\">Maintenance</h2><h1 class=\"text-5xl font-bold\">10 hrs/mo</h1><span class=\"text-sm\">Help keep Rapua running smoothly.</span></div></div></div></section><!-- Optional Payment Section --><section id=\"optional-payment\" class=\"container max-w-2xl mx-auto px-4 py-16 prose\"><h2 class=\"text-3xl text-center mb-8\">Or Use it For Free</h2><p>Not everyone is in a position to contribute, and that's all good! If you’re an educator, communicator, or simply unable to pay, please continue to use Rapua with no payment required.</p><p>If you want to self-host Rapua, you can find the <a href=\"https://github.com/nathanhollows/Rapua\" rel=\"external\">source code on GitHub</a>. Feel free to fork the project and make it your own.</p><p>Whether you choose to contribute or not, I am grateful to have you on board for the journey! Thanks for coming along for the ride.</p></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Decorative Background Elements --><div class=\"absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 dark:bg-accent/10 rounded-full blur-3xl\"></div><div class=\"absolute bottom-1/3 right-1/3 w-96 h-96 bg-primary/10 rounded-full blur-3xl\"></div><!-- Main Content --><main class=\"max-w-7xl mx-auto px-8 py-16 space-y-24\"><!-- Hero Section --><section class=\"relative z-10 max-w-6xl mx-auto text-center px-8\"><h1 class=\"text-5xl md:text-6xl xl:text-7xl font-bold mb-8\"><span class=\"font-light\">Simple,</span><br class=\"hidden md:block\"><span class=\"font-bold\">Fair Pricing</span></h1><p class=\"text-xl md:text-2xl max-w-3xl mx-auto font-medium mb-8\">One credit = one team starts playing. <br>No premium tiers, no locked functionality.</p></section><!-- Pricing Cards --><section class=\"grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto\"><!-- Free Credits Card --><div class=\"card indicator indicator-center w-full bg-gradient-to-br from-secondary/10 dark:from-secondary/5 to-secondary/20 dark:to-secondary/10 border border-secondary/50 dark:border-secondary/20 hover:border-secondary/80 dark:hover:border-secondary/40 transition-all hover:shadow-lg\"><div class=\"indicator-item badge badge-secondary badge-lg\">Free</div><div class=\"card-body p-8\"><div class=\"text-center mb-6\"><h2 class=\"text-2xl font-bold mb-2\">Monthly Credits</h2></div><div class=\"flex flex-row justify-around w-full md:w-8/12 mx-auto text-center space-y-4 mb-6\"><div><div class=\"text-4xl font-bold mb-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(config.RegularUserFreeCredits())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/pricing.templ`, Line: 39, Col: 41}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"text-base-content/80\">For all users</div></div><div class=\"divider divider-horizontal my-2\">OR</div><div><div class=\"text-4xl font-bold mb-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(config.EducatorFreeCredits())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/pricing.templ`, Line: 46, Col: 38}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"text-base-content/80\">For Educators</div></div></div><div class=\"space-y-2\"><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">Credits topped up monthly</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">All features included</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">No credit card required</span></div></div></div></div><!-- Paid Credits Card --><div class=\"card indicator indicator-center w-full bg-gradient-to-br from-primary/10 dark:from-primary/5 to-primary/20 dark:to-primary/10 border border-primary/20 hover:border-primary/40 transition-all hover:shadow-lg\"><div class=\"indicator-item badge badge-primary badge-lg\">Paid</div><div class=\"card-body p-8\"><div class=\"text-center mb-6\"><h2 class=\"text-2xl font-bold mb-2\">Extra Credits</h2></div><div class=\"text-center mb-6\"><div class=\"text-5xl font-bold mb-2\">$")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", float32(config.CreditPriceCents())/100))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/pricing.templ`, Line: 84, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"text-base-content/80 mb-2\">per credit</div></div><div class=\"space-y-2 mt-auto\"><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">Credits never expire</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">Free credits used first</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span class=\"text-sm\">Still receive free monthly credits!</span></div></div></div></div></section><section class=\"my-16\"><h2 class=\"text-3xl font-bold text-center mb-8\">Frequently Asked Questions</h2><div class=\"grid grid-cols-1 space-y-3 max-w-xl mx-auto\"><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">What is a credit?</div><div class=\"collapse-content prose\"><p>Think of a credit as a ticket for one team to join game. When the first player in a team enters their team code to start playing, the system deducts a credit from your account.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">When do my credits top up?</div><div class=\"collapse-content prose\"><p>Free credits top-up on the first day of each month (NZT time).</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">Do credits accrue over time?</div><div class=\"collapse-content prose\"><p>Free credits don't accumulate. The system will only top up free credits based on what you actually used. So if you used 6 free credits this month, the system tops you back up by 6 back the next month.</p><p>Paid credits, on the other hand, never expire and will stay in your account until you use them.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">How do I track my credits?</div><div class=\"collapse-content prose\"><p>Check your <a href=\"/admin/teams\" class=\"link\">Teams</a> page for a quick look at your current balance (both free and paid credits). For the full picture, head to the <a href=\"/admin/settings/credits\" class=\"link\">Credits</a> page in settings - it shows your total, usage history, and when you topped up.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">What happens if I run out of credits?</div><div class=\"collapse-content prose\"><p>Teams can't start playing until you have credits again. Players will see a friendly error message, and the system will give you a heads up when you log in so you're not caught off guard.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">How do I qualify for educator credits?</div><div class=\"collapse-content prose\"><p>Sign up with your work email address and Rapua will automatically detect if you're at an educational institution. If the system doesn't pick it up, <a href=\"/contact\" class=\"link\">get in touch</a> and I'll sort it out.</p><p>Educators include anyone working at schools, museums, universities, zoos, or art galleries.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">Why do educators get more free credits?</div><div class=\"collapse-content prose\"><p>Because they do incredible work with limited time and resources. Plus, I'm hoping to do a PhD in informal game-based learning someday, so this is my way of supporting the field I love.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">Is there a minimum purchase?</div><div class=\"collapse-content prose\"><p>The minimum purchase is 3 credits ($")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", float32(config.CreditPriceCents())/100*3))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/pricing.templ`, Line: 194, Col: 105}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " NZD). This is so I don't lose money in transaction fees.</p></div></div><div class=\"collapse bg-base-200 border-base-300 border\"><input type=\"checkbox\"><div class=\"collapse-title font-semibold\">Do you offer bulk discounts?</div><div class=\"collapse-content prose\"><p>No. At $")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", float32(config.CreditPriceCents())/100))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/pricing.templ`, Line: 203, Col: 75}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " NZD per credit, it's already pretty fair. </p></div></div></div></section></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

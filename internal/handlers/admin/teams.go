@@ -10,7 +10,7 @@ import (
 func (h *Handler) Teams(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	c := admin.Teams(user.CurrentInstance.Teams)
+	c := admin.Teams(user.CurrentInstance.Teams, user.FreeCredits+user.PaidCredits)
 	err := admin.Layout(c, *user, "Teams", "Teams").Render(r.Context(), w)
 
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupUploadsRepository(t *testing.T) (repositories.UploadsRepository, db.Transactor, func()) {
@@ -47,9 +48,9 @@ func TestUploadRepository_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.Create(context.Background(), tt.upload)
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, tt.upload.ID) // Ensure ID was generated
 			}
 		})
@@ -86,9 +87,9 @@ func TestUploadRepository_SearchByCriteria(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := repo.SearchByCriteria(context.Background(), tt.criteria)
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

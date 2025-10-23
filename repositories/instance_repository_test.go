@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 )
 
@@ -58,9 +59,9 @@ func TestInstanceRepository_Create(t *testing.T) {
 			inst := tc.instanceFn()
 			err := repo.Create(context.Background(), inst)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, inst.ID)
 			}
 		})
@@ -80,7 +81,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 				repo, _, cleanup := setupInstanceRepo(t)
 				defer cleanup()
 				err := repo.Create(ctx, &inst)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 			wantErr: false,
 		},
@@ -108,10 +109,10 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 
 			found, err := repo.GetByID(ctx, inst.ID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, found)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, found)
 				assert.Equal(t, inst.ID, found.ID)
 				assert.Equal(t, inst.Name, found.Name)
@@ -153,15 +154,15 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 					UserID: tc.userID,
 				}
 				err := repo.Create(ctx, inst)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			instances, err := repo.FindByUserID(ctx, tc.userID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, instances)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, instances, tc.count)
 			}
 		})
@@ -221,7 +222,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 					IsTemplate: true,
 				}
 				err := repo.Create(ctx, inst)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			for range tc.instanceCount {
 				inst := &models.Instance{
@@ -230,15 +231,15 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 					UserID: tc.userID,
 				}
 				err := repo.Create(ctx, inst)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			instances, err := repo.FindTemplates(ctx, tc.userID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, instances)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, instances, tc.templateCount)
 			}
 		})
@@ -291,18 +292,18 @@ func TestInstanceRepository_Update(t *testing.T) {
 
 			ctx := context.Background()
 			inst, err := tc.setupFn(ctx, t)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Now attempt to update
 			inst.Name = tc.updateName
 			err = repo.Update(ctx, &inst)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Check that it's updated
 				updated, getErr := repo.GetByID(ctx, inst.ID)
-				assert.NoError(t, getErr)
+				require.NoError(t, getErr)
 				assert.Equal(t, tc.updateName, updated.Name)
 			}
 		})
@@ -372,15 +373,15 @@ func TestInstanceRepository_Delete(t *testing.T) {
 				if rollbackErr != nil {
 					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
 				}
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				err = tx.Commit()
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Double-check that the instance no longer exists
 				found, findErr := repo.GetByID(ctx, inst.ID)
-				assert.Error(t, findErr)
+				require.Error(t, findErr)
 				assert.Nil(t, found)
 			}
 		})
@@ -412,7 +413,7 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 			defer cleanup()
 
 			tx, err := transactor.BeginTx(context.Background(), nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			ctx := context.Background()
 			// Create some instances for this user
@@ -423,7 +424,7 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 					UserID: tc.userID,
 				}
 				err := repo.Create(ctx, &inst)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			err = repo.DeleteByUser(ctx, tx, tc.userID)
@@ -432,14 +433,14 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 				if rollbackErr != nil {
 					t.Fatalf("failed to rollback transaction: %v", rollbackErr)
 				}
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				err = tx.Commit()
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Ensure none remain
 				found, err := repo.FindByUserID(ctx, tc.userID)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Empty(t, found)
 			}
 		})
@@ -487,15 +488,15 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 
 			ctx := context.Background()
 			err := tc.setupFn(ctx, t, tc.instanceID)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = repo.DismissQuickstart(ctx, tc.instanceID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				instances, findErr := repo.FindByUserID(ctx, tc.instanceID)
-				assert.NoError(t, findErr)
+				require.NoError(t, findErr)
 				for _, inst := range instances {
 					assert.True(t, inst.IsQuickStartDismissed, "quickstart should be dismissed")
 				}

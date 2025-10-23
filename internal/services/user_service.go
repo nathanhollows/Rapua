@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nathanhollows/Rapua/v4/config"
+	"github.com/nathanhollows/Rapua/v4/helpers"
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/nathanhollows/Rapua/v4/security"
@@ -51,6 +53,12 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User, passwor
 	// Generate UUID for user
 	user.ID = uuid.New().String()
 
+	// Set monthly credit limit based on email
+	user.MonthlyCreditLimit = config.GetFreeCreditsForEmail(user.Email, helpers.IsEducationalEmailHeuristic)
+
+	// Set initial free credits to the monthly limit
+	user.FreeCredits = user.MonthlyCreditLimit
+
 	return s.userRepo.Create(ctx, user)
 }
 
@@ -79,7 +87,8 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, 
 
 	// Handle work type if provided
 	if workType, exists := profile["work_type"]; exists {
-		if workType == "other" {
+		switch workType {
+		case "other":
 			otherWorkType, hasOther := profile["other_work_type"]
 			if hasOther && otherWorkType != "" {
 				user.WorkType.String = otherWorkType
@@ -87,11 +96,11 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, user *models.User, 
 			} else {
 				user.WorkType.Valid = false
 			}
-		} else if workType != "" {
+		case "":
+			user.WorkType.Valid = false
+		default:
 			user.WorkType.String = workType
 			user.WorkType.Valid = true
-		} else {
-			user.WorkType.Valid = false
 		}
 	}
 

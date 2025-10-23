@@ -61,10 +61,10 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 				tc.blockType,
 			)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.NotEmpty(t, blk.GetID(), "Expected a non-empty block ID")
+				require.NotEmpty(t, blk.GetID(), "Expected a non-empty block ID")
 				assert.Equal(t, tc.locationID, blk.GetLocationID(), "Location ID should match")
 				assert.Equal(t, tc.blockType, blk.GetType(), "Block type should match")
 			}
@@ -105,10 +105,10 @@ func TestBlockService_NewBlockState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			state, err := svc.NewBlockState(context.Background(), tc.blockID, tc.teamCode)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.NotEmpty(t, state.GetBlockID())
+				require.NotEmpty(t, state.GetBlockID())
 				assert.Equal(t, tc.blockID, state.GetBlockID())
 				assert.Equal(t, tc.teamCode, state.GetPlayerID())
 			}
@@ -149,10 +149,10 @@ func TestBlockService_NewMockBlockState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			state, err := svc.NewMockBlockState(context.Background(), tc.blockID, tc.teamCode)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.NotEmpty(t, state.GetBlockID())
+				require.NotEmpty(t, state.GetBlockID())
 				assert.Equal(t, tc.blockID, state.GetBlockID())
 			}
 		})
@@ -203,7 +203,7 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 
 			blk, err := svc.GetByBlockID(context.Background(), blockID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, blockID, blk.GetID())
@@ -270,7 +270,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 
 			blk, st, err := svc.GetBlockWithStateByBlockIDAndTeamCode(context.Background(), blockID, teamCode)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, blockID, blk.GetID())
@@ -325,7 +325,7 @@ func TestBlockService_FindByOwnerID(t *testing.T) {
 
 			blocksFound, err := svc.FindByOwnerID(context.Background(), tc.locationID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, blocksFound)
 			} else {
 				require.NoError(t, err)
@@ -388,7 +388,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 				tc.teamCode,
 			)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, blocksFound)
 				assert.Empty(t, states)
 			} else {
@@ -448,7 +448,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 
 			updated, err := svc.UpdateState(context.Background(), initialState)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, initialState.GetBlockID(), updated.GetBlockID())
@@ -509,7 +509,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 
 			err := svc.ReorderBlocks(context.Background(), tc.reorderIDs)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
@@ -573,7 +573,7 @@ func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
 
 			valRequired, err := svc.CheckValidationRequiredForLocation(context.Background(), tc.locationID)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.wantVal, valRequired, "Expected validation required to match")
@@ -647,7 +647,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 
 			valRequired, err := svc.CheckValidationRequiredForCheckIn(context.Background(), tc.locationID, tc.teamCode)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.wantVal, valRequired, "Expected validation result to match")
@@ -712,7 +712,7 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 
 			blocksFound, err := svc.FindByOwnerIDAndContext(context.Background(), tc.locationID, tc.context)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, blocksFound)
 			} else {
 				require.NoError(t, err)
@@ -788,7 +788,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 				tc.context,
 			)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, blocksFound)
 				assert.Empty(t, states)
 			} else {
@@ -858,10 +858,10 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 
 			updatedBlock, err := svc.UpdateBlock(context.Background(), blk, data)
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.NotNil(t, updatedBlock)
+				require.NotNil(t, updatedBlock)
 				assert.Equal(t, blk.GetID(), updatedBlock.GetID())
 			}
 		})

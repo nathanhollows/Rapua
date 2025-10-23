@@ -97,12 +97,12 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 			err := svc.DismissQuickstart(context.Background(), instanceID)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				if shouldExist {
 					// Verify the instance was actually updated in the database
@@ -153,9 +153,9 @@ func TestQuickstartService_DismissQuickstart_ValidationCases(t *testing.T) {
 			err := svc.DismissQuickstart(context.Background(), tc.instanceID)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -180,7 +180,7 @@ func TestQuickstartService_Integration_DatabasePersistence(t *testing.T) {
 
 	// Dismiss quickstart
 	err = svc.DismissQuickstart(context.Background(), instance.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify persistence
 	fetchedInstance, err = instanceRepo.GetByID(context.Background(), instance.ID)
@@ -208,7 +208,7 @@ func TestQuickstartService_Integration_MultipleInstances(t *testing.T) {
 
 	// Dismiss quickstart for instance1 only
 	err := svc.DismissQuickstart(context.Background(), instance1.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify instance1 is dismissed
 	fetchedInstance1, err := instanceRepo.GetByID(context.Background(), instance1.ID)
@@ -241,7 +241,7 @@ func TestQuickstartService_Integration_ContextCancellation(t *testing.T) {
 
 	// Try to dismiss quickstart with cancelled context
 	err := svc.DismissQuickstart(ctx, instance.ID)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "context canceled")
 }
 
@@ -293,7 +293,7 @@ func TestQuickstartService_Integration_RepositoryError(t *testing.T) {
 
 	// Test with a non-existent instance ID - repository will not error
 	err := svc.DismissQuickstart(context.Background(), "non-existent-instance")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Repository accepts the call and executes the update, even if no rows are affected
 }
 

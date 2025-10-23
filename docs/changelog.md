@@ -6,7 +6,34 @@ order: 100
 
 # Changelog
 
-## 5.0.0 (12-10-2025)
+## 5.1.0 (2025-10-23)
+
+Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 team start per game. That's it. No tiers. No limits. No bulk discounts. A single rate for each team. Users get additional monthly credits for free. Educators get a bit more. Easy.
+
+### Added
+
+- Simple credit system so Rapua can be self-sufficient. See [Pricing](/pricing) for details.
+- [Privacy](/privacy) updated with minor clarifying edits and [Terms and Conditions](/terms) created.
+- Config package to manage environment variables and configuration settings.
+- [Job scheduler](/docs/developer/job-scheduler) to manage recurring tasks.
+  - Monthly job includes topping all users up with free credits.
+  - Stale credit purchase clean up job
+- Indicators on the games and template page to show which game is currently selected and active.
+
+### Changed
+
+- Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now.
+- The [Experience Settings](/admin/experience) page is now much easier to read and nicer to look at.
+
+### Fixed
+
+- Template share link dialog no longer has duplicate URL field.
+- Experience preview now shows content blocks correctly.
+- Erroneous error appearing when launching a game from a template.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.1.0)
+
+## 5.0.0 (2025-10-12)
 
 v5.0.0 is a *major* release with big architectural changes to improve security, maintainability, and extensibility.
 
@@ -78,6 +105,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 
 ### Fixed
 
+- Upgraded to templ 0.3.xxx, fixed issues with LSPs and compilation. This upgrade required a move to Go 1.23.0.
 - Removed duplicate form input from image block.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.2.0)

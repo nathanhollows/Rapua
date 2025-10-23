@@ -85,12 +85,12 @@ func TestGameScheduleService_Start(t *testing.T) {
 			err := svc.Start(context.Background(), instance)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.True(t, instance.StartTime.Time.After(startTime.Add(-1*time.Second)))
 				assert.True(t, instance.StartTime.Time.Before(startTime.Add(1*time.Second)))
 			}
@@ -148,12 +148,12 @@ func TestGameScheduleService_Stop(t *testing.T) {
 			err := svc.Stop(context.Background(), instance)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.True(t, instance.EndTime.Time.After(stopTime.Add(-1*time.Second)))
 				assert.True(t, instance.EndTime.Time.Before(stopTime.Add(1*time.Second)))
 			}
@@ -220,12 +220,12 @@ func TestGameScheduleService_SetStartTime(t *testing.T) {
 			err := svc.SetStartTime(context.Background(), instance, tc.startTime)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.startTime.Unix(), instance.StartTime.Time.Unix())
 
 				// Check if end time was cleared when start time is after it
@@ -311,12 +311,12 @@ func TestGameScheduleService_SetEndTime(t *testing.T) {
 			err := svc.SetEndTime(context.Background(), instance, tc.endTime)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.endTime.Unix(), instance.EndTime.Time.Unix())
 			}
 		})
@@ -390,12 +390,12 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 			err := svc.ScheduleGame(context.Background(), instance, tc.startTime, tc.endTime)
 
 			if tc.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.startTime.Unix(), instance.StartTime.Time.Unix())
 				assert.Equal(t, tc.endTime.Unix(), instance.EndTime.Time.Unix())
 			}
@@ -422,28 +422,28 @@ func TestGameScheduleService_Integration_CompleteWorkflow(t *testing.T) {
 	endTime := time.Now().Add(3 * time.Hour)
 
 	err := svc.ScheduleGame(ctx, instance, startTime, endTime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, startTime.Unix(), instance.StartTime.Time.Unix())
 	assert.Equal(t, endTime.Unix(), instance.EndTime.Time.Unix())
 
 	// 2. Start the game immediately (should update start time)
 	err = svc.Start(ctx, instance)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, instance.StartTime.Time.Before(time.Now().Add(1*time.Second)))
 
 	// 3. Try to start again (should fail)
 	err = svc.Start(ctx, instance)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "game is already active")
 
 	// 4. Stop the game
 	err = svc.Stop(ctx, instance)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, instance.EndTime.Time.Before(time.Now().Add(1*time.Second)))
 
 	// 5. Try to stop again (should fail)
 	err = svc.Stop(ctx, instance)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "game is already closed")
 }
 
@@ -462,20 +462,20 @@ func TestGameScheduleService_Integration_DatabasePersistence(t *testing.T) {
 	endTime := time.Now().Add(3 * time.Hour)
 
 	err := svc.ScheduleGame(context.Background(), instance, startTime, endTime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify persistence by fetching from database
 	fetchedInstance, err := instanceRepo.GetByID(context.Background(), instance.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, startTime.Unix(), fetchedInstance.StartTime.Time.Unix())
 	assert.Equal(t, endTime.Unix(), fetchedInstance.EndTime.Time.Unix())
 
 	// Start the game and verify persistence
 	err = svc.Start(context.Background(), instance)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fetchedInstance, err = instanceRepo.GetByID(context.Background(), instance.ID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, fetchedInstance.StartTime.Time.Before(time.Now().Add(1*time.Second)))
 }
 
@@ -493,7 +493,7 @@ func TestGameScheduleService_Integration_EdgeCases(t *testing.T) {
 	newStartTime := time.Now().Add(2 * time.Hour)
 
 	err := svc.SetStartTime(context.Background(), instance, newStartTime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, newStartTime.Unix(), instance.StartTime.Time.Unix())
 	assert.True(t, instance.EndTime.IsZero(), "End time should be cleared when start time is after it")
 
@@ -502,6 +502,6 @@ func TestGameScheduleService_Integration_EdgeCases(t *testing.T) {
 	instance.StartTime = bun.NullTime{Time: equalTime}
 
 	err = svc.SetEndTime(context.Background(), instance, equalTime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, equalTime.Unix(), instance.EndTime.Time.Unix())
 }

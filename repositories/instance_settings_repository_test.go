@@ -59,7 +59,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 				return repo.Create(ctx, settings)
 			},
 			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, settings.InstanceID)
 			},
 		},
@@ -83,7 +83,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 				return repo.Update(ctx, settings)
 			},
 			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 				return repo.Delete(ctx, tx, settings.InstanceID)
 			},
 			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Optionally, query the database to confirm the instance was deleted
 			},
 		},
@@ -198,9 +198,9 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 			result, err := repo.GetByInstanceID(ctx, tt.instanceID)
 
 			if tt.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			if tt.expectNil {

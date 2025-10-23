@@ -70,7 +70,7 @@ func (s *StrArray) Scan(value any) error {
 
 // GetRouteStrategies returns a list of navigation modes.
 func GetRouteStrategies() RouteStrategies {
-	return []RouteStrategy{RouteStrategyRandom, RouteStrategyFreeRoam, RouteStrategyOrdered}
+	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandom}
 }
 
 // GetNavigationDisplayModes returns a list of navigation methods.
@@ -95,7 +95,7 @@ func (n RouteStrategy) String() string {
 
 // String returns the string representation of the NavigationDisplayMode.
 func (n NavigationDisplayMode) String() string {
-	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Content"}[n]
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues"}[n]
 }
 
 // String returns the string representation of the GameStatus.
@@ -132,7 +132,7 @@ func (g GameStatus) Description() string {
 	}[g]
 }
 
-// Parse RouteStrategy.
+// ParseRouteStrategy returns a RouteStrategy from a string.
 func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	switch s {
 	case "Random", "Randomised Route":
@@ -146,7 +146,7 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	}
 }
 
-// Parse NavigationDisplayMode.
+// ParseNavigationDisplayMode returns a NavigationDisplayMode from a string.
 func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 	switch s {
 	case "Show Map", "Map Only":
@@ -157,14 +157,14 @@ func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 		return NavigationDisplayNames, nil
 	case "Show Clues", "Clue-Based":
 		return NavigationDisplayClues, nil
-	case "Custom Content":
+	case "Custom Content", "Custom Clues":
 		return NavigationDisplayCustom, nil
 	default:
 		return NavigationDisplayMap, errors.New("invalid NavigationDisplayMode")
 	}
 }
 
-// Parse GameStatus.
+// ParseGameStatus returns a GameStatus from a string.
 func ParseGameStatus(s string) (GameStatus, error) {
 	switch s {
 	case "Scheduled":

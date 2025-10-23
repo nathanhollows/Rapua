@@ -161,7 +161,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if active {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"badge badge-sm badge-info tooltip cursor-default ml-2\" data-tip=\"Currently selected game\">Active</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"text-xs font-semibold opacity-60\">Currently selected game</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -178,7 +178,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			var templ_7745c5c3_Var6 templ.SafeURL
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 273, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 275, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 292, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 294, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -224,7 +224,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(instance.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 309, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 311, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 310, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 312, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(instance.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 320, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 322, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -263,7 +263,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 321, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 323, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -286,7 +286,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(instance.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 347, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 349, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -299,7 +299,7 @@ func instanceItem(instance models.Instance, active bool) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 348, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 350, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

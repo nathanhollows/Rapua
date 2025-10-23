@@ -1,22 +1,21 @@
-package services
+package services_test
 
 import (
 	"archive/zip"
-	"context"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/nathanhollows/Rapua/v4/internal/services"
 )
 
 func TestCreateQRCodeImage(t *testing.T) {
-	assetGen := NewAssetGenerator()
+	assetGen := services.NewAssetGenerator()
 
 	tests := []struct {
 		name      string
 		path      string
 		content   string
-		options   []QRCodeOption
+		options   []services.QRCodeOption
 		expectErr bool
 		cleanupFn func() // Function to clean up generated files if necessary.
 	}{
@@ -31,7 +30,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 			name:    "Invalid format",
 			path:    "invalid_format.qr",
 			content: "Hello, QR!",
-			options: []QRCodeOption{
+			options: []services.QRCodeOption{
 				assetGen.WithQRFormat("bmp"),
 			},
 			expectErr: true,
@@ -40,7 +39,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 			name:    "Valid PNG format",
 			path:    "valid.png",
 			content: "Hello, QR-1!",
-			options: []QRCodeOption{
+			options: []services.QRCodeOption{
 				assetGen.WithQRFormat("png"),
 			},
 			expectErr: false,
@@ -50,7 +49,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 			name:    "Valid SVG format",
 			path:    "valid.svg",
 			content: "Hello, QR-2!",
-			options: []QRCodeOption{
+			options: []services.QRCodeOption{
 				assetGen.WithQRFormat("svg"),
 			},
 			expectErr: false,
@@ -60,7 +59,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 			name:    "Custom Colors",
 			path:    "colored.svg",
 			content: "Hello, QR-3!",
-			options: []QRCodeOption{
+			options: []services.QRCodeOption{
 				assetGen.WithQRFormat("svg"),
 				assetGen.WithQRForeground("#FF0000"),
 				assetGen.WithQRBackground("#00FF00"),
@@ -72,7 +71,7 @@ func TestCreateQRCodeImage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := assetGen.CreateQRCodeImage(context.Background(), tt.path, tt.content, tt.options...)
+			err := assetGen.CreateQRCodeImage(tt.path, tt.content, tt.options...)
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("Expected error: %v, got: %v", tt.expectErr, err)
@@ -104,7 +103,7 @@ func fileExists(path string) bool {
 }
 
 func TestCreateArchive(t *testing.T) {
-	assetGen := NewAssetGenerator()
+	assetGen := services.NewAssetGenerator()
 
 	tests := []struct {
 		name      string
@@ -144,8 +143,10 @@ func TestCreateArchive(t *testing.T) {
 
 			// Execute
 			err := os.MkdirAll("assets/codes", 0755)
-			assert.NoError(t, err)
-			archivePath, err := assetGen.CreateArchive(context.Background(), tt.files)
+			if err != nil {
+				t.Fatalf("Failed to create assets directory: %v", err)
+			}
+			archivePath, err := assetGen.CreateArchive(tt.files)
 
 			// Check expectation
 			if (err != nil) != tt.expectErr {

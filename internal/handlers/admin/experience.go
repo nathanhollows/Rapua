@@ -1,9 +1,11 @@
 package admin
 
 import (
+	"maps"
 	"net/http"
 	"strconv"
 
+	"github.com/nathanhollows/Rapua/v4/blocks"
 	admin "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
 	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v4/models"
@@ -155,11 +157,40 @@ func (h *Handler) ExperiencePreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch navigation clue blocks for all next locations
+	allBlocks := make([]blocks.Block, 0)
+	allStates := make(map[string]blocks.PlayerState)
+
+	if team.Instance.Settings.NavigationDisplayMode == models.NavigationDisplayCustom {
+		for _, location := range locations {
+			locationBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+				r.Context(),
+				location.ID,
+				team.Code,
+				blocks.ContextLocationClues,
+			)
+			if err != nil {
+				h.handleError(
+					w,
+					r,
+					"Next: getting navigation blocks",
+					"Error loading navigation clues",
+					"Could not load navigation clues",
+					err,
+				)
+				return
+			}
+			allBlocks = append(allBlocks, locationBlocks...)
+			maps.Copy(allStates, blockStates)
+		}
+	}
+
 	var nextData templates.NextParams
 	nextData.Team = team
 	nextData.Settings = team.Instance.Settings
 	nextData.Locations = locations
-	nextData.Blocks = nil
+	nextData.Blocks = allBlocks
+	nextData.States = allStates
 
 	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
 	err = templates.Next(nextData).Render(r.Context(), w)

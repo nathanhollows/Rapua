@@ -1,11 +1,13 @@
 - /docs/changelog
 - /docs/deprecations
+- /docs/developer/billing
 - /docs/developer/contributing
 - /docs/developer/data-flow
 - /docs/developer/database-schema
 - /docs/developer/implementing-blocks
 - /docs/developer/index
 - /docs/developer/installation
+- /docs/developer/job-scheduler
 - /docs/developer/middleware
 - /docs/developer/migrations
 - /docs/developer/roadmap

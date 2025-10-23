@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v4/models"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupFacilitatorTokenRepo(t *testing.T) (repositories.FacilitatorTokenRepo, func()) {
@@ -35,11 +36,11 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 
 	// Save token
 	err := repo.SaveToken(ctx, token)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Retrieve token
 	retrieved, err := repo.GetToken(ctx, "jsonTest123")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, retrieved)
 	assert.Equal(t, token.Token, retrieved.Token)
 	assert.Equal(t, token.InstanceID, retrieved.InstanceID)

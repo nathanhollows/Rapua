@@ -52,12 +52,18 @@ func setupRouter(
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
-	router.Use(CSRF)
 
-	setupPublicRoutes(router, publicHandler)
-	setupPlayerRoutes(router, playerHandler)
-	setupAdminRoutes(router, adminHandler)
-	setupFacilitatorRoutes(router, adminHandler)
+	// Webhook routes that bypass CSRF protection
+	setupWebhookRoutes(router, adminHandler)
+
+	// All other routes with CSRF protection
+	router.Group(func(r chi.Router) {
+		r.Use(CSRF)
+		setupPublicRoutes(r, publicHandler)
+		setupPlayerRoutes(r, playerHandler)
+		setupAdminRoutes(r, adminHandler)
+		setupFacilitatorRoutes(r, adminHandler)
+	})
 
 	// Static files
 	workDir, _ := os.Getwd()
@@ -177,6 +183,7 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.Get("/contact", publicHandler.Contact)
 	router.Post("/contact", publicHandler.ContactPost)
 	router.Get("/privacy", publicHandler.Privacy)
+	router.Get("/terms", publicHandler.Terms)
 
 	router.Route("/login", func(r chi.Router) {
 		r.Get("/", publicHandler.Login)
@@ -324,10 +331,20 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/profile", adminHandler.SettingsProfile)
 			r.Post("/profile", adminHandler.SettingsProfilePost)
 			r.Get("/appearance", adminHandler.SettingsAppearance)
+			r.Route("/credits", func(r chi.Router) {
+				r.Get("/chart", adminHandler.SettingsCreditUsageChart)
+				r.Get("/", adminHandler.SettingsCreditUsage)
+			})
 			r.Get("/security", adminHandler.SettingsSecurity)
 			r.Post("/security", adminHandler.SettingsSecurityPost)
 			r.Delete("/delete-account", adminHandler.DeleteAccount)
-			// r.Get("/billing", adminHandler.SettingsBilling)
+		})
+
+		// Credit purchase endpoints
+		r.Route("/credits", func(r chi.Router) {
+			r.Post("/purchase/create-session", adminHandler.CreateCheckoutSession)
+			r.Get("/success", adminHandler.CreditPurchaseSuccess)
+			r.Get("/cancel", adminHandler.CreditPurchaseCancel)
 		})
 
 		r.NotFound(adminHandler.NotFound)
@@ -339,4 +356,10 @@ func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.Handler) {
 		r.Get("/login/{token}", adminHandler.FacilitatorLogin)
 		r.Get("/dashboard", adminHandler.FacilitatorDashboard)
 	})
+}
+
+// setupWebhookRoutes sets up webhook routes that bypass CSRF protection.
+func setupWebhookRoutes(router chi.Router, adminHandler *admin.Handler) {
+	// Webhook routes are registered before CSRF middleware, so they bypass it
+	router.Post("/webhooks/stripe", adminHandler.StripeWebhook)
 }

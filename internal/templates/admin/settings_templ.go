@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func Settings(user models.User) templ.Component {
+func Settings(contents templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,11 +34,11 @@ func Settings(user models.User) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><ul class=\"menu rounded-box w-80 h-min gap-1\" hx-target=\"#settings\" hx-swap=\"innerHTML\"><li><h2 class=\"menu-title\">Settings</h2></li><li><a hx-get=\"/admin/settings/profile\" hx-target=\"#settings\" class=\"active\" _=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round-icon lucide-circle-user-round\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Profile</a></li><li><a hx-get=\"/admin/settings/appearance\" _=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-palette-icon lucide-palette\"><path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"></path><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"></circle></svg> Appearance</a></li><li><a hx-get=\"/admin/settings/security\" _=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-lock-icon lucide-user-lock\"><circle cx=\"10\" cy=\"7\" r=\"4\"></circle><path d=\"M10.3 15H7a4 4 0 0 0-4 4v2\"></path><path d=\"M15 15.5V14a2 2 0 0 1 4 0v1.5\"></path><rect width=\"8\" height=\"5\" x=\"13\" y=\"16\" rx=\".899\"></rect></svg> Security</a></li><!--\n\t\t\t\t<li>\n\t\t\t\t\t<a\n\t\t\t\t\t\thx-get=\"/admin/settings/billing\"\n\t\t\t\t\t\t_=\"on click\n\t\tremove .active from <li a />\n\t\tadd .active to me\n\t\t\"\n\t\t\t\t\t>\n\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign-icon lucide-dollar-sign\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg>\n\t\t\t\t\t\tBilling\n\t\t\t\t\t</a>\n\t\t\t\t</li>\n--></ul><section id=\"settings\" class=\"w-full order-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><ul class=\"menu rounded-box w-80 h-min gap-1\" hx-boost=\"true\"><li><h2 class=\"menu-title\">Settings</h2></li><li><a href=\"/admin/settings/profile\" _=\"init if document.title.includes('Profile') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-user-round-icon lucide-circle-user-round\"><path d=\"M18 20a6 6 0 0 0-12 0\"></path><circle cx=\"12\" cy=\"10\" r=\"4\"></circle><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Profile</a></li><li><a href=\"/admin/settings/appearance\" _=\"init if document.title.includes('Appearance') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-palette-icon lucide-palette\"><path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"></path><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"></circle><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"></circle></svg> Appearance</a></li><li><a href=\"/admin/settings/security\" _=\"init if document.title.includes('Security') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-lock-icon lucide-user-lock\"><circle cx=\"10\" cy=\"7\" r=\"4\"></circle><path d=\"M10.3 15H7a4 4 0 0 0-4 4v2\"></path><path d=\"M15 15.5V14a2 2 0 0 1 4 0v1.5\"></path><rect width=\"8\" height=\"5\" x=\"13\" y=\"16\" rx=\".899\"></rect></svg> Security</a></li><li><h2 class=\"menu-title\">Billing</h2></li><li><a href=\"/admin/settings/credits\" _=\"init if document.title.includes('Billing') then\n\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column\"><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\"></line><line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\"></line><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\"></line></svg> Usage & Billing</a></li></ul><section id=\"settings\" class=\"w-full order-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SettingsProfile(user).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = contents.Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,14 +71,14 @@ func SettingsProfile(user models.User) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form hx-post=\"/admin/settings/profile\" hx-trigger=\"keyup delay:500ms, change delay:500ms\" hx-swap=\"none\"><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Update your profile</h2><!-- Account settings --><div class=\"flex gap-5\"><!-- Name --><fieldset class=\"fieldset w-7/12\"><legend class=\"fieldset-legend\">Full name</legend> <input name=\"name\" type=\"text\" placeholder=\"Janette Dough\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form hx-post=\"/admin/settings/profile\" hx-trigger=\"keyup delay:500ms, change delay:500ms\" hx-swap=\"none\"><div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><div class=\"grid h-fit flex-grow\"><h2 class=\"font-bold pb-5\">Update your profile</h2><!-- Account settings --><div class=\"flex gap-5\"><!-- Name --><fieldset class=\"fieldset w-7/12\"><legend class=\"fieldset-legend\">Full name</legend> <input name=\"name\" type=\"text\" placeholder=\"Janette Dough\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 99, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 95, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.DisplayName.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 110, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 106, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -200,7 +200,7 @@ func SettingsProfile(user models.User) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.WorkType.String)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 188, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 184, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -254,7 +254,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Change your theme</h2><p class=\"text-sm mb-4\">Theme preferences are stored in your browser and not tied to your account.</p><div id=\"theme-buttons\" class=\"space-y-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><div class=\"grid h-fit flex-grow\"><div class=\"\"><h2 class=\"font-bold pb-5\">Change your theme</h2><p class=\"text-sm mb-4\">Theme preferences are stored in your browser and not tied to your account.</p><div id=\"theme-buttons\" class=\"space-y-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -266,7 +266,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 232, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 228, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -279,7 +279,7 @@ func SettingsAppearance(user models.User) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 243, Col: 136}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 239, Col: 136}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +298,7 @@ func SettingsAppearance(user models.User) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(theme)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 251, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 247, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -340,32 +340,32 @@ func SettingsSecurity(user models.User) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if user.Provider == models.ProviderEmail {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-10 py-10 mt-12\"><p class=\"text-sm\">Logged in with <strong>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><p class=\"text-sm\">Logged in with <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 304, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 300, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</strong></p></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><h2 class=\"font-bold py-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Current password</legend> <input name=\"old_password\" type=\"password\" class=\"input w-full\" required></fieldset><!-- New password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">New password</legend> <input name=\"new_password\" type=\"password\" class=\"input w-full validator\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != '' then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><p class=\"validator-hint\">Must be 8 characters or longer.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Confirm password</legend> <input name=\"confirm_password\" type=\"password\" class=\"input w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById('new_password').value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .input-success from me\n\t\t\t\t\t\t\t\t\tremove .invisible from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .input-success to me\n\t\t\t\t\t\t\t\t\tadd .invisible to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><p id=\"password-mismatch\" class=\"invisible mt-2 text-xs text-error\">Passwords don't match</p></fieldset><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</strong></p></div><div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><div class=\"grid h-fit flex-grow\"><h2 class=\"font-bold pb-5\">Change your password</h2><form id=\"password-form\" hx-post=\"/admin/settings/security\" hx-swap=\"none\"><!-- Old password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Current password</legend> <input name=\"old_password\" type=\"password\" class=\"input w-full\" required></fieldset><!-- New password --><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">New password</legend> <input name=\"new_password\" type=\"password\" class=\"input w-full validator\" required minlength=\"8\" id=\"new_password\" _=\"on input if my value != '' then remove .input-error from #confirm_password else add .input-error to #confirm_password end\"><p class=\"validator-hint\">Must be 8 characters or longer.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Confirm password</legend> <input name=\"confirm_password\" type=\"password\" class=\"input w-full\" required id=\"confirm_password\" _=\"on input \n\t\t\t\t\t\t\t\tif my value is not document.getElementById('new_password').value then\n\t\t\t\t\t\t\t\t\tadd .input-error to me\n\t\t\t\t\t\t\t\t\tremove .input-success from me\n\t\t\t\t\t\t\t\t\tremove .invisible from #password-mismatch\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tremove .input-error from me\n\t\t\t\t\t\t\t\t\tadd .input-success to me\n\t\t\t\t\t\t\t\t\tadd .invisible to #password-mismatch\n\t\t\t\t\t\t\t\tend\"><p id=\"password-mismatch\" class=\"invisible mt-2 text-xs text-error\">Passwords don't match</p></fieldset><div class=\"mt-4\"><button type=\"submit\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\t\tif #new_password.value != #confirm_password.value then\n\t\t\t\t\t\t\t\t\thalt the event\n\t\t\t\t\t\t\t\t\tadd .input-error to #confirm_password\n\t\t\t\t\t\t\t\t\tremove .hidden from #password-mismatch\n\t\t\t\t\t\t\t\tend\">Change Password</button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"alert bg-transparent border-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" x=\"0px\" y=\"0px\" class=\"w-8 h-8 fill-base-content\" viewBox=\"0 0 32 32\"><path d=\"M 16.003906 14.0625 L 16.003906 18.265625 L 21.992188 18.265625 C 21.210938 20.8125 19.082031 22.636719 16.003906 22.636719 C 12.339844 22.636719 9.367188 19.664063 9.367188 16 C 9.367188 12.335938 12.335938 9.363281 16.003906 9.363281 C 17.652344 9.363281 19.15625 9.96875 20.316406 10.964844 L 23.410156 7.867188 C 21.457031 6.085938 18.855469 5 16.003906 5 C 9.925781 5 5 9.925781 5 16 C 5 22.074219 9.925781 27 16.003906 27 C 25.238281 27 27.277344 18.363281 26.371094 14.078125 Z\"></path></svg><div><h3 class=\"font-bold\">You're using Google to sign in</h3><p class=\"text-sm\">Your account is managed through Google authentication. Password settings are not available.</p><p class=\"text-sm\">Logged in with <strong>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><div class=\"alert bg-transparent border-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" x=\"0px\" y=\"0px\" class=\"w-8 h-8 fill-base-content\" viewBox=\"0 0 32 32\"><path d=\"M 16.003906 14.0625 L 16.003906 18.265625 L 21.992188 18.265625 C 21.210938 20.8125 19.082031 22.636719 16.003906 22.636719 C 12.339844 22.636719 9.367188 19.664063 9.367188 16 C 9.367188 12.335938 12.335938 9.363281 16.003906 9.363281 C 17.652344 9.363281 19.15625 9.96875 20.316406 10.964844 L 23.410156 7.867188 C 21.457031 6.085938 18.855469 5 16.003906 5 C 9.925781 5 5 9.925781 5 16 C 5 22.074219 9.925781 27 16.003906 27 C 25.238281 27 27.277344 18.363281 26.371094 14.078125 Z\"></path></svg><div><h3 class=\"font-bold\">You're using Google to sign in</h3><p class=\"text-sm\">Your account is managed through Google authentication. Password settings are not available.</p><p class=\"text-sm\">Logged in with <strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 387, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings.templ`, Line: 383, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -376,36 +376,7 @@ func SettingsSecurity(user models.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><!-- Delete Account Section --><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Delete your account</h2><div class=\"prose\"><p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, and uploaded files.</p><p>This is an irreversible process.</p><button type=\"button\" class=\"btn btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">Delete my account</button></div></div></div></div><dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete your account</h3><p class=\"pt-4\">You are about to delete your account. Doing this will wipe all data including:</p><ul><li>games</li><li>historical play data</li><li>any uploaded media</li><li>templates</li></ul><p>This action cannot be undone. If you choose to register again, you will start with a clean slate.</p><p>Please enter your email address to confirm:</p><form hx-delete=\"/admin/settings/delete-account\" hx-swap=\"none\"><input type=\"email\" name=\"confirm-email\" class=\"input w-full\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		return nil
-	})
-}
-
-func SettingsBilling(user models.User) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Your plan</h2><div class=\"prose\"><p>You are currently on the <strong>Free Plan</strong>.</p><p>Upgrade to Pro for additional features like team management, advanced analytics, and priority support.</p><button type=\"button\" class=\"btn btn-primary\" _=\"on click\n\t\t\t\t\t\t\tfetch '/admin/settings/billing/upgrade' {method: 'POST'}\n\t\t\t\t\t\t\t\tthen if(it.ok) call window.location.href = '/admin/settings/billing/checkout'\n\t\t\t\t\t\t\">Upgrade to Pro</button></div></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Order history</h2><table class=\"table w-full\"><thead><tr><th>Date</th><th>Amount</th><th>Plan</th><th>Receipt</th></tr></thead> <tbody><tr><td colspan=\"4\" class=\"text-center py-4\">No orders yet</td></tr></tbody></table></div></div></div><div class=\"flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-md px-5 py-5 mt-12\"><div class=\"grid h-fit px-5 flex-grow\"><div class=\"my-5\"><h2 class=\"font-bold pb-5\">Payment method</h2><div class=\"prose\"><p>All payments are handled securely via Stripe. Rapua does not store any payment information.</p></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12\"><div class=\"grid h-fit flex-grow\"><!-- Delete Account Section --><div class=\"\"><h2 class=\"font-bold pb-5\">Delete your account</h2><div class=\"prose\"><p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, uploaded files, and <strong>any purchased credits</strong>.</p><p>This is an irreversible process.</p><button type=\"button\" class=\"btn btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\">Delete my account</button></div></div></div></div><dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete your account</h3><p class=\"pt-4\">You are about to delete your account. Doing this will wipe all data including:</p><ul><li>games</li><li>historical play data</li><li>any uploaded media</li><li>templates</li><li><strong>any purchased credits</strong></li></ul><p>This action cannot be undone. If you choose to register again, you will start with a clean slate.</p><p>Please enter your email address to confirm:</p><form hx-delete=\"/admin/settings/delete-account\" hx-swap=\"none\"><input type=\"email\" name=\"confirm-email\" class=\"input w-full\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

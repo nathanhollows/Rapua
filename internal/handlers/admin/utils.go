@@ -57,6 +57,13 @@ type BlockService interface {
 		ctx context.Context,
 		ownerID, teamCode string,
 	) ([]blocks.Block, map[string]blocks.PlayerState, error)
+	// FindByOwnerIDAndTeamCodeWithStateAndContext fetches all blocks and their states
+	// for the given owner, team, and context
+	FindByOwnerIDAndTeamCodeWithStateAndContext(
+		ctx context.Context,
+		ownerID, teamCode string,
+		blockContext blocks.BlockContext,
+	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
@@ -69,6 +76,17 @@ type BlockService interface {
 	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
 	// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check-in
 	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, teamCode string) (bool, error)
+}
+
+type CreditService interface {
+	GetCreditAdjustments(
+		ctx context.Context,
+		filter services.CreditAdjustmentFilter,
+	) ([]models.CreditAdjustments, error)
+	GetTeamStartLogsSummary(
+		ctx context.Context,
+		filter services.TeamStartLogFilter,
+	) ([]services.TeamStartSummary, error)
 }
 
 type DeleteService interface {
@@ -193,6 +211,8 @@ type Handler struct {
 	assetGenerator          services.AssetGenerator
 	identityService         IdentityService
 	blockService            BlockService
+	creditService           CreditService
+	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
@@ -208,6 +228,7 @@ type Handler struct {
 	userService             UserService
 	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
+	stripeService           StripeService
 }
 
 func NewAdminHandler(
@@ -216,6 +237,8 @@ func NewAdminHandler(
 	assetGenerator services.AssetGenerator,
 	identityService IdentityService,
 	blockService BlockService,
+	creditService CreditService,
+	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
@@ -231,6 +254,7 @@ func NewAdminHandler(
 	userService UserService,
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
+	stripeService StripeService,
 ) *Handler {
 	return &Handler{
 		logger:                  logger,
@@ -238,6 +262,8 @@ func NewAdminHandler(
 		assetGenerator:          assetGenerator,
 		identityService:         identityService,
 		blockService:            blockService,
+		creditService:           creditService,
+		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
@@ -253,6 +279,7 @@ func NewAdminHandler(
 		userService:             userService,
 		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
+		stripeService:           stripeService,
 	}
 }
 
