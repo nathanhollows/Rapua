@@ -31,7 +31,7 @@ Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 tea
 - Experience preview now shows content blocks correctly.
 - Erroneous error appearing when launching a game from a template.
 
-[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v4.3.0)
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.1.0)
 
 ## 5.0.0 (2025-10-12)
 
