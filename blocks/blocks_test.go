@@ -71,3 +71,22 @@ func TestBlockUniqueness(t *testing.T) {
 		})
 	}
 }
+
+// Ensure that all blocks registered for ContextCheckpoint are interactive (require validation).
+func TestCheckpointBlocksAreInteractive(t *testing.T) {
+	checkpointBlocks := blocks.GetBlocksForContext(blocks.ContextCheckpoint)
+
+	for _, block := range checkpointBlocks {
+		t.Run(block.GetName()+" requires validation", func(t *testing.T) {
+			assert.True(t, block.RequiresValidation(),
+				"Checkpoint block %s (%s) must require validation to ensure player interaction",
+				block.GetName(), block.GetType())
+		})
+	}
+
+	// If no blocks are registered for checkpoint context, this test still passes
+	// but will provide coverage when blocks are added in the future.
+	if len(checkpointBlocks) == 0 {
+		t.Log("No blocks registered for ContextCheckpoint - test will validate them when added")
+	}
+}
