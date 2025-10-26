@@ -34,8 +34,8 @@ func TestInstanceService(t *testing.T) {
 	defer cleanup()
 
 	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentInstanceID: "instance123"}
-	err := userService.CreateUser(context.Background(), user, "password")
-	require.NoError(t, err)
+	createErr := userService.CreateUser(context.Background(), user, "password")
+	require.NoError(t, createErr)
 	assert.NotEmpty(t, user.ID)
 
 	t.Run("CreateInstance", func(t *testing.T) {
@@ -113,5 +113,70 @@ func TestInstanceService(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("GetByID", func(t *testing.T) {
+		instance, err := svc.CreateInstance(context.Background(), "TestGetByID", user)
+		require.NoError(t, err)
+
+		tests := []struct {
+			name       string
+			instanceID string
+			wantErr    bool
+		}{
+			{"Valid Instance ID", instance.ID, false},
+			{"Invalid Instance ID", "non-existent", true},
+			{"Empty Instance ID", "", true},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				retrieved, getErr := svc.GetByID(context.Background(), tc.instanceID)
+				if tc.wantErr {
+					require.Error(t, getErr)
+					assert.Nil(t, retrieved)
+				} else {
+					require.NoError(t, getErr)
+					assert.NotNil(t, retrieved)
+					assert.Equal(t, instance.ID, retrieved.ID)
+					assert.Equal(t, instance.Name, retrieved.Name)
+				}
+			})
+		}
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		instance, err := svc.CreateInstance(context.Background(), "OriginalName", user)
+		require.NoError(t, err)
+
+		t.Run("Valid Update", func(t *testing.T) {
+			// Get the full instance first
+			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			require.NoError(t, getErr)
+
+			// Update the name
+			fullInstance.Name = "UpdatedName"
+			updateErr := svc.Update(context.Background(), fullInstance)
+			require.NoError(t, updateErr)
+
+			// Verify the update persisted
+			updated, getErr := svc.GetByID(context.Background(), fullInstance.ID)
+			require.NoError(t, getErr)
+			assert.Equal(t, "UpdatedName", updated.Name)
+		})
+
+		t.Run("Nil Instance", func(t *testing.T) {
+			updateErr := svc.Update(context.Background(), nil)
+			require.Error(t, updateErr)
+		})
+
+		t.Run("Empty Name", func(t *testing.T) {
+			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			require.NoError(t, getErr)
+
+			fullInstance.Name = ""
+			updateErr := svc.Update(context.Background(), fullInstance)
+			require.Error(t, updateErr)
+		})
 	})
 }

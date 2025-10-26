@@ -12,6 +12,8 @@ order: 100
 
 - `DuplicationService` to handle all instance, template, and location duplication with transaction safety. Fixes [#90](https://github.com/nathanhollows/Rapua/issues/90).
   - Transaction-aware repository methods: `CreateTx` for instances, instance settings, and locations; `DuplicateBlocksByOwnerTx` for blocks.
+- Games can now be renamed just like templates.
+  - Added `GetByID` and `Update` methods to `InstanceService`.
 
 ### Changed
 

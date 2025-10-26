@@ -80,3 +80,29 @@ func (s *InstanceService) FindInstanceIDsForUser(ctx context.Context, userID str
 	}
 	return ids, nil
 }
+
+// GetByID finds an instance by ID.
+func (s *InstanceService) GetByID(ctx context.Context, id string) (*models.Instance, error) {
+	instance, err := s.instanceRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("getting instance by ID: %w", err)
+	}
+	return instance, nil
+}
+
+// Update updates an instance.
+func (s *InstanceService) Update(ctx context.Context, instance *models.Instance) error {
+	if instance == nil {
+		return errors.New("instance cannot be nil")
+	}
+
+	if instance.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+
+	if err := s.instanceRepo.Update(ctx, instance); err != nil {
+		return fmt.Errorf("updating instance: %w", err)
+	}
+
+	return nil
+}

@@ -133,6 +133,11 @@ type InstanceService interface {
 	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
 	// FindInstanceIDsForUser returns the IDs of all instances for the given user
 	FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error)
+
+	// GetByID finds an instance by ID
+	GetByID(ctx context.Context, id string) (*models.Instance, error)
+	// Update updates an instance
+	Update(ctx context.Context, instance *models.Instance) error
 }
 
 type IdentityService interface {
