@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // MockAuthService is a mock implementation of AuthenticatedUserGetter.

@@ -5,7 +5,7 @@ import (
 	"maps"
 	"net/http"
 
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/blocks"
 )
 
 // ValidateBlock runs input validation on the block.

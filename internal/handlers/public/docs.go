@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/public"
 )
 
 func (h *PublicHandler) Docs(w http.ResponseWriter, r *http.Request) {

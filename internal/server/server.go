@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
-	"github.com/nathanhollows/Rapua/v4/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v4/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v4/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
+	"github.com/nathanhollows/Rapua/v5/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v5/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v5/internal/scheduler"
 )
 
 const (

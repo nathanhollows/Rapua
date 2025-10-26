@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v4/helpers"
-	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	public "github.com/nathanhollows/Rapua/v4/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/helpers"
+	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	public "github.com/nathanhollows/Rapua/v5/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 const (

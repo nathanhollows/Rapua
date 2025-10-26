@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	admin "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	admin "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // Experience shows the game settings page.

@@ -11,9 +11,9 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v4/internal/flash"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/internal/flash"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun/schema"
 )
 

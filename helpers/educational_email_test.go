@@ -3,7 +3,7 @@ package helpers_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/helpers"
+	"github.com/nathanhollows/Rapua/v5/helpers"
 )
 
 func TestIsEducationalEmail(t *testing.T) {

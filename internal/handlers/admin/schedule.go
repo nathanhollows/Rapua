@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/helpers"
-	"github.com/nathanhollows/Rapua/v4/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/helpers"
+	"github.com/nathanhollows/Rapua/v5/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // StartGame starts the game immediately.

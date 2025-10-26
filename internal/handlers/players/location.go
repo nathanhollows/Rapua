@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // CheckInView shows the page for a specific location.

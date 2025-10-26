@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/helpers"
+	"github.com/nathanhollows/Rapua/v5/helpers"
 )
 
 func TestParseDate(t *testing.T) {

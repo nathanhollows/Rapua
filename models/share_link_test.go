@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 

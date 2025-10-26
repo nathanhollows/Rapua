@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/internal/services"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
 	"gopkg.in/yaml.v3"
 )
 

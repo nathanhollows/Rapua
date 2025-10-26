@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
 )
 
 func TestDefaultUserStatus(t *testing.T) {

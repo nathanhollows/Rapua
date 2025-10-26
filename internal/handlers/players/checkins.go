@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v4/internal/flash"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/internal/flash"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // CheckIn handles the GET request for scanning a location.
