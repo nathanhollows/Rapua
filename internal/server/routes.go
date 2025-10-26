@@ -38,7 +38,7 @@ func setupRouter(
 	}
 
 	// CSRF protection middleware
-	CSRF := csrf.Protect(
+	CSRF := csrf.Protect( //nolint:gocritic // CSRF
 		[]byte(csrfKey),
 		csrf.Secure(os.Getenv("IS_PROD") == "1"), // Use secure cookies in production
 		csrf.CookieName("csrf"),

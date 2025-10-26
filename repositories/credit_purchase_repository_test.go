@@ -436,11 +436,11 @@ func TestCreditPurchaseRepo_DeleteByUserID(t *testing.T) {
 	// Verify user's purchases were deleted
 	_, err = repo.GetByID(ctx, purchase1.ID)
 	require.Error(t, err)
-	assert.ErrorIs(t, err, sql.ErrNoRows)
+	require.ErrorIs(t, err, sql.ErrNoRows)
 
 	_, err = repo.GetByID(ctx, purchase2.ID)
 	require.Error(t, err)
-	assert.ErrorIs(t, err, sql.ErrNoRows)
+	require.ErrorIs(t, err, sql.ErrNoRows)
 
 	// Verify other user's purchase still exists
 	otherRetrieved, err := repo.GetByID(ctx, otherPurchase.ID)

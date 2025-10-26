@@ -26,7 +26,7 @@ func Start() {
 	authStore.Options.SameSite = http.SameSiteLaxMode
 	authStore.Options.HttpOnly = true
 	authStore.Options.Secure = true
-	//nolint:reassign
+	//nolint:reassign // This approach is correct as per the docs
 	gothic.Store = authStore
 	goth.UseProviders(
 		google.New(

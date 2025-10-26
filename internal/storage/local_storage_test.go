@@ -12,6 +12,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v5/internal/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockFile struct {
@@ -99,14 +100,14 @@ func TestLocalStorage_Upload(t *testing.T) {
 			filePaths, _, err := storage.Upload(ctx, tt.file, tt.filename)
 
 			if tt.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, filePaths)
 
 				for _, path := range filePaths {
 					_, statErr := os.Stat("./" + filepath.Clean(path))
-					assert.NoError(t, statErr)
+					require.NoError(t, statErr)
 				}
 			}
 		})

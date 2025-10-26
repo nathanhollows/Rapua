@@ -99,11 +99,35 @@ type DeleteService interface {
 }
 
 type DuplicationService interface {
-	DuplicateInstance(ctx context.Context, user *models.User, sourceInstanceID string, name string) (*models.Instance, error)
-	CreateTemplateFromInstance(ctx context.Context, user *models.User, sourceInstanceID string, name string) (*models.Instance, error)
-	CreateInstanceFromTemplate(ctx context.Context, user *models.User, templateID string, name string) (*models.Instance, error)
-	CreateInstanceFromSharedTemplate(ctx context.Context, user *models.User, templateID string, name string) (*models.Instance, error)
-	DuplicateLocation(ctx context.Context, sourceLocation models.Location, newInstanceID string) (*models.Location, error)
+	DuplicateInstance(
+		ctx context.Context,
+		user *models.User,
+		sourceInstanceID string,
+		name string,
+	) (*models.Instance, error)
+	CreateTemplateFromInstance(
+		ctx context.Context,
+		user *models.User,
+		sourceInstanceID string,
+		name string,
+	) (*models.Instance, error)
+	CreateInstanceFromTemplate(
+		ctx context.Context,
+		user *models.User,
+		templateID string,
+		name string,
+	) (*models.Instance, error)
+	CreateInstanceFromSharedTemplate(
+		ctx context.Context,
+		user *models.User,
+		templateID string,
+		name string,
+	) (*models.Instance, error)
+	DuplicateLocation(
+		ctx context.Context,
+		sourceLocation models.Location,
+		newInstanceID string,
+	) (*models.Location, error)
 }
 
 type FacilitatorService interface {

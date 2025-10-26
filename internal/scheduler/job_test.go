@@ -61,9 +61,9 @@ func TestNextDaily(t *testing.T) {
 
 	// Mock time.Now for consistent testing
 	originalNext := scheduler.NextDaily
-	defer func() { scheduler.NextDaily = originalNext }()
+	defer func() { scheduler.NextDaily = originalNext }() //nolint:reassign // Required for mocking time in tests
 
-	scheduler.NextDaily = func() time.Time {
+	scheduler.NextDaily = func() time.Time { //nolint:reassign // Required for mocking time in tests
 		tomorrow := now.AddDate(0, 0, 1)
 		return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, now.Location())
 	}
@@ -107,9 +107,9 @@ func TestNextFirstOfMonth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Mock time.Now for consistent testing
 			originalNext := scheduler.NextFirstOfMonth
-			defer func() { scheduler.NextFirstOfMonth = originalNext }()
+			defer func() { scheduler.NextFirstOfMonth = originalNext }() //nolint:reassign // Required for mocking time in tests
 
-			scheduler.NextFirstOfMonth = func() time.Time {
+			scheduler.NextFirstOfMonth = func() time.Time { //nolint:reassign // Required for mocking time in tests
 				now := tt.current
 				// Always go to next month, day 1, midnight
 				nextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())

@@ -61,6 +61,7 @@ func NewStripeService(
 
 	// Initialize Stripe API key
 	if stripeSecretKey != "" {
+		//nolint:reassign // Correct usage as per the docs.
 		stripe.Key = stripeSecretKey
 	}
 

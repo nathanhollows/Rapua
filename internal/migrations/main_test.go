@@ -7,7 +7,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v5/db"
 	"github.com/nathanhollows/Rapua/v5/internal/migrations"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun/migrate"
 )
 
@@ -35,16 +35,16 @@ func TestFullMigration(t *testing.T) {
 	// Setup the migrator
 	migrator := migrate.NewMigrator(db, migrations.Migrations)
 	if err := migrator.Init(ctx); err != nil {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	if err := migrator.Lock(ctx); err != nil {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	defer func() {
 		if err := migrator.Unlock(ctx); err != nil {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		db.Close()
 	}()
@@ -52,12 +52,12 @@ func TestFullMigration(t *testing.T) {
 	// Migrate up
 	_, err := migrator.Migrate(ctx)
 	if err != nil {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Rollback the migrations
 	_, err = migrator.Rollback(ctx)
 	if err != nil {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
