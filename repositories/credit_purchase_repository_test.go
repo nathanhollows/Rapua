@@ -3,7 +3,6 @@ package repositories_test
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"testing"
 	"time"
 
@@ -216,7 +215,7 @@ func TestCreditPurchaseRepo_GetByStripeSessionID_NotFound(t *testing.T) {
 
 	_, err := repo.GetByStripeSessionID(ctx, "nonexistent-session")
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, sql.ErrNoRows))
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestCreditPurchaseRepo_GetByID(t *testing.T) {
@@ -437,11 +436,11 @@ func TestCreditPurchaseRepo_DeleteByUserID(t *testing.T) {
 	// Verify user's purchases were deleted
 	_, err = repo.GetByID(ctx, purchase1.ID)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, sql.ErrNoRows))
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 
 	_, err = repo.GetByID(ctx, purchase2.ID)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, sql.ErrNoRows))
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 
 	// Verify other user's purchase still exists
 	otherRetrieved, err := repo.GetByID(ctx, otherPurchase.ID)
