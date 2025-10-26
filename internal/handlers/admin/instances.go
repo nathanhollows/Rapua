@@ -101,7 +101,7 @@ func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 	id := r.Form.Get("id")
 	name := r.Form.Get("name")
 
-	instance, err := h.instanceService.DuplicateInstance(r.Context(), user, id, name)
+	instance, err := h.duplicationService.DuplicateInstance(r.Context(), user, id, name)
 	if err != nil {
 		h.handleError(
 			w,

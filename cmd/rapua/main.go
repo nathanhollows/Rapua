@@ -363,6 +363,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditPurchaseRepo,
 		teamStartLogRepo,
 	)
+	duplicationService := services.NewDuplicationService(
+		transactor,
+		instanceRepo,
+		instanceSettingsRepo,
+		locationRepo,
+		blockRepo,
+	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
@@ -406,10 +413,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	)
 	leaderBoardService := services.NewLeaderBoardService(teamRepo)
 	instanceService := services.NewInstanceService(
-		locationService, *teamService, instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(
-		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
+		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 
 	sessions.Start()
@@ -458,6 +465,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditService,
 		creditPurchaseRepo,
 		deleteService,
+		duplicationService,
 		facilitatorService,
 		gameScheduleService,
 		instanceService,

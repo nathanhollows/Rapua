@@ -22,40 +22,31 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 
 	// Initialize repositories
 	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
-	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 
 	// Initialize services
-	markerService := services.NewMarkerService(markerRepo)
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
-	teamService := services.NewTeamService(
+	duplicationService := services.NewDuplicationService(
 		transactor,
-		teamRepo,
-		checkInRepo,
-		creditService,
-		blockStateRepo,
+		instanceRepo,
+		instanceSettingsRepo,
 		locationRepo,
+		blockRepo,
 	)
 	instanceService := services.NewInstanceService(
-		locationService, *teamService, instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo,
 	)
 
 	templateService := services.NewTemplateService(
-		locationService,
+		duplicationService,
 		instanceRepo,
 		instanceSettingsRepo,
 		shareLinkRepo,
 	)
-	return templateService, instanceService, cleanup
+	return templateService, *instanceService, cleanup
 }
 
 func TestTemplateService_CreateFromInstance(t *testing.T) {
@@ -83,11 +74,11 @@ func TestTemplateService_CreateFromInstance(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := svc.CreateFromInstance(context.Background(), tt.userID, tt.instanceID, tt.templateName)
+				_, createErr := svc.CreateFromInstance(context.Background(), tt.userID, tt.instanceID, tt.templateName)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, createErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, createErr)
 				}
 			})
 		}
@@ -123,11 +114,17 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := svc.LaunchInstance(context.Background(), tt.userID, tt.templateID, tt.instanceName, false)
+				_, launchErr := svc.LaunchInstance(
+					context.Background(),
+					tt.userID,
+					tt.templateID,
+					tt.instanceName,
+					false,
+				)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, launchErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, launchErr)
 				}
 			})
 		}
@@ -177,7 +174,7 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := svc.LaunchInstanceFromShareLink(
+				_, launchErr := svc.LaunchInstanceFromShareLink(
 					context.Background(),
 					tt.userID,
 					tt.shareLinkID,
@@ -185,9 +182,9 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 					tt.regen,
 				)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, launchErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, launchErr)
 				}
 			})
 		}
@@ -219,11 +216,11 @@ func TestTemplateService_GetByID(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := svc.GetByID(context.Background(), tt.templateID)
+				got, getErr := svc.GetByID(context.Background(), tt.templateID)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, getErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, getErr)
 					assert.Equal(t, template.ID, got.ID)
 					assert.True(t, got.IsTemplate)
 				}
@@ -270,11 +267,11 @@ func TestTemplateService_GetShareLink(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := svc.GetShareLink(context.Background(), tt.shareLinkID)
+				got, getErr := svc.GetShareLink(context.Background(), tt.shareLinkID)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, getErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, getErr)
 					assert.Equal(t, shareLinkID, got.ID)
 					assert.Equal(t, template.ID, got.TemplateID)
 					assert.Equal(t, user.ID, got.UserID)
@@ -335,11 +332,11 @@ func TestTemplateService_Update(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := svc.Update(context.Background(), tt.instance)
+				updateErr := svc.Update(context.Background(), tt.instance)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, updateErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, updateErr)
 
 					// Verify the update
 					updated, getErr := svc.GetByID(context.Background(), template.ID)
@@ -427,11 +424,11 @@ func TestTemplateService_CreateShareLink(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				url, err := svc.CreateShareLink(context.Background(), tt.userID, tt.data)
+				url, createErr := svc.CreateShareLink(context.Background(), tt.userID, tt.data)
 				if tt.wantErr {
-					require.Error(t, err)
+					require.Error(t, createErr)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, createErr)
 					assert.NotEmpty(t, url)
 
 					// Verify the URL contains "/templates/"

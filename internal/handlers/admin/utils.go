@@ -98,6 +98,14 @@ type DeleteService interface {
 	DeleteUser(ctx context.Context, userID string) error
 }
 
+type DuplicationService interface {
+	DuplicateInstance(ctx context.Context, user *models.User, sourceInstanceID string, name string) (*models.Instance, error)
+	CreateTemplateFromInstance(ctx context.Context, user *models.User, sourceInstanceID string, name string) (*models.Instance, error)
+	CreateInstanceFromTemplate(ctx context.Context, user *models.User, templateID string, name string) (*models.Instance, error)
+	CreateInstanceFromSharedTemplate(ctx context.Context, user *models.User, templateID string, name string) (*models.Instance, error)
+	DuplicateLocation(ctx context.Context, sourceLocation models.Location, newInstanceID string) (*models.Location, error)
+}
+
 type FacilitatorService interface {
 	CreateFacilitatorToken(
 		ctx context.Context,
@@ -115,6 +123,16 @@ type GameScheduleService interface {
 	SetStartTime(ctx context.Context, instance *models.Instance, start time.Time) error
 	SetEndTime(ctx context.Context, instance *models.Instance, end time.Time) error
 	ScheduleGame(ctx context.Context, instance *models.Instance, start, end time.Time) error
+}
+
+type InstanceService interface {
+	// CreateInstance creates a new instance for the given user
+	CreateInstance(ctx context.Context, name string, user *models.User) (*models.Instance, error)
+
+	// FindByUserID returns all instances for the given user
+	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
+	// FindInstanceIDsForUser returns the IDs of all instances for the given user
+	FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error)
 }
 
 type IdentityService interface {
@@ -214,9 +232,10 @@ type Handler struct {
 	creditService           CreditService
 	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
+	duplicationService      DuplicationService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
-	instanceService         services.InstanceService
+	instanceService         InstanceService
 	instanceSettingsService InstanceSettingsService
 	locationService         services.LocationService
 	markerService           MarkerService
@@ -240,9 +259,10 @@ func NewAdminHandler(
 	creditService CreditService,
 	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
+	duplicationService DuplicationService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
-	instanceService services.InstanceService,
+	instanceService InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
 	markerService MarkerService,
@@ -265,6 +285,7 @@ func NewAdminHandler(
 		creditService:           creditService,
 		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,
+		duplicationService:      duplicationService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
 		instanceService:         instanceService,

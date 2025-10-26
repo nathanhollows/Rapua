@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v4/blocks"
 	"github.com/nathanhollows/Rapua/v4/internal/services"
 	"github.com/nathanhollows/Rapua/v4/repositories"
 	"github.com/stretchr/testify/assert"
@@ -76,13 +75,13 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Create location from marker", func(t *testing.T) {
-		location, err := service.CreateLocationFromMarker(
+		location, createErr := service.CreateLocationFromMarker(
 			context.Background(),
 			gofakeit.UUID(),
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			marker.Code)
-		require.NoError(t, err)
+		require.NoError(t, createErr)
 		assert.NotEmpty(t, location.ID)
 	})
 
@@ -107,109 +106,13 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 	})
 
 	t.Run("Create location from marker with invalid marker code", func(t *testing.T) {
-		_, err := service.CreateLocationFromMarker(
+		_, createErr := service.CreateLocationFromMarker(
 			context.Background(),
 			gofakeit.UUID(),
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			"")
-		require.Error(t, err)
-	})
-}
-
-func TestLocationService_DuplicateLocation(t *testing.T) {
-	// Setup shared database connection
-	dbc, cleanup := setupDB(t)
-	defer cleanup()
-
-	// Create all repositories with shared database connection
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
-	blockStateRepo := repositories.NewBlockStateRepository(dbc)
-	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	markerService := services.NewMarkerService(markerRepo)
-
-	// Create services with shared repositories
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-
-	t.Run("Duplicate location", func(t *testing.T) {
-		// Create a location
-		location, err := locationService.CreateLocation(
-			context.Background(),
-			gofakeit.UUID(),
-			gofakeit.Name(),
-			gofakeit.Latitude(),
-			gofakeit.Longitude(),
-			gofakeit.Number(0, 100))
-		require.NoError(t, err)
-
-		// Create a block
-		block, err := blockService.NewBlockWithOwnerAndContext(
-			context.Background(),
-			location.ID,
-			blocks.ContextLocationContent,
-			"image",
-		)
-		require.NoError(t, err)
-		t.Logf("Created block with ID: %s for location: %s", block.GetID(), location.ID)
-
-		// Add some content to the block to test duplication
-		blockData := map[string][]string{
-			"url":     {"https://example.com/test-image.jpg"},
-			"caption": {"Test image caption"},
-			"link":    {"https://example.com/test-link"},
-		}
-
-		// Save the updated block with content
-		block, err = blockService.UpdateBlock(context.Background(), block, blockData)
-		require.NoError(t, err)
-
-		// Verify the block was created
-		blocksBeforeDuplicate, err := blockService.FindByOwnerID(context.Background(), location.ID)
-		require.NoError(t, err)
-		assert.Len(t, blocksBeforeDuplicate, 1)
-		t.Logf("Blocks before duplicate: %d", len(blocksBeforeDuplicate))
-
-		// Verify the blocks are accessible through the service
-		blocksAfterRelations, err := blockService.FindByOwnerID(context.Background(), location.ID)
-		require.NoError(t, err)
-		t.Logf("Location blocks after service lookup: %d", len(blocksAfterRelations))
-
-		// Duplicate the location
-		newLocation, err := locationService.DuplicateLocation(context.Background(), location, gofakeit.UUID())
-		require.NoError(t, err)
-		assert.NotEqual(t, location.ID, newLocation.ID)
-
-		// Check that the location was duplicated
-		checkLocation, err := locationService.GetByID(context.Background(), newLocation.ID)
-		require.NoError(t, err)
-		assert.NotNil(t, checkLocation)
-
-		// Check that the blocks were duplicated
-		blocks, err := blockService.FindByOwnerID(context.Background(), newLocation.ID)
-		require.NoError(t, err)
-		t.Logf("Blocks found for new location %s: %d", newLocation.ID, len(blocks))
-		for i, bl := range blocks {
-			t.Logf("Block %d: ID=%s, Type=%s", i, bl.GetID(), bl.GetType())
-		}
-		assert.Len(t, blocks, 1)
-
-		// Verify that the content was copied correctly
-		duplicatedBlock := blocks[0]
-		assert.Equal(t, "image", duplicatedBlock.GetType())
-		assert.NotEqual(t, block.GetID(), duplicatedBlock.GetID())       // Should have different IDs
-		assert.Equal(t, newLocation.ID, duplicatedBlock.GetLocationID()) // Should have new location ID
-
-		// Check that the content data was copied
-		originalData := string(block.GetData())
-		duplicatedData := string(duplicatedBlock.GetData())
-		assert.Equal(t, originalData, duplicatedData)
-
-		// The duplicated data should contain the test content
-		assert.Contains(t, duplicatedData, "https://example.com/test-image.jpg")
-		assert.Contains(t, duplicatedData, "Test image caption")
-		assert.Contains(t, duplicatedData, "https://example.com/test-link")
+		require.Error(t, createErr)
 	})
 }
 

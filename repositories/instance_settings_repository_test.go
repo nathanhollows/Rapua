@@ -213,3 +213,76 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 		})
 	}
 }
+
+func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
+	repo, transactor, cleanup := setupInstanceSettingsRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("creates instance settings within transaction", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		settings := &models.InstanceSettings{
+			InstanceID:       instanceID,
+			EnablePoints:     true,
+			ShowLeaderboard:  true,
+			MaxNextLocations: 3,
+		}
+
+		err = repo.CreateTx(ctx, tx, settings)
+		require.NoError(t, err)
+
+		err = tx.Commit()
+		require.NoError(t, err)
+
+		// Verify settings were created
+		found, err := repo.GetByInstanceID(ctx, instanceID)
+		require.NoError(t, err)
+		assert.Equal(t, settings.InstanceID, found.InstanceID)
+		assert.Equal(t, settings.EnablePoints, found.EnablePoints)
+		assert.Equal(t, settings.ShowLeaderboard, found.ShowLeaderboard)
+	})
+
+	t.Run("rolls back on transaction failure", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{
+			InstanceID:   instanceID,
+			EnablePoints: false,
+		}
+
+		err = repo.CreateTx(ctx, tx, settings)
+		require.NoError(t, err)
+
+		// Rollback transaction
+		err = tx.Rollback()
+		require.NoError(t, err)
+
+		// Verify settings were NOT created
+		_, err = repo.GetByInstanceID(ctx, instanceID)
+		require.Error(t, err)
+	})
+
+	t.Run("validates required fields", func(t *testing.T) {
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		settings := &models.InstanceSettings{
+			// Missing InstanceID
+			EnablePoints: true,
+		}
+
+		err = repo.CreateTx(ctx, tx, settings)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "instance ID is required")
+	})
+}
