@@ -12,6 +12,7 @@ type BlockContext string
 const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
+	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
 	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
 	// ContextEnd     BlockContext = "end"     // End pages.
 )
@@ -94,7 +95,9 @@ func registerBlock(instance Block, contexts []BlockContext) {
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
 	// Content blocks
-	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&MarkdownBlock{}, []BlockContext{
+		ContextLocationContent, ContextLocationClues,
+	})
 	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
@@ -106,10 +109,10 @@ func init() {
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 }
 
 // Public API functions

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/blocks"
+	"github.com/nathanhollows/Rapua/v5/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,5 +69,24 @@ func TestBlockUniqueness(t *testing.T) {
 			assert.False(t, descriptions[block.GetDescription()], "duplicate description: "+block.GetDescription())
 			descriptions[block.GetDescription()] = true
 		})
+	}
+}
+
+// Ensure that all blocks registered for ContextCheckpoint are interactive (require validation).
+func TestCheckpointBlocksAreInteractive(t *testing.T) {
+	checkpointBlocks := blocks.GetBlocksForContext(blocks.ContextCheckpoint)
+
+	for _, block := range checkpointBlocks {
+		t.Run(block.GetName()+" requires validation", func(t *testing.T) {
+			assert.True(t, block.RequiresValidation(),
+				"Checkpoint block %s (%s) must require validation to ensure player interaction",
+				block.GetName(), block.GetType())
+		})
+	}
+
+	// If no blocks are registered for checkpoint context, this test still passes
+	// but will provide coverage when blocks are added in the future.
+	if len(checkpointBlocks) == 0 {
+		t.Log("No blocks registered for ContextCheckpoint - test will validate them when added")
 	}
 }

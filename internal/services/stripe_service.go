@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v4/config"
-	"github.com/nathanhollows/Rapua/v4/db"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/config"
+	"github.com/nathanhollows/Rapua/v5/db"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/charge"
 	"github.com/stripe/stripe-go/v83/checkout/session"
@@ -61,6 +61,7 @@ func NewStripeService(
 
 	// Initialize Stripe API key
 	if stripeSecretKey != "" {
+		//nolint:reassign // Correct usage as per the docs.
 		stripe.Key = stripeSecretKey
 	}
 

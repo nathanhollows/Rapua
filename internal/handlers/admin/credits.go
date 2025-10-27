@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/stripe/stripe-go/v83"
 )
 
@@ -136,8 +136,8 @@ func (h *Handler) CreditPurchaseSuccess(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Render success page
-	c := templates.CreditPurchaseSuccess(*user, sessionID)
-	err = templates.Layout(c, *user, "Purchase Successful", "").Render(r.Context(), w)
+	c := templates.Settings(templates.CreditPurchaseSuccessContent(sessionID))
+	err = templates.Layout(c, *user, "Purchase Successful", "Purchase Successful").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering credit purchase success page", "error", err.Error())
 	}
@@ -148,8 +148,8 @@ func (h *Handler) CreditPurchaseCancel(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Render cancel page
-	c := templates.CreditPurchaseCancel(*user)
-	err := templates.Layout(c, *user, "Purchase Cancelled", "").Render(r.Context(), w)
+	c := templates.Settings(templates.CreditPurchaseCancelContent())
+	err := templates.Layout(c, *user, "Purchase Cancelled", "Purchase Successful").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering credit purchase cancel page", "error", err.Error())
 	}

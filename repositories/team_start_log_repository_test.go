@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -23,7 +23,14 @@ func setupTeamStartLogRepo(t *testing.T) (*repositories.TeamStartLogRepository, 
 	return teamStartLogRepo, dbc, cleanup
 }
 
-func createTestTeamStartLog(t *testing.T, db *bun.DB, userID, teamID, instanceID string, createdAt time.Time) models.TeamStartLog {
+func createTestTeamStartLog(
+	t *testing.T,
+	db *bun.DB,
+	userID,
+	teamID,
+	instanceID string,
+	createdAt time.Time,
+) models.TeamStartLog {
 	t.Helper()
 
 	log := models.TeamStartLog{
@@ -217,10 +224,14 @@ func TestTeamStartLogRepo_GetByUserIDAndInstanceIDWithTimeframe(t *testing.T) {
 
 	// Create test logs
 	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1", instanceID, now.Add(-3*time.Hour))          // Outside timeframe
-	log2 := createTestTeamStartLog(t, db, userID, "team-2", instanceID, now.Add(-1*time.Hour))          // Inside timeframe
-	log3 := createTestTeamStartLog(t, db, userID, "team-3", instanceID, now.Add(-30*time.Minute))       // Inside timeframe
-	log4 := createTestTeamStartLog(t, db, userID, "team-4", "other-instance", now.Add(-45*time.Minute)) // Different instance
+	log1 := createTestTeamStartLog(t, db, userID, "team-1",
+		instanceID, now.Add(-3*time.Hour)) // Outside timeframe
+	log2 := createTestTeamStartLog(t, db, userID, "team-2",
+		instanceID, now.Add(-1*time.Hour)) // Inside timeframe
+	log3 := createTestTeamStartLog(t, db, userID, "team-3",
+		instanceID, now.Add(-30*time.Minute)) // Inside timeframe
+	log4 := createTestTeamStartLog(t, db, userID, "team-4",
+		"other-instance", now.Add(-45*time.Minute)) // Different instance
 
 	// Define timeframe (last 2 hours)
 	startTime := now.Add(-2 * time.Hour)
@@ -274,7 +285,13 @@ func TestTeamStartLogRepo_EmptyResults(t *testing.T) {
 		{
 			name: "GetByUserIDAndInstanceIDWithTimeframe with non-existent user",
 			fn: func() ([]models.TeamStartLog, error) {
-				return repo.GetByUserIDAndInstanceIDWithTimeframe(ctx, nonExistentUserID, gofakeit.UUID(), time.Now().Add(-1*time.Hour), time.Now())
+				return repo.GetByUserIDAndInstanceIDWithTimeframe(
+					ctx,
+					nonExistentUserID,
+					gofakeit.UUID(),
+					time.Now().Add(-1*time.Hour),
+					time.Now(),
+				)
 			},
 		},
 	}
@@ -327,7 +344,9 @@ func TestTeamStartLogRepo_OrderingConsistency(t *testing.T) {
 	assert.Len(t, logs, 5)
 
 	for i, log := range logs {
-		assert.Equal(t, expectedSortedOrder[i], log.ID, "Log at index %d should be %s but was %s", i, expectedSortedOrder[i], log.ID)
+		assert.Equal(t, expectedSortedOrder[i], log.ID,
+			"Log at index %d should be %s but was %s",
+			i, expectedSortedOrder[i], log.ID)
 	}
 }
 
@@ -431,4 +450,3 @@ func TestTeamStartLogRepo_DeleteByUserID_MultipleInstances(t *testing.T) {
 		assert.Equal(t, 0, count, "Log %s should be deleted", logID)
 	}
 }
-

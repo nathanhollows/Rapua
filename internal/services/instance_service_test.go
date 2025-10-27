@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/db"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,39 +14,19 @@ import (
 func setupInstanceService(t *testing.T) (services.InstanceService, services.UserService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
-	transactor := db.NewTransactor(dbc)
 
 	// Initialize repositories
-	blockStateRepo := repositories.NewBlockStateRepository(dbc)
-	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
-	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
-	markerService := services.NewMarkerService(markerRepo)
 
 	// Initialize services
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	teamService := services.NewTeamService(
-		transactor,
-		teamRepo,
-		checkInRepo,
-		creditService,
-		blockStateRepo,
-		locationRepo,
-	)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		locationService, *teamService, instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo,
 	)
 
-	return instanceService, *userService, cleanup
+	return *instanceService, *userService, cleanup
 }
 
 func TestInstanceService(t *testing.T) {
@@ -55,8 +34,8 @@ func TestInstanceService(t *testing.T) {
 	defer cleanup()
 
 	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentInstanceID: "instance123"}
-	err := userService.CreateUser(context.Background(), user, "password")
-	require.NoError(t, err)
+	createErr := userService.CreateUser(context.Background(), user, "password")
+	require.NoError(t, createErr)
 	assert.NotEmpty(t, user.ID)
 
 	t.Run("CreateInstance", func(t *testing.T) {
@@ -73,12 +52,12 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				instance, err := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
+				instance, createErr := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
 				if tc.wantErr {
-					require.Error(t, err)
+					require.Error(t, createErr)
 					assert.Nil(t, instance)
 				} else {
-					require.NoError(t, err)
+					require.NoError(t, createErr)
 					assert.NotNil(t, instance)
 					assert.Equal(t, tc.instanceName, instance.Name)
 				}
@@ -86,41 +65,7 @@ func TestInstanceService(t *testing.T) {
 		}
 	})
 
-	t.Run("DuplicateInstance", func(t *testing.T) {
-		instance, _ := svc.CreateInstance(context.Background(), "Game1", user)
-
-		tests := []struct {
-			name       string
-			instanceID string
-			newName    string
-			user       *models.User
-			wantErr    bool
-		}{
-			{"Valid Duplicate", instance.ID, "Game1Copy", user, false},
-			{"Empty Name", instance.ID, "", user, true},
-			{"Invalid ID", "invalid-id", "Game2", user, true},
-			{"Nil User", instance.ID, "Game3", nil, true},
-		}
-
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				duplicatedInstance, err := svc.DuplicateInstance(
-					context.Background(),
-					tc.user,
-					tc.instanceID,
-					tc.newName,
-				)
-				if tc.wantErr {
-					require.Error(t, err)
-					assert.Nil(t, duplicatedInstance)
-				} else {
-					require.NoError(t, err)
-					assert.NotNil(t, duplicatedInstance)
-					assert.Equal(t, tc.newName, duplicatedInstance.Name)
-				}
-			})
-		}
-	})
+	// DuplicateInstance tests moved to duplication_service_test.go
 
 	t.Run("FindInstanceIDsForUser", func(t *testing.T) {
 		_, _ = svc.CreateInstance(context.Background(), "GameA", user)
@@ -137,9 +82,9 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				ids, err := svc.FindInstanceIDsForUser(context.Background(), tc.userID)
+				ids, findErr := svc.FindInstanceIDsForUser(context.Background(), tc.userID)
 				if tc.wantErr {
-					require.Error(t, err)
+					require.Error(t, findErr)
 					assert.Nil(t, ids)
 				}
 			})
@@ -161,12 +106,77 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				instances, err := svc.FindByUserID(context.Background(), tc.userID)
+				instances, findErr := svc.FindByUserID(context.Background(), tc.userID)
 				if tc.wantErr {
-					require.Error(t, err)
+					require.Error(t, findErr)
 					assert.Nil(t, instances)
 				}
 			})
 		}
+	})
+
+	t.Run("GetByID", func(t *testing.T) {
+		instance, err := svc.CreateInstance(context.Background(), "TestGetByID", user)
+		require.NoError(t, err)
+
+		tests := []struct {
+			name       string
+			instanceID string
+			wantErr    bool
+		}{
+			{"Valid Instance ID", instance.ID, false},
+			{"Invalid Instance ID", "non-existent", true},
+			{"Empty Instance ID", "", true},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				retrieved, getErr := svc.GetByID(context.Background(), tc.instanceID)
+				if tc.wantErr {
+					require.Error(t, getErr)
+					assert.Nil(t, retrieved)
+				} else {
+					require.NoError(t, getErr)
+					assert.NotNil(t, retrieved)
+					assert.Equal(t, instance.ID, retrieved.ID)
+					assert.Equal(t, instance.Name, retrieved.Name)
+				}
+			})
+		}
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		instance, err := svc.CreateInstance(context.Background(), "OriginalName", user)
+		require.NoError(t, err)
+
+		t.Run("Valid Update", func(t *testing.T) {
+			// Get the full instance first
+			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			require.NoError(t, getErr)
+
+			// Update the name
+			fullInstance.Name = "UpdatedName"
+			updateErr := svc.Update(context.Background(), fullInstance)
+			require.NoError(t, updateErr)
+
+			// Verify the update persisted
+			updated, getErr := svc.GetByID(context.Background(), fullInstance.ID)
+			require.NoError(t, getErr)
+			assert.Equal(t, "UpdatedName", updated.Name)
+		})
+
+		t.Run("Nil Instance", func(t *testing.T) {
+			updateErr := svc.Update(context.Background(), nil)
+			require.Error(t, updateErr)
+		})
+
+		t.Run("Empty Name", func(t *testing.T) {
+			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			require.NoError(t, getErr)
+
+			fullInstance.Name = ""
+			updateErr := svc.Update(context.Background(), fullInstance)
+			require.Error(t, updateErr)
+		})
 	})
 }

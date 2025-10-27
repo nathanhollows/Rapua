@@ -2,12 +2,13 @@ package repositories_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v4/db"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/db"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -77,7 +78,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 	}{
 		{
 			name: "Existing instance",
-			setupFn: func(ctx context.Context, tb testing.TB, inst models.Instance, t *testing.T) {
+			setupFn: func(ctx context.Context, _ testing.TB, inst models.Instance, t *testing.T) {
 				repo, _, cleanup := setupInstanceRepo(t)
 				defer cleanup()
 				err := repo.Create(ctx, &inst)
@@ -87,7 +88,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 		},
 		{
 			name: "Non-existent instance",
-			setupFn: func(ctx context.Context, tb testing.TB, inst models.Instance, t *testing.T) {
+			setupFn: func(_ context.Context, _ testing.TB, _ models.Instance, t *testing.T) {
 				// Intentionally do not save
 			},
 			wantErr: true,
@@ -271,7 +272,7 @@ func TestInstanceRepository_Update(t *testing.T) {
 		},
 		{
 			name: "Update non-existent instance",
-			setupFn: func(ctx context.Context, tb testing.TB) (models.Instance, error) {
+			setupFn: func(_ context.Context, tb testing.TB) (models.Instance, error) {
 				// Return an instance that hasn't been created
 				inst := models.Instance{
 					ID:     gofakeit.UUID(),
@@ -321,7 +322,7 @@ func TestInstanceRepository_Delete(t *testing.T) {
 	}{
 		{
 			name: "Delete existing instance",
-			setupFn: func(ctx context.Context, t *testing.T) (models.Instance, *bun.Tx, error) {
+			setupFn: func(ctx context.Context, _ *testing.T) (models.Instance, *bun.Tx, error) {
 				tx, err := transactor.BeginTx(ctx, nil)
 				if err != nil {
 					return models.Instance{}, nil, err
@@ -423,8 +424,8 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 					Name:   gofakeit.Word(),
 					UserID: tc.userID,
 				}
-				err := repo.Create(ctx, &inst)
-				require.NoError(t, err)
+				createErr := repo.Create(ctx, &inst)
+				require.NoError(t, createErr)
 			}
 
 			err = repo.DeleteByUser(ctx, tx, tc.userID)
@@ -439,8 +440,8 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 				err = tx.Commit()
 				require.NoError(t, err)
 				// Ensure none remain
-				found, err := repo.FindByUserID(ctx, tc.userID)
-				require.NoError(t, err)
+				found, findErr := repo.FindByUserID(ctx, tc.userID)
+				require.NoError(t, findErr)
 				assert.Empty(t, found)
 			}
 		})
@@ -474,7 +475,7 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 		{
 			name:       "Dismiss quickstart for user who has no instances",
 			instanceID: gofakeit.UUID(),
-			setupFn: func(ctx context.Context, tb testing.TB, instanceID string) error {
+			setupFn: func(_ context.Context, _ testing.TB, _ string) error {
 				return nil
 			},
 			wantErr: false,
@@ -503,4 +504,71 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInstanceRepository_CreateTx(t *testing.T) {
+	repo, transactor, cleanup := setupInstanceRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("creates instance within transaction", func(t *testing.T) {
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		instance := &models.Instance{
+			Name:   gofakeit.Word(),
+			UserID: gofakeit.UUID(),
+		}
+
+		err = repo.CreateTx(ctx, tx, instance)
+		require.NoError(t, err)
+		assert.NotEmpty(t, instance.ID, "ID should be generated")
+
+		err = tx.Commit()
+		require.NoError(t, err)
+
+		// Verify instance was created
+		found, err := repo.GetByID(ctx, instance.ID)
+		require.NoError(t, err)
+		assert.Equal(t, instance.Name, found.Name)
+		assert.Equal(t, instance.UserID, found.UserID)
+	})
+
+	t.Run("rolls back on transaction failure", func(t *testing.T) {
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+
+		instance := &models.Instance{
+			Name:   gofakeit.Word(),
+			UserID: gofakeit.UUID(),
+		}
+
+		err = repo.CreateTx(ctx, tx, instance)
+		require.NoError(t, err)
+
+		// Rollback transaction
+		err = tx.Rollback()
+		require.NoError(t, err)
+
+		// Verify instance was NOT created
+		_, err = repo.GetByID(ctx, instance.ID)
+		require.Error(t, err)
+	})
+
+	t.Run("validates required fields", func(t *testing.T) {
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		instance := &models.Instance{
+			Name: gofakeit.Word(),
+			// Missing UserID
+		}
+
+		err = repo.CreateTx(ctx, tx, instance)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "UserID is required")
+	})
 }

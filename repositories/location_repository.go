@@ -5,13 +5,15 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 
 type LocationRepository interface {
 	// Create saves or updates a location
 	Create(ctx context.Context, location *models.Location) error
+	// CreateTx saves a location within a transaction
+	CreateTx(ctx context.Context, tx *bun.Tx, location *models.Location) error
 	// Update updates a location in the database
 	Update(ctx context.Context, location *models.Location) error
 
@@ -48,7 +50,7 @@ type locationRepository struct {
 	db *bun.DB
 }
 
-// NewClueRepository creates a new ClueRepository.
+// NewLocationRepository creates a new LocationRepository.
 func NewLocationRepository(db *bun.DB) LocationRepository {
 	return &locationRepository{
 		db: db,
@@ -64,6 +66,15 @@ func (r *locationRepository) Create(ctx context.Context, location *models.Locati
 		return err
 	}
 	return r.Update(ctx, location)
+}
+
+// CreateTx saves a location within a transaction.
+func (r *locationRepository) CreateTx(ctx context.Context, tx *bun.Tx, location *models.Location) error {
+	if location.ID == "" {
+		location.ID = uuid.New().String()
+	}
+	_, err := tx.NewInsert().Model(location).Exec(ctx)
+	return err
 }
 
 // Update updates a location in the database.

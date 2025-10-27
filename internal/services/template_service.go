@@ -5,27 +5,27 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/helpers"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/helpers"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/uptrace/bun"
 )
 
 type TemplateService struct {
-	locationService      LocationService
+	duplicationService   *DuplicationService
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
 	shareLinkRepo        repositories.ShareLinkRepository
 }
 
 func NewTemplateService(
-	locationService LocationService,
+	duplicationService *DuplicationService,
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	shareLinkRepo repositories.ShareLinkRepository,
 ) TemplateService {
 	return TemplateService{
-		locationService:      locationService,
+		duplicationService:   duplicationService,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		shareLinkRepo:        shareLinkRepo,
@@ -48,67 +48,23 @@ func (s *TemplateService) CreateFromInstance(
 		return nil, errors.New("name cannot be empty")
 	}
 
-	oldInstance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	// Get user for duplication service
+	user := &models.User{ID: userID}
+
+	// Use duplication service to create template
+	newTemplate, err := s.duplicationService.CreateTemplateFromInstance(ctx, user, instanceID, name)
 	if err != nil {
-		return nil, errors.New("finding instance: " + err.Error())
-	}
-	if oldInstance == nil {
-		return nil, errors.New("instance not found")
+		return nil, errors.New("creating template from instance: " + err.Error())
 	}
 
-	if oldInstance.UserID != userID {
-		return nil, ErrPermissionDenied
-	}
-
-	if oldInstance.IsTemplate {
-		return nil, errors.New("cannot create a template from a template")
-	}
-
-	locations, err := s.locationService.FindByInstance(ctx, oldInstance.ID)
-	if err != nil {
-		return nil, errors.New("finding locations: " + err.Error())
-	}
-
-	if name == "" {
-		return nil, errors.New("name cannot be empty")
-	}
-	if instanceID == "" {
-		return nil, errors.New("id cannot be empty")
-	}
-
-	newInstance := &models.Instance{
-		Name:       name,
-		UserID:     userID,
-		IsTemplate: true,
-	}
-
-	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, errors.New("creating instance: " + err.Error())
-	}
-
-	// Copy locations
-	for _, location := range locations {
-		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
-		if err != nil {
-			return nil, errors.New("duplicating location: " + err.Error())
-		}
-	}
-
-	// Copy settings
-	settings := oldInstance.Settings
-	settings.InstanceID = newInstance.ID
-	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, errors.New("creating settings: " + err.Error())
-	}
-
-	return newInstance, nil
+	return newTemplate, nil
 }
 
 // LaunchInstance creates a new instance from a template.
 func (s *TemplateService) LaunchInstance(
 	ctx context.Context,
 	userID, templateID, name string,
-	regenLocationCodes bool,
+	_ bool, // TODO: regen marker IDs. This prevents sharing IDs.
 ) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
@@ -117,47 +73,13 @@ func (s *TemplateService) LaunchInstance(
 		return nil, errors.New("name cannot be empty")
 	}
 
-	template, err := s.instanceRepo.GetByID(ctx, templateID)
+	// Get user for duplication service
+	user := &models.User{ID: userID}
+
+	// Use duplication service - it validates template ownership and status
+	newInstance, err := s.duplicationService.CreateInstanceFromTemplate(ctx, user, templateID, name)
 	if err != nil {
-		return nil, errors.New("finding template: " + err.Error())
-	}
-
-	if template.UserID != userID {
-		return nil, ErrPermissionDenied
-	}
-
-	if !template.IsTemplate {
-		return nil, errors.New("instance is not a template")
-	}
-
-	locations, err := s.locationService.FindByInstance(ctx, template.ID)
-	if err != nil {
-		return nil, errors.New("finding locations: " + err.Error())
-	}
-
-	newInstance := &models.Instance{
-		Name:       name,
-		UserID:     userID,
-		IsTemplate: false,
-	}
-
-	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, errors.New("creating instance: " + err.Error())
-	}
-
-	// Copy locations
-	for _, location := range locations {
-		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
-		if err != nil {
-			return nil, errors.New("duplicating location: " + err.Error())
-		}
-	}
-
-	// Copy settings
-	settings := template.Settings
-	settings.InstanceID = newInstance.ID
-	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, errors.New("creating settings: " + err.Error())
+		return nil, errors.New("creating instance from template: " + err.Error())
 	}
 
 	return newInstance, nil
@@ -168,7 +90,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	ctx context.Context,
 	userID, shareLinkID string,
 	name string,
-	regen bool,
+	_ bool, // TODO: regen marker IDs. This prevents sharing IDs.
 ) (*models.Instance, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
@@ -193,6 +115,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 		return nil, ErrPermissionDenied
 	}
 
+	// Get template owner for duplication (share links use template owner's ID)
 	template, err := s.instanceRepo.GetByID(ctx, shareLink.TemplateID)
 	if err != nil {
 		return nil, errors.New("finding template: " + err.Error())
@@ -206,37 +129,19 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	if template.UserID != shareLink.UserID {
 		return nil, ErrPermissionDenied
 	}
-	locations, err := s.locationService.FindByInstance(ctx, template.ID)
+
+	// Use duplication service with shared template method (bypasses ownership check)
+	user := &models.User{ID: userID}
+	newInstance, err := s.duplicationService.CreateInstanceFromSharedTemplate(ctx, user, shareLink.TemplateID, name)
 	if err != nil {
-		return nil, errors.New("finding locations: " + err.Error())
-	}
-	newInstance := &models.Instance{
-		Name:       name,
-		UserID:     userID,
-		IsTemplate: false,
-	}
-	if err := s.instanceRepo.Create(ctx, newInstance); err != nil {
-		return nil, errors.New("creating instance: " + err.Error())
-	}
-	// Copy locations
-	for _, location := range locations {
-		_, err := s.locationService.DuplicateLocation(ctx, location, newInstance.ID)
-		if err != nil {
-			return nil, errors.New("duplicating location: " + err.Error())
-		}
-	}
-	// Copy settings
-	settings := template.Settings
-	settings.InstanceID = newInstance.ID
-	if err := s.instanceSettingsRepo.Create(ctx, &settings); err != nil {
-		return nil, errors.New("creating settings: " + err.Error())
+		return nil, errors.New("creating instance from shared template: " + err.Error())
 	}
 	// Increment the used count
 	shareLink.UsedCount++
 	if shareLink.MaxUses > 0 && shareLink.UsedCount >= shareLink.MaxUses {
 		shareLink.ExpiresAt = bun.NullTime{Time: time.Now()}
 	}
-	if err := s.shareLinkRepo.Use(ctx, shareLink); err != nil {
+	if err = s.shareLinkRepo.Use(ctx, shareLink); err != nil {
 		return nil, errors.New("updating share link: " + err.Error())
 	}
 

@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v4/filesystem"
-	admin "github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v4/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v4/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v5/filesystem"
+	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v5/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v5/internal/middlewares"
 )
 
 const (
@@ -38,7 +38,7 @@ func setupRouter(
 	}
 
 	// CSRF protection middleware
-	CSRF := csrf.Protect(
+	CSRF := csrf.Protect( //nolint:gocritic // CSRF
 		[]byte(csrfKey),
 		csrf.Secure(os.Getenv("IS_PROD") == "1"), // Use secure cookies in production
 		csrf.CookieName("csrf"),
@@ -283,6 +283,9 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/{id}", adminHandler.Instances)
 			r.Post("/{id}", adminHandler.Instances)
 			r.Get("/{id}/switch", adminHandler.InstanceSwitch)
+			r.Get("/{id}/name", adminHandler.InstancesName)
+			r.Get("/{id}/edit/name", adminHandler.InstancesNameEdit)
+			r.Post("/{id}/edit/name", adminHandler.InstancesNameEditPost)
 			r.Post("/delete", adminHandler.InstanceDelete)
 			r.Post("/duplicate", adminHandler.InstanceDuplicate)
 		})

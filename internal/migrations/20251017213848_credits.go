@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v4/config"
-	"github.com/nathanhollows/Rapua/v4/helpers"
+	"github.com/nathanhollows/Rapua/v5/config"
+	"github.com/nathanhollows/Rapua/v5/helpers"
 	"github.com/uptrace/bun"
 )
 

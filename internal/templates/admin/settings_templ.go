@@ -9,7 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"strings"
 )
 

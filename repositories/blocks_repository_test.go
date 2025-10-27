@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	"github.com/nathanhollows/Rapua/v4/db"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/db"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1293,4 +1293,90 @@ func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 			tt.cleanupFunc(oldOwnerID, newOwnerID)
 		})
 	}
+}
+
+func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
+	repo, _, transactor, cleanup := setupBlockRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("duplicates blocks within transaction", func(t *testing.T) {
+		oldOwnerID := gofakeit.UUID()
+		newOwnerID := gofakeit.UUID()
+
+		// Create blocks for old owner
+		block1, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: oldOwnerID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), oldOwnerID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+
+		block2, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: oldOwnerID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), oldOwnerID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+
+		_ = block1
+		_ = block2
+
+		// Duplicate within transaction
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		err = repo.DuplicateBlocksByOwnerTx(ctx, tx, oldOwnerID, newOwnerID)
+		require.NoError(t, err)
+
+		err = tx.Commit()
+		require.NoError(t, err)
+
+		// Verify new blocks were created
+		newBlocks, err := repo.FindByOwnerID(ctx, newOwnerID)
+		require.NoError(t, err)
+		assert.Len(t, newBlocks, 2)
+
+		// Verify old blocks still exist
+		oldBlocks, err := repo.FindByOwnerID(ctx, oldOwnerID)
+		require.NoError(t, err)
+		assert.Len(t, oldBlocks, 2)
+	})
+
+	t.Run("rolls back on transaction failure", func(t *testing.T) {
+		oldOwnerID := gofakeit.UUID()
+		newOwnerID := gofakeit.UUID()
+
+		// Create one block for old owner
+		_, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: oldOwnerID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), oldOwnerID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+
+		// Start transaction
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+
+		err = repo.DuplicateBlocksByOwnerTx(ctx, tx, oldOwnerID, newOwnerID)
+		require.NoError(t, err)
+
+		// Rollback
+		err = tx.Rollback()
+		require.NoError(t, err)
+
+		// Verify no new blocks were created
+		newBlocks, err := repo.FindByOwnerID(ctx, newOwnerID)
+		require.NoError(t, err)
+		assert.Empty(t, newBlocks)
+	})
 }

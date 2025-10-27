@@ -6,6 +6,27 @@ order: 100
 
 # Changelog
 
+## 5.2.0 (2025-10-25)
+
+### Added
+
+- `DuplicationService` to handle all instance, template, and location duplication with transaction safety. Fixes [#90](https://github.com/nathanhollows/Rapua/issues/90).
+  - Transaction-aware repository methods: `CreateTx` for instances, instance settings, and locations; `DuplicateBlocksByOwnerTx` for blocks.
+- Games can now be renamed just like templates.
+  - Added `GetByID` and `Update` methods to `InstanceService`.
+
+### Changed
+
+- Refactored duplication logic from `InstanceService`, `LocationService`, and `TemplateService` into centralized `DuplicationService`.
+
+### Fixed
+
+- Instance settings are now correctly duplicated when creating or launching templates. Fixes [#87](https://github.com/nathanhollows/Rapua/issues/87).
+- Nicer stripe callback pages. Fixes [#89](https://github.com/nathanhollows/Rapua/issues/89).
+- Fixed v4 to v5 import references across all files.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.2.0)
+
 ## 5.1.0 (2025-10-23)
 
 Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 team start per game. That's it. No tiers. No limits. No bulk discounts. A single rate for each team. Users get additional monthly credits for free. Educators get a bit more. Easy.

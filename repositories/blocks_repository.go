@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 
@@ -65,6 +65,8 @@ type BlockRepository interface {
 	// DuplicateBlocksByOwner duplicates all blocks from oldOwnerID to newOwnerID
 	// Preserves all block properties including context, ordering, points, etc.
 	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
+	// DuplicateBlocksByOwnerTx duplicates all blocks within a transaction
+	DuplicateBlocksByOwnerTx(ctx context.Context, tx *bun.Tx, oldOwnerID, newOwnerID string) error
 }
 
 type blockRepository struct {
@@ -426,6 +428,50 @@ func (r *blockRepository) DuplicateBlocksByOwner(
 
 	// Bulk insert all blocks
 	_, err = r.db.NewInsert().
+		Model(&newBlocks).
+		Exec(ctx)
+
+	return err
+}
+
+// DuplicateBlocksByOwnerTx duplicates all blocks from one owner to another within a transaction.
+func (r *blockRepository) DuplicateBlocksByOwnerTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	oldOwnerID, newOwnerID string,
+) error {
+	// Fetch all blocks for the old owner
+	var originalBlocks []models.Block
+	err := tx.NewSelect().
+		Model(&originalBlocks).
+		Where("owner_id = ?", oldOwnerID).
+		Scan(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Nothing to duplicate
+	if len(originalBlocks) == 0 {
+		return nil
+	}
+
+	// Create new blocks with new IDs and owner
+	newBlocks := make([]models.Block, len(originalBlocks))
+	for i, original := range originalBlocks {
+		newBlocks[i] = models.Block{
+			ID:                 uuid.New().String(),
+			OwnerID:            newOwnerID,
+			Type:               original.Type,
+			Context:            original.Context,
+			Data:               original.Data,
+			Ordering:           original.Ordering,
+			Points:             original.Points,
+			ValidationRequired: original.ValidationRequired,
+		}
+	}
+
+	// Bulk insert all blocks
+	_, err = tx.NewInsert().
 		Model(&newBlocks).
 		Exec(ctx)
 

@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // Helper function to get quiz player data

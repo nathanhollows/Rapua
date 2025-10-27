@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/db"
-	"github.com/nathanhollows/Rapua/v4/internal/migrations"
+	"github.com/nathanhollows/Rapua/v5/db"
+	"github.com/nathanhollows/Rapua/v5/internal/migrations"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 )

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 )
 
 type LocationService interface {
@@ -19,7 +19,6 @@ type LocationService interface {
 		points int,
 		markerCode string,
 	) (models.Location, error)
-	DuplicateLocation(ctx context.Context, location models.Location, newInstanceID string) (models.Location, error)
 
 	// GetByID finds a location by its ID
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
@@ -141,31 +140,6 @@ func (s locationService) CreateLocationFromMarker(
 	return location, nil
 }
 
-// DuplicateLocation duplicates a location.
-func (s locationService) DuplicateLocation(
-	ctx context.Context,
-	location models.Location,
-	newInstanceID string,
-) (models.Location, error) {
-	// Copy the location
-	newLocation := location
-	newLocation.ID = ""
-	newLocation.InstanceID = newInstanceID
-	err := s.locationRepo.Create(ctx, &newLocation)
-	if err != nil {
-		return models.Location{}, fmt.Errorf("saving location: %w", err)
-	}
-
-	// Duplicate all blocks from old location to new location
-	// This preserves all block properties including context
-	err = s.blockRepo.DuplicateBlocksByOwner(ctx, location.ID, newLocation.ID)
-	if err != nil {
-		return models.Location{}, fmt.Errorf("duplicating blocks: %w", err)
-	}
-
-	return newLocation, nil
-}
-
 // GetByID finds a location by ID.
 func (s locationService) GetByID(ctx context.Context, locationID string) (*models.Location, error) {
 	location, err := s.locationRepo.GetByID(ctx, locationID)
@@ -247,20 +221,19 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 	}
 
 	if shared && update {
-		newMarker, err := s.markerService.CreateMarker(
+		newMarker, createErr := s.markerService.CreateMarker(
 			ctx,
 			location.Marker.Name,
 			location.Marker.Lat,
 			location.Marker.Lng,
 		)
-		if err != nil {
-			return fmt.Errorf("creating new marker: %w", err)
+		if createErr != nil {
+			return fmt.Errorf("creating new marker: %w", createErr)
 		}
 		location.MarkerID = newMarker.Code
 	} else if update {
-		err := s.markerRepo.Update(ctx, &location.Marker)
-		if err != nil {
-			return fmt.Errorf("updating marker: %w", err)
+		if updateErr := s.markerRepo.Update(ctx, &location.Marker); updateErr != nil {
+			return fmt.Errorf("updating marker: %w", updateErr)
 		}
 	}
 
@@ -278,9 +251,8 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 	}
 
 	if update {
-		err := s.locationRepo.Update(ctx, location)
-		if err != nil {
-			return fmt.Errorf("updating location: %w", err)
+		if updateErr := s.locationRepo.Update(ctx, location); updateErr != nil {
+			return fmt.Errorf("updating location: %w", updateErr)
 		}
 	}
 

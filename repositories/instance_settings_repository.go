@@ -5,13 +5,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 
 type InstanceSettingsRepository interface {
 	// Create new instance settings to the database
 	Create(ctx context.Context, settings *models.InstanceSettings) error
+	// CreateTx creates new instance settings within a transaction
+	CreateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error
 
 	// Update updates an instance in the database
 	Update(ctx context.Context, settings *models.InstanceSettings) error
@@ -40,6 +42,23 @@ func (r *instanceSettingsRepository) Create(ctx context.Context, settings *model
 	settings.CreatedAt = time.Now().UTC()
 	settings.UpdatedAt = time.Now().UTC()
 	_, err := r.db.NewInsert().Model(settings).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *instanceSettingsRepository) CreateTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	settings *models.InstanceSettings,
+) error {
+	if settings.InstanceID == "" {
+		return errors.New("instance ID is required")
+	}
+	settings.CreatedAt = time.Now().UTC()
+	settings.UpdatedAt = time.Now().UTC()
+	_, err := tx.NewInsert().Model(settings).Exec(ctx)
 	if err != nil {
 		return err
 	}

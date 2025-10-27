@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v4/internal/flash"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	templates "github.com/nathanhollows/Rapua/v4/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/internal/flash"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 // getTemplateByID retrieves a template by ID from various sources (param, form).

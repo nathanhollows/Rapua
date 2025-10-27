@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 )
 
 type AccessService struct {

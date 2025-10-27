@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v4/blocks"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) templ.Component {

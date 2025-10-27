@@ -6,13 +6,15 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 
 type InstanceRepository interface {
 	// Create saves an instance to the database
 	Create(ctx context.Context, instance *models.Instance) error
+	// CreateTx saves an instance to the database within a transaction
+	CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error
 
 	// GetByID finds an instance by ID
 	GetByID(ctx context.Context, id string) (*models.Instance, error)
@@ -52,6 +54,20 @@ func (r *instanceRepository) Create(ctx context.Context, instance *models.Instan
 		return errors.New("UserID is required")
 	}
 	_, err := r.db.NewInsert().Model(instance).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *instanceRepository) CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error {
+	if instance.ID == "" {
+		instance.ID = uuid.New().String()
+	}
+	if instance.UserID == "" {
+		return errors.New("UserID is required")
+	}
+	_, err := tx.NewInsert().Model(instance).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -148,8 +164,8 @@ func (r *instanceRepository) DeleteByUser(ctx context.Context, tx *bun.Tx, userI
 		return fmt.Errorf("finding instances by user ID: %w", err)
 	}
 	for _, instance := range instances {
-		if err := r.Delete(ctx, tx, instance.ID); err != nil {
-			return fmt.Errorf("deleting instance: %w", err)
+		if deleteErr := r.Delete(ctx, tx, instance.ID); deleteErr != nil {
+			return fmt.Errorf("deleting instance: %w", deleteErr)
 		}
 	}
 	return nil

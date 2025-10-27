@@ -12,25 +12,25 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v4/db"
-	admin "github.com/nathanhollows/Rapua/v4/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v4/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v4/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v4/internal/migrations"
-	"github.com/nathanhollows/Rapua/v4/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v4/internal/server"
-	"github.com/nathanhollows/Rapua/v4/internal/services"
-	"github.com/nathanhollows/Rapua/v4/internal/sessions"
-	"github.com/nathanhollows/Rapua/v4/internal/storage"
-	"github.com/nathanhollows/Rapua/v4/models"
-	"github.com/nathanhollows/Rapua/v4/repositories"
+	"github.com/nathanhollows/Rapua/v5/db"
+	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v5/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v5/internal/migrations"
+	"github.com/nathanhollows/Rapua/v5/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v5/internal/server"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
+	"github.com/nathanhollows/Rapua/v5/internal/sessions"
+	"github.com/nathanhollows/Rapua/v5/internal/storage"
+	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v5/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v5.1.0"
+const version = "v5.2.0"
 
 func main() {
 	logger := slog.New(
@@ -363,6 +363,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditPurchaseRepo,
 		teamStartLogRepo,
 	)
+	duplicationService := services.NewDuplicationService(
+		transactor,
+		instanceRepo,
+		instanceSettingsRepo,
+		locationRepo,
+		blockRepo,
+	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
@@ -406,10 +413,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	)
 	leaderBoardService := services.NewLeaderBoardService(teamRepo)
 	instanceService := services.NewInstanceService(
-		locationService, *teamService, instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo,
 	)
 	templateService := services.NewTemplateService(
-		locationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
+		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 
 	sessions.Start()
@@ -458,6 +465,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditService,
 		creditPurchaseRepo,
 		deleteService,
+		duplicationService,
 		facilitatorService,
 		gameScheduleService,
 		instanceService,

@@ -2,7 +2,7 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 templ Instances(instances []models.Instance, currentInstance models.Instance, templates []models.Instance) {
@@ -241,6 +241,64 @@ function launchTemplate() {
 </script>
 }
 
+templ InstanceName(instance models.Instance, active bool) {
+	<div
+		class="tooltip cursor-pointer"
+		data-tip="Click to rename"
+		hx-get={ fmt.Sprint("/admin/instances/", instance.ID, "/edit/name") }
+		hx-target={ fmt.Sprint("#name-", instance.ID) }
+		hx-swap="innerHTML"
+		_="on click send closeNameEdit"
+	>
+		{ instance.Name }
+		if active {
+			<div class="text-xs font-semibold opacity-60">
+				Currently selected game
+			</div>
+		}
+	</div>
+}
+
+templ InstanceNameEdit(instance models.Instance) {
+	<form
+		hx-post={ fmt.Sprint("/admin/instances/", instance.ID, "/edit/name") }
+		hx-target={ fmt.Sprint("#name-", instance.ID) }
+		hx-swap="innerHTML"
+		hx-trigger="submit"
+	>
+		<label class="input gap-2">
+			<input
+				id="name-input"
+				type="text"
+				name="name"
+				class="grow text-ellipsis"
+				placeholder="Instance name"
+				autoComplete="off"
+				autoFocus
+				tabIndex="0"
+				value={ instance.Name }
+				_="on keyup[key == 'Escape'] send closeNameEdit"
+			/>
+			<button
+				type="button"
+				hx-get={ fmt.Sprint("/admin/instances/", instance.ID, "/name") }
+				hx-target={ fmt.Sprint("#name-", instance.ID) }
+				hx-swap="innerHTML"
+				class="btn btn-xs btn-circle"
+				hx-trigger="click, closeNameEdit from:body"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+			</button>
+			<button
+				type="submit"
+				class="btn btn-xs btn-circle"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-4 h-4"><path d="M20 6 9 17l-5-5"></path></svg>
+			</button>
+		</label>
+	</form>
+}
+
 templ instanceItem(instance models.Instance, active bool) {
 	<div
 		class="instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
@@ -259,13 +317,11 @@ templ instanceItem(instance models.Instance, active bool) {
 				}
 			</div>
 			<!-- Instance name -->
-			<span class="instance-name">
-				{ instance.Name }
-				if active {
-					<div class="text-xs font-semibold opacity-60">
-						Currently selected game
-					</div>
-				}
+			<span
+				id={ fmt.Sprint("name-", instance.ID) }
+				class="instance-name grow"
+			>
+				@InstanceName(instance, active)
 			</span>
 			<span class="grow"></span>
 			<!-- Action buttons -->

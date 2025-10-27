@@ -3,7 +3,7 @@ package security_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v4/security"
+	"github.com/nathanhollows/Rapua/v5/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

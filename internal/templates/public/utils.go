@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v4/helpers"
+	"github.com/nathanhollows/Rapua/v5/helpers"
 	enclave "github.com/quail-ink/goldmark-enclave"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"

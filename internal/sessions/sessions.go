@@ -9,7 +9,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
-	"github.com/nathanhollows/Rapua/v4/models"
+	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 var store sessions.Store
@@ -26,7 +26,7 @@ func Start() {
 	authStore.Options.SameSite = http.SameSiteLaxMode
 	authStore.Options.HttpOnly = true
 	authStore.Options.Secure = true
-	//nolint:reassign
+	//nolint:reassign // This approach is correct as per the docs
 	gothic.Store = authStore
 	goth.UseProviders(
 		google.New(
