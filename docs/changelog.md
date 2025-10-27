@@ -22,6 +22,7 @@ order: 100
 ### Fixed
 
 - Instance settings are now correctly duplicated when creating or launching templates. Fixes [#87](https://github.com/nathanhollows/Rapua/issues/87).
+- Nicer stripe callback pages. Fixes [#89](https://github.com/nathanhollows/Rapua/issues/89).
 - Fixed v4 to v5 import references across all files.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.2.0)

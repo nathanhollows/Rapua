@@ -356,6 +356,10 @@ templ CreditUsageYear(usage []services.TeamStartSummary) {
 }
 
 templ CreditPurchaseSuccess(user models.User, sessionID string) {
+	@CreditPurchaseSuccessContent(sessionID)
+}
+
+templ CreditPurchaseSuccessContent(sessionID string) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
 		<div class="grid h-fit flex-grow">
 			<div class="my-5">
@@ -370,11 +374,10 @@ templ CreditPurchaseSuccess(user models.User, sessionID string) {
 				</div>
 				<div class="prose mt-6">
 					<p>Thank you for your purchase! Your credits are now available and ready to use.</p>
-					<p class="text-sm text-base-content/70">Session ID: { sessionID }</p>
 				</div>
 				<div class="mt-6">
 					<a href="/admin/settings/credits" class="btn btn-primary">
-						View Credit Balance
+						View Credit Usage & Balance
 					</a>
 				</div>
 			</div>
@@ -383,6 +386,10 @@ templ CreditPurchaseSuccess(user models.User, sessionID string) {
 }
 
 templ CreditPurchaseCancel(user models.User) {
+	@CreditPurchaseCancelContent()
+}
+
+templ CreditPurchaseCancelContent() {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
 		<div class="grid h-fit flex-grow">
 			<div class="my-5">
