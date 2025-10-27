@@ -33,7 +33,226 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 		user.CurrentInstance.Locations[i] = location
 	}
 
-	c := templates.LocationsIndex(user.CurrentInstance.Settings, user.CurrentInstance.Locations)
+	// Dummy game structure data - Greytown Quest
+	groups := models.GameStructure{
+		ID:             "root",
+		Name:           "Greytown Heritage Quest",
+		Color:          "base",
+		Routing:        models.RouteStrategyFreeRoam,
+		Navigation:     models.NavigationDisplayClues,
+		CompletionType: models.CompletionAll,
+		IsRoot:         true,
+		Locations: []*models.Location{
+			{
+				ID:       "loc1",
+				Name:     "Main Street Information Centre",
+				MarkerID: "INFO1",
+				Points:   5,
+			},
+		},
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "historic-buildings",
+				Name:           "Historic Buildings Trail",
+				Color:          "primary",
+				Routing:        models.RouteStrategyOrdered,
+				Navigation:     models.NavigationDisplayClues,
+				CompletionType: models.CompletionAll,
+				IsRoot:         false,
+				Order:          1,
+				Locations: []*models.Location{
+					{
+						ID:       "loc2",
+						Name:     "Cobblestones Museum",
+						MarkerID: "COB01",
+						Points:   50,
+					},
+					{
+						ID:       "loc3",
+						Name:     "St Andrew's Church",
+						MarkerID: "CHR01",
+						Points:   40,
+					},
+					{
+						ID:       "loc4",
+						Name:     "Town Hall Clock Tower",
+						MarkerID: "HALL1",
+						Points:   45,
+					},
+				},
+				SubGroups: []models.GameStructure{
+					{
+						ID:             "victorian-shops",
+						Name:           "Victorian Shop Fronts",
+						Color:          "accent",
+						Routing:        models.RouteStrategyFreeRoam,
+						Navigation:     models.NavigationDisplayClues,
+						CompletionType: models.CompletionMinimum,
+						MinimumRequired: 2,
+						IsRoot:         false,
+						Order:          1,
+						Locations: []*models.Location{
+							{
+								ID:       "loc5",
+								Name:     "Greytown Pharmacy",
+								MarkerID: "PHRM1",
+								Points:   20,
+							},
+							{
+								ID:       "loc6",
+								Name:     "Antique Store",
+								MarkerID: "ANTQ1",
+								Points:   20,
+							},
+							{
+								ID:       "loc7",
+								Name:     "Old Post Office",
+								MarkerID: "POST1",
+								Points:   25,
+							},
+						},
+						SubGroups: []models.GameStructure{},
+					},
+				},
+			},
+			{
+				ID:              "nature-walk",
+				Name:            "Waiohine River Walk",
+				Color:           "success",
+				Routing:         models.RouteStrategyOrdered,
+				Navigation:      models.NavigationDisplayClues,
+				CompletionType:  models.CompletionAll,
+				IsRoot:          false,
+				Order:           2,
+				Locations: []*models.Location{
+					{
+						ID:       "loc8",
+						Name:     "River Bridge Crossing",
+						MarkerID: "BRG01",
+						Points:   30,
+					},
+					{
+						ID:       "loc9",
+						Name:     "Native Bush Trail",
+						MarkerID: "BUSH1",
+						Points:   35,
+					},
+					{
+						ID:       "loc10",
+						Name:     "Scenic Lookout Point",
+						MarkerID: "LOOK1",
+						Points:   40,
+					},
+				},
+				SubGroups: []models.GameStructure{},
+			},
+			{
+				ID:              "local-flavours",
+				Name:            "Local Flavours & Crafts",
+				Color:           "warning",
+				Routing:         models.RouteStrategyFreeRoam,
+				Navigation:      models.NavigationDisplayClues,
+				CompletionType:  models.CompletionMinimum,
+				MinimumRequired: 3,
+				IsRoot:          false,
+				Order:           3,
+				Locations: []*models.Location{
+					{
+						ID:       "loc11",
+						Name:     "Greytown Wine Centre",
+						MarkerID: "WINE1",
+						Points:   25,
+					},
+					{
+						ID:       "loc12",
+						Name:     "Village Café",
+						MarkerID: "CAFE1",
+						Points:   15,
+					},
+					{
+						ID:       "loc13",
+						Name:     "Artisan Bakery",
+						MarkerID: "BAKR1",
+						Points:   20,
+					},
+					{
+						ID:       "loc14",
+						Name:     "Craft Gallery",
+						MarkerID: "GALL1",
+						Points:   30,
+					},
+					{
+						ID:       "loc15",
+						Name:     "Olive Oil Co.",
+						MarkerID: "OLIV1",
+						Points:   25,
+					},
+				},
+				SubGroups: []models.GameStructure{
+					{
+						ID:             "hidden-gems",
+						Name:           "Hidden Gems",
+						Color:          "info",
+						Routing:        models.RouteStrategyRandom,
+						Navigation:     models.NavigationDisplayClues,
+						CompletionType: models.CompletionMinimum,
+						MinimumRequired: 1,
+						IsRoot:         false,
+						Order:          1,
+						Locations: []*models.Location{
+							{
+								ID:       "loc16",
+								Name:     "Secret Garden Café",
+								MarkerID: "SECR1",
+								Points:   35,
+							},
+							{
+								ID:       "loc17",
+								Name:     "Local Artist Studio",
+								MarkerID: "ART01",
+								Points:   30,
+							},
+						},
+						SubGroups: []models.GameStructure{},
+					},
+				},
+			},
+			{
+				ID:              "bonus-challenges",
+				Name:            "Bonus Challenges",
+				Color:           "secondary",
+				Routing:         models.RouteStrategyFreeRoam,
+				Navigation:      models.NavigationDisplayClues,
+				CompletionType:  models.CompletionMinimum,
+				MinimumRequired: 1,
+				IsRoot:          false,
+				Order:           4,
+				Locations: []*models.Location{
+					{
+						ID:       "loc18",
+						Name:     "Photo Challenge: Best Shopfront",
+						MarkerID: "PHOT1",
+						Points:   50,
+					},
+					{
+						ID:       "loc19",
+						Name:     "Trivia Challenge: Town History",
+						MarkerID: "TRIV1",
+						Points:   60,
+					},
+					{
+						ID:       "loc20",
+						Name:     "Scavenger Hunt: Find the Plaque",
+						MarkerID: "SCAV1",
+						Points:   70,
+					},
+				},
+				SubGroups: []models.GameStructure{},
+			},
+		},
+	}
+
+	c := templates.LocationGroupList(user.CurrentInstance.Settings, groups)
 	err := templates.Layout(c, *user, "Locations", "Locations").Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("Locations: rendering template", "error", err)
