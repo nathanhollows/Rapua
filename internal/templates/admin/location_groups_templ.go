@@ -14,6 +14,16 @@ import (
 	"github.com/nathanhollows/Rapua/v5/models"
 )
 
+var emptyGroupData = models.GameStructure{
+	Name:       "New Group",
+	Color:      "primary",
+	Locations:  nil,
+	SubGroups:  nil,
+	Routing:    models.RouteStrategyFreeRoam,
+	Navigation: models.NavigationDisplayCustom,
+	IsRoot:     false,
+}
+
 func LocationGroupList(settings models.InstanceSettings, groups models.GameStructure) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -35,15 +45,23 @@ func LocationGroupList(settings models.InstanceSettings, groups models.GameStruc
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Header --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Locations <span class=\"htmx-indicator loading loading-dots loading-md text-info\">Updating</span></h1><span class=\"flex md:flex-row flex-wrap justify-center gap-5\"><div class=\"join\"><a href=\"/admin/locations/qr-codes.zip\" class=\"btn btn-base btn-outline join-item mb-3 md:mb-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-image-down\"><path d=\"M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21\"></path> <path d=\"m14 19 3 3 v-5.5\"></path> <path d=\"m17 22 3-3\"></path> <circle cx=\"9\" cy=\"9\" r=\"2\"></circle></svg> QR codes</a> <a class=\"btn btn-base btn-outline join-item\" href=\"/admin/locations/posters.pdf\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-down\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path> <path d=\"M12 18v-6\"></path> <path d=\"m9 15 3 3 3-3\"></path></svg> Posters</a></div><a href=\"/admin/locations/new\" hx-boost=\"true\" class=\"btn btn-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-plus w-5 h-5\"><path d=\"M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle><path d=\"M16 18h6\"></path><path d=\"M19 15v6\"></path></svg> Add Location</a></span></div><div class=\"px-6\" id=\"root-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Header --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Locations <span class=\"htmx-indicator loading loading-dots loading-md text-info\">Updating</span></h1><span class=\"flex md:flex-row flex-wrap justify-center gap-5\"><div class=\"join\"><a href=\"/admin/locations/qr-codes.zip\" class=\"btn btn-base btn-outline join-item mb-3 md:mb-0\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-image-down\"><path d=\"M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21\"></path> <path d=\"m14 19 3 3 v-5.5\"></path> <path d=\"m17 22 3-3\"></path> <circle cx=\"9\" cy=\"9\" r=\"2\"></circle></svg> QR codes</a> <a class=\"btn btn-base btn-outline join-item\" href=\"/admin/locations/posters.pdf\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-down\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path> <path d=\"M12 18v-6\"></path> <path d=\"m9 15 3 3 3-3\"></path></svg> Posters</a></div><div class=\"join\"><button class=\"btn btn-secondary join-item\" _=\"on click\n\t\t\t\t\t\tset groupsArea to first .groups-area\n\t\t\t\t\t\tput #empty-group-template's innerHTML at start of groupsArea\n\t\t\t\t\t\t-- Initialize SortableJS on the new group's locations-area\n\t\t\t\t\t\tset newLocationsArea to groupsArea.querySelector('.group-item .locations-area')\n\t\t\t\t\t\tjs(newLocationsArea)\n\t\t\t\t\t\t\tnew Sortable(newLocationsArea, {\n\t\t\t\t\t\t\t\tgroup: 'locations',\n\t\t\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\t\t\tdraggable: '.location-item',\n\t\t\t\t\t\t\t\thandle: '.location-drag-handle',\n\t\t\t\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t\t\tconsole.log('Location moved:', evt);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-group-icon lucide-group w-5 h-5\"><path d=\"M3 7V5c0-1.1.9-2 2-2h2\"></path><path d=\"M17 3h2c1.1 0 2 .9 2 2v2\"></path><path d=\"M21 17v2c0 1.1-.9 2-2 2h-2\"></path><path d=\"M7 21H5c-1.1 0-2-.9-2-2v-2\"></path><rect width=\"7\" height=\"5\" x=\"7\" y=\"7\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"10\" y=\"12\" rx=\"1\"></rect></svg> Add Group</button> <a href=\"/admin/locations/new\" hx-boost=\"true\" class=\"btn btn-secondary join-item\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-plus w-5 h-5\"><path d=\"M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle><path d=\"M16 18h6\"></path><path d=\"M19 15v6\"></path></svg> Add Location</a></div></span></div><template id=\"empty-group-template\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = locationGroup(groups, "root").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = locationGroup(emptyGroupData).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</template><div class=\"px-6\" id=\"root-container\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = locationGroup(groups).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -55,7 +73,7 @@ func LocationGroupList(settings models.InstanceSettings, groups models.GameStruc
 	})
 }
 
-func locationGroup(group models.GameStructure, groupID string) templ.Component {
+func locationGroup(group models.GameStructure) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -77,20 +95,20 @@ func locationGroup(group models.GameStructure, groupID string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if group.IsRoot {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Root locations area --> <div class=\"locations-area space-y-3 mb-6\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<!-- Root locations area --> <div class=\"locations-area join join-vertical my-6 w-full bg-base-300 rounded-2xl\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(groupID)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 52, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 94, Col: 109}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -100,61 +118,61 @@ func locationGroup(group models.GameStructure, groupID string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Root groups area --> <div class=\"groups-area space-y-6\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><!-- Root groups area --> <div class=\"groups-area space-y-6\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(groupID)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 58, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 100, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, subGroup := range group.SubGroups {
-				templ_7745c5c3_Err = locationGroup(subGroup, subGroup.ID).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = locationGroup(subGroup).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!-- Nested group card --> <div class=\"group-item card shadow bg-primary/5 border border-primary/40 border-l-4 hover:border-primary/60 transition-colors\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<!-- Nested group card --> <div class=\"group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 65, Col: 153}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 107, Col: 142}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" data-group-color=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" data-group-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(group.Color)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 65, Col: 186}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 107, Col: 175}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><div class=\"card-body p-4\"><div class=\"flex justify-between items-center mb-3\"><div class=\"flex items-center gap-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"><div class=\"card-body p-4\"><div class=\"flex justify-between items-center mb-3\"><div class=\"flex items-center gap-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -162,41 +180,41 @@ func locationGroup(group models.GameStructure, groupID string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<input type=\"text\" class=\"input input-ghost p-2 font-bold bg-transparent\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<input type=\"text\" class=\"input input-ghost p-2 font-bold bg-transparent\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(group.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 71, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 113, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"></div><div class=\"flex-grow cursor-move group-drag-handle min-h-8\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"></div><div class=\"flex-grow cursor-move group-drag-handle min-h-8\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = groupMenu(group.Routing).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = groupMenu(group.Routing, len(group.Locations)).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><!-- Locations area within group --><div class=\"locations-area mb-3 join join-vertical\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><!-- Locations area within group --><div class=\"locations-area join join-vertical\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 77, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 119, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -206,30 +224,17 @@ func locationGroup(group models.GameStructure, groupID string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><!-- Subgroups area within group - always show --><div class=\"groups-area space-y-3 mt-4\" data-group-id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 83, Col: 68}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><!-- Subgroups area within group - always show -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, subGroup := range group.SubGroups {
-				templ_7745c5c3_Err = locationGroup(subGroup, subGroup.ID).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = locationGroup(subGroup).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -254,34 +259,34 @@ func locationItem(location models.Location) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var10 == nil {
-			templ_7745c5c3_Var10 = templ.NopComponent
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-300/80\" data-location-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(location.ID)
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(location.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 94, Col: 134}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 134, Col: 134}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><div class=\"loc flex items-center gap-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg> <span class=\"tooltip cursor-help\" data-tip=\"Has coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg></span> <span class=\"tooltip cursor-help\" data-tip=\"Has clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span><div class=\"badge badge-sm badge-outline border-primary font-medium tooltip\" data-tip=\"Location ID\"><code>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var11 string
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 143, Col: 128}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><div class=\"loc flex items-center gap-3\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg> <span class=\"tooltip cursor-help\" data-tip=\"Has coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg></span> <span class=\"tooltip cursor-help\" data-tip=\"Has clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span><div class=\"badge badge-sm badge-outline border-primary font-medium\"><code>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 103, Col: 97}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -289,12 +294,12 @@ func locationItem(location models.Location) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 104, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 144, Col: 103}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -302,16 +307,24 @@ func locationItem(location models.Location) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Points))
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Points))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 106, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 146, Col: 75}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " pts</span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " pts</span>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = publishedToggle().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -319,7 +332,38 @@ func locationItem(location models.Location) templ.Component {
 	})
 }
 
-func groupMenu(nav models.RouteStrategy) templ.Component {
+func publishedToggle() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if false {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div><label class=\"swap\"><input type=\"checkbox\"> <label class=\"swap tooltip\" data-tip=\"Published\"><input type=\"checkbox\" checked _=\"on change\n\t\t\t\t\t\t\tset parent to the closest parent <label />\n\t\t\t\t\t\tif my.checked then\n\t\t\t\t\t\t\tset parent's @data-tip to 'Published'\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tset parent's @data-tip to 'Draft'\n\t\t\t\t\t\tend\n\t\t\t\t\t\"> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-on lucide lucide-eye-icon lucide-eye w-5\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-off lucide lucide-eye-closed-icon lucide-eye-closed w-5\"><path d=\"m15 18-.722-3.25\"></path><path d=\"M2 8a10.645 10.645 0 0 0 20 0\"></path><path d=\"m20 15-1.726-2.05\"></path><path d=\"m4 15 1.726-2.05\"></path><path d=\"m9 18 .722-3.25\"></path></svg></label></label></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
+func visitationSettings(locationCount int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -340,28 +384,143 @@ func groupMenu(nav models.RouteStrategy) templ.Component {
 			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex gap-2\"><div class=\"dropdown dropdown-bottom\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost\">")
+		if false {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"dropdown dropdown-bottom dropdown-center visitation-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost\"><span class=\"visit-button-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-check-icon lucide-check-check\"><path d=\"M18 6 7 17l-5-5\"></path><path d=\"m22 10-7.5 7.5L13 16\"></path></svg></span> <span class=\"visit-button-text\">Visit All</span> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><div tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><!-- Visit All Menu Item --><ul class=\"menu p-2 w-full\"><li><a role=\"button\" class=\"visit-option\" data-mode=\"all\" _=\"on click\n\t\t\t\t\t\t\t\tset dropdown to closest <.visitation-dropdown/>\n\t\t\t\t\t\t\t\tset buttonText to dropdown.querySelector('.visit-button-text')\n\t\t\t\t\t\t\t\tset buttonIcon to dropdown.querySelector('.visit-button-icon')\n\t\t\t\t\t\t\t\tset buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`\n\t\t\t\t\t\t\t\tput 'Visit All' into buttonText\n\t\t\t\t\t\t\t\tremove .bg-base-300 from <.visit-option/>\n\t\t\t\t\t\t\t\tadd .bg-base-300 to me\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-check-icon lucide-check-check\"><path d=\"M18 6 7 17l-5-5\"></path><path d=\"m22 10-7.5 7.5L13 16\"></path></svg> Visit All</a></li></ul><!-- Visit N Slider Section --><div class=\"p-3 pt-0\"><label class=\"text-xs font-medium mb-2\">Visit at least:</label><div class=\"flex items-center gap-2\"><input type=\"range\" min=\"1\" max=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(locationCount))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 220, Col: 38}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(locationCount))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 221, Col: 40}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"range range-primary range-sm flex-1 visit-slider\" _=\"on input\n\t\t\t\t\t\t\t\tset dropdown to closest <.visitation-dropdown/>\n\t\t\t\t\t\t\t\tset buttonText to dropdown.querySelector('.visit-button-text')\n\t\t\t\t\t\t\t\tset buttonIcon to dropdown.querySelector('.visit-button-icon')\n\t\t\t\t\t\t\t\tif my.value == my.max then\n\t\t\t\t\t\t\t\t\tset buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`\n\t\t\t\t\t\t\t\t\tput 'Visit All' into buttonText\n\t\t\t\t\t\t\t\t\tremove .bg-base-300 from <.visit-option/>\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tset buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`\n\t\t\t\t\t\t\t\t\tput 'Visit ' + my.value into buttonText\n\t\t\t\t\t\t\t\t\tremove .bg-base-300 from <.visit-option/>\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tput my.value into the next <output/>\"> <output class=\"badge badge-sm badge-primary min-w-[3rem] text-center\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(locationCount))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 238, Col: 103}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</output></div><div class=\"text-xs text-base-content/60 text-center\"><span class=\"visit-disabled-msg hidden\">Disabled in Ordered mode</span></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
+func groupMenu(nav models.RouteStrategy, locationCount int) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"flex gap-2 items-center\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = visitationSettings(locationCount).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<!-- Route Strategy Picker -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = routeStrategyPicker(nav).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<button class=\"btn btn-sm btn-ghost tooltip delete-group-btn\" data-tip=\"Delete group\" _=\"on click\n\t\t\t\tif I match .confirming then\n\t\t\t\t\t-- Actually delete the group\n\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\tset rootLocationsArea to document.querySelector('#root-container .locations-area')\n\t\t\t\t\t-- Get ALL location items in this group (including nested ones)\n\t\t\t\t\tset allLocations to groupCard.querySelectorAll('.location-item')\n\t\t\t\t\t-- Move all locations to root\n\t\t\t\t\tfor location in allLocations\n\t\t\t\t\t\tcall rootLocationsArea.appendChild(location)\n\t\t\t\t\tend\n\t\t\t\t\t-- Remove the group card\n\t\t\t\t\tremove groupCard\n\t\t\t\telse\n\t\t\t\t\t-- First click: show confirmation\n\t\t\t\t\tadd .confirming to me\n\t\t\t\t\tset my @data-tip to 'Are you sure?'\n\t\t\t\t\tadd .tooltip-warning to me\n\t\t\t\t\t-- Reset after 2 seconds (non-blocking)\n\t\t\t\tend\n\t\t\ton mouseleave\n\t\t\t\tif I match .confirming then\n\t\t\t\t\tremove .confirming from me\n\t\t\t\t\tset my @data-tip to 'Delete group'\n\t\t\t\t\tremove .tooltip-warning from me\n\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func routeStrategyPicker(nav models.RouteStrategy) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"dropdown dropdown-bottom dropdown-center route-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost\"><div class=\"route-strat contents\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch nav {
 		case models.RouteStrategyOrdered:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-ordered-icon lucide-list-ordered w-4\"><path d=\"M10 12h11\"></path><path d=\"M10 18h11\"></path><path d=\"M10 6h11\"></path><path d=\"M4 10h2\"></path><path d=\"M4 6h1v4\"></path><path d=\"M6 18H4c0-1 2-2 2-3s-1-1.5-2-1\"></path></svg> Ordered ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-ordered-icon lucide-list-ordered w-4\"><path d=\"M10 12h11\"></path><path d=\"M10 18h11\"></path><path d=\"M10 6h11\"></path><path d=\"M4 10h2\"></path><path d=\"M4 6h1v4\"></path><path d=\"M6 18H4c0-1 2-2 2-3s-1-1.5-2-1\"></path></svg> Ordered")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.RouteStrategyFreeRoam:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> Free Roam ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> Free Roam")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.RouteStrategyRandom:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-52 p-2 shadow\"><li><a><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> Free Roam</a></li><li><a><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-ordered-icon lucide-list-ordered w-4\"><path d=\"M10 12h11\"></path><path d=\"M10 18h11\"></path><path d=\"M10 6h11\"></path><path d=\"M4 10h2\"></path><path d=\"M4 6h1v4\"></path><path d=\"M6 18H4c0-1 2-2 2-3s-1-1.5-2-1\"></path></svg> Ordered</a></li><li><a><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random</a></li></ul></div><a class=\"btn btn-sm btn-ghost\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-group-icon lucide-group w-4\"><path d=\"M3 7V5c0-1.1.9-2 2-2h2\"></path><path d=\"M17 3h2c1.1 0 2 .9 2 2v2\"></path><path d=\"M21 17v2c0 1.1-.9 2-2 2h-2\"></path><path d=\"M7 21H5c-1.1 0-2-.9-2-2v-2\"></path><rect width=\"7\" height=\"5\" x=\"7\" y=\"7\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"10\" y=\"12\" rx=\"1\"></rect></svg> Add group</a> <button class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Delete group\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-52 p-2 shadow\"><li><button role=\"button\" class=\"route-option\" data-mode=\"freeroam\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML\n\t\t\t\t\t\tset visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')\n\t\t\t\t\t\tremove @disabled from visitDropdown.querySelector('.visit-slider')\n\t\t\t\t\t\tremove @disabled from visitDropdown.querySelector('a[role=button]')\n\t\t\t\t\t\tadd .hidden to visitDropdown.querySelector('.visit-disabled-msg')\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> Free Roam</button></li><li><button role=\"button\" class=\"route-option\" data-mode=\"ordered\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML\n\t\t\t\t\t\tset visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')\n\t\t\t\t\t\tset visitSlider to visitDropdown.querySelector('.visit-slider')\n\t\t\t\t\t\tadd @disabled to visitSlider\n\t\t\t\t\t\tadd @disabled to visitDropdown.querySelector('a[role=button]')\n\t\t\t\t\t\tset visitSlider.value to visitSlider.max\n\t\t\t\t\t\tput 'Visit All' into visitDropdown.querySelector('.visit-button-text')\n\t\t\t\t\t\tremove .hidden from visitDropdown.querySelector('.visit-disabled-msg')\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-ordered-icon lucide-list-ordered w-4\"><path d=\"M10 12h11\"></path><path d=\"M10 18h11\"></path><path d=\"M10 6h11\"></path><path d=\"M4 10h2\"></path><path d=\"M4 6h1v4\"></path><path d=\"M6 18H4c0-1 2-2 2-3s-1-1.5-2-1\"></path></svg> Ordered</button></li><li><button role=\"button\" class=\"route-option\" data-mode=\"random\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML\n\t\t\t\t\t\tset visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')\n\t\t\t\t\t\tremove @disabled from visitDropdown.querySelector('.visit-slider')\n\t\t\t\t\t\tremove @disabled from visitDropdown.querySelector('a[role=button]')\n\t\t\t\t\t\tadd .hidden to visitDropdown.querySelector('.visit-disabled-msg')\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random</button></li></ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -371,7 +530,7 @@ func groupMenu(nav models.RouteStrategy) templ.Component {
 
 func colours() []string {
 	return []string{
-		"primary", "secondary", "accent", "success", "info", "warning", "error", "base",
+		"primary", "secondary", "accent", "success", "info", "warning", "error", "base-content",
 	}
 }
 
@@ -391,79 +550,79 @@ func picker(colour string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"dropdown dropdown-bottom\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"dropdown dropdown-bottom\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var17 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s cursor-pointer", colour)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+		var templ_7745c5c3_Var22 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s cursor-pointer", colour)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var22...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div tabindex=\"0\" role=\"button\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div tabindex=\"0\" role=\"button\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var17).String())
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var22).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"></div><ul tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-56\"><div class=\"hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base\"></div><div class=\"menu menu-horizontal\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"></div><ul tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-56\"><div class=\"hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content\"></div><div class=\"menu menu-horizontal\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, color := range colours() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<li><a data-group-color=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<li><a data-group-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(color)
+			var templ_7745c5c3_Var24 string
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(color)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 174, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 384, Col: 31}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" class=\"cursor-pointer\" _=\"on click set (closest <.card />)'s @data-group-color to my @data-group-color\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var20 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var20...)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" class=\"cursor-pointer\" _=\"on click set (closest <.card />)'s @data-group-color to my @data-group-color\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div class=\"")
+			var templ_7745c5c3_Var25 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var25...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var21 string
-			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var20).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var26 string
+			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var25).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\"></div></a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"></div></a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div></ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -487,12 +646,12 @@ func sortableScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<script>\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\t// Initialize sortable for all locations-area elements\n\t\t\tdocument.querySelectorAll('.locations-area').forEach(function(el) {\n\t\t\t\tnew Sortable(el, {\n\t\t\t\t\tgroup: 'locations',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.location-item',\n\t\t\t\t\thandle: '.location-drag-handle',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\tconsole.log('Location moved from', evt.from.dataset.groupId, 'to', evt.to.dataset.groupId);\n\t\t\t\t\t\t// TODO: Send update to server\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize sortable for all groups-area elements\n\t\t\tdocument.querySelectorAll('.groups-area').forEach(function(el) {\n\t\t\t\tnew Sortable(el, {\n\t\t\t\t\tgroup: 'groups',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.group-item',\n\t\t\t\t\thandle: '.group-drag-handle',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\tconsole.log('Group moved from', evt.from.dataset.groupId, 'to', evt.to.dataset.groupId);\n\t\t\t\t\t\t// TODO: Send update to server\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script><style>\n\t\t.sortable-ghost {\n\t\t\topacity: 0.4;\n\t\t\tbackground: hsl(var(--b2));\n\t\t}\n\t\t.sortable-chosen {\n\t\t\topacity: 0.8;\n\t\t}\n\t\t.sortable-drag {\n\t\t\topacity: 1;\n\t\t}\n\t\t/* Show drop zone hint when dragging */\n\t\t.sortable-drag ~ .locations-area:empty,\n\t\t.sortable-drag ~ .groups-area:empty,\n\t\t.locations-area:empty.sortable-drag-over,\n\t\t.groups-area:empty.sortable-drag-over {\n\t\t\tborder-color: hsl(var(--p) / 0.5);\n\t\t\tbackground: hsl(var(--p) / 0.05);\n\t\t}\n\t</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<script>\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\t// Initialize sortable for all locations-area elements\n\t\t\tdocument.querySelectorAll('.locations-area').forEach(function(el) {\n\t\t\t\tnew Sortable(el, {\n\t\t\t\t\tgroup: 'locations',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.location-item',\n\t\t\t\t\thandle: '.location-drag-handle',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\t// swapThreshold: 0.25,\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t// TODO: Send update to server\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize sortable for all groups-area elements\n\t\t\tdocument.querySelectorAll('.groups-area').forEach(function(el) {\n\t\t\t\tnew Sortable(el, {\n\t\t\t\t\tgroup: 'groups',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.group-item',\n\t\t\t\t\thandle: '.group-drag-handle',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\t// swapThreshold: 0.25,\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t// TODO: Send update to server\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize route strategy highlighting and visitation controls\n\t\t\tdocument.querySelectorAll('.route-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst currentText = dropdown.querySelector('.route-strat').textContent.trim();\n\t\t\t\tconst options = dropdown.querySelectorAll('.route-option');\n\t\t\t\tconst groupItem = dropdown.closest('.group-item');\n\t\t\t\tconst visitDropdown = groupItem ? groupItem.querySelector('.visitation-dropdown') : null;\n\n\t\t\t\toptions.forEach(function(option) {\n\t\t\t\t\tif (option.textContent.trim().includes(currentText)) {\n\t\t\t\t\t\toption.classList.add('bg-base-300');\n\n\t\t\t\t\t\t// If \"Ordered\" mode is selected, disable the visitation dropdown\n\t\t\t\t\t\tif (currentText === 'Ordered' && visitDropdown) {\n\t\t\t\t\t\t\tconst visitSlider = visitDropdown.querySelector('.visit-slider');\n\t\t\t\t\t\t\tconst visitButton = visitDropdown.querySelector('a[role=button]');\n\t\t\t\t\t\t\tconst visitMsg = visitDropdown.querySelector('.visit-disabled-msg');\n\n\t\t\t\t\t\t\tif (visitSlider) {\n\t\t\t\t\t\t\t\tvisitSlider.setAttribute('disabled', 'disabled');\n\t\t\t\t\t\t\t\tvisitSlider.value = visitSlider.max;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif (visitButton) {\n\t\t\t\t\t\t\t\tvisitButton.setAttribute('disabled', 'disabled');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif (visitMsg) {\n\t\t\t\t\t\t\t\tvisitMsg.classList.remove('hidden');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize visit option highlighting\n\t\t\tdocument.querySelectorAll('.visitation-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst firstOption = dropdown.querySelector('.visit-option');\n\t\t\t\tif (firstOption) {\n\t\t\t\t\tfirstOption.classList.add('bg-base-300');\n\t\t\t\t}\n\t\t\t});\n\t\t});\n\t</script><style>\n\t\t.sortable-ghost {\n\t\t\topacity: 0.4;\n\t\t\tbackground: hsl(var(--b2));\n\t\t}\n\t\t.sortable-chosen {\n\t\t\topacity: 0.8;\n\t\t}\n\t\t.sortable-drag {\n\t\t\topacity: 1;\n\t\t}\n\t\t/* Show drop zone hint when dragging */\n\t\t.sortable-drag ~ .locations-area:empty,\n\t\t.sortable-drag ~ .groups-area:empty,\n\t\t.locations-area:empty.sortable-drag-over,\n\t\t.groups-area:empty.sortable-drag-over {\n\t\t\tborder-color: hsl(var(--p) / 0.5);\n\t\t\tbackground: hsl(var(--p) / 0.05);\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

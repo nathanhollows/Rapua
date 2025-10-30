@@ -470,7 +470,9 @@ p.label {
   --color-primary-content: oklch(17.419% 0.043 148.024);
 }
 
-[data-group-color="base"] {
-  --color-primary: oklch(97.788% 0.004 56.375);
-  --color-primary-content: oklch(21% 0.034 264.665);
+/* Dark Mode Base Content */
+[data-group-color="base-content"] {
+  --color-primary: var(--color-base-content);
+  --color-primary-content: var(--color-base-100);
 }
+
