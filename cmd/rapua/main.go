@@ -348,6 +348,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
+	gameStructureService := services.NewGameStructureService(dbc)
 	deleteService := services.NewDeleteService(
 		transactor,
 		blockRepo,
@@ -377,6 +378,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
+
+	// Set the relation loader so gameStructureService can load location relations
+	gameStructureService.SetRelationLoader(locationService)
+
 	navigationService := services.NewNavigationService(locationRepo, teamRepo)
 	checkInService := services.NewCheckInService(
 		checkInRepo,
@@ -468,6 +473,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		duplicationService,
 		facilitatorService,
 		gameScheduleService,
+		gameStructureService,
 		instanceService,
 		instanceSettingsService,
 		locationService,

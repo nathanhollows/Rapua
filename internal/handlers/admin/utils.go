@@ -264,6 +264,7 @@ type Handler struct {
 	duplicationService      DuplicationService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
+	gameStructureService    *services.GameStructureService
 	instanceService         InstanceService
 	instanceSettingsService InstanceSettingsService
 	locationService         services.LocationService
@@ -291,6 +292,7 @@ func NewAdminHandler(
 	duplicationService DuplicationService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
+	gameStructureService *services.GameStructureService,
 	instanceService InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
@@ -317,6 +319,7 @@ func NewAdminHandler(
 		duplicationService:      duplicationService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
+		gameStructureService:    gameStructureService,
 		instanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
 		locationService:         locationService,
