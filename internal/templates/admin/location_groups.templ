@@ -27,13 +27,13 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 			<div class="join">
 				<a
 					href="/admin/locations/qr-codes.zip"
-					class="btn btn-base btn-outline join-item mb-3 md:mb-0"
+					class="btn btn-base join-item mb-3 md:mb-0"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-down"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"></path> <path d="m14 19 3 3 v-5.5"></path> <path d="m17 22 3-3"></path> <circle cx="9" cy="9" r="2"></circle></svg>
 					QR codes
 				</a>
 				<a
-					class="btn btn-base btn-outline join-item"
+					class="btn btn-base join-item"
 					href="/admin/locations/posters.pdf"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path> <path d="M14 2v4a2 2 0 0 0 2 2h4"></path> <path d="M12 18v-6"></path> <path d="m9 15 3 3 3-3"></path></svg>
@@ -105,10 +105,12 @@ templ locationGroup(group models.GameStructure) {
 	} else {
 		<!-- Nested group card -->
 		<div class="group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors" data-group-id={ group.ID } data-group-color={ group.Color }>
-			<div class="card-body p-4">
-				<div class="flex justify-between items-center mb-3">
+			<div class="card-body p-5 pt-3">
+				<div class="flex justify-between items-center">
 					<div class="flex items-center gap-3">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+						<div class="tooltip lg:tooltip-top tooltip-right" data-tip="Drag to reorder group">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+						</div>
 						@picker(group.Color)
 						<input type="text" class="input input-ghost p-2 font-bold bg-transparent" value={ group.Name }/>
 					</div>
@@ -141,7 +143,11 @@ templ locationItem(location models.Location) {
 				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 			</span>
 			<div class="badge badge-sm badge-outline border-primary font-medium tooltip" data-tip="Location ID"><code>{ location.MarkerID }</code></div>
-			<a href="/admin/locations/START" class="link link-hover font-medium" hx-boost="true">{ location.Name }</a>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/locations/%s", location.MarkerID)) }
+				class="link link-hover font-medium"
+				hx-boost="true"
+			>{ location.Name }</a>
 			<div class="flex-grow cursor-move location-drag-handle min-h-4"></div>
 			<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
 			@publishedToggle()
@@ -288,7 +294,7 @@ templ groupMenu(nav models.RouteStrategy, locationCount int) {
 
 templ routeStrategyPicker(nav models.RouteStrategy) {
 	<div class="dropdown dropdown-bottom dropdown-center route-dropdown">
-		<a tabindex="0" role="button" class="btn btn-sm btn-ghost">
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Route Strategy">
 			<div class="route-strat contents">
 				switch nav {
 					case models.RouteStrategyOrdered:
@@ -374,9 +380,9 @@ func colours() []string {
 
 templ picker(colour string) {
 	<div class="dropdown dropdown-bottom">
-		<div tabindex="0" role="button" class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s cursor-pointer", colour) }></div>
-		<ul tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-56">
-			<div class="hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content"></div>
+		<div tabindex="0" role="button" class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s cursor-pointer tooltip", colour) } data-tip="Group color"></div>
+		<ul tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-48">
+			<div class="hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content t"></div>
 			<div class="menu menu-horizontal">
 				for _, color := range colours() {
 					<li>
