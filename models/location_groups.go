@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -14,37 +15,60 @@ const (
 	CompletionMinimum CompletionType = "minimum"
 )
 
-// OrderedItem represents an item within a GameStructure that can be either a location or a subgroup
-// This stores the ordering information along with the item identifier and type
-type OrderedItem struct {
-	Type  string `json:"type"`  // "location" or "group"
-	ID    string `json:"id"`    // Location ID or SubGroup ID
-	Order int    `json:"order"` // The order position within the group
-}
-
 // GameStructure represents the hierarchical game state structure
+//
+// IMPORTANT ARCHITECTURE NOTES:
+//
+// Order Invariant:
+//   - LocationIDs are ALWAYS stored before SubGroups
+//   - Array order is preserved on save/load
+//   - No explicit ordering fields needed - position in array = order
+//
+// Root Group Behavior:
+//   - Every instance has exactly ONE root group (IsRoot: true)
+//   - The root group is NEVER rendered in the UI
+//   - The root group acts as an invisible container for:
+//     - Visible subgroups (rendered as group cards)
+//     - Ungrouped locations (rendered directly in the root locations area)
+//   - Root group Name is always empty ("")
+//   - Root group Color is always empty ("")
+//
+// Visible Groups:
+//   - All visible groups in the UI are SubGroups of the root
+//   - Visible groups have IsRoot: false
+//   - Visible groups always have a Name and Color
+//   - Visible groups are rendered as collapsible group cards
+//
+// Example Structure:
+//
+//	Root (IsRoot: true, Name: "")
+//	├── LocationIDs: ["loc1", "loc2"]  // Rendered in root locations-area
+//	└── SubGroups:
+//	    ├── Group "Museum Tour" (visible group card)
+//	    │   └── LocationIDs: ["loc3", "loc4"]
+//	    └── Group "Historical Sites" (visible group card)
+//	        └── LocationIDs: ["loc5", "loc6"]
 type GameStructure struct {
 	ID              string                `json:"id"`
-	Name            string                `json:"name"`
-	Color           string                `json:"color"`                      // Group color for UI display
+	Name            string                `json:"name"`                       // Empty for root group, required for visible groups
+	Color           string                `json:"color"`                      // Empty for root, required for visible groups (e.g., "primary", "secondary")
 	Routing         RouteStrategy         `json:"routing"`                    // ordered, random, free_roam
 	Navigation      NavigationDisplayMode `json:"navigation"`                 // clues, map, map_names, names_only
 	CompletionType  CompletionType        `json:"completion_type"`            // all, minimum
 	MinimumRequired int                   `json:"minimum_required,omitempty"` // For minimum completion type
-	IsRoot          bool                  `json:"is_root"`                    // Whether this is the root group
-	OrderedItems    []OrderedItem         `json:"ordered_items"`              // Ordered list of locations and subgroups
-	Order           int                   `json:"order"`                      // Order within parent group
+	IsRoot          bool                  `json:"is_root"`                    // true ONLY for the invisible root container
 
-	// Runtime fields - not stored in JSON, populated by GameStructureService
-	LocationIDs     []string         `json:"-"`          // Extracted from OrderedItems
-	Locations       []*Location      `json:"-"`          // Loaded location pointers
-	SubGroups       []GameStructure  `json:"sub_groups"` // Nested groups (for JSON storage)
-	LoadedSubGroups []*GameStructure `json:"-"`          // Loaded subgroup pointers
-	populated       bool             `json:"-"`          // Private field to track if locations are loaded
+	// Storage: locations first, then subgroups - order preserved in arrays
+	LocationIDs []string        `json:"location_ids"` // Ordered list of location IDs
+	SubGroups   []GameStructure `json:"sub_groups"`   // Ordered list of nested groups
+
+	// Runtime fields - populated by GameStructureService
+	Locations []*Location `json:"-"` // Loaded location pointers
+	populated bool        `json:"-"` // Private field to track if locations are loaded
 }
 
 // Scan implements the sql.Scanner interface for database unmarshalling
-func (gs *GameStructure) Scan(value interface{}) error {
+func (gs *GameStructure) Scan(value any) error {
 	if value == nil {
 		*gs = GameStructure{}
 		return nil
@@ -117,11 +141,18 @@ type GameContext struct {
 
 // GameStructureServiceInterface defines the methods needed by GameContext
 type GameStructureServiceInterface interface {
-	GetOrderedItems(group *GameStructure) []OrderedItem
-	GetLocationIDs(group *GameStructure) []string
-	GetSubGroupIDs(group *GameStructure) []string
+	// Loading methods
+	Load(ctx context.Context, instanceID string, group *GameStructure, recursive bool) error
+	LoadByLocationID(ctx context.Context, instanceID string, locationID string) (*GameStructure, error)
+
+	// Validation and persistence
+	Validate(group *GameStructure, instanceID string) error
+	Save(ctx context.Context, instanceID string, group *GameStructure) error
+
+	// Navigation methods
 	FindGroupByID(gameStructure *GameStructure, groupID string) *GameStructure
-	GetNextItemType(group *GameStructure, completedLocationIDs map[string]bool, completedGroupIDs map[string]bool) interface{} // Will be NextItemType
+	GetAllLocationIDs(group *GameStructure) []string
+	GetNextItemType(group *GameStructure, completedLocationIDs map[string]bool, completedGroupIDs map[string]bool) interface{}
 	GetNextLocation(group *GameStructure, completedLocationIDs map[string]bool, teamID string) string
 	GetNextGroup(group *GameStructure, completedGroups map[string]bool) *GameStructure
 	IsCompleted(group *GameStructure, completedCount int) bool
@@ -138,19 +169,9 @@ func NewGameContext(structure *GameStructure, service GameStructureServiceInterf
 // === DELEGATION METHODS ===
 // These methods delegate to the service, making templates cleaner
 
-// GetOrderedItems returns the ordered items for this context's structure
-func (gc *GameContext) GetOrderedItems() []OrderedItem {
-	return gc.service.GetOrderedItems(gc.Structure)
-}
-
-// GetLocationIDs returns location IDs for this context's structure
-func (gc *GameContext) GetLocationIDs() []string {
-	return gc.service.GetLocationIDs(gc.Structure)
-}
-
-// GetSubGroupIDs returns subgroup IDs for this context's structure
-func (gc *GameContext) GetSubGroupIDs() []string {
-	return gc.service.GetSubGroupIDs(gc.Structure)
+// GetAllLocationIDs returns all location IDs recursively for this context's structure
+func (gc *GameContext) GetAllLocationIDs() []string {
+	return gc.service.GetAllLocationIDs(gc.Structure)
 }
 
 // GetNextLocation returns the next location for this context's structure
