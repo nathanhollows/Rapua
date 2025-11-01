@@ -46,8 +46,17 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 					_="on click
 						set groupsArea to first .groups-area
 						put #empty-group-template's innerHTML at start of groupsArea
+						-- Set a UUID and random color for the new group
+						set newGroup to groupsArea.querySelector('.group-item')
+						js(newGroup)
+							const uuid = generateUUID();
+							const colors = ['primary', 'secondary', 'accent', 'success', 'info', 'warning', 'error', 'base-content'];
+							const randomColor = colors[Math.floor(Math.random() * colors.length)];
+							newGroup.dataset.groupId = uuid;
+							newGroup.dataset.groupColor = randomColor;
+						end
 						-- Initialize SortableJS on the new group's locations-area
-						set newLocationsArea to groupsArea.querySelector('.group-item .locations-area')
+						set newLocationsArea to newGroup.querySelector('.locations-area')
 						js(newLocationsArea)
 							new Sortable(newLocationsArea, {
 								group: 'locations',
@@ -59,10 +68,12 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 								dragClass: 'sortable-drag',
 								invertSwap: true,
 								onEnd: function(evt) {
-									console.log('Location moved:', evt);
+									saveGameStructure();
 								}
 							});
 						end
+						-- Trigger save for the new group
+						js saveGameStructure() end
 						"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-group-icon lucide-group w-5 h-5"><path d="M3 7V5c0-1.1.9-2 2-2h2"></path><path d="M17 3h2c1.1 0 2 .9 2 2v2"></path><path d="M21 17v2c0 1.1-.9 2-2 2h-2"></path><path d="M7 21H5c-1.1 0-2-.9-2-2v-2"></path><rect width="7" height="5" x="7" y="7" rx="1"></rect><rect width="7" height="5" x="10" y="12" rx="1"></rect></svg>
@@ -80,26 +91,37 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 		</span>
 	</div>
 	<template id="empty-group-template">
-		@locationGroup(emptyGroupData)
+		@locationGroup(emptyGroupData, settings)
 	</template>
+	<!-- Hidden form for htmx structure updates -->
+	<form
+		id="structure-form"
+		hx-post="/admin/locations/structure"
+		hx-trigger="submit delay:100ms"
+		hx-swap="none"
+		hx-indicator=".htmx-indicator"
+		style="display: none;"
+	>
+		<input type="hidden" name="structure" id="structure-input"/>
+	</form>
 	<div class="px-6" id="root-container">
-		@locationGroup(groups)
+		@locationGroup(groups, settings)
 	</div>
 	@sortableScript()
 }
 
-templ locationGroup(group models.GameStructure) {
+templ locationGroup(group models.GameStructure, settings models.InstanceSettings) {
 	if group.IsRoot {
 		<!-- Root locations area -->
 		<div class="locations-area join join-vertical my-6 w-full bg-base-300 rounded-2xl" data-group-id={ group.ID }>
 			for _, location := range group.Locations {
-				@locationItem(*location)
+				@locationItem(*location, settings)
 			}
 		</div>
 		<!-- Root groups area -->
 		<div class="groups-area space-y-6" data-group-id={ group.ID }>
 			for _, subGroup := range group.SubGroups {
-				@locationGroup(subGroup)
+				@locationGroup(subGroup, settings)
 			}
 		</div>
 	} else {
@@ -120,19 +142,19 @@ templ locationGroup(group models.GameStructure) {
 				<!-- Locations area within group -->
 				<div class="locations-area join join-vertical" data-group-id={ group.ID }>
 					for _, location := range group.Locations {
-						@locationItem(*location)
+						@locationItem(*location, settings)
 					}
 				</div>
 				<!-- Subgroups area within group - always show -->
 				for _, subGroup := range group.SubGroups {
-					@locationGroup(subGroup)
+					@locationGroup(subGroup, settings)
 				}
 			</div>
 		</div>
 	}
 }
 
-templ locationItem(location models.Location) {
+templ locationItem(location models.Location, settings models.InstanceSettings) {
 	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-300/80" data-location-id={ location.ID }>
 		<div class="loc flex items-center gap-3">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
@@ -149,7 +171,9 @@ templ locationItem(location models.Location) {
 				hx-boost="true"
 			>{ location.Name }</a>
 			<div class="flex-grow cursor-move location-drag-handle min-h-4"></div>
-			<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
+			if settings.EnablePoints {
+				<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
+			}
 			@publishedToggle()
 		</div>
 	</div>
@@ -184,77 +208,54 @@ templ publishedToggle() {
 	}
 }
 
-templ visitationSettings(locationCount int) {
-	if false {
-		<div class="dropdown dropdown-bottom dropdown-center visitation-dropdown">
-			<a tabindex="0" role="button" class="btn btn-sm btn-ghost">
-				<span class="visit-button-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check-icon lucide-check-check"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
-				</span>
-				<span class="visit-button-text">Visit All</span>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
-			</a>
-			<div tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow">
-				<!-- Visit All Menu Item -->
-				<ul class="menu p-2 w-full">
-					<li>
-						<a
-							role="button"
-							class="visit-option"
-							data-mode="all"
-							_="on click
-								set dropdown to closest <.visitation-dropdown/>
-								set buttonText to dropdown.querySelector('.visit-button-text')
-								set buttonIcon to dropdown.querySelector('.visit-button-icon')
-								set buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`
-								put 'Visit All' into buttonText
-								remove .bg-base-300 from <.visit-option/>
-								add .bg-base-300 to me"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check-icon lucide-check-check"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
-							Visit All
-						</a>
-					</li>
-				</ul>
-				<!-- Visit N Slider Section -->
-				<div class="p-3 pt-0">
-					<label class="text-xs font-medium mb-2">Visit at least:</label>
-					<div class="flex items-center gap-2">
-						<input
-							type="range"
-							min="1"
-							max={ fmt.Sprint(locationCount) }
-							value={ fmt.Sprint(locationCount) }
-							class="range range-primary range-sm flex-1 visit-slider"
-							_="on input
-								set dropdown to closest <.visitation-dropdown/>
-								set buttonText to dropdown.querySelector('.visit-button-text')
-								set buttonIcon to dropdown.querySelector('.visit-button-icon')
+templ completionCount(locationCount int) {
+	<div class="dropdown dropdown-bottom dropdown-center completion-dropdown">
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Maximum completions for group">
+			<span class="completion-button-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check-icon lucide-check-check"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
+			</span>
+			<span class="completion-button-text">Complete All</span>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<div tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow">
+			<div class="p-3">
+				<label class="text-xs font-medium">Must complete:</label>
+				<div class="flex items-center gap-2 mt-4">
+					<input
+						type="range"
+						min="1"
+						max={ fmt.Sprint(locationCount) }
+						value={ fmt.Sprint(locationCount) }
+						class="range range-primary range-sm flex-1 completion-slider"
+						_="on input
+								set dropdown to closest <.completion-dropdown/>
+								set buttonText to dropdown.querySelector('.completion-button-text')
+								set buttonIcon to dropdown.querySelector('.completion-button-icon')
+								set output to the next <output/>
 								if my.value == my.max then
 									set buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`
-									put 'Visit All' into buttonText
-									remove .bg-base-300 from <.visit-option/>
+									put 'Complete All' into buttonText
+									put 'All' into output
 								else
 									set buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`
-									put 'Visit ' + my.value into buttonText
-									remove .bg-base-300 from <.visit-option/>
+									put ('Complete ' + my.value) into buttonText
+									put my.value into output
 								end
-								put my.value into the next <output/>"
-						/>
-						<output class="badge badge-sm badge-primary min-w-[3rem] text-center">{ fmt.Sprint(locationCount) }</output>
-					</div>
-					<div class="text-xs text-base-content/60 text-center">
-						<span class="visit-disabled-msg hidden">Disabled in Ordered mode</span>
-					</div>
+								js saveGameStructure() end"
+					/>
+					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">All</output>
+				</div>
+				<div class="text-xs text-base-content/60 text-center mt-2">
+					<span class="completion-disabled-msg hidden">Disabled in Guided Path mode</span>
 				</div>
 			</div>
 		</div>
-	}
+	</div>
 }
 
 templ groupMenu(nav models.RouteStrategy, locationCount int) {
 	<div class="flex gap-2 items-center">
-		@visitationSettings(locationCount)
+		@completionCount(locationCount)
 		<!-- Route Strategy Picker -->
 		@routeStrategyPicker(nav)
 		<button
@@ -273,6 +274,8 @@ templ groupMenu(nav models.RouteStrategy, locationCount int) {
 					end
 					-- Remove the group card
 					remove groupCard
+					-- Trigger save after deletion
+					js saveGameStructure() end
 				else
 					-- First click: show confirmation
 					add .confirming to me
@@ -298,14 +301,14 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 			<div class="route-strat contents">
 				switch nav {
 					case models.RouteStrategyOrdered:
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-ordered-icon lucide-list-ordered w-4"><path d="M10 12h11"></path><path d="M10 18h11"></path><path d="M10 6h11"></path><path d="M4 10h2"></path><path d="M4 6h1v4"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
-						Ordered
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
+						{ models.RouteStrategyOrdered.String() }
 					case models.RouteStrategyFreeRoam:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
-						Free Roam
+						{ models.RouteStrategyFreeRoam.String() }
 					case models.RouteStrategyRandom:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
-						Random
+						{ models.RouteStrategyRandom.String() }
 				}
 			</div>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
@@ -315,57 +318,63 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 				<button
 					role="button"
 					class="route-option"
-					data-mode="freeroam"
+					data-mode={ models.RouteStrategyOrdered.String() }
 					_="on click
 						remove .bg-base-300 from <.route-option/>
 						add .bg-base-300 to me
 						set ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML
-						set visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')
-						remove @disabled from visitDropdown.querySelector('.visit-slider')
-						remove @disabled from visitDropdown.querySelector('a[role=button]')
-						add .hidden to visitDropdown.querySelector('.visit-disabled-msg')"
+						-- Disable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						add .btn-disabled to completionDropdown.querySelector('a')
+						add .hidden to completionDropdown.querySelector('.dropdown-content')
+						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
+					{ models.RouteStrategyOrdered.String() }
+				</button>
+			</li>
+			<li>
+				<button
+					role="button"
+					class="route-option"
+					data-mode={ models.RouteStrategyFreeRoam.String() }
+					_="on click
+						remove .bg-base-300 from <.route-option/>
+						add .bg-base-300 to me
+						set ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML
+						-- Enable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						remove .btn-disabled from completionDropdown.querySelector('a')
+						remove .hidden from completionDropdown.querySelector('.dropdown-content')
+						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
-					Free Roam
+					{ models.RouteStrategyFreeRoam.String() }
 				</button>
 			</li>
 			<li>
 				<button
 					role="button"
 					class="route-option"
-					data-mode="ordered"
+					data-mode={ models.RouteStrategyRandom.String() }
 					_="on click
 						remove .bg-base-300 from <.route-option/>
 						add .bg-base-300 to me
 						set ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML
-						set visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')
-						set visitSlider to visitDropdown.querySelector('.visit-slider')
-						add @disabled to visitSlider
-						add @disabled to visitDropdown.querySelector('a[role=button]')
-						set visitSlider.value to visitSlider.max
-						put 'Visit All' into visitDropdown.querySelector('.visit-button-text')
-						remove .hidden from visitDropdown.querySelector('.visit-disabled-msg')"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-ordered-icon lucide-list-ordered w-4"><path d="M10 12h11"></path><path d="M10 18h11"></path><path d="M10 6h11"></path><path d="M4 10h2"></path><path d="M4 6h1v4"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
-					Ordered
-				</button>
-			</li>
-			<li>
-				<button
-					role="button"
-					class="route-option"
-					data-mode="random"
-					_="on click
-						remove .bg-base-300 from <.route-option/>
-						add .bg-base-300 to me
-						set ((closest <.route-dropdown/>).querySelector('.route-strat')'s innerHTML) to my innerHTML
-						set visitDropdown to (closest <.group-item/>).querySelector('.visitation-dropdown')
-						remove @disabled from visitDropdown.querySelector('.visit-slider')
-						remove @disabled from visitDropdown.querySelector('a[role=button]')
-						add .hidden to visitDropdown.querySelector('.visit-disabled-msg')"
+						-- Enable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						remove .btn-disabled from completionDropdown.querySelector('a')
+						remove .hidden from completionDropdown.querySelector('.dropdown-content')
+						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
-					Random
+					{ models.RouteStrategyRandom.String() }
 				</button>
 			</li>
 		</ul>
@@ -388,8 +397,10 @@ templ picker(colour string) {
 					<li>
 						<a
 							data-group-color={ color }
-							class="cursor-pointer"
-							_="on click set (closest <.card />)'s @data-group-color to my @data-group-color"
+							class="cursor-pointer color-picker-option"
+							_="on click
+								set (closest <.card />)'s @data-group-color to my @data-group-color
+								js saveGameStructure() end"
 						>
 							<div class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color) }></div>
 						</a>
@@ -402,28 +413,214 @@ templ picker(colour string) {
 
 templ sortableScript() {
 	<script>
-		document.addEventListener('DOMContentLoaded', function() {
+		// UUID generation function (v4)
+		function generateUUID() {
+			return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				const r = Math.random() * 16 | 0;
+				const v = c === 'x' ? r : (r & 0x3 | 0x8);
+				return v.toString(16);
+			});
+		}
+
+		// Encode game structure from DOM
+		function encodeGameStructure() {
+			const rootContainer = document.getElementById('root-container');
+			if (!rootContainer) {
+				console.error('Root container not found');
+				return null;
+			}
+
+			// Find or create root group
+			const rootLocationsArea = rootContainer.querySelector('.locations-area');
+			const rootGroupsArea = rootContainer.querySelector('.groups-area');
+
+			const rootGroupID = rootLocationsArea?.dataset.groupId || generateUUID();
+
+			const structure = {
+				id: rootGroupID,
+				name: '',
+				color: '',
+				routing: 'Open Exploration',
+				navigation: 'Custom Clues',
+				completion_type: 'all',
+				minimum_required: 0,
+				is_root: true,
+				location_ids: [],
+				sub_groups: []
+			};
+
+			// Collect root-level locations
+			if (rootLocationsArea) {
+				const locationItems = rootLocationsArea.querySelectorAll(':scope > .location-item');
+				locationItems.forEach(item => {
+					const locationId = item.dataset.locationId;
+					if (locationId) {
+						structure.location_ids.push(locationId);
+					}
+				});
+			}
+
+			// Collect sub-groups
+			if (rootGroupsArea) {
+				const groupItems = rootGroupsArea.querySelectorAll(':scope > .group-item');
+				groupItems.forEach(groupCard => {
+					const subGroup = encodeGroup(groupCard);
+					if (subGroup) {
+						structure.sub_groups.push(subGroup);
+					}
+				});
+			}
+
+			return structure;
+		}
+
+		// Encode a single group (non-root)
+		function encodeGroup(groupCard) {
+			const groupId = groupCard.dataset.groupId || generateUUID();
+			const groupColor = groupCard.dataset.groupColor || 'primary';
+			const nameInput = groupCard.querySelector('input[type="text"]');
+			const name = nameInput ? nameInput.value : 'Unnamed Group';
+
+			// Get routing strategy - send display name directly
+			const routeStrat = groupCard.querySelector('.route-strat');
+			let routing = 'Open Exploration'; // default
+			if (routeStrat) {
+				routing = routeStrat.textContent.trim();
+			}
+
+			// Get completion requirements
+			const completionSlider = groupCard.querySelector('.completion-slider');
+			let completionType = 'all';
+			let minimumRequired = 0;
+
+			if (completionSlider) {
+				const value = parseInt(completionSlider.value);
+				const max = parseInt(completionSlider.max);
+
+				if (value < max) {
+					completionType = 'minimum';
+					minimumRequired = value;
+				}
+			}
+
+			const group = {
+				id: groupId,
+				name: name,
+				color: groupColor,
+				routing: routing,
+				navigation: 'Custom Clues',
+				completion_type: completionType,
+				minimum_required: minimumRequired,
+				is_root: false,
+				location_ids: [],
+				sub_groups: []
+			};
+
+			// Collect locations in this group
+			const locationsArea = groupCard.querySelector('.locations-area');
+			if (locationsArea) {
+				const locationItems = locationsArea.querySelectorAll(':scope > .location-item');
+				locationItems.forEach(item => {
+					const locationId = item.dataset.locationId;
+					if (locationId) {
+						group.location_ids.push(locationId);
+					}
+				});
+			}
+
+			// Recursively collect sub-groups (if any - though current UI doesn't support nesting)
+			const subGroupsArea = groupCard.querySelector('.groups-area');
+			if (subGroupsArea) {
+				const subGroupItems = subGroupsArea.querySelectorAll(':scope > .group-item');
+				subGroupItems.forEach(subGroupCard => {
+					const subGroup = encodeGroup(subGroupCard);
+					if (subGroup) {
+						group.sub_groups.push(subGroup);
+					}
+				});
+			}
+
+			return group;
+		}
+
+		// Update completion count slider for a group
+		function updateCompletionSlider(groupCard) {
+			const locationsArea = groupCard.querySelector('.locations-area');
+			const slider = groupCard.querySelector('.completion-slider');
+			const output = groupCard.querySelector('.completion-dropdown output');
+			const buttonText = groupCard.querySelector('.completion-button-text');
+			const buttonIcon = groupCard.querySelector('.completion-button-icon');
+
+			if (!locationsArea || !slider) return;
+
+			const locationCount = locationsArea.querySelectorAll('.location-item').length;
+			const oldMax = parseInt(slider.max);
+			const currentValue = parseInt(slider.value);
+
+			// Update max value
+			slider.max = locationCount;
+
+			// If current value equals or exceeds new max, set to max (All)
+			if (currentValue >= locationCount || currentValue === oldMax) {
+				slider.value = locationCount;
+				if (output) output.textContent = 'All';
+				if (buttonText) buttonText.textContent = 'Complete All';
+				if (buttonIcon) {
+					buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;
+				}
+			}
+		}
+
+		// Save game structure to server using htmx
+		function saveGameStructure() {
+			const structure = encodeGameStructure();
+			if (!structure) {
+				return;
+			}
+
+			// Set the structure in the hidden input and submit via htmx
+			const structureInput = document.getElementById('structure-input');
+			const form = document.getElementById('structure-form');
+
+			structureInput.value = JSON.stringify(structure);
+			htmx.trigger(form, 'submit');
+		}
+
+		// Initialize all sortable areas and UI controls
+		function initializeLocationGroups() {
 			// Initialize sortable for all locations-area elements
 			document.querySelectorAll('.locations-area').forEach(function(el) {
-				new Sortable(el, {
+				// Skip if already initialized
+				if (el.sortableInstance) return;
+
+				el.sortableInstance = new Sortable(el, {
 					group: 'locations',
 					animation: 150,
 					draggable: '.location-item',
-					handle: '.location-drag-handle',
 					ghostClass: 'sortable-ghost',
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
-					// swapThreshold: 0.25,
 					invertSwap: true,
+					filter: 'a, button, input, select, textarea, [contenteditable], .badge, svg:not(.location-drag-handle), .tooltip',
+					preventOnFilter: false,
 					onEnd: function(evt) {
-						// TODO: Send update to server
+						// Update completion sliders for both source and destination groups
+						const fromGroup = evt.from.closest('.group-item');
+						const toGroup = evt.to.closest('.group-item');
+						if (fromGroup) updateCompletionSlider(fromGroup);
+						if (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);
+
+						saveGameStructure();
 					}
 				});
 			});
 
 			// Initialize sortable for all groups-area elements
 			document.querySelectorAll('.groups-area').forEach(function(el) {
-				new Sortable(el, {
+				// Skip if already initialized
+				if (el.sortableInstance) return;
+
+				el.sortableInstance = new Sortable(el, {
 					group: 'groups',
 					animation: 150,
 					draggable: '.group-item',
@@ -431,53 +628,69 @@ templ sortableScript() {
 					ghostClass: 'sortable-ghost',
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
-					// swapThreshold: 0.25,
 					invertSwap: true,
 					onEnd: function(evt) {
-						// TODO: Send update to server
+						saveGameStructure();
 					}
 				});
 			});
 
-			// Initialize route strategy highlighting and visitation controls
+			// Initialize route strategy highlighting and completion controls
 			document.querySelectorAll('.route-dropdown').forEach(function(dropdown) {
 				const currentText = dropdown.querySelector('.route-strat').textContent.trim();
 				const options = dropdown.querySelectorAll('.route-option');
 				const groupItem = dropdown.closest('.group-item');
-				const visitDropdown = groupItem ? groupItem.querySelector('.visitation-dropdown') : null;
+				const completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;
 
 				options.forEach(function(option) {
 					if (option.textContent.trim().includes(currentText)) {
 						option.classList.add('bg-base-300');
 
-						// If "Ordered" mode is selected, disable the visitation dropdown
-						if (currentText === 'Ordered' && visitDropdown) {
-							const visitSlider = visitDropdown.querySelector('.visit-slider');
-							const visitButton = visitDropdown.querySelector('a[role=button]');
-							const visitMsg = visitDropdown.querySelector('.visit-disabled-msg');
+						// If "Guided Path" mode is selected, disable the completion dropdown
+						if (currentText.includes('Guided Path') && completionDropdown) {
+							const completionButton = completionDropdown.querySelector('a[role=button]');
+							const completionContent = completionDropdown.querySelector('.dropdown-content');
+							const completionMsg = groupItem.querySelector('.completion-disabled-msg');
 
-							if (visitSlider) {
-								visitSlider.setAttribute('disabled', 'disabled');
-								visitSlider.value = visitSlider.max;
+							if (completionButton) {
+								completionButton.classList.add('btn-disabled');
 							}
-							if (visitButton) {
-								visitButton.setAttribute('disabled', 'disabled');
+							if (completionContent) {
+								completionContent.classList.add('hidden');
 							}
-							if (visitMsg) {
-								visitMsg.classList.remove('hidden');
+							if (completionMsg) {
+								completionMsg.classList.remove('hidden');
 							}
 						}
 					}
 				});
 			});
+		}
 
-			// Initialize visit option highlighting
-			document.querySelectorAll('.visitation-dropdown').forEach(function(dropdown) {
-				const firstOption = dropdown.querySelector('.visit-option');
-				if (firstOption) {
-					firstOption.classList.add('bg-base-300');
+		document.addEventListener('DOMContentLoaded', function() {
+			initializeLocationGroups();
+
+			// Add event listeners for group name changes
+			document.addEventListener('input', function(e) {
+				if (e.target.matches('.group-item input[type="text"]')) {
+					saveGameStructure();
 				}
 			});
+
+			// Add event listeners for route strategy changes
+			document.addEventListener('click', function(e) {
+				if (e.target.matches('.route-option')) {
+					saveGameStructure();
+				}
+			});
+		});
+
+		// Re-initialize after htmx content swap
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			// Only reinitialize if the swapped content contains location groups
+			if (evt.detail.target.querySelector('.locations-area') || evt.detail.target.querySelector('.groups-area')) {
+				initializeLocationGroups();
+			}
 		});
 	</script>
 	<style>

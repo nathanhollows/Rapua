@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -455,4 +456,70 @@ func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/locations")
+}
+
+// SaveGameStructure handles saving the game structure from the browser.
+func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
+	// Check HTMX headers
+	if r.Header.Get("Hx-Request") != "true" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	user := h.UserFromContext(r.Context())
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		h.handleError(
+			w,
+			r,
+			"SaveGameStructure: parsing form",
+			"Error parsing form",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	// Get the structure JSON from form
+	structureJSON := r.FormValue("structure")
+	if structureJSON == "" {
+		h.handleError(w, r, "SaveGameStructure: missing structure", "Missing structure data")
+		return
+	}
+
+	// Parse the JSON
+	var structure models.GameStructure
+	if err := json.Unmarshal([]byte(structureJSON), &structure); err != nil {
+		h.handleError(
+			w,
+			r,
+			"SaveGameStructure: decoding JSON",
+			"Invalid JSON: "+err.Error(),
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	// Validate and save using the service
+	if err := h.gameStructureService.Save(r.Context(), user.CurrentInstanceID, &structure); err != nil {
+		h.handleError(
+			w,
+			r,
+			"SaveGameStructure: saving structure",
+			"Validation failed: "+err.Error(),
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	h.handleSuccess(w, r, "Game structure saved")
 }
