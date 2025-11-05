@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 5.3.0
+
+### Added
+
+- Navigation and routing logic refactored into the new `navigation` package.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.3.0)
+
 ## 5.2.0 (2025-10-25)
 
 ### Added
