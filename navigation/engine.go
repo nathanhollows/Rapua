@@ -58,10 +58,97 @@ func IsGroupCompleted(
 	}
 }
 
-// GetNextGroup determines what group should be active after completing the current group.
+// ComputeCurrentGroup determines which group a team should currently be in based on their
+// completed locations. This walks through the structure from the first visible group,
+// automatically advancing through completed groups.
+//
+// Auto-advance behavior:
+//   - 100% completion: ALWAYS auto-advance to next group
+//   - Minimum completion (not 100%):
+//     - AutoAdvance = true: advance immediately
+//     - AutoAdvance = false: stay in group (let players complete remaining locations)
+//
+// Returns empty string if:
+//   - Structure has no visible groups
+//   - All groups are completed
+//
+// This function is deterministic: same completedLocationIDs always produces same result.
+func ComputeCurrentGroup(
+	structure *models.GameStructure,
+	completedLocationIDs []string,
+) string {
+	// Start at first visible group
+	current := GetFirstVisibleGroup(structure)
+	if current == nil {
+		return "" // No visible groups configured
+	}
+
+	// Walk through structure, advancing when appropriate
+	for {
+		// Check completion status
+		completed := makeSet(completedLocationIDs)
+		completedCount := 0
+		for _, locID := range current.LocationIDs {
+			if completed[locID] {
+				completedCount++
+			}
+		}
+
+		// If group is incomplete (minimum not met), stay here
+		isMinimumMet := false
+		switch current.CompletionType {
+		case models.CompletionAll:
+			isMinimumMet = completedCount == len(current.LocationIDs)
+		case models.CompletionMinimum:
+			isMinimumMet = completedCount >= current.MinimumRequired
+		}
+
+		if !isMinimumMet {
+			return current.ID // Stay - minimum not met
+		}
+
+		// Minimum is met - check if we should advance
+		allComplete := completedCount == len(current.LocationIDs)
+
+		// Always advance if 100% complete
+		if allComplete {
+			// Try to advance to next group
+			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
+
+			// If we can't advance or reached the end, stay at current
+			if !shouldAdvance || reason == ReasonAllComplete {
+				return current.ID
+			}
+
+			// Move to next group and continue checking
+			current = next
+			continue
+		}
+
+		// Partial completion (minimum met, but not all locations)
+		// Only advance if AutoAdvance is true
+		if !current.AutoAdvance {
+			return current.ID // Stay - let players complete remaining locations
+		}
+
+		// AutoAdvance is true and minimum met - advance to next group
+		next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
+
+		if !shouldAdvance || reason == ReasonAllComplete {
+			return current.ID
+		}
+
+		current = next
+	}
+}
+
+// GetNextGroup finds the next group in sequence after the current group.
+// This is a low-level function that just finds the next sibling or parent's sibling.
+// It does NOT check AutoAdvance - that's handled by ComputeCurrentGroup.
+//
 // Returns (nextGroup, shouldAdvance, reason) where:
 //   - nextGroup: the group that should be active next (may be current if not advancing)
-//   - shouldAdvance: true if team should move to a different group
+//   - shouldAdvance: true if there is a next group to move to
 //   - reason: typed explanation of the decision (see AdvanceReason constants)
 func GetNextGroup(
 	structure *models.GameStructure,
@@ -71,16 +158,6 @@ func GetNextGroup(
 	currentGroup := FindGroupByID(structure, currentGroupID)
 	if currentGroup == nil {
 		return nil, false, ReasonGroupNotFound
-	}
-
-	// Check if current group is complete
-	if !IsGroupCompleted(structure, currentGroupID, completedLocationIDs) {
-		return currentGroup, false, ReasonGroupIncomplete
-	}
-
-	// Check if auto-advance is enabled
-	if !currentGroup.AutoAdvance {
-		return currentGroup, false, ReasonAutoAdvanceDisabled
 	}
 
 	// Find parent and current index

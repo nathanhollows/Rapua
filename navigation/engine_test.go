@@ -133,51 +133,36 @@ func TestIsGroupCompleted_EmptyLocationIDs(t *testing.T) {
 
 // === GetNextGroup Tests ===
 
-func TestGetNextGroup_Incomplete(t *testing.T) {
+func TestGetNextGroup_HasNextSibling(t *testing.T) {
 	structure := makeTestStructure()
-	completed := []string{"loc1"} // Only 1 of 2 locations
-
-	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group1", completed)
-
-	assert.False(t, shouldAdvance)
-	assert.Equal(t, navigation.ReasonGroupIncomplete, reason)
-	assert.Equal(t, "group1", next.ID)
-}
-
-func TestGetNextGroup_CompleteWithAutoAdvance(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc1", "loc2"} // All locations complete
-
-	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group1", completed)
+	// GetNextGroup no longer checks completion - it just finds next in sequence
+	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group1", []string{})
 
 	assert.True(t, shouldAdvance)
 	assert.Equal(t, navigation.ReasonNextSibling, reason)
 	assert.Equal(t, "group2", next.ID)
 }
 
-func TestGetNextGroup_CompleteNoAutoAdvance(t *testing.T) {
+func TestGetNextGroup_SecondToThird(t *testing.T) {
 	structure := makeTestStructure()
-	completed := []string{"loc6"} // Group3 complete but AutoAdvance = false
 
-	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group3", completed)
+	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group2", []string{})
 
-	assert.False(t, shouldAdvance)
-	assert.Equal(t, navigation.ReasonAutoAdvanceDisabled, reason)
-	assert.Equal(t, "group3", next.ID)
-}
-
-func TestGetNextGroup_LastGroup(t *testing.T) {
-	structure := makeTestStructure()
-	// Complete group2 (last group with AutoAdvance)
-	completed := []string{"loc3", "loc4"}
-
-	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group2", completed)
-
-	// Should advance to group3 (next sibling)
 	assert.True(t, shouldAdvance)
 	assert.Equal(t, navigation.ReasonNextSibling, reason)
 	assert.Equal(t, "group3", next.ID)
 }
+
+func TestGetNextGroup_LastGroupNoNext(t *testing.T) {
+	structure := makeTestStructure()
+	// group3 is the last sibling, so there's no next group
+	next, shouldAdvance, reason := navigation.GetNextGroup(structure, "group3", []string{})
+
+	assert.False(t, shouldAdvance)
+	assert.Equal(t, navigation.ReasonAllComplete, reason)
+	assert.Nil(t, next)
+}
+
 
 func TestGetNextGroup_GroupNotFound(t *testing.T) {
 	structure := makeTestStructure()
@@ -691,5 +676,214 @@ func BenchmarkFindGroupByID(b *testing.B) {
 	b.ResetTimer()
 	for range b.N {
 		navigation.FindGroupByID(structure, "group2")
+	}
+}
+
+// === ComputeCurrentGroup Tests ===
+
+func TestComputeCurrentGroup_NoCompletions(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{}
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group1", groupID, "should start at first visible group")
+}
+
+func TestComputeCurrentGroup_FirstGroupIncomplete(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1"} // Only 1 of 2 locations in group1
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group1", groupID, "should stay in incomplete group")
+}
+
+func TestComputeCurrentGroup_AutoAdvanceToGroup2(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2"} // group1 100% complete (all 2 locations)
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group2", groupID, "should auto-advance to group2 (100% complete)")
+}
+
+func TestComputeCurrentGroup_Group2Incomplete(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2", "loc3"} // group1 complete, group2 only 1 of 3 (needs 2)
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group2", groupID, "should stay in group2 (needs minimum 2)")
+}
+
+func TestComputeCurrentGroup_AutoAdvanceToGroup3(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2", "loc3", "loc4"} // group1 100%, group2 minimum (2 of 3) with AutoAdvance=true
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group3", groupID, "should auto-advance to group3 (minimum met with AutoAdvance=true)")
+}
+
+func TestComputeCurrentGroup_Group3CompleteNoAutoAdvance(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2", "loc3", "loc4", "loc6"} // All groups 100% complete
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group3", groupID, "should stay in group3 (last group, 100% complete)")
+}
+
+func TestComputeCurrentGroup_MinimumMetButAutoAdvanceFalse(t *testing.T) {
+	// Create structure where group2 has AutoAdvance=false
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1"},
+			},
+			{
+				ID:              "group2",
+				CompletionType:  models.CompletionMinimum,
+				MinimumRequired: 2,
+				AutoAdvance:     false, // Let players complete remaining locations
+				LocationIDs:     []string{"loc2", "loc3", "loc4"},
+			},
+			{
+				ID:             "group3",
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc5"},
+			},
+		},
+	}
+
+	// Complete group1 fully, complete minimum for group2 (2 of 3)
+	completed := []string{"loc1", "loc2", "loc3"}
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group2", groupID, "should stay in group2 (minimum met but AutoAdvance=false)")
+}
+
+func TestComputeCurrentGroup_AllLocationsCompleteAlwaysAdvances(t *testing.T) {
+	// Even with AutoAdvance=false, should advance when ALL locations complete
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1"},
+			},
+			{
+				ID:              "group2",
+				CompletionType:  models.CompletionMinimum,
+				MinimumRequired: 2,
+				AutoAdvance:     false, // Normally would stay
+				LocationIDs:     []string{"loc2", "loc3", "loc4"},
+			},
+			{
+				ID:             "group3",
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc5"},
+			},
+		},
+	}
+
+	// Complete ALL locations in group2 (not just minimum)
+	completed := []string{"loc1", "loc2", "loc3", "loc4"}
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "group3", groupID, "should advance to group3 (100% complete overrides AutoAdvance=false)")
+}
+
+func TestComputeCurrentGroup_NoVisibleGroups(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{}, // No visible groups
+	}
+	completed := []string{}
+
+	groupID := navigation.ComputeCurrentGroup(structure, completed)
+	assert.Equal(t, "", groupID, "should return empty string when no visible groups")
+}
+
+func TestComputeCurrentGroup_Deterministic(t *testing.T) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2", "loc3"}
+
+	// Call multiple times with same inputs
+	groupID1 := navigation.ComputeCurrentGroup(structure, completed)
+	groupID2 := navigation.ComputeCurrentGroup(structure, completed)
+	groupID3 := navigation.ComputeCurrentGroup(structure, completed)
+
+	assert.Equal(t, groupID1, groupID2, "should be deterministic")
+	assert.Equal(t, groupID2, groupID3, "should be deterministic")
+}
+
+func TestComputeCurrentGroup_NestedGroups(t *testing.T) {
+	// Test with nested subgroups
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "parent",
+				Name:           "Parent Group",
+				Color:          "blue",
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{},
+				SubGroups: []models.GameStructure{
+					{
+						ID:             "child1",
+						Name:           "Child 1",
+						Color:          "red",
+						CompletionType: models.CompletionAll,
+						AutoAdvance:    true,
+						LocationIDs:    []string{"loc1", "loc2"},
+					},
+					{
+						ID:             "child2",
+						Name:           "Child 2",
+						Color:          "green",
+						CompletionType: models.CompletionAll,
+						AutoAdvance:    false,
+						LocationIDs:    []string{"loc3"},
+					},
+				},
+			},
+		},
+	}
+
+	// No completions - should start at first visible subgroup
+	groupID := navigation.ComputeCurrentGroup(structure, []string{})
+	assert.Equal(t, "parent", groupID, "should start at parent group")
+}
+
+func TestComputeCurrentGroup_DifferentCompletionOrder(t *testing.T) {
+	structure := makeTestStructure()
+
+	// Same locations completed, different order
+	completed1 := []string{"loc2", "loc1"}
+	completed2 := []string{"loc1", "loc2"}
+
+	groupID1 := navigation.ComputeCurrentGroup(structure, completed1)
+	groupID2 := navigation.ComputeCurrentGroup(structure, completed2)
+
+	assert.Equal(t, groupID1, groupID2, "order of completions should not matter")
+}
+
+// Benchmark ComputeCurrentGroup
+func BenchmarkComputeCurrentGroup(b *testing.B) {
+	structure := makeTestStructure()
+	completed := []string{"loc1", "loc2", "loc3"}
+
+	b.ResetTimer()
+	for range b.N {
+		navigation.ComputeCurrentGroup(structure, completed)
 	}
 }
