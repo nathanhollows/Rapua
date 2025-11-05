@@ -56,6 +56,8 @@ type GameStructure struct {
 	Navigation      NavigationDisplayMode `json:"navigation"`                 // clues, map, map_names, names_only
 	CompletionType  CompletionType        `json:"completion_type"`            // all, minimum
 	MinimumRequired int                   `json:"minimum_required,omitempty"` // For minimum completion type
+	MaxNext         int                   `json:"max_next,omitempty"`         // Max locations to show for random routing (0 = unlimited)
+	AutoAdvance     bool                  `json:"auto_advance"`               // If true, auto-move to next group when CompletionType met
 	IsRoot          bool                  `json:"is_root"`                    // true ONLY for the invisible root container
 
 	// Storage: locations first, then subgroups - order preserved in arrays
