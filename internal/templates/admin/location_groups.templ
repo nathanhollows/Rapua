@@ -277,6 +277,10 @@ templ groupMenu(group models.GameStructure) {
 		@routeStrategyPicker(group.Routing)
 		<!-- Navigation Display Picker -->
 		@navigationDisplayPicker(group.Navigation)
+		if false {
+			<!-- Auto Advance Picker -->
+			@autoAdvancePicker(group.Navigation)
+		}
 		<button
 			class="btn btn-sm btn-ghost tooltip delete-group-btn"
 			data-tip="Delete group"
@@ -471,6 +475,19 @@ templ navigationDisplayPicker(nav models.NavigationDisplayMode) {
 				</li>
 			}
 		</ul>
+	</div>
+}
+
+templ autoAdvancePicker(nav models.NavigationDisplayMode) {
+	<div class="dropdown dropdown-bottom dropdown-center nav-display-dropdown">
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Auto Advance">
+			<div class="nav-display contents">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-fading-arrow-up-icon lucide-circle-fading-arrow-right w-4 h-4" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 7.38 16.75M12 16l4-4-4-4M8 12h8M2.5 8.875a10 10 0 0 0-.5 3M2.83 16a10 10 0 0 0 2.43 3.4M4.636 5.235a10 10 0 0 1 .891-.857M8.644 21.42a10 10 0 0 0 7.631-.38"></path></svg>
+				Auto Advance
+			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow"></ul>
 	</div>
 }
 
