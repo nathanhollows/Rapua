@@ -101,6 +101,17 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Post("/", playerHandler.Next)
 	})
 
+	// Advance to next group (manual skip)
+	router.Route("/advance", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(
+				playerHandler.GetTeamService(),
+				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next),
+			)
+		})
+		r.Post("/", playerHandler.AdvanceGroup)
+	})
+
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(

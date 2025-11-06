@@ -65,17 +65,19 @@ func IsGroupCompleted(
 // Auto-advance behavior:
 //   - 100% completion: ALWAYS auto-advance to next group
 //   - Minimum completion (not 100%):
-//     - AutoAdvance = true: advance immediately
-//     - AutoAdvance = false: stay in group (let players complete remaining locations)
+//   - AutoAdvance = true: advance immediately
+//   - AutoAdvance = false: stay in group (let players complete remaining locations)
+//   - Skipped groups: If a group is in skippedGroupIDs, advance past it even if AutoAdvance = false
 //
 // Returns empty string if:
 //   - Structure has no visible groups
 //   - All groups are completed
 //
-// This function is deterministic: same completedLocationIDs always produces same result.
+// This function is deterministic: same inputs always produce same result.
 func ComputeCurrentGroup(
 	structure *models.GameStructure,
 	completedLocationIDs []string,
+	skippedGroupIDs []string,
 ) string {
 	// Start at first visible group
 	current := GetFirstVisibleGroup(structure)
@@ -83,8 +85,26 @@ func ComputeCurrentGroup(
 		return "" // No visible groups configured
 	}
 
+	// Create set for fast skipped group lookup
+	skipped := makeSet(skippedGroupIDs)
+
 	// Walk through structure, advancing when appropriate
 	for {
+		// Check if this group was manually skipped
+		if skipped[current.ID] {
+			// Group was skipped - advance to next
+			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
+
+			// If we can't advance or reached the end, stay at current
+			if !shouldAdvance || reason == ReasonAllComplete {
+				return current.ID
+			}
+
+			// Move to next group and continue checking
+			current = next
+			continue
+		}
+
 		// Check completion status
 		completed := makeSet(completedLocationIDs)
 		completedCount := 0

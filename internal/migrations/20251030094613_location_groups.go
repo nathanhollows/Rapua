@@ -42,6 +42,19 @@ type m20251030094613_location struct {
 	Name       string `bun:"name,type:varchar(255)"`
 }
 
+type m20251030094613_Team struct {
+	bun.BaseModel `bun:"table:teams"`
+
+	ID              string   `bun:"id,pk"`
+	Code            string   `bun:"code,unique"`
+	Name            string   `bun:"name,"`
+	InstanceID      string   `bun:"instance_id,notnull"`
+	HasStarted      bool     `bun:"has_started,default:false"`
+	MustCheckOut    string   `bun:"must_scan_out"`
+	Points          int      `bun:"points,"`
+	SkippedGroupIDs []string `bun:"skipped_group_ids,type:text[],array"`
+}
+
 type m20251030094613_instanceSettings struct {
 	bun.BaseModel `bun:"table:instance_settings"`
 
@@ -80,20 +93,21 @@ const (
 // This ensures the migration always uses the structure as it was at the time of creation,
 // regardless of future changes to the live models.GameStructure
 type m20251030094613_GameStructure struct {
-	ID              string                                 `json:"id"`
-	Name            string                                 `json:"name"`
-	Color           string                                 `json:"color"`
-	Routing         m20251030094613_RouteStrategy          `json:"routing"`
-	Navigation      m20251030094613_NavigationDisplayMode  `json:"navigation"`
-	CompletionType  m20251030094613_CompletionType         `json:"completion_type"`
-	MinimumRequired int                                    `json:"minimum_required,omitempty"`
-	IsRoot          bool                                   `json:"is_root"`
-	LocationIDs     []string                               `json:"location_ids"`
-	SubGroups       []m20251030094613_GameStructure        `json:"sub_groups"`
+	ID              string                                `json:"id"`
+	Name            string                                `json:"name"`
+	Color           string                                `json:"color"`
+	Routing         m20251030094613_RouteStrategy         `json:"routing"`
+	Navigation      m20251030094613_NavigationDisplayMode `json:"navigation"`
+	CompletionType  m20251030094613_CompletionType        `json:"completion_type"`
+	MinimumRequired int                                   `json:"minimum_required,omitempty"`
+	AutoAdvance     bool                                  `json:"auto_advance"` // NEW: Auto-advance when completion criteria met
+	IsRoot          bool                                  `json:"is_root"`
+	LocationIDs     []string                              `json:"location_ids"`
+	SubGroups       []m20251030094613_GameStructure       `json:"sub_groups"`
 }
 
 func init() {
-	// Adds the GameStructure field and migrates existing location data
+	// Adds the GameStructure field, migrates existing location data, and creates team_progress table
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// Add the game_structure column
 		_, err := db.NewAddColumn().
@@ -175,10 +189,29 @@ func init() {
 			}
 		}
 
+		// Add skipped_group_ids column to teams table
+		_, err = db.NewAddColumn().
+			Model((*m20251030094613_Team)(nil)).
+			ColumnExpr("skipped_group_ids text default '[]'").
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("20251030094613_location_groups.go: add skipped_group_ids column: %w", err)
+		}
+
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		// Down migration - just drop the column
+		// Down migration - drop the game_structure column and skipped_group_ids
+		// Drop skipped_group_ids column from teams table
 		_, err := db.NewDropColumn().
+			Model((*m20251030094613_Team)(nil)).
+			Column("skipped_group_ids").
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("20251030094613_location_groups.go: drop skipped_group_ids column: %w", err)
+		}
+
+		// Drop game_structure column from instances table
+		_, err = db.NewDropColumn().
 			Model((*m20251030094613_instance)(nil)).
 			Column("game_structure").
 			Exec(ctx)
