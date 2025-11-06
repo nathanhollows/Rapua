@@ -274,7 +274,7 @@ templ groupMenu(group models.GameStructure) {
 	<div class="flex gap-2 items-center">
 		@completionCount(group)
 		<!-- Route Strategy Picker -->
-		@routeStrategyPicker(group.Routing)
+		@routeStrategyPicker(group)
 		<!-- Navigation Display Picker -->
 		@navigationDisplayPicker(group.Navigation)
 		if false {
@@ -318,11 +318,11 @@ templ groupMenu(group models.GameStructure) {
 	</div>
 }
 
-templ routeStrategyPicker(nav models.RouteStrategy) {
-	<div class="dropdown dropdown-bottom dropdown-center route-dropdown">
+templ routeStrategyPicker(group models.GameStructure) {
+	<div class="dropdown dropdown-bottom dropdown-center route-dropdown" data-max-next={ getMaxNextValue(group) }>
 		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Route Strategy">
 			<div class="route-strat contents">
-				switch nav {
+				switch group.Routing {
 					case models.RouteStrategyOrdered:
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
 						{ models.RouteStrategyOrdered.String() }
@@ -331,22 +331,26 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 						{ models.RouteStrategyFreeRoam.String() }
 					case models.RouteStrategyRandom:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
-						{ models.RouteStrategyRandom.String() }
+						Random <span class="max-next-display">{ getMaxNextValue(group) }</span>
 				}
 			</div>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
 		</a>
-		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-72 p-2 shadow">
-			<li>
-				<button
-					role="button"
-					class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
-					data-mode={ models.RouteStrategyOrdered.String() }
-					_="on click
+		<div class="dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow">
+			<ul tabindex="0" class="menu">
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ models.RouteStrategyOrdered.String() }
+						_="on click
 						remove .bg-base-300 from <.route-option/>
 						add .bg-base-300 to me
-						set routeStrat to (closest <.route-dropdown/>).querySelector('.route-strat')
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
 						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						-- Hide max-next slider
+						add .hidden to dropdown.querySelector('.max-next-slider-container')
 						-- Disable completion dropdown
 						set groupCard to closest <.group-item/>
 						set completionDropdown to groupCard.querySelector('.completion-dropdown')
@@ -354,24 +358,27 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 						add .hidden to completionDropdown.querySelector('.dropdown-content')
 						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
 						js saveGameStructure() end"
-				>
-					<div class="flex items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
-						<span class="font-medium">{ models.RouteStrategyOrdered.String() }</span>
-					</div>
-					<span class="text-xs text-base-content/60">{ models.RouteStrategyOrdered.Description() }</span>
-				</button>
-			</li>
-			<li>
-				<button
-					role="button"
-					class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty"
-					data-mode={ models.RouteStrategyFreeRoam.String() }
-					_="on click
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyOrdered.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ models.RouteStrategyOrdered.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty"
+						data-mode={ models.RouteStrategyFreeRoam.String() }
+						_="on click
 						remove .bg-base-300 from <.route-option/>
 						add .bg-base-300 to me
-						set routeStrat to (closest <.route-dropdown/>).querySelector('.route-strat')
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
 						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						-- Hide max-next slider
+						add .hidden to dropdown.querySelector('.max-next-slider-container')
 						-- Enable completion dropdown
 						set groupCard to closest <.group-item/>
 						set completionDropdown to groupCard.querySelector('.completion-dropdown')
@@ -379,24 +386,28 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 						remove .hidden from completionDropdown.querySelector('.dropdown-content')
 						add .hidden to groupCard.querySelector('.completion-disabled-msg')
 						js saveGameStructure() end"
-				>
-					<div class="flex items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
-						<span class="font-medium">{ models.RouteStrategyFreeRoam.String() }</span>
-					</div>
-					<span class="text-xs text-base-content/60 break-after-auto">{ models.RouteStrategyFreeRoam.Description() }</span>
-				</button>
-			</li>
-			<li>
-				<button
-					role="button"
-					class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
-					data-mode={ models.RouteStrategyRandom.String() }
-					_="on click
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyFreeRoam.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60 break-after-auto">{ models.RouteStrategyFreeRoam.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ models.RouteStrategyRandom.String() }
+						_="on click
 						remove .bg-base-300 from <.route-option/>
 						add .bg-base-300 to me
-						set routeStrat to (closest <.route-dropdown/>).querySelector('.route-strat')
-						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
+						set maxNextValue to dropdown.querySelector('.max-next-slider').value
+						set routeStrat's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>` + maxNextValue + `</span>`
+						-- Show max-next slider
+						remove .hidden from dropdown.querySelector('.max-next-slider-container')
 						-- Enable completion dropdown
 						set groupCard to closest <.group-item/>
 						set completionDropdown to groupCard.querySelector('.completion-dropdown')
@@ -404,15 +415,41 @@ templ routeStrategyPicker(nav models.RouteStrategy) {
 						remove .hidden from completionDropdown.querySelector('.dropdown-content')
 						add .hidden to groupCard.querySelector('.completion-disabled-msg')
 						js saveGameStructure() end"
-				>
-					<div class="flex items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
-						<span class="font-medium">{ models.RouteStrategyRandom.String() }</span>
-					</div>
-					<span class="text-xs text-base-content/60">{ models.RouteStrategyRandom.Description() }</span>
-				</button>
-			</li>
-		</ul>
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyRandom.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ models.RouteStrategyRandom.Description() }</span>
+					</button>
+				</li>
+			</ul>
+			<!-- MaxNext slider - shown only when Random routing is selected -->
+			<div class={ "max-next-slider-container p-5 pt-0", templ.KV("hidden", group.Routing != models.RouteStrategyRandom) }>
+				<label class="text-xs font-medium">Locations to show:</label>
+				<p class="text-xs text-base-content/60 mt-1 text-pretty">How many random locations should players see at once?</p>
+				<div class="flex items-center gap-2 mt-2">
+					<input
+						type="range"
+						min="1"
+						max="10"
+						value={ getMaxNextValue(group) }
+						class="range range-primary range-sm flex-1 max-next-slider"
+						_="on input
+						set output to the next <output/>
+						put my.value into output
+						set dropdown to closest <.route-dropdown/>
+						set dropdown's @data-max-next to my.value
+						set maxNextDisplay to dropdown.querySelector('.max-next-display')
+						if maxNextDisplay
+							put my.value into maxNextDisplay
+						end
+						js saveGameStructure() end"
+					/>
+					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">{ getMaxNextValue(group) }</output>
+				</div>
+			</div>
+		</div>
 	</div>
 }
 
@@ -502,6 +539,13 @@ func getCompletionValue(group models.GameStructure) string {
 		return fmt.Sprint(group.MinimumRequired)
 	}
 	return fmt.Sprint(len(group.Locations))
+}
+
+func getMaxNextValue(group models.GameStructure) string {
+	if group.MaxNext > 0 {
+		return fmt.Sprint(group.MaxNext)
+	}
+	return "3"
 }
 
 templ picker(colour string) {
@@ -601,13 +645,17 @@ templ sortableScript() {
 			// Get routing strategy - map display name to integer
 			const routeStrat = groupCard.querySelector('.route-strat');
 			let routing = 1; // default: RouteStrategyFreeRoam
+			let maxNext = 0; // default: 0 (unlimited for non-random routes)
 			if (routeStrat) {
 				const text = routeStrat.textContent.trim();
 				// Map string to integer values matching models.RouteStrategy
 				if (text.includes('Guided Path')) {
 					routing = 2; // RouteStrategyOrdered
-				} else if (text.includes('Randomised Route')) {
+				} else if (text.includes('Random')) {
 					routing = 0; // RouteStrategyRandom
+					// Get maxNext from dropdown data attribute
+					const dropdown = groupCard.querySelector('.route-dropdown');
+					maxNext = dropdown ? parseInt(dropdown.dataset.maxNext) || 3 : 3;
 				} else {
 					routing = 1; // RouteStrategyFreeRoam (Open Exploration)
 				}
@@ -655,6 +703,7 @@ templ sortableScript() {
 				navigation: navigation,
 				completion_type: completionType,
 				minimum_required: minimumRequired,
+				max_next: maxNext,
 				is_root: false,
 				location_ids: [],
 				sub_groups: []
@@ -786,8 +835,25 @@ templ sortableScript() {
 				const groupItem = dropdown.closest('.group-item');
 				const completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;
 
+				// Initialize MaxNext slider for Random routing
+				if (currentText.includes('Random')) {
+					const maxNext = parseInt(dropdown.dataset.maxNext) || 3;
+					const slider = dropdown.querySelector('.max-next-slider');
+					const output = dropdown.querySelector('.max-next-slider + output');
+					if (slider) {
+						slider.value = maxNext;
+					}
+					if (output) {
+						output.textContent = maxNext;
+					}
+				}
+
 				options.forEach(function(option) {
-					if (option.textContent.trim().includes(currentText)) {
+					const optionMode = option.dataset.mode;
+					// Match based on the route strategy name
+					if ((currentText.includes('Guided Path') && optionMode === 'Guided Path') ||
+					    (currentText.includes('Open Exploration') && optionMode === 'Open Exploration') ||
+					    (currentText.includes('Random') && optionMode === 'Randomised Route')) {
 						option.classList.add('bg-base-300');
 
 						// If "Guided Path" mode is selected, disable the completion dropdown
