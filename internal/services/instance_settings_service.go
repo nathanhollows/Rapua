@@ -46,11 +46,6 @@ func (s *InstanceSettingsService) SaveSettings(ctx context.Context, settings *mo
 		return errors.New("settings cannot be nil")
 	}
 
-	// Validate business rules
-	if settings.MaxNextLocations < 0 {
-		return errors.New("max next locations cannot be negative")
-	}
-
 	// Save to database
 	if err := s.instanceSettingsRepo.Update(ctx, settings); err != nil {
 		return fmt.Errorf("saving settings: %w", err)

@@ -183,6 +183,7 @@ type MarkerService interface {
 
 type NavigationService interface {
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	GetPlayerNavigationView(ctx context.Context, team *models.Team) (*services.PlayerNavigationView, error)
 }
 
 type NotificationService interface {
