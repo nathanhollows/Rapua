@@ -382,7 +382,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	// Set the relation loader so gameStructureService can load location relations
 	gameStructureService.SetRelationLoader(locationService)
 
-	navigationService := services.NewNavigationService(locationRepo, teamRepo)
+	navigationService := services.NewNavigationService(locationRepo, teamRepo, gameStructureService, blockService)
 	checkInService := services.NewCheckInService(
 		checkInRepo,
 		locationRepo,
