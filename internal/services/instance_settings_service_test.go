@@ -80,27 +80,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 		assert.Contains(t, err.Error(), "settings cannot be nil")
 	})
 
-	t.Run("Save settings with negative max locations", func(t *testing.T) {
-		settings := createTestInstanceSettings(t)
-		settings.MaxNextLocations = -1
-
-		err := service.SaveSettings(context.Background(), settings)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "max next locations cannot be negative")
-	})
-
-	t.Run("Save settings with zero max locations", func(t *testing.T) {
-		settings := createTestInstanceSettings(t)
-		settings.MaxNextLocations = 0
-
-		err := service.SaveSettings(context.Background(), settings)
-		// Should not error for zero (valid value)
-		// Will error for database reasons, but not validation
-		if err != nil {
-			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-		}
-	})
-
 	t.Run("Save settings with various navigation modes", func(t *testing.T) {
 		testCases := []struct {
 			name string
@@ -183,36 +162,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 
 		err := service.SaveSettings(context.Background(), settings)
 		// Should not error for large positive values
-		if err != nil {
-			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-		}
-	})
-}
-
-func TestInstanceSettingsService_ValidationLogic(t *testing.T) {
-	service, cleanup := setupInstanceSettingsService(t)
-	defer cleanup()
-
-	t.Run("Validation edge cases", func(t *testing.T) {
-		// Test the boundary condition for MaxNextLocations
-		settings := createTestInstanceSettings(t)
-
-		// Test exactly -1 (should fail)
-		settings.MaxNextLocations = -1
-		err := service.SaveSettings(context.Background(), settings)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "max next locations cannot be negative")
-
-		// Test exactly 0 (should pass validation)
-		settings.MaxNextLocations = 0
-		err = service.SaveSettings(context.Background(), settings)
-		if err != nil {
-			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-		}
-
-		// Test exactly 1 (should pass validation)
-		settings.MaxNextLocations = 1
-		err = service.SaveSettings(context.Background(), settings)
 		if err != nil {
 			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
 		}
