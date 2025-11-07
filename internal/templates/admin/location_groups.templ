@@ -550,7 +550,7 @@ func getMaxNextValue(group models.GameStructure) string {
 
 templ picker(colour string) {
 	<div class="dropdown dropdown-bottom">
-		<div tabindex="0" role="button" class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s cursor-pointer tooltip", colour) } data-tip="Group color"></div>
+		<div tabindex="0" role="button" class="w-4 h-4 rounded-full bg-primary cursor-pointer tooltip" data-tip="Group color"></div>
 		<ul tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-48">
 			<div class="hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content t"></div>
 			<div class="menu menu-horizontal">
