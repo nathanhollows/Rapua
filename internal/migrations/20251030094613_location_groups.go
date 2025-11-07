@@ -63,7 +63,7 @@ type m20251030094613_instanceSettings struct {
 	NavigationDisplayMode m20250927085100_NavigationDisplayMode `bun:"navigation_method,type:int"`
 }
 
-// Timestamped copy of enum types for this migration
+// Timestamped copy of enum types for this migration.
 type m20251030094613_RouteStrategy int
 type m20251030094613_NavigationDisplayMode int
 
@@ -81,7 +81,7 @@ const (
 	m20251030094613_NavigationDisplayCustom
 )
 
-// Timestamped copy of CompletionType for this migration
+// Timestamped copy of CompletionType for this migration.
 type m20251030094613_CompletionType string
 
 const (
@@ -91,7 +91,7 @@ const (
 
 // Timestamped copy of GameStructure for this migration
 // This ensures the migration always uses the structure as it was at the time of creation,
-// regardless of future changes to the live models.GameStructure
+// regardless of future changes to the live models.GameStructure.
 type m20251030094613_GameStructure struct {
 	ID              string                                `json:"id"`
 	Name            string                                `json:"name"`
@@ -175,7 +175,11 @@ func init() {
 			// Marshal to JSON
 			jsonData, err := json.Marshal(rootStructure)
 			if err != nil {
-				return fmt.Errorf("20251030094613_location_groups.go: marshal game_structure for instance %s: %w", instance.ID, err)
+				return fmt.Errorf(
+					"20251030094613_location_groups.go: marshal game_structure for instance %s: %w",
+					instance.ID,
+					err,
+				)
 			}
 
 			// Update the instance with the new game_structure
@@ -185,7 +189,11 @@ func init() {
 				Where("id = ?", instance.ID).
 				Exec(ctx)
 			if err != nil {
-				return fmt.Errorf("20251030094613_location_groups.go: update game_structure for instance %s: %w", instance.ID, err)
+				return fmt.Errorf(
+					"20251030094613_location_groups.go: update game_structure for instance %s: %w",
+					instance.ID,
+					err,
+				)
 			}
 		}
 

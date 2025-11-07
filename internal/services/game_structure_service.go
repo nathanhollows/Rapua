@@ -2,24 +2,25 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v5/models"
 	"github.com/uptrace/bun"
 )
 
-// LocationRelationLoader defines the interface for loading location relations
+// LocationRelationLoader defines the interface for loading location relations.
 type LocationRelationLoader interface {
 	LoadRelations(ctx context.Context, location *models.Location) error
 }
 
-// GameStructureService provides operations for loading, saving, and validating GameStructures
+// GameStructureService provides operations for loading, saving, and validating GameStructures.
 type GameStructureService struct {
 	db             *bun.DB
 	relationLoader LocationRelationLoader
 }
 
-// NewGameStructureService creates a new GameStructureService
+// NewGameStructureService creates a new GameStructureService.
 func NewGameStructureService(db *bun.DB) *GameStructureService {
 	return &GameStructureService{
 		db:             db,
@@ -34,10 +35,15 @@ func (s *GameStructureService) SetRelationLoader(loader LocationRelationLoader) 
 
 // Load populates the GameStructure with location data from the database
 // If recursive is true, loads all subgroups recursively
-// If recursive is false, only loads locations for this specific group
-func (s *GameStructureService) Load(ctx context.Context, instanceID string, group *models.GameStructure, recursive bool) error {
+// If recursive is false, only loads locations for this specific group.
+func (s *GameStructureService) Load(
+	ctx context.Context,
+	instanceID string,
+	group *models.GameStructure,
+	recursive bool,
+) error {
 	if group == nil {
-		return fmt.Errorf("group cannot be nil")
+		return errors.New("group cannot be nil")
 	}
 
 	// Load locations for this group if it has any
@@ -84,8 +90,13 @@ func (s *GameStructureService) Load(ctx context.Context, instanceID string, grou
 }
 
 // LoadWithRelations loads locations and their relations (blocks, etc.) for the game structure
-// If recursive is true, loads all subgroups recursively
-func (s *GameStructureService) LoadWithRelations(ctx context.Context, instanceID string, group *models.GameStructure, recursive bool) error {
+// If recursive is true, loads all subgroups recursively.
+func (s *GameStructureService) LoadWithRelations(
+	ctx context.Context,
+	instanceID string,
+	group *models.GameStructure,
+	recursive bool,
+) error {
 	// First load the basic location data
 	if err := s.Load(ctx, instanceID, group, recursive); err != nil {
 		return err
@@ -99,8 +110,12 @@ func (s *GameStructureService) LoadWithRelations(ctx context.Context, instanceID
 	return nil
 }
 
-// loadRelationsRecursive loads relations for all locations in the structure
-func (s *GameStructureService) loadRelationsRecursive(ctx context.Context, group *models.GameStructure, recursive bool) error {
+// loadRelationsRecursive loads relations for all locations in the structure.
+func (s *GameStructureService) loadRelationsRecursive(
+	ctx context.Context,
+	group *models.GameStructure,
+	recursive bool,
+) error {
 	// Load relations for this group's locations
 	for i := range group.Locations {
 		if err := s.relationLoader.LoadRelations(ctx, group.Locations[i]); err != nil {
@@ -121,8 +136,12 @@ func (s *GameStructureService) loadRelationsRecursive(ctx context.Context, group
 }
 
 // LoadByLocationID finds the group containing the specified location and loads it
-// Returns the specific group containing that location (not the root)
-func (s *GameStructureService) LoadByLocationID(ctx context.Context, instanceID string, locationID string) (*models.GameStructure, error) {
+// Returns the specific group containing that location (not the root).
+func (s *GameStructureService) LoadByLocationID(
+	ctx context.Context,
+	instanceID string,
+	locationID string,
+) (*models.GameStructure, error) {
 	// First, get the instance to retrieve its game structure
 	var instance models.Instance
 	err := s.db.NewSelect().
@@ -147,8 +166,11 @@ func (s *GameStructureService) LoadByLocationID(ctx context.Context, instanceID 
 	return group, nil
 }
 
-// findGroupByLocationID recursively searches for a group containing the location ID
-func (s *GameStructureService) findGroupByLocationID(group *models.GameStructure, locationID string) *models.GameStructure {
+// findGroupByLocationID recursively searches for a group containing the location ID.
+func (s *GameStructureService) findGroupByLocationID(
+	group *models.GameStructure,
+	locationID string,
+) *models.GameStructure {
 	// Check if this group contains the location
 	for _, id := range group.LocationIDs {
 		if id == locationID {
@@ -166,7 +188,7 @@ func (s *GameStructureService) findGroupByLocationID(group *models.GameStructure
 	return nil
 }
 
-// Save persists the GameStructure to the database
+// Save persists the GameStructure to the database.
 func (s *GameStructureService) Save(ctx context.Context, instanceID string, group *models.GameStructure) error {
 	// Validate before saving
 	if err := s.Validate(group, instanceID); err != nil {
@@ -186,10 +208,10 @@ func (s *GameStructureService) Save(ctx context.Context, instanceID string, grou
 	return nil
 }
 
-// Validate checks the GameStructure for errors
+// Validate checks the GameStructure for errors.
 func (s *GameStructureService) Validate(group *models.GameStructure, instanceID string) error {
 	if group == nil {
-		return fmt.Errorf("group cannot be nil")
+		return errors.New("group cannot be nil")
 	}
 
 	// Check for duplicate location IDs across entire tree
@@ -212,7 +234,7 @@ func (s *GameStructureService) Validate(group *models.GameStructure, instanceID 
 	return nil
 }
 
-// checkDuplicateLocationIDs recursively checks for duplicate location IDs
+// checkDuplicateLocationIDs recursively checks for duplicate location IDs.
 func (s *GameStructureService) checkDuplicateLocationIDs(group *models.GameStructure, seen map[string]bool) error {
 	for _, id := range group.LocationIDs {
 		if seen[id] {
@@ -230,7 +252,7 @@ func (s *GameStructureService) checkDuplicateLocationIDs(group *models.GameStruc
 	return nil
 }
 
-// checkDuplicateGroupIDs recursively checks for duplicate group IDs
+// checkDuplicateGroupIDs recursively checks for duplicate group IDs.
 func (s *GameStructureService) checkDuplicateGroupIDs(group *models.GameStructure, seen map[string]bool) error {
 	if group.ID != "" {
 		if seen[group.ID] {
@@ -248,7 +270,7 @@ func (s *GameStructureService) checkDuplicateGroupIDs(group *models.GameStructur
 	return nil
 }
 
-// validateGroupMetadata checks that visible groups have required metadata
+// validateGroupMetadata checks that visible groups have required metadata.
 func (s *GameStructureService) validateGroupMetadata(group *models.GameStructure) error {
 	// Root group can have empty name and color
 	if !group.IsRoot {
@@ -270,7 +292,7 @@ func (s *GameStructureService) validateGroupMetadata(group *models.GameStructure
 	return nil
 }
 
-// FindGroupByID recursively searches for a group with the specified ID
+// FindGroupByID recursively searches for a group with the specified ID.
 func (s *GameStructureService) FindGroupByID(group *models.GameStructure, groupID string) *models.GameStructure {
 	if group.ID == groupID {
 		return group
@@ -285,7 +307,7 @@ func (s *GameStructureService) FindGroupByID(group *models.GameStructure, groupI
 	return nil
 }
 
-// GetAllLocationIDs returns all location IDs in the group and its subgroups (flattened, in order)
+// GetAllLocationIDs returns all location IDs in the group and its subgroups (flattened, in order).
 func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []string {
 	ids := make([]string, 0)
 
@@ -300,25 +322,36 @@ func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []
 	return ids
 }
 
-// GetNextItemType returns what type of item should be next (placeholder implementation)
-func (s *GameStructureService) GetNextItemType(group *models.GameStructure, completedLocationIDs map[string]bool, completedGroupIDs map[string]bool) interface{} {
+// GetNextItemType returns what type of item should be next (placeholder implementation).
+func (s *GameStructureService) GetNextItemType(
+	group *models.GameStructure,
+	completedLocationIDs map[string]bool,
+	completedGroupIDs map[string]bool,
+) interface{} {
 	// TODO: Implement based on routing strategy
 	return nil
 }
 
-// GetNextLocation returns the next location based on routing strategy (placeholder implementation)
-func (s *GameStructureService) GetNextLocation(group *models.GameStructure, completedLocationIDs map[string]bool, teamID string) string {
+// GetNextLocation returns the next location based on routing strategy (placeholder implementation).
+func (s *GameStructureService) GetNextLocation(
+	group *models.GameStructure,
+	completedLocationIDs map[string]bool,
+	teamID string,
+) string {
 	// TODO: Implement based on routing strategy
 	return ""
 }
 
-// GetNextGroup returns the next group based on routing strategy (placeholder implementation)
-func (s *GameStructureService) GetNextGroup(group *models.GameStructure, completedGroups map[string]bool) *models.GameStructure {
+// GetNextGroup returns the next group based on routing strategy (placeholder implementation).
+func (s *GameStructureService) GetNextGroup(
+	group *models.GameStructure,
+	completedGroups map[string]bool,
+) *models.GameStructure {
 	// TODO: Implement based on routing strategy
 	return nil
 }
 
-// IsCompleted checks if a group is completed based on completion type and count
+// IsCompleted checks if a group is completed based on completion type and count.
 func (s *GameStructureService) IsCompleted(group *models.GameStructure, completedCount int) bool {
 	switch group.CompletionType {
 	case models.CompletionAll:

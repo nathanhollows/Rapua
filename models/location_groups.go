@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-// CompletionType defines how a group is considered completed
+// CompletionType defines how a group is considered completed.
 type CompletionType string
 
 const (
@@ -28,8 +28,8 @@ const (
 //   - Every instance has exactly ONE root group (IsRoot: true)
 //   - The root group is NEVER rendered in the UI
 //   - The root group acts as an invisible container for:
-//     - Visible subgroups (rendered as group cards)
-//     - Ungrouped locations (rendered directly in the root locations area)
+//   - Visible subgroups (rendered as group cards)
+//   - Ungrouped locations (rendered directly in the root locations area)
 //   - Root group Name is always empty ("")
 //   - Root group Color is always empty ("")
 //
@@ -69,7 +69,7 @@ type GameStructure struct {
 	populated bool        `json:"-"` // Private field to track if locations are loaded
 }
 
-// Scan implements the sql.Scanner interface for database unmarshalling
+// Scan implements the sql.Scanner interface for database unmarshalling.
 func (gs *GameStructure) Scan(value any) error {
 	if value == nil {
 		*gs = GameStructure{}
@@ -110,7 +110,7 @@ func (gs *GameStructure) Scan(value any) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface for database marshalling
+// Value implements the driver.Valuer interface for database marshalling.
 func (gs GameStructure) Value() (driver.Value, error) {
 	if gs.ID == "" {
 		return nil, nil
@@ -124,24 +124,24 @@ func (gs GameStructure) Value() (driver.Value, error) {
 	return string(data), nil
 }
 
-// IsPopulated returns whether this group has been populated with location data
+// IsPopulated returns whether this group has been populated with location data.
 func (gs *GameStructure) IsPopulated() bool {
 	return gs.populated
 }
 
-// SetPopulated marks this group as populated with location data
+// SetPopulated marks this group as populated with location data.
 func (gs *GameStructure) SetPopulated(populated bool) {
 	gs.populated = populated
 }
 
 // GameContext wraps a GameStructure with its service for easy template usage
-// This allows passing a single object that has both data and behavior
+// This allows passing a single object that has both data and behavior.
 type GameContext struct {
 	Structure *GameStructure
 	service   GameStructureServiceInterface // Interface for testing
 }
 
-// GameStructureServiceInterface defines the methods needed by GameContext
+// GameStructureServiceInterface defines the methods needed by GameContext.
 type GameStructureServiceInterface interface {
 	// Loading methods
 	Load(ctx context.Context, instanceID string, group *GameStructure, recursive bool) error
@@ -154,13 +154,17 @@ type GameStructureServiceInterface interface {
 	// Navigation methods
 	FindGroupByID(gameStructure *GameStructure, groupID string) *GameStructure
 	GetAllLocationIDs(group *GameStructure) []string
-	GetNextItemType(group *GameStructure, completedLocationIDs map[string]bool, completedGroupIDs map[string]bool) interface{}
+	GetNextItemType(
+		group *GameStructure,
+		completedLocationIDs map[string]bool,
+		completedGroupIDs map[string]bool,
+	) interface{}
 	GetNextLocation(group *GameStructure, completedLocationIDs map[string]bool, teamID string) string
 	GetNextGroup(group *GameStructure, completedGroups map[string]bool) *GameStructure
 	IsCompleted(group *GameStructure, completedCount int) bool
 }
 
-// NewGameContext creates a new GameContext with structure and service
+// NewGameContext creates a new GameContext with structure and service.
 func NewGameContext(structure *GameStructure, service GameStructureServiceInterface) *GameContext {
 	return &GameContext{
 		Structure: structure,
@@ -171,22 +175,25 @@ func NewGameContext(structure *GameStructure, service GameStructureServiceInterf
 // === DELEGATION METHODS ===
 // These methods delegate to the service, making templates cleaner
 
-// GetAllLocationIDs returns all location IDs recursively for this context's structure
+// GetAllLocationIDs returns all location IDs recursively for this context's structure.
 func (gc *GameContext) GetAllLocationIDs() []string {
 	return gc.service.GetAllLocationIDs(gc.Structure)
 }
 
-// GetNextLocation returns the next location for this context's structure
+// GetNextLocation returns the next location for this context's structure.
 func (gc *GameContext) GetNextLocation(completedLocationIDs map[string]bool, teamID string) string {
 	return gc.service.GetNextLocation(gc.Structure, completedLocationIDs, teamID)
 }
 
-// GetNextItemType returns what type of item should be next
-func (gc *GameContext) GetNextItemType(completedLocationIDs map[string]bool, completedGroupIDs map[string]bool) interface{} {
+// GetNextItemType returns what type of item should be next.
+func (gc *GameContext) GetNextItemType(
+	completedLocationIDs map[string]bool,
+	completedGroupIDs map[string]bool,
+) interface{} {
 	return gc.service.GetNextItemType(gc.Structure, completedLocationIDs, completedGroupIDs)
 }
 
-// GetNextGroup returns the next group for this context's structure
+// GetNextGroup returns the next group for this context's structure.
 func (gc *GameContext) GetNextGroup(completedGroups map[string]bool) *GameContext {
 	nextGroup := gc.service.GetNextGroup(gc.Structure, completedGroups)
 	if nextGroup == nil {
@@ -195,14 +202,14 @@ func (gc *GameContext) GetNextGroup(completedGroups map[string]bool) *GameContex
 	return NewGameContext(nextGroup, gc.service)
 }
 
-// IsCompleted checks if this context's structure is completed
+// IsCompleted checks if this context's structure is completed.
 func (gc *GameContext) IsCompleted(completedCount int) bool {
 	return gc.service.IsCompleted(gc.Structure, completedCount)
 }
 
 // === NAVIGATION METHODS ===
 
-// GetSubGroupContext returns a GameContext for a specific subgroup by ID
+// GetSubGroupContext returns a GameContext for a specific subgroup by ID.
 func (gc *GameContext) GetSubGroupContext(groupID string) *GameContext {
 	subGroup := gc.service.FindGroupByID(gc.Structure, groupID)
 	if subGroup == nil {
@@ -211,7 +218,7 @@ func (gc *GameContext) GetSubGroupContext(groupID string) *GameContext {
 	return NewGameContext(subGroup, gc.service)
 }
 
-// GetSubGroupContexts returns GameContexts for all direct subgroups
+// GetSubGroupContexts returns GameContexts for all direct subgroups.
 func (gc *GameContext) GetSubGroupContexts() []*GameContext {
 	var contexts []*GameContext
 	for i := range gc.Structure.SubGroups {
@@ -222,52 +229,52 @@ func (gc *GameContext) GetSubGroupContexts() []*GameContext {
 
 // === CONVENIENCE ACCESSORS ===
 
-// ID returns the structure's ID
+// ID returns the structure's ID.
 func (gc *GameContext) ID() string {
 	return gc.Structure.ID
 }
 
-// Name returns the structure's name
+// Name returns the structure's name.
 func (gc *GameContext) Name() string {
 	return gc.Structure.Name
 }
 
-// Color returns the structure's color
+// Color returns the structure's color.
 func (gc *GameContext) Color() string {
 	return gc.Structure.Color
 }
 
-// Routing returns the structure's routing mode
+// Routing returns the structure's routing mode.
 func (gc *GameContext) Routing() RouteStrategy {
 	return gc.Structure.Routing
 }
 
-// Navigation returns the structure's navigation method
+// Navigation returns the structure's navigation method.
 func (gc *GameContext) Navigation() NavigationDisplayMode {
 	return gc.Structure.Navigation
 }
 
-// CompletionType returns the structure's completion type
+// CompletionType returns the structure's completion type.
 func (gc *GameContext) CompletionType() CompletionType {
 	return gc.Structure.CompletionType
 }
 
-// MinimumRequired returns the minimum required count
+// MinimumRequired returns the minimum required count.
 func (gc *GameContext) MinimumRequired() int {
 	return gc.Structure.MinimumRequired
 }
 
-// IsRoot returns whether this is the root group
+// IsRoot returns whether this is the root group.
 func (gc *GameContext) IsRoot() bool {
 	return gc.Structure.IsRoot
 }
 
-// Locations returns the loaded locations
+// Locations returns the loaded locations.
 func (gc *GameContext) Locations() []*Location {
 	return gc.Structure.Locations
 }
 
-// SubGroups returns the direct subgroups (use GetSubGroupContexts for contexts)
+// SubGroups returns the direct subgroups (use GetSubGroupContexts for contexts).
 func (gc *GameContext) SubGroups() []GameStructure {
 	return gc.Structure.SubGroups
 }
