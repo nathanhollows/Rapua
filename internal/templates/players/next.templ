@@ -3,16 +3,14 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
 	templates "github.com/nathanhollows/Rapua/v5/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v5/models"
 )
 
 type NextParams struct {
-	Settings  models.InstanceSettings
-	Team      models.Team
-	Locations []models.Location
-	Blocks    []blocks.Block
-	States    map[string]blocks.PlayerState
+	Team models.Team
+	View *services.PlayerNavigationView
 }
 
 templ Next(data NextParams) {
@@ -23,25 +21,42 @@ templ Next(data NextParams) {
 		>
 			Next location
 		</h2>
-		if data.Settings.MustCheckOut && data.Team.MustCheckOut != "" {
+		if data.View.MustCheckOut {
 			<div role="alert" class="alert alert-info mt-8">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
 				<span>
-					You must check out of your 
-					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", data.Team.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
+					You must check out of your
+					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", data.View.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
 						current location
 					</a>
 					before you can check in to the next one.
 				</span>
 			</div>
 		} else {
-			switch data.Settings.NavigationDisplayMode {
+			if data.View.CanAdvanceEarly {
+				<div role="alert" class="alert my-8">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+					<div class="flex flex-col gap-2">
+						<span class="text-pretty">
+							You have completed the minimum requirements for this area! You can continue exploring the remaining locations, or
+							<a
+								hx-post="/advance"
+								hx-swap="none"
+								class="link"
+							>
+								advance to the next group
+							</a>.
+						</span>
+					</div>
+				</div>
+			}
+			switch data.View.CurrentGroup.Navigation {
 				case models.NavigationDisplayMap:
-					@showMap(data.Locations)
+					@showMap(data.View.NextLocations)
 				case models.NavigationDisplayMapAndNames:
-					@showMapAndNames(data.Settings, data.Locations)
+					@showMapAndNames(data.View.Settings, data.View.NextLocations)
 				case models.NavigationDisplayNames:
-					@showNames(data.Settings, data.Locations)
+					@showNames(data.View.Settings, data.View.NextLocations)
 				case models.NavigationDisplayCustom:
 					@showCustom(prepareCustomContentViewData(data))
 			}
@@ -134,13 +149,13 @@ type locationWithBlocks struct {
 }
 
 func prepareCustomContentViewData(data NextParams) customContentViewData {
-	locationsWithBlocks := make([]locationWithBlocks, 0, len(data.Locations))
-	for _, location := range data.Locations {
+	locationsWithBlocks := make([]locationWithBlocks, 0, len(data.View.NextLocations))
+	for _, location := range data.View.NextLocations {
 		lwb := locationWithBlocks{
 			Location: location,
 			Blocks:   make([]blocks.Block, 0),
 		}
-		for _, block := range data.Blocks {
+		for _, block := range data.View.Blocks {
 			if block.GetLocationID() == location.ID {
 				lwb.Blocks = append(lwb.Blocks, block)
 			}
@@ -150,14 +165,14 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 	for i, lwb := range locationsWithBlocks {
 		lwb.States = make(map[string]blocks.PlayerState)
 		for _, block := range lwb.Blocks {
-			if state, ok := data.States[block.GetID()]; ok {
+			if state, ok := data.View.BlockStates[block.GetID()]; ok {
 				lwb.States[block.GetID()] = state
 			}
 		}
 		locationsWithBlocks[i] = lwb
 	}
 	return customContentViewData{
-		Settings:            data.Settings,
+		Settings:            data.View.Settings,
 		LocationsWithBlocks: locationsWithBlocks,
 	}
 }
@@ -219,7 +234,7 @@ templ mapScript() {
 			break;
 		}
 	}
-	
+
     // Clear any existing markers
     markerArray.forEach(marker => marker.remove());
     markerArray = [];
