@@ -835,7 +835,7 @@ templ sortableScript() {
 				const groupItem = dropdown.closest('.group-item');
 				const completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;
 
-				// Initialize MaxNext slider for Random routing
+				// Initialize MaxNext slider for Random routing (mode 0)
 				if (currentText.includes('Random')) {
 					const maxNext = parseInt(dropdown.dataset.maxNext) || 3;
 					const slider = dropdown.querySelector('.max-next-slider');
@@ -848,32 +848,35 @@ templ sortableScript() {
 					}
 				}
 
+				// Find and highlight the matching option
+				// Strategy: compare the option's text content with what's currently displayed
+				let selectedOption = null;
 				options.forEach(function(option) {
-					const optionMode = option.dataset.mode;
-					// Match based on the route strategy name
-					if ((currentText.includes('Guided Path') && optionMode === 'Guided Path') ||
-					    (currentText.includes('Open Exploration') && optionMode === 'Open Exploration') ||
-					    (currentText.includes('Random') && optionMode === 'Randomised Route')) {
+					const optionModeText = option.querySelector('.font-medium').textContent.trim();
+					// Check if the current display contains the option's mode name
+					// This handles both exact matches and partial matches (like "Random 3" contains part of "Randomised Route")
+					if (currentText.includes(optionModeText) || optionModeText.includes(currentText.split(' ')[0])) {
 						option.classList.add('bg-base-300');
-
-						// If "Guided Path" mode is selected, disable the completion dropdown
-						if (currentText.includes('Guided Path') && completionDropdown) {
-							const completionButton = completionDropdown.querySelector('a[role=button]');
-							const completionContent = completionDropdown.querySelector('.dropdown-content');
-							const completionMsg = groupItem.querySelector('.completion-disabled-msg');
-
-							if (completionButton) {
-								completionButton.classList.add('btn-disabled');
-							}
-							if (completionContent) {
-								completionContent.classList.add('hidden');
-							}
-							if (completionMsg) {
-								completionMsg.classList.remove('hidden');
-							}
-						}
+						selectedOption = option;
 					}
 				});
+
+				// If "Guided Path" mode is selected, disable the completion dropdown
+				if (selectedOption && selectedOption.dataset.mode === 'Guided Path' && completionDropdown) {
+					const completionButton = completionDropdown.querySelector('a[role=button]');
+					const completionContent = completionDropdown.querySelector('.dropdown-content');
+					const completionMsg = groupItem.querySelector('.completion-disabled-msg');
+
+					if (completionButton) {
+						completionButton.classList.add('btn-disabled');
+					}
+					if (completionContent) {
+						completionContent.classList.add('hidden');
+					}
+					if (completionMsg) {
+						completionMsg.classList.remove('hidden');
+					}
+				}
 			});
 
 			// Initialize navigation display highlighting

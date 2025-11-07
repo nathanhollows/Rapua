@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v5/blocks"
 	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v5/internal/flash"
+	"github.com/nathanhollows/Rapua/v5/internal/services"
 	"github.com/nathanhollows/Rapua/v5/internal/sessions"
 	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v5/models"
@@ -54,6 +55,7 @@ type MarkerService interface {
 type NavigationService interface {
 	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	GetPlayerNavigationView(ctx context.Context, team *models.Team) (*services.PlayerNavigationView, error)
 	// HasVisited(checkins []models.CheckIn, locationID string) bool
 }
 
