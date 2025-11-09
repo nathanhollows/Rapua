@@ -111,26 +111,26 @@ func Lobby(team models.Team) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div hx-get=\"/lobby\" hx-swap=\"none\" hx-trigger=\"every 20s, timer\" hx-boost=\"true\"></div><!-- Header --><div class=\"sm:mx-auto sm:w-full sm:max-w-sm\"><svg class=\"w-16 h-16 m-auto stroke-base-content fill-base-content mb-3\" viewBox=\"0 0 31.622 38.219\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\"><path style=\"fill:currentColor;stroke-width:2.14931;stroke:none\" d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg><h2 class=\"text-center text-2xl font-bold leading-9 tracking-tight\">Lobby</h2><p class=\"text-center font-bold text-lg my-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div hx-get=\"/lobby\" hx-swap=\"none\" hx-trigger=\"every 20s, timer\" hx-boost=\"true\"></div><!-- Header --><div class=\"sm:mx-auto sm:w-full sm:max-w-sm\"><svg class=\"w-16 h-16 m-auto stroke-base-content fill-base-content mb-3\" viewBox=\"0 0 31.622 38.219\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\"><path style=\"fill:currentColor;stroke-width:2.14931;stroke:none\" d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg><h2 class=\"text-center text-2xl font-bold leading-9 tracking-tight\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(team.Instance.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 36, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 33, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</p></div><!-- Content --><div class=\"sm:mx-auto sm:w-full sm:max-w-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</h2></div><!-- Content --><div class=\"sm:mx-auto sm:w-full sm:max-w-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch team.Instance.GetStatus() {
 		case models.Closed:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"alert alert-warning\">This game is currently closed.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div role=\"alert\" class=\"alert alert-warning w-min m-auto my-5\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-icon lucide-lock w-5 h-5\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg> <span class=\"text-nowrap\">Game closed</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -142,7 +142,7 @@ func Lobby(team models.Team) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(team.Instance.StartTime.Format("02-Jan-2006 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 51, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 49, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -153,15 +153,11 @@ func Lobby(team models.Team) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"prose\"><div class=\"divider mt-12\">Instructions</div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		templ_7745c5c3_Err = instructions().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><div class=\"divider mb-5 prose\">Team Info</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"divider mb-5 prose\">Team Info</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,50 +165,50 @@ func Lobby(team models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"divider\"></div><div class=\"text-center mt-12\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"divider\"></div><div class=\"text-center mt-12\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch team.Instance.GetStatus() {
 		case models.Scheduled:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a href=\"/lobby\" hx-boost=\"true\" class=\"btn btn-neutral\" disabled>Waiting for game to start</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<a href=\"/lobby\" hx-boost=\"true\" class=\"btn btn-neutral\" disabled>Waiting for game to start</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Active:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<a href=\"/next\" hx-boost=\"true\" hx-swap=\"outerHTML\" class=\"btn btn-primary\">Start Playing</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a href=\"/next\" hx-boost=\"true\" hx-swap=\"outerHTML\" class=\"btn btn-primary\">Start Playing</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		default:
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></div><dialog id=\"my_modal_5\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\">Choose a team name</h3><label class=\"input flex items-center gap-2 my-5 w-full\">Name: <input form=\"team-name\" name=\"name\" type=\"text\" class=\"grow w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div><dialog id=\"my_modal_5\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\">Choose a team name</h3><label class=\"input flex items-center gap-2 my-5 w-full\">Name: <input form=\"team-name\" name=\"name\" type=\"text\" class=\"grow w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 103, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 98, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" autocomplete=\"off\"></label> <input form=\"team-name\" type=\"hidden\" name=\"team_id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" autocomplete=\"off\"></label> <input form=\"team-name\" type=\"hidden\" name=\"team_id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 105, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 100, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"modal-action\"><form method=\"dialog\" id=\"team-name\"><!-- if there is a button in form, it will close the modal --><button type=\"button\" class=\"btn\" onclick=\"my_modal_5.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" hx-post=\"/lobby/team-name\" hx-include=\"[form='team-name']\" hx-target=\"#team-id\" onclick=\"my_modal_5.close()\">Save</button></form></div></div></dialog><style>\n\tfor i := range 60 {\n\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t--value: { fmt.Sprint(i) };\n\t\t}\n\t}\n\t</style><script>\n  // JavaScript for countdown\n  function startCountdown(startTime) {\n    function updateCountdown() {\n      const now = new Date();\n      const remainingTime = new Date(startTime) - now;\n\n      if (remainingTime == 0) {\n\t\twindow.location.reload();\n        return;\n      }\n\n      const seconds = Math.floor((remainingTime / 1000) % 60);\n      const minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n      const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n      const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n      document.getElementById(\"seconds\").style.setProperty('--value', seconds);\n      document.getElementById(\"minutes\").style.setProperty('--value', minutes);\n\n      if (hours > 0) {\n        document.getElementById(\"hours-container\").style.display = \"block\";\n        document.getElementById(\"hours\").style.setProperty('--value', hours);\n      } else {\n        document.getElementById(\"hours-container\").style.display = \"none\";\n      }\n\n      if (days > 0) {\n        document.getElementById(\"days-container\").style.display = \"block\";\n        document.getElementById(\"days\").style.setProperty('--value', days);\n      } else {\n        document.getElementById(\"days-container\").style.display = \"none\";\n      }\n\t  \n    }\n\n    updateCountdown();\n    setInterval(updateCountdown, 1000);\n\n  }\n\n  if (document.getElementById('start-time') != null) {\n\t\tfunction UTCtoLocal(time) {\n\t\t\tconst utc = new Date(`${time}`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn local\n\t\t}\n\t  const startTimeElement = document.getElementById('start-time');\n\t  const startTime = startTimeElement.dataset.start;\n\t  startCountdown(UTCtoLocal(startTime));\n  }\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><div class=\"modal-action\"><form method=\"dialog\" id=\"team-name\"><!-- if there is a button in form, it will close the modal --><button type=\"button\" class=\"btn\" onclick=\"my_modal_5.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" hx-post=\"/lobby/team-name\" hx-include=\"[form='team-name']\" hx-target=\"#team-id\" onclick=\"my_modal_5.close()\">Save</button></form></div></div></dialog><style>\n\tfor i := range 60 {\n\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t--value: { fmt.Sprint(i) };\n\t\t}\n\t}\n\t</style><script>\n  // JavaScript for countdown\n  function startCountdown(startTime) {\n    function updateCountdown() {\n      const now = new Date();\n      const remainingTime = new Date(startTime) - now;\n\n      if (remainingTime == 0) {\n\t\twindow.location.reload();\n        return;\n      }\n\n      const seconds = Math.floor((remainingTime / 1000) % 60);\n      const minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n      const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n      const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n      document.getElementById(\"seconds\").style.setProperty('--value', seconds);\n      document.getElementById(\"minutes\").style.setProperty('--value', minutes);\n\n      if (hours > 0) {\n        document.getElementById(\"hours-container\").style.display = \"block\";\n        document.getElementById(\"hours\").style.setProperty('--value', hours);\n      } else {\n        document.getElementById(\"hours-container\").style.display = \"none\";\n      }\n\n      if (days > 0) {\n        document.getElementById(\"days-container\").style.display = \"block\";\n        document.getElementById(\"days\").style.setProperty('--value', days);\n      } else {\n        document.getElementById(\"days-container\").style.display = \"none\";\n      }\n\t  \n    }\n\n    updateCountdown();\n    setInterval(updateCountdown, 1000);\n\n  }\n\n  if (document.getElementById('start-time') != null) {\n\t\tfunction UTCtoLocal(time) {\n\t\t\tconst utc = new Date(`${time}`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn local\n\t\t}\n\t  const startTimeElement = document.getElementById('start-time');\n\t  const startTime = startTimeElement.dataset.start;\n\t  startCountdown(UTCtoLocal(startTime));\n  }\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -241,7 +237,7 @@ func instructions() templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<ul><li>Use the app to move between locations and complete challenges along the way.</li><li>Each location may include clues, puzzles, or tasks to complete.</li><li>Only <strong>one player per team</strong> needs to check in at each location.</li><li>You may receive multiple possible locations or clues at a time. You can choose the order in which to visit them.</li><li>The game will let you know when you've reached the correct location.</li><li>When you arrive, <strong>scan the QR code</strong> or <strong>use the link</strong> at the location to continue to the next stage.</li><li>Keep going and have fun!</li></ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div class=\"prose my-5\"><div class=\"divider my-5\">Instructions</div><ol><li>Follow the clues to find your next location. There may be multiple possible spots to choose from.</li><li>Scan the QR code or follow the link in the app to confirm your location.</li><li>Solve the clue, answer a question, or finish a quick task.</li><li>Keep traveling to new locations, checking in, and completing activities until the game ends.</li><li>Keep going and have fun!</li></ol></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
