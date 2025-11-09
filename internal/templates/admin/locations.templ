@@ -97,7 +97,7 @@ templ AddLocation(data AddLocationData) {
 			}
 			<a
 				role="tab"
-				class="tab transition-colors tab-active group"
+				class="tab transition-colors group"
 				_="on click
 							if I do not match .tab-active
 								remove .tab-active from .tab-active
@@ -111,17 +111,6 @@ templ AddLocation(data AddLocationData) {
 								set <input[name=latitude]/>'s disabled to true
 								set <input[name=longitude]/>'s disabled to true
 							end
-						end
-						on load if I match .tab-active
-							add .hidden to #new-marker
-							add .hidden to #shared-marker
-							add .hidden to #marker-controls
-							set <input[name=marker]/>'s disabled to true
-							set <input[name=name]/>'s value to ''
-							add .hidden to #marker-badge
-							set <input[name=latitude]/>'s disabled to true
-							set <input[name=longitude]/>'s disabled to true
-						end
 						end
 						"
 			>
