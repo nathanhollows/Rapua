@@ -107,7 +107,7 @@ type m20251030094613_GameStructure struct {
 }
 
 func init() {
-	// Adds the GameStructure field, migrates existing location data, and creates team_progress table
+	// Adds the GameStructure field, migrates existing location data, drops old instance_settings columns
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// Add the game_structure column
 		_, err := db.NewAddColumn().
@@ -206,16 +206,57 @@ func init() {
 			return fmt.Errorf("20251030094613_location_groups.go: add skipped_group_ids column: %w", err)
 		}
 
+		// Drop obsolete columns from instance_settings (moved to GameStructure)
+		columnsToRemove := []string{"navigation_mode", "navigation_method", "max_next_locations"}
+		for _, column := range columnsToRemove {
+			_, err = db.NewDropColumn().
+				Model((*m20251030094613_instanceSettings)(nil)).
+				Column(column).
+				Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("20251030094613_location_groups.go: drop column %s: %w", column, err)
+			}
+		}
+
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		// Down migration - drop the game_structure column and skipped_group_ids
+		// Down migration - recreate dropped columns and remove game_structure
+
+		// Recreate instance_settings columns with defaults
+		// navigation_mode: RouteStrategyRandom (0)
+		// navigation_method: NavigationDisplayCustom (4)
+		// max_next_locations: 3
+		_, err := db.NewAddColumn().
+			Model((*m20251030094613_instanceSettings)(nil)).
+			ColumnExpr("navigation_mode int NOT NULL DEFAULT 0").
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("20251030094613_location_groups.go: rollback add navigation_mode: %w", err)
+		}
+
+		_, err = db.NewAddColumn().
+			Model((*m20251030094613_instanceSettings)(nil)).
+			ColumnExpr("navigation_method int NOT NULL DEFAULT 4").
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("20251030094613_location_groups.go: rollback add navigation_method: %w", err)
+		}
+
+		_, err = db.NewAddColumn().
+			Model((*m20251030094613_instanceSettings)(nil)).
+			ColumnExpr("max_next_locations int NOT NULL DEFAULT 3").
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("20251030094613_location_groups.go: rollback add max_next_locations: %w", err)
+		}
+
 		// Drop skipped_group_ids column from teams table
-		_, err := db.NewDropColumn().
+		_, err = db.NewDropColumn().
 			Model((*m20251030094613_Team)(nil)).
 			Column("skipped_group_ids").
 			Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("20251030094613_location_groups.go: drop skipped_group_ids column: %w", err)
+			return fmt.Errorf("20251030094613_location_groups.go: rollback drop skipped_group_ids: %w", err)
 		}
 
 		// Drop game_structure column from instances table
@@ -224,7 +265,7 @@ func init() {
 			Column("game_structure").
 			Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("20251030094613_location_groups.go: drop column game_structure: %w", err)
+			return fmt.Errorf("20251030094613_location_groups.go: rollback drop game_structure: %w", err)
 		}
 
 		return nil

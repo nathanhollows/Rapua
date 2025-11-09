@@ -56,7 +56,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								hx-target="#preview"
 								hx-vals={ fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`) }
 							>
-								<input type="hidden" name="instanceID" value={ fmt.Sprint(link.TemplateID) }/>
+								<input type="hidden" name="instanceID" value={ link.TemplateID }/>
 								<select
 									id="pages"
 									class="select select-sm w-56 md:w-96 mx-auto text-ellipsis"
@@ -267,17 +267,15 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 					<div class="prose">
 						<ul>
 							<li>
-								<strong>{ fmt.Sprint(len(link.Template.Locations)) }</strong> locations
+								<strong>{ len(link.Template.Locations) }</strong> locations
 							</li>
 							<li>
-								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.RouteStrategy.Description() }>
-									{ link.Template.Settings.RouteStrategy.String() }
-								</span>
-							</li>
-							<li>
-								<span class="tooltip cursor-help underline decoration-dashed" data-tip={ link.Template.Settings.NavigationDisplayMode.Description() }>
-									{ link.Template.Settings.NavigationDisplayMode.String() }
-								</span>
+								<strong>{ len(link.Template.GameStructure.SubGroups) }</strong>
+								if len(link.Template.GameStructure.SubGroups) == 1 {
+									group
+								} else {
+									groups
+								}
 							</li>
 							if link.Template.Settings.EnablePoints {
 								<li>
@@ -319,7 +317,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						<legend class="fieldset-legend">Game name</legend>
 						<input type="text" class="input w-full" name="name" required autocomplete="off"/>
 						<p class="label">You can edit this later on.</p>
-						<input type="hidden" name="link" value={ fmt.Sprint(link.ID) }/>
+						<input type="hidden" name="link" value={ link.ID }/>
 					</fieldset>
 					<!-- TODO -->
 					<div class="form-control my-5 hidden">

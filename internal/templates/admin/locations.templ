@@ -45,11 +45,7 @@ templ AddLocation(data AddLocationData) {
 			<a
 				id="new-marker-tab"
 				role="tab"
-				if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
-					class="tab transition-colors"
-				} else {
-					class="tab transition-colors tab-active"
-				}
+				class="tab transition-colors tab-active"
 				_="on click 
 				if I do not match .tab-active
 					remove .tab-active from .tab-active
@@ -99,11 +95,10 @@ templ AddLocation(data AddLocationData) {
 					</div>
 				</a>
 			}
-			if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
-				<a
-					role="tab"
-					class="tab transition-colors tab-active group"
-					_="on click
+			<a
+				role="tab"
+				class="tab transition-colors tab-active group"
+				_="on click
 							if I do not match .tab-active
 								remove .tab-active from .tab-active
 								toggle .tab-active
@@ -129,26 +124,25 @@ templ AddLocation(data AddLocationData) {
 						end
 						end
 						"
-				>
-					No map marker
-					<div class="dropdown dropdown-end dropdown-hover">
-						<div tabindex="0" role="button" class="text-info">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-						</div>
-						<div
-							tabindex="0"
-							class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
-						>
-							<div tabindex="0" class="card-body">
-								<h2 class="card-title">No map marker</h2>
-								<p>
-									Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
-								</p>
-							</div>
+			>
+				No map marker
+				<div class="dropdown dropdown-end dropdown-hover">
+					<div tabindex="0" role="button" class="text-info">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+					</div>
+					<div
+						tabindex="0"
+						class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+					>
+						<div tabindex="0" class="card-body">
+							<h2 class="card-title">No map marker</h2>
+							<p>
+								Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
+							</p>
 						</div>
 					</div>
-				</a>
-			}
+				</div>
+			</a>
 		</div>
 		if len(data.Neighbouring) > 0 {
 			for _, location := range data.Neighbouring {

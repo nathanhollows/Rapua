@@ -108,9 +108,7 @@ func TestNavigationService_GetPlayerNavigationView_TeamBlocked(t *testing.T) {
 
 	// Create instance settings
 	settings := &models.InstanceSettings{
-		InstanceID:            instance.ID,
-		RouteStrategy:         models.RouteStrategyFreeRoam,
-		NavigationDisplayMode: models.NavigationDisplayNames,
+		InstanceID: instance.ID,
 	}
 	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	err = settingsRepo.Create(ctx, settings)
@@ -174,9 +172,7 @@ func TestNavigationService_GetPlayerNavigationView_FirstGroup(t *testing.T) {
 
 	// Create instance settings
 	settings := &models.InstanceSettings{
-		InstanceID:            instance.ID,
-		RouteStrategy:         models.RouteStrategyFreeRoam,
-		NavigationDisplayMode: models.NavigationDisplayNames,
+		InstanceID: instance.ID,
 	}
 	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	err = settingsRepo.Create(ctx, settings)
@@ -251,9 +247,7 @@ func TestNavigationService_GetPlayerNavigationView_CanAdvanceEarly(t *testing.T)
 
 	// Create instance settings
 	settings := &models.InstanceSettings{
-		InstanceID:            instance.ID,
-		RouteStrategy:         models.RouteStrategyFreeRoam,
-		NavigationDisplayMode: models.NavigationDisplayNames,
+		InstanceID: instance.ID,
 	}
 	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	err = settingsRepo.Create(ctx, settings)
@@ -347,9 +341,7 @@ func TestNavigationService_GetPlayerNavigationView_SkippedGroup(t *testing.T) {
 
 	// Create instance settings
 	settings := &models.InstanceSettings{
-		InstanceID:            instance.ID,
-		RouteStrategy:         models.RouteStrategyFreeRoam,
-		NavigationDisplayMode: models.NavigationDisplayNames,
+		InstanceID: instance.ID,
 	}
 	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	err = settingsRepo.Create(ctx, settings)

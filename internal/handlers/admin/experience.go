@@ -2,7 +2,6 @@ package admin
 
 import (
 	"net/http"
-	"strconv"
 
 	admin "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
 	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
@@ -67,37 +66,6 @@ func (h *Handler) ExperiencePreview(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.handleError(w, r, "Error parsing form", "Error parsing form", "error", err)
 		return
-	}
-
-	if r.Form.Has("navigationDisplayMode") {
-		method, err := models.ParseNavigationDisplayMode(r.Form.Get("navigationDisplayMode"))
-		if err != nil {
-			h.handleError(w, r, "Error parsing navigation method", "Error parsing navigation method", "error", err)
-			return
-		}
-		user.CurrentInstance.Settings.NavigationDisplayMode = method
-	}
-
-	if r.Form.Has("routeStrategy") {
-		mode, err := models.ParseRouteStrategy(r.Form.Get("routeStrategy"))
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"Error parsing navigation mode",
-				"Error parsing navigation mode",
-				"error",
-				err,
-				"mode",
-				r.Form.Get("routeStrategy"),
-			)
-			return
-		}
-		user.CurrentInstance.Settings.RouteStrategy = mode
-	}
-
-	if r.Form.Has("maxLocations") {
-		user.CurrentInstance.Settings.MaxNextLocations, _ = strconv.Atoi(r.Form.Get("maxLocations"))
 	}
 
 	if r.Form.Has("showTeamCount") {

@@ -26,14 +26,11 @@ func createTestInstanceSettings(t *testing.T) *models.InstanceSettings {
 	t.Helper()
 
 	return &models.InstanceSettings{
-		InstanceID:            gofakeit.UUID(),
-		RouteStrategy:         models.RouteStrategyFreeRoam,
-		MustCheckOut:          gofakeit.Bool(),
-		NavigationDisplayMode: models.NavigationDisplayMap,
-		ShowTeamCount:         false,
-		MaxNextLocations:      3,
-		EnablePoints:          true,
-		EnableBonusPoints:     false,
+		InstanceID:        gofakeit.UUID(),
+		MustCheckOut:      gofakeit.Bool(),
+		ShowTeamCount:     false,
+		EnablePoints:      true,
+		EnableBonusPoints: false,
 	}
 }
 
@@ -70,7 +67,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 		if err != nil {
 			// If there's an error, it shouldn't be from our validation rules
 			assert.NotContains(t, err.Error(), "settings cannot be nil")
-			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
 		}
 	})
 
@@ -78,55 +74,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 		err := service.SaveSettings(context.Background(), nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "settings cannot be nil")
-	})
-
-	t.Run("Save settings with various navigation modes", func(t *testing.T) {
-		testCases := []struct {
-			name string
-			mode models.RouteStrategy
-		}{
-			{"FreeRoamNav", models.RouteStrategyFreeRoam},
-			{"OrderedNav", models.RouteStrategyOrdered},
-			{"RandomNav", models.RouteStrategyRandom},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				settings := createTestInstanceSettings(t)
-				settings.RouteStrategy = tc.mode
-
-				err := service.SaveSettings(context.Background(), settings)
-				// Validation should pass, might fail on database operations
-				if err != nil {
-					assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-				}
-			})
-		}
-	})
-
-	t.Run("Save settings with various navigation methods", func(t *testing.T) {
-		testCases := []struct {
-			name   string
-			method models.NavigationDisplayMode
-		}{
-			{"ShowMap", models.NavigationDisplayMap},
-			{"ShowMapAndNames", models.NavigationDisplayMapAndNames},
-			{"ShowNames", models.NavigationDisplayNames},
-			{"ShowClues", models.NavigationDisplayClues},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				settings := createTestInstanceSettings(t)
-				settings.NavigationDisplayMode = tc.method
-
-				err := service.SaveSettings(context.Background(), settings)
-				// Validation should pass, might fail on database operations
-				if err != nil {
-					assert.NotContains(t, err.Error(), "max next locations cannot be negative")
-				}
-			})
-		}
 	})
 
 	t.Run("Save settings with boolean flags", func(t *testing.T) {
@@ -153,17 +100,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 					assert.NotContains(t, err.Error(), "max next locations cannot be negative")
 				}
 			})
-		}
-	})
-
-	t.Run("Save settings with large max locations", func(t *testing.T) {
-		settings := createTestInstanceSettings(t)
-		settings.MaxNextLocations = 1000
-
-		err := service.SaveSettings(context.Background(), settings)
-		// Should not error for large positive values
-		if err != nil {
-			assert.NotContains(t, err.Error(), "max next locations cannot be negative")
 		}
 	})
 }

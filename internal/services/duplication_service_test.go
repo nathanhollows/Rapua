@@ -64,10 +64,9 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 		// Create settings
 		settings := &models.InstanceSettings{
-			InstanceID:       sourceInstance.ID,
-			EnablePoints:     true,
-			ShowLeaderboard:  true,
-			MaxNextLocations: 3,
+			InstanceID:      sourceInstance.ID,
+			EnablePoints:    true,
+			ShowLeaderboard: true,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
@@ -106,7 +105,6 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
-		assert.Equal(t, settings.MaxNextLocations, duplicatedSettings.MaxNextLocations)
 
 		// Verify locations were duplicated
 		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)

@@ -1,9 +1,6 @@
 package templates
 
-import (
-	"fmt"
-	"github.com/nathanhollows/Rapua/v5/models"
-)
+import "github.com/nathanhollows/Rapua/v5/models"
 
 templ TeamID(team models.Team, oob bool) {
 	<div
@@ -83,7 +80,7 @@ templ Lobby(team models.Team) {
 		}
 		<div class="prose">
 			<div class="divider mt-12">Instructions</div>
-			@instructions(team.Instance.Settings)
+			@instructions()
 		</div>
 		<div class="divider mb-5 prose">Team Info</div>
 		@TeamID(team, false)
@@ -187,32 +184,14 @@ templ Lobby(team models.Team) {
 </script>
 }
 
-templ instructions(instance models.InstanceSettings) {
+templ instructions() {
 	<ul>
-		<li>Use the app to navigate to the next location.</li>
-		<li>Complete any activities along the way.</li>
-		<li>Only <strong>one player per team</strong> needs to check in.</li>
-		<!-- Navigation Mode -->
-		switch instance.RouteStrategy {
-			case models.RouteStrategyRandom:
-				<li>You will be shown <strong>{ fmt.Sprint(instance.MaxNextLocations) }</strong> locations at a time.</li>
-				if instance.NavigationDisplayMode == models.NavigationDisplayClues {
-					<li>Solve <strong>a clue</strong> to find the next location.</li>
-					<li>Each clue is for a <strong>different</strong> location.</li>
-				} else {
-					<li>Follow the locations in any order.</li>
-				}
-				<li>The game will tell you if you are at the wrong location.</li>
-			case models.RouteStrategyFreeRoam:
-				<li>Follow the locations in any order.</li>
-				if instance.NavigationDisplayMode == models.NavigationDisplayClues {
-					<li>Solve a clue to find the next location.</li>
-					<li>Each clue is for a <em>different</em> location.</li>
-				}
-				<li>Follow the locations in any order.</li>
-			default:
-				break
-		}
-		<li><strong>Scan the QR code</strong> or <strong>enter the URL</strong> at the location to get the next clue.</li>
+		<li>Use the app to move between locations and complete challenges along the way.</li>
+		<li>Each location may include clues, puzzles, or tasks to complete.</li>
+		<li>Only <strong>one player per team</strong> needs to check in at each location.</li>
+		<li>You may receive multiple possible locations or clues at a time. You can choose the order in which to visit them.</li>
+		<li>The game will let you know when you've reached the correct location.</li>
+		<li>When you arrive, <strong>scan the QR code</strong> or <strong>use the link</strong> at the location to continue to the next stage.</li>
+		<li>Keep going and have fun!</li>
 	</ul>
 }
