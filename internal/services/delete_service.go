@@ -73,9 +73,8 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			err := tx.Rollback()
-			if err != nil {
-				slog.Error("transaction", "error", err)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				slog.Error("transaction", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -102,8 +101,9 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			err := tx.Rollback()
-			slog.Error("transaction", "error", err)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				slog.Error("transaction", "error", rollbackErr)
+			}
 			panic(p)
 		}
 	}()
@@ -148,9 +148,8 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 
 	defer func() {
 		if p := recover(); p != nil {
-			err := tx.Rollback()
-			if err != nil {
-				panic(fmt.Errorf("rolling back transaction: %w", err))
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				panic(fmt.Errorf("rolling back transaction: %w", rollbackErr))
 			}
 			panic(p)
 		}

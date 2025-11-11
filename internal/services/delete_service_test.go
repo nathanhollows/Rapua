@@ -287,13 +287,16 @@ func TestDeleteService_DeleteUser_TransactionalRollback(t *testing.T) {
 	err = svc.DeleteUser(ctx, user.ID)
 	if err == nil {
 		// Verify everything was deleted as a transaction
-		count, err := dbc.NewSelect().Model(&models.User{}).Where("id = ?", user.ID).Count(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, 0, count)
+		userCount, countErr := dbc.NewSelect().Model(&models.User{}).Where("id = ?", user.ID).Count(ctx)
+		require.NoError(t, countErr)
+		assert.Equal(t, 0, userCount)
 
-		count, err = dbc.NewSelect().Model(&models.CreditPurchase{}).Where("user_id = ?", user.ID).Count(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, 0, count)
+		purchaseCount, countErr := dbc.NewSelect().
+			Model(&models.CreditPurchase{}).
+			Where("user_id = ?", user.ID).
+			Count(ctx)
+		require.NoError(t, countErr)
+		assert.Equal(t, 0, purchaseCount)
 	}
 }
 

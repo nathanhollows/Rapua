@@ -154,8 +154,8 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 		// Create game structure with subgroups
 		gameStructure := models.GameStructure{
-			ID:     gofakeit.UUID(),
-			IsRoot: true,
+			ID:          gofakeit.UUID(),
+			IsRoot:      true,
 			LocationIDs: []string{location1.ID},
 			SubGroups: []models.GameStructure{
 				{
@@ -215,12 +215,22 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		assert.Equal(t, "Group 1", duplicated.GameStructure.SubGroups[0].Name)
 		assert.Len(t, duplicated.GameStructure.SubGroups[0].LocationIDs, 1)
 		assert.Equal(t, locationsByName["Location 2"], duplicated.GameStructure.SubGroups[0].LocationIDs[0])
-		assert.NotEqual(t, location2.ID, duplicated.GameStructure.SubGroups[0].LocationIDs[0], "Location ID should be remapped")
+		assert.NotEqual(
+			t,
+			location2.ID,
+			duplicated.GameStructure.SubGroups[0].LocationIDs[0],
+			"Location ID should be remapped",
+		)
 
 		assert.Equal(t, "Group 2", duplicated.GameStructure.SubGroups[1].Name)
 		assert.Len(t, duplicated.GameStructure.SubGroups[1].LocationIDs, 1)
 		assert.Equal(t, locationsByName["Location 3"], duplicated.GameStructure.SubGroups[1].LocationIDs[0])
-		assert.NotEqual(t, location3.ID, duplicated.GameStructure.SubGroups[1].LocationIDs[0], "Location ID should be remapped")
+		assert.NotEqual(
+			t,
+			location3.ID,
+			duplicated.GameStructure.SubGroups[1].LocationIDs[0],
+			"Location ID should be remapped",
+		)
 	})
 
 	t.Run("rejects template duplication", func(t *testing.T) {

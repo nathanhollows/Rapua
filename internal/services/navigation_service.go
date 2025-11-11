@@ -97,8 +97,8 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 
 	// Load full relations for each location
 	for i := range locations {
-		if err := s.locationRepo.LoadRelations(ctx, &locations[i]); err != nil {
-			return nil, fmt.Errorf("loading relations for location: %w", err)
+		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
+			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
 		}
 	}
 
@@ -187,8 +187,8 @@ func (s *NavigationService) GetPlayerNavigationView(
 
 	// Load full relations for each location
 	for i := range locations {
-		if err := s.locationRepo.LoadRelations(ctx, &locations[i]); err != nil {
-			return nil, fmt.Errorf("loading relations for location: %w", err)
+		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
+			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
 		}
 	}
 	view.NextLocations = locations
@@ -196,14 +196,14 @@ func (s *NavigationService) GetPlayerNavigationView(
 	// Load navigation blocks if using custom display mode
 	if view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
 		for _, location := range locations {
-			locationBlocks, blockStates, err := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 				ctx,
 				location.ID,
 				team.Code,
 				blocks.ContextLocationClues,
 			)
-			if err != nil {
-				return nil, fmt.Errorf("loading navigation blocks: %w", err)
+			if blockErr != nil {
+				return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
 			}
 			view.Blocks = append(view.Blocks, locationBlocks...)
 			for k, v := range blockStates {
