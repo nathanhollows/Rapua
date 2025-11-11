@@ -281,11 +281,12 @@ func (s *DuplicationService) duplicateInstance(
 	name string,
 	asTemplate bool,
 ) (*models.Instance, error) {
-	// Create new instance
+	// Create new instance with copied game structure
 	newInstance := &models.Instance{
-		Name:       name,
-		UserID:     userID,
-		IsTemplate: asTemplate,
+		Name:          name,
+		UserID:        userID,
+		IsTemplate:    asTemplate,
+		GameStructure: sourceInstance.GameStructure,
 	}
 
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
@@ -305,11 +306,27 @@ func (s *DuplicationService) duplicateInstance(
 		return nil, fmt.Errorf("finding locations: %w", err)
 	}
 
-	// Duplicate all locations
+	// Duplicate all locations and build ID mapping
+	locationIDMap := make(map[string]string, len(locations))
 	for _, location := range locations {
-		if _, dupErr := s.duplicateLocation(ctx, tx, location, newInstance.ID); dupErr != nil {
+		newLocation, dupErr := s.duplicateLocation(ctx, tx, location, newInstance.ID)
+		if dupErr != nil {
 			return nil, fmt.Errorf("duplicating location %s: %w", location.ID, dupErr)
 		}
+		locationIDMap[location.ID] = newLocation.ID
+	}
+
+	// Remap location IDs in the game structure
+	s.remapLocationIDs(&newInstance.GameStructure, locationIDMap)
+
+	// Update the instance with the remapped game structure
+	_, err = tx.NewUpdate().
+		Model(newInstance).
+		Column("game_structure").
+		WherePK().
+		Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("updating game structure: %w", err)
 	}
 
 	return newInstance, nil
@@ -339,4 +356,20 @@ func (s *DuplicationService) duplicateLocation(
 	}
 
 	return &newLocation, nil
+}
+
+// remapLocationIDs recursively updates all location IDs in the game structure
+// using the provided mapping from old IDs to new IDs.
+func (s *DuplicationService) remapLocationIDs(group *models.GameStructure, idMap map[string]string) {
+	// Remap location IDs in this group
+	for i, oldID := range group.LocationIDs {
+		if newID, exists := idMap[oldID]; exists {
+			group.LocationIDs[i] = newID
+		}
+	}
+
+	// Recursively remap in subgroups
+	for i := range group.SubGroups {
+		s.remapLocationIDs(&group.SubGroups[i], idMap)
+	}
 }
