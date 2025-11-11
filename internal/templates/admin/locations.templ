@@ -346,7 +346,7 @@ templ EditLocation(data EditLocationData) {
 			</form>
 		</div>
 	</div>
-	<div class="flex flex-col lg:flex-row m-5 pt-0 gap-5">
+	<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
 		<div class="flex flex-col flex-grow min-w-0">
 			<div class="flex flex-col sm:flex-row gap-5 mb-5">
 				<fieldset class="fieldset w-full md:w-1/2">
@@ -573,19 +573,12 @@ templ EditLocation(data EditLocationData) {
 				</section>
 			}
 		</div>
-		<!-- Sidebar -->
-		<!-- Preview Divider -->
-		<div class="divider lg:divider-horizontal">
-			<span class="lg:[writing-mode:vertical-lr]">
-				Preview
-			</span>
-		</div>
 		<!-- Preview -->
 		<div class="h-min-content">
-			<div class="mockup-phone h-min sticky top-8">
-				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden" data-theme="cupcake">
+			<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
+				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100">
 					<div
-						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full"
+						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
 						hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
