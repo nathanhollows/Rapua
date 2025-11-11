@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 func TemplatePeview(link models.ShareLink, authed bool) templ.Component {

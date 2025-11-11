@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v5/internal/sessions"
+	"github.com/nathanhollows/Rapua/v6/internal/sessions"
 )
 
 func init() {

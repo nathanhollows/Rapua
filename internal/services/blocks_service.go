@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 type BlockService struct {

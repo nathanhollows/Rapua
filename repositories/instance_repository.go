@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/uptrace/bun"
 )
 

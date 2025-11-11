@@ -12,25 +12,25 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v5/db"
-	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v5/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v5/internal/migrations"
-	"github.com/nathanhollows/Rapua/v5/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v5/internal/server"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	"github.com/nathanhollows/Rapua/v5/internal/sessions"
-	"github.com/nathanhollows/Rapua/v5/internal/storage"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/db"
+	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/migrations"
+	"github.com/nathanhollows/Rapua/v6/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v6/internal/server"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/internal/sessions"
+	"github.com/nathanhollows/Rapua/v6/internal/storage"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v5.3.0"
+const version = "v6.0.0"
 
 func main() {
 	logger := slog.New(

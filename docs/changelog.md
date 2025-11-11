@@ -6,7 +6,7 @@ order: 100
 
 # Changelog
 
-## 5.3.0
+## 6.0.0
 
 ### Added
 

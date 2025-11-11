@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 // Locations shows admin the locations.

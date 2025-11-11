@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v5/filesystem"
-	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v5/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v5/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v6/filesystem"
+	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
 )
 
 const (

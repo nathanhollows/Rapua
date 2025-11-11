@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 type QuickstartService struct {

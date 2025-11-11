@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 var emptyGroupData = models.GameStructure{

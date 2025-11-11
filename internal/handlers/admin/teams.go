@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	admin "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	admin "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
 )
 
 func (h *Handler) Teams(w http.ResponseWriter, r *http.Request) {

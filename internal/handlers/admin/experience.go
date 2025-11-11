@@ -3,9 +3,9 @@ package admin
 import (
 	"net/http"
 
-	admin "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v5/models"
+	admin "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 // Experience shows the game settings page.

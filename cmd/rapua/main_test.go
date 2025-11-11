@@ -57,7 +57,7 @@ func TestModuleVersionMatchesChangelog(t *testing.T) {
 		t.Fatalf("failed to read go.mod: %v", err)
 	}
 
-	// Parse module version (e.g., github.com/nathanhollows/Rapua/v5)
+	// Parse module version (e.g., github.com/nathanhollows/Rapua/v6)
 	moduleRe := regexp.MustCompile(`(?m)^module .+/v(\d+)`)
 	moduleMatches := moduleRe.FindStringSubmatch(string(goModContent))
 

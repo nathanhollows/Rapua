@@ -10,9 +10,9 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	bTemplates "github.com/nathanhollows/Rapua/v5/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	bTemplates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 type AddLocationData struct {

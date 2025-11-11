@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/nathanhollows/Rapua/v5/db"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/db"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/uptrace/bun"
 )
 

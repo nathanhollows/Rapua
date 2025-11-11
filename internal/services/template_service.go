@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v5/helpers"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/helpers"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/uptrace/bun"
 )
 

@@ -3,7 +3,7 @@ package blocks
 import (
 	"html/template"
 
-	"github.com/nathanhollows/Rapua/v5/helpers"
+	"github.com/nathanhollows/Rapua/v6/helpers"
 )
 
 func stringToMarkdown(s string) template.HTML {

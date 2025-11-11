@@ -3,8 +3,8 @@ package navigation_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/navigation"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/navigation"
 	"github.com/stretchr/testify/assert"
 )
 

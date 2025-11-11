@@ -11,10 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
-	"github.com/nathanhollows/Rapua/v5/internal/sessions"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
-	"github.com/nathanhollows/Rapua/v5/security"
+	"github.com/nathanhollows/Rapua/v6/internal/sessions"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v6/security"
 )
 
 const (

@@ -3,7 +3,7 @@ package models
 import (
 	"encoding/json"
 
-	"github.com/nathanhollows/Rapua/v5/blocks"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 )
 
 type Block struct {

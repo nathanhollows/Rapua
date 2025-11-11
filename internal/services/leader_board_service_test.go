@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 func setupLeaderboardService(t *testing.T) (*services.LeaderBoardService, func()) {

@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/markbates/goth"
-	"github.com/nathanhollows/Rapua/v5/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 type DeleteService interface {
