@@ -19,6 +19,8 @@ type LocationRepository interface {
 
 	// GetByID finds a location by ID
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
+	// FindByIDs finds multiple locations by their IDs
+	FindByIDs(ctx context.Context, instanceID string, locationIDs []string) ([]*models.Location, error)
 	// FindByInstance finds a location by instance and code
 	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
 	// Find all locations for an instance
@@ -91,6 +93,24 @@ func (r *locationRepository) GetByID(ctx context.Context, locationID string) (*m
 		return nil, fmt.Errorf("finding location: %w", err)
 	}
 	return &location, nil
+}
+
+// FindByIDs finds multiple locations by their IDs.
+func (r *locationRepository) FindByIDs(ctx context.Context, instanceID string, locationIDs []string) ([]*models.Location, error) {
+	if len(locationIDs) == 0 {
+		return []*models.Location{}, nil
+	}
+
+	var locations []*models.Location
+	err := r.db.NewSelect().
+		Model(&locations).
+		Where("instance_id = ?", instanceID).
+		Where("id IN (?)", bun.In(locationIDs)).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("finding locations by IDs: %w", err)
+	}
+	return locations, nil
 }
 
 // FindByInstance finds a location by instance and code.
