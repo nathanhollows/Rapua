@@ -234,6 +234,7 @@ func (r *locationRepository) LoadRelations(ctx context.Context, location *models
 func (r *locationRepository) LoadMarker(ctx context.Context, location *models.Location) error {
 	err := r.db.NewSelect().
 		Model(location).
+		WherePK().
 		Relation("Marker").
 		Scan(ctx)
 	if err != nil {
@@ -246,6 +247,7 @@ func (r *locationRepository) LoadMarker(ctx context.Context, location *models.Lo
 func (r *locationRepository) LoadInstance(ctx context.Context, location *models.Location) error {
 	err := r.db.NewSelect().
 		Model(location).
+		WherePK().
 		Relation("Instance").
 		Scan(ctx)
 	if err != nil {
@@ -258,6 +260,7 @@ func (r *locationRepository) LoadInstance(ctx context.Context, location *models.
 func (r *locationRepository) LoadBlocks(ctx context.Context, location *models.Location) error {
 	err := r.db.NewSelect().
 		Model(location).
+		WherePK().
 		Relation("Blocks").
 		Scan(ctx)
 	if err != nil {
