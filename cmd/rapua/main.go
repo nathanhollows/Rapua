@@ -348,7 +348,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	gameStructureService := services.NewGameStructureService(dbc)
+	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor,
 		blockRepo,
