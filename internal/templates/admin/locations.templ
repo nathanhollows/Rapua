@@ -213,6 +213,7 @@ type EditLocationData struct {
 	Location         models.Location
 	ContentBlocks    blocks.Blocks
 	NavigationBlocks blocks.Blocks
+	NavigationMode   models.NavigationDisplayMode
 }
 
 templ deleteBlockModal() {
@@ -380,82 +381,84 @@ templ EditLocation(data EditLocationData) {
 			</div>
 			<!-- Delete modal -->
 			@deleteBlockModal()
-			<!-- Clues -->
-			<div class="divider mt-5 mb-10">
-				<div class="dropdown dropdown-center">
-					<div class="block">
-						<div tabindex="0" role="button" class="btn btn-sm btn-outline">
-							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-							Add a clue
+			<!-- Clues (only show when navigation mode is Custom Clues) -->
+			if data.NavigationMode == models.NavigationDisplayCustom {
+				<div class="divider mt-5 mb-10">
+					<div class="dropdown dropdown-center">
+						<div class="block">
+							<div tabindex="0" role="button" class="btn btn-sm btn-outline">
+								<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+								Add a clue
+							</div>
 						</div>
-					</div>
-					<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
-						<div class="card-body pt-3">
-							<div class="divider">
-								<span class="badge badge-ghost">Static content</span>
-							</div>
-							<div class="grid grid-cols-3 grid-flow-row gap-5">
-								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
-									if !block.RequiresValidation() {
-										<form
-											class="indicator w-full"
-											hx-post="/admin/blocks/"
-											hx-target="next .blocks"
-											hx-swap="beforeend"
-										>
-											<input type="hidden" name="owner" value={ data.Location.ID }/>
-											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
-											<input type="hidden" name="type" value={ block.GetType() }/>
-											<button
-												type="submit"
-												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-												data-tip={ block.GetDescription() }
+						<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
+							<div class="card-body pt-3">
+								<div class="divider">
+									<span class="badge badge-ghost">Static content</span>
+								</div>
+								<div class="grid grid-cols-3 grid-flow-row gap-5">
+									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
+										if !block.RequiresValidation() {
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="next .blocks"
+												hx-swap="beforeend"
 											>
-												@templ.Raw(block.GetIconSVG())
-												{ block.GetName() }
-											</button>
-										</form>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
+													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+													data-tip={ block.GetDescription() }
+												>
+													@templ.Raw(block.GetIconSVG())
+													{ block.GetName() }
+												</button>
+											</form>
+										}
 									}
-								}
-							</div>
-							<div class="divider">
-								<span class="badge badge-ghost">Interactive</span>
-							</div>
-							<div class="grid grid-cols-3 grid-flow-row gap-5">
-								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
-									if block.RequiresValidation() {
-										<form
-											class="indicator w-full"
-											hx-post="/admin/blocks/"
-											hx-target="next .blocks"
-											hx-swap="beforeend"
-										>
-											<input type="hidden" name="owner" value={ data.Location.ID }/>
-											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
-											<input type="hidden" name="type" value={ block.GetType() }/>
-											<button
-												type="submit"
-												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-												data-tip={ block.GetDescription() }
+								</div>
+								<div class="divider">
+									<span class="badge badge-ghost">Interactive</span>
+								</div>
+								<div class="grid grid-cols-3 grid-flow-row gap-5">
+									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
+										if block.RequiresValidation() {
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="next .blocks"
+												hx-swap="beforeend"
 											>
-												@templ.Raw(block.GetIconSVG())
-												{ block.GetName() }
-											</button>
-										</form>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
+													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+													data-tip={ block.GetDescription() }
+												>
+													@templ.Raw(block.GetIconSVG())
+													{ block.GetName() }
+												</button>
+											</form>
+										}
 									}
-								}
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div
-				class="blocks flex flex-col gap-5"
-			>
-				for _, block := range data.NavigationBlocks {
-					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
-				}
-			</div>
+				<div
+					class="blocks flex flex-col gap-5"
+				>
+					for _, block := range data.NavigationBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
+					}
+				</div>
+			}
 			<!-- Blocks -->
 			<section>
 				<div class="divider my-10">
