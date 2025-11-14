@@ -7,13 +7,16 @@ import (
 )
 
 var emptyGroupData = models.GameStructure{
-	Name:       "New Group",
-	Color:      "primary",
-	Locations:  nil,
-	SubGroups:  nil,
-	Routing:    models.RouteStrategyFreeRoam,
-	Navigation: models.NavigationDisplayCustom,
-	IsRoot:     false,
+	Name:            "New Group",
+	Color:           "primary",
+	Locations:       nil,
+	SubGroups:       nil,
+	Routing:         models.RouteStrategyFreeRoam,
+	Navigation:      models.NavigationDisplayCustom,
+	CompletionType:  models.CompletionAll,
+	MinimumRequired: 0,
+	AutoAdvance:     true,
+	IsRoot:          false,
 }
 
 templ LocationGroupList(settings models.InstanceSettings, groups models.GameStructure) {
@@ -224,7 +227,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 }
 
 templ locationItem(location models.Location, settings models.InstanceSettings) {
-	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-300/80" data-location-id={ location.ID } data-search-text={ location.Name }>
+	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30" data-location-id={ location.ID } data-search-text={ location.Name }>
 		<div class="loc flex items-center gap-3">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
 			<!-- Map marker icon - always rendered, visibility controlled by CSS -->
@@ -292,7 +295,7 @@ templ publishedToggle() {
 }
 
 templ completionCount(group models.GameStructure) {
-	<div class="dropdown dropdown-bottom dropdown-center completion-dropdown">
+	<div class="dropdown dropdown-bottom dropdown-center completion-dropdown" data-completion-type={ getCompletionTypeAttr(group) }>
 		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Completion requirement">
 			<span class="completion-button-icon">
 				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
@@ -321,21 +324,37 @@ templ completionCount(group models.GameStructure) {
 						max={ fmt.Sprint(len(group.Locations)) }
 						value={ getCompletionValue(group) }
 						class="range range-primary range-sm flex-1 completion-slider"
+						aria-label="Number of locations required to complete this group"
 						_="on input
 								set dropdown to closest <.completion-dropdown/>
-								set buttonText to dropdown.querySelector('.completion-button-text')
-								set buttonIcon to dropdown.querySelector('.completion-button-icon')
-								set output to the next <output/>
+								set autoAdvanceCheckbox to dropdown.querySelector('.auto-advance-checkbox')
 								if my.value == my.max then
-									set buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`
-									put 'Complete All' into buttonText
-									put 'All' into output
+									-- Slider at max - auto-enable auto-advance and show 'Complete All' mode
+									js(dropdown, autoAdvanceCheckbox)
+										// Always set to 'Complete All' mode when slider reaches max
+										dropdown.dataset.completionType = 'all';
+										updateCompletionButton(dropdown, 'all', null);
+										if (autoAdvanceCheckbox) {
+											autoAdvanceCheckbox.checked = true;
+											autoAdvanceCheckbox.disabled = true;
+										}
+									end
 								else
-									set buttonIcon's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`
-									put ('Complete ' + my.value) into buttonText
-									put my.value into output
+									-- Slider below max - always 'minimum' mode (single tick, enabled checkbox)
+									set dropdown's @data-completion-type to 'minimum'
+									js(dropdown, my, autoAdvanceCheckbox)
+										updateCompletionButton(dropdown, 'minimum', my.value);
+										// Auto-advance is optional for Complete N
+										// If transitioning from disabled state (was All), default to checked
+										if (autoAdvanceCheckbox) {
+											if (autoAdvanceCheckbox.disabled) {
+												autoAdvanceCheckbox.checked = true;
+											}
+											autoAdvanceCheckbox.disabled = false;
+										}
+									end
 								end
-								js saveGameStructure() end"
+								js window.debouncedSave() end"
 					/>
 					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">
 						if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
@@ -348,6 +367,41 @@ templ completionCount(group models.GameStructure) {
 				<div class="text-xs text-base-content/60 text-center mt-2">
 					<span class="completion-disabled-msg hidden">Disabled in Guided Path mode</span>
 				</div>
+				<!-- Auto Advance Toggle -->
+				<div class="divider my-2"></div>
+				<label class="label cursor-pointer justify-start gap-3">
+					if group.CompletionType == models.CompletionAll {
+						<input
+							type="checkbox"
+							class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+							checked
+							disabled
+							aria-describedby="auto-advance-help"
+							_="on change js(me) handleAutoAdvanceChange(me) end"
+						/>
+					} else {
+						if group.AutoAdvance {
+							<input
+								type="checkbox"
+								class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+								checked
+								aria-describedby="auto-advance-help"
+								_="on change js(me) handleAutoAdvanceChange(me) end"
+							/>
+						} else {
+							<input
+								type="checkbox"
+								class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+								aria-describedby="auto-advance-help"
+								_="on change js(me) handleAutoAdvanceChange(me) end"
+							/>
+						}
+					}
+					<span class="label-text font-medium">Auto-advance to next group</span>
+				</label>
+				<p class="text-xs text-base-content/60 mt-1">
+					When enabled, players will automatically move to the next group after completing the required locations.
+				</p>
 			</div>
 		</div>
 	</div>
@@ -531,7 +585,7 @@ templ routeStrategyPicker(group models.GameStructure) {
 						if maxNextDisplay
 							put my.value into maxNextDisplay
 						end
-						js saveGameStructure() end"
+						js window.debouncedSave() end"
 					/>
 					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">{ getMaxNextValue(group) }</output>
 				</div>
@@ -642,6 +696,20 @@ func getCompletionValue(group models.GameStructure) string {
 	return fmt.Sprint(len(group.Locations))
 }
 
+func getCompletionTypeAttr(group models.GameStructure) string {
+	// Determine the correct completion type for the data attribute
+	// This handles the distinction between "Complete All" and "Complete N of N"
+	if group.CompletionType == models.CompletionAll {
+		return "all"
+	}
+	// Even if slider is at max, if it's minimum type, keep it as minimum
+	// This allows "Complete N of N" without forced auto-advance
+	if group.CompletionType == models.CompletionMinimum {
+		return "minimum"
+	}
+	return string(group.CompletionType)
+}
+
 func getMaxNextValue(group models.GameStructure) string {
 	if group.MaxNext > 0 {
 		return fmt.Sprint(group.MaxNext)
@@ -684,6 +752,55 @@ templ sortableScript() {
 			});
 		}
 
+		// Helper: Update completion button UI
+		function updateCompletionButton(dropdown, type, value) {
+			const buttonText = dropdown.querySelector('.completion-button-text');
+			const buttonIcon = dropdown.querySelector('.completion-button-icon');
+			const output = dropdown.querySelector('output');
+
+			if (!buttonText || !buttonIcon || !output) return;
+
+			if (type === 'all') {
+				buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;
+				buttonText.textContent = 'Complete All';
+				output.textContent = 'All';
+			} else {
+				buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`;
+				buttonText.textContent = `Complete ${value}`;
+				output.textContent = value;
+			}
+		}
+
+		// Helper: Handle auto-advance checkbox change
+		function handleAutoAdvanceChange(checkbox) {
+			const dropdown = checkbox.closest('.completion-dropdown');
+			if (!dropdown) return;
+
+			const slider = dropdown.querySelector('.completion-slider');
+			if (!slider) return;
+
+			const isAtMax = slider.value == slider.max;
+
+			if (isAtMax) {
+				// Slider is at max - update mode based on checkbox state
+				if (checkbox.checked) {
+					// Auto-advance ON → 'Complete All' mode (double tick, disabled checkbox)
+					dropdown.dataset.completionType = 'all';
+					updateCompletionButton(dropdown, 'all', null);
+					checkbox.disabled = true;
+				} else {
+					// Auto-advance OFF → 'Complete N of N' mode (single tick, enabled checkbox)
+					dropdown.dataset.completionType = 'minimum';
+					updateCompletionButton(dropdown, 'minimum', slider.value);
+					checkbox.disabled = false;
+				}
+			}
+			// If slider is not at max, checkbox state doesn't affect the display
+			// (it's always "Complete N" with single tick)
+
+			window.debouncedSave();
+		}
+
 		// Encode game structure from DOM
 		function encodeGameStructure() {
 			const rootContainer = document.getElementById('root-container');
@@ -707,6 +824,8 @@ templ sortableScript() {
 				navigation: 4, // NavigationDisplayCustom
 				completion_type: 'all',
 				minimum_required: 0,
+				max_next: 0,
+				auto_advance: false,
 				is_root: true,
 				location_ids: [],
 				sub_groups: []
@@ -750,7 +869,7 @@ templ sortableScript() {
 			let routing = 1; // default: RouteStrategyFreeRoam
 			let maxNext = 0; // default: 0 (unlimited for non-random routes)
 			if (routeStrat) {
-				const text = routeStrat.textContent.trim();
+				const text = routeStrat.textContent?.trim() || '';
 				// Map string to integer values matching models.RouteStrategy
 				if (text.includes('Guided Path')) {
 					routing = 2; // RouteStrategyOrdered
@@ -758,7 +877,8 @@ templ sortableScript() {
 					routing = 0; // RouteStrategyRandom
 					// Get maxNext from dropdown data attribute
 					const dropdown = groupCard.querySelector('.route-dropdown');
-					maxNext = dropdown ? parseInt(dropdown.dataset.maxNext) || 3 : 3;
+					const maxNextValue = dropdown?.dataset?.maxNext;
+					maxNext = maxNextValue ? parseInt(maxNextValue) || 3 : 3;
 				} else {
 					routing = 1; // RouteStrategyFreeRoam (Open Exploration)
 				}
@@ -768,7 +888,7 @@ templ sortableScript() {
 			const navDisplay = groupCard.querySelector('.nav-display');
 			let navigation = 4; // default: NavigationDisplayCustom
 			if (navDisplay) {
-				const text = navDisplay.textContent.trim();
+				const text = navDisplay.textContent?.trim() || '';
 				// Map string to integer values matching models.NavigationDisplayMode
 				if (text.includes('Map Only')) {
 					navigation = 0; // NavigationDisplayMap
@@ -784,19 +904,39 @@ templ sortableScript() {
 			}
 
 			// Get completion requirements
+			const completionDropdown = groupCard.querySelector('.completion-dropdown');
 			const completionSlider = groupCard.querySelector('.completion-slider');
-			let completionType = 'all';
+
+			// Use the data attribute to preserve the actual completion type
+			// This prevents inferring 'all' when slider is at max but user set 'minimum'
+			let completionType = completionDropdown?.dataset.completionType || 'all';
 			let minimumRequired = 0;
 
 			if (completionSlider) {
 				const value = parseInt(completionSlider.value);
 				const max = parseInt(completionSlider.max);
 
-				if (value < max) {
-					completionType = 'minimum';
-					minimumRequired = value;
+				// Validate parsed values
+				if (isNaN(value) || value < 1) {
+					console.error('Invalid completion slider value:', completionSlider.value);
+					minimumRequired = 1; // Safe default
+				} else if (isNaN(max) || max < 1) {
+					console.error('Invalid completion slider max:', completionSlider.max);
+					minimumRequired = 1; // Safe default
+				} else {
+					// Ensure value doesn't exceed max (locations count)
+					const validValue = Math.min(value, max);
+
+					// Only set minimumRequired if completion type is 'minimum'
+					if (completionType === 'minimum') {
+						minimumRequired = validValue;
+					}
 				}
 			}
+
+			// Get auto-advance setting
+			const autoAdvanceCheckbox = groupCard.querySelector('.auto-advance-checkbox');
+			const autoAdvance = autoAdvanceCheckbox?.checked ?? (completionType === 'all');
 
 			const group = {
 				id: groupId,
@@ -807,6 +947,7 @@ templ sortableScript() {
 				completion_type: completionType,
 				minimum_required: minimumRequired,
 				max_next: maxNext,
+				auto_advance: autoAdvance,
 				is_root: false,
 				location_ids: [],
 				sub_groups: []
@@ -822,6 +963,12 @@ templ sortableScript() {
 						group.location_ids.push(locationId);
 					}
 				});
+			}
+
+			// Edge case: If group has no locations, ensure minimumRequired is 0
+			if (group.location_ids.length === 0) {
+				group.minimum_required = 0;
+				group.completion_type = 'all'; // Default for empty groups
 			}
 
 			// Recursively collect sub-groups (if any - though current UI doesn't support nesting)
@@ -871,12 +1018,24 @@ templ sortableScript() {
 		function saveGameStructure() {
 			const structure = encodeGameStructure();
 			if (!structure) {
+				console.error('Failed to encode game structure');
+				return;
+			}
+
+			// Validate structure has valid data
+			if (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0)) {
+				console.warn('Structure has no groups or locations, skipping save');
 				return;
 			}
 
 			// Set the structure in the hidden input and submit via htmx
 			const structureInput = document.getElementById('structure-input');
 			const form = document.getElementById('structure-form');
+
+			if (!structureInput || !form) {
+				console.error('Form elements not found');
+				return;
+			}
 
 			structureInput.value = JSON.stringify(structure);
 			htmx.trigger(form, 'submit');
@@ -1006,7 +1165,9 @@ templ sortableScript() {
 		}
 
 		// Create debounced version of saveGameStructure (500ms delay)
-		const debouncedSave = debounce(saveGameStructure, 500);
+		// Use window to avoid redeclaration errors with HTMX content swaps
+		// Use defensive assignment pattern to prevent race conditions
+		window.debouncedSave = window.debouncedSave || debounce(saveGameStructure, 500);
 
 		document.addEventListener('DOMContentLoaded', function() {
 			initializeLocationGroups();
@@ -1014,7 +1175,7 @@ templ sortableScript() {
 			// Add event listeners for group name changes (with debounce)
 			document.addEventListener('input', function(e) {
 				if (e.target.matches('.group-item input[type="text"]')) {
-					debouncedSave();
+					window.debouncedSave();
 				}
 			});
 
