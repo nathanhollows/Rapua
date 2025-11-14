@@ -6,13 +6,36 @@ order: 100
 
 # Changelog
 
-## 6.0.0
+## 6.0.0 (2025-11-14)
+
+Version 6.0.0 is a *major* release introducing the game structure system.
 
 ### Added
 
-- Navigation and routing logic refactored into the new `navigation` package.
+- [Location Groups](/docs/user/location-groups) enable multi-stage games with custom routing and navigation rules [Closes #60](https://github.com/nathanhollows/Rapua/issues/60).
+  - Organise locations into groups with different completion requirements (complete all, complete minimum, etc.)
+  - Configure routing strategies per group (free roam, linear, random, etc.)
+  - Control navigation display modes per group (show names, map, clues, etc.)
+  - Auto-advance between groups or allow manual progression.
+- **Game Structure Service** manages loading, saving, and validating game structures with location relations.
+- Locations now show/hide blocks based on their parent group context (i.e., clues only show if enabled for the group).
 
-[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v5.3.0)
+### Changed
+
+- **Breaking change:** Removed `RouteStrategy` and `NavigationDisplayMode` fields from instance settings. These are now configured per-group in the game structure.
+- Navigation logic completely refactored from `NavigationService` into new `navigation` package for easier testing.
+- Simplified game settings interface.
+- Updated to DaisyUI 5.5.0 for improved UI components.
+
+### Fixed
+
+- Location display now properly respects group-level navigation settings [Closes #96](https://github.com/nathanhollows/Rapua/issues/96)
+
+### Removed
+
+- Instance-level routing and navigation settings (now configured per-group in game structure) [Makes #69 redundant](https://github.com/nathanhollows/Rapua/issues/69)
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.0)
 
 ## 5.2.0 (2025-10-25)
 
