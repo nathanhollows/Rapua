@@ -3,9 +3,9 @@ package templates
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v5/internal/flash"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/internal/flash"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/uptrace/bun/schema"
 )
 
@@ -81,23 +81,16 @@ templ ActivityTracker(instance models.Instance) {
 					</div>
 				}
 				if len(instance.Locations) > 0 {
-					for i, location := range instance.Locations {
-						<div
-							class="location-item flex flex-row justify-between items-center space-x-3 bg-base-200 hover:bg-base-300 border-base-300 rounded-lg p-4 join-item"
-						>
-							<div class="flex flex-row items-center space-x-3 grow">
-								<strong>{ intToString(i + 1) }</strong>
-								<a
-									href={ templ.URL(fmt.Sprintf("/admin/locations/%s", location.Marker.Code)) }
-									hx-boost="true"
-									class="link flex-grow location-name"
-									if location.Marker.IsMapped() {
-										data-lat={ fmt.Sprint(location.Marker.Lat) }
-										data-lng={ fmt.Sprint(location.Marker.Lng) }
-									}
-								>{ location.Marker.Name }</a>
-							</div>
-						</div>
+					for _,location := range instance.Locations {
+						<input
+							type="hidden"
+							class="location-name"
+							if location.Marker.IsMapped() {
+								data-lat={ fmt.Sprint(location.Marker.Lat) }
+								data-lng={ fmt.Sprint(location.Marker.Lng) }
+							}
+							value={ location.Marker.Name }
+						/>
 					}
 				}
 			</div>
@@ -182,7 +175,7 @@ templ ActivityTracker(instance models.Instance) {
       const marker = new mapboxgl.Marker(el)
         .setLngLat([location.dataset.lng, location.dataset.lat])
         .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups
-          .setHTML('<h3>' + location.textContent + '</h3>'));
+          .setHTML('<h3>' + location.value + '</h3>'));
 
 				marker.getElement().addEventListener('mouseenter', function () {
 				  popup = marker.getPopup();
@@ -199,18 +192,6 @@ templ ActivityTracker(instance models.Instance) {
 
 			let locationContainer = location.parentElement.parentElement;
 
-      // Add hover event listener to open the marker popup when hovering over the list item
-      locationContainer.addEventListener('mouseenter', () => {
-				if (!marker.getPopup().isOpen()) {
-							marker.togglePopup();
-						}
-      });
-
-      locationContainer.addEventListener('mouseleave', () => {
-				if (marker.getPopup().isOpen()) {
-							marker.togglePopup();
-						}
-      });
     });
 
     // Sort markers by latitude

@@ -2,270 +2,10 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	bTemplates "github.com/nathanhollows/Rapua/v5/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	bTemplates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
-
-templ LocationsIndex(settings models.InstanceSettings, locations []models.Location) {
-	<!-- Header -->
-	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">
-			Locations 
-			<span class="htmx-indicator loading loading-dots loading-md text-info">Updating</span>
-		</h1>
-		<span class="flex md:flex-row flex-wrap items-center justify-center gap-5">
-			<!-- Download buttons -->
-			if len(locations) > 1 {
-				<div class="join">
-					<a
-						href="/admin/locations/qr-codes.zip"
-						class="btn btn-sm btn-base btn-outline join-item mb-3 md:mb-0"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-down w-4 h-4"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"></path> <path d="m14 19 3 3v-5.5"></path> <path d="m17 22 3-3"></path> <circle cx="9" cy="9" r="2"></circle></svg>
-						QR codes
-					</a>
-					<a
-						class="btn btn-sm btn-base btn-outline join-item"
-						href="/admin/locations/posters.pdf"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down w-4 h-4"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path> <path d="M14 2v4a2 2 0 0 0 2 2h4"></path> <path d="M12 18v-6"></path> <path d="m9 15 3 3 3-3"></path></svg>
-						Posters
-					</a>
-				</div>
-			}
-			<a
-				href="/admin/locations/new"
-				hx-boost="true"
-				class="btn btn-secondary"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-5 h-5"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
-				Add Location
-			</a>
-		</span>
-	</div>
-	<!-- Locations list -->
-	<div
-		class="px-5"
-	>
-		<ul
-			hx-post="/admin/locations/reorder"
-			hx-trigger="end"
-			hx-swap="none"
-			hx-include="[name='location']"
-			if settings.RouteStrategy == models.RouteStrategyOrdered {
-				class="list rounded-lg shadow sortable"
-			} else {
-				class="list rounded-lg"
-			}
-		>
-			<li class="ignore-sort flex flex-row gap-3 items-center p-3 py-4 text-xs rounded-lg tracking-wide bg-base-200/80 border border-base-300">
-				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
-					<span
-						id="location-count"
-						_="on searchfilter
-						set my textContent to <.location-item:not( [style*='display: none'] )/>'s length"
-					>
-						{ fmt.Sprint(len(locations)) }
-					</span> locations
-				</span>
-				<form class="filter ml-auto">
-					<input
-						class="btn btn-square btn-sm"
-						type="reset"
-						value="×"
-						_="on click
-							show .location-item
-								when its textContent.toLowerCase()
-								contains #search-locations's value.toLowerCase()
-							send searchfilter to #location-count
-						"
-					/>
-					<input
-						id="filter-clues"
-						class="btn btn-sm"
-						type="radio"
-						name="frameworks"
-						aria-label="No Clues"
-						_="on change
-							if my checked then
-								show .location-item
-									when its @data-clues is 'false' and
-									its textContent.toLowerCase()
-									contains #search-locations's value.toLowerCase()
-								then
-								send searchfilter to #location-count
-							end
-							"
-					/>
-					<input
-						id="filter-marker"
-						class="btn btn-sm"
-						type="radio"
-						name="frameworks"
-						aria-label="No Coordinates"
-						_="on change
-							if my checked then
-								show .location-item
-									when its @data-marker is 'false' and
-									its textContent.toLowerCase()
-									contains #search-locations's value.toLowerCase()
-								then
-								send searchfilter to #location-count
-							end
-							"
-					/>
-				</form>
-				<!-- Search -->
-				<label class="input input-sm flex items-center gap-2 w-60">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-					<input
-						id="search-locations"
-						type="text"
-						placeholder="Search"
-						class="grow"
-						_="
-						init send input to me
-						on input 
-							show .location-item
-								when its textContent.toLowerCase()
-								contains my value.toLowerCase()
-							then
-							if my value's length > 0 then
-								remove .invisible from #clear-search
-							else
-								add .invisible to #clear-search
-							end
-							send change to #filter-clues
-							send change to #filter-marker
-							send searchfilter to #location-count"
-					/>
-					<button
-						id="clear-search"
-						role="button"
-						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
-						type="reset"
-						_="
-						init if #search-locations's value's length > 0 then
-							remove .invisible from me
-						end
-						on click
-							set #search-locations's value to ''
-							add .invisible to me
-							send input to #search-locations
-							"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-					</button>
-				</label>
-			</li>
-			for _, location := range locations {
-				<li
-					class="location-item list-row hover:bg-base-200 transition-colors"
-					hx-include="this"
-					data-order={ fmt.Sprint(location.Order) }
-					data-clues="true"
-					data-marker={ fmt.Sprint(location.Marker.Lat != 0) }
-				>
-					<!-- Location icons -->
-					<div class="flex flex-row items-center gap-3 grow">
-						<!-- Drag handle -->
-						if settings.RouteStrategy == models.RouteStrategyOrdered {
-							<div
-								class="tooltip tooltip-right flex gap-3 cursor-move"
-								data-tip="Drag to reorder"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-							</div>
-							<input type="hidden" name="location" value={ location.ID }/>
-						}
-						<!-- Marker icon -->
-						if location.Marker.Lat != 0 {
-							<span
-								class="tooltip tooltip-right @7xl:tooltip-top cursor-help"
-								data-tip="Has coordinates"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle> </svg>
-							</span>
-						} else {
-							<span
-								class="tooltip tooltip-right @7xl:tooltip-top cursor-help"
-								data-tip="Unmapped location"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-off tooltip" data-tip="Location has no coordinates set"><path d="M5.43 5.43A8.06 8.06 0 0 0 4 10c0 6 8 12 8 12a29.94 29.94 0 0 0 5-5"></path> <path d="M19.18 13.52A8.66 8.66 0 0 0 20 10a8 8 0 0 0-8-8 7.88 7.88 0 0 0-3.52.82"></path> <path d="M9.13 9.13A2.78 2.78 0 0 0 9 10a3 3 0 0 0 3 3 2.78 2.78 0 0 0 .87-.13"></path> <path d="M14.9 9.25a3 3 0 0 0-2.15-2.16"></path> <line x1="2" x2="22" y1="2" y2="22"></line> </svg>
-							</span>
-						}
-						<!-- Clue indicator -->
-						if settings.NavigationDisplayMode == models.NavigationDisplayClues {
-							// TODO: FIX THIS
-							if true {
-								<span class="tooltip text-neutral cursor-help" data-tip="No clues">
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-x"><path d="m13.5 8.5-5 5"></path><path d="m8.5 8.5 5 5"></path><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-								</span>
-							} else {
-								<span class="tooltip cursor-help" data-tip="Has clues">
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-								</span>
-							}
-						}
-					</div>
-					<!-- Location code -->
-					<div
-						class="badge badge-ghost basis-16 tooltip"
-						data-tip="Unique location code"
-					>
-						<code>
-							{ location.Marker.Code }
-						</code>
-					</div>
-					<div class="list-col-grow">
-						<a
-							href={ templ.SafeURL(fmt.Sprint("/admin/locations/", location.MarkerID)) }
-							class="link"
-							hx-boost="true"
-							hx-swap="outerHTML"
-						>
-							{ location.Marker.Name }
-						</a>
-					</div>
-					if settings.EnablePoints {
-						<span class="badge">
-							{ fmt.Sprint(location.Points) } pts
-						</span>
-					}
-				</li>
-			}
-		</ul>
-	</div>
-	<script>
-		htmx.onLoad(function(content) {
-			var sortables = content.querySelectorAll(".sortable");
-			for (var i = 0; i < sortables.length; i++) {
-			  var sortable = sortables[i];
-			  var sortableInstance = new Sortable(sortable, {
-				  animation: 150,
-				  handle: ".cursor-move",
-				  filter: ".ignore-sort",
-
-				  // Prevent dragging if the target element has the 'ignore-sort' class
-				  onMove: function (evt) {
-					  return !evt.related.classList.contains('ignore-sort');
-				  },
-
-				  // Disable sorting on the `end` event
-				  onEnd: function (evt) {
-					this.option("disabled", true);
-				  }
-			  });
-
-			  // Re-enable sorting on the `htmx:afterSwap` event
-			  sortable.addEventListener("htmx:afterSettle", function() {
-				sortableInstance.option("disabled", false);
-			  });
-			}
-		})
-</script>
-}
 
 type AddLocationData struct {
 	Settings     models.InstanceSettings
@@ -305,11 +45,7 @@ templ AddLocation(data AddLocationData) {
 			<a
 				id="new-marker-tab"
 				role="tab"
-				if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
-					class="tab transition-colors"
-				} else {
-					class="tab transition-colors tab-active"
-				}
+				class="tab transition-colors tab-active"
 				_="on click 
 				if I do not match .tab-active
 					remove .tab-active from .tab-active
@@ -359,11 +95,10 @@ templ AddLocation(data AddLocationData) {
 					</div>
 				</a>
 			}
-			if data.Settings.NavigationDisplayMode == models.NavigationDisplayClues || data.Settings.NavigationDisplayMode == models.NavigationDisplayNames {
-				<a
-					role="tab"
-					class="tab transition-colors tab-active group"
-					_="on click
+			<a
+				role="tab"
+				class="tab transition-colors group"
+				_="on click
 							if I do not match .tab-active
 								remove .tab-active from .tab-active
 								toggle .tab-active
@@ -377,38 +112,26 @@ templ AddLocation(data AddLocationData) {
 								set <input[name=longitude]/>'s disabled to true
 							end
 						end
-						on load if I match .tab-active
-							add .hidden to #new-marker
-							add .hidden to #shared-marker
-							add .hidden to #marker-controls
-							set <input[name=marker]/>'s disabled to true
-							set <input[name=name]/>'s value to ''
-							add .hidden to #marker-badge
-							set <input[name=latitude]/>'s disabled to true
-							set <input[name=longitude]/>'s disabled to true
-						end
-						end
 						"
-				>
-					No map marker
-					<div class="dropdown dropdown-end dropdown-hover">
-						<div tabindex="0" role="button" class="text-info">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-						</div>
-						<div
-							tabindex="0"
-							class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
-						>
-							<div tabindex="0" class="card-body">
-								<h2 class="card-title">No map marker</h2>
-								<p>
-									Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
-								</p>
-							</div>
+			>
+				No map marker
+				<div class="dropdown dropdown-end dropdown-hover">
+					<div tabindex="0" role="button" class="text-info">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+					</div>
+					<div
+						tabindex="0"
+						class="card compact font-normal dropdown-content bg-base-200 text-base-content rounded-box z-20 w-64 shadow-lg text-start"
+					>
+						<div tabindex="0" class="card-body">
+							<h2 class="card-title">No map marker</h2>
+							<p>
+								Use this for locations that don’t stay in one place or don’t need a map. For example, a book that moves in a library or a spot inside a tall building.
+							</p>
 						</div>
 					</div>
-				</a>
-			}
+				</div>
+			</a>
 		</div>
 		if len(data.Neighbouring) > 0 {
 			for _, location := range data.Neighbouring {
@@ -490,6 +213,7 @@ type EditLocationData struct {
 	Location         models.Location
 	ContentBlocks    blocks.Blocks
 	NavigationBlocks blocks.Blocks
+	NavigationMode   models.NavigationDisplayMode
 }
 
 templ deleteBlockModal() {
@@ -623,7 +347,7 @@ templ EditLocation(data EditLocationData) {
 			</form>
 		</div>
 	</div>
-	<div class="flex flex-col lg:flex-row m-5 pt-0 gap-5">
+	<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
 		<div class="flex flex-col flex-grow min-w-0">
 			<div class="flex flex-col sm:flex-row gap-5 mb-5">
 				<fieldset class="fieldset w-full md:w-1/2">
@@ -657,82 +381,84 @@ templ EditLocation(data EditLocationData) {
 			</div>
 			<!-- Delete modal -->
 			@deleteBlockModal()
-			<!-- Clues -->
-			<div class="divider mt-5 mb-10">
-				<div class="dropdown dropdown-center">
-					<div class="block">
-						<div tabindex="0" role="button" class="btn btn-sm btn-outline">
-							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-							Add a clue
+			<!-- Clues (only show when navigation mode is Custom Clues) -->
+			if data.NavigationMode == models.NavigationDisplayCustom {
+				<div class="divider mt-5 mb-10">
+					<div class="dropdown dropdown-center">
+						<div class="block">
+							<div tabindex="0" role="button" class="btn btn-sm btn-outline">
+								<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+								Add a clue
+							</div>
 						</div>
-					</div>
-					<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
-						<div class="card-body pt-3">
-							<div class="divider">
-								<span class="badge badge-ghost">Static content</span>
-							</div>
-							<div class="grid grid-cols-3 grid-flow-row gap-5">
-								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
-									if !block.RequiresValidation() {
-										<form
-											class="indicator w-full"
-											hx-post="/admin/blocks/"
-											hx-target="next .blocks"
-											hx-swap="beforeend"
-										>
-											<input type="hidden" name="owner" value={ data.Location.ID }/>
-											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
-											<input type="hidden" name="type" value={ block.GetType() }/>
-											<button
-												type="submit"
-												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-												data-tip={ block.GetDescription() }
+						<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
+							<div class="card-body pt-3">
+								<div class="divider">
+									<span class="badge badge-ghost">Static content</span>
+								</div>
+								<div class="grid grid-cols-3 grid-flow-row gap-5">
+									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
+										if !block.RequiresValidation() {
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="next .blocks"
+												hx-swap="beforeend"
 											>
-												@templ.Raw(block.GetIconSVG())
-												{ block.GetName() }
-											</button>
-										</form>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
+													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+													data-tip={ block.GetDescription() }
+												>
+													@templ.Raw(block.GetIconSVG())
+													{ block.GetName() }
+												</button>
+											</form>
+										}
 									}
-								}
-							</div>
-							<div class="divider">
-								<span class="badge badge-ghost">Interactive</span>
-							</div>
-							<div class="grid grid-cols-3 grid-flow-row gap-5">
-								for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
-									if block.RequiresValidation() {
-										<form
-											class="indicator w-full"
-											hx-post="/admin/blocks/"
-											hx-target="next .blocks"
-											hx-swap="beforeend"
-										>
-											<input type="hidden" name="owner" value={ data.Location.ID }/>
-											<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
-											<input type="hidden" name="type" value={ block.GetType() }/>
-											<button
-												type="submit"
-												class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-												data-tip={ block.GetDescription() }
+								</div>
+								<div class="divider">
+									<span class="badge badge-ghost">Interactive</span>
+								</div>
+								<div class="grid grid-cols-3 grid-flow-row gap-5">
+									for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationClues) {
+										if block.RequiresValidation() {
+											<form
+												class="indicator w-full"
+												hx-post="/admin/blocks/"
+												hx-target="next .blocks"
+												hx-swap="beforeend"
 											>
-												@templ.Raw(block.GetIconSVG())
-												{ block.GetName() }
-											</button>
-										</form>
+												<input type="hidden" name="owner" value={ data.Location.ID }/>
+												<input type="hidden" name="context" value={ blocks.ContextLocationClues }/>
+												<input type="hidden" name="type" value={ block.GetType() }/>
+												<button
+													type="submit"
+													class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+													data-tip={ block.GetDescription() }
+												>
+													@templ.Raw(block.GetIconSVG())
+													{ block.GetName() }
+												</button>
+											</form>
+										}
 									}
-								}
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div
-				class="blocks flex flex-col gap-5"
-			>
-				for _, block := range data.NavigationBlocks {
-					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
-				}
-			</div>
+				<div
+					class="blocks flex flex-col gap-5"
+				>
+					for _, block := range data.NavigationBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
+					}
+				</div>
+			}
 			<!-- Blocks -->
 			<section>
 				<div class="divider my-10">
@@ -850,19 +576,12 @@ templ EditLocation(data EditLocationData) {
 				</section>
 			}
 		</div>
-		<!-- Sidebar -->
-		<!-- Preview Divider -->
-		<div class="divider lg:divider-horizontal">
-			<span class="lg:[writing-mode:vertical-lr]">
-				Preview
-			</span>
-		</div>
 		<!-- Preview -->
 		<div class="h-min-content">
-			<div class="mockup-phone h-min sticky top-8">
-				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden" data-theme="cupcake">
+			<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
+				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100">
 					<div
-						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-100 min-h-full"
+						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
 						hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
 						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }

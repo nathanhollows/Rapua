@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v5/db"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/db"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -64,10 +64,9 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 		// Create settings
 		settings := &models.InstanceSettings{
-			InstanceID:       sourceInstance.ID,
-			EnablePoints:     true,
-			ShowLeaderboard:  true,
-			MaxNextLocations: 3,
+			InstanceID:      sourceInstance.ID,
+			EnablePoints:    true,
+			ShowLeaderboard: true,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
@@ -106,7 +105,6 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
-		assert.Equal(t, settings.MaxNextLocations, duplicatedSettings.MaxNextLocations)
 
 		// Verify locations were duplicated
 		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
@@ -115,6 +113,124 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		assert.NotEqual(t, location.ID, duplicatedLocations[0].ID)
 		assert.Equal(t, location.Name, duplicatedLocations[0].Name)
 		assert.Equal(t, location.Points, duplicatedLocations[0].Points)
+	})
+
+	t.Run("duplicates game structure with remapped location IDs", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+
+		// Create source instance with game structure
+		sourceInstance := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: false,
+		}
+		err := instanceRepo.Create(ctx, sourceInstance)
+		require.NoError(t, err)
+
+		// Create locations
+		location1 := &models.Location{
+			Name:       "Location 1",
+			InstanceID: sourceInstance.ID,
+			MarkerID:   gofakeit.UUID(),
+		}
+		err = locationRepo.Create(ctx, location1)
+		require.NoError(t, err)
+
+		location2 := &models.Location{
+			Name:       "Location 2",
+			InstanceID: sourceInstance.ID,
+			MarkerID:   gofakeit.UUID(),
+		}
+		err = locationRepo.Create(ctx, location2)
+		require.NoError(t, err)
+
+		location3 := &models.Location{
+			Name:       "Location 3",
+			InstanceID: sourceInstance.ID,
+			MarkerID:   gofakeit.UUID(),
+		}
+		err = locationRepo.Create(ctx, location3)
+		require.NoError(t, err)
+
+		// Create game structure with subgroups
+		gameStructure := models.GameStructure{
+			ID:          gofakeit.UUID(),
+			IsRoot:      true,
+			LocationIDs: []string{location1.ID},
+			SubGroups: []models.GameStructure{
+				{
+					ID:          gofakeit.UUID(),
+					Name:        "Group 1",
+					Color:       "primary",
+					LocationIDs: []string{location2.ID},
+				},
+				{
+					ID:          gofakeit.UUID(),
+					Name:        "Group 2",
+					Color:       "secondary",
+					LocationIDs: []string{location3.ID},
+				},
+			},
+		}
+		sourceInstance.GameStructure = gameStructure
+
+		// Update instance with game structure
+		err = instanceRepo.Update(ctx, sourceInstance)
+		require.NoError(t, err)
+
+		// Create settings
+		settings := &models.InstanceSettings{
+			InstanceID: sourceInstance.ID,
+		}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		// Duplicate the instance
+		newName := gofakeit.Word()
+		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, newName)
+		require.NoError(t, err)
+
+		// Verify game structure was copied
+		assert.NotEmpty(t, duplicated.GameStructure.ID)
+		assert.True(t, duplicated.GameStructure.IsRoot)
+		assert.Len(t, duplicated.GameStructure.SubGroups, 2)
+
+		// Get duplicated locations
+		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
+		require.NoError(t, err)
+		require.Len(t, duplicatedLocations, 3)
+
+		// Build a map of duplicated locations by name for verification
+		locationsByName := make(map[string]string)
+		for _, loc := range duplicatedLocations {
+			locationsByName[loc.Name] = loc.ID
+		}
+
+		// Verify location IDs were remapped in root group
+		assert.Len(t, duplicated.GameStructure.LocationIDs, 1)
+		assert.Equal(t, locationsByName["Location 1"], duplicated.GameStructure.LocationIDs[0])
+		assert.NotEqual(t, location1.ID, duplicated.GameStructure.LocationIDs[0], "Location ID should be remapped")
+
+		// Verify location IDs were remapped in subgroups
+		assert.Equal(t, "Group 1", duplicated.GameStructure.SubGroups[0].Name)
+		assert.Len(t, duplicated.GameStructure.SubGroups[0].LocationIDs, 1)
+		assert.Equal(t, locationsByName["Location 2"], duplicated.GameStructure.SubGroups[0].LocationIDs[0])
+		assert.NotEqual(
+			t,
+			location2.ID,
+			duplicated.GameStructure.SubGroups[0].LocationIDs[0],
+			"Location ID should be remapped",
+		)
+
+		assert.Equal(t, "Group 2", duplicated.GameStructure.SubGroups[1].Name)
+		assert.Len(t, duplicated.GameStructure.SubGroups[1].LocationIDs, 1)
+		assert.Equal(t, locationsByName["Location 3"], duplicated.GameStructure.SubGroups[1].LocationIDs[0])
+		assert.NotEqual(
+			t,
+			location3.ID,
+			duplicated.GameStructure.SubGroups[1].LocationIDs[0],
+			"Location ID should be remapped",
+		)
 	})
 
 	t.Run("rejects template duplication", func(t *testing.T) {

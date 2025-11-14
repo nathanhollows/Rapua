@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
 )
 
 const (

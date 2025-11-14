@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 )
 
 // Interface for IsUserAuthenticated.

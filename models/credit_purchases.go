@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v5/config"
+	"github.com/nathanhollows/Rapua/v6/config"
 )
 
 // CreditPurchase represents a record of credit purchases via Stripe.

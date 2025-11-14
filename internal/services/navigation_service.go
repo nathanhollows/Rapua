@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
-	"golang.org/x/exp/rand"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/navigation"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 var (
@@ -17,18 +18,45 @@ var (
 )
 
 type NavigationService struct {
-	locationRepo repositories.LocationRepository
-	teamRepo     repositories.TeamRepository
+	locationRepo         repositories.LocationRepository
+	teamRepo             repositories.TeamRepository
+	gameStructureService *GameStructureService
+	blockService         *BlockService
+}
+
+// PlayerNavigationView contains all data needed to render the player navigation UI.
+type PlayerNavigationView struct {
+	// Settings
+	Settings models.InstanceSettings // Global instance settings
+
+	// Current state
+	CurrentGroup     *models.GameStructure // Current group
+	CanAdvanceEarly  bool                  // Whether team can manually advance to next group (minimum met, AutoAdvance=false, not 100% complete)
+	MustCheckOut     bool                  // Whether team must check out before proceeding
+	BlockingLocation *models.Location      // Location team must check out from (nil if not blocked)
+
+	// Available locations
+	NextLocations []models.Location // Locations team can visit next
+	// Completed locations (for scavenger hunt mode or similar)
+	CompletedLocations []models.Location // Locations already visited (optional, for certain display modes)
+
+	// Navigation clues (for custom display mode)
+	Blocks      []blocks.Block                // All navigation clue blocks for next locations
+	BlockStates map[string]blocks.PlayerState // States for navigation clue blocks
 }
 
 // NewNavigationService creates a new instance of NavigationService.
 func NewNavigationService(
 	locationRepo repositories.LocationRepository,
 	teamRepo repositories.TeamRepository,
+	gameStructureService *GameStructureService,
+	blockService *BlockService,
 ) *NavigationService {
 	return &NavigationService{
-		locationRepo: locationRepo,
-		teamRepo:     teamRepo,
+		locationRepo:         locationRepo,
+		teamRepo:             teamRepo,
+		gameStructureService: gameStructureService,
+		blockService:         blockService,
 	}
 }
 
@@ -69,117 +97,126 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 
 	// Load full relations for each location
 	for i := range locations {
-		if err := s.locationRepo.LoadRelations(ctx, &locations[i]); err != nil {
-			return nil, fmt.Errorf("loading relations for location: %w", err)
+		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
+			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
 		}
 	}
 
 	return locations, nil
 }
 
-// getUnvisitedLocations returns a list of locations that the team has not visited.
-func (s *NavigationService) getUnvisitedLocations(_ context.Context, team *models.Team) []models.Location {
-	unvisited := make([]models.Location, 0, len(team.Instance.Locations))
+// GetPlayerNavigationView returns a complete view of navigation data for the player UI.
+func (s *NavigationService) GetPlayerNavigationView(
+	ctx context.Context,
+	team *models.Team,
+) (*PlayerNavigationView, error) {
+	// Load team relations if not already loaded
+	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
+		return nil, fmt.Errorf("loading team relations: %w", err)
+	}
 
-	for _, location := range team.Instance.Locations {
-		if !s.HasVisited(team.CheckIns, location.ID) {
-			unvisited = append(unvisited, location)
+	view := &PlayerNavigationView{
+		Settings:    team.Instance.Settings,
+		Blocks:      make([]blocks.Block, 0),
+		BlockStates: make(map[string]blocks.PlayerState),
+	}
+
+	// Check if team is blocked (must check out)
+	if team.MustCheckOut != "" {
+		view.MustCheckOut = true
+		// Load blocking location
+		blockingLocation, err := s.locationRepo.GetByID(ctx, team.MustCheckOut)
+		if err != nil {
+			return nil, fmt.Errorf("loading blocking location: %w", err)
+		}
+		view.BlockingLocation = blockingLocation
+		// Team is blocked, no next locations available
+		view.NextLocations = []models.Location{}
+		return view, nil
+	}
+
+	// Get current group (if using GameStructure)
+	var currentGroup *models.GameStructure
+	if team.Instance.GameStructure.ID != "" {
+		// Compute current group from completed locations
+		completedIDs := s.getCompletedLocationIDs(team.CheckIns)
+		currentGroupID := navigation.ComputeCurrentGroup(
+			&team.Instance.GameStructure,
+			completedIDs,
+			team.SkippedGroupIDs,
+		)
+
+		if currentGroupID != "" {
+			currentGroup = navigation.FindGroupByID(&team.Instance.GameStructure, currentGroupID)
+		}
+		view.CurrentGroup = currentGroup
+
+		// Check if team can advance early (minimum met, AutoAdvance=false, not 100% complete)
+		if currentGroup != nil && !currentGroup.AutoAdvance && len(currentGroup.LocationIDs) > 0 {
+			// Count completed locations in current group
+			completedSet := make(map[string]bool)
+			for _, id := range completedIDs {
+				completedSet[id] = true
+			}
+			completedCount := 0
+			for _, locID := range currentGroup.LocationIDs {
+				if completedSet[locID] {
+					completedCount++
+				}
+			}
+
+			// Check if minimum met but not all complete
+			isMinimumMet := false
+			switch currentGroup.CompletionType {
+			case models.CompletionAll:
+				isMinimumMet = completedCount == len(currentGroup.LocationIDs)
+			case models.CompletionMinimum:
+				isMinimumMet = completedCount >= currentGroup.MinimumRequired
+			}
+
+			allComplete := completedCount == len(currentGroup.LocationIDs)
+			view.CanAdvanceEarly = isMinimumMet && !allComplete
 		}
 	}
 
-	return unvisited
-}
-
-// getOrderedLocations returns the next location in the defined order.
-func (s *NavigationService) getOrderedLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
-	unvisited := s.getUnvisitedLocations(ctx, team)
-	if len(unvisited) == 0 {
-		return nil, ErrAllLocationsVisited
+	// Get next locations
+	locations, err := s.determineNextLocations(ctx, team)
+	if err != nil {
+		return nil, err
 	}
 
-	// Find the location with the lowest order value
-	nextLocation := unvisited[0]
-	for _, location := range unvisited[1:] {
-		if location.Order < nextLocation.Order {
-			nextLocation = location
+	// Load full relations for each location
+	for i := range locations {
+		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
+			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
 		}
 	}
+	view.NextLocations = locations
 
-	return []models.Location{nextLocation}, nil
-}
-
-// getRandomLocations returns random locations for the team to visit.
-// This function uses the team code as a seed for the random number generator.
-// Process:
-// 1. Shuffle the list of all locations deterministically based on team code,
-// 2. Select the first n unvisited locations from the shuffled list,
-// 3. Return these locations ensuring the order is consistent across refreshes,
-// 3. Return these locations ensuring the order is consistent across refreshes.
-func (s *NavigationService) getRandomLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
-	allLocations := team.Instance.Locations
-	if len(allLocations) == 0 {
-		return nil, errors.New("no locations found")
-	}
-
-	unvisited := s.getUnvisitedLocations(ctx, team)
-	if len(unvisited) == 0 {
-		return []models.Location{}, ErrAllLocationsVisited
-	}
-
-	// Seed the random number generator with the team code to ensure deterministic shuffling
-	seed := uint64(0)
-	for _, char := range team.Code {
-		seed += uint64(char)
-	}
-	rand.Seed(seed)
-
-	// We shuffle the list of all locations to ensure randomness
-	// even when the team has visited some locations
-	shuffledLocations := make([]models.Location, len(allLocations))
-	copy(shuffledLocations, allLocations)
-	rand.Shuffle(len(shuffledLocations), func(i, j int) {
-		shuffledLocations[i], shuffledLocations[j] = shuffledLocations[j], shuffledLocations[i]
-	})
-
-	// Select the first n unvisited locations from the shuffled list
-	n := team.Instance.Settings.MaxNextLocations
-	selectedLocations := []models.Location{}
-	for _, loc := range shuffledLocations {
-		if !s.HasVisited(team.CheckIns, loc.ID) {
-			selectedLocations = append(selectedLocations, loc)
-			if len(selectedLocations) >= n {
-				break
+	// Load navigation blocks if using custom display mode
+	if view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+		for _, location := range locations {
+			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+				ctx,
+				location.ID,
+				team.Code,
+				blocks.ContextLocationClues,
+			)
+			if blockErr != nil {
+				return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
+			}
+			view.Blocks = append(view.Blocks, locationBlocks...)
+			for k, v := range blockStates {
+				view.BlockStates[k] = v
 			}
 		}
 	}
 
-	if len(selectedLocations) == 0 {
-		return nil, ErrAllLocationsVisited
-	}
+	// TODO: Optionally load completed locations for scavenger hunt mode
+	// This could be controlled by a new display mode
+	// view.CompletedLocations = s.getCompletedLocations(ctx, team)
 
-	return selectedLocations, nil
-}
-
-// getFreeRoamLocations returns a list of locations for free roam mode. This
-// function returns all locations in the instance for the team to visit.
-func (s *NavigationService) getFreeRoamLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
-	unvisited := s.getUnvisitedLocations(ctx, team)
-
-	if len(unvisited) == 0 {
-		return nil, ErrAllLocationsVisited
-	}
-
-	return unvisited, nil
-}
-
-// HasVisited returns true if the team has visited the location.
-func (s *NavigationService) HasVisited(checkins []models.CheckIn, locationID string) bool {
-	for _, checkin := range checkins {
-		if checkin.LocationID == locationID {
-			return true
-		}
-	}
-	return false
+	return view, nil
 }
 
 // determineNextLocations is the core logic for finding next locations without relation loading.
@@ -188,22 +225,8 @@ func (s *NavigationService) determineNextLocations(ctx context.Context, team *mo
 		return nil, err
 	}
 
-	// Check if the team has visited all locations
-	if len(team.CheckIns) == len(team.Instance.Locations) {
-		return nil, ErrAllLocationsVisited
-	}
-
-	// Determine the next locations based on the navigation mode
-	switch team.Instance.Settings.RouteStrategy {
-	case models.RouteStrategyOrdered:
-		return s.getOrderedLocations(ctx, team)
-	case models.RouteStrategyRandom:
-		return s.getRandomLocations(ctx, team)
-	case models.RouteStrategyFreeRoam:
-		return s.getFreeRoamLocations(ctx, team)
-	}
-
-	return nil, errors.New("invalid navigation mode")
+	// All games use GameStructure (migration converts legacy games)
+	return s.getValidLocationsFromGameStructure(ctx, team)
 }
 
 // validateTeamState checks if team has required relations loaded.
@@ -214,9 +237,8 @@ func (s *NavigationService) validateTeamState(team *models.Team) error {
 	if team.Instance.Settings.InstanceID == "" {
 		return ErrInstanceSettingsNotFound
 	}
-	if len(team.Instance.Locations) == 0 {
-		return ErrLocationNotFound
-	}
+	// Note: Locations are no longer required here since all games use GameStructure
+	// and locations are loaded on-demand by group
 	return nil
 }
 
@@ -231,4 +253,60 @@ func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team 
 // normalizeMarkerID trims and uppercases marker ID.
 func (s *NavigationService) normalizeMarkerID(markerID string) string {
 	return strings.TrimSpace(strings.ToUpper(markerID))
+}
+
+// getValidLocationsFromGameStructure determines valid locations using the GameStructure system.
+func (s *NavigationService) getValidLocationsFromGameStructure(
+	ctx context.Context,
+	team *models.Team,
+) ([]models.Location, error) {
+	// 1. Check if team is locked at a location (MustCheckOut)
+	// Use existing Team.MustCheckOut field (single source of truth)
+	if team.MustCheckOut != "" {
+		return []models.Location{}, nil // No locations available until checkout
+	}
+
+	// 2. Get completed location IDs from CheckIns
+	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
+
+	// 3. Compute current group from completed locations (pure function, deterministic)
+	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
+
+	if currentGroupID == "" {
+		// No valid group (either no groups configured or all completed)
+		return []models.Location{}, nil
+	}
+
+	// 4. Get available location IDs using navigation package
+	locationIDs := navigation.GetAvailableLocationIDs(
+		&team.Instance.GameStructure,
+		currentGroupID,
+		completedIDs,
+		team.Code,
+	)
+
+	if len(locationIDs) == 0 {
+		return []models.Location{}, nil
+	}
+
+	// 5. Fetch only the needed locations from database
+	locations := make([]models.Location, 0, len(locationIDs))
+	for _, id := range locationIDs {
+		location, err := s.locationRepo.GetByID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load location %s: %w", id, err)
+		}
+		locations = append(locations, *location)
+	}
+
+	return locations, nil
+}
+
+// getCompletedLocationIDs extracts location IDs from check-ins.
+func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) []string {
+	completed := make([]string, 0, len(checkIns))
+	for _, checkIn := range checkIns {
+		completed = append(completed, checkIn.LocationID)
+	}
+	return completed
 }

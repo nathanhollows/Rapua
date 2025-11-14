@@ -3,8 +3,8 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
 )
 
 func (h *PublicHandler) Contact(w http.ResponseWriter, r *http.Request) {

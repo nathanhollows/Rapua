@@ -1,0 +1,1236 @@
+
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+var emptyGroupData = models.GameStructure{
+	Name:            "New Group",
+	Color:           "primary",
+	Locations:       nil,
+	SubGroups:       nil,
+	Routing:         models.RouteStrategyFreeRoam,
+	Navigation:      models.NavigationDisplayCustom,
+	CompletionType:  models.CompletionAll,
+	MinimumRequired: 0,
+	AutoAdvance:     true,
+	IsRoot:          false,
+}
+
+templ LocationGroupList(settings models.InstanceSettings, groups models.GameStructure) {
+	<!-- Header -->
+	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
+		<h1 class="text-2xl font-bold">
+			Locations
+			<span class="htmx-indicator loading loading-dots loading-md text-info">Updating</span>
+		</h1>
+		<span class="flex md:flex-row flex-wrap justify-center gap-3">
+			<label class="input flex items-center gap-2 w-60">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5">
+					<circle cx="11" cy="11" r="8"></circle>
+					<path d="m21 21-4.3-4.3"></path>
+				</svg>
+				<input
+					id="search-locations"
+					type="text"
+					class="grow"
+					placeholder="Search locations"
+					_="on input
+						-- Normalize search term: lowercase and remove diacritics
+						js(me)
+							const normalize = (str) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+							window.normalizedSearch = normalize(me.value);
+						end
+						-- Filter location items (not groups)
+						for location in .location-item
+							js(location)
+								const normalize = (str) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+								const locationName = location.dataset.searchText || '';
+								const normalizedLocation = normalize(locationName);
+								location._matchesSearch = window.normalizedSearch === '' || normalizedLocation.includes(window.normalizedSearch);
+							end
+							if location._matchesSearch then
+								remove .hidden from location
+							else
+								add .hidden to location
+							end
+						end
+						-- Toggle clear button visibility
+						if my value's length > 0 then
+							remove .invisible from #clear-search
+						else
+							add .invisible to #clear-search
+						end
+					"
+				/>
+				<button
+					id="clear-search"
+					role="button"
+					class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+					type="button"
+					_="on click
+						set #search-locations's value to ''
+						add .invisible to me
+						send input to #search-locations
+					"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4 opacity-80 hover:opacity-100">
+						<path d="M18 6 6 18"></path>
+						<path d="m6 6 12 12"></path>
+					</svg>
+				</button>
+			</label>
+			<div class="join">
+				<a
+					href="/admin/locations/qr-codes.zip"
+					class="btn btn-base join-item mb-3 md:mb-0"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-down"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"></path> <path d="m14 19 3 3 v-5.5"></path> <path d="m17 22 3-3"></path> <circle cx="9" cy="9" r="2"></circle></svg>
+					QR codes
+				</a>
+				<a
+					class="btn btn-base join-item"
+					href="/admin/locations/posters.pdf"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path> <path d="M14 2v4a2 2 0 0 0 2 2h4"></path> <path d="M12 18v-6"></path> <path d="m9 15 3 3 3-3"></path></svg>
+					Posters
+				</a>
+			</div>
+			<div class="join">
+				<button
+					class="btn btn-secondary join-item"
+					_="on click
+						set groupsArea to first .groups-area
+						put #empty-group-template's innerHTML at start of groupsArea
+						-- Set a UUID and random color for the new group
+						set newGroup to groupsArea.querySelector('.group-item')
+						js(newGroup)
+							const uuid = generateUUID();
+							const colors = ['primary', 'secondary', 'accent', 'success', 'info', 'warning', 'error', 'base-content'];
+							const randomColor = colors[Math.floor(Math.random() * colors.length)];
+							newGroup.dataset.groupId = uuid;
+							newGroup.dataset.groupColor = randomColor;
+						end
+						-- Initialize SortableJS on the new group's locations-area
+						set newLocationsArea to newGroup.querySelector('.locations-area')
+						js(newLocationsArea)
+							new Sortable(newLocationsArea, {
+								group: 'locations',
+								animation: 150,
+								draggable: '.location-item',
+								handle: '.location-drag-handle',
+								ghostClass: 'sortable-ghost',
+								chosenClass: 'sortable-chosen',
+								dragClass: 'sortable-drag',
+								invertSwap: true,
+								onEnd: function(evt) {
+									saveGameStructure();
+								}
+							});
+						end
+						-- Trigger save for the new group
+						js saveGameStructure() end
+						"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-group-icon lucide-group w-5 h-5"><path d="M3 7V5c0-1.1.9-2 2-2h2"></path><path d="M17 3h2c1.1 0 2 .9 2 2v2"></path><path d="M21 17v2c0 1.1-.9 2-2 2h-2"></path><path d="M7 21H5c-1.1 0-2-.9-2-2v-2"></path><rect width="7" height="5" x="7" y="7" rx="1"></rect><rect width="7" height="5" x="10" y="12" rx="1"></rect></svg>
+					Add Group
+				</button>
+				<a
+					href="/admin/locations/new"
+					hx-boost="true"
+					class="btn btn-secondary join-item"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-5 h-5"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
+					Add Location
+				</a>
+			</div>
+		</span>
+	</div>
+	<template id="empty-group-template">
+		@locationGroup(emptyGroupData, settings)
+	</template>
+	<!-- Hidden form for htmx structure updates -->
+	<form
+		id="structure-form"
+		hx-post="/admin/locations/structure"
+		hx-trigger="submit delay:100ms"
+		hx-swap="none"
+		hx-indicator=".htmx-indicator"
+		style="display: none;"
+	>
+		<input type="hidden" name="structure" id="structure-input"/>
+	</form>
+	<div class="px-6" id="root-container">
+		@locationGroup(groups, settings)
+	</div>
+	@sortableScript()
+}
+
+templ locationGroup(group models.GameStructure, settings models.InstanceSettings) {
+	if group.IsRoot {
+		<!-- Root groups area -->
+		<div class="groups-area space-y-6" data-group-id={ group.ID }>
+			for _, subGroup := range group.SubGroups {
+				@locationGroup(subGroup, settings)
+			}
+		</div>
+		<!-- Hidden/unassigned locations area -->
+		<div class="divider my-12 gap-2">
+			Unassigned locations
+			<div class="dropdown dropdown-hover dropdown-top dropdown-center">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="m12 16v-4"></path><path d="m12 8h.01"></path></svg></div>
+				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
+					<div tabindex="0" class="card-body">
+						<h2 class="card-title">Unassigned Locations</h2>
+						<p class="text-wrap">
+							Locations placed here will not be visible or accessible to players in the game.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0" data-unassigned="true" data-nav-mode={ fmt.Sprint(int(group.Navigation)) }>
+			for _, location := range group.Locations {
+				@locationItem(*location, settings)
+			}
+		</div>
+	} else {
+		<!-- Nested group card -->
+		<div class="group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors" data-group-id={ group.ID } data-group-color={ group.Color }>
+			<div class="card-body p-5 pt-3">
+				<div class="flex justify-between items-center">
+					<div class="flex items-center gap-3">
+						<div class="tooltip lg:tooltip-top tooltip-right" data-tip="Drag to reorder group">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+						</div>
+						@picker(group.Color)
+						<input type="text" class="input input-ghost p-2 font-bold bg-transparent" value={ group.Name }/>
+					</div>
+					<div class="flex-grow cursor-move group-drag-handle min-h-8"></div>
+					@groupMenu(group)
+				</div>
+				<!-- Locations area within group -->
+				<div class="locations-area join join-vertical" data-group-id={ group.ID } data-nav-mode={ fmt.Sprint(int(group.Navigation)) }>
+					for _, location := range group.Locations {
+						@locationItem(*location, settings)
+					}
+				</div>
+				<!-- Subgroups area within group - always show -->
+				for _, subGroup := range group.SubGroups {
+					@locationGroup(subGroup, settings)
+				}
+			</div>
+		</div>
+	}
+}
+
+templ locationItem(location models.Location, settings models.InstanceSettings) {
+	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30" data-location-id={ location.ID } data-search-text={ location.Name }>
+		<div class="loc flex items-center gap-3">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+			<!-- Map marker icon - always rendered, visibility controlled by CSS -->
+			if location.HasCoordinates() {
+				<span class="tooltip cursor-help location-marker-icon" data-tip="Has map coordinates">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+				</span>
+			} else {
+				<span class="tooltip cursor-help location-marker-icon text-base-content/30" data-tip="Missing coordinates">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-off"><path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"></path><path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568"></path><path d="m2 2 20 20"></path><path d="M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533"></path><path d="M9.13 9.13a3 3 0 0 0 3.74 3.74"></path></svg>
+				</span>
+			}
+			<!-- Clues icon - always rendered, visibility controlled by CSS -->
+			if location.HasCluesContext() {
+				<span class="tooltip cursor-help location-clues-icon" data-tip="Has clues">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+				</span>
+			} else {
+				<span class="tooltip cursor-help location-clues-icon text-base-content/30" data-tip="No clues">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-slash"><path d="m13.5 8.5-5 5"></path><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+				</span>
+			}
+			<div class="badge badge-sm badge-outline border-primary font-medium tooltip" data-tip="Location ID"><code>{ location.MarkerID }</code></div>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/locations/%s", location.MarkerID)) }
+				class="link link-hover font-medium"
+				hx-boost="true"
+			>{ location.Name }</a>
+			<div class="flex-grow cursor-move location-drag-handle min-h-4"></div>
+			if settings.EnablePoints {
+				<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
+			}
+			@publishedToggle()
+		</div>
+	</div>
+}
+
+templ publishedToggle() {
+	if false {
+		<div>
+			<label class="swap">
+				<input type="checkbox"/>
+				<label
+					class="swap tooltip"
+					data-tip="Published"
+				>
+					<input
+						type="checkbox"
+						checked
+						_="on change
+							set parent to the closest parent <label />
+						if my.checked then
+							set parent's @data-tip to 'Published'
+						else
+							set parent's @data-tip to 'Draft'
+						end
+					"
+					/>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="swap-on lucide lucide-eye-icon lucide-eye w-5"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="swap-off lucide lucide-eye-closed-icon lucide-eye-closed w-5"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+				</label>
+			</label>
+		</div>
+	}
+}
+
+templ completionCount(group models.GameStructure) {
+	<div class="dropdown dropdown-bottom dropdown-center completion-dropdown" data-completion-type={ getCompletionTypeAttr(group) }>
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Completion requirement">
+			<span class="completion-button-icon">
+				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check-icon lucide-check-check"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
+				} else {
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"></path></svg>
+				}
+			</span>
+			<span class="completion-button-text">
+				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+					Complete All
+				} else {
+					Complete { fmt.Sprint(group.MinimumRequired) }
+				}
+			</span>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<div tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow">
+			<div class="p-3">
+				<label class="text-xs font-medium">Completion requirement:</label>
+				<p class="text-xs text-base-content/60 mt-1">Set how many locations players must complete to move on to the next group.</p>
+				<div class="flex items-center gap-2 mt-4">
+					<input
+						type="range"
+						min="1"
+						max={ fmt.Sprint(len(group.Locations)) }
+						value={ getCompletionValue(group) }
+						class="range range-primary range-sm flex-1 completion-slider"
+						aria-label="Number of locations required to complete this group"
+						_="on input
+								set dropdown to closest <.completion-dropdown/>
+								set autoAdvanceCheckbox to dropdown.querySelector('.auto-advance-checkbox')
+								if my.value == my.max then
+									-- Slider at max - auto-enable auto-advance and show 'Complete All' mode
+									js(dropdown, autoAdvanceCheckbox)
+										// Always set to 'Complete All' mode when slider reaches max
+										dropdown.dataset.completionType = 'all';
+										updateCompletionButton(dropdown, 'all', null);
+										if (autoAdvanceCheckbox) {
+											autoAdvanceCheckbox.checked = true;
+											autoAdvanceCheckbox.disabled = true;
+										}
+									end
+								else
+									-- Slider below max - always 'minimum' mode (single tick, enabled checkbox)
+									set dropdown's @data-completion-type to 'minimum'
+									js(dropdown, my, autoAdvanceCheckbox)
+										updateCompletionButton(dropdown, 'minimum', my.value);
+										// Auto-advance is optional for Complete N
+										// If transitioning from disabled state (was All), default to checked
+										if (autoAdvanceCheckbox) {
+											if (autoAdvanceCheckbox.disabled) {
+												autoAdvanceCheckbox.checked = true;
+											}
+											autoAdvanceCheckbox.disabled = false;
+										}
+									end
+								end
+								js window.debouncedSave() end"
+					/>
+					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">
+						if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+							All
+						} else {
+							{ fmt.Sprint(group.MinimumRequired) }
+						}
+					</output>
+				</div>
+				<div class="text-xs text-base-content/60 text-center mt-2">
+					<span class="completion-disabled-msg hidden">Disabled in Guided Path mode</span>
+				</div>
+				<!-- Auto Advance Toggle -->
+				<div class="divider my-2"></div>
+				<label class="label cursor-pointer justify-start gap-3">
+					if group.CompletionType == models.CompletionAll {
+						<input
+							type="checkbox"
+							class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+							checked
+							disabled
+							aria-describedby="auto-advance-help"
+							_="on change js(me) handleAutoAdvanceChange(me) end"
+						/>
+					} else {
+						if group.AutoAdvance {
+							<input
+								type="checkbox"
+								class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+								checked
+								aria-describedby="auto-advance-help"
+								_="on change js(me) handleAutoAdvanceChange(me) end"
+							/>
+						} else {
+							<input
+								type="checkbox"
+								class="checkbox checkbox-sm checkbox-primary auto-advance-checkbox"
+								aria-describedby="auto-advance-help"
+								_="on change js(me) handleAutoAdvanceChange(me) end"
+							/>
+						}
+					}
+					<span class="label-text font-medium">Auto-advance to next group</span>
+				</label>
+				<p class="text-xs text-base-content/60 mt-1">
+					When enabled, players will automatically move to the next group after completing the required locations.
+				</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ groupMenu(group models.GameStructure) {
+	<div class="flex gap-2 items-center">
+		@completionCount(group)
+		<!-- Route Strategy Picker -->
+		@routeStrategyPicker(group)
+		<!-- Navigation Display Picker -->
+		@navigationDisplayPicker(group.Navigation)
+		if false {
+			<!-- Auto Advance Picker -->
+			@autoAdvancePicker(group.Navigation)
+		}
+		<button
+			class="btn btn-sm btn-ghost tooltip delete-group-btn"
+			data-tip="Delete group"
+			_="on click
+				if I match .confirming then
+					-- Actually delete the group
+					set groupCard to closest <.group-item/>
+					-- Get ALL location items in this group (including nested ones)
+					set allLocations to groupCard.querySelectorAll('.location-item')
+					-- Find the unassigned locations area (the one at the bottom with data-unassigned)
+					js(allLocations)
+						const unassignedArea = document.querySelector('#root-container .locations-area[data-unassigned]');
+						if (unassignedArea) {
+							allLocations.forEach(location => {
+								unassignedArea.appendChild(location);
+							});
+						}
+					end
+					-- Remove the group card
+					remove groupCard
+					-- Trigger save after deletion
+					js saveGameStructure() end
+				else
+					-- First click: show confirmation
+					add .confirming to me
+					set my @data-tip to 'Are you sure?'
+					add .tooltip-warning to me
+					-- Reset after 2 seconds (non-blocking)
+				end
+			on mouseleave
+				if I match .confirming then
+					remove .confirming from me
+					set my @data-tip to 'Delete group'
+					remove .tooltip-warning from me
+				end"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+		</button>
+	</div>
+}
+
+templ routeStrategyPicker(group models.GameStructure) {
+	<div class="dropdown dropdown-bottom dropdown-center route-dropdown" data-max-next={ getMaxNextValue(group) }>
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Route Strategy">
+			<div class="route-strat contents">
+				switch group.Routing {
+					case models.RouteStrategyOrdered:
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
+						{ models.RouteStrategyOrdered.String() }
+					case models.RouteStrategyFreeRoam:
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
+						{ models.RouteStrategyFreeRoam.String() }
+					case models.RouteStrategyRandom:
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
+						Random <span class="max-next-display">{ getMaxNextValue(group) }</span>
+				}
+			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<div class="dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow">
+			<ul tabindex="0" class="menu">
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ models.RouteStrategyOrdered.String() }
+						_="on click
+						remove .bg-base-300 from <.route-option/>
+						add .bg-base-300 to me
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
+						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						-- Hide max-next slider
+						add .hidden to dropdown.querySelector('.max-next-slider-container')
+						-- Disable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						add .btn-disabled to completionDropdown.querySelector('a')
+						add .hidden to completionDropdown.querySelector('.dropdown-content')
+						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyOrdered.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ models.RouteStrategyOrdered.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty"
+						data-mode={ models.RouteStrategyFreeRoam.String() }
+						_="on click
+						remove .bg-base-300 from <.route-option/>
+						add .bg-base-300 to me
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
+						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						-- Hide max-next slider
+						add .hidden to dropdown.querySelector('.max-next-slider-container')
+						-- Enable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						remove .btn-disabled from completionDropdown.querySelector('a')
+						remove .hidden from completionDropdown.querySelector('.dropdown-content')
+						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyFreeRoam.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60 break-after-auto">{ models.RouteStrategyFreeRoam.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ models.RouteStrategyRandom.String() }
+						_="on click
+						remove .bg-base-300 from <.route-option/>
+						add .bg-base-300 to me
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
+						set maxNextValue to dropdown.querySelector('.max-next-slider').value
+						set routeStrat's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>` + maxNextValue + `</span>`
+						-- Show max-next slider
+						remove .hidden from dropdown.querySelector('.max-next-slider-container')
+						-- Enable completion dropdown
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						remove .btn-disabled from completionDropdown.querySelector('a')
+						remove .hidden from completionDropdown.querySelector('.dropdown-content')
+						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						js saveGameStructure() end"
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
+							<span class="font-medium">{ models.RouteStrategyRandom.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ models.RouteStrategyRandom.Description() }</span>
+					</button>
+				</li>
+			</ul>
+			<!-- MaxNext slider - shown only when Random routing is selected -->
+			<div class={ "max-next-slider-container p-5 pt-0", templ.KV("hidden", group.Routing != models.RouteStrategyRandom) }>
+				<label class="text-xs font-medium">Locations to show:</label>
+				<p class="text-xs text-base-content/60 mt-1 text-pretty">How many random locations should players see at once?</p>
+				<div class="flex items-center gap-2 mt-2">
+					<input
+						type="range"
+						min="1"
+						max="10"
+						value={ getMaxNextValue(group) }
+						class="range range-primary range-sm flex-1 max-next-slider"
+						_="on input
+						set output to the next <output/>
+						put my.value into output
+						set dropdown to closest <.route-dropdown/>
+						set dropdown's @data-max-next to my.value
+						set maxNextDisplay to dropdown.querySelector('.max-next-display')
+						if maxNextDisplay
+							put my.value into maxNextDisplay
+						end
+						js window.debouncedSave() end"
+					/>
+					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">{ getMaxNextValue(group) }</output>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ navigationDisplayPicker(nav models.NavigationDisplayMode) {
+	<div class="dropdown dropdown-bottom dropdown-center nav-display-dropdown">
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Navigation Display">
+			<div class="nav-display contents">
+				switch nav {
+					case models.NavigationDisplayMap:
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
+						{ models.NavigationDisplayMap.String() }
+					case models.NavigationDisplayMapAndNames:
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-house"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"></path><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"></path><path d="M18 22v-3"></path><circle cx="10" cy="10" r="3"></circle></svg>
+						{ models.NavigationDisplayMapAndNames.String() }
+					case models.NavigationDisplayNames:
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 12h.01"></path><path d="M3 18h.01"></path><path d="M3 6h.01"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M8 6h13"></path></svg>
+						{ models.NavigationDisplayNames.String() }
+					case models.NavigationDisplayClues:
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+						{ models.NavigationDisplayClues.String() }
+					case models.NavigationDisplayCustom:
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
+						{ models.NavigationDisplayCustom.String() }
+				}
+			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow">
+			for _, mode := range models.GetNavigationDisplayModes() {
+				<li>
+					<button
+						role="button"
+						class="nav-display-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ mode.String() }
+						data-index={ fmt.Sprint(int(mode)) }
+						_="on click
+							remove .bg-base-300 from <.nav-display-option/>
+							add .bg-base-300 to me
+							set navDisplay to (closest <.nav-display-dropdown/>).querySelector('.nav-display')
+							set navDisplay's innerHTML to my.querySelector('div').innerHTML
+							-- Update data-nav-mode attribute on locations-area to reflect new navigation mode
+							set groupCard to closest <.group-item/>
+							if groupCard
+								set locationsArea to groupCard.querySelector('.locations-area')
+								if locationsArea
+									set locationsArea's @data-nav-mode to my @data-index
+								end
+							else
+								-- For root group
+								set rootLocationsArea to document.querySelector('#root-container .locations-area')
+								if rootLocationsArea
+									set rootLocationsArea's @data-nav-mode to my @data-index
+								end
+							end
+							js saveGameStructure() end"
+					>
+						<div class="flex items-center gap-2">
+							switch mode {
+								case models.NavigationDisplayMap:
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
+								case models.NavigationDisplayMapAndNames:
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-house"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"></path><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"></path><path d="M18 22v-3"></path><circle cx="10" cy="10" r="3"></circle></svg>
+								case models.NavigationDisplayNames:
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 12h.01"></path><path d="M3 18h.01"></path><path d="M3 6h.01"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M8 6h13"></path></svg>
+								case models.NavigationDisplayClues:
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+								case models.NavigationDisplayCustom:
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-blocks"><rect width="7" height="7" x="14" y="3" rx="1"></rect><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"></path></svg>
+							}
+							<span class="font-medium">{ mode.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ mode.Description() }</span>
+					</button>
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+templ autoAdvancePicker(nav models.NavigationDisplayMode) {
+	<div class="dropdown dropdown-bottom dropdown-center nav-display-dropdown">
+		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Auto Advance">
+			<div class="nav-display contents">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-fading-arrow-up-icon lucide-circle-fading-arrow-right w-4 h-4" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 7.38 16.75M12 16l4-4-4-4M8 12h8M2.5 8.875a10 10 0 0 0-.5 3M2.83 16a10 10 0 0 0 2.43 3.4M4.636 5.235a10 10 0 0 1 .891-.857M8.644 21.42a10 10 0 0 0 7.631-.38"></path></svg>
+				Auto Advance
+			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow"></ul>
+	</div>
+}
+
+func colours() []string {
+	return []string{
+		"primary", "secondary", "accent", "success", "info", "warning", "error", "base-content",
+	}
+}
+
+func getCompletionValue(group models.GameStructure) string {
+	if group.CompletionType == models.CompletionMinimum && group.MinimumRequired > 0 {
+		return fmt.Sprint(group.MinimumRequired)
+	}
+	return fmt.Sprint(len(group.Locations))
+}
+
+func getCompletionTypeAttr(group models.GameStructure) string {
+	// Determine the correct completion type for the data attribute
+	// This handles the distinction between "Complete All" and "Complete N of N"
+	if group.CompletionType == models.CompletionAll {
+		return "all"
+	}
+	// Even if slider is at max, if it's minimum type, keep it as minimum
+	// This allows "Complete N of N" without forced auto-advance
+	if group.CompletionType == models.CompletionMinimum {
+		return "minimum"
+	}
+	return string(group.CompletionType)
+}
+
+func getMaxNextValue(group models.GameStructure) string {
+	if group.MaxNext > 0 {
+		return fmt.Sprint(group.MaxNext)
+	}
+	return "3"
+}
+
+templ picker(colour string) {
+	<div class="dropdown dropdown-bottom">
+		<div tabindex="0" role="button" class="w-4 h-4 rounded-full bg-primary cursor-pointer tooltip" data-tip="Group color"></div>
+		<ul tabindex="0" class="dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-48">
+			<div class="hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content t"></div>
+			<div class="menu menu-horizontal">
+				for _, color := range colours() {
+					<li>
+						<a
+							data-group-color={ color }
+							class="cursor-pointer color-picker-option"
+							_="on click
+								set (closest <.card />)'s @data-group-color to my @data-group-color
+								js saveGameStructure() end"
+						>
+							<div class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color) }></div>
+						</a>
+					</li>
+				}
+			</div>
+		</ul>
+	</div>
+}
+
+templ sortableScript() {
+	<script>
+		// UUID generation function (v4)
+		function generateUUID() {
+			return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				const r = Math.random() * 16 | 0;
+				const v = c === 'x' ? r : (r & 0x3 | 0x8);
+				return v.toString(16);
+			});
+		}
+
+		// Helper: Update completion button UI
+		function updateCompletionButton(dropdown, type, value) {
+			const buttonText = dropdown.querySelector('.completion-button-text');
+			const buttonIcon = dropdown.querySelector('.completion-button-icon');
+			const output = dropdown.querySelector('output');
+
+			if (!buttonText || !buttonIcon || !output) return;
+
+			if (type === 'all') {
+				buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;
+				buttonText.textContent = 'Complete All';
+				output.textContent = 'All';
+			} else {
+				buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`;
+				buttonText.textContent = `Complete ${value}`;
+				output.textContent = value;
+			}
+		}
+
+		// Helper: Handle auto-advance checkbox change
+		function handleAutoAdvanceChange(checkbox) {
+			const dropdown = checkbox.closest('.completion-dropdown');
+			if (!dropdown) return;
+
+			const slider = dropdown.querySelector('.completion-slider');
+			if (!slider) return;
+
+			const isAtMax = slider.value == slider.max;
+
+			if (isAtMax) {
+				// Slider is at max - update mode based on checkbox state
+				if (checkbox.checked) {
+					// Auto-advance ON → 'Complete All' mode (double tick, disabled checkbox)
+					dropdown.dataset.completionType = 'all';
+					updateCompletionButton(dropdown, 'all', null);
+					checkbox.disabled = true;
+				} else {
+					// Auto-advance OFF → 'Complete N of N' mode (single tick, enabled checkbox)
+					dropdown.dataset.completionType = 'minimum';
+					updateCompletionButton(dropdown, 'minimum', slider.value);
+					checkbox.disabled = false;
+				}
+			}
+			// If slider is not at max, checkbox state doesn't affect the display
+			// (it's always "Complete N" with single tick)
+
+			window.debouncedSave();
+		}
+
+		// Encode game structure from DOM
+		function encodeGameStructure() {
+			const rootContainer = document.getElementById('root-container');
+			if (!rootContainer) {
+				console.error('Root container not found');
+				return null;
+			}
+
+			// Find root group area and unassigned locations area
+			const rootGroupsArea = rootContainer.querySelector('.groups-area');
+			const rootLocationsArea = rootContainer.querySelector('.locations-area:not([data-unassigned])');
+			const unassignedLocationsArea = rootContainer.querySelector('.locations-area[data-unassigned]');
+
+			const rootGroupID = rootGroupsArea?.dataset.groupId || generateUUID();
+
+			const structure = {
+				id: rootGroupID,
+				name: '',
+				color: '',
+				routing: 1, // RouteStrategyFreeRoam
+				navigation: 4, // NavigationDisplayCustom
+				completion_type: 'all',
+				minimum_required: 0,
+				max_next: 0,
+				auto_advance: false,
+				is_root: true,
+				location_ids: [],
+				sub_groups: []
+			};
+
+			// Collect root-level locations from unassigned area
+			// Unassigned locations ARE the root's location_ids
+			if (unassignedLocationsArea) {
+				const locationItems = unassignedLocationsArea.querySelectorAll(':scope > .location-item');
+				locationItems.forEach(item => {
+					const locationId = item.dataset.locationId;
+					if (locationId) {
+						structure.location_ids.push(locationId);
+					}
+				});
+			}
+
+			// Collect sub-groups
+			if (rootGroupsArea) {
+				const groupItems = rootGroupsArea.querySelectorAll(':scope > .group-item');
+				groupItems.forEach(groupCard => {
+					const subGroup = encodeGroup(groupCard);
+					if (subGroup) {
+						structure.sub_groups.push(subGroup);
+					}
+				});
+			}
+
+			return structure;
+		}
+
+		// Encode a single group (non-root)
+		function encodeGroup(groupCard) {
+			const groupId = groupCard.dataset.groupId || generateUUID();
+			const groupColor = groupCard.dataset.groupColor || 'primary';
+			const nameInput = groupCard.querySelector('input[type="text"]');
+			const name = nameInput ? nameInput.value : 'Unnamed Group';
+
+			// Get routing strategy - map display name to integer
+			const routeStrat = groupCard.querySelector('.route-strat');
+			let routing = 1; // default: RouteStrategyFreeRoam
+			let maxNext = 0; // default: 0 (unlimited for non-random routes)
+			if (routeStrat) {
+				const text = routeStrat.textContent?.trim() || '';
+				// Map string to integer values matching models.RouteStrategy
+				if (text.includes('Guided Path')) {
+					routing = 2; // RouteStrategyOrdered
+				} else if (text.includes('Random')) {
+					routing = 0; // RouteStrategyRandom
+					// Get maxNext from dropdown data attribute
+					const dropdown = groupCard.querySelector('.route-dropdown');
+					const maxNextValue = dropdown?.dataset?.maxNext;
+					maxNext = maxNextValue ? parseInt(maxNextValue) || 3 : 3;
+				} else {
+					routing = 1; // RouteStrategyFreeRoam (Open Exploration)
+				}
+			}
+
+			// Get navigation display mode - map display name to integer
+			const navDisplay = groupCard.querySelector('.nav-display');
+			let navigation = 4; // default: NavigationDisplayCustom
+			if (navDisplay) {
+				const text = navDisplay.textContent?.trim() || '';
+				// Map string to integer values matching models.NavigationDisplayMode
+				if (text.includes('Map Only')) {
+					navigation = 0; // NavigationDisplayMap
+				} else if (text.includes('Labelled Map')) {
+					navigation = 1; // NavigationDisplayMapAndNames
+				} else if (text.includes('Location List')) {
+					navigation = 2; // NavigationDisplayNames
+				} else if (text.includes('Clue-Based')) {
+					navigation = 3; // NavigationDisplayClues
+				} else {
+					navigation = 4; // NavigationDisplayCustom (Custom Clues)
+				}
+			}
+
+			// Get completion requirements
+			const completionDropdown = groupCard.querySelector('.completion-dropdown');
+			const completionSlider = groupCard.querySelector('.completion-slider');
+
+			// Use the data attribute to preserve the actual completion type
+			// This prevents inferring 'all' when slider is at max but user set 'minimum'
+			let completionType = completionDropdown?.dataset.completionType || 'all';
+			let minimumRequired = 0;
+
+			if (completionSlider) {
+				const value = parseInt(completionSlider.value);
+				const max = parseInt(completionSlider.max);
+
+				// Validate parsed values
+				if (isNaN(value) || value < 1) {
+					console.error('Invalid completion slider value:', completionSlider.value);
+					minimumRequired = 1; // Safe default
+				} else if (isNaN(max) || max < 1) {
+					console.error('Invalid completion slider max:', completionSlider.max);
+					minimumRequired = 1; // Safe default
+				} else {
+					// Ensure value doesn't exceed max (locations count)
+					const validValue = Math.min(value, max);
+
+					// Only set minimumRequired if completion type is 'minimum'
+					if (completionType === 'minimum') {
+						minimumRequired = validValue;
+					}
+				}
+			}
+
+			// Get auto-advance setting
+			const autoAdvanceCheckbox = groupCard.querySelector('.auto-advance-checkbox');
+			const autoAdvance = autoAdvanceCheckbox?.checked ?? (completionType === 'all');
+
+			const group = {
+				id: groupId,
+				name: name,
+				color: groupColor,
+				routing: routing,
+				navigation: navigation,
+				completion_type: completionType,
+				minimum_required: minimumRequired,
+				max_next: maxNext,
+				auto_advance: autoAdvance,
+				is_root: false,
+				location_ids: [],
+				sub_groups: []
+			};
+
+			// Collect locations in this group
+			const locationsArea = groupCard.querySelector('.locations-area');
+			if (locationsArea) {
+				const locationItems = locationsArea.querySelectorAll(':scope > .location-item');
+				locationItems.forEach(item => {
+					const locationId = item.dataset.locationId;
+					if (locationId) {
+						group.location_ids.push(locationId);
+					}
+				});
+			}
+
+			// Edge case: If group has no locations, ensure minimumRequired is 0
+			if (group.location_ids.length === 0) {
+				group.minimum_required = 0;
+				group.completion_type = 'all'; // Default for empty groups
+			}
+
+			// Recursively collect sub-groups (if any - though current UI doesn't support nesting)
+			const subGroupsArea = groupCard.querySelector('.groups-area');
+			if (subGroupsArea) {
+				const subGroupItems = subGroupsArea.querySelectorAll(':scope > .group-item');
+				subGroupItems.forEach(subGroupCard => {
+					const subGroup = encodeGroup(subGroupCard);
+					if (subGroup) {
+						group.sub_groups.push(subGroup);
+					}
+				});
+			}
+
+			return group;
+		}
+
+		// Update completion count slider for a group
+		function updateCompletionSlider(groupCard) {
+			const locationsArea = groupCard.querySelector('.locations-area');
+			const slider = groupCard.querySelector('.completion-slider');
+			const output = groupCard.querySelector('.completion-dropdown output');
+			const buttonText = groupCard.querySelector('.completion-button-text');
+			const buttonIcon = groupCard.querySelector('.completion-button-icon');
+
+			if (!locationsArea || !slider) return;
+
+			const locationCount = locationsArea.querySelectorAll('.location-item').length;
+			const oldMax = parseInt(slider.max);
+			const currentValue = parseInt(slider.value);
+
+			// Update max value
+			slider.max = locationCount;
+
+			// If current value equals or exceeds new max, set to max (All)
+			if (currentValue >= locationCount || currentValue === oldMax) {
+				slider.value = locationCount;
+				if (output) output.textContent = 'All';
+				if (buttonText) buttonText.textContent = 'Complete All';
+				if (buttonIcon) {
+					buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;
+				}
+			}
+		}
+
+		// Save game structure to server using htmx
+		function saveGameStructure() {
+			const structure = encodeGameStructure();
+			if (!structure) {
+				console.error('Failed to encode game structure');
+				return;
+			}
+
+			// Validate structure has valid data
+			if (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0)) {
+				console.warn('Structure has no groups or locations, skipping save');
+				return;
+			}
+
+			// Set the structure in the hidden input and submit via htmx
+			const structureInput = document.getElementById('structure-input');
+			const form = document.getElementById('structure-form');
+
+			if (!structureInput || !form) {
+				console.error('Form elements not found');
+				return;
+			}
+
+			structureInput.value = JSON.stringify(structure);
+			htmx.trigger(form, 'submit');
+		}
+
+		// Initialize all sortable areas and UI controls
+		function initializeLocationGroups() {
+			// Initialize sortable for all locations-area elements
+			document.querySelectorAll('.locations-area').forEach(function(el) {
+				// Skip if already initialized
+				if (el.sortableInstance) return;
+
+				el.sortableInstance = new Sortable(el, {
+					group: 'locations',
+					animation: 150,
+					draggable: '.location-item',
+					ghostClass: 'sortable-ghost',
+					chosenClass: 'sortable-chosen',
+					dragClass: 'sortable-drag',
+					invertSwap: true,
+					filter: 'a, button, input, select, textarea, [contenteditable], .badge, svg:not(.location-drag-handle), .tooltip',
+					preventOnFilter: false,
+					onEnd: function(evt) {
+						// Update completion sliders for both source and destination groups
+						const fromGroup = evt.from.closest('.group-item');
+						const toGroup = evt.to.closest('.group-item');
+						if (fromGroup) updateCompletionSlider(fromGroup);
+						if (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);
+
+						saveGameStructure();
+					}
+				});
+			});
+
+			// Initialize sortable for all groups-area elements
+			document.querySelectorAll('.groups-area').forEach(function(el) {
+				// Skip if already initialized
+				if (el.sortableInstance) return;
+
+				el.sortableInstance = new Sortable(el, {
+					group: 'groups',
+					animation: 150,
+					draggable: '.group-item',
+					ghostClass: 'sortable-ghost',
+					chosenClass: 'sortable-chosen',
+					dragClass: 'sortable-drag',
+					invertSwap: true,
+					filter: 'a, button, input, select, textarea, [contenteditable], .badge, svg, .tooltip, .dropdown, .location-item, .locations-area, .btn, .route-dropdown, .nav-display-dropdown, .completion-dropdown',
+					preventOnFilter: false,
+					onEnd: function(evt) {
+						saveGameStructure();
+					}
+				});
+			});
+
+			// Initialize route strategy highlighting and completion controls
+			document.querySelectorAll('.route-dropdown').forEach(function(dropdown) {
+				const currentText = dropdown.querySelector('.route-strat').textContent.trim();
+				const options = dropdown.querySelectorAll('.route-option');
+				const groupItem = dropdown.closest('.group-item');
+				const completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;
+
+				// Initialize MaxNext slider for Random routing (mode 0)
+				if (currentText.includes('Random')) {
+					const maxNext = parseInt(dropdown.dataset.maxNext) || 3;
+					const slider = dropdown.querySelector('.max-next-slider');
+					const output = dropdown.querySelector('.max-next-slider + output');
+					if (slider) {
+						slider.value = maxNext;
+					}
+					if (output) {
+						output.textContent = maxNext;
+					}
+				}
+
+				// Find and highlight the matching option
+				// Strategy: compare the option's text content with what's currently displayed
+				let selectedOption = null;
+				options.forEach(function(option) {
+					const optionModeText = option.querySelector('.font-medium').textContent.trim();
+					// Check if the current display contains the option's mode name
+					// This handles both exact matches and partial matches (like "Random 3" contains part of "Randomised Route")
+					if (currentText.includes(optionModeText) || optionModeText.includes(currentText.split(' ')[0])) {
+						option.classList.add('bg-base-300');
+						selectedOption = option;
+					}
+				});
+
+				// If "Guided Path" mode is selected, disable the completion dropdown
+				if (selectedOption && selectedOption.dataset.mode === 'Guided Path' && completionDropdown) {
+					const completionButton = completionDropdown.querySelector('a[role=button]');
+					const completionContent = completionDropdown.querySelector('.dropdown-content');
+					const completionMsg = groupItem.querySelector('.completion-disabled-msg');
+
+					if (completionButton) {
+						completionButton.classList.add('btn-disabled');
+					}
+					if (completionContent) {
+						completionContent.classList.add('hidden');
+					}
+					if (completionMsg) {
+						completionMsg.classList.remove('hidden');
+					}
+				}
+			});
+
+			// Initialize navigation display highlighting
+			document.querySelectorAll('.nav-display-dropdown').forEach(function(dropdown) {
+				const currentText = dropdown.querySelector('.nav-display').textContent.trim();
+				const options = dropdown.querySelectorAll('.nav-display-option');
+
+				options.forEach(function(option) {
+					if (option.textContent.trim().includes(currentText)) {
+						option.classList.add('bg-base-300');
+					}
+				});
+			});
+		}
+
+		// Debounce function to delay execution
+		function debounce(func, delay) {
+			let timeout;
+			return function(...args) {
+				clearTimeout(timeout);
+				timeout = setTimeout(() => func.apply(this, args), delay);
+			};
+		}
+
+		// Create debounced version of saveGameStructure (500ms delay)
+		// Use window to avoid redeclaration errors with HTMX content swaps
+		// Use defensive assignment pattern to prevent race conditions
+		window.debouncedSave = window.debouncedSave || debounce(saveGameStructure, 500);
+
+		document.addEventListener('DOMContentLoaded', function() {
+			initializeLocationGroups();
+
+			// Add event listeners for group name changes (with debounce)
+			document.addEventListener('input', function(e) {
+				if (e.target.matches('.group-item input[type="text"]')) {
+					window.debouncedSave();
+				}
+			});
+
+			// Add event listeners for route strategy changes
+			document.addEventListener('click', function(e) {
+				if (e.target.matches('.route-option')) {
+					saveGameStructure();
+				}
+			});
+		});
+
+		// Re-initialize after htmx content swap
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			// Only reinitialize if the swapped content contains location groups
+			if (evt.detail.target.querySelector('.locations-area') || evt.detail.target.querySelector('.groups-area')) {
+				initializeLocationGroups();
+			}
+		});
+	</script>
+	<style>
+		.sortable-ghost {
+			opacity: 0.4;
+			background: hsl(var(--b2));
+		}
+		.sortable-chosen {
+			opacity: 0.8;
+		}
+		.sortable-drag {
+			opacity: 1;
+		}
+		/* Show drop zone hint when dragging */
+		.sortable-drag ~ .locations-area:empty,
+		.sortable-drag ~ .groups-area:empty,
+		.locations-area:empty.sortable-drag-over,
+		.groups-area:empty.sortable-drag-over {
+			border-color: hsl(var(--p) / 0.5);
+			background: hsl(var(--p) / 0.05);
+		}
+
+		/* Location indicator visibility rules based on parent group navigation mode */
+		/* Map marker: visible for Map Only (0) and Labelled Map (1) */
+		.locations-area .location-marker-icon {
+			display: none;
+		}
+		.locations-area[data-nav-mode="0"] .location-marker-icon,
+		.locations-area[data-nav-mode="1"] .location-marker-icon {
+			display: inline-flex;
+		}
+
+		/* Clues: visible only for Custom Clues (4) */
+		.locations-area .location-clues-icon {
+			display: none;
+		}
+		.locations-area[data-nav-mode="4"] .location-clues-icon {
+			display: inline-flex;
+		}
+	</style>
+}

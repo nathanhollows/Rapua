@@ -12,25 +12,25 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v5/db"
-	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v5/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v5/internal/migrations"
-	"github.com/nathanhollows/Rapua/v5/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v5/internal/server"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	"github.com/nathanhollows/Rapua/v5/internal/sessions"
-	"github.com/nathanhollows/Rapua/v5/internal/storage"
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/db"
+	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/migrations"
+	"github.com/nathanhollows/Rapua/v6/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v6/internal/server"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/internal/sessions"
+	"github.com/nathanhollows/Rapua/v6/internal/storage"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v5.2.0"
+const version = "v6.0.0"
 
 func main() {
 	logger := slog.New(
@@ -348,6 +348,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
+	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor,
 		blockRepo,
@@ -377,7 +378,11 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	navigationService := services.NewNavigationService(locationRepo, teamRepo)
+
+	// Set the relation loader so gameStructureService can load location relations
+	gameStructureService.SetRelationLoader(locationService)
+
+	navigationService := services.NewNavigationService(locationRepo, teamRepo, gameStructureService, blockService)
 	checkInService := services.NewCheckInService(
 		checkInRepo,
 		locationRepo,
@@ -468,6 +473,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		duplicationService,
 		facilitatorService,
 		gameScheduleService,
+		gameStructureService,
 		instanceService,
 		instanceSettingsService,
 		locationService,

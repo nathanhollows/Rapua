@@ -1,9 +1,6 @@
 package templates
 
-import (
-	"fmt"
-	"github.com/nathanhollows/Rapua/v5/models"
-)
+import "github.com/nathanhollows/Rapua/v6/models"
 
 templ Experience(settings models.InstanceSettings, locationCount int) {
 	<main class="max-w-7xl m-auto pb-8">
@@ -28,7 +25,6 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 			<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
 				<!-- Settings Panel -->
 				<div class="flex-1 space-y-8" id="movement-settings">
-					@RoutingCard(settings)
 					@PlayerViewCard(settings)
 					@CompetitionCard(settings)
 				</div>
@@ -49,79 +45,6 @@ templ PreviewScript() {
 	<script src="/static/js/experience_preview.js"></script>
 }
 
-// RoutingCard - Routing settings in a card matching settings.templ style
-templ RoutingCard(settings models.InstanceSettings) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10">
-		<div class="grid h-fit flex-grow space-y-6">
-			<!-- Section Header -->
-			<div>
-				<h2 class="font-bold text-lg flex items-center gap-2">
-					Routing
-				</h2>
-				<p class="text-sm text-base-content/60 mt-1 text-wrap">Control the path teams take through your experience</p>
-			</div>
-			<!-- Route Strategy -->
-			<div>
-				<label class="font-semibold text-base flex items-center gap-2">
-					Route Strategy
-				</label>
-				<div class="mt-3">
-					for i, v := range models.GetRouteStrategies() {
-						<label class="label cursor-pointer justify-start gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors w-full">
-							<input
-								type="radio"
-								name="routeStrategy"
-								value={ v.String() }
-								data-index={ intToString(i) }
-								class="radio checked:radio-primary"
-								if settings.RouteStrategy == v {
-									checked
-								}
-								onchange="updatePreview()"
-								_={ routeStrategyScript(i) }
-							/>
-							<div class="flex-1">
-								<div class="text-base-content">{ v.String() }</div>
-								<div class="text-sm text-base-content/60 text-wrap">{ v.Description() }</div>
-							</div>
-						</label>
-					}
-				</div>
-			</div>
-			<!-- Location Limit -->
-			<div>
-				<label class="font-semibold text-base flex items-center gap-2" for="maxLocations">
-					Location Limit
-				</label>
-				<p class="text-sm text-base-content/60 mt-1">The maximum number of locations shown to show a team.</p>
-				<div class="flex items-center gap-4 mt-3">
-					<input
-						type="number"
-						name="maxLocations"
-						id="maxLocations"
-						min="0"
-						step="1"
-						placeholder="3"
-						value={ intToString(settings.MaxNextLocations) }
-						class="input input-bordered w-32"
-						onkeyup="updatePreview()"
-					/>
-					<span class="text-sm text-base-content/60">Set to 0 to show all</span>
-				</div>
-				<div
-					id="maxLocationsDisabledMessage"
-					class={ fmt.Sprint("alert alert-warning alert-soft mt-3 text-sm invisible") }
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-					</svg>
-					<span>Only available for { models.RouteStrategyRandom.String() }</span>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
 // PlayerViewCard - Player view settings
 templ PlayerViewCard(settings models.InstanceSettings) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10">
@@ -132,68 +55,8 @@ templ PlayerViewCard(settings models.InstanceSettings) {
 					Player View
 				</h2>
 				<p class="text-sm text-base-content/60 mt-1">
-					How players know where to go.
+					How players know what to do and where to go.
 				</p>
-			</div>
-			<!-- Navigation Display -->
-			<div>
-				<label class="font-semibold text-base flex items-center gap-2">
-					Navigation Display
-				</label>
-				<div class="grid md:grid-cols-2 mt-3">
-					for i, v := range models.GetNavigationDisplayModes() {
-						<label class="label cursor-pointer justify-start gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-							<input
-								type="radio"
-								name="navigationDisplayMode"
-								value={ v.String() }
-								data-index={ intToString(i) }
-								class="radio checked:radio-primary"
-								if settings.NavigationDisplayMode == v {
-									checked
-								}
-								onchange="updatePreview()"
-								_={ navigationDisplayScript(i) }
-							/>
-							<div class="flex-1">
-								<div class="font-medium text-base-content">{ v.String() }</div>
-								<div class="text-sm text-base-content/60 text-wrap">{ v.Description() }</div>
-							</div>
-						</label>
-					}
-				</div>
-			</div>
-			<!-- Display Team Count -->
-			<div>
-				<div class="form-control">
-					<label class="label cursor-pointer justify-start gap-3">
-						<input
-							type="checkbox"
-							id="showTeamCount"
-							name="showTeamCount"
-							class="toggle checked:toggle-primary"
-							if settings.ShowTeamCount {
-								checked
-							}
-							onchange="updatePreview()"
-						/>
-						<div class="flex-1">
-							<span class="font-medium text-base-content flex items-center gap-2">
-								Display team count
-							</span>
-							<p class="text-sm text-base-content/60 mt-1 text-wrap">Show how many teams are at each location.</p>
-						</div>
-					</label>
-					<div
-						id="teamCountDisabledMessage"
-						class="alert alert-warning alert-soft mt-2 text-sm invisible"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-						</svg>
-						<span>Disabled when { models.NavigationDisplayCustom.String() } is selected</span>
-					</div>
-				</div>
 			</div>
 			<!-- Check Out Toggle -->
 			<div>
@@ -230,7 +93,7 @@ templ CompetitionCard(settings models.InstanceSettings) {
 				<h2 class="font-bold text-lg flex items-center gap-2">
 					Competition
 				</h2>
-				<p class="text-sm text-base-content/60 mt-1 text-wrap">Configure points and competitive features</p>
+				<p class="text-sm text-base-content/60 mt-1 text-wrap">Configure points and competitive features.</p>
 			</div>
 			<!-- Enable Points -->
 			<div>

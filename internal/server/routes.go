@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v5/filesystem"
-	admin "github.com/nathanhollows/Rapua/v5/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v5/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v5/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v5/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v6/filesystem"
+	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
 )
 
 const (
@@ -99,6 +99,17 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		})
 		r.Get("/", playerHandler.Next)
 		r.Post("/", playerHandler.Next)
+	})
+
+	// Advance to next group (manual skip)
+	router.Route("/advance", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(
+				playerHandler.GetTeamService(),
+				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next),
+			)
+		})
+		r.Post("/", playerHandler.AdvanceGroup)
 	})
 
 	router.Route("/blocks", func(r chi.Router) {
@@ -242,6 +253,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 		r.Route("/locations", func(r chi.Router) {
 			r.Get("/", adminHandler.Locations)
 			r.Post("/reorder", adminHandler.ReorderLocations)
+			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/new", adminHandler.LocationNew)
 			r.Post("/new", adminHandler.LocationNewPost)
 			r.Get("/{id}", adminHandler.LocationEdit)

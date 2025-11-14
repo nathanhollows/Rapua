@@ -11,15 +11,16 @@ type Instance struct {
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 
-	ID                    string       `bun:"id,pk,type:varchar(36)"`
-	Name                  string       `bun:"name,type:varchar(255)"`
-	UserID                string       `bun:"user_id,type:varchar(36)"`
-	IsTemplate            bool         `bun:"is_template,type:bool"`
-	TemplateID            string       `bun:"template_id,type:varchar(36),nullzero"`
-	StartTime             bun.NullTime `bun:"start_time,nullzero"`
-	EndTime               bun.NullTime `bun:"end_time,nullzero"`
-	Status                GameStatus   `bun:"-"`
-	IsQuickStartDismissed bool         `bun:"is_quick_start_dismissed,type:bool"`
+	ID                    string        `bun:"id,pk,type:varchar(36)"`
+	Name                  string        `bun:"name,type:varchar(255)"`
+	UserID                string        `bun:"user_id,type:varchar(36)"`
+	IsTemplate            bool          `bun:"is_template,type:bool"`
+	TemplateID            string        `bun:"template_id,type:varchar(36),nullzero"`
+	StartTime             bun.NullTime  `bun:"start_time,nullzero"`
+	EndTime               bun.NullTime  `bun:"end_time,nullzero"`
+	Status                GameStatus    `bun:"-"`
+	IsQuickStartDismissed bool          `bun:"is_quick_start_dismissed,type:bool"`
+	GameStructure         GameStructure `bun:"game_structure,type:string"`
 
 	Teams      []Team           `bun:"rel:has-many,join:id=instance_id"`
 	Locations  []Location       `bun:"rel:has-many,join:id=instance_id"`

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-pdf/fpdf"
-	"github.com/nathanhollows/Rapua/v5/helpers"
+	"github.com/nathanhollows/Rapua/v6/helpers"
 	go_qr "github.com/piglig/go-qr"
 )
 

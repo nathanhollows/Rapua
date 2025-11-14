@@ -8,8 +8,8 @@ import (
 	"slices"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
 )
 
 // BlockEdit shows the form to edit a block (legacy method).

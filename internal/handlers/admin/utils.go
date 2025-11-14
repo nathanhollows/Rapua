@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v5/internal/flash"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v6/internal/flash"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 type AccessService interface {
@@ -183,6 +183,7 @@ type MarkerService interface {
 
 type NavigationService interface {
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
+	GetPlayerNavigationView(ctx context.Context, team *models.Team) (*services.PlayerNavigationView, error)
 }
 
 type NotificationService interface {
@@ -264,6 +265,7 @@ type Handler struct {
 	duplicationService      DuplicationService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
+	gameStructureService    *services.GameStructureService
 	instanceService         InstanceService
 	instanceSettingsService InstanceSettingsService
 	locationService         services.LocationService
@@ -291,6 +293,7 @@ func NewAdminHandler(
 	duplicationService DuplicationService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
+	gameStructureService *services.GameStructureService,
 	instanceService InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
@@ -317,6 +320,7 @@ func NewAdminHandler(
 		duplicationService:      duplicationService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
+		gameStructureService:    gameStructureService,
 		instanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
 		locationService:         locationService,

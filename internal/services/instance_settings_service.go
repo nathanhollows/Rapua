@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v5/models"
-	"github.com/nathanhollows/Rapua/v5/repositories"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 type InstanceSettingsService struct {
@@ -44,11 +44,6 @@ func (s *InstanceSettingsService) GetInstanceSettings(
 func (s *InstanceSettingsService) SaveSettings(ctx context.Context, settings *models.InstanceSettings) error {
 	if settings == nil {
 		return errors.New("settings cannot be nil")
-	}
-
-	// Validate business rules
-	if settings.MaxNextLocations < 0 {
-		return errors.New("max next locations cannot be negative")
 	}
 
 	// Save to database

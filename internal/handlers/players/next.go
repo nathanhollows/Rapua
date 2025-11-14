@@ -2,14 +2,11 @@ package players
 
 import (
 	"errors"
-	"maps"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v5/blocks"
-	"github.com/nathanhollows/Rapua/v5/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v5/internal/services"
-	templates "github.com/nathanhollows/Rapua/v5/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v5/models"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
 )
 
 func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
@@ -25,50 +22,20 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
+	// Get complete navigation view from service
+	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
-		if errors.Is(err, services.ErrAllLocationsVisited) && team.MustCheckOut == "" {
+		if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
 			h.redirect(w, r, "/finish")
 			return
 		}
-		h.handleError(w, r, "Next: getting next locations", "Error getting next locations", "Could not load data", err)
+		h.handleError(w, r, "Next: getting navigation view", "Error loading navigation", "Could not load data", err)
 		return
 	}
 
-	// Fetch navigation clue blocks for all next locations
-	allBlocks := make([]blocks.Block, 0)
-	allStates := make(map[string]blocks.PlayerState)
-
-	if team.Instance.Settings.NavigationDisplayMode == models.NavigationDisplayCustom {
-		for _, location := range locations {
-			locationBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
-				r.Context(),
-				location.ID,
-				team.Code,
-				blocks.ContextLocationClues,
-			)
-			if err != nil {
-				h.handleError(
-					w,
-					r,
-					"Next: getting navigation blocks",
-					"Error loading navigation clues",
-					"Could not load navigation clues",
-					err,
-				)
-				return
-			}
-			allBlocks = append(allBlocks, locationBlocks...)
-			maps.Copy(allStates, blockStates)
-		}
-	}
-
 	nextData := templates.NextParams{
-		Team:      *team,
-		Settings:  team.Instance.Settings,
-		Locations: locations,
-		Blocks:    allBlocks,
-		States:    allStates,
+		Team: *team,
+		View: view,
 	}
 
 	template := templates.Next(nextData)
@@ -79,7 +46,6 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// nextPreview shows a preview of the navigation page for admins.
 func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
@@ -93,52 +59,27 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
+	// Get complete navigation view from service
+	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
-		if errors.Is(err, services.ErrAllLocationsVisited) && team.MustCheckOut == "" {
+		if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
 			h.redirect(w, r, "/finish")
 			return
 		}
-		h.handleError(w, r, "Next: getting next locations", "Error getting next locations", "Could not load data", err)
+		h.handleError(
+			w,
+			r,
+			"NextPreview: getting navigation view",
+			"Error loading navigation",
+			"Could not load data",
+			err,
+		)
 		return
 	}
 
-	// Fetch navigation clue blocks for all locations
-	allBlocks := make([]blocks.Block, 0)
-	allStates := make(map[string]blocks.PlayerState)
-
-	if team.Instance.Settings.NavigationDisplayMode == models.NavigationDisplayCustom {
-		for _, location := range locations {
-			locationBlocks, err := h.blockService.FindByOwnerIDAndContext(
-				r.Context(),
-				location.ID,
-				blocks.ContextLocationClues,
-			)
-			if err != nil {
-				h.handleError(w, r, "NextPreview: getting navigation blocks", "Error getting blocks", "error", err)
-				return
-			}
-
-			// Create mock states for preview
-			for _, block := range locationBlocks {
-				mockState, err := h.blockService.NewMockBlockState(r.Context(), block.GetID(), "")
-				if err != nil {
-					h.handleError(w, r, "NextPreview: creating block state", "Error creating block state", "error", err)
-					return
-				}
-				allStates[block.GetID()] = mockState
-			}
-
-			allBlocks = append(allBlocks, locationBlocks...)
-		}
-	}
-
 	nextData := templates.NextParams{
-		Team:      *team,
-		Settings:  team.Instance.Settings,
-		Locations: locations,
-		Blocks:    allBlocks,
-		States:    allStates,
+		Team: *team,
+		View: view,
 	}
 
 	err = templates.Next(nextData).Render(r.Context(), w)
