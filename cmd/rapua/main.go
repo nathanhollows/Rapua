@@ -30,7 +30,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v6.0.0"
+const version = "v6.0.1"
 
 func main() {
 	logger := slog.New(
