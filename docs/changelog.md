@@ -11,6 +11,7 @@ order: 100
 ### Fixed
 
 - Minor UI updates for higher contrast and mobile readability.
+- Allow sms: and tel: links in content blocks. Closes [#94](https://github.com/nathanhollows/Rapua/issues/94)
 - Phone preview is now an appropriate size when no content is present. Fixes [#95](https://github.com/nathanhollows/Rapua/issues/94)
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.1)
