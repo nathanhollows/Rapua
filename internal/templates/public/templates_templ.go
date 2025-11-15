@@ -34,7 +34,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"w-full max-w-7xl m-auto p-7\"><div class=\"border border-primary/40 bg-gradient-to-br from-primary/40 to-primary/10 rounded-3xl p-16 relative overflow-hidden w-full pb-20\"><!-- Decorative Background --><div class=\"absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32\"></div><div class=\"absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-48 translate-y-48\"></div><div class=\"relative z-10\"><div class=\"badge badge-primary\">Template</div><h1 class=\"text-5xl font-black\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"w-full max-w-7xl m-auto p-7\"><div class=\"border border-primary/40 bg-gradient-to-br from-primary/40 to-primary/10 rounded-3xl p-5 md:p-16 relative overflow-hidden w-full pb-10 md:pb-20\"><!-- Decorative Background --><div class=\"absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32\"></div><div class=\"absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-48 translate-y-48\"></div><div class=\"relative z-10\"><div class=\"badge badge-primary\">Template</div><h1 class=\"text-5xl font-black\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
