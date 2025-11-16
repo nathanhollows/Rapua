@@ -15,7 +15,7 @@ type ShareLinkRepository struct {
 	db *bun.DB
 }
 
-// NewTeamRepository creates a new TeamRepository.
+// NewShareLinkRepository creates a new ShareLinkRepository.
 func NewShareLinkRepository(db *bun.DB) ShareLinkRepository {
 	return ShareLinkRepository{
 		db: db,

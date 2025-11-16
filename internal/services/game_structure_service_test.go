@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupGameStructureService(t *testing.T) (*services.GameStructureService, services.LocationService, services.BlockService, services.InstanceService, services.UserService, func()) {
+func setupGameStructureService(
+	t *testing.T,
+) (*services.GameStructureService, services.LocationService, services.BlockService, services.InstanceService, services.UserService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
@@ -75,7 +77,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		err = service.Load(ctx, instance.ID, &structure, false)
 		require.NoError(t, err)
 		assert.Len(t, structure.Locations, 1)
-		assert.Len(t, structure.Locations[0].Blocks, 0, "Blocks should not be loaded yet")
+		assert.Empty(t, structure.Locations[0].Blocks, "Blocks should not be loaded yet")
 
 		// Load blocks
 		err = service.LoadBlocksForStructure(ctx, &structure, false)
@@ -183,7 +185,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 
 		// Verify only root level has blocks loaded
 		assert.Len(t, structure.Locations[0].Blocks, 1, "Root location should have blocks")
-		assert.Len(t, structure.SubGroups[0].Locations[0].Blocks, 0, "Subgroup location should NOT have blocks")
+		assert.Empty(t, structure.SubGroups[0].Locations[0].Blocks, "Subgroup location should NOT have blocks")
 	})
 }
 

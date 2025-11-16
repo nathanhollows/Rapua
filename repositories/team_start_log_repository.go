@@ -91,7 +91,7 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(
 	return logs, nil
 }
 
-// Create saves a new team start log entry.
+// CreateWithTx saves a new team start log entry.
 func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, log *models.TeamStartLog) error {
 	_, err := tx.NewInsert().Model(log).Exec(ctx)
 	return err

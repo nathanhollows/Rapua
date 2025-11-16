@@ -188,11 +188,11 @@ func TestTrackPages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to marshal known pages: %v", err)
 	}
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
+	if mkdirErr := os.MkdirAll(tempDir, 0755); mkdirErr != nil {
+		t.Fatalf("failed to create temp dir: %v", mkdirErr)
 	}
-	if err := os.WriteFile(filepath.Join(tempDir, ".known_pages.yaml"), knownPagesData, 0644); err != nil {
-		t.Fatalf("failed to write known pages file: %v", err)
+	if writeErr := os.WriteFile(filepath.Join(tempDir, ".known_pages.yaml"), knownPagesData, 0644); writeErr != nil {
+		t.Fatalf("failed to write known pages file: %v", writeErr)
 	}
 
 	docsService, err := services.NewDocsService(tempDir)
@@ -217,13 +217,13 @@ func TestTrackPages(t *testing.T) {
 	}
 
 	// Verify missing_pages.yaml was created
-	missingPagesData, err := os.ReadFile(filepath.Join(tempDir, "missing_pages.yaml"))
-	if err != nil {
-		t.Fatalf("failed to read missing pages file: %v", err)
+	missingPagesData, readErr := os.ReadFile(filepath.Join(tempDir, "missing_pages.yaml"))
+	if readErr != nil {
+		t.Fatalf("failed to read missing pages file: %v", readErr)
 	}
 	var missingPages []string
-	if err := yaml.Unmarshal(missingPagesData, &missingPages); err != nil {
-		t.Fatalf("failed to unmarshal missing pages: %v", err)
+	if unmarshalErr := yaml.Unmarshal(missingPagesData, &missingPages); unmarshalErr != nil {
+		t.Fatalf("failed to unmarshal missing pages: %v", unmarshalErr)
 	}
 	if len(missingPages) != 1 || missingPages[0] != "/docs/old-page" {
 		t.Errorf("expected missing pages to contain only '/docs/old-page', got %v", missingPages)
@@ -251,12 +251,12 @@ func TestRedirects(t *testing.T) {
 	redirects := []services.RedirectEntry{
 		{From: "/docs/old-page", To: "/docs/new-page"},
 	}
-	redirectData, err := yaml.Marshal(redirects)
-	if err != nil {
-		t.Fatalf("failed to marshal redirects: %v", err)
+	redirectData, marshalErr := yaml.Marshal(redirects)
+	if marshalErr != nil {
+		t.Fatalf("failed to marshal redirects: %v", marshalErr)
 	}
-	if err := os.WriteFile(filepath.Join(tempDir, "redirect_pages.yaml"), redirectData, 0644); err != nil {
-		t.Fatalf("failed to write redirects file: %v", err)
+	if writeErr := os.WriteFile(filepath.Join(tempDir, "redirect_pages.yaml"), redirectData, 0644); writeErr != nil {
+		t.Fatalf("failed to write redirects file: %v", writeErr)
 	}
 
 	docsService, err := services.NewDocsService(tempDir)

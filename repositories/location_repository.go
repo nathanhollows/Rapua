@@ -96,7 +96,11 @@ func (r *locationRepository) GetByID(ctx context.Context, locationID string) (*m
 }
 
 // FindByIDs finds multiple locations by their IDs.
-func (r *locationRepository) FindByIDs(ctx context.Context, instanceID string, locationIDs []string) ([]*models.Location, error) {
+func (r *locationRepository) FindByIDs(
+	ctx context.Context,
+	instanceID string,
+	locationIDs []string,
+) ([]*models.Location, error) {
 	if len(locationIDs) == 0 {
 		return []*models.Location{}, nil
 	}

@@ -40,7 +40,11 @@ func AdminAuthMiddleware(authService AuthenticatedUserGetter, next http.Handler)
 // AdminCheckInstanceMiddleware ensures the user has an instance selected.
 func AdminCheckInstanceMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := r.Context().Value(contextkeys.UserKey).(*models.User)
+		user, ok := r.Context().Value(contextkeys.UserKey).(*models.User)
+		if !ok || user == nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
 
 		// Check if the route contains /admin/instances
 		reg := regexp.MustCompile(`/admin/instances/?`)

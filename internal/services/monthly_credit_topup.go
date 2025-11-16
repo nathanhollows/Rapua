@@ -80,7 +80,7 @@ func (s *MonthlyCreditTopupService) TopUpCredits(ctx context.Context) error {
 
 	// Process users for each credit limit
 	for _, creditLimit := range limits {
-		if err := s.processUserCredits(ctx, creditLimit, false); err != nil {
+		if err = s.processUserCredits(ctx, creditLimit, false); err != nil {
 			return err
 		}
 	}
@@ -215,7 +215,7 @@ func (s *MonthlyCreditTopupService) processUserCreditsAtLevel(
 	}
 
 	// Commit the transaction
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 

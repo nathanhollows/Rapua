@@ -135,12 +135,12 @@ func (s *assetGenerator) CreateQRCodeImage(
 
 	switch defaultOptions.format {
 	case pngFormat:
-		err := qr.PNG(config, path)
+		err = qr.PNG(config, path)
 		if err != nil {
 			return err
 		}
 	case svgFormat:
-		err := qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
+		err = qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
 		if err != nil {
 			return err
 		}
@@ -168,25 +168,29 @@ func (s *assetGenerator) CreateArchive(paths []string) (path string, err error) 
 	defer zipWriter.Close()
 
 	// Add each file to the zip
-	for _, path := range paths {
-		file, err := os.Open(path)
+	for _, filePath := range paths {
+		var file *os.File
+		file, err = os.Open(filePath)
 		if err != nil {
 			return "", err
 		}
 		defer file.Close()
 
-		info, err := file.Stat()
+		var info os.FileInfo
+		info, err = file.Stat()
 		if err != nil {
 			return "", err
 		}
 
-		header, err := zip.FileInfoHeader(info)
+		var header *zip.FileHeader
+		header, err = zip.FileInfoHeader(info)
 		if err != nil {
 			return "", err
 		}
 
-		header.Name = strings.TrimPrefix(path, "assets/codes/")
-		writer, err := zipWriter.CreateHeader(header)
+		header.Name = strings.TrimPrefix(filePath, "assets/codes/")
+		var writer io.Writer
+		writer, err = zipWriter.CreateHeader(header)
 		if err != nil {
 			return "", err
 		}

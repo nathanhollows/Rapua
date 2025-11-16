@@ -53,17 +53,17 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 
 	// Cleanup
 	for _, team := range []models.Team{*sampleTeam} {
-		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-		require.NoError(t, err, "expected no error when starting transaction")
+		tx, txErr := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, txErr, "expected no error when starting transaction")
 
-		err = repo.Delete(ctx, tx, team.InstanceID, team.Code)
-		if err != nil {
+		deleteErr := repo.Delete(ctx, tx, team.InstanceID, team.Code)
+		if deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			require.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, deleteErr, "expected no error when deleting team")
 		} else {
-			err := tx.Commit()
-			require.NoError(t, err, "expected no error when committing transaction")
+			commitErr := tx.Commit()
+			require.NoError(t, commitErr, "expected no error when committing transaction")
 		}
 	}
 }
@@ -99,13 +99,13 @@ func TestTeamRepository_InsertAndUpdate(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 
-	if err := repo.Delete(ctx, tx, sampleTeam.InstanceID, sampleTeam.Code); err != nil {
+	if deleteErr := repo.Delete(ctx, tx, sampleTeam.InstanceID, sampleTeam.Code); deleteErr != nil {
 		rollbackErr := tx.Rollback()
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		require.NoError(t, err, "expected no error when deleting team")
+		require.NoError(t, deleteErr, "expected no error when deleting team")
 	} else {
-		err := tx.Commit()
-		require.NoError(t, err, "expected no error when committing transaction")
+		commitErr := tx.Commit()
+		require.NoError(t, commitErr, "expected no error when committing transaction")
 	}
 }
 
@@ -131,13 +131,13 @@ func TestTeamRepository_Delete(t *testing.T) {
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
-	if err := repo.Delete(ctx, tx, sampleTeam[0].InstanceID, sampleTeam[0].Code); err != nil {
+	if deleteErr := repo.Delete(ctx, tx, sampleTeam[0].InstanceID, sampleTeam[0].Code); deleteErr != nil {
 		rollbackErr := tx.Rollback()
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		require.NoError(t, err, "expected no error when deleting team")
+		require.NoError(t, deleteErr, "expected no error when deleting team")
 	} else {
-		err := tx.Commit()
-		require.NoError(t, err, "expected no error when committing transaction")
+		commitErr := tx.Commit()
+		require.NoError(t, commitErr, "expected no error when committing transaction")
 	}
 }
 
@@ -163,15 +163,15 @@ func TestTeamRepository_Reset(t *testing.T) {
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
-	if err := repo.Reset(ctx, tx, sampleTeam[0].InstanceID, []string{sampleTeam[0].Code}); err != nil {
+	if resetErr := repo.Reset(ctx, tx, sampleTeam[0].InstanceID, []string{sampleTeam[0].Code}); resetErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		}
-		require.NoError(t, err, "expected no error when resetting team")
+		require.NoError(t, resetErr, "expected no error when resetting team")
 	} else {
-		err := tx.Commit()
-		require.NoError(t, err, "expected no error when committing transaction")
+		commitErr := tx.Commit()
+		require.NoError(t, commitErr, "expected no error when committing transaction")
 	}
 }
 
@@ -210,15 +210,15 @@ func TestTeamRepository_FindAll(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
-		if err := repo.Delete(ctx, tx, instanceID, team.Code); err != nil {
+		if deleteErr := repo.Delete(ctx, tx, instanceID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			require.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, deleteErr, "expected no error when deleting team")
 			break
 		}
 	}
-	err = tx.Commit()
-	require.NoError(t, err, "expected no error when committing transaction")
+	commitErr := tx.Commit()
+	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_FindAllWithScans(t *testing.T) {
@@ -257,15 +257,15 @@ func TestTeamRepository_FindAllWithScans(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
-		if err := repo.Delete(ctx, tx, instanceID, team.Code); err != nil {
+		if deleteErr := repo.Delete(ctx, tx, instanceID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			require.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, deleteErr, "expected no error when deleting team")
 			break
 		}
 	}
-	err = tx.Commit()
-	require.NoError(t, err, "expected no error when committing transaction")
+	commitErr := tx.Commit()
+	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_InsertBatch(t *testing.T) {
@@ -302,15 +302,15 @@ func TestTeamRepository_InsertBatch(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range sampleTeams {
-		if err := repo.Delete(ctx, tx, team.InstanceID, team.Code); err != nil {
+		if deleteErr := repo.Delete(ctx, tx, team.InstanceID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-			require.NoError(t, err, "expected no error when deleting team")
+			require.NoError(t, deleteErr, "expected no error when deleting team")
 			break
 		}
 	}
-	err = tx.Commit()
-	require.NoError(t, err, "expected no error when committing transaction")
+	commitErr := tx.Commit()
+	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
 func TestTeamRepository_InsertBatch_UniqueConstraintError(t *testing.T) {

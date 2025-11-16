@@ -178,7 +178,7 @@ func (r *CreditPurchaseRepository) UpdateStatusWithTx(ctx context.Context, tx *b
 	return err
 }
 
-// UpdateStripePaymentID updates the Stripe payment ID for a purchase.
+// UpdateStripePaymentIDWithTx updates the Stripe payment ID for a purchase.
 func (r *CreditPurchaseRepository) UpdateStripePaymentIDWithTx(
 	ctx context.Context,
 	tx *bun.Tx,

@@ -173,12 +173,12 @@ func init() {
 			}
 
 			// Marshal to JSON
-			jsonData, err := json.Marshal(rootStructure)
-			if err != nil {
+			jsonData, jsonErr := json.Marshal(rootStructure)
+			if jsonErr != nil {
 				return fmt.Errorf(
 					"20251030094613_location_groups.go: marshal game_structure for instance %s: %w",
 					instance.ID,
-					err,
+					jsonErr,
 				)
 			}
 

@@ -114,7 +114,8 @@ func (s *AuthService) OAuthLogin(ctx context.Context, provider string, oauthUser
 	existingUser, err := s.userRepository.GetByEmail(ctx, oauthUser.Email)
 	if err != nil {
 		// User doesn't exist, create a new one
-		newUser, err := s.CreateUserWithOAuth(ctx, oauthUser)
+		var newUser *models.User
+		newUser, err = s.CreateUserWithOAuth(ctx, oauthUser)
 		if err != nil {
 			return nil, fmt.Errorf("creating user with OAuth: %w", err)
 		}

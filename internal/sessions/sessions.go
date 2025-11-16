@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/gorilla/sessions"
-	gsessions "github.com/gorilla/sessions"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
@@ -22,7 +21,7 @@ const (
 func Start() {
 	store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
-	authStore := gsessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
+	authStore := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
 	authStore.Options.SameSite = http.SameSiteLaxMode
 	authStore.Options.HttpOnly = true
 	authStore.Options.Secure = true
@@ -39,12 +38,12 @@ func Start() {
 	)
 }
 
-// Get returns a session for the given request.
+// GetAdmin returns the admin session for the given request.
 func GetAdmin(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, adminSession)
 }
 
-// Get returns a session for the given request.
+// GetPlayer returns the player session for the given request.
 func GetPlayer(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, playerSession)
 }

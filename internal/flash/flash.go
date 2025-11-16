@@ -44,13 +44,13 @@ func (m Message) Save(w http.ResponseWriter, r *http.Request) error {
 	return session.Save(r, w)
 }
 
-// Set the title of the message.
+// SetTitle sets the title of the message.
 func (m *Message) SetTitle(title string) Message {
 	m.Title = title
 	return *m
 }
 
-// Set the message of the message.
+// SetMessage sets the message content.
 func (m *Message) SetMessage(message string) Message {
 	m.Message = message
 	return *m

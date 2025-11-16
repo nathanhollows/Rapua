@@ -23,7 +23,7 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if team.MustCheckOut != "" {
-		err := h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
+		err = h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
 		if err != nil {
 			h.logger.Error("CheckIn: loading blocking location", "err", err)
 			http.Redirect(w, r, r.Header.Get("/next"), http.StatusFound)
@@ -149,7 +149,7 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if team.MustCheckOut != "" {
-		err := h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
+		err = h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
 		if err != nil {
 			h.logger.Error("CheckIn: loading blocking location", "err", err)
 			// TODO: render error page

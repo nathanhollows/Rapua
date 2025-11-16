@@ -42,7 +42,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
+	if err = r.ParseForm(); err != nil {
 		h.handleError(w, r, "Error parsing form", "Error parsing form", "error", err)
 		return
 	}
