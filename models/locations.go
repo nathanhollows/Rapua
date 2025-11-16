@@ -36,3 +36,13 @@ func (l *Location) HasCluesContext() bool {
 	}
 	return false
 }
+
+// HasCheckpointBlocks returns true if the location has any blocks with checkpoint/validation context.
+func (l *Location) HasCheckpointBlocks() bool {
+	for i := range l.Blocks {
+		if l.Blocks[i].Context == blocks.ContextCheckpoint {
+			return true
+		}
+	}
+	return false
+}

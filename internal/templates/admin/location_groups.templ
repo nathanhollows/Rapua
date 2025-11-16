@@ -335,36 +335,7 @@ templ completionCount(group models.GameStructure) {
 						value={ getCompletionValue(group) }
 						class="range range-primary range-sm flex-1 completion-slider"
 						aria-label="Number of locations required to complete this group"
-						_="on input
-								set dropdown to closest <.completion-dropdown/>
-								set autoAdvanceCheckbox to dropdown.querySelector('.auto-advance-checkbox')
-								if my.value == my.max then
-									-- Slider at max - auto-enable auto-advance and show 'Complete All' mode
-									js(dropdown, autoAdvanceCheckbox)
-										// Always set to 'Complete All' mode when slider reaches max
-										dropdown.dataset.completionType = 'all';
-										updateCompletionButton(dropdown, 'all', null);
-										if (autoAdvanceCheckbox) {
-											autoAdvanceCheckbox.checked = true;
-											autoAdvanceCheckbox.disabled = true;
-										}
-									end
-								else
-									-- Slider below max - always 'minimum' mode (single tick, enabled checkbox)
-									set dropdown's @data-completion-type to 'minimum'
-									js(dropdown, my, autoAdvanceCheckbox)
-										updateCompletionButton(dropdown, 'minimum', my.value);
-										// Auto-advance is optional for Complete N
-										// If transitioning from disabled state (was All), default to checked
-										if (autoAdvanceCheckbox) {
-											if (autoAdvanceCheckbox.disabled) {
-												autoAdvanceCheckbox.checked = true;
-											}
-											autoAdvanceCheckbox.disabled = false;
-										}
-									end
-								end
-								js window.debouncedSave() end"
+						_="on input js(me) handleCompletionSliderChange(me) end"
 					/>
 					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">
 						if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
@@ -431,38 +402,8 @@ templ groupMenu(group models.GameStructure) {
 		<button
 			class="btn btn-sm btn-ghost tooltip delete-group-btn"
 			data-tip="Delete group"
-			_="on click
-				if I match .confirming then
-					-- Actually delete the group
-					set groupCard to closest <.group-item/>
-					-- Get ALL location items in this group (including nested ones)
-					set allLocations to groupCard.querySelectorAll('.location-item')
-					-- Find the unassigned locations area (the one at the bottom with data-unassigned)
-					js(allLocations)
-						const unassignedArea = document.querySelector('#root-container .locations-area[data-unassigned]');
-						if (unassignedArea) {
-							allLocations.forEach(location => {
-								unassignedArea.appendChild(location);
-							});
-						}
-					end
-					-- Remove the group card
-					remove groupCard
-					-- Trigger save after deletion
-					js saveGameStructure() end
-				else
-					-- First click: show confirmation
-					add .confirming to me
-					set my @data-tip to 'Are you sure?'
-					add .tooltip-warning to me
-					-- Reset after 2 seconds (non-blocking)
-				end
-			on mouseleave
-				if I match .confirming then
-					remove .confirming from me
-					set my @data-tip to 'Delete group'
-					remove .tooltip-warning from me
-				end"
+			_="on click js(me) handleDeleteGroup(me) end
+			on mouseleave js(me) resetDeleteConfirmation(me) end"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
 		</button>
@@ -480,6 +421,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 					case models.RouteStrategyFreeRoam:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
 						{ models.RouteStrategyFreeRoam.String() }
+					case models.RouteStrategyScavengerHunt:
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-todo-icon lucide-list-todo w-4 h-4"><path d="M13 5h8"></path><path d="M13 12h8"></path><path d="M13 19h8"></path><path d="m3 17 2 2 4-4"></path><rect x="3" y="4" width="6" height="6" rx="1"></rect></svg>
+						{ models.RouteStrategyScavengerHunt.String() }
 					case models.RouteStrategyRandom:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
 						Random <span class="max-next-display">{ getMaxNextValue(group) }</span>
@@ -494,21 +438,7 @@ templ routeStrategyPicker(group models.GameStructure) {
 						role="button"
 						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
 						data-mode={ models.RouteStrategyOrdered.String() }
-						_="on click
-						remove .bg-base-300 from <.route-option/>
-						add .bg-base-300 to me
-						set dropdown to closest <.route-dropdown/>
-						set routeStrat to dropdown.querySelector('.route-strat')
-						set routeStrat's innerHTML to my.querySelector('div').innerHTML
-						-- Hide max-next slider
-						add .hidden to dropdown.querySelector('.max-next-slider-container')
-						-- Disable completion dropdown
-						set groupCard to closest <.group-item/>
-						set completionDropdown to groupCard.querySelector('.completion-dropdown')
-						add .btn-disabled to completionDropdown.querySelector('a')
-						add .hidden to completionDropdown.querySelector('.dropdown-content')
-						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
-						js saveGameStructure() end"
+						_="on click js(me) selectRouteStrategy(me, false, false) end"
 					>
 						<div class="flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-milestone-icon lucide-milestone w-4"><path d="M12 13v8"></path><path d="M12 3v3"></path><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"></path></svg>
@@ -522,21 +452,7 @@ templ routeStrategyPicker(group models.GameStructure) {
 						role="button"
 						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty"
 						data-mode={ models.RouteStrategyFreeRoam.String() }
-						_="on click
-						remove .bg-base-300 from <.route-option/>
-						add .bg-base-300 to me
-						set dropdown to closest <.route-dropdown/>
-						set routeStrat to dropdown.querySelector('.route-strat')
-						set routeStrat's innerHTML to my.querySelector('div').innerHTML
-						-- Hide max-next slider
-						add .hidden to dropdown.querySelector('.max-next-slider-container')
-						-- Enable completion dropdown
-						set groupCard to closest <.group-item/>
-						set completionDropdown to groupCard.querySelector('.completion-dropdown')
-						remove .btn-disabled from completionDropdown.querySelector('a')
-						remove .hidden from completionDropdown.querySelector('.dropdown-content')
-						add .hidden to groupCard.querySelector('.completion-disabled-msg')
-						js saveGameStructure() end"
+						_="on click js(me) selectRouteStrategy(me, true, false) end"
 					>
 						<div class="flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
@@ -548,24 +464,23 @@ templ routeStrategyPicker(group models.GameStructure) {
 				<li>
 					<button
 						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty"
+						data-mode={ models.RouteStrategyScavengerHunt.String() }
+						_="on click js(me) selectRouteStrategy(me, true, false) end"
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-todo-icon lucide-list-todo w-4 h-4"><path d="M13 5h8"></path><path d="M13 12h8"></path><path d="M13 19h8"></path><path d="m3 17 2 2 4-4"></path><rect x="3" y="4" width="6" height="6" rx="1"></rect></svg>
+							<span class="font-medium">{ models.RouteStrategyScavengerHunt.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60 break-after-auto">{ models.RouteStrategyScavengerHunt.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
 						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
 						data-mode={ models.RouteStrategyRandom.String() }
-						_="on click
-						remove .bg-base-300 from <.route-option/>
-						add .bg-base-300 to me
-						set dropdown to closest <.route-dropdown/>
-						set routeStrat to dropdown.querySelector('.route-strat')
-						set maxNextValue to dropdown.querySelector('.max-next-slider').value
-						set routeStrat's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>` + maxNextValue + `</span>`
-						-- Show max-next slider
-						remove .hidden from dropdown.querySelector('.max-next-slider-container')
-						-- Enable completion dropdown
-						set groupCard to closest <.group-item/>
-						set completionDropdown to groupCard.querySelector('.completion-dropdown')
-						remove .btn-disabled from completionDropdown.querySelector('a')
-						remove .hidden from completionDropdown.querySelector('.dropdown-content')
-						add .hidden to groupCard.querySelector('.completion-disabled-msg')
-						js saveGameStructure() end"
+						_="on click js(me) selectRouteStrategy(me, true, true) end"
 					>
 						<div class="flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
@@ -586,16 +501,7 @@ templ routeStrategyPicker(group models.GameStructure) {
 						max="10"
 						value={ getMaxNextValue(group) }
 						class="range range-primary range-sm flex-1 max-next-slider"
-						_="on input
-						set output to the next <output/>
-						put my.value into output
-						set dropdown to closest <.route-dropdown/>
-						set dropdown's @data-max-next to my.value
-						set maxNextDisplay to dropdown.querySelector('.max-next-display')
-						if maxNextDisplay
-							put my.value into maxNextDisplay
-						end
-						js window.debouncedSave() end"
+						_="on input js(me) handleMaxNextSliderChange(me) end"
 					/>
 					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">{ getMaxNextValue(group) }</output>
 				</div>
@@ -636,26 +542,7 @@ templ navigationDisplayPicker(nav models.NavigationDisplayMode) {
 						class="nav-display-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
 						data-mode={ mode.String() }
 						data-index={ fmt.Sprint(int(mode)) }
-						_="on click
-							remove .bg-base-300 from <.nav-display-option/>
-							add .bg-base-300 to me
-							set navDisplay to (closest <.nav-display-dropdown/>).querySelector('.nav-display')
-							set navDisplay's innerHTML to my.querySelector('div').innerHTML
-							-- Update data-nav-mode attribute on locations-area to reflect new navigation mode
-							set groupCard to closest <.group-item/>
-							if groupCard
-								set locationsArea to groupCard.querySelector('.locations-area')
-								if locationsArea
-									set locationsArea's @data-nav-mode to my @data-index
-								end
-							else
-								-- For root group
-								set rootLocationsArea to document.querySelector('#root-container .locations-area')
-								if rootLocationsArea
-									set rootLocationsArea's @data-nav-mode to my @data-index
-								end
-							end
-							js saveGameStructure() end"
+						_="on click js(me) selectNavigationDisplay(me) end"
 					>
 						<div class="flex items-center gap-2">
 							switch mode {
@@ -738,9 +625,7 @@ templ picker(colour string) {
 						<a
 							data-group-color={ color }
 							class="cursor-pointer color-picker-option"
-							_="on click
-								set (closest <.card />)'s @data-group-color to my @data-group-color
-								js saveGameStructure() end"
+							_="on click js(me) selectGroupColor(me) end"
 						>
 							<div class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color) }></div>
 						</a>
@@ -809,6 +694,117 @@ templ sortableScript() {
 			// (it's always "Complete N" with single tick)
 
 			window.debouncedSave();
+		}
+
+		// Helper: Handle route strategy selection
+		function selectRouteStrategy(button, enableCompletion, isRandom) {
+			button.closest('.menu').querySelectorAll('.route-option').forEach(opt => opt.classList.remove('bg-base-300'));
+			button.classList.add('bg-base-300');
+
+			const dropdown = button.closest('.route-dropdown');
+			const routeStrat = dropdown.querySelector('.route-strat');
+			const groupCard = button.closest('.group-item');
+			const completionDropdown = groupCard.querySelector('.completion-dropdown');
+
+			if (isRandom) {
+				const maxNextValue = dropdown.querySelector('.max-next-slider').value;
+				routeStrat.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>${maxNextValue}</span>`;
+				dropdown.querySelector('.max-next-slider-container').classList.remove('hidden');
+			} else {
+				routeStrat.innerHTML = button.querySelector('div').innerHTML;
+				dropdown.querySelector('.max-next-slider-container').classList.add('hidden');
+			}
+
+			if (enableCompletion) {
+				completionDropdown.querySelector('a').classList.remove('btn-disabled');
+				completionDropdown.querySelector('.dropdown-content').classList.remove('hidden');
+				groupCard.querySelector('.completion-disabled-msg').classList.add('hidden');
+			} else {
+				completionDropdown.querySelector('a').classList.add('btn-disabled');
+				completionDropdown.querySelector('.dropdown-content').classList.add('hidden');
+				groupCard.querySelector('.completion-disabled-msg').classList.remove('hidden');
+			}
+
+			saveGameStructure();
+		}
+
+		// Helper: Handle navigation display selection
+		function selectNavigationDisplay(button) {
+			button.closest('.menu').querySelectorAll('.nav-display-option').forEach(opt => opt.classList.remove('bg-base-300'));
+			button.classList.add('bg-base-300');
+
+			const navDisplay = button.closest('.nav-display-dropdown').querySelector('.nav-display');
+			navDisplay.innerHTML = button.querySelector('div').innerHTML;
+
+			const groupCard = button.closest('.group-item');
+			const locationsArea = groupCard ? groupCard.querySelector('.locations-area') : document.querySelector('#root-container .locations-area');
+			if (locationsArea) locationsArea.dataset.navMode = button.dataset.index;
+
+			saveGameStructure();
+		}
+
+		// Helper: Handle group deletion with confirmation
+		function handleDeleteGroup(button) {
+			if (button.classList.contains('confirming')) {
+				const groupCard = button.closest('.group-item');
+				const allLocations = groupCard.querySelectorAll('.location-item');
+				const unassignedArea = document.querySelector('#root-container .locations-area[data-unassigned]');
+				if (unassignedArea) allLocations.forEach(loc => unassignedArea.appendChild(loc));
+				groupCard.remove();
+				saveGameStructure();
+			} else {
+				button.classList.add('confirming');
+				button.dataset.tip = 'Are you sure?';
+				button.classList.add('tooltip-warning');
+			}
+		}
+
+		// Helper: Reset delete confirmation state
+		function resetDeleteConfirmation(button) {
+			if (button.classList.contains('confirming')) {
+				button.classList.remove('confirming');
+				button.dataset.tip = 'Delete group';
+				button.classList.remove('tooltip-warning');
+			}
+		}
+
+		// Helper: Handle completion slider change
+		function handleCompletionSliderChange(slider) {
+			const dropdown = slider.closest('.completion-dropdown');
+			const autoAdvanceCheckbox = dropdown.querySelector('.auto-advance-checkbox');
+
+			if (slider.value == slider.max) {
+				dropdown.dataset.completionType = 'all';
+				updateCompletionButton(dropdown, 'all', null);
+				if (autoAdvanceCheckbox) {
+					autoAdvanceCheckbox.checked = true;
+					autoAdvanceCheckbox.disabled = true;
+				}
+			} else {
+				dropdown.dataset.completionType = 'minimum';
+				updateCompletionButton(dropdown, 'minimum', slider.value);
+				if (autoAdvanceCheckbox) {
+					if (autoAdvanceCheckbox.disabled) autoAdvanceCheckbox.checked = true;
+					autoAdvanceCheckbox.disabled = false;
+				}
+			}
+			window.debouncedSave();
+		}
+
+		// Helper: Handle max-next slider change
+		function handleMaxNextSliderChange(slider) {
+			slider.nextElementSibling.textContent = slider.value;
+			const dropdown = slider.closest('.route-dropdown');
+			dropdown.dataset.maxNext = slider.value;
+			const maxNextDisplay = dropdown.querySelector('.max-next-display');
+			if (maxNextDisplay) maxNextDisplay.textContent = slider.value;
+			window.debouncedSave();
+		}
+
+		// Helper: Handle group color selection
+		function selectGroupColor(element) {
+			element.closest('.card').dataset.groupColor = element.dataset.groupColor;
+			saveGameStructure();
 		}
 
 		// Encode game structure from DOM
@@ -883,6 +879,8 @@ templ sortableScript() {
 				// Map string to integer values matching models.RouteStrategy
 				if (text.includes('Guided Path')) {
 					routing = 2; // RouteStrategyOrdered
+				} else if (text.includes('Scavenger')) {
+					routing = 3; // RouteStrategyOrdered
 				} else if (text.includes('Random')) {
 					routing = 0; // RouteStrategyRandom
 					// Get maxNext from dropdown data attribute

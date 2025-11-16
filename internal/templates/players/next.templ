@@ -56,7 +56,7 @@ templ Next(data NextParams) {
 				case models.NavigationDisplayMapAndNames:
 					@showMapAndNames(data.View.Settings, data.View.NextLocations)
 				case models.NavigationDisplayNames:
-					@showNames(data.View.Settings, data.View.NextLocations)
+					@showNames(data.View)
 				case models.NavigationDisplayCustom:
 					@showCustom(prepareCustomContentViewData(data))
 			}
@@ -118,23 +118,105 @@ templ showMapAndNames(settings models.InstanceSettings, locations []models.Locat
 	@mapScript()
 }
 
-templ showNames(settings models.InstanceSettings, locations []models.Location) {
-	<p class="text-center pb-5">
-		You may choose any of the following locations. Use the map below to help
-		find where you want to go.
-	</p>
-	for _, location := range locations {
-		<p class="text-center pb-3">
-			<em>{ location.Name }</em>
-			<!-- Show the number of teams visiting this location -->
-			if settings.ShowTeamCount {
-				<br/>
-				<span class="badge badge-ghost">
-					{ fmt.Sprint(location.CurrentCount) } Teams Visiting
-				</span>
-			}
+templ showNames(data *services.PlayerNavigationView) {
+	if data.CurrentGroup.Routing != models.RouteStrategyScavengerHunt {
+		<p class="text-center pb-5">
+			You may choose any of the following locations. 
 		</p>
+		for _, location := range data.NextLocations {
+			<p class="text-center pb-3">
+				<em>{ location.Name }</em>
+				<!-- Show the number of teams visiting this location -->
+				if data.Settings.ShowTeamCount {
+					<br/>
+					<span class="badge badge-ghost">
+						{ fmt.Sprint(location.CurrentCount) } Teams Visiting
+					</span>
+				}
+			</p>
+		}
+	} else {
+		<ul class="list">
+			<li class="p-4 pb-2 text-xs opacity-60 tracking-wide">
+				<p class="text-center pb-5">
+					You may choose any of the following locations.
+				</p>
+			</li>
+			for i, location := range data.CurrentGroup.LocationIDs {
+				<li class="list-row items-center">
+					<div class="text-xl font-thin opacity-50 tabular-nums">
+						{ fmt.Sprintf("%02d", i+1) }
+					</div>
+					for _, loc := range prepareNamesViewData(data) {
+						if loc.ID == location {
+							if isLocationCompleted(data, loc.ID) {
+								<div class="list-col-grow">
+									<div class="line-through opacity-50">{ loc.Name }</div>
+								</div>
+								<div class="btn btn-circle btn-ghost tooltip tooltip-left" data-tip="Completed" disabled>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check w-5"><path d="M20 6 9 17l-5-5"></path></svg>
+								</div>
+							} else {
+								<div class="list-col-grow">
+									<div>{ loc.Name }</div>
+								</div>
+								if loc.HasCheckpointBlocks() {
+									<a
+										href={ templ.SafeURL(fmt.Sprint("/s/", loc.MarkerID)) }
+										hx-boost="true"
+										class="btn btn-circle"
+									>
+										<svg class="size-[1.2em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"><path d="M6 3L20 12 6 21 6 3z"></path></g></svg>
+									</a>
+								} else {
+									<div class="btn btn-circle btn-ghost tooltip tooltip-left" data-tip="Find the QR code to check in">
+										<svg class="w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>
+									</div>
+								}
+							}
+						}
+					}
+				</li>
+			}
+		</ul>
 	}
+}
+
+// Check if a location has been completed by the team
+func isLocationCompleted(data *services.PlayerNavigationView, locationID string) bool {
+	for _, loc := range data.CompletedLocations {
+		if loc.ID == locationID {
+			return true
+		}
+	}
+	return false
+}
+
+// Data structure for scavenger hunt location name view
+// Zips together completed and incomplete locations in the same order as the group
+func prepareNamesViewData(data *services.PlayerNavigationView) []models.Location {
+	locations := make([]models.Location, 0, len(data.CurrentGroup.LocationIDs))
+	for _, locID := range data.CurrentGroup.LocationIDs {
+		// First check NextLocations (unvisited)
+		found := false
+		for _, loc := range data.NextLocations {
+			if loc.ID == locID {
+				locations = append(locations, loc)
+				found = true
+				break
+			}
+		}
+		// If not found, check CompletedLocations (visited)
+		if !found {
+			for _, loc := range data.CompletedLocations {
+				if loc.ID == locID {
+					locations = append(locations, loc)
+					break
+				}
+			}
+		}
+	}
+	return locations
 }
 
 type customContentViewData struct {

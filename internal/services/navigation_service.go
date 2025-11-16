@@ -212,9 +212,22 @@ func (s *NavigationService) GetPlayerNavigationView(
 		}
 	}
 
-	// TODO: Optionally load completed locations for scavenger hunt mode
-	// This could be controlled by a new display mode
-	// view.CompletedLocations = s.getCompletedLocations(ctx, team)
+	// Load completed locations if needed
+	if view.CurrentGroup.Routing == models.RouteStrategyScavengerHunt {
+		completedLocations := make([]models.Location, 0, len(team.CheckIns))
+		for _, checkIn := range team.CheckIns {
+			location, err := s.locationRepo.GetByID(ctx, checkIn.LocationID)
+			if err != nil {
+				return nil, fmt.Errorf("loading completed location %s: %w", checkIn.LocationID, err)
+			}
+			// Load full relations
+			if loadErr := s.locationRepo.LoadRelations(ctx, location); loadErr != nil {
+				return nil, fmt.Errorf("loading relations for completed location: %w", loadErr)
+			}
+			completedLocations = append(completedLocations, *location)
+		}
+		view.CompletedLocations = completedLocations
+	}
 
 	return view, nil
 }

@@ -252,6 +252,11 @@ func GetAvailableLocationIDs(
 		// Return all unvisited location IDs
 		return unvisitedIDs
 
+	case models.RouteStrategyScavengerHunt:
+		// Return all unvisited location IDs
+		// The view is responsible for showing a checklist including all visited locations
+		return unvisitedIDs
+
 	default:
 		return unvisitedIDs
 	}
