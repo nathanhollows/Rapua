@@ -16,13 +16,13 @@ func NewFacilitatorTokenRepo(db *bun.DB) FacilitatorTokenRepo {
 	return FacilitatorTokenRepo{db: db}
 }
 
-// Save a facilitator token.
+// SaveToken saves a facilitator token.
 func (r *FacilitatorTokenRepo) SaveToken(ctx context.Context, token models.FacilitatorToken) error {
 	_, err := r.db.NewInsert().Model(&token).Exec(ctx)
 	return err
 }
 
-// Retrieve a token.
+// GetToken retrieves a token by its value.
 func (r *FacilitatorTokenRepo) GetToken(ctx context.Context, token string) (*models.FacilitatorToken, error) {
 	var facToken models.FacilitatorToken
 	err := r.db.NewSelect().Model(&facToken).Where("token = ?", token).Scan(ctx)

@@ -52,12 +52,12 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				instance, createErr := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
+				instance, instanceErr := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
 				if tc.wantErr {
-					require.Error(t, createErr)
+					require.Error(t, instanceErr)
 					assert.Nil(t, instance)
 				} else {
-					require.NoError(t, createErr)
+					require.NoError(t, instanceErr)
 					assert.NotNil(t, instance)
 					assert.Equal(t, tc.instanceName, instance.Name)
 				}

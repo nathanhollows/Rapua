@@ -94,7 +94,7 @@ func (ds *DocsService) loadKnownPages() error {
 	}
 
 	var pages []string
-	if err := yaml.Unmarshal(data, &pages); err != nil {
+	if err = yaml.Unmarshal(data, &pages); err != nil {
 		return err
 	}
 
@@ -115,7 +115,7 @@ func (ds *DocsService) loadMissingPages() error {
 	}
 
 	var pages []string
-	if err := yaml.Unmarshal(data, &pages); err != nil {
+	if err = yaml.Unmarshal(data, &pages); err != nil {
 		return err
 	}
 
@@ -136,7 +136,7 @@ func (ds *DocsService) loadRedirects() error {
 	}
 
 	var redirects []RedirectEntry
-	if err := yaml.Unmarshal(data, &redirects); err != nil {
+	if err = yaml.Unmarshal(data, &redirects); err != nil {
 		return err
 	}
 
@@ -185,7 +185,7 @@ func (ds *DocsService) trackPages() error {
 			return err
 		}
 
-		if err := os.WriteFile(missingPath, missingData, 0644); err != nil {
+		if err = os.WriteFile(missingPath, missingData, 0644); err != nil {
 			return err
 		}
 	} else {
@@ -211,7 +211,7 @@ func (ds *DocsService) trackPages() error {
 	}
 
 	knownPath := filepath.Join(ds.DocsDir, ".known_pages.yaml")
-	if err := os.WriteFile(knownPath, knownData, 0644); err != nil {
+	if err = os.WriteFile(knownPath, knownData, 0644); err != nil {
 		return err
 	}
 
@@ -266,7 +266,7 @@ func (ds *DocsService) loadDocs() error {
 			Title string `yaml:"title"`
 			Order int    `yaml:"order"`
 		}
-		if err := yaml.Unmarshal([]byte(parts[1]), &meta); err != nil {
+		if err = yaml.Unmarshal([]byte(parts[1]), &meta); err != nil {
 			return err
 		}
 

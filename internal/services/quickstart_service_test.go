@@ -107,8 +107,8 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 				if shouldExist {
 					// Verify the instance was actually updated in the database
 					instanceRepo := repositories.NewInstanceRepository(dbc)
-					instance, err := instanceRepo.GetByID(context.Background(), instanceID)
-					if assert.NoError(t, err) {
+					instance, getErr := instanceRepo.GetByID(context.Background(), instanceID)
+					if assert.NoError(t, getErr) {
 						assert.Equal(t, tc.expectedDismissed, instance.IsQuickStartDismissed)
 					}
 				}

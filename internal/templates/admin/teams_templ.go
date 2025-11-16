@@ -278,7 +278,7 @@ func Teams(teams []models.Team, credits int) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if credits <= 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"badge badge-soft badge-error tooltip tooltip-bottom\" data-tip=\"No credits remaining! New teams won't be able to start playing.\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"badge badge-error tooltip tooltip-bottom\" data-tip=\"No credits remaining! New teams won't be able to start playing.\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -288,24 +288,24 @@ func Teams(teams []models.Team, credits int) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if credits >= 5 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " class=\"badge badge-soft badge-info tooltip tooltip-bottom\" data-tip=\"Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " class=\"badge badge-info tooltip tooltip-bottom\" data-tip=\"Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " class=\"badge badge-soft badge-warning tooltip tooltip-bottom\" data-tip=\"Low on credits! Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " class=\"badge badge-warning tooltip tooltip-bottom\" data-tip=\"Low on credits! Each team start costs one credit. Credits do not affect how many team codes you can generate.\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info-icon lucide-info w-4\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(credits))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 432, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 433, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {

@@ -46,7 +46,7 @@ templ AddLocation(data AddLocationData) {
 				id="new-marker-tab"
 				role="tab"
 				class="tab transition-colors tab-active"
-				_="on click 
+				_="on click
 				if I do not match .tab-active
 					remove .tab-active from .tab-active
 					toggle .tab-active
@@ -54,7 +54,6 @@ templ AddLocation(data AddLocationData) {
 					add .hidden to #shared-marker
 					remove .hidden from #marker-controls
 					set <input[name=marker]/>'s disabled to true
-					set <input[name=name]/>'s value to ''
 					add .hidden to #marker-badge
 					set <input[name=latitude]/>'s disabled to false
 					set <input[name=longitude]/>'s disabled to false
@@ -106,7 +105,6 @@ templ AddLocation(data AddLocationData) {
 								add .hidden to #shared-marker
 								add .hidden to #marker-controls
 								set <input[name=marker]/>'s disabled to true
-								set <input[name=name]/>'s value to ''
 								add .hidden to #marker-badge
 								set <input[name=latitude]/>'s disabled to true
 								set <input[name=longitude]/>'s disabled to true
@@ -579,7 +577,7 @@ templ EditLocation(data EditLocationData) {
 		<!-- Preview -->
 		<div class="h-min-content">
 			<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
-				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100">
+				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
 					<div
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }

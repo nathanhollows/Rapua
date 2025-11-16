@@ -185,10 +185,10 @@ func TestUserRepository_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = repo.Delete(ctx, tx, user.ID)
-	require.NoError(t, err)
-	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
+	deleteErr := repo.Delete(ctx, tx, user.ID)
+	require.NoError(t, deleteErr)
+	if commitErr := tx.Commit(); commitErr != nil {
+		t.Fatal(commitErr)
 	}
 
 	// Verify user is deleted

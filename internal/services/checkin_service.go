@@ -370,13 +370,13 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 		}
 
 		// Update the check in all blocks have been completed
-		unfinishedCheckIn, err := s.blockService.CheckValidationRequiredForCheckIn(
+		unfinishedCheckIn, checkErr := s.blockService.CheckValidationRequiredForCheckIn(
 			ctx,
 			block.GetLocationID(),
 			team.Code,
 		)
-		if err != nil {
-			return nil, nil, fmt.Errorf("checking if validation is required: %w", err)
+		if checkErr != nil {
+			return nil, nil, fmt.Errorf("checking if validation is required: %w", checkErr)
 		}
 
 		if !unfinishedCheckIn {

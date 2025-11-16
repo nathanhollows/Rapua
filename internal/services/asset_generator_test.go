@@ -164,9 +164,9 @@ func TestCreateArchive(t *testing.T) {
 				}
 
 				// Open the zip file for verification
-				r, err := zip.OpenReader(archivePath)
-				if err != nil {
-					t.Fatalf("Failed to open archive: %v", err)
+				r, zipErr := zip.OpenReader(archivePath)
+				if zipErr != nil {
+					t.Fatalf("Failed to open archive: %v", zipErr)
 				}
 				defer r.Close()
 

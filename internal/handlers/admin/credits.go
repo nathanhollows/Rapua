@@ -29,7 +29,10 @@ type CreditPurchaseRepository interface {
 func (h *Handler) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, r, "CreateCheckoutSession: parse form", "Error parsing form", err)
+		return
+	}
 
 	// Validate credits amount
 	creditsStr := r.FormValue("credits")

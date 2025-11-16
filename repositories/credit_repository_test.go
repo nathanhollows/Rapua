@@ -400,8 +400,8 @@ func TestCreditRepo_BulkUpdateCreditUpdateNotices(t *testing.T) {
 
 	// Verify each user got a credit adjustment record
 	for _, userID := range userIDs {
-		adjustments, err := repo.GetCreditAdjustmentsByUserID(ctx, userID)
-		require.NoError(t, err)
+		adjustments, getErr := repo.GetCreditAdjustmentsByUserID(ctx, userID)
+		require.NoError(t, getErr)
 		require.Len(t, adjustments, 1)
 		assert.Equal(t, 5, adjustments[0].Credits, "Adjustment should show difference (15-10=5)")
 		assert.Equal(t, "Monthly top-up", adjustments[0].Reason)

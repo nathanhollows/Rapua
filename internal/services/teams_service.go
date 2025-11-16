@@ -247,7 +247,7 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			err := tx.Rollback()
+			err = tx.Rollback()
 			if err != nil {
 				panic("rolling back transaction after panic: " + err.Error())
 			}

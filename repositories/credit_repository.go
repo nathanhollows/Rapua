@@ -91,7 +91,7 @@ func (r *CreditRepository) GetCreditAdjustmentsByUserIDWithPagination(
 	return adjustments, nil
 }
 
-// SaveCreditAdjustment saves a new credit adjustment record.
+// CreateCreditAdjustmentWithTx saves a new credit adjustment record.
 func (r *CreditRepository) CreateCreditAdjustmentWithTx(
 	ctx context.Context,
 	tx *bun.Tx,

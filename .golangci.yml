@@ -400,6 +400,9 @@ linters:
         # Omit embedded fields from selector expression.
         # https://staticcheck.dev/docs/checks/#QF1008
         - -QF1008
+        # Disable underscore naming check (too many false positives).
+        # https://staticcheck.dev/docs/checks/#ST1003
+        - -ST1003
 
     usetesting:
       # Enable/disable `os.TempDir()` detections.
@@ -439,3 +442,6 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+      - path: 'blocks/.*\.go'
+        linters:
+          - dupl

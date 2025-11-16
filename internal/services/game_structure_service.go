@@ -191,7 +191,7 @@ func (s *GameStructureService) LoadByLocationID(
 	}
 
 	// Load the group's locations (non-recursive)
-	if err := s.Load(ctx, instanceID, group, false); err != nil {
+	if err = s.Load(ctx, instanceID, group, false); err != nil {
 		return nil, err
 	}
 
@@ -240,7 +240,7 @@ func (s *GameStructureService) Save(ctx context.Context, instanceID string, grou
 
 	instance.GameStructure = *group
 
-	if err := s.instanceRepo.Update(ctx, instance); err != nil {
+	if err = s.instanceRepo.Update(ctx, instance); err != nil {
 		return fmt.Errorf("failed to save game structure: %w", err)
 	}
 

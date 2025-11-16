@@ -92,9 +92,9 @@ func init() {
 				Clues: locationClues,
 			}
 
-			jsonData, err := json.Marshal(blockData)
-			if err != nil {
-				return fmt.Errorf("failed to marshal block data for location %s: %w", locationID, err)
+			jsonData, jsonErr := json.Marshal(blockData)
+			if jsonErr != nil {
+				return fmt.Errorf("failed to marshal block data for location %s: %w", locationID, jsonErr)
 			}
 
 			// Create the block
@@ -159,7 +159,7 @@ func init() {
 		for _, block := range clueBlocks {
 			// Get the InstanceID from the location
 			var location m20250927115843_Location
-			err := db.NewSelect().
+			err = db.NewSelect().
 				Model(&location).
 				Where("id = ?", block.LocationID).
 				Scan(ctx)

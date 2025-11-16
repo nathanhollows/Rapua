@@ -167,12 +167,12 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := repo.GetByInstanceID(ctx, tt.instanceID)
+			result, getErr := repo.GetByInstanceID(ctx, tt.instanceID)
 
 			if tt.expectError {
-				require.Error(t, err)
+				require.Error(t, getErr)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, getErr)
 			}
 
 			if tt.expectNil {

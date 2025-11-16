@@ -17,7 +17,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
-// LoginHandler is the handler for the admin login page.
+// Login is the handler for the admin login page.
 func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	if authed {
@@ -64,7 +64,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
-		err := c.Render(r.Context(), w)
+		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(w, r, "LoginPost: rendering template", "Error logging in", "error", err)
 		}
@@ -96,7 +96,7 @@ func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
 }
 
-// RegisterHandler is the handler for the admin register page.
+// Register is the handler for the admin register page.
 func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// User is already authenticated, redirect to the admin page
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
@@ -113,7 +113,7 @@ func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// RegisterPostHandler handles the form submission for creating a new user.
+// RegisterPost handles the form submission for creating a new user.
 func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -134,7 +134,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		if errors.Is(err, services.ErrPasswordsDoNotMatch) {
 			c := templates.RegisterError("Passwords do not match.")
-			err := c.Render(r.Context(), w)
+			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
 
@@ -142,7 +142,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		c := templates.RegisterError("Something went wrong! Please try again.")
-		err := c.Render(r.Context(), w)
+		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
 		}
@@ -152,7 +152,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	err = h.identityService.SendEmailVerification(r.Context(), &user)
 	if err != nil {
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
-			err := h.deleteService.DeleteUser(r.Context(), user.ID)
+			err = h.deleteService.DeleteUser(r.Context(), user.ID)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: deleting user", "Error deleting user", "error", err)
 				return
@@ -176,7 +176,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ForgotPasswordHandler is the handler for the forgot password page.
+// ForgotPassword is the handler for the forgot password page.
 func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// User is already authenticated, redirect to the admin page
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
@@ -193,7 +193,7 @@ func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ForgotPasswordPostHandler handles the form submission for the forgot password page.
+// ForgotPasswordPost handles the form submission for the forgot password page.
 func (h *PublicHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement
 
@@ -255,7 +255,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
-		err := c.Render(r.Context(), w)
+		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(w, r, "AuthCallback: rendering template", "Error authenticating user", "error", err)
 			return
@@ -366,7 +366,7 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 			c := templates.Toast(
 				*flash.NewError("Your email is already verified."),
 			)
-			err := c.Render(r.Context(), w)
+			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(
 					w,
@@ -385,7 +385,7 @@ func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.R
 		c := templates.Toast(
 			*flash.NewError("An error occurred while trying to send the email. Please try again."),
 		)
-		err := c.Render(r.Context(), w)
+		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(
 				w,

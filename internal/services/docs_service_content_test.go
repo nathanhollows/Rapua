@@ -155,7 +155,7 @@ func TestDocs_LinksResolve(t *testing.T) {
 				walkPages(page.Children)
 			}
 			nodes := testDocs_MarkdownToAST(t, page.Content)
-			err := ast.Walk(nodes, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+			walkErr := ast.Walk(nodes, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 				if !entering || n.Kind() != ast.KindLink {
 					return ast.WalkContinue, nil
 				}
@@ -178,8 +178,8 @@ func TestDocs_LinksResolve(t *testing.T) {
 				// Check if this is a redirect
 				if redirectTo, ok := docsService.Redirects[dest]; ok {
 					// Verify the redirect target exists
-					_, err := docsService.GetPage(redirectTo)
-					if err != nil {
+					_, redirectErr := docsService.GetPage(redirectTo)
+					if redirectErr != nil {
 						t.Errorf("redirect for (%s -> %s) points to non-existent page in /docs/%s",
 							dest, redirectTo, page.Path)
 					}
@@ -187,16 +187,16 @@ func TestDocs_LinksResolve(t *testing.T) {
 				}
 
 				// Complain if the link doesn't resolve to a doc page
-				_, err := docsService.GetPage(dest)
-				if err != nil {
+				_, pageErr := docsService.GetPage(dest)
+				if pageErr != nil {
 					t.Errorf("invalid link (%s) in /docs/%s", dest, page.Path)
 				}
 
 				// TODO: Check for anchor links
 				return ast.WalkContinue, nil
 			})
-			if err != nil {
-				t.Fatalf("failed to walk AST: %v", err)
+			if walkErr != nil {
+				t.Fatalf("failed to walk AST: %v", walkErr)
 			}
 		}
 	}
@@ -355,11 +355,11 @@ func TestDocs_RedirectsValid(t *testing.T) {
 
 	for from, to := range docsService.Redirects {
 		// Verify the target exists
-		_, err := docsService.GetPage(to)
-		if err != nil {
+		_, pageErr := docsService.GetPage(to)
+		if pageErr != nil {
 			// Skip errors that are themselves redirects
 			redirectError := &services.RedirectError{}
-			if errors.As(err, &redirectError) {
+			if errors.As(pageErr, &redirectError) {
 				continue
 			}
 			t.Errorf("redirect from %s points to non-existent page %s", from, to)

@@ -445,8 +445,8 @@ func TestTeamStartLogRepo_DeleteByUserID_MultipleInstances(t *testing.T) {
 
 	// Verify specific logs
 	for _, logID := range []string{log1.ID, log2.ID, log3.ID} {
-		count, err := db.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", logID).Count(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, 0, count, "Log %s should be deleted", logID)
+		logCount, countErr := db.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", logID).Count(ctx)
+		require.NoError(t, countErr)
+		assert.Equal(t, 0, logCount, "Log %s should be deleted", logID)
 	}
 }

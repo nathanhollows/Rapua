@@ -126,8 +126,8 @@ func (h PlayerHandler) getTeamFromContext(ctx context.Context) (*models.Team, er
 	if val == nil {
 		return nil, errors.New("team not found")
 	}
-	team := val.(*models.Team)
-	if team == nil {
+	team, ok := val.(*models.Team)
+	if !ok || team == nil {
 		return nil, errors.New("team not found")
 	}
 	return team, nil

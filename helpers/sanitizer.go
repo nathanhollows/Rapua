@@ -23,7 +23,8 @@ func getPolicy() *bluemonday.Policy {
 			AllowAttrs("src", "width", "height", "allow", "allowfullscreen", "frameborder").
 			OnElements("iframe").
 			// Allow input with type "checkbox", remove disabled attribute
-			AllowAttrs("type").Matching(regexp.MustCompile(`\bcheckbox\b`)).OnElements("input")
+			AllowAttrs("type").Matching(regexp.MustCompile(`\bcheckbox\b`)).OnElements("input").
+			AllowURLSchemes("http", "https", "mailto", "tel", "sms")
 	})
 	return policy
 }

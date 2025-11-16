@@ -185,7 +185,7 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add the new location to the root group (unassigned area)
-	if err := h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
+	if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
 		h.logger.Error("LocationNewPost: adding location to root group", "error", err, "location_id", location.ID)
 		// Don't fail the request - the location was created successfully
 		// The orphan detection in Save will catch this later
@@ -581,7 +581,7 @@ func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locati
 	instance.GameStructure.LocationIDs = append(instance.GameStructure.LocationIDs, locationID)
 
 	// Save the updated structure
-	if err := h.gameStructureService.Save(ctx, instanceID, &instance.GameStructure); err != nil {
+	if err = h.gameStructureService.Save(ctx, instanceID, &instance.GameStructure); err != nil {
 		return fmt.Errorf("saving structure: %w", err)
 	}
 

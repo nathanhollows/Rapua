@@ -110,7 +110,7 @@ func TestIdentityService_AuthenticateUser(t *testing.T) {
 }
 
 func TestIdentityService_IsUserAuthenticated(t *testing.T) {
-	service, _, cleanup := setupIdentityService(t)
+	service, _, cleanup := setupIdentityService(t) //nolint:staticcheck // service used when test is unskipped
 	defer cleanup()
 
 	// Skip session tests since they require proper session configuration
@@ -187,7 +187,7 @@ func TestIdentityService_IsUserAuthenticated(t *testing.T) {
 }
 
 func TestIdentityService_GetAuthenticatedUser(t *testing.T) {
-	service, userRepo, cleanup := setupIdentityService(t)
+	service, userRepo, cleanup := setupIdentityService(t) //nolint:staticcheck // vars used when test is unskipped
 	defer cleanup()
 
 	// Skip session tests since they require proper session configuration
@@ -445,12 +445,12 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("User found with OAuth provider", func(t *testing.T) {
-		foundUser, err := service.CheckUserRegisteredWithOAuth(context.Background(), "google", email)
+		foundUser, checkErr := service.CheckUserRegisteredWithOAuth(context.Background(), "google", email)
 
 		// This may error if the repository method doesn't exist
 		// The test validates the service calls the repository correctly
-		if err != nil {
-			assert.Contains(t, err.Error(), "getting user by email and provider")
+		if checkErr != nil {
+			assert.Contains(t, checkErr.Error(), "getting user by email and provider")
 		} else {
 			assert.Equal(t, user.ID, foundUser.ID)
 			assert.Equal(t, user.Email, foundUser.Email)
@@ -458,14 +458,14 @@ func TestIdentityService_CheckUserRegisteredWithOAuth(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		foundUser, err := service.CheckUserRegisteredWithOAuth(
+		foundUser, checkErr := service.CheckUserRegisteredWithOAuth(
 			context.Background(),
 			"google",
 			"nonexistent@example.com",
 		)
 
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "getting user by email and provider")
+		require.Error(t, checkErr)
+		assert.Contains(t, checkErr.Error(), "getting user by email and provider")
 		assert.Nil(t, foundUser)
 	})
 }
@@ -490,31 +490,31 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Successful email verification", func(t *testing.T) {
-		err := service.VerifyEmail(context.Background(), token)
+		verifyErr := service.VerifyEmail(context.Background(), token)
 
-		require.NoError(t, err)
+		require.NoError(t, verifyErr)
 
 		// Verify the user was updated
-		updatedUser, err := userRepo.GetByID(context.Background(), user.ID)
-		require.NoError(t, err)
+		updatedUser, getErr := userRepo.GetByID(context.Background(), user.ID)
+		require.NoError(t, getErr)
 		assert.True(t, updatedUser.EmailVerified)
 		assert.Empty(t, updatedUser.EmailToken)
 		assert.False(t, updatedUser.EmailTokenExpiry.Valid)
 	})
 
 	t.Run("Invalid token", func(t *testing.T) {
-		err := service.VerifyEmail(context.Background(), "invalid-token")
+		verifyErr := service.VerifyEmail(context.Background(), "invalid-token")
 
-		require.Error(t, err)
-		assert.Equal(t, services.ErrInvalidToken, err)
+		require.Error(t, verifyErr)
+		assert.Equal(t, services.ErrInvalidToken, verifyErr)
 	})
 
 	t.Run("Empty token", func(t *testing.T) {
-		err := service.VerifyEmail(context.Background(), "")
+		verifyErr := service.VerifyEmail(context.Background(), "")
 
-		require.Error(t, err)
+		require.Error(t, verifyErr)
 		// Empty token may return either ErrInvalidToken or ErrTokenExpired depending on implementation
-		assert.True(t, errors.Is(err, services.ErrInvalidToken) || errors.Is(err, services.ErrTokenExpired))
+		assert.True(t, errors.Is(verifyErr, services.ErrInvalidToken) || errors.Is(verifyErr, services.ErrTokenExpired))
 	})
 
 	// Create a user with expired token
@@ -530,10 +530,10 @@ func TestIdentityService_VerifyEmail(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Expired token", func(t *testing.T) {
-		err := service.VerifyEmail(context.Background(), "expired-token")
+		verifyErr := service.VerifyEmail(context.Background(), "expired-token")
 
-		require.Error(t, err)
-		assert.Equal(t, services.ErrTokenExpired, err)
+		require.Error(t, verifyErr)
+		assert.Equal(t, services.ErrTokenExpired, verifyErr)
 	})
 }
 
@@ -548,19 +548,19 @@ func TestIdentityService_SendEmailVerification(t *testing.T) {
 			EmailVerified: false,
 			Provider:      models.ProviderEmail,
 		}
-		err := userRepo.Create(context.Background(), user)
-		require.NoError(t, err)
+		createErr := userRepo.Create(context.Background(), user)
+		require.NoError(t, createErr)
 
-		err = service.SendEmailVerification(context.Background(), user)
+		sendErr := service.SendEmailVerification(context.Background(), user)
 
 		// May error due to email service not being properly configured in tests
 		// But should not be the user already verified error
-		if err != nil {
-			assert.NotEqual(t, services.ErrUserAlreadyVerified, err)
+		if sendErr != nil {
+			assert.NotEqual(t, services.ErrUserAlreadyVerified, sendErr)
 		} else {
 			// Verify the user was updated with token
-			updatedUser, err := userRepo.GetByID(context.Background(), user.ID)
-			require.NoError(t, err)
+			updatedUser, getErr := userRepo.GetByID(context.Background(), user.ID)
+			require.NoError(t, getErr)
 			assert.NotEmpty(t, updatedUser.EmailToken)
 			assert.True(t, updatedUser.EmailTokenExpiry.Valid)
 		}

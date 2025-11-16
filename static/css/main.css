@@ -162,6 +162,10 @@ p.label {
   @apply text-wrap;
 }
 
+.alert span p a {
+  @apply link;
+}
+
 .card[data-group-color="secondary"] {
   --p: var(--s);
   --pc: var(--sc);

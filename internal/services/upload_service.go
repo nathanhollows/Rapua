@@ -95,7 +95,7 @@ func (s *UploadService) UploadFile(
 	}
 
 	// Save metadata to database
-	if err := s.repo.Create(ctx, upload); err != nil {
+	if err = s.repo.Create(ctx, upload); err != nil {
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
 	}
 

@@ -51,7 +51,7 @@ func (s *StalePurchaseCleanupService) CleanupStalePurchases(ctx context.Context)
 
 	rowsAffected, _ := result.RowsAffected()
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 

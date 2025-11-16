@@ -56,7 +56,7 @@ func (s *NotificationService) SendNotificationToAllTeams(ctx context.Context, in
 
 	for _, team := range teams {
 		if team.HasStarted {
-			_, err := s.SendNotification(ctx, team.Code, content)
+			_, err = s.SendNotification(ctx, team.Code, content)
 			if err != nil {
 				return err
 			}

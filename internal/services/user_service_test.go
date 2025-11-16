@@ -203,8 +203,8 @@ func TestUpdateUserProfile(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Get a fresh copy of the user for each test
-			currentUser, err := service.GetUserByEmail(context.Background(), email)
-			require.NoError(t, err)
+			currentUser, getErr := service.GetUserByEmail(context.Background(), email)
+			require.NoError(t, getErr)
 
 			// Update the profile
 			updateErr := service.UpdateUserProfile(context.Background(), currentUser, tc.profile)

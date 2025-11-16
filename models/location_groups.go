@@ -113,7 +113,7 @@ func (gs *GameStructure) Scan(value any) error {
 // Value implements the driver.Valuer interface for database marshalling.
 func (gs GameStructure) Value() (driver.Value, error) {
 	if gs.ID == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil,nil is idiomatic for driver.Valuer to represent SQL NULL
 	}
 
 	data, err := json.Marshal(gs)

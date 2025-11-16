@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 )
 
-// Interface for IsUserAuthenticated.
+// AuthChecker is an interface for checking user authentication.
 type AuthChecker interface {
 	IsUserAuthenticated(r *http.Request) bool
 }

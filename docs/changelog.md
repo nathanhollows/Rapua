@@ -6,6 +6,17 @@ order: 100
 
 # Changelog
 
+## 6.0.1 (2025-11-15)
+
+### Fixed
+
+- Minor UI updates for higher contrast and mobile readability.
+- Allow sms: and tel: links in content blocks. Closes [#94](https://github.com/nathanhollows/Rapua/issues/94)
+- Phone preview is now an appropriate size when no content is present. Fixes [#95](https://github.com/nathanhollows/Rapua/issues/95)
+- Changing the marker type on a new location no longer clears the name field.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.1)
+
 ## 6.0.0 (2025-11-14)
 
 Version 6.0.0 is a *major* release introducing the game structure system.
