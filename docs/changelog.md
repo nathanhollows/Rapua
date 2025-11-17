@@ -11,6 +11,7 @@ order: 100
 ### Fixed
 
 - Buttons now support `tel:`, `sms:`, and `mailto:` links. Fixes [#99](https://github.com/nathanhollows/Rapua/issues/99)
+- Location and group drag-and-drop now works after browser back navigation. Fixes [#102](https://github.com/nathanhollows/Rapua/issues/102)
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.2)
 

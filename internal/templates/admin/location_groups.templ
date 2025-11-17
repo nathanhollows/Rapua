@@ -218,7 +218,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 						@picker(group.Color)
 						<input type="text" class="input input-ghost p-2 font-bold bg-transparent" value={ group.Name }/>
 					</div>
-					<div class="flex-grow cursor-move group-drag-handle min-h-8"></div>
+					<div class="flex-grow"></div>
 					@groupMenu(group)
 				</div>
 				<!-- Locations area within group -->
@@ -239,7 +239,9 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 templ locationItem(location models.Location, settings models.InstanceSettings) {
 	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30" data-location-id={ location.ID } data-search-text={ location.Name }>
 		<div class="loc flex items-center gap-3">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+			<div class="tooltip tooltip-right" data-tip="Drag to reorder location">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+			</div>
 			<!-- Map marker icon - always rendered, visibility controlled by CSS -->
 			if location.HasCoordinates() {
 				<span class="tooltip cursor-help location-marker-icon" data-tip="Has map coordinates">
@@ -266,7 +268,7 @@ templ locationItem(location models.Location, settings models.InstanceSettings) {
 				class="link link-hover font-medium"
 				hx-boost="true"
 			>{ location.Name }</a>
-			<div class="flex-grow cursor-move location-drag-handle min-h-4"></div>
+			<div class="flex-grow"></div>
 			if settings.EnablePoints {
 				<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
 			}
@@ -1066,7 +1068,7 @@ templ sortableScript() {
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
 					invertSwap: true,
-					filter: 'a, button, input, select, textarea, [contenteditable], .badge, svg:not(.location-drag-handle), .tooltip',
+					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown',
 					preventOnFilter: false,
 					onEnd: function(evt) {
 						// Update completion sliders for both source and destination groups
@@ -1093,7 +1095,7 @@ templ sortableScript() {
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
 					invertSwap: true,
-					filter: 'a, button, input, select, textarea, [contenteditable], .badge, svg, .tooltip, .dropdown, .location-item, .locations-area, .btn, .route-dropdown, .nav-display-dropdown, .completion-dropdown',
+					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area',
 					preventOnFilter: false,
 					onEnd: function(evt) {
 						saveGameStructure();
@@ -1203,6 +1205,18 @@ templ sortableScript() {
 			if (evt.detail.target.querySelector('.locations-area') || evt.detail.target.querySelector('.groups-area')) {
 				initializeLocationGroups();
 			}
+		});
+
+		// Re-initialize after browser back/forward navigation (htmx history restore)
+		document.addEventListener('htmx:historyRestore', function(evt) {
+			// Clear existing sortable instances since they're stale after history restore
+			document.querySelectorAll('.locations-area, .groups-area').forEach(function(el) {
+				if (el.sortableInstance) {
+					el.sortableInstance.destroy();
+					el.sortableInstance = null;
+				}
+			});
+			initializeLocationGroups();
 		});
 	</script>
 	<style>
