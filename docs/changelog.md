@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 6.0.2 (2025-11-17)
+
+### Fixed
+
+- Buttons now support `tel:`, `sms:`, and `mailto:` links. Fixes [#99](https://github.com/nathanhollows/Rapua/issues/99)
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.2)
+
 ## 6.0.1 (2025-11-15)
 
 ### Fixed
