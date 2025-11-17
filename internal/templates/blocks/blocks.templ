@@ -162,7 +162,6 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open bool) {
 	<div
 		id={ fmt.Sprint("block-", block.GetID()) }
-		tabindex="0"
 		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"
 		data-block-id={ block.GetID() }
 	>

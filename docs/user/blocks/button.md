@@ -17,7 +17,11 @@ The button block links to webpages. It is a static block that does not award poi
 When creating a button block, you can configure:
 
 - **Button Text**: The text displayed on the button
-- **Link URL**: The destination URL (can be external or internal)
+- **Link URL**: The destination URL. Supported schemes:
+  - `https://` or `http://` for web links
+  - `mailto:` for email links
+  - `tel:` for phone calls
+  - `sms:` for text messages
 - **Style**: Choose from six DaisyUI button variants
 - **Open in New Tab**: Option to open the link in a new browser tab
 
