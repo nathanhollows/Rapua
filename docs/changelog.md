@@ -6,6 +6,18 @@ order: 100
 
 # Changelog
 
+## 6.0.2 (2025-11-17)
+
+### Fixed
+
+- Buttons now support `tel:`, `sms:`, and `mailto:` links. Fixes [#99](https://github.com/nathanhollows/Rapua/issues/99)
+- Location and group drag-and-drop now works after browser back navigation. Fixes [#102](https://github.com/nathanhollows/Rapua/issues/102)
+- Image block uploads now work as expected. Fixes [#100](https://github.com/nathanhollows/Rapua/issues/100)
+- Image blocks accept arbitrary URL sources.
+- Blocks now toggle open and closed correctly in the admin interface.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.0.2)
+
 ## 6.0.1 (2025-11-15)
 
 ### Fixed
