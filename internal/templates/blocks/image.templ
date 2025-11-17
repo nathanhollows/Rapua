@@ -37,83 +37,72 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s-upload", block.ID) }
-		if block.URL != "" {
-			class="w-full hidden"
-		} else {
-			class="w-full"
-		}
+		class="hidden"
 		hx-post="/admin/media/upload"
 		hx-encoding="multipart/form-data"
 		hx-trigger={ fmt.Sprintf("change from:(#file-%s) delay:500ms", block.ID) }
-		_={ fmt.Sprintf(`on htmx:xhr:progress(loaded, total)
-				set #progress-%s's value to ((loaded / total) * 100)
-				if loaded == total
-					then add .hidden to <#progress-%s />
-				end
-			end`,
-			block.ID, block.ID,
-			) }
 		hx-swap="none"
-		_={ fmt.Sprint(`on htmx:xhr:progress(loaded, total) 
-				set the closest <progress />'s value to ((loaded / total * 100) as Float)
-			end
-			`, block.ID, block.ID) }
 	>
 		<input type="hidden" name="location_id" value={ fmt.Sprint(block.LocationID) }/>
 		<input type="hidden" name="block_id" value={ fmt.Sprint(block.ID) }/>
 		<input type="hidden" name="context" value="image_block"/>
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Pick a file</legend>
-			<input
-				type="file"
-				class="file-input"
-				id={ fmt.Sprintf("file-%s", block.ID) }
-				name="file"
-				type="file"
-				accept="image/*"
-				class="file-input w-full"
-				_="on change
-					remove .hidden from the next <progress />"
-			/>
-			<label class="label">Max size 2MB</label>
-		</fieldset>
-		<progress
-			id={ fmt.Sprintf("progress-%s", block.ID) }
-			class="progress progress-primary w-full hidden"
-			value="0"
-			max="100"
-		></progress>
+		<input
+			type="file"
+			id={ fmt.Sprintf("file-%s", block.ID) }
+			name="file"
+			accept="image/*"
+			class="hidden"
+			_={ fmt.Sprintf(`on change
+				remove .hidden from #progress-%s
+				on htmx:xhr:progress(loaded, total) from #form-%s-upload
+					set #progress-%s's value to ((loaded / total) * 100)
+				end`, block.ID, block.ID, block.ID) }
+		/>
 	</form>
 	<form
-		if block.URL == "" {
-			class="w-full hidden"
-		} else {
-			class="w-full"
-		}
 		id={ fmt.Sprintf("form-%s", block.ID) }
+		class="w-full"
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("submit, htmx:afterSettle from:(#form-%s-upload), keyup change from:(#form-%s input) delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
-		_={ fmt.Sprintf(`on htmx:afterSettle from #form-%s-upload
-				remove .hidden from me
-				add .hidden to #form-%s-upload
-			end`,
-			block.ID, block.ID,
-			) }
 	>
 		<fieldset class="fieldset w-full">
 			<legend class="fieldset-legend">Image URL</legend>
-			<label class="input w-full">
+			<label
+				id={ fmt.Sprintf("url-%s-label", block.ID) }
+				class="input w-full"
+			>
 				<input
 					type="text"
+					name="url"
 					class="grow text-ellipsis"
 					placeholder="https://..."
 					value={ block.URL }
-					disabled
 				/>
 			</label>
 		</fieldset>
-		<input type="hidden" name="url" value={ block.URL }/>
+		<fieldset class="fieldset w-full">
+			<legend class="fieldset-legend">Or upload</legend>
+			<input
+				type="file"
+				class="file-input w-full"
+				accept="image/*"
+				_={ fmt.Sprintf(`on change
+					set #file-%s.files to my.files
+					trigger change on #file-%s
+					remove .hidden from #progress-%s
+				on htmx:afterSettle from #form-%s-upload
+					add .hidden to #progress-%s
+					set #progress-%s.value to 0`, block.ID, block.ID, block.ID, block.ID, block.ID, block.ID) }
+			/>
+			<p class="label">Max size 2MB</p>
+			<progress
+				id={ fmt.Sprintf("progress-%s", block.ID) }
+				class="progress progress-primary w-full hidden"
+				value="0"
+				max="100"
+			></progress>
+		</fieldset>
 		<div class="flex flex-col md:flex-row gap-5">
 			<fieldset class="fieldset w-full">
 				<legend class="fieldset-legend">Caption</legend>
@@ -144,17 +133,15 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 templ ImageAdminUpload(media models.Upload) {
 	<label
 		id={ fmt.Sprintf("url-%s-label", media.BlockID) }
-		class="input input-disabled border-opacity-100 flex items-center gap-2"
+		class="input w-full"
 		hx-swap-oob="true"
 	>
 		<input
-			id={ fmt.Sprintf("url-%s", media.BlockID) }
+			type="text"
 			name="url"
-			type="url"
-			class="grow"
-			placeholder="Image URL"
+			class="grow text-ellipsis"
+			placeholder="https://..."
 			value={ media.OriginalURL }
 		/>
-		<button class="btn btn-sm btn-secondary btn-ghost btn-circle">×</button>
 	</label>
 }
