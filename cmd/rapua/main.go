@@ -30,7 +30,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const version = "v6.0.2"
+const (
+	version    = "v6.1.0"
+	uploadsDir = "static/uploads/"
+)
 
 func main() {
 	logger := slog.New(
@@ -363,6 +366,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditRepo,
 		creditPurchaseRepo,
 		teamStartLogRepo,
+		dbc,
+		uploadsDir,
 	)
 	duplicationService := services.NewDuplicationService(
 		transactor,
@@ -395,6 +400,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
+	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(dbc, logger, uploadsDir)
 	creditService := services.NewCreditService(
 		transactor,
 		creditRepo,
@@ -436,6 +442,16 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	jobs.AddJob(
 		"Stale Credit Purchase Cleanup",
 		staleCreditCleanupService.CleanupStalePurchases,
+		scheduler.NextDaily,
+	)
+	jobs.AddJob(
+		"Orphaned Uploads Cleanup",
+		func(ctx context.Context) error {
+			if err := orphanedUploadsCleanupService.CleanupOrphanedUploads(ctx); err != nil {
+				return err
+			}
+			return orphanedUploadsCleanupService.CleanupEmptyDirectories(ctx)
+		},
 		scheduler.NextDaily,
 	)
 	jobs.Start()
