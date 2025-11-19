@@ -23,7 +23,7 @@ func setupMonthlyCreditTopupService(t *testing.T) (services.MonthlyCreditTopupSe
 	creditRepo := repositories.NewCreditRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 
-	service := services.NewMonthlyCreditTopupService(transactor, creditRepo)
+	service := services.NewMonthlyCreditTopupService(transactor, creditRepo, newTLogger(t))
 
 	// Create test users in the database
 	ctx := context.Background()
