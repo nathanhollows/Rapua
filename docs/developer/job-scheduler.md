@@ -95,11 +95,19 @@ jobs.Stop()
 
 ```go
 type MyService struct {
-    // dependencies
+    db     *bun.DB
+    logger *slog.Logger
+}
+
+func NewMyService(db *bun.DB, logger *slog.Logger) *MyService {
+    return &MyService{
+        db:     db,
+        logger: logger,
+    }
 }
 
 func (s *MyService) PerformTask(ctx context.Context) error {
-    slog.Info("Running my scheduled task")
+    s.logger.InfoContext(ctx, "Running my scheduled task")
 
     if err := someOperation(); err != nil {
         return fmt.Errorf("failed to perform task: %w", err)
@@ -113,7 +121,7 @@ func (s *MyService) PerformTask(ctx context.Context) error {
 
 ```go
 // In main.go
-myService := services.NewMyService(transactor, logger)
+myService := services.NewMyService(dbc, logger)
 
 jobs.AddJob(
     "My Scheduled Task",
@@ -187,7 +195,7 @@ Deletes `pending` or `failed` purchases, preserves `completed` purchases, uses t
 2. **Context Awareness**: Respect context for cancellation
 3. **Error Handling**: Return errors but design for failures (retry next cycle)
 4. **Timeouts**: Add timeouts for long-running operations
-5. **Logging**: Use structured logging with relevant context
+5. **Logging**: Use context-aware structured logging (e.g., `logger.InfoContext(ctx, ...)`) with relevant fields
 
 ### Example: Idempotent Job
 
@@ -199,7 +207,7 @@ func (s *Service) ProcessRecords(ctx context.Context) error {
     }
 
     if lastRun.After(time.Now().Add(-24 * time.Hour)) {
-        slog.Info("Already processed in last 24 hours, skipping")
+        s.logger.InfoContext(ctx, "Already processed in last 24 hours, skipping")
         return nil
     }
 
@@ -224,7 +232,7 @@ func (s *Service) ProcessBatch(ctx context.Context) error {
             return ctx.Err()
         default:
             if err := s.processItem(ctx, item); err != nil {
-                slog.Error("Failed to process item", "item", item.ID, "error", err)
+                s.logger.ErrorContext(ctx, "Failed to process item", "item", item.ID, "error", err)
             }
         }
     }

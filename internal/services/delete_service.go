@@ -35,6 +35,7 @@ type DeleteService struct {
 	teamStartLogRepo     *repositories.TeamStartLogRepository
 	db                   *bun.DB
 	uploadsDir           string
+	logger               *slog.Logger
 }
 
 // NewDeleteService creates a new DeleteService with the provided dependencies.
@@ -54,6 +55,7 @@ func NewDeleteService(
 	teamStartLogRepo *repositories.TeamStartLogRepository,
 	db *bun.DB,
 	uploadsDir string,
+	logger *slog.Logger,
 ) *DeleteService {
 	return &DeleteService{
 		transactor:           transactor,
@@ -71,6 +73,7 @@ func NewDeleteService(
 		teamStartLogRepo:     teamStartLogRepo,
 		db:                   db,
 		uploadsDir:           uploadsDir,
+		logger:               logger,
 	}
 }
 
@@ -552,7 +555,7 @@ func (s *DeleteService) extractImageURL(ctx context.Context, tx *bun.Tx, blockID
 	}
 	err = json.Unmarshal(modelBlock.Data, &imageData)
 	if err != nil {
-		slog.Warn("failed to parse image block data", "blockID", blockID, "error", err)
+		s.logger.WarnContext(ctx, "failed to parse image block data", "blockID", blockID, "error", err)
 		return "", nil // Don't fail deletion if we can't parse
 	}
 
@@ -628,20 +631,20 @@ func (s *DeleteService) cleanupOrphanedUpload(url string) {
 
 	// Skip external URLs - only clean up local uploads
 	if !isUploadedFile(url) {
-		slog.Debug("skipping external URL", "url", url)
+		s.logger.DebugContext(ctx, "skipping external URL", "url", url)
 		return
 	}
 
 	// Check if the upload is still referenced by other blocks
 	isReferenced, err := s.isFileReferencedInBlocks(ctx, url)
 	if err != nil {
-		slog.Warn("failed to check upload references", "url", url, "error", err)
+		s.logger.WarnContext(ctx, "failed to check upload references", "url", url, "error", err)
 		return
 	}
 
 	if isReferenced {
 		// Upload is still used by other blocks, don't delete
-		slog.Debug("upload still referenced, keeping", "url", url)
+		s.logger.DebugContext(ctx, "upload still referenced, keeping", "url", url)
 		return
 	}
 
@@ -660,9 +663,9 @@ func (s *DeleteService) cleanupOrphanedUpload(url string) {
 		if _, statErr := os.Stat(filePath); statErr == nil {
 			// File exists, delete it
 			if removeErr := os.Remove(filePath); removeErr != nil {
-				slog.Warn("failed to delete orphaned upload", "path", filePath, "error", removeErr)
+				s.logger.WarnContext(ctx, "failed to delete orphaned upload", "path", filePath, "error", removeErr)
 			} else {
-				slog.Info("deleted orphaned upload", "path", filePath, "url", url)
+				s.logger.InfoContext(ctx, "deleted orphaned upload", "path", filePath, "url", url)
 			}
 			return
 		}
@@ -683,22 +686,22 @@ func (s *DeleteService) cleanupOrphanedUpload(url string) {
 	})
 
 	if err != nil {
-		slog.Warn("error walking uploads directory", "error", err)
+		s.logger.WarnContext(ctx, "error walking uploads directory", "error", err)
 		return
 	}
 
 	if filePath == "" {
 		// File doesn't exist on filesystem, nothing to clean up
-		slog.Debug("upload file not found on filesystem", "url", url)
+		s.logger.DebugContext(ctx, "upload file not found on filesystem", "url", url)
 		return
 	}
 
 	// Delete the file
 	err = os.Remove(filePath)
 	if err != nil {
-		slog.Warn("failed to delete orphaned upload", "path", filePath, "error", err)
+		s.logger.WarnContext(ctx, "failed to delete orphaned upload", "path", filePath, "error", err)
 		return
 	}
 
-	slog.Info("deleted orphaned upload", "path", filePath, "url", url)
+	s.logger.InfoContext(ctx, "deleted orphaned upload", "path", filePath, "url", url)
 }
