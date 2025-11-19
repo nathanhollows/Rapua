@@ -55,6 +55,7 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 		teamStartLogRepo,
 		dbc,
 		uploadsDir,
+		newTLogger(t),
 	)
 
 	return deleteService, dbc, cleanup

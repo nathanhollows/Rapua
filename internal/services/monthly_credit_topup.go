@@ -31,15 +31,18 @@ type CreditTopupRepository interface {
 type MonthlyCreditTopupService struct {
 	transactor db.Transactor
 	creditRepo CreditTopupRepository
+	logger     *slog.Logger
 }
 
 func NewMonthlyCreditTopupService(
 	transactor db.Transactor,
 	creditRepo CreditTopupRepository,
+	logger *slog.Logger,
 ) *MonthlyCreditTopupService {
 	return &MonthlyCreditTopupService{
 		transactor: transactor,
 		creditRepo: creditRepo,
+		logger:     logger,
 	}
 }
 
@@ -130,7 +133,8 @@ func (s *MonthlyCreditTopupService) processUserCredits(ctx context.Context, cred
 		)
 		if err != nil {
 			// Log the failure but continue with next credit level to avoid partial failures
-			slog.Error(
+			s.logger.ErrorContext(
+				ctx,
 				"processing user credits with retry",
 				"credit_limit",
 				creditLimit,
@@ -165,7 +169,8 @@ func (s *MonthlyCreditTopupService) processUserCreditsWithRetry(
 		lastErr = err
 
 		// Log the retry attempt
-		slog.Error(
+		s.logger.ErrorContext(
+			ctx,
 			"retrying credit top-up",
 			"attempt",
 			attempt,
