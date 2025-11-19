@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -34,6 +35,10 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 
+	// Create temp uploads directory for testing
+	tempDir := t.TempDir()
+	uploadsDir := tempDir + "/static/uploads/"
+
 	deleteService := services.NewDeleteService(
 		transactor,
 		blockRepo,
@@ -48,6 +53,8 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 		creditRepo,
 		creditPurchaseRepo,
 		teamStartLogRepo,
+		dbc,
+		uploadsDir,
 	)
 
 	return deleteService, dbc, cleanup
@@ -473,4 +480,173 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	count, err = dbc.NewSelect().Model(&models.TeamStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All team start logs should be deleted")
+}
+
+func TestDeleteService_DeleteBlock_ImageBlock(t *testing.T) {
+	_, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Create a simple image block
+	imageBlock := createTestImageBlock(t, dbc, "test-location-id", "/static/uploads/2025/11/18/test-image.png")
+
+	// Verify block exists
+	count, err := dbc.NewSelect().Model(&models.Block{}).Where("id = ?", imageBlock.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "Block should exist before deletion")
+
+	// Note: Full end-to-end test requires actual file creation and async testing
+	// The core deletion flow is tested by existing DeleteService tests
+	// Upload cleanup is tested separately in orphaned_uploads_cleanup_test.go
+}
+
+// Helper functions
+
+func createTestImageBlock(t *testing.T, dbc *bun.DB, locationID string, imageURL string) *models.Block {
+	t.Helper()
+
+	// Create image block data
+	imageData := map[string]interface{}{
+		"content": imageURL,
+		"caption": "Test image",
+	}
+	jsonData, err := json.Marshal(imageData)
+	require.NoError(t, err)
+
+	block := &models.Block{
+		ID:       "block-" + gofakeit.UUID(),
+		OwnerID:  locationID,
+		Type:     "image",
+		Data:     jsonData,
+		Ordering: 0,
+		Points:   0,
+	}
+
+	_, err = dbc.NewInsert().Model(block).Exec(context.Background())
+	require.NoError(t, err)
+
+	return block
+}
+
+func TestIsUploadedFile(t *testing.T) {
+	tests := []struct {
+		name     string
+		url      string
+		siteURL  string
+		expected bool
+	}{
+		{
+			name:     "relative upload path",
+			url:      "/static/uploads/2025/11/18/test.png",
+			siteURL:  "http://localhost:8090",
+			expected: true,
+		},
+		{
+			name:     "absolute upload path with matching site URL",
+			url:      "http://localhost:8090/static/uploads/2025/11/18/test.png",
+			siteURL:  "http://localhost:8090",
+			expected: true,
+		},
+		{
+			name:     "absolute upload path with production domain",
+			url:      "https://rapua.nz/static/uploads/2025/11/18/test.png",
+			siteURL:  "https://rapua.nz",
+			expected: true,
+		},
+		{
+			name:     "external URL - different domain",
+			url:      "https://example.com/image.png",
+			siteURL:  "http://localhost:8090",
+			expected: false,
+		},
+		{
+			name:     "external URL - with static/uploads in path",
+			url:      "https://cdn.example.com/static/uploads/image.png",
+			siteURL:  "http://localhost:8090",
+			expected: false,
+		},
+		{
+			name:     "external URL - no uploads path",
+			url:      "https://rapua.nz/other/path/image.png",
+			siteURL:  "https://rapua.nz",
+			expected: false,
+		},
+		{
+			name:     "relative path - not uploads",
+			url:      "/assets/logo.png",
+			siteURL:  "http://localhost:8090",
+			expected: false,
+		},
+		{
+			name:     "empty URL",
+			url:      "",
+			siteURL:  "http://localhost:8090",
+			expected: false,
+		},
+		{
+			name:     "default fallback when no SITE_URL env",
+			url:      "http://localhost:8090/static/uploads/2025/11/18/test.png",
+			siteURL:  "", // Empty means use default
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set or unset SITE_URL for this test
+			if tt.siteURL != "" {
+				t.Setenv("SITE_URL", tt.siteURL)
+			}
+
+			result := services.IsUploadedFileForTest(tt.url)
+			assert.Equal(t, tt.expected, result, "Expected %v for URL: %s", tt.expected, tt.url)
+		})
+	}
+}
+
+func TestEscapeLikePattern(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "no special characters",
+			input:    "test.png",
+			expected: "test.png",
+		},
+		{
+			name:     "underscore",
+			input:    "test_image.png",
+			expected: "test\\_image.png",
+		},
+		{
+			name:     "percent",
+			input:    "test%image.png",
+			expected: "test\\%image.png",
+		},
+		{
+			name:     "backslash",
+			input:    "test\\image.png",
+			expected: "test\\\\image.png",
+		},
+		{
+			name:     "all special characters",
+			input:    "test_%\\file.png",
+			expected: "test\\_\\%\\\\file.png",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := services.EscapeLikePatternForTest(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }

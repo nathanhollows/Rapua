@@ -6,6 +6,15 @@ order: 100
 
 # Changelog
 
+## 6.1.0 (2025-11-19)
+
+### Added
+
+- Delete images on block deletion to prevent orphaned files.
+- Orphaned uploads cleanup job runs daily to remove unreferenced files from `static/uploads/`.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.1.0)
+
 ## 6.0.2 (2025-11-17)
 
 ### Fixed
