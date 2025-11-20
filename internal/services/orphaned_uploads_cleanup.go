@@ -6,39 +6,49 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/uptrace/bun"
+	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
 type OrphanedUploadsCleanupService struct {
-	db         *bun.DB
-	logger     *slog.Logger
-	uploadsDir string
+	uploadsRepo repositories.UploadsRepository
+	logger      *slog.Logger
+	uploadsDir  string
 }
 
 func NewOrphanedUploadsCleanupService(
-	db *bun.DB,
+	uploadsRepo repositories.UploadsRepository,
 	logger *slog.Logger,
 	uploadsDir string,
 ) *OrphanedUploadsCleanupService {
 	return &OrphanedUploadsCleanupService{
-		db:         db,
-		logger:     logger,
-		uploadsDir: uploadsDir,
+		uploadsRepo: uploadsRepo,
+		logger:      logger,
+		uploadsDir:  uploadsDir,
 	}
 }
 
-// CleanupOrphanedUploads scans the uploads directory and removes files
-// that are not referenced in any blocks.
+// CleanupOrphanedUploads finds and removes upload records and files for deleted blocks.
 func (s *OrphanedUploadsCleanupService) CleanupOrphanedUploads(ctx context.Context) error {
-	s.logger.InfoContext(ctx, "Starting orphaned uploads cleanup", "uploads_dir", s.uploadsDir)
+	s.logger.InfoContext(ctx, "Starting orphaned uploads cleanup")
+
+	// Get all orphaned uploads from the database
+	orphanedUploads, err := s.uploadsRepo.GetOrphanedUploads(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch orphaned uploads: %w", err)
+	}
+
+	if len(orphanedUploads) == 0 {
+		s.logger.InfoContext(ctx, "No orphaned uploads found")
+		return nil
+	}
 
 	var filesDeleted int
-	var totalFiles int
+	var recordsDeleted int
 
-	// Walk through all files in the uploads directory
-	err := filepath.Walk(s.uploadsDir, func(path string, info os.FileInfo, err error) error {
+	// Delete each orphaned upload
+	for _, upload := range orphanedUploads {
 		// Check for context cancellation
 		select {
 		case <-ctx.Done():
@@ -46,112 +56,93 @@ func (s *OrphanedUploadsCleanupService) CleanupOrphanedUploads(ctx context.Conte
 		default:
 		}
 
-		if err != nil {
-			s.logger.Warn("Error accessing path", "path", path, "error", err)
-			return nil // Continue walking
-		}
-
-		// Skip directories
-		if info.IsDir() {
-			return nil
-		}
-
-		totalFiles++
-
-		// Convert absolute file path to URL path
-		// e.g., /home/user/Rapua/static/uploads/2025/11/17/uuid.png -> /static/uploads/2025/11/17/uuid.png
-		relPath, err := filepath.Rel(filepath.Dir(s.uploadsDir), path)
-		if err != nil {
-			s.logger.Warn("Failed to get relative path", "path", path, "error", err)
-			return nil
-		}
-
-		// Convert to forward slashes for URL comparison
-		urlPath := "/" + filepath.ToSlash(relPath)
-
-		// Check if this URL is referenced in any blocks
-		isReferenced, err := s.isFileReferencedInBlocks(ctx, urlPath)
-		if err != nil {
-			s.logger.Warn("Failed to check if file is referenced",
-				"path", urlPath,
-				"error", err,
+		// Delete the upload record from database
+		deleteErr := s.uploadsRepo.Delete(ctx, upload.ID)
+		if deleteErr != nil {
+			s.logger.WarnContext(ctx, "Failed to delete upload record",
+				"uploadID", upload.ID,
+				"error", deleteErr,
 			)
-			return nil
+			continue
 		}
+		recordsDeleted++
 
-		if !isReferenced {
-			// File is orphaned, delete it
-			if removeErr := os.Remove(path); removeErr != nil {
-				s.logger.Warn("Failed to delete orphaned file",
-					"path", path,
-					"error", removeErr,
-				)
-				return nil
-			}
-
-			s.logger.Info("Deleted orphaned upload",
-				"path", urlPath,
-				"filesystem_path", path,
-			)
+		// Delete the main file from filesystem using OriginalURL (which contains the actual path)
+		if s.deleteUploadFile(ctx, upload.OriginalURL) {
 			filesDeleted++
 		}
 
-		return nil
-	})
+		// Delete any additional size variants
+		sizes, sizeErr := upload.GetSizes()
+		if sizeErr != nil {
+			s.logger.WarnContext(ctx, "Failed to get upload sizes",
+				"uploadID", upload.ID,
+				"error", sizeErr,
+			)
+			continue
+		}
 
-	if err != nil {
-		return fmt.Errorf("failed to walk uploads directory: %w", err)
+		for _, size := range sizes {
+			if s.deleteUploadFile(ctx, size.URL) {
+				filesDeleted++
+			}
+		}
 	}
 
 	s.logger.InfoContext(ctx, "Orphaned uploads cleanup completed",
-		"total_files_scanned", totalFiles,
+		"records_deleted", recordsDeleted,
 		"files_deleted", filesDeleted,
-		"files_retained", totalFiles-filesDeleted,
 	)
 
 	return nil
 }
 
-// isFileReferencedInBlocks checks if a URL path is referenced in any block's data.
-// It searches through the JSON data field of all blocks for the URL.
-// Only checks for local uploaded files, not external URLs.
-func (s *OrphanedUploadsCleanupService) isFileReferencedInBlocks(
-	ctx context.Context,
-	urlPath string,
-) (bool, error) {
-	// Extract just the filename for search
-	filename := filepath.Base(urlPath)
+// deleteUploadFile deletes a single file from the filesystem using its URL/path.
+// Returns true if file was successfully deleted, false otherwise.
+func (s *OrphanedUploadsCleanupService) deleteUploadFile(ctx context.Context, urlOrPath string) bool {
+	// Parse the URL to get the filesystem path
+	// Expected formats:
+	//   - /static/uploads/YYYY/MM/DD/filename.ext (relative)
+	//   - http://domain/static/uploads/YYYY/MM/DD/filename.ext (absolute)
 
-	// Escape LIKE special characters
-	escapedFilename := escapeLikePattern(filename)
-
-	// Get site URL for matching absolute local URLs
-	siteURL := os.Getenv("SITE_URL")
-	if siteURL == "" {
-		siteURL = "http://localhost:8090"
+	// Strip domain if present (convert absolute URL to path)
+	path := urlOrPath
+	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
+		// Extract path from URL (everything after domain)
+		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
+		parts := strings.SplitN(urlOrPath, "/", 4)
+		//nolint:mnd // Need 4 parts to extract path after domain
+		if len(parts) >= 4 {
+			path = "/" + parts[3]
+		}
 	}
 
-	// Search for the filename in blocks data, but only where it appears
-	// as part of a local upload URL pattern:
-	// 1. Relative path: "/static/uploads/..."
-	// 2. Absolute path with site domain: "http://localhost:8090/static/uploads/..."
-	// This prevents matching external URLs like https://example.com/static/uploads/file.png
+	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-	// Build two search patterns
-	relativePattern := escapeLikePattern("\"/static/uploads/") + "%" + escapedFilename + "%"
-	absolutePattern := escapeLikePattern("\""+siteURL+"/static/uploads/") + "%" + escapedFilename + "%"
-
-	count, err := s.db.NewSelect().
-		Model((*models.Block)(nil)).
-		Where("data LIKE ? ESCAPE '\\'", "%"+relativePattern).
-		WhereOr("data LIKE ? ESCAPE '\\'", "%"+absolutePattern).
-		Count(ctx)
-
-	if err != nil {
-		return false, fmt.Errorf("failed to query blocks: %w", err)
+	if len(parts) < 6 || parts[0] != "static" || parts[1] != "uploads" {
+		s.logger.WarnContext(ctx, "Unexpected upload URL format",
+			"url", urlOrPath,
+			"parsed_path", path)
+		return false
 	}
 
-	return count > 0, nil
+	// Extract date path: YYYY/MM/DD
+	datePath := filepath.Join(parts[2], parts[3], parts[4])
+	filename := filepath.Base(path)
+	filePath := filepath.Join(s.uploadsDir, datePath, filename)
+
+	// Delete the file
+	if err := os.Remove(filePath); err != nil {
+		if !os.IsNotExist(err) {
+			s.logger.WarnContext(ctx, "Failed to delete upload file",
+				"path", filePath,
+				"error", err,
+			)
+		}
+		return false
+	}
+
+	return true
 }
 
 // CleanupEmptyDirectories removes empty directories in the uploads folder.
