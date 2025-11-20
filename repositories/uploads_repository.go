@@ -55,3 +55,43 @@ func (r *UploadsRepository) SearchByCriteria(
 	err := query.Scan(ctx)
 	return uploads, err
 }
+
+// GetByBlockID retrieves all uploads associated with a specific block.
+func (r *UploadsRepository) GetByBlockID(ctx context.Context, blockID string) ([]*models.Upload, error) {
+	var uploads []*models.Upload
+	err := r.db.NewSelect().
+		Model(&uploads).
+		Where("block_id = ?", blockID).
+		Scan(ctx)
+	return uploads, err
+}
+
+// Delete removes an upload record by ID.
+func (r *UploadsRepository) Delete(ctx context.Context, uploadID string) error {
+	_, err := r.db.NewDelete().
+		Model((*models.Upload)(nil)).
+		Where("id = ?", uploadID).
+		Exec(ctx)
+	return err
+}
+
+// DeleteByBlockID removes all upload records associated with a specific block.
+func (r *UploadsRepository) DeleteByBlockID(ctx context.Context, blockID string) error {
+	_, err := r.db.NewDelete().
+		Model((*models.Upload)(nil)).
+		Where("block_id = ?", blockID).
+		Exec(ctx)
+	return err
+}
+
+// GetOrphanedUploads retrieves all uploads that reference non-existent blocks.
+// This includes uploads where block_id is not null but the block doesn't exist.
+func (r *UploadsRepository) GetOrphanedUploads(ctx context.Context) ([]*models.Upload, error) {
+	var uploads []*models.Upload
+	err := r.db.NewSelect().
+		Model(&uploads).
+		Where("block_id IS NOT NULL").
+		Where("block_id NOT IN (SELECT id FROM blocks)").
+		Scan(ctx)
+	return uploads, err
+}
