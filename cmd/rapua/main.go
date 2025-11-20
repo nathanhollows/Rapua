@@ -366,6 +366,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		creditRepo,
 		creditPurchaseRepo,
 		teamStartLogRepo,
+		uploadRepo,
 		dbc,
 		uploadsDir,
 		logger,
@@ -401,7 +402,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo, logger)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
-	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(dbc, logger, uploadsDir)
+	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(uploadRepo, logger, uploadsDir)
 	creditService := services.NewCreditService(
 		transactor,
 		creditRepo,

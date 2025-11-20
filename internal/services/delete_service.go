@@ -4,7 +4,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -33,6 +32,7 @@ type DeleteService struct {
 	creditRepo           *repositories.CreditRepository
 	creditPurchaseRepo   *repositories.CreditPurchaseRepository
 	teamStartLogRepo     *repositories.TeamStartLogRepository
+	uploadsRepo          repositories.UploadsRepository
 	db                   *bun.DB
 	uploadsDir           string
 	logger               *slog.Logger
@@ -53,6 +53,7 @@ func NewDeleteService(
 	creditRepo *repositories.CreditRepository,
 	creditPurchaseRepo *repositories.CreditPurchaseRepository,
 	teamStartLogRepo *repositories.TeamStartLogRepository,
+	uploadsRepo repositories.UploadsRepository,
 	db *bun.DB,
 	uploadsDir string,
 	logger *slog.Logger,
@@ -71,6 +72,7 @@ func NewDeleteService(
 		creditRepo:           creditRepo,
 		creditPurchaseRepo:   creditPurchaseRepo,
 		teamStartLogRepo:     teamStartLogRepo,
+		uploadsRepo:          uploadsRepo,
 		db:                   db,
 		uploadsDir:           uploadsDir,
 		logger:               logger,
@@ -105,7 +107,7 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	return tx.Commit()
 }
 
-// DeleteBlock deletes a block and its associated player progress.
+// DeleteBlock deletes a block and its associated player progress and uploads.
 func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -122,15 +124,16 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 		}
 	}()
 
-	// Extract image URL before deletion (if it's an image block)
-	imageURL, err := s.extractImageURL(ctx, tx, blockID)
+	// Get uploads associated with this block before deletion
+	uploads, err := s.uploadsRepo.GetByBlockID(ctx, blockID)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("extracting image URL: %w; rollback failed: %w", err, rollbackErr)
+			return fmt.Errorf("fetching uploads: %w; rollback failed: %w", err, rollbackErr)
 		}
-		return fmt.Errorf("extracting image URL: %w", err)
+		return fmt.Errorf("fetching uploads: %w", err)
 	}
 
+	// Delete the block and its states
 	err = s.deleteBlock(ctx, tx, blockID)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
@@ -139,14 +142,27 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 		return fmt.Errorf("deleting block: %w", err)
 	}
 
+	// Delete upload records from database using the transaction
+	_, err = tx.NewDelete().
+		Model((*models.Upload)(nil)).
+		Where("block_id = ?", blockID).
+		Exec(ctx)
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
+		}
+		return fmt.Errorf("deleting upload records: %w", err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	// Only cleanup after transaction commits successfully
-	if imageURL != "" {
-		go s.cleanupOrphanedUpload(imageURL)
+	// Only cleanup files after transaction commits successfully
+	// Use background context so cleanup isn't cancelled when request ends
+	if len(uploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), uploads)
 	}
 
 	return nil
@@ -528,180 +544,66 @@ func (s *DeleteService) deleteInstance(ctx context.Context, tx *bun.Tx, instance
 	return nil
 }
 
-// extractImageURL extracts the image URL from a block if it's an image block.
-// Returns empty string if block is not an image block or doesn't have a URL.
-func (s *DeleteService) extractImageURL(ctx context.Context, tx *bun.Tx, blockID string) (string, error) {
-	// Fetch the block to check its type and data
-	var modelBlock models.Block
-	err := tx.NewSelect().
-		Model(&modelBlock).
-		Where("id = ?", blockID).
-		Scan(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil // Block doesn't exist, nothing to extract
-		}
-		return "", fmt.Errorf("fetching block: %w", err)
-	}
-
-	// Only process image blocks
-	if modelBlock.Type != "image" {
-		return "", nil
-	}
-
-	// Parse the JSON data to extract the URL
-	var imageData struct {
-		URL string `json:"content"`
-	}
-	err = json.Unmarshal(modelBlock.Data, &imageData)
-	if err != nil {
-		s.logger.WarnContext(ctx, "failed to parse image block data", "blockID", blockID, "error", err)
-		return "", nil // Don't fail deletion if we can't parse
-	}
-
-	return imageData.URL, nil
-}
-
-// escapeLikePattern escapes special characters in LIKE patterns to prevent unintended matches.
-func escapeLikePattern(s string) string {
-	s = strings.ReplaceAll(s, "\\", "\\\\")
-	s = strings.ReplaceAll(s, "%", "\\%")
-	s = strings.ReplaceAll(s, "_", "\\_")
-	return s
-}
-
-// isUploadedFile checks if a URL is a local uploaded file, not an external URL.
-// Returns true for:
-// - /static/uploads/... (relative path)
-// - http://localhost:8090/static/uploads/... (matches SITE_URL)
-// - https://yourdomain.com/static/uploads/... (matches SITE_URL)
-// Returns false for external URLs like https://example.com/image.png
-func isUploadedFile(url string) bool {
-	// Check for relative upload path
-	if strings.HasPrefix(url, "/static/uploads/") {
-		return true
-	}
-
-	// Check for absolute URL matching site domain
-	if strings.Contains(url, "/static/uploads/") {
-		// Extract domain from URL if present
-		if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-			// Get site URL from environment (with fallback)
-			siteURL := os.Getenv("SITE_URL")
-			if siteURL == "" {
-				siteURL = "http://localhost:8090" // Default fallback
-			}
-
-			// Check if URL starts with site domain
-			if strings.HasPrefix(url, siteURL+"/static/uploads/") {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// isFileReferencedInBlocks checks if a URL is referenced in any block's data.
-// Returns true if the filename appears in any block (uses same logic as orphaned uploads cleanup).
-func (s *DeleteService) isFileReferencedInBlocks(ctx context.Context, urlPath string) (bool, error) {
-	// Extract just the filename for flexible search
-	filename := filepath.Base(urlPath)
-
-	// Escape LIKE special characters to prevent unintended matches
-	escapedFilename := escapeLikePattern(filename)
-
-	// Search for the filename in the blocks data (JSON field)
-	count, err := s.db.NewSelect().
-		Model((*models.Block)(nil)).
-		Where("data LIKE ? ESCAPE '\\'", "%"+escapedFilename+"%").
-		Count(ctx)
-
-	if err != nil {
-		return false, fmt.Errorf("querying blocks: %w", err)
-	}
-
-	return count > 0, nil
-}
-
-// cleanupOrphanedUpload deletes a file from the filesystem if it's not referenced by any blocks.
+// cleanupUploadFiles deletes physical files from the filesystem based on upload records.
 // This runs in a goroutine with background context, so errors are only logged.
-func (s *DeleteService) cleanupOrphanedUpload(url string) {
-	ctx := context.Background()
+func (s *DeleteService) cleanupUploadFiles(ctx context.Context, uploads []*models.Upload) {
+	for _, upload := range uploads {
+		// Delete the main file using OriginalURL (which contains the actual path)
+		s.deleteUploadFile(ctx, upload.OriginalURL)
 
-	// Skip external URLs - only clean up local uploads
-	if !isUploadedFile(url) {
-		s.logger.DebugContext(ctx, "skipping external URL", "url", url)
-		return
+		// Delete any additional size variants
+		sizes, err := upload.GetSizes()
+		if err != nil {
+			s.logger.WarnContext(ctx, "failed to get upload sizes", "uploadID", upload.ID, "error", err)
+			continue
+		}
+
+		for _, size := range sizes {
+			s.deleteUploadFile(ctx, size.URL)
+		}
 	}
+}
 
-	// Check if the upload is still referenced by other blocks
-	isReferenced, err := s.isFileReferencedInBlocks(ctx, url)
-	if err != nil {
-		s.logger.WarnContext(ctx, "failed to check upload references", "url", url, "error", err)
-		return
-	}
+// deleteUploadFile deletes a single file from the filesystem using its URL/path.
+func (s *DeleteService) deleteUploadFile(ctx context.Context, urlOrPath string) {
+	// Parse the URL to get the filesystem path
+	// Expected formats:
+	//   - /static/uploads/YYYY/MM/DD/filename.ext (relative)
+	//   - http://domain/static/uploads/YYYY/MM/DD/filename.ext (absolute)
 
-	if isReferenced {
-		// Upload is still used by other blocks, don't delete
-		s.logger.DebugContext(ctx, "upload still referenced, keeping", "url", url)
-		return
-	}
-
-	// Try direct path construction first for performance
-	// Expected format: /static/uploads/YYYY/MM/DD/filename.ext
-	filename := filepath.Base(url)
-	parts := strings.Split(strings.Trim(url, "/"), "/")
-
-	var filePath string
-	if len(parts) >= 6 && parts[0] == "static" && parts[1] == "uploads" {
-		// Extract date path: YYYY/MM/DD
-		datePath := filepath.Join(parts[2], parts[3], parts[4])
-		filePath = filepath.Join(s.uploadsDir, datePath, filename)
-
-		// Verify file exists at expected location
-		if _, statErr := os.Stat(filePath); statErr == nil {
-			// File exists, delete it
-			if removeErr := os.Remove(filePath); removeErr != nil {
-				s.logger.WarnContext(ctx, "failed to delete orphaned upload", "path", filePath, "error", removeErr)
-			} else {
-				s.logger.InfoContext(ctx, "deleted orphaned upload", "path", filePath, "url", url)
-			}
-			return
+	// Strip domain if present (convert absolute URL to path)
+	path := urlOrPath
+	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
+		// Extract path from URL (everything after domain)
+		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
+		parts := strings.SplitN(urlOrPath, "/", 4)
+		//nolint:mnd // Need 4 parts to extract path after domain
+		if len(parts) >= 4 {
+			path = "/" + parts[3]
 		}
 	}
 
-	// Fallback: Walk the uploads directory to find the file
-	// (Only needed if URL format is unexpected or file moved)
-	err = filepath.Walk(s.uploadsDir, func(path string, info os.FileInfo, walkErr error) error {
-		if walkErr != nil {
-			//nolint:nilerr // Continue walking on errors, intentionally ignore per-file errors
-			return nil
-		}
-		if !info.IsDir() && filepath.Base(path) == filename {
-			filePath = path
-			return filepath.SkipAll // Found it, stop walking
-		}
-		return nil
-	})
+	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-	if err != nil {
-		s.logger.WarnContext(ctx, "error walking uploads directory", "error", err)
+	if len(parts) < 6 || parts[0] != "static" || parts[1] != "uploads" {
+		s.logger.WarnContext(ctx, "unexpected upload URL format",
+			"url", urlOrPath,
+			"parsed_path", path,
+			"parts", len(parts))
 		return
 	}
 
-	if filePath == "" {
-		// File doesn't exist on filesystem, nothing to clean up
-		s.logger.DebugContext(ctx, "upload file not found on filesystem", "url", url)
-		return
-	}
+	// Extract date path: YYYY/MM/DD
+	datePath := filepath.Join(parts[2], parts[3], parts[4])
+	filename := filepath.Base(path)
+	filePath := filepath.Join(s.uploadsDir, datePath, filename)
 
 	// Delete the file
-	err = os.Remove(filePath)
-	if err != nil {
-		s.logger.WarnContext(ctx, "failed to delete orphaned upload", "path", filePath, "error", err)
-		return
+	if err := os.Remove(filePath); err != nil {
+		if !os.IsNotExist(err) {
+			s.logger.WarnContext(ctx, "failed to delete upload file",
+				"path", filePath,
+				"error", err)
+		}
 	}
-
-	s.logger.InfoContext(ctx, "deleted orphaned upload", "path", filePath, "url", url)
 }
