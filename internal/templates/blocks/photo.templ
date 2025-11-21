@@ -15,210 +15,148 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			@templ.Raw(stringToMarkdown(block.Prompt))
-			if data.IsComplete() {
+			<div class="not-prose">
+				<!-- Display existing images -->
 				if len(block.GetImageURLs(data)) > 0 {
-					<div class="mt-4 grid gap-4">
+					<div class="flex flex-col gap-4">
 						for _, imageURL := range block.GetImageURLs(data) {
-							<img src={ imageURL } alt="Uploaded photo" class="rounded-lg max-w-full"/>
+							<div class="indicator w-full max-h-96 flex items-center justify-center">
+								if !data.IsComplete() {
+									<button
+										class="indicator-item indicator-top indicator-end badge badge-error cursor-pointer z-10"
+										hx-post="/blocks/validate"
+										hx-vals={ fmt.Sprintf(`{"block": "%s", "delete": "%s"}`, block.ID, imageURL) }
+										hx-swap="outerHTML"
+										hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+									</button>
+								}
+								<img src={ imageURL } alt="Uploaded photo" class="rounded-lg max-w-full max-h-full object-contain"/>
+							</div>
 						}
 					</div>
-				} else {
-					<p class="text-sm text-gray-500">No images found in player data</p>
 				}
-			} else {
-				<form
-					id={ fmt.Sprintf("photoForm-%s", block.ID) }
-					hx-post="/blocks/validate"
-					hx-swap="outerHTML"
-					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-					data-block-id={ block.ID }
-					data-location-id={ block.LocationID }
-				>
-					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="form-control">
-						<label id={ fmt.Sprintf("uploadButton-%s", block.ID) } for={ fmt.Sprintf("fileInput-%s", block.ID) } class="btn btn-primary w-full cursor-pointer">
+				<!-- Upload button (only show if under limit and not complete) -->
+				if !data.IsComplete() && len(block.GetImageURLs(data)) < block.MaxImages {
+					<form
+						id={ fmt.Sprintf("photoForm-%s", block.ID) }
+						hx-post="/blocks/validate"
+						hx-swap="outerHTML"
+						hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+						data-block-id={ block.ID }
+						data-location-id={ block.LocationID }
+						data-max-images={ fmt.Sprint(block.MaxImages) }
+					>
+						<input type="hidden" name="block" value={ block.ID }/>
+						<label
+							id={ fmt.Sprintf("uploadButton-%s", block.ID) }
+							for={ fmt.Sprintf("fileInput-%s", block.ID) }
+							class="btn btn-primary w-full cursor-pointer"
+						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera w-5 h-5"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
 							Upload Photo
+							if block.MaxImages > 1 {
+								({ fmt.Sprint(len(block.GetImageURLs(data))) } of { fmt.Sprint(block.MaxImages) })
+							}
 						</label>
 						<input type="file" id={ fmt.Sprintf("fileInput-%s", block.ID) } class="hidden" accept="image/*"/>
-					</div>
-					<div id={ fmt.Sprintf("previewContainer-%s", block.ID) } class="hidden flex flex-col items-center gap-4 mt-0">
-						<img id={ fmt.Sprintf("imagePreview-%s", block.ID) } alt="Preview" class="rounded-lg max-w-full m-auto"/>
-						<progress id={ fmt.Sprintf("progressBar-%s", block.ID) } class="progress progress-primary w-full" value="0" max="100"></progress>
-						<div class="grid grid-cols-2 gap-4 w-full hidden" id={ fmt.Sprintf("actionButtons-%s", block.ID) }>
-							<label for={ fmt.Sprintf("fileInput-%s", block.ID) } class="btn btn-accent w-full">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-undo w-5 h-5"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
-								Retry
-							</label>
-							<button id={ fmt.Sprintf("submitButton-%s", block.ID) } type="submit" class="btn btn-primary w-full">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-5 h-5"><path d="M20 6 9 17l-5-5"></path></svg>
-								Submit
-							</button>
-						</div>
-					</div>
-				</form>
-				<script type="text/javascript">
-					(function() {
-						const form = document.currentScript.previousElementSibling;
-						const blockId = form.getAttribute('data-block-id');
-						const locationId = form.getAttribute('data-location-id');
-						const fileInput = document.getElementById('fileInput-' + blockId);
-						const previewContainer = document.getElementById('previewContainer-' + blockId);
-						const imagePreview = document.getElementById('imagePreview-' + blockId);
-						const progressBar = document.getElementById('progressBar-' + blockId);
-						const submitButton = document.getElementById('submitButton-' + blockId);
-						const uploadButton = document.getElementById('uploadButton-' + blockId);
-						const actionButtons = document.getElementById('actionButtons-' + blockId);
+						<progress id={ fmt.Sprintf("progressBar-%s", block.ID) } class="progress progress-primary w-full mt-2 hidden" value="0" max="100"></progress>
+					</form>
+					<script type="text/javascript">
+						(function() {
+							const form = document.currentScript.previousElementSibling;
+							const blockId = form.getAttribute('data-block-id');
+							const locationId = form.getAttribute('data-location-id');
+							const fileInput = document.getElementById('fileInput-' + blockId);
+							const progressBar = document.getElementById('progressBar-' + blockId);
 
-						if (!fileInput) {
-							console.error('File input not found:', 'fileInput-' + blockId);
-							return;
-						}
-
-						console.log('Photo block initialized:', blockId);
-
-						fileInput.addEventListener('change', async function(event) {
-							console.log('File selected:', event.target.files[0]);
-							const file = event.target.files[0];
-							if (!file) return;
-
-							const reader = new FileReader();
-							reader.onload = function(e) {
-								imagePreview.src = e.target.result;
-								previewContainer.classList.remove('hidden');
-								uploadButton.classList.add('hidden');
-							};
-							reader.readAsDataURL(file);
-
-							const formData = new FormData();
-							formData.append('file', file);
-							formData.append('block_id', blockId);
-							if (locationId) {
-								formData.append('location_id', locationId);
+							if (!fileInput) {
+								console.error('File input not found:', 'fileInput-' + blockId);
+								return;
 							}
 
-							try {
-								const uploadUrl = await uploadFile(formData);
-								progressBar.classList.add('hidden');
-								actionButtons.classList.remove('hidden');
+							fileInput.addEventListener('change', async function(event) {
+								const file = event.target.files[0];
+								if (!file) return;
 
-								const hiddenInput = document.createElement('input');
-								hiddenInput.type = 'hidden';
-								hiddenInput.name = 'url';
-								hiddenInput.value = uploadUrl;
-								form.appendChild(hiddenInput);
-							} catch (error) {
-								progressBar.classList.add('hidden');
-								actionButtons.classList.remove('hidden');
-								submitButton.classList.add('hidden');
-								console.error(error);
-							}
-						});
+								progressBar.classList.remove('hidden');
+								progressBar.value = 0;
 
-						async function uploadFile(formData) {
-							return new Promise((resolve, reject) => {
-								const xhr = new XMLHttpRequest();
-								xhr.open('POST', '/upload/image', true);
-
-								// Get CSRF token from htmx headers
-								const body = document.querySelector('body');
-								const hxHeaders = body.getAttribute('hx-headers');
-								if (hxHeaders) {
-									try {
-										const headers = JSON.parse(hxHeaders);
-										if (headers['X-CSRF-TOKEN']) {
-											xhr.setRequestHeader('X-CSRF-TOKEN', headers['X-CSRF-TOKEN']);
-										}
-									} catch (e) {
-										console.error('Failed to parse CSRF token:', e);
-									}
+								const formData = new FormData();
+								formData.append('file', file);
+								formData.append('block_id', blockId);
+								if (locationId) {
+									formData.append('location_id', locationId);
 								}
 
-								xhr.upload.addEventListener('progress', function(e) {
-									if (e.lengthComputable) {
-										const percentComplete = (e.loaded / e.total) * 100;
-										progressBar.value = percentComplete;
-									}
-								});
+								try {
+									const uploadUrl = await uploadFile(formData);
 
-								xhr.onload = function() {
-									if (xhr.status === 200) {
-										resolve(JSON.parse(xhr.responseText).url);
-									} else {
-										reject(new Error('Upload failed'));
-									}
-								};
+									const hiddenInput = document.createElement('input');
+									hiddenInput.type = 'hidden';
+									hiddenInput.name = 'url';
+									hiddenInput.value = uploadUrl;
+									form.appendChild(hiddenInput);
 
-								xhr.onerror = function() {
-									reject(new Error('Upload error'));
-								};
-
-								xhr.send(formData);
+									// Auto-submit the form
+									htmx.trigger(form, 'submit');
+								} catch (error) {
+									progressBar.classList.add('hidden');
+									alert('Upload failed: ' + error.message);
+									console.error(error);
+								}
 							});
-						}
-					})();
-				</script>
-			}
+
+							async function uploadFile(formData) {
+								return new Promise((resolve, reject) => {
+									const xhr = new XMLHttpRequest();
+									xhr.open('POST', '/upload/image', true);
+
+									const body = document.querySelector('body');
+									const hxHeaders = body.getAttribute('hx-headers');
+									if (hxHeaders) {
+										try {
+											const headers = JSON.parse(hxHeaders);
+											if (headers['X-CSRF-TOKEN']) {
+												xhr.setRequestHeader('X-CSRF-TOKEN', headers['X-CSRF-TOKEN']);
+											}
+										} catch (e) {
+											console.error('Failed to parse CSRF token:', e);
+										}
+									}
+
+									xhr.upload.addEventListener('progress', function(e) {
+										if (e.lengthComputable) {
+											progressBar.value = (e.loaded / e.total) * 100;
+										}
+									});
+
+									xhr.onload = function() {
+										if (xhr.status === 200) {
+											resolve(JSON.parse(xhr.responseText).url);
+										} else {
+											reject(new Error('Upload failed'));
+										}
+									};
+
+									xhr.onerror = function() {
+										reject(new Error('Upload error'));
+									};
+
+									xhr.send(formData);
+								});
+							}
+						})();
+					</script>
+				}
+			</div>
 		</div>
 	</div>
 }
 
 templ photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
-	<div
-		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			@templ.Raw(stringToMarkdown(block.Prompt))
-			if data.IsComplete() {
-				<p class="label-text font-bold text-success">
-					You got it!
-				</p>
-				if len(block.GetImageURLs(data)) > 0 {
-					<div class="mt-4 grid gap-4">
-						for _, imageURL := range block.GetImageURLs(data) {
-							<img src={ imageURL } alt="Uploaded photo" class="rounded-lg max-w-full"/>
-						}
-					</div>
-				} else {
-					<p class="text-sm text-gray-500">No images found in player data</p>
-				}
-			} else {
-				<form
-					hx-post={ fmt.Sprint("/blocks/validate") }
-					hx-swap="none"
-				>
-					<input type="hidden" name="block" value={ block.ID }/>
-					<label
-						for={ fmt.Sprintf("photo-%s", block.ID) }
-						class="form-control w-full"
-					>
-						<div class="join w-full animate-[wobble_1s_ease-in-out]">
-							<input
-								id={ fmt.Sprintf("photo-%s", block.ID) }
-								name="photo"
-								type="text"
-								placeholder="Photo"
-								class="input input-primary join-item w-full max-w-xs"
-								autoComplete="off"
-								required
-							/>
-							<button
-								class="btn btn-primary btn-outline join-item rounded-r-full"
-							>
-								Check
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-							</button>
-						</div>
-					</label>
-				</form>
-			}
-		</div>
-	</div>
+	@photoPlayer(settings, block, data)
 }
 
 var photoTextarea = TextareaParams{
@@ -232,12 +170,32 @@ templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input:not([type=range])) delay:500ms, input from:(#form-%s input[type=range]) delay:500ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
 		if settings.EnablePoints {
 			@adminPointsField(block.Points)
 		}
 		@TextareaField(photoTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset max-w-xs">
+			<legend class="fieldset-legend">Max Images</legend>
+			<div class="flex items-center gap-2">
+				<input
+					type="range"
+					name="max_images"
+					id={ fmt.Sprintf("max-images-%s", block.ID) }
+					min="1"
+					max="5"
+					value={ fmt.Sprint(block.MaxImages) }
+					class="range range-primary flex-1"
+					step="1"
+					_={ fmt.Sprintf("on input set #max-images-output-%s.textContent to my.value", block.ID) }
+				/>
+				<output id={ fmt.Sprintf("max-images-output-%s", block.ID) } class="badge badge-sm badge-primary min-w-[3rem] text-center font-bold">
+					{ fmt.Sprint(block.MaxImages) }
+				</output>
+			</div>
+			<p class="label">Maximum number of photos that can be uploaded</p>
+		</fieldset>
 	</form>
 }
