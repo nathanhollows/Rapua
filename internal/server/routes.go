@@ -124,6 +124,15 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Post("/validate", playerHandler.ValidateBlock)
 	})
 
+	// Upload route for player media
+	router.Route("/upload", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
+		})
+		r.Post("/image", playerHandler.UploadImage)
+	})
+
 	// Show the lobby page
 	router.Route("/lobby", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {

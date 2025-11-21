@@ -477,6 +477,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		navigationService,
 		notificationService,
 		teamService,
+		uploadService,
 	)
 
 	adminHandler := admin.NewAdminHandler(
