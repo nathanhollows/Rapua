@@ -1,22 +1,23 @@
-package models
+package models_test
 
 import (
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLocation_HasCoordinates(t *testing.T) {
 	tests := []struct {
 		name     string
-		location Location
+		location models.Location
 		want     bool
 	}{
 		{
 			name: "Location with mapped coordinates",
-			location: Location{
-				Marker: Marker{
+			location: models.Location{
+				Marker: models.Marker{
 					Lat: -41.2865,
 					Lng: 174.7762,
 				},
@@ -25,8 +26,8 @@ func TestLocation_HasCoordinates(t *testing.T) {
 		},
 		{
 			name: "Location without coordinates (zero values)",
-			location: Location{
-				Marker: Marker{
+			location: models.Location{
+				Marker: models.Marker{
 					Lat: 0,
 					Lng: 0,
 				},
@@ -35,8 +36,8 @@ func TestLocation_HasCoordinates(t *testing.T) {
 		},
 		{
 			name: "Location with partial coordinates (only latitude)",
-			location: Location{
-				Marker: Marker{
+			location: models.Location{
+				Marker: models.Marker{
 					Lat: -41.2865,
 					Lng: 0,
 				},
@@ -45,8 +46,8 @@ func TestLocation_HasCoordinates(t *testing.T) {
 		},
 		{
 			name: "Location with partial coordinates (only longitude)",
-			location: Location{
-				Marker: Marker{
+			location: models.Location{
+				Marker: models.Marker{
 					Lat: 0,
 					Lng: 174.7762,
 				},
@@ -66,13 +67,13 @@ func TestLocation_HasCoordinates(t *testing.T) {
 func TestLocation_HasCluesContext(t *testing.T) {
 	tests := []struct {
 		name     string
-		location Location
+		location models.Location
 		want     bool
 	}{
 		{
 			name: "Location with clues block",
-			location: Location{
-				Blocks: []Block{
+			location: models.Location{
+				Blocks: []models.Block{
 					{Context: blocks.ContextLocationClues},
 				},
 			},
@@ -80,8 +81,8 @@ func TestLocation_HasCluesContext(t *testing.T) {
 		},
 		{
 			name: "Location with multiple blocks including clues",
-			location: Location{
-				Blocks: []Block{
+			location: models.Location{
+				Blocks: []models.Block{
 					{Context: blocks.ContextLocationContent},
 					{Context: blocks.ContextLocationClues},
 					{Context: blocks.ContextCheckpoint},
@@ -91,8 +92,8 @@ func TestLocation_HasCluesContext(t *testing.T) {
 		},
 		{
 			name: "Location with only content blocks",
-			location: Location{
-				Blocks: []Block{
+			location: models.Location{
+				Blocks: []models.Block{
 					{Context: blocks.ContextLocationContent},
 					{Context: blocks.ContextCheckpoint},
 				},
@@ -101,14 +102,14 @@ func TestLocation_HasCluesContext(t *testing.T) {
 		},
 		{
 			name: "Location with no blocks",
-			location: Location{
-				Blocks: []Block{},
+			location: models.Location{
+				Blocks: []models.Block{},
 			},
 			want: false,
 		},
 		{
 			name: "Location with nil blocks",
-			location: Location{
+			location: models.Location{
 				Blocks: nil,
 			},
 			want: false,
