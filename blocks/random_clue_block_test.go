@@ -1,9 +1,10 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,8 +16,8 @@ func TestRandomClueBlock_ParseData(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -64,7 +65,7 @@ func TestRandomClueBlock_UpdateBlockData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			block := RandomClueBlock{}
+			block := blocks.RandomClueBlock{}
 			err := block.UpdateBlockData(tt.input)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, block.Clues)
@@ -73,8 +74,8 @@ func TestRandomClueBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestRandomClueBlock_GetClue(t *testing.T) {
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID: "test-block-id",
 		},
 		Clues: []string{
@@ -111,8 +112,8 @@ func TestRandomClueBlock_GetClue(t *testing.T) {
 }
 
 func TestRandomClueBlock_GetClue_EmptyClues(t *testing.T) {
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID: "test-block-id",
 		},
 		Clues: []string{},
@@ -123,8 +124,8 @@ func TestRandomClueBlock_GetClue_EmptyClues(t *testing.T) {
 }
 
 func TestRandomClueBlock_GetClue_SingleClue(t *testing.T) {
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID: "test-block-id",
 		},
 		Clues: []string{"Only clue"},
@@ -138,13 +139,13 @@ func TestRandomClueBlock_GetClue_SingleClue(t *testing.T) {
 
 func TestRandomClueBlock_GetClue_Deterministic(t *testing.T) {
 	// Test that the same team + block combination always produces the same result
-	block1 := RandomClueBlock{
-		BaseBlock: BaseBlock{ID: "block-1"},
+	block1 := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{ID: "block-1"},
 		Clues:     []string{"A", "B", "C", "D", "E"},
 	}
 
-	block2 := RandomClueBlock{
-		BaseBlock: BaseBlock{ID: "block-2"},
+	block2 := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{ID: "block-2"},
 		Clues:     []string{"A", "B", "C", "D", "E"},
 	}
 
@@ -170,21 +171,21 @@ func TestRandomClueBlock_GetClue_Deterministic(t *testing.T) {
 }
 
 func TestRandomClueBlock_RequiresValidation(t *testing.T) {
-	block := RandomClueBlock{}
+	block := blocks.RandomClueBlock{}
 	assert.False(t, block.RequiresValidation(), "Random clue block should not require validation")
 }
 
 func TestRandomClueBlock_ValidatePlayerInput(t *testing.T) {
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 0,
 		},
 		Clues: []string{"Test clue"},
 	}
 
-	state := &mockPlayerState{
-		blockID:  "block-1",
-		playerID: "player-1",
+	state := &blocks.MockPlayerState{
+		//BlockID:  "block-1",
+		//PlayerID: "player-1",
 	}
 
 	// Any input should mark the block as complete without validation
@@ -205,8 +206,8 @@ func TestRandomClueBlock_ValidatePlayerInput(t *testing.T) {
 }
 
 func TestRandomClueBlock_GetData(t *testing.T) {
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:     "test-id",
 			Points: 0,
 		},
@@ -217,7 +218,7 @@ func TestRandomClueBlock_GetData(t *testing.T) {
 	assert.NotNil(t, data)
 
 	// Verify we can unmarshal the data
-	var unmarshaled RandomClueBlock
+	var unmarshaled blocks.RandomClueBlock
 	err := json.Unmarshal(data, &unmarshaled)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"First clue", "Second clue"}, unmarshaled.Clues)
@@ -225,8 +226,8 @@ func TestRandomClueBlock_GetData(t *testing.T) {
 
 func TestRandomClueBlock_Distribution(t *testing.T) {
 	// Test that the distribution across teams is reasonably even
-	block := RandomClueBlock{
-		BaseBlock: BaseBlock{ID: "test-block"},
+	block := blocks.RandomClueBlock{
+		BaseBlock: blocks.BaseBlock{ID: "test-block"},
 		Clues:     []string{"A", "B", "C", "D"},
 	}
 

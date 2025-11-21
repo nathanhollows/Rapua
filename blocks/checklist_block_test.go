@@ -1,23 +1,24 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestChecklistBlock_Getters(t *testing.T) {
-	block := ChecklistBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ChecklistBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
 			Points:     5,
 		},
 		Content: "Test Content",
-		List: []ChecklistItem{
+		List: []blocks.ChecklistItem{
 			{ID: "item-1", Description: "Item 1", Checked: false},
 			{ID: "item-2", Description: "Item 2", Checked: false},
 		},
@@ -34,8 +35,8 @@ func TestChecklistBlock_Getters(t *testing.T) {
 
 func TestChecklistBlock_ParseData(t *testing.T) {
 	data := `{"content":"Test Content","list":[{"id":"item-1","description":"Item 1","checked":false},{"id":"item-2","description":"Item 2","checked":false}]}`
-	block := ChecklistBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ChecklistBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -54,7 +55,7 @@ func TestChecklistBlock_ParseData(t *testing.T) {
 
 func TestChecklistBlock_UpdateBlockData(t *testing.T) {
 	// Just add content
-	block := ChecklistBlock{}
+	block := blocks.ChecklistBlock{}
 	data := map[string][]string{
 		"content": {"Updated Content"},
 	}
@@ -65,17 +66,17 @@ func TestChecklistBlock_UpdateBlockData(t *testing.T) {
 
 func TestChecklistBlock_ValidatePlayerInput(t *testing.T) {
 	// Initial setup for checklist block and mock player state
-	block := ChecklistBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ChecklistBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 10,
 		},
-		List: []ChecklistItem{
+		List: []blocks.ChecklistItem{
 			{ID: "item-1", Description: "Item 1", Checked: false},
 			{ID: "item-2", Description: "Item 2", Checked: false},
 		},
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	// Validate player input where only "item-1" is checked
 	input := map[string][]string{
@@ -85,7 +86,7 @@ func TestChecklistBlock_ValidatePlayerInput(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that player data contains "item-1"
-	var playerData checklistPlayerData
+	var playerData blocks.ChecklistPlayerData
 	err = json.Unmarshal(state.GetPlayerData(), &playerData)
 	require.NoError(t, err)
 	assert.Contains(t, playerData.CheckedItems, "item-1")

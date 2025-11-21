@@ -1,17 +1,18 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestButtonBlock_Getters(t *testing.T) {
-	block := ButtonBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ButtonBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -35,8 +36,8 @@ func TestButtonBlock_ParseData(t *testing.T) {
 	variant := "success"
 	data := `{"link":"` + link + `","text":"` + text + `","variant":"` + variant + `"}`
 
-	block := ButtonBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ButtonBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -49,7 +50,7 @@ func TestButtonBlock_ParseData(t *testing.T) {
 }
 
 func TestButtonBlock_UpdateBlockData(t *testing.T) {
-	block := ButtonBlock{}
+	block := blocks.ButtonBlock{}
 	data := map[string][]string{
 		"link":    {"https://example.com"},
 		"text":    {"Updated Button Text"},
@@ -63,8 +64,8 @@ func TestButtonBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
-	block := ButtonBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ButtonBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
 		Link:    "https://example.com",
@@ -72,7 +73,7 @@ func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
 		Variant: "info",
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)

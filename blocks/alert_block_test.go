@@ -1,17 +1,18 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAlertBlock_Getters(t *testing.T) {
-	block := AlertBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.AlertBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -31,8 +32,8 @@ func TestAlertBlock_ParseData(t *testing.T) {
 	content := gofakeit.Sentence(5)
 	variant := gofakeit.Word()
 	data := `{"content":"` + content + `","variant":"` + variant + `"}`
-	block := AlertBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.AlertBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -44,7 +45,7 @@ func TestAlertBlock_ParseData(t *testing.T) {
 }
 
 func TestAlertBlock_UpdateBlockData(t *testing.T) {
-	block := AlertBlock{}
+	block := blocks.AlertBlock{}
 	data := map[string][]string{
 		"content": {"Updated Content"},
 	}
@@ -54,15 +55,15 @@ func TestAlertBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestAlertBlock_ValidatePlayerInput(t *testing.T) {
-	block := AlertBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.AlertBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
 		Content: "Test Content",
 		Variant: "info",
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)

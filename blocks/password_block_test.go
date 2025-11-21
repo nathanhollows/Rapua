@@ -1,16 +1,17 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAnswerBlock_Getters(t *testing.T) {
-	block := PasswordBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.PasswordBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-456",
 			Order:      2,
@@ -31,8 +32,8 @@ func TestAnswerBlock_Getters(t *testing.T) {
 
 func TestAnswerBlock_ParseData(t *testing.T) {
 	data := `{"prompt":"Answer Content", "answer":"secret", "fuzzy":true}`
-	block := PasswordBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.PasswordBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -46,7 +47,7 @@ func TestAnswerBlock_ParseData(t *testing.T) {
 
 func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 	// Update all fields
-	block := PasswordBlock{}
+	block := blocks.PasswordBlock{}
 	data := map[string][]string{
 		"prompt": {"Updated Answer Content"},
 		"answer": {"newsecret"},
@@ -59,7 +60,7 @@ func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 	assert.True(t, block.Fuzzy)
 
 	// Update without fuzzy
-	block = PasswordBlock{}
+	block = blocks.PasswordBlock{}
 	data = map[string][]string{
 		"prompt": {"Updated Answer Content"},
 		"answer": {"newsecret"},
@@ -72,14 +73,14 @@ func TestAnswerBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestAnswerBlock_ValidatePlayerInput(t *testing.T) {
-	block := PasswordBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.PasswordBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 10,
 		},
 		Answer: "secret",
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	// Test incorrect answer
 	input := map[string][]string{"answer": {"wrong"}}
