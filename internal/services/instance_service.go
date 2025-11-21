@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 )
@@ -42,6 +43,31 @@ func (s *InstanceService) CreateInstance(
 		Name:       name,
 		UserID:     user.ID,
 		IsTemplate: false,
+		GameStructure: models.GameStructure{
+			ID:             uuid.New().String(),
+			Name:           "",
+			Color:          "",
+			Routing:        models.RouteStrategyFreeRoam,
+			Navigation:     models.NavigationDisplayMap,
+			CompletionType: models.CompletionAll,
+			IsRoot:         true,
+			LocationIDs:    []string{},
+			SubGroups: []models.GameStructure{
+				{
+					ID:             uuid.New().String(),
+					Name:           "Locations",
+					Color:          "primary",
+					Routing:        models.RouteStrategyRandom,
+					Navigation:     models.NavigationDisplayCustom,
+					CompletionType: models.CompletionAll,
+					MaxNext:        3,
+					AutoAdvance:    true,
+					IsRoot:         false,
+					LocationIDs:    []string{},
+					SubGroups:      []models.GameStructure{},
+				},
+			},
+		},
 	}
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
