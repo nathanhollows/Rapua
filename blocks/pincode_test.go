@@ -1,4 +1,4 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,8 +14,8 @@ import (
 func TestPincodeBlock_Getters(t *testing.T) {
 	prompt := gofakeit.Question()
 	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
-	block := PincodeBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.PincodeBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -34,8 +35,8 @@ func TestPincodeBlock_ParseData(t *testing.T) {
 	prompt := gofakeit.Question()
 	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
 	data := `{"prompt":"` + prompt + `", "pincode":"` + pincode + `"}`
-	block := PincodeBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.PincodeBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: []byte(data),
 		},
 	}
@@ -50,7 +51,7 @@ func TestPincodeBlock_UpdateBlockData(t *testing.T) {
 	prompt := gofakeit.Question()
 	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
 	points := strconv.Itoa(gofakeit.Number(1, 1000))
-	block := PincodeBlock{}
+	block := blocks.PincodeBlock{}
 	data := map[string][]string{
 		"prompt":  {prompt},
 		"pincode": {pincode},
@@ -67,7 +68,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	prompt := gofakeit.Question()
 	pincode := "12345" // Use fixed pincode for predictable testing
 	points := strconv.Itoa(gofakeit.Number(1, 1000))
-	block := PincodeBlock{}
+	block := blocks.PincodeBlock{}
 	data := map[string][]string{
 		"prompt":  {prompt},
 		"pincode": {pincode},
@@ -85,7 +86,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	input := map[string][]string{
 		"pincode": {"9", "8", "7", "6", "5"},
 	}
-	state1 := &mockPlayerState{}
+	state1 := &blocks.MockPlayerState{}
 	newState, err := block.ValidatePlayerInput(state1, input)
 	require.NoError(t, err)
 	assert.False(t, newState.IsComplete())
@@ -96,7 +97,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	input = map[string][]string{
 		"pincode": {"a", "b", "c", "d", "e"},
 	}
-	state2 := &mockPlayerState{}
+	state2 := &blocks.MockPlayerState{}
 	newState, err = block.ValidatePlayerInput(state2, input)
 	require.NoError(t, err)
 	assert.False(t, newState.IsComplete())
@@ -107,7 +108,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	input = map[string][]string{
 		"pincode": {"1", "2", "3"},
 	}
-	state3 := &mockPlayerState{}
+	state3 := &blocks.MockPlayerState{}
 	_, err = block.ValidatePlayerInput(state3, input)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pincode length does not match")
@@ -117,7 +118,7 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	input = map[string][]string{
 		"pincode": {"12", "3", "4", "5", "6"},
 	}
-	state4 := &mockPlayerState{}
+	state4 := &blocks.MockPlayerState{}
 	_, err = block.ValidatePlayerInput(state4, input)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pincode must be a single character per input")
@@ -127,14 +128,14 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	input = map[string][]string{
 		"pincode": {"1", "2", "3", "4", "5"},
 	}
-	state5 := &mockPlayerState{}
+	state5 := &blocks.MockPlayerState{}
 	newState, err = block.ValidatePlayerInput(state5, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, points, strconv.Itoa(newState.GetPointsAwarded()))
 
 	// Check the successful attempt's data
-	var newPlayerData pincodeBlockData
+	var newPlayerData blocks.PincodeBlockData
 	err = json.Unmarshal(newState.GetPlayerData(), &newPlayerData)
 	require.NoError(t, err)
 	assert.Equal(t, 1, newPlayerData.Attempts)
