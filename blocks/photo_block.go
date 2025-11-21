@@ -100,3 +100,18 @@ func (b *PhotoBlock) ValidatePlayerInput(state PlayerState, input map[string][]s
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+
+// GetImageURLs extracts the image URLs from the player state.
+func (b *PhotoBlock) GetImageURLs(state PlayerState) []string {
+	if state.GetPlayerData() == nil {
+		return []string{}
+	}
+
+	var data photoBlockData
+	err := json.Unmarshal(state.GetPlayerData(), &data)
+	if err != nil {
+		return []string{}
+	}
+
+	return data.URLs
+}

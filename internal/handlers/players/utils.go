@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v6/blocks"
@@ -77,6 +78,16 @@ type TeamService interface {
 	StartPlaying(ctx context.Context, teamCod string) error
 }
 
+type UploadService interface {
+	// UploadFile uploads a file with metadata
+	UploadFile(
+		ctx context.Context,
+		file multipart.File,
+		fileHeader *multipart.FileHeader,
+		data services.UploadMetadata,
+	) (*models.Upload, error)
+}
+
 type PlayerHandler struct {
 	logger                  *slog.Logger
 	blockService            BlockService
@@ -86,6 +97,7 @@ type PlayerHandler struct {
 	navigationService       NavigationService
 	notificationService     NotificationService
 	teamService             TeamService
+	uploadService           UploadService
 }
 
 func NewPlayerHandler(
@@ -97,6 +109,7 @@ func NewPlayerHandler(
 	navigationService NavigationService,
 	notificationService NotificationService,
 	teamService TeamService,
+	uploadService UploadService,
 ) *PlayerHandler {
 	return &PlayerHandler{
 		logger:                  logger,
@@ -107,6 +120,7 @@ func NewPlayerHandler(
 		navigationService:       navigationService,
 		notificationService:     notificationService,
 		teamService:             teamService,
+		uploadService:           uploadService,
 	}
 }
 
