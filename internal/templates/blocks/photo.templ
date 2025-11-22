@@ -15,12 +15,12 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 		@completionBadge(data)
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			@templ.Raw(stringToMarkdown(block.Prompt))
-			<div class="not-prose">
+			<div class="not-prose flex flex-col gap-5">
 				<!-- Display existing images -->
 				if len(block.GetImageURLs(data)) > 0 {
-					<div class="flex flex-col gap-4">
+					<div class="flex flex-col gap-5">
 						for _, imageURL := range block.GetImageURLs(data) {
-							<div class="indicator w-full max-h-96 flex items-center justify-center">
+							<div class="indicator w-full flex items-center justify-center">
 								if !data.IsComplete() {
 									<button
 										class="indicator-item indicator-top indicator-end badge badge-error cursor-pointer z-10"
@@ -29,7 +29,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 										hx-swap="outerHTML"
 										hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
 									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
 									</button>
 								}
 								<img src={ imageURL } alt="Uploaded photo" class="rounded-lg max-w-full max-h-full object-contain"/>
