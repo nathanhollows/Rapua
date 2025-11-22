@@ -1,16 +1,17 @@
-package blocks
+package blocks_test
 
 import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestImageBlock_Getters(t *testing.T) {
-	block := ImageBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ImageBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      0,
@@ -32,7 +33,7 @@ func TestImageBlock_UpdateBlockData(t *testing.T) {
 	caption := gofakeit.Sentence(5)
 	link := gofakeit.URL()
 
-	block := ImageBlock{}
+	block := blocks.ImageBlock{}
 	data := map[string][]string{
 		"url":     {url},
 		"caption": {caption},

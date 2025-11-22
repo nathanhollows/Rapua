@@ -1,16 +1,17 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestQuizBlock_Getters(t *testing.T) {
-	block := QuizBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-quiz-id",
 			LocationID: "location-123",
 			Order:      3,
@@ -42,8 +43,8 @@ func TestQuizBlock_ParseData(t *testing.T) {
 		"retry_enabled": false
 	}`
 
-	block := QuizBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -63,7 +64,7 @@ func TestQuizBlock_ParseData(t *testing.T) {
 
 func TestQuizBlock_UpdateBlockData(t *testing.T) {
 	// Test with single choice quiz
-	block := QuizBlock{}
+	block := blocks.QuizBlock{}
 	data := map[string][]string{
 		"question":        {"What is the capital of France?"},
 		"points":          {"100"},
@@ -90,7 +91,7 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 	assert.True(t, block.Options[3].IsCorrect)
 
 	// Test with multiple choice enabled
-	block = QuizBlock{}
+	block = blocks.QuizBlock{}
 	data = map[string][]string{
 		"question":        {"Select all programming languages:"},
 		"points":          {"50"},
@@ -115,7 +116,7 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 	assert.False(t, block.Options[3].IsCorrect) // CSS
 
 	// Test with empty options (should be filtered out)
-	block = QuizBlock{}
+	block = blocks.QuizBlock{}
 	data = map[string][]string{
 		"question":       {"Test question"},
 		"option_text":    {"Valid option", "", "Another valid", ""},
@@ -130,26 +131,26 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestQuizBlock_RequiresValidation(t *testing.T) {
-	block := QuizBlock{}
+	block := blocks.QuizBlock{}
 	assert.True(t, block.RequiresValidation())
 }
 
 func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
-	block := QuizBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 100,
 		},
 		Question:       "What is 2+2?",
 		MultipleChoice: false,
 		RetryEnabled:   false,
-		Options: []QuizOption{
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "3", IsCorrect: false},
 			{ID: "option_1", Text: "4", IsCorrect: true},
 			{ID: "option_2", Text: "5", IsCorrect: false},
 		},
 	}
 
-	state := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 
 	// Test no selection - should not error but mark as incomplete with 1 attempt
 	input := map[string][]string{}
@@ -159,7 +160,7 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
 	// Verify player data shows 1 attempt with no selections
-	var playerData QuizPlayerData
+	var playerData blocks.QuizPlayerData
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 	require.NoError(t, err)
 	assert.Equal(t, 1, playerData.Attempts)
@@ -167,7 +168,7 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 	assert.False(t, playerData.IsCorrect)
 
 	// Test correct answer (use fresh state)
-	freshState := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	freshState := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_1"}}
 	newState, err = block.ValidatePlayerInput(freshState, input)
 	require.NoError(t, err)
@@ -182,7 +183,7 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 	assert.True(t, playerData.IsCorrect)
 
 	// Test incorrect answer
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_0"}}
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -196,14 +197,14 @@ func TestQuizBlock_ValidatePlayerInput_SingleChoice(t *testing.T) {
 }
 
 func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
-	block := QuizBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 100,
 		},
 		Question:       "Select all programming languages:",
 		MultipleChoice: true,
 		RetryEnabled:   false,
-		Options: []QuizOption{
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "Python", IsCorrect: true},
 			{ID: "option_1", Text: "HTML", IsCorrect: false},
 			{ID: "option_2", Text: "JavaScript", IsCorrect: true},
@@ -211,7 +212,7 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 		},
 	}
 
-	state := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 
 	// Test perfect answer (all correct options, no incorrect)
 	input := map[string][]string{"quiz_option": {"option_0", "option_2"}}
@@ -220,13 +221,13 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 
-	var playerData QuizPlayerData
+	var playerData blocks.QuizPlayerData
 	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
 	require.NoError(t, err)
 	assert.True(t, playerData.IsCorrect)
 
 	// Test partial answer (some correct, some incorrect)
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_0", "option_1"}} // Python (correct) + HTML (incorrect)
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -241,7 +242,7 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	assert.False(t, playerData.IsCorrect)
 
 	// Test only correct answers but not all
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_0"}} // Only Python
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -252,7 +253,7 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 	assert.Equal(t, 75, newState.GetPointsAwarded())
 
 	// Test all incorrect selections
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_1", "option_3"}} // HTML and CSS (both incorrect)
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -264,20 +265,20 @@ func TestQuizBlock_ValidatePlayerInput_MultipleChoice(t *testing.T) {
 
 func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	// Test single choice with retry
-	block := QuizBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 100,
 		},
 		Question:       "What is 2+2?",
 		MultipleChoice: false,
 		RetryEnabled:   true,
-		Options: []QuizOption{
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "3", IsCorrect: false},
 			{ID: "option_1", Text: "4", IsCorrect: true},
 		},
 	}
 
-	state := &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 
 	// Test incorrect answer with retry enabled (single choice)
 	input := map[string][]string{"quiz_option": {"option_0"}}
@@ -287,7 +288,7 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
 	// Test correct answer with retry enabled (single choice)
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_1"}}
 	newState, err = block.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -295,14 +296,14 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 
 	// Test multiple choice with retry
-	multiBlock := QuizBlock{
-		BaseBlock: BaseBlock{
+	multiBlock := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 100,
 		},
 		Question:       "Select programming languages:",
 		MultipleChoice: true,
 		RetryEnabled:   true,
-		Options: []QuizOption{
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "Python", IsCorrect: true},
 			{ID: "option_1", Text: "HTML", IsCorrect: false},
 			{ID: "option_2", Text: "JavaScript", IsCorrect: true},
@@ -311,7 +312,7 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	}
 
 	// Test partial answer with multiple choice retry - should get partial points but remain incomplete
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_0"}} // Only Python (partial answer)
 	newState, err = multiBlock.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -319,7 +320,7 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	assert.Equal(t, 75, newState.GetPointsAwarded()) // 3 out of 4 correct = 75 points
 
 	// Test perfect answer with multiple choice retry - should complete
-	state = &mockPlayerState{blockID: "test-block", playerID: "test-player"}
+	state = &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
 	input = map[string][]string{"quiz_option": {"option_0", "option_2"}} // Perfect answer
 	newState, err = multiBlock.ValidatePlayerInput(state, input)
 	require.NoError(t, err)
@@ -329,29 +330,29 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 
 func TestQuizBlock_CalculatePoints_EdgeCases(t *testing.T) {
 	// Test with no correct options
-	block := QuizBlock{
-		BaseBlock: BaseBlock{Points: 100},
-		Options: []QuizOption{
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{Points: 100},
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "A", IsCorrect: false},
 			{ID: "option_1", Text: "B", IsCorrect: false},
 		},
 	}
 
-	points, isCorrect := block.calculatePoints([]string{"option_0"})
+	points, isCorrect := block.CalculatePoints([]string{"option_0"})
 	assert.Equal(t, 0, points)
 	assert.False(t, isCorrect)
 
 	// Test with empty options
-	block.Options = []QuizOption{}
-	points, isCorrect = block.calculatePoints([]string{"option_0"})
+	block.Options = []blocks.QuizOption{}
+	points, isCorrect = block.CalculatePoints([]string{"option_0"})
 	assert.Equal(t, 0, points)
 	assert.False(t, isCorrect)
 }
 
 func TestQuizBlock_GetShuffledOptions(t *testing.T) {
-	block := QuizBlock{
+	block := blocks.QuizBlock{
 		RandomizeOrder: true,
-		Options: []QuizOption{
+		Options: []blocks.QuizOption{
 			{ID: "option_0", Text: "A", IsCorrect: false},
 			{ID: "option_1", Text: "B", IsCorrect: true},
 			{ID: "option_2", Text: "C", IsCorrect: false},
@@ -382,13 +383,13 @@ func TestQuizBlock_GetShuffledOptions(t *testing.T) {
 
 	// Test with single option (should not shuffle)
 	block.RandomizeOrder = true
-	block.Options = []QuizOption{{ID: "option_0", Text: "A", IsCorrect: true}}
+	block.Options = []blocks.QuizOption{{ID: "option_0", Text: "A", IsCorrect: true}}
 	single := block.GetShuffledOptions()
 	assert.Equal(t, block.Options, single)
 }
 
 func TestNewQuizBlock(t *testing.T) {
-	base := BaseBlock{
+	base := blocks.BaseBlock{
 		ID:         "test-id",
 		LocationID: "location-123",
 		Type:       "quiz_block",
@@ -396,7 +397,7 @@ func TestNewQuizBlock(t *testing.T) {
 		Points:     50,
 	}
 
-	block := NewQuizBlock(base)
+	block := blocks.NewQuizBlock(base)
 
 	assert.Equal(t, base, block.BaseBlock)
 	assert.Empty(t, block.Question)

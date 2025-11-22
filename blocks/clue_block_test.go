@@ -1,16 +1,17 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClueBlock_Getters(t *testing.T) {
-	block := ClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-clue-id",
 			LocationID: "location-123",
 			Order:      3,
@@ -31,8 +32,8 @@ func TestClueBlock_Getters(t *testing.T) {
 
 func TestClueBlock_ParseData(t *testing.T) {
 	data := `{"clue_text":"Secret hint here", "description_text":"Want a clue?", "button_label":"Reveal"}`
-	block := ClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -48,7 +49,7 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    map[string][]string
-		expected ClueBlock
+		expected blocks.ClueBlock
 	}{
 		{
 			name: "update all fields",
@@ -58,8 +59,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 				"description_text": {"Having trouble? Get a hint below."},
 				"button_label":     {"Show Hint"},
 			},
-			expected: ClueBlock{
-				BaseBlock: BaseBlock{
+			expected: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: -20,
 				},
 				ClueText:        "The answer is 42",
@@ -75,8 +76,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 				"description_text": {"Description"},
 				"button_label":     {""},
 			},
-			expected: ClueBlock{
-				BaseBlock: BaseBlock{
+			expected: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: -10,
 				},
 				ClueText:        "Hint text",
@@ -91,8 +92,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 				"clue_text":        {"Some clue"},
 				"description_text": {"Some description"},
 			},
-			expected: ClueBlock{
-				BaseBlock: BaseBlock{
+			expected: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: 0,
 				},
 				ClueText:        "Some clue",
@@ -104,7 +105,7 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			block := ClueBlock{}
+			block := blocks.ClueBlock{}
 			err := block.UpdateBlockData(tt.input)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected.Points, block.Points)
@@ -116,7 +117,7 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestClueBlock_UpdateBlockData_InvalidPoints(t *testing.T) {
-	block := ClueBlock{}
+	block := blocks.ClueBlock{}
 	input := map[string][]string{
 		"points": {"invalid"},
 	}
@@ -127,30 +128,30 @@ func TestClueBlock_UpdateBlockData_InvalidPoints(t *testing.T) {
 }
 
 func TestClueBlock_RequiresValidation(t *testing.T) {
-	block := ClueBlock{}
+	block := blocks.ClueBlock{}
 	assert.True(t, block.RequiresValidation())
 }
 
 func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 	tests := []struct {
 		name             string
-		block            ClueBlock
-		initialState     PlayerState
+		block            blocks.ClueBlock
+		initialState     blocks.PlayerState
 		input            map[string][]string
 		expectedPoints   int
 		expectedComplete bool
 	}{
 		{
 			name: "reveal clue with cost",
-			block: ClueBlock{
-				BaseBlock: BaseBlock{
+			block: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: -10,
 				},
 				ClueText: "The secret is here",
 			},
-			initialState: &mockPlayerState{
-				blockID:  "block-1",
-				playerID: "player-1",
+			initialState: &blocks.MockPlayerState{
+				BlockID:  "block-1",
+				PlayerID: "player-1",
 			},
 			input: map[string][]string{
 				"reveal_clue": {"true"},
@@ -160,15 +161,15 @@ func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 		},
 		{
 			name: "reveal clue with no cost",
-			block: ClueBlock{
-				BaseBlock: BaseBlock{
+			block: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: 0,
 				},
 				ClueText: "Free clue",
 			},
-			initialState: &mockPlayerState{
-				blockID:  "block-2",
-				playerID: "player-2",
+			initialState: &blocks.MockPlayerState{
+				BlockID:  "block-2",
+				PlayerID: "player-2",
 			},
 			input: map[string][]string{
 				"reveal_clue": {"true"},
@@ -178,14 +179,14 @@ func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 		},
 		{
 			name: "no reveal input",
-			block: ClueBlock{
-				BaseBlock: BaseBlock{
+			block: blocks.ClueBlock{
+				BaseBlock: blocks.BaseBlock{
 					Points: -5,
 				},
 			},
-			initialState: &mockPlayerState{
-				blockID:  "block-3",
-				playerID: "player-3",
+			initialState: &blocks.MockPlayerState{
+				BlockID:  "block-3",
+				PlayerID: "player-3",
 			},
 			input:            map[string][]string{},
 			expectedPoints:   0,
@@ -203,7 +204,7 @@ func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 
 			// Check that player data is updated when clue is revealed
 			if tt.expectedComplete {
-				var playerData clueBlockData
+				var playerData blocks.ClueBlockData
 				unmarshalErr := json.Unmarshal(newState.GetPlayerData(), &playerData)
 				require.NoError(t, unmarshalErr)
 				assert.True(t, playerData.IsRevealed)
@@ -213,20 +214,20 @@ func TestClueBlock_ValidatePlayerInput(t *testing.T) {
 }
 
 func TestClueBlock_ValidatePlayerInput_WithExistingPlayerData(t *testing.T) {
-	block := ClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: -15,
 		},
 	}
 
 	// Create state with existing player data
-	existingData := clueBlockData{IsRevealed: false}
+	existingData := blocks.ClueBlockData{IsRevealed: false}
 	existingDataBytes, _ := json.Marshal(existingData)
 
-	initialState := &mockPlayerState{
-		blockID:    "block-1",
-		playerID:   "player-1",
-		playerData: existingDataBytes,
+	initialState := &blocks.MockPlayerState{
+		BlockID:    "block-1",
+		PlayerID:   "player-1",
+		PlayerData: existingDataBytes,
 	}
 
 	input := map[string][]string{
@@ -240,20 +241,20 @@ func TestClueBlock_ValidatePlayerInput_WithExistingPlayerData(t *testing.T) {
 	assert.Equal(t, -15, newState.GetPointsAwarded())
 
 	// Verify player data is updated
-	var updatedData clueBlockData
+	var updatedData blocks.ClueBlockData
 	err = json.Unmarshal(newState.GetPlayerData(), &updatedData)
 	require.NoError(t, err)
 	assert.True(t, updatedData.IsRevealed)
 }
 
 func TestClueBlock_ValidatePlayerInput_InvalidPlayerData(t *testing.T) {
-	block := ClueBlock{}
+	block := blocks.ClueBlock{}
 
 	// Create state with invalid JSON data
-	initialState := &mockPlayerState{
-		blockID:    "block-1",
-		playerID:   "player-1",
-		playerData: json.RawMessage(`invalid json`),
+	initialState := &blocks.MockPlayerState{
+		BlockID:    "block-1",
+		PlayerID:   "player-1",
+		PlayerData: json.RawMessage(`invalid json`),
 	}
 
 	input := map[string][]string{
@@ -266,8 +267,8 @@ func TestClueBlock_ValidatePlayerInput_InvalidPlayerData(t *testing.T) {
 }
 
 func TestClueBlock_GetData(t *testing.T) {
-	block := ClueBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.ClueBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:     "test-id",
 			Points: -10,
 		},
@@ -280,7 +281,7 @@ func TestClueBlock_GetData(t *testing.T) {
 	assert.NotNil(t, data)
 
 	// Verify we can unmarshal the data
-	var unmarshaled ClueBlock
+	var unmarshaled blocks.ClueBlock
 	err := json.Unmarshal(data, &unmarshaled)
 	require.NoError(t, err)
 	assert.Equal(t, "Secret clue", unmarshaled.ClueText)

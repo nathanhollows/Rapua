@@ -1,17 +1,18 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDividerBlock_Getters(t *testing.T) {
-	block := DividerBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.DividerBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -29,8 +30,8 @@ func TestDividerBlock_Getters(t *testing.T) {
 
 func TestDividerBlock_ParseData(t *testing.T) {
 	data := `{"title":""}`
-	block := DividerBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.DividerBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -42,7 +43,7 @@ func TestDividerBlock_ParseData(t *testing.T) {
 
 func TestDividerBlock_UpdateBlockData(t *testing.T) {
 	title := gofakeit.Word()
-	block := DividerBlock{}
+	block := blocks.DividerBlock{}
 	data := map[string][]string{
 		"title": {title},
 	}
@@ -53,14 +54,14 @@ func TestDividerBlock_UpdateBlockData(t *testing.T) {
 
 func TestDividerBlock_ValidatePlayerInput(t *testing.T) {
 	title := gofakeit.Word()
-	block := DividerBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.DividerBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
 		Title: title,
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)

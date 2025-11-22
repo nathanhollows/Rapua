@@ -1,15 +1,16 @@
-package blocks
+package blocks_test
 
 import (
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestYoutubeBlock_Getters(t *testing.T) {
-	block := YoutubeBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.YoutubeBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -27,7 +28,7 @@ func TestYoutubeBlock_Getters(t *testing.T) {
 }
 
 func TestYoutubeBlock_UpdateBlockData(t *testing.T) {
-	block := YoutubeBlock{}
+	block := blocks.YoutubeBlock{}
 	data := map[string][]string{
 		"URL": {"https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
 	}
@@ -43,14 +44,14 @@ func TestYoutubeBlock_UpdateBlockData(t *testing.T) {
 func TestYoutubeBlock_ValidatePlayerInput(t *testing.T) {
 	// Test: invalid URL
 
-	block := YoutubeBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.YoutubeBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
 		URL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)

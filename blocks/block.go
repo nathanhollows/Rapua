@@ -110,6 +110,7 @@ func init() {
 	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
@@ -185,8 +186,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewButtonBlock(baseBlock), nil
 	case "random_clue":
 		return NewRandomClueBlock(baseBlock), nil
-	// case "photo":
-	// 	return NewPhotoBlock(baseBlock), nil
+	case "photo":
+		return NewPhotoBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -271,9 +272,8 @@ func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
 	}
 }
 
-//
-// func NewPhotoBlock(base BaseBlock) *PhotoBlock {
-// 	return &PhotoBlock{
-// 		BaseBlock: base,
-// 	}
-// }
+func NewPhotoBlock(base BaseBlock) *PhotoBlock {
+	return &PhotoBlock{
+		BaseBlock: base,
+	}
+}

@@ -1,16 +1,17 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMarkdownBlock_Getters(t *testing.T) {
-	block := MarkdownBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.MarkdownBlock{
+		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			LocationID: "location-123",
 			Order:      1,
@@ -28,8 +29,8 @@ func TestMarkdownBlock_Getters(t *testing.T) {
 
 func TestMarkdownBlock_ParseData(t *testing.T) {
 	data := `{"content":"Test Content"}`
-	block := MarkdownBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.MarkdownBlock{
+		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
 		},
 	}
@@ -40,7 +41,7 @@ func TestMarkdownBlock_ParseData(t *testing.T) {
 }
 
 func TestMarkdownBlock_UpdateBlockData(t *testing.T) {
-	block := MarkdownBlock{}
+	block := blocks.MarkdownBlock{}
 	data := map[string][]string{
 		"content": {"Updated Content"},
 	}
@@ -50,14 +51,14 @@ func TestMarkdownBlock_UpdateBlockData(t *testing.T) {
 }
 
 func TestMarkdownBlock_ValidatePlayerInput(t *testing.T) {
-	block := MarkdownBlock{
-		BaseBlock: BaseBlock{
+	block := blocks.MarkdownBlock{
+		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
 		Content: "Test Content",
 	}
 
-	state := &mockPlayerState{}
+	state := &blocks.MockPlayerState{}
 
 	input := map[string][]string{}
 	newState, err := block.ValidatePlayerInput(state, input)

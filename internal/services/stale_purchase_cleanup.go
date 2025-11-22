@@ -55,7 +55,7 @@ func (s *StalePurchaseCleanupService) CleanupStalePurchases(ctx context.Context)
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	s.logger.InfoContext(ctx, "Cleaned up stale purchases",
+	s.logger.DebugContext(ctx, "Cleaned up stale purchases",
 		"deleted_count", rowsAffected,
 		"cutoff_date", cutoffTime,
 	)

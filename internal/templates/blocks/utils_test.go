@@ -1,9 +1,10 @@
-package blocks
+package blocks_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +52,7 @@ func TestGetBrokerInfoReceived(t *testing.T) {
 				playerData: tt.playerData,
 			}
 
-			result := getBrokerInfoReceived(mockState)
+			result := templates.GetBrokerInfoReceived(mockState)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

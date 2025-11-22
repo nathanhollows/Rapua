@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	version    = "v6.1.1"
+	version    = "v6.2.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -477,6 +477,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 		navigationService,
 		notificationService,
 		teamService,
+		uploadService,
 	)
 
 	adminHandler := admin.NewAdminHandler(
