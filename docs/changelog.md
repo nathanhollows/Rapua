@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 6.1.1 (2025-11-21)
+
+### Fixed
+
+- Fixed an issue where new instances didn't have populated game structures.
+
 ## 6.1.0 (2025-11-19)
 
 ### Added
