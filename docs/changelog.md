@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 6.2.0 (2025-11-23)
+
+### Added
+
+- [Photo Block](/docs/user/blocks/photo) to allow players to take and upload photos as part of the game.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.2.0)
+
 ## 6.1.1 (2025-11-21)
 
 ### Fixed

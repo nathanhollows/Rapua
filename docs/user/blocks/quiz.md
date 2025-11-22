@@ -1,7 +1,7 @@
 ---
 title: "Quiz Block"
 sidebar: true
-order: 10
+order: 11
 ---
 
 # Quiz Block
