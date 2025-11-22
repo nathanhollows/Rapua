@@ -32,6 +32,7 @@ These blocks allow you to create interactive elements in your game that require 
 - [Checklist Block](/docs/user/blocks/checklist)
 - [Clue Block](/docs/user/blocks/clue)
 - [Password Block](/docs/user/blocks/password)
+- [Photo Block](/docs/user/blocks/photo)
 - [Pincode Block](/docs/user/blocks/pincode)
 - [Quiz Block](/docs/user/blocks/quiz)
 - [Sorting Block](/docs/user/blocks/sorting)
