@@ -22,6 +22,7 @@ const (
 	RouteStrategyRandom RouteStrategy = iota
 	RouteStrategyFreeRoam
 	RouteStrategyOrdered
+	RouteStrategySecret // Locations that may be accessed out of sequence
 )
 
 const (
@@ -70,7 +71,7 @@ func (s *StrArray) Scan(value any) error {
 
 // GetRouteStrategies returns a list of navigation modes.
 func GetRouteStrategies() RouteStrategies {
-	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandom}
+	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandom, RouteStrategySecret}
 }
 
 // GetNavigationDisplayModes returns a list of navigation methods.
@@ -90,7 +91,7 @@ func GetGameStatuses() GameStatuses {
 
 // String returns the string representation of the RouteStrategy.
 func (n RouteStrategy) String() string {
-	return [...]string{"Randomised Route", "Open Exploration", "Guided Path"}[n]
+	return [...]string{"Randomised Route", "Open Exploration", "Guided Path", "Secret"}[n]
 }
 
 // String returns the string representation of the NavigationDisplayMode.
@@ -109,6 +110,7 @@ func (n RouteStrategy) Description() string {
 		"The game will randomly select locations for players to visit. Good for large groups as it disperses players.",
 		"Players can visit locations in any order. This mode shows all locations and is good for exploration.",
 		"Players must visit locations in a specific order. Good for narrative experiences.",
+		"Locations that may be accessed out of sequence. These locations are never explicitly shown to players.",
 	}[n]
 }
 
@@ -141,6 +143,8 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 		return RouteStrategyFreeRoam, nil
 	case "Ordered", "Guided Path":
 		return RouteStrategyOrdered, nil
+	case "Secret":
+		return RouteStrategySecret, nil
 	default:
 		return 0, errors.New("invalid RouteStrategy")
 	}
