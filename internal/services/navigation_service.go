@@ -61,6 +61,7 @@ func NewNavigationService(
 }
 
 // IsValidLocation checks if the location code is valid for the team to check in to.
+// This includes both regular available locations AND accessible secret locations.
 func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error) {
 	if err := s.validateTeamState(team); err != nil {
 		return false, err
@@ -72,13 +73,26 @@ func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Te
 		return false, fmt.Errorf("determine next valid locations: %w", err)
 	}
 
-	// Check if the location code is valid
+	// Check if the location code is valid in regular available locations
 	markerID = s.normalizeMarkerID(markerID)
 	for _, loc := range locations {
 		if loc.MarkerID == markerID {
 			return true, nil
 		}
 	}
+
+	// Also check accessible secret locations
+	secretLocations, err := s.getAccessibleSecretLocations(ctx, team)
+	if err != nil {
+		return false, fmt.Errorf("determine accessible secret locations: %w", err)
+	}
+
+	for _, loc := range secretLocations {
+		if loc.MarkerID == markerID {
+			return true, nil
+		}
+	}
+
 	return false, fmt.Errorf("code %s is not a valid next location", markerID)
 }
 
@@ -309,4 +323,47 @@ func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) [
 		completed = append(completed, checkIn.LocationID)
 	}
 	return completed
+}
+
+// getAccessibleSecretLocations returns secret locations that are accessible from the team's current position.
+// Secret locations are never displayed to players but are valid for check-in via QR code, link, or GPS.
+func (s *NavigationService) getAccessibleSecretLocations(
+	ctx context.Context,
+	team *models.Team,
+) ([]models.Location, error) {
+	if err := s.validateTeamState(team); err != nil {
+		return nil, err
+	}
+
+	// Get completed location IDs
+	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
+
+	// Compute current group
+	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
+	if currentGroupID == "" {
+		return []models.Location{}, nil
+	}
+
+	// Get accessible secret location IDs from navigation package
+	secretLocationIDs := navigation.GetAccessibleSecretLocationIDs(
+		&team.Instance.GameStructure,
+		currentGroupID,
+		completedIDs,
+	)
+
+	if len(secretLocationIDs) == 0 {
+		return []models.Location{}, nil
+	}
+
+	// Fetch actual location objects
+	locations := make([]models.Location, 0, len(secretLocationIDs))
+	for _, id := range secretLocationIDs {
+		location, err := s.locationRepo.GetByID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load secret location %s: %w", id, err)
+		}
+		locations = append(locations, *location)
+	}
+
+	return locations, nil
 }
