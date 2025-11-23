@@ -12,7 +12,6 @@ If you want to [request a feature](https://github.com/nathanhollows/Rapua/issues
 
 ## Content blocks
 
-- **Photo challenge**: A block that allows users to take a photo and submit it ([#49](https://github.com/nathanhollows/Rapua/issues/49)).
 - **Video challenge**: A block that allows users to record a video and submit it.
 - **Map**: Mapbox integration with arbitrary markers, zooming, and coordinates.
 - **Audio waveform**: A block for admins to upload audio files that users can listen to, with a waveform visualisation.
