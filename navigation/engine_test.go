@@ -1038,3 +1038,392 @@ func BenchmarkComputeCurrentGroup(b *testing.B) {
 		navigation.ComputeCurrentGroup(structure, completed, nil)
 	}
 }
+
+// Test GetAccessibleSecretLocationIDs - sibling secret groups.
+func TestGetAccessibleSecretLocationIDs_SiblingSecrets(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2", "loc3"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc4", "loc5"},
+			},
+		},
+	}
+
+	// Player is in group1
+	secretIDs := navigation.GetAccessibleSecretLocationIDs(structure, "group1", []string{})
+
+	assert.Len(t, secretIDs, 2, "should have 2 accessible secret locations")
+	assert.Contains(t, secretIDs, "loc4")
+	assert.Contains(t, secretIDs, "loc5")
+}
+
+// Test GetAccessibleSecretLocationIDs - uncle secret groups.
+func TestGetAccessibleSecretLocationIDs_UncleSecrets(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				SubGroups: []models.GameStructure{
+					{
+						ID:             "secret_group2",
+						Name:           "Secret Subgroup",
+						Color:          "purple",
+						Routing:        models.RouteStrategySecret,
+						CompletionType: models.CompletionAll,
+						AutoAdvance:    true,
+						LocationIDs:    []string{"loc6"},
+					},
+					{
+						ID:             "subgroup1",
+						Name:           "Subgroup 1",
+						Color:          "green",
+						Routing:        models.RouteStrategyOrdered,
+						CompletionType: models.CompletionAll,
+						AutoAdvance:    true,
+						LocationIDs:    []string{"loc1", "loc2", "loc3"},
+					},
+				},
+			},
+			{
+				ID:             "group2",
+				Name:           "Group 2",
+				Color:          "yellow",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc7", "loc8"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Root Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc4", "loc5"},
+			},
+		},
+	}
+
+	// Player is in subgroup1 (child of group1)
+	// Should have access to:
+	// - secret_group2 (sibling)
+	// - secret_group (uncle - sibling of parent group1)
+	secretIDs := navigation.GetAccessibleSecretLocationIDs(structure, "subgroup1", []string{})
+
+	assert.Len(t, secretIDs, 3, "should have 3 accessible secret locations")
+	assert.Contains(t, secretIDs, "loc6", "should access sibling secret_group2")
+	assert.Contains(t, secretIDs, "loc4", "should access uncle secret_group")
+	assert.Contains(t, secretIDs, "loc5", "should access uncle secret_group")
+}
+
+// Test GetAccessibleSecretLocationIDs - filters completed locations.
+func TestGetAccessibleSecretLocationIDs_FilterCompleted(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc4", "loc5", "loc6"},
+			},
+		},
+	}
+
+	// Player has completed loc4
+	secretIDs := navigation.GetAccessibleSecretLocationIDs(structure, "group1", []string{"loc4"})
+
+	assert.Len(t, secretIDs, 2, "should only return unvisited secret locations")
+	assert.Contains(t, secretIDs, "loc5")
+	assert.Contains(t, secretIDs, "loc6")
+	assert.NotContains(t, secretIDs, "loc4", "should not include completed location")
+}
+
+// Test GetAccessibleSecretLocationIDs - no secret groups.
+func TestGetAccessibleSecretLocationIDs_NoSecrets(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+			{
+				ID:             "group2",
+				Name:           "Group 2",
+				Color:          "red",
+				Routing:        models.RouteStrategyFreeRoam,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc3", "loc4"},
+			},
+		},
+	}
+
+	secretIDs := navigation.GetAccessibleSecretLocationIDs(structure, "group1", []string{})
+
+	assert.Empty(t, secretIDs, "should return empty slice when no secret groups exist")
+}
+
+// Test GetAccessibleSecretLocationIDs - invalid group ID.
+func TestGetAccessibleSecretLocationIDs_InvalidGroupID(t *testing.T) {
+	structure := makeTestStructure()
+
+	secretIDs := navigation.GetAccessibleSecretLocationIDs(structure, "nonexistent", []string{})
+
+	assert.Empty(t, secretIDs, "should return empty slice for invalid group ID")
+}
+
+// Test GetAvailableLocationIDs - secret routing strategy returns empty.
+func TestGetAvailableLocationIDs_SecretRoutingReturnsEmpty(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+		},
+	}
+
+	locationIDs := navigation.GetAvailableLocationIDs(structure, "secret_group", []string{}, "TEAM1")
+
+	assert.Empty(t, locationIDs, "secret groups should never return locations in GetAvailableLocationIDs")
+}
+
+// Test ComputeCurrentGroup - secret groups are never current group.
+func TestComputeCurrentGroup_SecretGroupsNeverCurrent(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"secret1", "secret2"},
+			},
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+		},
+	}
+
+	// Start of game - should be group1, not secret_group
+	currentGroupID := navigation.ComputeCurrentGroup(structure, []string{}, nil)
+	assert.Equal(t, "group1", currentGroupID, "should skip secret groups and start at group1")
+
+	// Complete a secret location - current group should still be group1
+	currentGroupID = navigation.ComputeCurrentGroup(structure, []string{"secret1"}, nil)
+	assert.Equal(t, "group1", currentGroupID, "completing secret locations should not affect current group")
+}
+
+// Test ComputeCurrentGroup - game completion ignores secret groups.
+func TestComputeCurrentGroup_GameCompletionIgnoresSecrets(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"secret1", "secret2"},
+			},
+			{
+				ID:             "group2",
+				Name:           "Group 2",
+				Color:          "green",
+				Routing:        models.RouteStrategyFreeRoam,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc3", "loc4"},
+			},
+		},
+	}
+
+	// Complete all non-secret locations
+	completed := []string{"loc1", "loc2", "loc3", "loc4"}
+	currentGroupID := navigation.ComputeCurrentGroup(structure, completed, nil)
+
+	// Game should be complete (current group is last non-secret group)
+	// When all locations are complete, we stay at the last group
+	assert.Equal(
+		t,
+		"group2",
+		currentGroupID,
+		"should stay at last non-secret group when all non-secret locations complete",
+	)
+
+	// Even with some secret locations completed, game should still be complete
+	completedWithSecrets := []string{"loc1", "loc2", "loc3", "loc4", "secret1"}
+	currentGroupID = navigation.ComputeCurrentGroup(structure, completedWithSecrets, nil)
+	assert.Equal(t, "group2", currentGroupID, "secret location completion should not affect game state")
+}
+
+// Test ComputeCurrentGroup - secret groups between regular groups.
+func TestComputeCurrentGroup_SecretGroupsBetweenRegular(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1", "loc2"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"secret1"},
+			},
+			{
+				ID:             "group2",
+				Name:           "Group 2",
+				Color:          "green",
+				Routing:        models.RouteStrategyFreeRoam,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc3", "loc4"},
+			},
+		},
+	}
+
+	// Start - should be group1
+	currentGroupID := navigation.ComputeCurrentGroup(structure, []string{}, nil)
+	assert.Equal(t, "group1", currentGroupID, "should start at group1")
+
+	// Complete group1 - should skip secret_group and advance to group2
+	completed := []string{"loc1", "loc2"}
+	currentGroupID = navigation.ComputeCurrentGroup(structure, completed, nil)
+	assert.Equal(t, "group2", currentGroupID, "should skip secret_group and advance to group2")
+
+	// Complete secret while in group2 - should stay in group2
+	completedWithSecret := []string{"loc1", "loc2", "secret1"}
+	currentGroupID = navigation.ComputeCurrentGroup(structure, completedWithSecret, nil)
+	assert.Equal(t, "group2", currentGroupID, "completing secret should not change current group")
+}
+
+// Test GetNextGroup - should skip secret groups when advancing.
+func TestGetNextGroup_SkipsSecretGroups(t *testing.T) {
+	structure := &models.GameStructure{
+		ID:     "root",
+		IsRoot: true,
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "group1",
+				Name:           "Group 1",
+				Color:          "blue",
+				Routing:        models.RouteStrategyOrdered,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc1"},
+			},
+			{
+				ID:             "secret_group",
+				Name:           "Secret Group",
+				Color:          "red",
+				Routing:        models.RouteStrategySecret,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"secret1"},
+			},
+			{
+				ID:             "group2",
+				Name:           "Group 2",
+				Color:          "green",
+				Routing:        models.RouteStrategyFreeRoam,
+				CompletionType: models.CompletionAll,
+				AutoAdvance:    true,
+				LocationIDs:    []string{"loc2"},
+			},
+		},
+	}
+
+	// Get next group from group1 - should skip secret_group and return group2
+	nextGroup, shouldAdvance, reason := navigation.GetNextGroup(structure, "group1", []string{"loc1"})
+
+	assert.True(t, shouldAdvance, "should advance to next non-secret group")
+	assert.NotNil(t, nextGroup, "should return a group")
+	assert.Equal(t, "group2", nextGroup.ID, "should skip secret_group and return group2")
+	assert.Equal(t, navigation.ReasonNextSibling, reason, "should report correct reason")
+}

@@ -162,9 +162,10 @@ func ComputeCurrentGroup(
 	}
 }
 
-// GetNextGroup finds the next group in sequence after the current group.
+// GetNextGroup finds the next non-secret group in sequence after the current group.
 // This is a low-level function that just finds the next sibling or parent's sibling.
 // It does NOT check AutoAdvance - that's handled by ComputeCurrentGroup.
+// Secret groups are skipped as they never become the current group.
 //
 // Returns (nextGroup, shouldAdvance, reason) where:
 //   - nextGroup: the group that should be active next (may be current if not advancing)
@@ -186,9 +187,11 @@ func GetNextGroup(
 		return nil, false, ReasonNoParent // At root - shouldn't happen
 	}
 
-	// Try next sibling
-	if index+1 < len(parent.SubGroups) {
-		return &parent.SubGroups[index+1], true, ReasonNextSibling
+	// Try next non-secret sibling
+	for i := index + 1; i < len(parent.SubGroups); i++ {
+		if parent.SubGroups[i].Routing != models.RouteStrategySecret {
+			return &parent.SubGroups[i], true, ReasonNextSibling
+		}
 	}
 
 	// Try parent's next sibling (recursive)
@@ -199,7 +202,7 @@ func GetNextGroup(
 		}
 	}
 
-	// No more groups
+	// No more non-secret groups
 	return nil, false, ReasonAllComplete
 }
 
@@ -216,6 +219,7 @@ func GetNextGroup(
 //
 // Note: This function works with location IDs only. Caller is responsible
 // for fetching actual location objects after filtering.
+// Note: Secret locations are handled separately by GetAccessibleSecretLocationIDs.
 func GetAvailableLocationIDs(
 	structure *models.GameStructure,
 	groupID string,
@@ -252,9 +256,111 @@ func GetAvailableLocationIDs(
 		// Return all unvisited location IDs
 		return unvisitedIDs
 
+	case models.RouteStrategySecret:
+		// Secret locations are never shown in the normal available locations
+		// They are only accessible via direct access (QR code, link, GPS)
+		return []string{}
+
 	default:
 		return unvisitedIDs
 	}
+}
+
+// GetAccessibleSecretLocationIDs returns secret location IDs that are accessible from the current group.
+// Secret locations are accessible if they are siblings of the current group or any of its ancestors.
+// This walks UP the tree recursively, checking for secret siblings at each level.
+//
+// Accessible relationships (walking UP):
+//   - Sibling: same parent
+//   - Uncle: parent's sibling
+//   - Great-uncle: grandparent's sibling
+//   - Great-great-uncle: great-grandparent's sibling
+//   - ... and so on to root
+//
+// NOT accessible (never walks DOWN):
+//   - Cousins: children of uncles
+//   - Nested children: descendants of any group
+//
+// Example structure:
+//
+//	root[
+//	  secret_root_level[loc9],         ← great-uncle to inner_group
+//	  branch_a[
+//	    secret_a[loc7, loc8],          ← uncle to inner_group
+//	    branch_b[
+//	      inner_group[loc1, loc2],     ← current group
+//	      secret_b[loc3, loc4]         ← sibling to inner_group
+//	    ]
+//	  ]
+//	]
+//
+// If player is in inner_group:
+//   - secret_b accessible (sibling)
+//   - secret_a accessible (uncle - sibling of parent branch_b)
+//   - secret_root_level accessible (great-uncle - sibling of grandparent branch_a)
+//
+// Returns empty slice if:
+//   - Current group not found
+//   - No secret groups are accessible
+func GetAccessibleSecretLocationIDs(
+	structure *models.GameStructure,
+	currentGroupID string,
+	completedLocationIDs []string,
+) []string {
+	currentGroup := FindGroupByID(structure, currentGroupID)
+	if currentGroup == nil {
+		return []string{}
+	}
+
+	accessibleIDs := make([]string, 0)
+	completed := makeSet(completedLocationIDs)
+
+	// Walk up the tree, checking for secret siblings at each ancestor level
+	ancestor := currentGroup
+	for {
+		parent, _ := findParentAndIndex(ancestor, structure)
+		if parent == nil {
+			break // Reached root
+		}
+
+		// Collect unvisited secret locations from siblings
+		secretIDs := collectSecretSiblingLocations(parent, ancestor.ID, completed)
+		accessibleIDs = append(accessibleIDs, secretIDs...)
+
+		// Move up to next ancestor
+		if parent.IsRoot {
+			break // Stop at root
+		}
+		ancestor = parent
+	}
+
+	return accessibleIDs
+}
+
+// collectSecretSiblingLocations finds unvisited locations in secret sibling groups.
+func collectSecretSiblingLocations(
+	parent *models.GameStructure,
+	excludeGroupID string,
+	completed map[string]bool,
+) []string {
+	secretIDs := make([]string, 0)
+
+	for i := range parent.SubGroups {
+		subGroup := &parent.SubGroups[i]
+		if subGroup.ID == excludeGroupID {
+			continue // Skip the excluded group
+		}
+		if subGroup.Routing == models.RouteStrategySecret {
+			// Add unvisited locations from this secret sibling group
+			for _, locID := range subGroup.LocationIDs {
+				if !completed[locID] {
+					secretIDs = append(secretIDs, locID)
+				}
+			}
+		}
+	}
+
+	return secretIDs
 }
 
 // FindGroupByID recursively searches for a group with the specified ID.
@@ -278,8 +384,9 @@ func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStruc
 	return nil
 }
 
-// GetFirstVisibleGroup returns the first non-root subgroup, which is where teams should start.
-// Returns nil if structure has no subgroups (invalid game configuration).
+// GetFirstVisibleGroup returns the first non-root, non-secret subgroup, which is where teams should start.
+// Secret groups are never the current group - they're accessible but don't affect progression.
+// Returns nil if structure has no non-secret subgroups.
 func GetFirstVisibleGroup(structure *models.GameStructure) *models.GameStructure {
 	if structure == nil || !structure.IsRoot {
 		return nil
@@ -289,7 +396,15 @@ func GetFirstVisibleGroup(structure *models.GameStructure) *models.GameStructure
 		return nil
 	}
 
-	return &structure.SubGroups[0]
+	// Find first non-secret group
+	for i := range structure.SubGroups {
+		if structure.SubGroups[i].Routing != models.RouteStrategySecret {
+			return &structure.SubGroups[i]
+		}
+	}
+
+	// All subgroups are secret - invalid configuration
+	return nil
 }
 
 // ValidateStructure performs basic validation on a GameStructure.
