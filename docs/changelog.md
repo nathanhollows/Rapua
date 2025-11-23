@@ -6,6 +6,23 @@ order: 100
 
 # Changelog
 
+## 6.3.0 (2025-11-23)
+
+### Added
+
+- Added a new **Secret** routing strategy for hidden bonus locations
+  - See [Game Settings](/docs/user/game-settings) for user guide or [Navigation Logic Reference](/docs/developer/navigation-logic) for technical details
+  - Secret locations are accessible via QR code, link, or GPS but never shown in the UI
+  - Accessible when they are siblings or uncles to the current group
+  - Do not affect game progression or completion
+  - Automatically disable completion settings and navigation modes in admin UI
+
+### Changed
+
+- Location group UI now uses data-driven architecture for easier maintenance
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.3.0)
+
 ## 6.2.0 (2025-11-23)
 
 ### Added
