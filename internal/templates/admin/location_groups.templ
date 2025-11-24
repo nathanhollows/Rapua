@@ -421,11 +421,12 @@ templ completionCount(group models.GameStructure) {
 
 templ groupMenu(group models.GameStructure) {
 	<div class="flex gap-2 items-center">
-		@completionCount(group)
 		<!-- Route Strategy Picker -->
 		@routeStrategyPicker(group)
 		<!-- Navigation Display Picker -->
 		@navigationDisplayPicker(group.Navigation)
+		<!-- Completion Requirements Menu -->
+		@completionCount(group)
 		if false {
 			<!-- Auto Advance Picker -->
 			@autoAdvancePicker(group.Navigation)
@@ -482,6 +483,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 					case models.RouteStrategyFreeRoam:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints-icon lucide-footprints w-4 h-5"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg>
 						{ models.RouteStrategyFreeRoam.String() }
+					case models.RouteStrategySecret:
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gem-icon lucide-gem w-4 h-4"><path d="M10.5 3 8 9l4 13 4-13-2.5-6"></path><path d="M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z"></path><path d="M2 9h20"></path></svg>
+						{ models.RouteStrategySecret.String() }
 					case models.RouteStrategyRandom:
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle h-4 w-4"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
 						Random <span class="max-next-display">{ getMaxNextValue(group) }</span>
@@ -510,6 +514,10 @@ templ routeStrategyPicker(group models.GameStructure) {
 						add .btn-disabled to completionDropdown.querySelector('a')
 						add .hidden to completionDropdown.querySelector('.dropdown-content')
 						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
+						-- Enable navigation dropdown
+						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
+						remove .btn-disabled from navDropdown.querySelector('a')
+						remove .hidden from navDropdown.querySelector('.dropdown-content')
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -538,6 +546,10 @@ templ routeStrategyPicker(group models.GameStructure) {
 						remove .btn-disabled from completionDropdown.querySelector('a')
 						remove .hidden from completionDropdown.querySelector('.dropdown-content')
 						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						-- Enable navigation dropdown
+						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
+						remove .btn-disabled from navDropdown.querySelector('a')
+						remove .hidden from navDropdown.querySelector('.dropdown-content')
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -545,6 +557,37 @@ templ routeStrategyPicker(group models.GameStructure) {
 							<span class="font-medium">{ models.RouteStrategyFreeRoam.String() }</span>
 						</div>
 						<span class="text-xs text-base-content/60 break-after-auto">{ models.RouteStrategyFreeRoam.Description() }</span>
+					</button>
+				</li>
+				<li>
+					<button
+						role="button"
+						class="route-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
+						data-mode={ models.RouteStrategySecret.String() }
+						_="on click
+						remove .bg-base-300 from <.route-option/>
+						add .bg-base-300 to me
+						set dropdown to closest <.route-dropdown/>
+						set routeStrat to dropdown.querySelector('.route-strat')
+						set routeStrat's innerHTML to my.querySelector('div').innerHTML
+						-- Hide max-next slider
+						add .hidden to dropdown.querySelector('.max-next-slider-container')
+						-- Disable completion and navigation dropdowns for Secret
+						set groupCard to closest <.group-item/>
+						set completionDropdown to groupCard.querySelector('.completion-dropdown')
+						add .btn-disabled to completionDropdown.querySelector('a')
+						add .hidden to completionDropdown.querySelector('.dropdown-content')
+						remove .hidden from groupCard.querySelector('.completion-disabled-msg')
+						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
+						add .btn-disabled to navDropdown.querySelector('a')
+						add .hidden to navDropdown.querySelector('.dropdown-content')
+						js saveGameStructure() end"
+					>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gem-icon lucide-gem w-4 h-4"><path d="M10.5 3 8 9l4 13 4-13-2.5-6"></path><path d="M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z"></path><path d="M2 9h20"></path></svg>
+							<span class="font-medium">{ models.RouteStrategySecret.String() }</span>
+						</div>
+						<span class="text-xs text-base-content/60">{ models.RouteStrategySecret.Description() }</span>
 					</button>
 				</li>
 				<li>
@@ -567,6 +610,10 @@ templ routeStrategyPicker(group models.GameStructure) {
 						remove .btn-disabled from completionDropdown.querySelector('a')
 						remove .hidden from completionDropdown.querySelector('.dropdown-content')
 						add .hidden to groupCard.querySelector('.completion-disabled-msg')
+						-- Enable navigation dropdown
+						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
+						remove .btn-disabled from navDropdown.querySelector('a')
+						remove .hidden from navDropdown.querySelector('.dropdown-content')
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -885,6 +932,8 @@ templ sortableScript() {
 				// Map string to integer values matching models.RouteStrategy
 				if (text.includes('Guided Path')) {
 					routing = 2; // RouteStrategyOrdered
+				} else if (text.includes('Secret')) {
+					routing = 3; // RouteStrategySecret
 				} else if (text.includes('Random')) {
 					routing = 0; // RouteStrategyRandom
 					// Get maxNext from dropdown data attribute
@@ -1109,6 +1158,7 @@ templ sortableScript() {
 				const options = dropdown.querySelectorAll('.route-option');
 				const groupItem = dropdown.closest('.group-item');
 				const completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;
+				const navDropdown = groupItem ? groupItem.querySelector('.nav-display-dropdown') : null;
 
 				// Initialize MaxNext slider for Random routing (mode 0)
 				if (currentText.includes('Random')) {
@@ -1136,8 +1186,8 @@ templ sortableScript() {
 					}
 				});
 
-				// If "Guided Path" mode is selected, disable the completion dropdown
-				if (selectedOption && selectedOption.dataset.mode === 'Guided Path' && completionDropdown) {
+				// Disable completion dropdown for "Guided Path" and "Secret" modes
+				if (selectedOption && (selectedOption.dataset.mode === 'Guided Path' || selectedOption.dataset.mode === 'Secret') && completionDropdown) {
 					const completionButton = completionDropdown.querySelector('a[role=button]');
 					const completionContent = completionDropdown.querySelector('.dropdown-content');
 					const completionMsg = groupItem.querySelector('.completion-disabled-msg');
@@ -1150,6 +1200,19 @@ templ sortableScript() {
 					}
 					if (completionMsg) {
 						completionMsg.classList.remove('hidden');
+					}
+				}
+
+				// Disable navigation dropdown for "Secret" mode only
+				if (selectedOption && selectedOption.dataset.mode === 'Secret' && navDropdown) {
+					const navButton = navDropdown.querySelector('a[role=button]');
+					const navContent = navDropdown.querySelector('.dropdown-content');
+
+					if (navButton) {
+						navButton.classList.add('btn-disabled');
+					}
+					if (navContent) {
+						navContent.classList.add('hidden');
 					}
 				}
 			});
