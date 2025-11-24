@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 6.3.1 (2025-11-24)
+
+### Fixed
+
+- Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps.
+
 ## 6.3.0 (2025-11-23)
 
 ### Added
