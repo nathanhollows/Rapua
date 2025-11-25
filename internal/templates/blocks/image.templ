@@ -7,7 +7,7 @@ import (
 )
 
 templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
-	<figure id={ fmt.Sprintf("player-block-%s", block.ID) }>
+	<figure id={ fmt.Sprintf("player-block-%s", block.ID) } class="flex flex-col items-center">
 		if block.Link != "" {
 			<a
 				href={ templ.SafeURL(block.Link) }
@@ -95,7 +95,7 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 					add .hidden to #progress-%s
 					set #progress-%s.value to 0`, block.ID, block.ID, block.ID, block.ID, block.ID, block.ID) }
 			/>
-			<p class="label">Max size 2MB</p>
+			<p class="label">Max size 25MB</p>
 			<progress
 				id={ fmt.Sprintf("progress-%s", block.ID) }
 				class="progress progress-primary w-full hidden"
