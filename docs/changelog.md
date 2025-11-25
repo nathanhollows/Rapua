@@ -17,6 +17,8 @@ order: 100
 - Image blocks now center properly
 - Removed duplicate "Locations" header in template previews
 - Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps
+- Teams page selection counter and checkboxes now update correctly when teams are added, deleted, or reset
+- Fixed duplicate team entries appearing when deleting or resetting teams
 
 ## 6.3.0 (2025-11-23)
 
