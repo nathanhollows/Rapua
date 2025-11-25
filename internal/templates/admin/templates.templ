@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+templ TemplatesPage(templates []models.Instance) {
+	@Templates(templates)
+	<!-- Modals -->
+	@templateModals()
+	<!-- JavaScript -->
+	@templateScripts()
+}
+
 templ Templates(templates []models.Instance) {
 	<div id="templates" class="px-5">
 		<!-- Header -->
@@ -95,8 +103,6 @@ templ Templates(templates []models.Instance) {
 			</div>
 		</div>
 	</div>
-	<!-- Modals -->
-	@templateModals()
 }
 
 templ TemplateName(template models.Instance) {
@@ -192,6 +198,7 @@ templ templateItem(template models.Instance) {
 				hx-get={ fmt.Sprint("/admin/templates/", template.ID, "/share") }
 				hx-target="#share_template_modal"
 				hx-swap="innerHTML"
+				hx-trigger="click"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2 w-4 h-4"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
 				Share
@@ -221,6 +228,7 @@ templ templateItem(template models.Instance) {
 							hx-get={ fmt.Sprint("/admin/templates/", template.ID, "/share") }
 							hx-target="#share_template_modal"
 							hx-swap="innerHTML"
+							hx-trigger="click"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2 w-4 h-4"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
 							Share
@@ -526,4 +534,53 @@ templ ShareLinkCopyModal(url string) {
 			</form>
 		</div>
 	</div>
+}
+
+templ templateScripts() {
+	<script>
+function handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {
+	// Error checking
+	if (!modalId) {
+		console.error('Modal ID is required');
+		return;
+	}
+	if (showInstanceName && !nameFieldId) {
+		console.error('Name field ID is required when showing instance name');
+		return;
+	}
+	if (showInstanceName && !document.getElementById(nameFieldId)) {
+		console.error('Name field ID does not exist');
+		return;
+	}
+
+	const { id, name } = event.currentTarget.dataset;
+	if (!id) {
+		console.error('Template ID is required');
+		return;
+	}
+	const modal = document.getElementById(modalId);
+	const form = modal.querySelector('form');
+	const input = form.querySelector('input[name="name"]');
+	const hidden = form.querySelector('input[name="id"]');
+
+	if (showInstanceName) {
+		document.getElementById(nameFieldId).textContent = name;
+	}
+
+	if (input) {
+		input.value = defaultName ? `${name} ${defaultName}` : name || '';
+	}
+	hidden.value = id;
+
+	modal.showModal();
+}
+
+function confirmDeleteTemplate() {
+	handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);
+}
+
+function launchTemplate() {
+	handleModalAction('launch_template_modal', 'launch-template-name', '', true);
+}
+</script>
 }
