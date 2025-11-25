@@ -10,6 +10,10 @@ import (
 const maxUploadSize = 25 << 20 // 25MB
 
 func (h *PlayerHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
+	// Set the maximum request body size
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+	// The parameter to ParseMultipartForm is maxMemory (how much to keep in RAM before spilling to disk)
 	err := r.ParseMultipartForm(maxUploadSize)
 	if err != nil {
 		h.handleError(w, r, "UploadImage", "File too large", "error", err)

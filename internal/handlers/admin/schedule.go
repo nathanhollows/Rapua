@@ -32,7 +32,12 @@ func (h *Handler) StartGame(w http.ResponseWriter, r *http.Request) {
 	msg := *flash.NewSuccess("Game started!")
 	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("StartGame: rendering template", "error", err)
+		h.logger.Error("StartGame: rendering GameScheduleStatus template", "error", err)
+		return
+	}
+	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("StartGame: rendering ActivityStatusBadgeOOB template", "error", err)
 	}
 }
 
@@ -58,7 +63,12 @@ func (h *Handler) StopGame(w http.ResponseWriter, r *http.Request) {
 	msg := *flash.NewSuccess("Game stopped!")
 	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("StopGame: rendering template", "error", err)
+		h.logger.Error("StopGame: rendering GameScheduleStatus template", "error", err)
+		return
+	}
+	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("StopGame: rendering ActivityStatusBadgeOOB template", "error", err)
 	}
 }
 
@@ -114,7 +124,12 @@ func (h *Handler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 	err = templates.GameScheduleStatus(user.CurrentInstance, *flash.NewSuccess("Schedule updated!")).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ScheduleGame: rendering template", "error", err)
+		h.logger.Error("ScheduleGame: rendering GameScheduleStatus template", "error", err)
+		return
+	}
+	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("ScheduleGame: rendering ActivityStatusBadgeOOB template", "error", err)
 	}
 }
 
