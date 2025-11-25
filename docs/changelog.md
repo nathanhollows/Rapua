@@ -6,11 +6,17 @@ order: 100
 
 # Changelog
 
-## 6.3.1 (2025-11-24)
+## 6.3.1 (2025-11-25)
 
 ### Fixed
 
-- Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps.
+- Template modal buttons now work after creating new templates
+- Template preview locations now display in game structure order
+- Quickstart guide dismissal no longer redirects to /admin/
+- File upload limit increased to 25MB (note: nginx `client_max_body_size` must also be configured)
+- Image blocks now center properly
+- Removed duplicate "Locations" header in template previews
+- Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps
 
 ## 6.3.0 (2025-11-23)
 
