@@ -170,6 +170,9 @@ templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data 
 				</form>
 			} else {
 				@quizResults(block, data)
+				if data.IsComplete() && block.UnlockedContent != "" {
+					@templ.Raw(stringToMarkdown(block.UnlockedContent))
+				}
 			}
 		</div>
 	</div>
@@ -250,6 +253,9 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 				<div class="animate-[pulse_1s_ease-in-out]">
 					@quizResults(block, data)
 				</div>
+				if data.IsComplete() && block.UnlockedContent != "" {
+					@templ.Raw(stringToMarkdown(block.UnlockedContent))
+				}
 			}
 		</div>
 	</div>
@@ -261,6 +267,15 @@ var quizQuestionTextarea = TextareaParams{
 	Placeholder: "How many chickens are there in the world?",
 	Markdown:    true,
 	Required:    true,
+}
+
+var quizUnlockedContentTextarea = TextareaParams{
+	Name:        "unlocked_content",
+	Title:       "Unlocked Content",
+	Placeholder: "Well done! Here's what happens next...",
+	Markdown:    true,
+	Required:    false,
+	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
 templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
@@ -333,6 +348,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				<button
 					class="btn btn-outline btn-xs"
 					type="button"
+					id="add-option-btn"
 					_="
 						on click
 							set :group to closest <form />
@@ -343,6 +359,8 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 								remove <input[type=checkbox] /> from last <label /> in :group
 							end
 							set @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )
+							set :newInput to last <input[name=option_text] /> in :group
+							call :newInput.focus()
 						"
 				>
 					Add Option
@@ -388,6 +406,8 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				At least one option must be correct.
 			</span>
 		</fieldset>
+		// Unlocked content field
+		@TextareaField(quizUnlockedContentTextarea.SetValue(block.UnlockedContent))
 		<template id="quiz-option-template">
 			<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
 				<input
@@ -408,7 +428,18 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 					style="field-sizing: content;"
 					placeholder="Answer option..."
 					autoComplete="off"
-					_="on keyup send save to (closest <form/>)"
+					_="on keyup
+						send save to (closest <form/>)
+						if event.key is 'Enter'
+							set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
+							set :myIndex to Array.from(:allOptions).indexOf(me)
+							if :myIndex is :allOptions.length - 1
+								send click to (closest <form />).querySelector('#add-option-btn')
+							else
+								call :allOptions[:myIndex + 1].focus()
+							end
+						end
+					"
 				/>
 				<button
 					type="button"
@@ -456,7 +487,18 @@ templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool
 			placeholder="Answer option..."
 			value={ option.Text }
 			autoComplete="off"
-			_="on keyup send save to (closest <form/>)"
+			_="on keyup
+				send save to (closest <form/>)
+				if event.key is 'Enter'
+					set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
+					set :myIndex to Array.from(:allOptions).indexOf(me)
+					if :myIndex is :allOptions.length - 1
+						send click to (closest <form />).querySelector('#add-option-btn')
+					else
+						call :allOptions[:myIndex + 1].focus()
+					end
+				end
+			"
 		/>
 		<button
 			type="button"

@@ -6,6 +6,12 @@ order: 100
 
 # Changelog
 
+## 6.4.0 (2025-11-27)
+
+### Added
+
+- [Quiz](/docs/user/blocks/quiz) block now supports unlocked content that displays after players answer correctly
+
 ## 6.3.1 (2025-11-25)
 
 ### Fixed
