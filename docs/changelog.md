@@ -6,6 +6,14 @@ order: 100
 
 # Changelog
 
+## 6.5.0
+
+### Fixed
+
+- Admin alerts now use default alert styles for better visibility and consistency.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.5.0)
+
 ## 6.3.0 (2025-11-23)
 
 ### Added
