@@ -9,6 +9,52 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
+// getTeamStatus calculates the status of a team based on its current state
+func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
+	if team.MustCheckOut != "" {
+		return services.StatusOnsite
+	} else if len(team.CheckIns) == totalLocations && totalLocations > 0 {
+		return services.StatusFinished
+	} else if len(team.CheckIns) > 0 {
+		return services.StatusTransit
+	} else if team.HasStarted {
+		return services.StatusStarted
+	}
+	return services.StatusStarted // Default to "Not Started" behavior
+}
+
+// TeamStatusBadge renders a status badge for a team with optional tooltip and size
+templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) {
+	switch status {
+		case services.StatusOnsite:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-accent badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Currently checked in">Onsite</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-accent badge-%s", size) }>Onsite</span>
+			}
+		case services.StatusFinished:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Finished all locations!">Finished</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-success badge-%s", size) }>Finished</span>
+			}
+		case services.StatusTransit:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-secondary badge-soft badge-%s tooltip tooltip-left", size) } data-tip="This team is between locations">In transit</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-secondary badge-%s", size) }>In transit</span>
+			}
+		case services.StatusStarted:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-ghost badge-%s tooltip tooltip-left", size) } data-tip="This team has not checked in anywhere yet">Started</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Started</span>
+			}
+		default:
+			<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Not Started</span>
+	}
+}
+
 templ ActivityTracker(instance models.Instance) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
@@ -267,14 +313,18 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 					</th>
 				</tr>
 			</thead>
-			<tbody id="contents" class="overflow-x-hidden">
+			<tbody
+				id="contents"
+				class="overflow-x-hidden"
+				hx-disinherit="*"
+			>
 				for _, teamData := range leaderboardData {
 					<tr
-						class="cursor-pointer hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden"
-						hx-get={ fmt.Sprintf("/admin/activity/team/%s", teamData.Code) }
-						hx-target="#team_modal .modal-box"
-						hx-trigger="click"
-						hx-swap="innerHTML"
+						class="hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
+						hx-get={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) }
+						hx-target="body"
+						hx-swap="outerHTML"
+						hx-push-url="true"
 					>
 						<td class="text-center">
 							switch teamData.Rank {
@@ -288,7 +338,9 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 									<span class="text-xl">{ fmt.Sprint(teamData.Rank) }</span>
 							}
 						</td>
-						<td class="font-mono tracking-wider">{ teamData.Code }</td>
+						<td class="font-mono tracking-wider">
+							{ teamData.Code }
+						</td>
 						if teamData.Name != "" {
 							<td>{ teamData.Name }</td>
 						} else {
@@ -310,16 +362,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 							}
 						</td>
 						<td>
-							switch teamData.Status {
-								case services.StatusOnsite:
-									<span class="badge badge-accent badge-soft badge-sm tooltip tooltip-left" data-tip="Currently checked in">Onsite</span>
-								case services.StatusFinished:
-									<span class="badge badge-success badge-soft badge-sm tooltip tooltip-left" data-tip="Finished all locations!">Finished</span>
-								case services.StatusTransit:
-									<span class="badge badge-secondary badge-soft badge-sm tooltip tooltip-left" data-tip="This team is between locations">In transit</span>
-								case services.StatusStarted:
-									<span class="badge badge-ghost badge-sm tooltip tooltip-left" data-tip="This team has not checked in anywhere yet">Started</span>
-							}
+							@TeamStatusBadge(teamData.Status, true, "sm")
 						</td>
 					</tr>
 				}

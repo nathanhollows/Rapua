@@ -43,28 +43,25 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 templ Messages(messages []models.Notification) {
 	if len(messages) > 0 {
 		<div class="sm:mx-auto sm:w-full sm:max-w-sm mb-12">
-			<div class="flex flex-col gap-4 w-full">
+			<div class="flex flex-col w-full">
 				for _, message := range messages {
 					if !message.Dismissed {
 						<div
-							class="indicator w-full shadow-2xl"
 							id={ "message-" + message.ID }
+							role="alert"
+							class="alert alert-vertical sm:alert-horizontal"
 						>
-							<span class="indicator-item indicator-center indicator-top badge badge-info badge-outline bg-base-200">
-								Admin alert
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail-open w-5 h-5 stroke-info"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"></path><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"></path></svg>
+							<span>
+								{ message.Content }
 							</span>
-							<button
-								hx-post={ "/dismiss/" + message.ID }
-								hx-target={ "#message-" + message.ID }
-								class="indicator-item indicator-end indicator-top btn btn-info btn-circle btn-xs"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4 animate-pulse"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-							</button>
-							<div role="alert" class="alert grid-flow-col text-wrap border-info">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail-open w-5 h-5 stroke-info"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"></path><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"></path></svg>
-								<span>
-									{ message.Content }
-								</span>
+							<div>
+								<button
+									hx-post={ "/dismiss/" + message.ID }
+									hx-target={ "#message-" + message.ID }
+									hx-swap="outerHTML"
+									class="btn btn-xs btn-info"
+								>Dismiss</button>
 							</div>
 						</div>
 					}

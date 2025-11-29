@@ -6,6 +6,19 @@ order: 100
 
 # Changelog
 
+## 6.5.0
+
+### Added
+
+- Dedicated team overview page with detailed stats, progress tracking, and uploaded media gallery.
+
+### Fixed
+
+- Admin alerts now use default alert styles for better visibility and consistency.
+- Don't show markers with coordinates (0,0) on maps to avoid confusion.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.5.0)
+
 ## 6.4.0 (2025-11-27)
 
 ### Added

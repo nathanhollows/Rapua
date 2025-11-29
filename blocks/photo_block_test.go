@@ -192,7 +192,7 @@ func TestPhotoBlock_GetImageURLs_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	state := &blocks.MockPlayerState{
-		PlayerData: playerData,
+		PlayerData:    playerData,
 		IsCompleteVal: true,
 	}
 
@@ -209,7 +209,7 @@ func TestPhotoBlock_GetImageURLs_NoData(t *testing.T) {
 	}
 
 	state := &blocks.MockPlayerState{
-		PlayerData: nil,
+		PlayerData:    nil,
 		IsCompleteVal: false,
 	}
 
@@ -224,7 +224,7 @@ func TestPhotoBlock_GetImageURLs_InvalidJSON(t *testing.T) {
 	}
 
 	state := &blocks.MockPlayerState{
-		PlayerData: []byte("invalid json"),
+		PlayerData:    []byte("invalid json"),
 		IsCompleteVal: true,
 	}
 
@@ -263,9 +263,9 @@ func TestPhotoBlock_UpdateBlockData_DefaultMaxImages(t *testing.T) {
 
 func TestPhotoBlock_UpdateBlockData_InvalidMaxImages(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		maxImages string
-		wantErr  bool
+		wantErr   bool
 	}{
 		{"too low", "0", true},
 		{"too high", "6", true},
@@ -347,7 +347,7 @@ func TestPhotoBlock_ValidatePlayerInput_Delete(t *testing.T) {
 	}
 
 	state := &blocks.MockPlayerState{
-		PlayerData: playerData,
+		PlayerData:    playerData,
 		IsCompleteVal: false,
 	}
 
@@ -387,7 +387,7 @@ func TestPhotoBlock_ValidatePlayerInput_DeleteLastImage(t *testing.T) {
 
 	state := &blocks.MockPlayerState{
 		PlayerData:    playerData,
-		IsCompleteVal:    true,
+		IsCompleteVal: true,
 		PointsAwarded: 10,
 	}
 
