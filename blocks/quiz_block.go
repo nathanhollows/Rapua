@@ -14,11 +14,12 @@ import (
 // QuizBlock allows players to answer multiple choice questions.
 type QuizBlock struct {
 	BaseBlock
-	Question       string       `json:"question"`        // Markdown question text
-	Options        []QuizOption `json:"options"`         // Answer choices
-	MultipleChoice bool         `json:"multiple_choice"` // Whether multiple answers are allowed
-	RandomizeOrder bool         `json:"randomize_order"` // Shuffle options
-	RetryEnabled   bool         `json:"retry_enabled"`   // Allow players to retry
+	Question        string       `json:"question"`         // Markdown question text
+	Options         []QuizOption `json:"options"`          // Answer choices
+	MultipleChoice  bool         `json:"multiple_choice"`  // Whether multiple answers are allowed
+	RandomizeOrder  bool         `json:"randomize_order"`  // Shuffle options
+	RetryEnabled    bool         `json:"retry_enabled"`    // Allow players to retry
+	UnlockedContent string       `json:"unlocked_content"` // Content shown after correct answer
 }
 
 // QuizOption represents an individual answer choice.
@@ -117,6 +118,10 @@ func (b *QuizBlock) updateSettings(input map[string][]string) {
 	b.RetryEnabled = false
 	if retryEnabled, exists := input["retry_enabled"]; exists && len(retryEnabled) > 0 {
 		b.RetryEnabled = retryEnabled[0] == "on"
+	}
+
+	if unlockedContent, exists := input["unlocked_content"]; exists && len(unlockedContent) > 0 {
+		b.UnlockedContent = unlockedContent[0]
 	}
 }
 
@@ -329,11 +334,12 @@ func (b *QuizBlock) GetShuffledOptions() []QuizOption {
 // NewQuizBlock creates a new quiz block instance.
 func NewQuizBlock(base BaseBlock) *QuizBlock {
 	return &QuizBlock{
-		BaseBlock:      base,
-		Question:       "",
-		Options:        []QuizOption{},
-		MultipleChoice: false,
-		RandomizeOrder: false,
-		RetryEnabled:   false,
+		BaseBlock:       base,
+		Question:        "",
+		Options:         []QuizOption{},
+		MultipleChoice:  false,
+		RandomizeOrder:  false,
+		RetryEnabled:    false,
+		UnlockedContent: "",
 	}
 }

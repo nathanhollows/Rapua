@@ -83,7 +83,7 @@ func QuickstartBar(instance models.Instance) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</ol><button data-tip=\"Dismiss\" hx-post=\"/admin/quickstart/dismiss?redirect=true\" hx-swap=\"outerHTML\" hx-target=\"#quickstart\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</ol><button data-tip=\"Dismiss\" hx-post=\"/admin/quickstart/dismiss\" hx-swap=\"outerHTML\" hx-target=\"#quickstart\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -8,9 +8,13 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
 )
 
-const maxUploadSize = 100 << 20 // 100MB
+const maxUploadSize = 25 << 20 // 25MB
 
 func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
+	// Set the maximum request body size
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+	// The parameter to ParseMultipartForm is maxMemory (how much to keep in RAM before spilling to disk)
 	err := r.ParseMultipartForm(maxUploadSize)
 	if err != nil {
 		h.handleError(w, r, "UploadMedia", "File too large", "error", err)

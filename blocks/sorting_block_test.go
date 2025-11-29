@@ -308,9 +308,9 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		require.NoError(t, err)
 
 		state := &blocks.MockPlayerState{
-			BlockID:    "block-id",
-			PlayerID:   "player-id",
-			PlayerData: playerDataJSON,
+			BlockID:       "block-id",
+			PlayerID:      "player-id",
+			PlayerData:    playerDataJSON,
 			IsCompleteVal: false, // Intentionally not marked complete
 		}
 

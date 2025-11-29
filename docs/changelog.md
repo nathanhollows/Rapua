@@ -6,6 +6,56 @@ order: 100
 
 # Changelog
 
+## 6.5.0
+
+### Added
+
+- Dedicated team overview page with detailed stats, progress tracking, and uploaded media gallery closes [#104](https://github.com/nathanhollows/Rapua/issues/104)
+
+### Fixed
+
+- Admin alerts now use default alert styles for better visibility and consistency.
+- Don't show markers with coordinates (0,0) on maps to avoid confusion.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.5.0)
+
+## 6.4.0 (2025-11-27)
+
+### Added
+
+- [Quiz](/docs/user/blocks/quiz) block now supports unlocked content that displays after players answer correctly
+
+## 6.3.1 (2025-11-25)
+
+### Fixed
+
+- Template modal buttons now work after creating new templates
+- Template preview locations now display in game structure order
+- Quickstart guide dismissal no longer redirects to /admin/
+- File upload limit increased to 25MB (note: nginx `client_max_body_size` must also be configured)
+- Image blocks now center properly
+- Removed duplicate "Locations" header in template previews
+- Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps
+- Teams page selection counter and checkboxes now update correctly when teams are added, deleted, or reset
+- Fixed duplicate team entries appearing when deleting or resetting teams
+
+## 6.3.0 (2025-11-23)
+
+### Added
+
+- Added a new **Secret** routing strategy for hidden bonus locations
+  - See [Game Settings](/docs/user/game-settings) for user guide or [Navigation Logic Reference](/docs/developer/navigation-logic) for technical details
+  - Secret locations are accessible via QR code, link, or GPS but never shown in the UI
+  - Accessible when they are siblings or uncles to the current group
+  - Do not affect game progression or completion
+  - Automatically disable completion settings and navigation modes in admin UI
+
+### Changed
+
+- Location group UI now uses data-driven architecture for easier maintenance
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.3.0)
+
 ## 6.2.0 (2025-11-23)
 
 ### Added

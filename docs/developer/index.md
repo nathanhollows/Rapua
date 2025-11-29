@@ -16,6 +16,11 @@ Welcome to the Rapua developer documentation. This section contains technical in
 - [Middleware](middleware) - Learn about the middleware components
 - [Migrations](migrations) - Database migration process
 
+## Core Systems
+
+- [Navigation Logic Reference](navigation-logic) - Routing strategies, navigation modes, and completion settings
+- [Job Scheduler](job-scheduler) - Background job processing and scheduling
+
 ## Development
 
 - [Contributing](contributing) - Guidelines for contributing to Rapua

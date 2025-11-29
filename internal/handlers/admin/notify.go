@@ -2,6 +2,8 @@ package admin
 
 import (
 	"net/http"
+
+	admin "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
 )
 
 // NotifyAllPost sends a notification to all teams.
@@ -80,5 +82,35 @@ func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.handleSuccess(w, r, "Notification sent")
+	// Fetch updated notifications
+	notifications, err := h.notificationService.GetNotifications(r.Context(), teamCode)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"NotifyTeamPost fetching notifications",
+			"Error fetching notifications",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	// Render the updated alerts list
+	err = admin.AlertsList(notifications).Render(r.Context(), w)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"NotifyTeamPost rendering alerts list",
+			"Error rendering notifications",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
 }

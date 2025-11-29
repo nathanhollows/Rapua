@@ -76,7 +76,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = Templates(templates).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TemplatesPage(templates).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

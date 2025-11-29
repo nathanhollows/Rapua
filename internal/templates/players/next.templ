@@ -80,12 +80,14 @@ templ showMap(locations []models.Location) {
 		<div id="map-next" class="map w-full h-full rounded-lg"></div>
 	</div>
 	for _, location := range locations {
-		<span
-			class="location-name"
-			data-lat={ fmt.Sprint(location.Marker.Lat) }
-			data-lng={ fmt.Sprint(location.Marker.Lng) }
-			data-code={ location.MarkerID }
-		></span>
+		if location.Marker.IsMapped() {
+			<span
+				class="location-name"
+				data-lat={ fmt.Sprint(location.Marker.Lat) }
+				data-lng={ fmt.Sprint(location.Marker.Lng) }
+				data-code={ location.MarkerID }
+			></span>
+		}
 	}
 	@mapScript()
 }
@@ -96,13 +98,17 @@ templ showMapAndNames(settings models.InstanceSettings, locations []models.Locat
 	</p>
 	for _, location := range locations {
 		<p class="text-center pb-3">
-			<em
-				class="location-name"
-				data-lat={ fmt.Sprint(location.Marker.Lat) }
-				data-lng={ fmt.Sprint(location.Marker.Lng) }
-				data-name={ location.Name }
-				data-code={ location.MarkerID }
-			>{ location.Name }</em>
+			if location.Marker.IsMapped() {
+				<em
+					class="location-name"
+					data-lat={ fmt.Sprint(location.Marker.Lat) }
+					data-lng={ fmt.Sprint(location.Marker.Lng) }
+					data-name={ location.Name }
+					data-code={ location.MarkerID }
+				>{ location.Name }</em>
+			} else {
+				<em>{ location.Name }</em>
+			}
 			<!-- Show the number of teams visiting this location -->
 			if settings.ShowTeamCount {
 				<br/>

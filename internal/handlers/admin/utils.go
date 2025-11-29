@@ -215,6 +215,17 @@ type TeamService interface {
 	LoadRelation(ctx context.Context, team *models.Team, relation string) error
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Team) error
+
+	// BuildLocationGroupMap creates a map from location ID to group info
+	BuildLocationGroupMap(structure *models.GameStructure) map[string]services.LocationGroupInfo
+	// BuildGroupOrder creates a map from group name to its order in the game structure
+	BuildGroupOrder(structure *models.GameStructure) map[string]int
+	// GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order
+	GroupCheckInsByGroup(
+		checkIns []models.CheckIn,
+		locationGroups map[string]services.LocationGroupInfo,
+		groupOrder map[string]int,
+	) []services.GroupedCheckIns
 }
 
 type UploadService interface {

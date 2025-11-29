@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -95,7 +96,7 @@ func (ds *DocsService) loadKnownPages() error {
 
 	var pages []string
 	if err = yaml.Unmarshal(data, &pages); err != nil {
-		return err
+		return fmt.Errorf("parsing %s: %w", knownPagesPath, err)
 	}
 
 	for _, page := range pages {
@@ -116,7 +117,7 @@ func (ds *DocsService) loadMissingPages() error {
 
 	var pages []string
 	if err = yaml.Unmarshal(data, &pages); err != nil {
-		return err
+		return fmt.Errorf("parsing %s: %w", missingPagesPath, err)
 	}
 
 	for _, page := range pages {
@@ -137,7 +138,7 @@ func (ds *DocsService) loadRedirects() error {
 
 	var redirects []RedirectEntry
 	if err = yaml.Unmarshal(data, &redirects); err != nil {
-		return err
+		return fmt.Errorf("parsing %s: %w", redirectPath, err)
 	}
 
 	for _, redirect := range redirects {
@@ -267,7 +268,7 @@ func (ds *DocsService) loadDocs() error {
 			Order int    `yaml:"order"`
 		}
 		if err = yaml.Unmarshal([]byte(parts[1]), &meta); err != nil {
-			return err
+			return fmt.Errorf("parsing YAML front matter in %s: %w", relativePath, err)
 		}
 
 		// Extract headings for ToC

@@ -269,7 +269,7 @@ templ nav(user models.User, section string) {
 						if len(user.Instances) > 0 {
 							<li>
 								<h2 class="menu-title">Switch games</h2>
-								<ul>
+								<ul hx-boost="true">
 									for _, instance := range user.Instances {
 										<li>
 											if instance.ID == user.CurrentInstance.ID {
