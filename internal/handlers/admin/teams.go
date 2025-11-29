@@ -209,7 +209,15 @@ func (h *Handler) TeamOverview(w http.ResponseWriter, r *http.Request) {
 
 	team, err := h.teamService.GetTeamByCode(r.Context(), teamCode)
 	if err != nil || team == nil || team.InstanceID != user.CurrentInstanceID {
-		h.logger.Warn("TeamOverview: team not found or access denied", "error", err, "team_code", teamCode, "instance_id", user.CurrentInstanceID)
+		h.logger.Warn(
+			"TeamOverview: team not found or access denied",
+			"error",
+			err,
+			"team_code",
+			teamCode,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
 		http.Redirect(w, r, "/admin/teams", http.StatusSeeOther)
 		return
 	}

@@ -5,7 +5,7 @@ import "encoding/json"
 // Export unexported types for testing in blocks_test package
 // These are only available during test compilation
 
-// MockPlayerState is a mock implementation of PlayerState for testing
+// MockPlayerState is a mock implementation of PlayerState for testing.
 type MockPlayerState struct {
 	BlockID       string
 	PlayerID      string
@@ -29,20 +29,20 @@ type BrokerBlockData = brokerBlockData
 type ClueBlockData = clueBlockData
 type PhotoBlockData = photoBlockData
 
-// Export unexported functions for testing
+// Export unexported functions for testing.
 var DeterministicShuffle = deterministicShuffle
 
-// CalculatePoints exposes the calculatePoints method for testing
+// CalculatePoints exposes the calculatePoints method for testing.
 func (b *QuizBlock) CalculatePoints(selectedOptions []string) (int, bool) {
 	return b.calculatePoints(selectedOptions)
 }
 
-// OrderIsCorrect exposes the orderIsCorrect method for testing
+// OrderIsCorrect exposes the orderIsCorrect method for testing.
 func (b *SortingBlock) OrderIsCorrect(playerOrder []string) bool {
 	return b.orderIsCorrect(playerOrder)
 }
 
-// CalculateCorrectItemCorrectPlacePoints exposes the calculateCorrectItemCorrectPlacePoints method for testing
+// CalculateCorrectItemCorrectPlacePoints exposes the calculateCorrectItemCorrectPlacePoints method for testing.
 func (b *SortingBlock) CalculateCorrectItemCorrectPlacePoints(playerOrder []string) int {
 	return b.calculateCorrectItemCorrectPlacePoints(playerOrder)
 }

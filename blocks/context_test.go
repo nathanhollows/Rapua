@@ -48,7 +48,12 @@ func TestBlockContextFiltering(t *testing.T) {
 	}
 }
 
-func checkExpectedBlocks(t *testing.T, availableBlocks blocks.Blocks, expectedBlocks []string, context blocks.BlockContext) {
+func checkExpectedBlocks(
+	t *testing.T,
+	availableBlocks blocks.Blocks,
+	expectedBlocks []string,
+	context blocks.BlockContext,
+) {
 	t.Helper()
 	for _, expectedBlock := range expectedBlocks {
 		if !blockTypeExists(availableBlocks, expectedBlock) {
@@ -57,7 +62,12 @@ func checkExpectedBlocks(t *testing.T, availableBlocks blocks.Blocks, expectedBl
 	}
 }
 
-func checkUnexpectedBlocks(t *testing.T, availableBlocks blocks.Blocks, unexpectedBlocks []string, context blocks.BlockContext) {
+func checkUnexpectedBlocks(
+	t *testing.T,
+	availableBlocks blocks.Blocks,
+	unexpectedBlocks []string,
+	context blocks.BlockContext,
+) {
 	t.Helper()
 	for _, unexpectedBlock := range unexpectedBlocks {
 		if blockTypeExists(availableBlocks, unexpectedBlock) {

@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	// Default group constants used in grouping logic
+	// Default group constants used in grouping logic.
 	defaultUngroupedName  = "Other"
 	defaultUngroupedColor = "base-content"
 
-	// Test fixture base time for deterministic timestamps
+	// Test fixture base time for deterministic timestamps.
 	baseTime = "2024-01-15T10:00:00Z"
 )
 
@@ -47,7 +47,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 	return *teamService, cleanup
 }
 
-// getBaseTime returns a fixed time for deterministic testing
+// getBaseTime returns a fixed time for deterministic testing.
 func getBaseTime() time.Time {
 	t, _ := time.Parse(time.RFC3339, baseTime)
 	return t
@@ -134,11 +134,11 @@ func TestTeamService_FindAll(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name           string
-		setupTeams     int
-		instanceID     string
-		wantCount      int
-		wantErr        bool
+		name       string
+		setupTeams int
+		instanceID string
+		wantCount  int
+		wantErr    bool
 	}{
 		{
 			name:       "find all teams for instance",
@@ -412,12 +412,12 @@ func TestTeamService_BuildGroupOrder(t *testing.T) {
 				},
 			},
 			want: map[string]int{
-				"Zone A":      0,
-				"Subzone A1":  1,
-				"Subzone A2":  2,
-				"Zone B":      3,
-				"Zone C":      4,
-				"Subzone C1":  5,
+				"Zone A":     0,
+				"Subzone A1": 1,
+				"Subzone A2": 2,
+				"Zone B":     3,
+				"Zone C":     4,
+				"Subzone C1": 5,
 			},
 		},
 		{

@@ -334,60 +334,33 @@ func (s *TeamService) buildGroupOrderRecursive(group *models.GameStructure, resu
 	}
 }
 
-// GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order.
-// Optimized to minimize passes over the data by sorting during grouping.
-func (s *TeamService) GroupCheckInsByGroup(
-	checkIns []models.CheckIn,
-	locationGroups map[string]LocationGroupInfo,
-	groupOrder map[string]int,
-) []GroupedCheckIns {
-	groupMap := make(map[string]*GroupedCheckIns)
-	var ungrouped []models.CheckIn
-
-	// Single pass: group check-ins and insert in sorted order by creation time
-	for _, scan := range checkIns {
-		if !scan.MustCheckOut {
-			if groupInfo, ok := locationGroups[scan.Location.ID]; ok {
-				if _, exists := groupMap[groupInfo.GroupName]; !exists {
-					groupMap[groupInfo.GroupName] = &GroupedCheckIns{
-						GroupInfo: groupInfo,
-						CheckIns:  []models.CheckIn{},
-					}
-				}
-				// Insert check-in in sorted position by creation time
-				group := groupMap[groupInfo.GroupName]
-				insertPos := sort.Search(len(group.CheckIns), func(i int) bool {
-					return group.CheckIns[i].CreatedAt.After(scan.CreatedAt)
-				})
-				// Efficient insertion: append and copy instead of double append
-				group.CheckIns = append(group.CheckIns, models.CheckIn{})
-				copy(group.CheckIns[insertPos+1:], group.CheckIns[insertPos:])
-				group.CheckIns[insertPos] = scan
-			} else {
-				ungrouped = append(ungrouped, scan)
-			}
-		}
-	}
-
-	// Sort ungrouped check-ins by creation time
-	sort.Slice(ungrouped, func(i, j int) bool {
-		return ungrouped[i].CreatedAt.Before(ungrouped[j].CreatedAt)
+// insertCheckInSorted inserts a check-in into the group's check-ins in sorted order by creation time.
+func insertCheckInSorted(group *GroupedCheckIns, checkIn models.CheckIn) {
+	insertPos := sort.Search(len(group.CheckIns), func(i int) bool {
+		return group.CheckIns[i].CreatedAt.After(checkIn.CreatedAt)
 	})
+	// Efficient insertion: append and copy instead of double append
+	group.CheckIns = append(group.CheckIns, models.CheckIn{})
+	copy(group.CheckIns[insertPos+1:], group.CheckIns[insertPos:])
+	group.CheckIns[insertPos] = checkIn
+}
 
-	// Build result slice in sorted order by group order
-	// First, collect all group names and their orders
-	type groupWithOrder struct {
-		name  string
-		order int
-		found bool
-	}
+// groupWithOrder tracks a group name and its order in the game structure.
+type groupWithOrder struct {
+	name  string
+	order int
+	found bool
+}
+
+// sortGroupsByOrder sorts groups by their order in the game structure.
+// Groups with defined order come before groups without order.
+func sortGroupsByOrder(groupMap map[string]*GroupedCheckIns, groupOrder map[string]int) []GroupedCheckIns {
 	groups := make([]groupWithOrder, 0, len(groupMap))
 	for name := range groupMap {
 		order, found := groupOrder[name]
 		groups = append(groups, groupWithOrder{name: name, order: order, found: found})
 	}
 
-	// Sort groups by their order
 	sort.Slice(groups, func(i, j int) bool {
 		// Groups with order come before those without
 		if groups[i].found && !groups[j].found {
@@ -404,11 +377,51 @@ func (s *TeamService) GroupCheckInsByGroup(
 		return false
 	})
 
-	// Build final result in sorted order
-	result := make([]GroupedCheckIns, 0, len(groupMap)+1)
+	result := make([]GroupedCheckIns, 0, len(groupMap))
 	for _, g := range groups {
 		result = append(result, *groupMap[g.name])
 	}
+	return result
+}
+
+// GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order.
+// Optimized to minimize passes over the data by sorting during grouping.
+func (s *TeamService) GroupCheckInsByGroup(
+	checkIns []models.CheckIn,
+	locationGroups map[string]LocationGroupInfo,
+	groupOrder map[string]int,
+) []GroupedCheckIns {
+	groupMap := make(map[string]*GroupedCheckIns)
+	var ungrouped []models.CheckIn
+
+	// Single pass: group check-ins and insert in sorted order by creation time
+	for _, scan := range checkIns {
+		if scan.MustCheckOut {
+			continue
+		}
+
+		groupInfo, ok := locationGroups[scan.Location.ID]
+		if !ok {
+			ungrouped = append(ungrouped, scan)
+			continue
+		}
+
+		if _, exists := groupMap[groupInfo.GroupName]; !exists {
+			groupMap[groupInfo.GroupName] = &GroupedCheckIns{
+				GroupInfo: groupInfo,
+				CheckIns:  []models.CheckIn{},
+			}
+		}
+		insertCheckInSorted(groupMap[groupInfo.GroupName], scan)
+	}
+
+	// Sort ungrouped check-ins by creation time
+	sort.Slice(ungrouped, func(i, j int) bool {
+		return ungrouped[i].CreatedAt.Before(ungrouped[j].CreatedAt)
+	})
+
+	// Build result slice in sorted order by group order
+	result := sortGroupsByOrder(groupMap, groupOrder)
 
 	// Add ungrouped locations as "Other" group at the end
 	if len(ungrouped) > 0 {
