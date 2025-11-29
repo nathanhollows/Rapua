@@ -326,9 +326,19 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 					</th>
 				</tr>
 			</thead>
-			<tbody id="contents" class="overflow-x-hidden" hx-boost="true" hx-disinherit="*">
+			<tbody
+				id="contents"
+				class="overflow-x-hidden"
+				hx-disinherit="*"
+			>
 				for _, teamData := range leaderboardData {
-					<tr class="hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden">
+					<tr
+						class="hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
+						hx-get={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) }
+						hx-target="body"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+					>
 						<td class="text-center">
 							switch teamData.Rank {
 								case 1:
@@ -342,9 +352,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 							}
 						</td>
 						<td class="font-mono tracking-wider">
-							<a href={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) } class="block cursor-pointer">
-								{ teamData.Code }
-							</a>
+							{ teamData.Code }
 						</td>
 						if teamData.Name != "" {
 							<td>{ teamData.Name }</td>
