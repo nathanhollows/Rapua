@@ -11,6 +11,7 @@ templ TeamsTable(teams []models.Team) {
 	<ul
 		id="teams-ul"
 		class="list rounded-lg mx-5"
+		hx-boost="true"
 		_="on htmx:afterSwap or htmx:afterSettle
 			js(me)
 				// Count checked checkboxes
@@ -644,7 +645,11 @@ templ TeamStatsCard(settings models.InstanceSettings, team models.Team, complete
 						@TeamStatusBadge(getTeamStatus(team, totalLocations), false, "lg")
 					</div>
 					<div class="stat-desc">
-						Last seen { timeago.Parse(team.CheckIns[len(team.CheckIns)-1].CreatedAt) }
+						if len(team.CheckIns) > 0 {
+							Last seen { timeago.Parse(team.CheckIns[len(team.CheckIns)-1].CreatedAt) }
+						} else {
+							No activity yet
+						}
 					</div>
 				</div>
 				<div class="stat">

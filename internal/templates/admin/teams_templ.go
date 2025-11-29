@@ -36,7 +36,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<ul id=\"teams-ul\" class=\"list rounded-lg mx-5\" _=\"on htmx:afterSwap or htmx:afterSettle\n\t\t\tjs(me)\n\t\t\t\t// Count checked checkboxes\n\t\t\t\tvar checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;\n\t\t\t\tvar allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');\n\n\t\t\t\t// Update all selection count elements (including in modals)\n\t\t\t\tdocument.querySelectorAll('span').forEach(function(span) {\n\t\t\t\t\tvar prev = span.previousSibling;\n\t\t\t\t\tif (prev && prev.textContent && prev.textContent.includes('Selected:')) {\n\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t}\n\t\t\t\t\t// Also update counts in modal dialogs\n\t\t\t\t\tvar parent = span.parentElement;\n\t\t\t\t\tif (parent && parent.innerHTML &&\n\t\t\t\t\t\t(parent.innerHTML.includes('reset') || parent.innerHTML.includes('delete'))) {\n\t\t\t\t\t\tvar text = span.textContent;\n\t\t\t\t\t\tif (text && !isNaN(text.trim())) {\n\t\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Update select-all checkbox state\n\t\t\t\tvar selectAll = document.getElementById('select-all');\n\t\t\t\tif (selectAll) {\n\t\t\t\t\tif (checkedCount === 0) {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {\n\t\t\t\t\t\tselectAll.checked = true;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = true;\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Show/hide actions and filters bars\n\t\t\t\tvar actions = document.getElementById('team-actions');\n\t\t\t\tvar filters = document.getElementById('team-filters');\n\t\t\t\tif (checkedCount > 0) {\n\t\t\t\t\tif (actions) actions.classList.remove('hidden');\n\t\t\t\t\tif (filters) filters.classList.add('hidden');\n\t\t\t\t} else {\n\t\t\t\t\tif (actions) actions.classList.add('hidden');\n\t\t\t\t\tif (filters) filters.classList.remove('hidden');\n\t\t\t\t}\n\t\t\tend\n\t\tend\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"filter\"><input class=\"btn btn-sm filter-reset\" type=\"radio\" name=\"activefilter\" aria-label=\"All\" _=\"\n\t\t\t\t\t\t\ton click remove .hidden from <.team-item/>\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Active Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Inactive Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-5 h-5\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\ton input \n\t\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"> <button id=\"clear-search\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\tinit if #search-teams's value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\tset #search-teams's value to ''\n\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\tsend input to #search-teams\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<ul id=\"teams-ul\" class=\"list rounded-lg mx-5\" hx-boost=\"true\" _=\"on htmx:afterSwap or htmx:afterSettle\n\t\t\tjs(me)\n\t\t\t\t// Count checked checkboxes\n\t\t\t\tvar checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;\n\t\t\t\tvar allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');\n\n\t\t\t\t// Update all selection count elements (including in modals)\n\t\t\t\tdocument.querySelectorAll('span').forEach(function(span) {\n\t\t\t\t\tvar prev = span.previousSibling;\n\t\t\t\t\tif (prev && prev.textContent && prev.textContent.includes('Selected:')) {\n\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t}\n\t\t\t\t\t// Also update counts in modal dialogs\n\t\t\t\t\tvar parent = span.parentElement;\n\t\t\t\t\tif (parent && parent.innerHTML &&\n\t\t\t\t\t\t(parent.innerHTML.includes('reset') || parent.innerHTML.includes('delete'))) {\n\t\t\t\t\t\tvar text = span.textContent;\n\t\t\t\t\t\tif (text && !isNaN(text.trim())) {\n\t\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Update select-all checkbox state\n\t\t\t\tvar selectAll = document.getElementById('select-all');\n\t\t\t\tif (selectAll) {\n\t\t\t\t\tif (checkedCount === 0) {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {\n\t\t\t\t\t\tselectAll.checked = true;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = true;\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Show/hide actions and filters bars\n\t\t\t\tvar actions = document.getElementById('team-actions');\n\t\t\t\tvar filters = document.getElementById('team-filters');\n\t\t\t\tif (checkedCount > 0) {\n\t\t\t\t\tif (actions) actions.classList.remove('hidden');\n\t\t\t\t\tif (filters) filters.classList.add('hidden');\n\t\t\t\t} else {\n\t\t\t\t\tif (actions) actions.classList.add('hidden');\n\t\t\t\t\tif (filters) filters.classList.remove('hidden');\n\t\t\t\t}\n\t\t\tend\n\t\tend\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"filter\"><input class=\"btn btn-sm filter-reset\" type=\"radio\" name=\"activefilter\" aria-label=\"All\" _=\"\n\t\t\t\t\t\t\ton click remove .hidden from <.team-item/>\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Active Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Inactive Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-5 h-5\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\ton input \n\t\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"> <button id=\"clear-search\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\tinit if #search-teams's value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\tset #search-teams's value to ''\n\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\tsend input to #search-teams\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -152,7 +152,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 388, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 389, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -170,7 +170,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 457, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 458, Col: 99}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -188,7 +188,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 459, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 460, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 471, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 472, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -235,7 +235,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var10 templ.SafeURL
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/teams/%s", team.Code)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 476, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 477, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -307,7 +307,7 @@ func Teams(teams []models.Team, credits int) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(credits))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 525, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 526, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 600, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 601, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -391,7 +391,7 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 603, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 604, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -489,59 +489,70 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div><div class=\"stat-desc\">Last seen ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div><div class=\"stat-desc\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(timeago.Parse(team.CheckIns[len(team.CheckIns)-1].CreatedAt))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 647, Col: 78}
+		if len(team.CheckIns) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "Last seen ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(timeago.Parse(team.CheckIns[len(team.CheckIns)-1].CreatedAt))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 649, Col: 79}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "No activity yet")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coins-icon lucide-coins h-8 w-8\"><circle cx=\"8\" cy=\"8\" r=\"6\"></circle><path d=\"M18.09 10.37A6 6 0 1 1 10.34 18\"></path><path d=\"M7 6h1v4\"></path><path d=\"m16.71 13.88.7.71-2.82 2.82\"></path></svg></div><div class=\"stat-title\">Points</div><div class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coins-icon lucide-coins h-8 w-8\"><circle cx=\"8\" cy=\"8\" r=\"6\"></circle><path d=\"M18.09 10.37A6 6 0 1 1 10.34 18\"></path><path d=\"M7 6h1v4\"></path><path d=\"m16.71 13.88.7.71-2.82 2.82\"></path></svg></div><div class=\"stat-title\">Points</div><div class=\"stat-value\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(team.Points))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 655, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 660, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</div><div class=\"stat-desc\">From check-ins and blocks</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-check-inside-icon lucide-map-pin-check-inside w-8 h-8\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><path d=\"m9 10 2 2 4-4\"></path></svg></div><div class=\"stat-title\">Locations</div><div class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div><div class=\"stat-desc\">From check-ins and blocks</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-check-inside-icon lucide-map-pin-check-inside w-8 h-8\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><path d=\"m9 10 2 2 4-4\"></path></svg></div><div class=\"stat-title\">Locations</div><div class=\"stat-value\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(completedLocations))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 665, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 670, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span class=\"text-base opacity-50\">∕")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<span class=\"text-base opacity-50\">∕")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(totalLocations))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 665, Col: 129}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 670, Col: 129}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</span></div><div class=\"stat-desc\">Completed locations</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-percent-icon lucide-circle-percent w-8 h-8\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m15 9-6 6\"></path><path d=\"M9 9h.01\"></path><path d=\"M15 15h.01\"></path></svg></div><div class=\"stat-title\">Progress</div><div class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</span></div><div class=\"stat-desc\">Completed locations</div></div><div class=\"stat\"><div class=\"stat-figure text-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-percent-icon lucide-circle-percent w-8 h-8\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m15 9-6 6\"></path><path d=\"M9 9h.01\"></path><path d=\"M15 15h.01\"></path></svg></div><div class=\"stat-title\">Progress</div><div class=\"stat-value\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -549,19 +560,19 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", float64(completedLocations)/float64(totalLocations)*100))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 677, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 682, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "0%")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "0%")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><div class=\"stat-desc\">Towards completion</div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div><div class=\"stat-desc\">Towards completion</div></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -590,20 +601,20 @@ func CurrentLocationCard(team models.Team) templ.Component {
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<div class=\"card bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 hover:border-accent/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin w-5 h-5\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg> Current Location</h2><div class=\"mt-2\"><div class=\"flex items-center gap-3 p-4 bg-base-100 rounded-lg\"><div class=\"badge badge-accent\">Checked In</div><span class=\"font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"card bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 hover:border-accent/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin w-5 h-5\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg> Current Location</h2><div class=\"mt-2\"><div class=\"flex items-center gap-3 p-4 bg-base-100 rounded-lg\"><div class=\"badge badge-accent\">Checked In</div><span class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(team.BlockingLocation.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 701, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 706, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -632,17 +643,17 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass-icon lucide-compass w-5 h-5\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Next locations</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-compass-icon lucide-compass w-5 h-5\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg> Next locations</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(nextLocations) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if groupInfo, ok := locationGroups[nextLocations[0].ID]; ok {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"mt-2\"><div class=\"flex items-center gap-2 mb-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"mt-2\"><div class=\"flex items-center gap-2 mb-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -651,7 +662,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -664,108 +675,108 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\"></div><span class=\"text-sm font-medium\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\"></div><span class=\"text-sm font-medium\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(groupInfo.GroupName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 721, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 726, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span></div><div class=\"join join-vertical w-full\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</span></div><div class=\"join join-vertical w-full\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, location := range nextLocations {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center gap-3\"><div class=\"badge badge-sm badge-outline border-primary\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center gap-3\"><div class=\"badge badge-sm badge-outline border-primary\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 727, Col: 86}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 732, Col: 86}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div><span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div><span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 728, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 733, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</span></div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</span></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<div class=\"join join-vertical w-full mt-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<div class=\"join join-vertical w-full mt-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, location := range nextLocations {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center gap-3\"><div class=\"badge badge-sm badge-outline border-primary\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center gap-3\"><div class=\"badge badge-sm badge-outline border-primary\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 739, Col: 85}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 744, Col: 85}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div><span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</div><span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var31 string
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 740, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 745, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span></div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</span></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div class=\"alert mt-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-current shrink-0 w-6 h-6\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>All locations completed!</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"alert mt-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-current shrink-0 w-6 h-6\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>All locations completed!</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -794,12 +805,12 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-5 h-5\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Location history</h2><div class=\"mt-2 max-h-80 overflow-y-auto space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-5 h-5\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Location history</h2><div class=\"mt-2 max-h-80 overflow-y-auto space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, grouped := range groupedHistory {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div><div class=\"flex items-center gap-2 mb-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<div><div class=\"flex items-center gap-2 mb-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -808,7 +819,7 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -821,84 +832,84 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\"></div><span class=\"text-sm font-medium\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\"></div><span class=\"text-sm font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(grouped.GroupInfo.GroupName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 768, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 773, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</span></div><div class=\"join join-vertical w-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span></div><div class=\"join join-vertical w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, scan := range grouped.CheckIns {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center justify-between gap-3\"><div class=\"flex items-center gap-3 flex-1 min-w-0\"><div class=\"badge badge-success badge-sm\">✓</div><span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<div class=\"join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-base-content/30\"><div class=\"flex items-center justify-between gap-3\"><div class=\"flex items-center gap-3 flex-1 min-w-0\"><div class=\"badge badge-success badge-sm\">✓</div><span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(scan.Location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 776, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 781, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span></div><div class=\"flex items-center gap-2 text-sm flex-shrink-0\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</span></div><div class=\"flex items-center gap-2 text-sm flex-shrink-0\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if settings.EnablePoints && scan.Points > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<span class=\"badge badge-info badge-sm\">+")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<span class=\"badge badge-info badge-sm\">+")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var37 string
 					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.Points))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 780, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 785, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, " pts</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, " pts</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<span class=\"convert-time badge badge-ghost badge-sm\" data-datetime=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<span class=\"convert-time badge badge-ghost badge-sm\" data-datetime=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.CreatedAt.UTC()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 782, Col: 113}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 787, Col: 113}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\"></span></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\"></span></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -927,102 +938,102 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-images-icon lucide-images w-5 h-5\"><path d=\"m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16\"></path><path d=\"M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2\"></path><circle cx=\"13\" cy=\"7\" r=\"1\" fill=\"currentColor\"></circle><rect x=\"8\" y=\"2\" width=\"14\" height=\"14\" rx=\"2\"></rect></svg> Uploaded media (")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-images-icon lucide-images w-5 h-5\"><path d=\"m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16\"></path><path d=\"M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2\"></path><circle cx=\"13\" cy=\"7\" r=\"1\" fill=\"currentColor\"></circle><rect x=\"8\" y=\"2\" width=\"14\" height=\"14\" rx=\"2\"></rect></svg> Uploaded media (")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(uploads)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 800, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 805, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, ")</h2><div class=\"mt-2 columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, ")</h2><div class=\"mt-2 columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, upload := range uploads {
 			if upload.Type == models.MediaTypeImage {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var41 templ.SafeURL
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(upload.OriginalURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 805, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 810, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" target=\"_blank\" class=\"block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out group break-inside-avoid hover:scale-105\"><img src=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\" target=\"_blank\" class=\"block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out group break-inside-avoid hover:scale-105\"><img src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(upload.OriginalURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 806, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 811, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" alt=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "\" alt=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Upload by team %s on %s", teamCode, upload.Timestamp.Format("Jan 2, 2006")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 806, Col: 133}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 811, Col: 133}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\" class=\"w-full h-auto object-cover\"></a>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\" class=\"w-full h-auto object-cover\"></a>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if upload.Type == models.MediaTypeVideo {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var44 templ.SafeURL
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(upload.OriginalURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 809, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 814, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\" target=\"_blank\" class=\"block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out relative group break-inside-avoid hover:scale-105\"><video src=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" target=\"_blank\" class=\"block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out relative group break-inside-avoid hover:scale-105\"><video src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(upload.OriginalURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 810, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 815, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" class=\"w-full h-auto object-cover\"></video><div class=\"absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-12 h-12 text-white\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg></div></a>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\" class=\"w-full h-auto object-cover\"></video><div class=\"absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-12 h-12 text-white\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg></div></a>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1051,7 +1062,7 @@ func AlertsCard(team models.Team, notifications []models.Notification) templ.Com
 			templ_7745c5c3_Var46 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<div class=\"card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-bell w-5 h-5\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"></path><path d=\"M13.916 2.314A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.74 7.327A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.411 13.956 18 12.5 18 8a6 6 0 0 0-4.084-5.686\"></path></svg> Alerts</h2><div id=\"alerts-list\" class=\"mt-2 space-y-2 max-h-80 overflow-y-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div class=\"card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors\"><div class=\"card-body p-6\"><h2 class=\"card-title text-lg flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-bell w-5 h-5\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"></path><path d=\"M13.916 2.314A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.74 7.327A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.411 13.956 18 12.5 18 8a6 6 0 0 0-4.084-5.686\"></path></svg> Alerts</h2><div id=\"alerts-list\" class=\"mt-2 space-y-2 max-h-80 overflow-y-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1059,20 +1070,20 @@ func AlertsCard(team models.Team, notifications []models.Notification) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div><div class=\"divider my-2\"></div><form hx-post=\"/admin/notify/team\" hx-target=\"#alerts-list\" hx-swap=\"innerHTML\" hx-on::after-request=\"if(event.detail.successful) this.reset()\" class=\"mt-2\"><input type=\"hidden\" name=\"teamCode\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</div><div class=\"divider my-2\"></div><form hx-post=\"/admin/notify/team\" hx-target=\"#alerts-list\" hx-swap=\"innerHTML\" hx-on::after-request=\"if(event.detail.successful) this.reset()\" class=\"mt-2\"><input type=\"hidden\" name=\"teamCode\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 834, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 839, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "\"><div class=\"join w-full\"><input class=\"input input-bordered join-item w-full\" name=\"content\" placeholder=\"Send an alert to this team...\" autocomplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary join-item\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-5 h-5\"><path d=\"m3 3 3 9-3 9 19-9Z\"></path><path d=\"M6 12h16\"></path></svg> Send</button></div><div class=\"label\"><span class=\"label-text-alt text-xs\">Alerts are read-only • Teams can dismiss after reading</span></div></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\"><div class=\"join w-full\"><input class=\"input input-bordered join-item w-full\" name=\"content\" placeholder=\"Send an alert to this team...\" autocomplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary join-item\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-5 h-5\"><path d=\"m3 3 3 9-3 9 19-9Z\"></path><path d=\"M6 12h16\"></path></svg> Send</button></div><div class=\"label\"><span class=\"label-text-alt text-xs\">Alerts are read-only • Teams can dismiss after reading</span></div></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1103,49 +1114,49 @@ func AlertsList(notifications []models.Notification) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		if len(notifications) > 0 {
 			for _, notification := range notifications {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div class=\"py-3\"><div class=\"flex items-start gap-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<div class=\"py-3\"><div class=\"flex items-start gap-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if !notification.Dismissed {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<span class=\"inline-block w-1.5 h-1.5 rounded-full bg-info mt-1.5 flex-shrink-0\"></span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<span class=\"inline-block w-1.5 h-1.5 rounded-full bg-info mt-1.5 flex-shrink-0\"></span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<div class=\"flex-1 min-w-0\"><p class=\"text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<div class=\"flex-1 min-w-0\"><p class=\"text-sm\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var49 string
 				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(notification.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 859, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 864, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</p><time class=\"text-xs text-base-content/50 mt-1 block\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</p><time class=\"text-xs text-base-content/50 mt-1 block\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(notification.CreatedAt.Local().Format("02 Jan 03:04 PM")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 860, Col: 130}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 865, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</time></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</time></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<p class=\"text-sm text-base-content/60 text-center py-4\">No alerts sent yet</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<p class=\"text-sm text-base-content/60 text-center py-4\">No alerts sent yet</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
