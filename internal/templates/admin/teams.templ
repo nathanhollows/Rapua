@@ -8,7 +8,60 @@ import (
 )
 
 templ TeamsTable(teams []models.Team) {
-	<ul class="list rounded-lg mx-5">
+	<ul
+		id="teams-ul"
+		class="list rounded-lg mx-5"
+		_="on htmx:afterSwap or htmx:afterSettle
+			js(me)
+				// Count checked checkboxes
+				var checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;
+				var allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');
+
+				// Update all selection count elements (including in modals)
+				document.querySelectorAll('span').forEach(function(span) {
+					var prev = span.previousSibling;
+					if (prev && prev.textContent && prev.textContent.includes('Selected:')) {
+						span.textContent = checkedCount;
+					}
+					// Also update counts in modal dialogs
+					var parent = span.parentElement;
+					if (parent && parent.innerHTML &&
+						(parent.innerHTML.includes('reset') || parent.innerHTML.includes('delete'))) {
+						var text = span.textContent;
+						if (text && !isNaN(text.trim())) {
+							span.textContent = checkedCount;
+						}
+					}
+				});
+
+				// Update select-all checkbox state
+				var selectAll = document.getElementById('select-all');
+				if (selectAll) {
+					if (checkedCount === 0) {
+						selectAll.checked = false;
+						selectAll.indeterminate = false;
+					} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+						selectAll.checked = true;
+						selectAll.indeterminate = false;
+					} else {
+						selectAll.checked = false;
+						selectAll.indeterminate = true;
+					}
+				}
+
+				// Show/hide actions and filters bars
+				var actions = document.getElementById('team-actions');
+				var filters = document.getElementById('team-filters');
+				if (checkedCount > 0) {
+					if (actions) actions.classList.remove('hidden');
+					if (filters) filters.classList.add('hidden');
+				} else {
+					if (actions) actions.classList.add('hidden');
+					if (filters) filters.classList.remove('hidden');
+				}
+			end
+		end"
+	>
 		<div class="flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item">
 			<!-- Select all -->
 			<input
@@ -20,7 +73,7 @@ templ TeamsTable(teams []models.Team) {
 						if my checked
 							add .bg-base-200 to <.team-item:not(.hidden)/>
 							remove .bg-transparent from <.team-item:not(.hidden)/>
-						else 
+						else
 							add .bg-transparent to <.team-item:not(.hidden)/>
 							remove .bg-base-200 from <.team-item:not(.hidden)/>
 						end
@@ -273,8 +326,8 @@ templ TeamsTable(teams []models.Team) {
 			<form
 				hx-post="/admin/teams/reset"
 				hx-include=".team-item"
-				hx-target="#teams-list"
-				hx-swap="outerHTML"
+				hx-target="#teams-table"
+				hx-swap="innerHTML"
 			>
 				<input type="hidden" name="id" value=""/>
 				<div class="modal-action">
@@ -306,8 +359,8 @@ templ TeamsTable(teams []models.Team) {
 			<form
 				hx-delete="/admin/teams/delete"
 				hx-include=".team-item"
-				hx-target="#teams-list"
-				hx-swap="outerHTML"
+				hx-target="#teams-table"
+				hx-swap="innerHTML"
 			>
 				<input type="hidden" name="id" value=""/>
 				<div class="modal-action">
@@ -339,14 +392,54 @@ templ teamItem(team models.Team, classes string) {
 						transition opacity to 0 then
 						remove the closest .team-item
 					end
-					on input or change
-						if me.checked
-							remove .bg-transparent from closest .team-item
-							add .bg-base-200 to closest .team-item
-						else
-							add .bg-transparent to closest .team-item
-							remove .bg-base-200 from closest .team-item
-						end
+				end
+				on change
+					if me.checked
+						remove .bg-transparent from closest .team-item
+						add .bg-base-200 to closest .team-item
+					else
+						add .bg-transparent to closest .team-item
+						remove .bg-base-200 from closest .team-item
+					end
+					js(me)
+						var checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;
+						var allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');
+						var selectAll = document.getElementById('select-all');
+
+						// Update selection counts
+						document.querySelectorAll('span').forEach(function(span) {
+							var prev = span.previousSibling;
+							if (prev && prev.textContent && prev.textContent.includes('Selected:')) {
+								span.textContent = checkedCount;
+							}
+						});
+
+						// Update select-all state
+						if (selectAll) {
+							if (checkedCount === 0) {
+								selectAll.checked = false;
+								selectAll.indeterminate = false;
+							} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+								selectAll.checked = true;
+								selectAll.indeterminate = false;
+							} else {
+								selectAll.checked = false;
+								selectAll.indeterminate = true;
+							}
+						}
+
+						// Show/hide actions and filters
+						var actions = document.getElementById('team-actions');
+						var filters = document.getElementById('team-filters');
+						if (checkedCount > 0) {
+							if (actions) actions.classList.remove('hidden');
+							if (filters) filters.classList.add('hidden');
+						} else {
+							if (actions) actions.classList.add('hidden');
+							if (filters) filters.classList.remove('hidden');
+						}
+					end
+				end
 				"
 			/>
 			<!-- Location code -->
@@ -454,7 +547,7 @@ templ Teams(teams []models.Team, credits int) {
 			<p class="py-4">How many teams would you like to add?</p>
 			<form
 				hx-post="/admin/teams/add"
-				hx-target="#teams-list"
+				hx-target="#teams-ul"
 				hx-swap="beforeend swap:0.5s"
 				class="join flex flex-row w-full"
 			>

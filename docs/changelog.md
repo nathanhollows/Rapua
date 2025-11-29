@@ -18,6 +18,26 @@ order: 100
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.5.0)
 
+## 6.4.0 (2025-11-27)
+
+### Added
+
+- [Quiz](/docs/user/blocks/quiz) block now supports unlocked content that displays after players answer correctly
+
+## 6.3.1 (2025-11-25)
+
+### Fixed
+
+- Template modal buttons now work after creating new templates
+- Template preview locations now display in game structure order
+- Quickstart guide dismissal no longer redirects to /admin/
+- File upload limit increased to 25MB (note: nginx `client_max_body_size` must also be configured)
+- Image blocks now center properly
+- Removed duplicate "Locations" header in template previews
+- Activity status badge now updates automatically when starting/stopping games using HTMX out-of-band swaps
+- Teams page selection counter and checkboxes now update correctly when teams are added, deleted, or reset
+- Fixed duplicate team entries appearing when deleting or resetting teams
+
 ## 6.3.0 (2025-11-23)
 
 ### Added

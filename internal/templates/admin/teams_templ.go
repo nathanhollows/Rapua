@@ -36,7 +36,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<ul class=\"list rounded-lg mx-5\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse \n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"filter\"><input class=\"btn btn-sm filter-reset\" type=\"radio\" name=\"activefilter\" aria-label=\"All\" _=\"\n\t\t\t\t\t\t\ton click remove .hidden from <.team-item/>\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Active Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Inactive Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-5 h-5\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\ton input \n\t\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"> <button id=\"clear-search\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\tinit if #search-teams's value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\tset #search-teams's value to ''\n\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\tsend input to #search-teams\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<ul id=\"teams-ul\" class=\"list rounded-lg mx-5\" _=\"on htmx:afterSwap or htmx:afterSettle\n\t\t\tjs(me)\n\t\t\t\t// Count checked checkboxes\n\t\t\t\tvar checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;\n\t\t\t\tvar allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');\n\n\t\t\t\t// Update all selection count elements (including in modals)\n\t\t\t\tdocument.querySelectorAll('span').forEach(function(span) {\n\t\t\t\t\tvar prev = span.previousSibling;\n\t\t\t\t\tif (prev && prev.textContent && prev.textContent.includes('Selected:')) {\n\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t}\n\t\t\t\t\t// Also update counts in modal dialogs\n\t\t\t\t\tvar parent = span.parentElement;\n\t\t\t\t\tif (parent && parent.innerHTML &&\n\t\t\t\t\t\t(parent.innerHTML.includes('reset') || parent.innerHTML.includes('delete'))) {\n\t\t\t\t\t\tvar text = span.textContent;\n\t\t\t\t\t\tif (text && !isNaN(text.trim())) {\n\t\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Update select-all checkbox state\n\t\t\t\tvar selectAll = document.getElementById('select-all');\n\t\t\t\tif (selectAll) {\n\t\t\t\t\tif (checkedCount === 0) {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {\n\t\t\t\t\t\tselectAll.checked = true;\n\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t} else {\n\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\tselectAll.indeterminate = true;\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Show/hide actions and filters bars\n\t\t\t\tvar actions = document.getElementById('team-actions');\n\t\t\t\tvar filters = document.getElementById('team-filters');\n\t\t\t\tif (checkedCount > 0) {\n\t\t\t\t\tif (actions) actions.classList.remove('hidden');\n\t\t\t\t\tif (filters) filters.classList.add('hidden');\n\t\t\t\t} else {\n\t\t\t\t\tif (actions) actions.classList.add('hidden');\n\t\t\t\t\tif (filters) filters.classList.remove('hidden');\n\t\t\t\t}\n\t\t\tend\n\t\tend\"><div class=\"flex flex-row items-center gap-3 border border-base-300 bg-base-200/80 rounded p-3 py-4 join-item\"><!-- Select all --><input id=\"select-all\" type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary\" _=\"on change or load\n\t\t\t\t\t\tset <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked\n\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\tadd .bg-base-200 to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-transparent from <.team-item:not(.hidden)/>\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to <.team-item:not(.hidden)/>\n\t\t\t\t\t\t\tremove .bg-base-200 from <.team-item:not(.hidden)/>\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton change from <input[name='team-checkbox']/>\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is 0\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to false\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length\n\t\t\t\t\t\t\tset my indeterminate to false\n\t\t\t\t\t\t\tset my checked to true\n\t\t\t\t\t\tend\n\t\t\t\t\t\tif my checked or my indeterminate\n\t\t\t\t\t\t\tadd .hidden to #team-filters\n\t\t\t\t\t\t\tremove .hidden from #team-actions\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\ton htmx:afterRequest from #delete-confirm\n\t\t\t\t\t\twait 0.5s\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tset me.checked to false\n\t\t\t\t\t\t\tset me.indeterminate to false\n\t\t\t\t\t\t\tremove .hidden from #team-filters\n\t\t\t\t\t\t\tadd .hidden to #team-actions\n\t\t\t\t\t\tend\n\t\t\t\t\tend\n\t\t\t\t\t\"><div id=\"team-actions\" class=\"hidden flex flex-row flex-grow gap-3 items-center justify-between\"><span class=\"font-bold text-base-content text-sm\">Selected:  <span class=\"font-bold text-base-content/60\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span></span><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']:checked/>\n\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button> <button id=\"reset-teams\" class=\"btn btn-sm btn-warning\" _=\"on click\n\t\t\t\t\t\t\tconfirm_reset_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-history w-4 h-4\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path><path d=\"M12 7v5l4 2\"></path></svg> Reset</button> <button id=\"delete-teams\" class=\"btn btn-sm btn-error\" _=\"on click\n\t\t\t\t\t\t\tconfirm_delete_modal.showModal()\n\t\t\t\t\t\tend\n\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</button></div></div><div id=\"team-filters\" class=\"flex flex-grow flex-row justify-between\"><!-- Active/Inactive count --><div class=\"filter\"><input class=\"btn btn-sm filter-reset\" type=\"radio\" name=\"activefilter\" aria-label=\"All\" _=\"\n\t\t\t\t\t\t\ton click remove .hidden from <.team-item/>\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Active Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.inactive/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"> <input class=\"btn btn-sm\" type=\"radio\" name=\"activefilter\" aria-label=\"Inactive Only\" _=\"\n\t\t\t\t\t\ton change\n\t\t\t\t\t\t\tif my checked\n\t\t\t\t\t\t\t\tremove .hidden from <.team-item/>\n\t\t\t\t\t\t\t\tadd .hidden to <.team-item.active/>\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\"></div><div class=\"flex flex-row gap-2\"><button class=\"btn btn-sm btn-outline\" _=\"on click\n\t\t\t\t\t\tset list to []\n\t\t\t\t\t\trepeat for x in <input[name='team-checkbox']/>\n\t\t\t\t\t\t\tif x's offsetParent is not null\n\t\t\t\t\t\t\t\tappend x's value to list\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\twriteText(list.join('\\n')) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Codes</button><!-- Search --><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-5 h-5\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\ton input \n\t\t\t\t\t\t\t\tshow .team-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"> <button id=\"clear-search\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\tinit if #search-teams's value's length > 0 then\n\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\tset #search-teams's value to ''\n\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\tsend input to #search-teams\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -67,7 +67,7 @@ func TeamsTable(teams []models.Team) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " _=\"on htmx:afterSettle from body\n\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div><dialog id=\"confirm_reset_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Reset teams</h3><p class=\"pt-4\">You are about to reset  <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all related data including:</p><ul><li>the team name</li><li>all related check-ins, points, activity progress, and media</li></ul><p>Credits are not restored if a team is reset.</p><p>Only the team code will be kept. This action cannot be undone.</p><form hx-post=\"/admin/teams/reset\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_reset_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-warning\" onclick=\"confirm_reset_modal.close()\">Reset</button></div></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete teams</h3><p class=\"pt-4\">You are about to delete <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all data including:</p><ul><li>the team</li><li>check-ins</li><li>activity progress</li><li>any uploaded media</li></ul><p>Credits are not restored if a team is deleted.</p><p>This action cannot be undone.</p><form hx-delete=\"/admin/teams/delete\" hx-include=\".team-item\" hx-target=\"#teams-list\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button id=\"delete-confirm\" type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " _=\"on htmx:afterSettle from body\n\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\tremove .hidden from me\n\t\t\t\telse\n\t\t\t\t\tadd .hidden to me\n\t\t\t\tend\n\t\t\t\ton htmx:afterRequest from body\n\t\t\t\t\twait 0.5s\n\t\t\t\t\tif <.team-item/>'s length == 0\n\t\t\t\t\t\tremove .hidden from me\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .hidden to me\n\t\t\t\t\tend\n\t\t\t\t\"><div class=\"flex flex-row items-center gap-3 grow\"><p class=\"flex-grow text-center\">No teams to show yet. Do you want to <a href=\"#\" class=\"link\" onclick=\"add_teams_modal.showModal()\">add some teams</a>?</p></div></div></div><dialog id=\"confirm_reset_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Reset teams</h3><p class=\"pt-4\">You are about to reset  <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all related data including:</p><ul><li>the team name</li><li>all related check-ins, points, activity progress, and media</li></ul><p>Credits are not restored if a team is reset.</p><p>Only the team code will be kept. This action cannot be undone.</p><form hx-post=\"/admin/teams/reset\" hx-include=\".team-item\" hx-target=\"#teams-table\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_reset_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-warning\" onclick=\"confirm_reset_modal.close()\">Reset</button></div></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete teams</h3><p class=\"pt-4\">You are about to delete <span class=\"font-bold\" _=\"on change from <input[type='checkbox']/> or load\n\t\t\t\t\t\t\tset my textContent to <input[name='team-checkbox']:checked/>'s length\"></span> team(s). Doing this will wipe all data including:</p><ul><li>the team</li><li>check-ins</li><li>activity progress</li><li>any uploaded media</li></ul><p>Credits are not restored if a team is deleted.</p><p>This action cannot be undone.</p><form hx-delete=\"/admin/teams/delete\" hx-include=\".team-item\" hx-target=\"#teams-table\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button id=\"delete-confirm\" type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -152,13 +152,13 @@ func teamItem(team models.Team, classes string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 335, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 388, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" _=\"on htmx:afterRequest from #delete-confirm\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tadd .bg-danger .text-danger-content to closest .team-item\n\t\t\t\t\t\ttransition opacity to 0 then\n\t\t\t\t\t\tremove the closest .team-item\n\t\t\t\t\tend\n\t\t\t\t\ton input or change\n\t\t\t\t\t\tif me.checked\n\t\t\t\t\t\t\tremove .bg-transparent from closest .team-item\n\t\t\t\t\t\t\tadd .bg-base-200 to closest .team-item\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tadd .bg-transparent to closest .team-item\n\t\t\t\t\t\t\tremove .bg-base-200 from closest .team-item\n\t\t\t\t\t\tend\n\t\t\t\t\"><!-- Location code --><div class=\"tooltip cursor-pointer\" data-tip=\"Click to copy\" _=\"on click \n\t\t\t\t\twriteText(my textContent) on navigator.clipboard\n\t\t\t\t\tset @data-tip to 'Copied!'\n\t\t\t\t\twait 2s\n\t\t\t\t\tset @data-tip to 'Click to copy'\n\t\t\t\t\t\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" _=\"on htmx:afterRequest from #delete-confirm\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tadd .bg-danger .text-danger-content to closest .team-item\n\t\t\t\t\t\ttransition opacity to 0 then\n\t\t\t\t\t\tremove the closest .team-item\n\t\t\t\t\tend\n\t\t\t\tend\n\t\t\t\ton change\n\t\t\t\t\tif me.checked\n\t\t\t\t\t\tremove .bg-transparent from closest .team-item\n\t\t\t\t\t\tadd .bg-base-200 to closest .team-item\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .bg-transparent to closest .team-item\n\t\t\t\t\t\tremove .bg-base-200 from closest .team-item\n\t\t\t\t\tend\n\t\t\t\t\tjs(me)\n\t\t\t\t\t\tvar checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;\n\t\t\t\t\t\tvar allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');\n\t\t\t\t\t\tvar selectAll = document.getElementById('select-all');\n\n\t\t\t\t\t\t// Update selection counts\n\t\t\t\t\t\tdocument.querySelectorAll('span').forEach(function(span) {\n\t\t\t\t\t\t\tvar prev = span.previousSibling;\n\t\t\t\t\t\t\tif (prev && prev.textContent && prev.textContent.includes('Selected:')) {\n\t\t\t\t\t\t\t\tspan.textContent = checkedCount;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Update select-all state\n\t\t\t\t\t\tif (selectAll) {\n\t\t\t\t\t\t\tif (checkedCount === 0) {\n\t\t\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t\t\t} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {\n\t\t\t\t\t\t\t\tselectAll.checked = true;\n\t\t\t\t\t\t\t\tselectAll.indeterminate = false;\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tselectAll.checked = false;\n\t\t\t\t\t\t\t\tselectAll.indeterminate = true;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Show/hide actions and filters\n\t\t\t\t\t\tvar actions = document.getElementById('team-actions');\n\t\t\t\t\t\tvar filters = document.getElementById('team-filters');\n\t\t\t\t\t\tif (checkedCount > 0) {\n\t\t\t\t\t\t\tif (actions) actions.classList.remove('hidden');\n\t\t\t\t\t\t\tif (filters) filters.classList.add('hidden');\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tif (actions) actions.classList.add('hidden');\n\t\t\t\t\t\t\tif (filters) filters.classList.remove('hidden');\n\t\t\t\t\t\t}\n\t\t\t\t\tend\n\t\t\t\tend\n\t\t\t\t\"><!-- Location code --><div class=\"tooltip cursor-pointer\" data-tip=\"Click to copy\" _=\"on click \n\t\t\t\t\twriteText(my textContent) on navigator.clipboard\n\t\t\t\t\tset @data-tip to 'Copied!'\n\t\t\t\t\twait 2s\n\t\t\t\t\tset @data-tip to 'Click to copy'\n\t\t\t\t\t\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -170,7 +170,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 364, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 457, Col: 99}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -188,7 +188,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 366, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 459, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 378, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 471, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -235,7 +235,7 @@ func teamItem(team models.Team, classes string) templ.Component {
 			var templ_7745c5c3_Var10 templ.SafeURL
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/teams/%s", team.Code)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 383, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 476, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -307,7 +307,7 @@ func Teams(teams []models.Team, credits int) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(credits))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 432, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 525, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -321,7 +321,7 @@ func Teams(teams []models.Team, credits int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><!-- Modal for adding teams --><dialog id=\"add_teams_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"font-bold text-lg\">Quick add teams</h3><p class=\"py-4\">How many teams would you like to add?</p><form hx-post=\"/admin/teams/add\" hx-target=\"#teams-list\" hx-swap=\"beforeend swap:0.5s\" class=\"join flex flex-row w-full\"><input name=\"count\" type=\"number\" id=\"count\" class=\"input join-item flex-grow\" placeholder=\"1+\" min=\"1\" step=\"1\" value=\"10\"> <button class=\"btn btn-primary join-item\" onclick=\"add_teams_modal.close()\">Add Teams</button></form><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Nevermind</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><!-- Modal for adding teams --><dialog id=\"add_teams_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"font-bold text-lg\">Quick add teams</h3><p class=\"py-4\">How many teams would you like to add?</p><form hx-post=\"/admin/teams/add\" hx-target=\"#teams-ul\" hx-swap=\"beforeend swap:0.5s\" class=\"join flex flex-row w-full\"><input name=\"count\" type=\"number\" id=\"count\" class=\"input join-item flex-grow\" placeholder=\"1+\" min=\"1\" step=\"1\" value=\"10\"> <button class=\"btn btn-primary join-item\" onclick=\"add_teams_modal.close()\">Add Teams</button></form><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Nevermind</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -373,7 +373,7 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 507, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 600, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -391,7 +391,7 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 510, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 603, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -496,7 +496,7 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(timeago.Parse(team.CheckIns[len(team.CheckIns)-1].CreatedAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 554, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 647, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -509,7 +509,7 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(team.Points))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 562, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 655, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -522,7 +522,7 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(completedLocations))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 572, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 665, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -535,7 +535,7 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(totalLocations))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 572, Col: 129}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 665, Col: 129}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -549,7 +549,7 @@ func TeamStatsCard(settings models.InstanceSettings, team models.Team, completed
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", float64(completedLocations)/float64(totalLocations)*100))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 584, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 677, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -597,7 +597,7 @@ func CurrentLocationCard(team models.Team) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(team.BlockingLocation.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 608, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 701, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -671,7 +671,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(groupInfo.GroupName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 628, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 721, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -689,7 +689,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 634, Col: 86}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 727, Col: 86}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
@@ -702,7 +702,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 635, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 728, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -730,7 +730,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 646, Col: 85}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 739, Col: 85}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
@@ -743,7 +743,7 @@ func NextLocationsCard(nextLocations []models.Location, locationGroups map[strin
 					var templ_7745c5c3_Var31 string
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 647, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 740, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
@@ -828,7 +828,7 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(grouped.GroupInfo.GroupName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 675, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 768, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -846,7 +846,7 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(scan.Location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 683, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 776, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -864,7 +864,7 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 					var templ_7745c5c3_Var37 string
 					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.Points))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 687, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 780, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 					if templ_7745c5c3_Err != nil {
@@ -882,7 +882,7 @@ func PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []se
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.CreatedAt.UTC()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 689, Col: 113}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 782, Col: 113}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -934,7 +934,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(uploads)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 707, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 800, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -953,7 +953,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				var templ_7745c5c3_Var41 templ.SafeURL
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(upload.OriginalURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 712, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 805, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -966,7 +966,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(upload.OriginalURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 713, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 806, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -979,7 +979,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Upload by team %s on %s", teamCode, upload.Timestamp.Format("Jan 2, 2006")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 713, Col: 133}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 806, Col: 133}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -997,7 +997,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				var templ_7745c5c3_Var44 templ.SafeURL
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(upload.OriginalURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 716, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 809, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -1010,7 +1010,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(upload.OriginalURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 717, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 810, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -1066,7 +1066,7 @@ func AlertsCard(team models.Team, notifications []models.Notification) templ.Com
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 741, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 834, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -1120,7 +1120,7 @@ func AlertsList(notifications []models.Notification) templ.Component {
 				var templ_7745c5c3_Var49 string
 				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(notification.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 766, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 859, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 				if templ_7745c5c3_Err != nil {
@@ -1133,7 +1133,7 @@ func AlertsList(notifications []models.Notification) templ.Component {
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(notification.CreatedAt.Local().Format("02 Jan 03:04 PM")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 767, Col: 130}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/teams.templ`, Line: 860, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {

@@ -50,7 +50,7 @@ templ QuickstartBar(instance models.Instance) {
 			</ol>
 			<button
 				data-tip="Dismiss"
-				hx-post="/admin/quickstart/dismiss?redirect=true"
+				hx-post="/admin/quickstart/dismiss"
 				hx-swap="outerHTML"
 				hx-target="#quickstart"
 				if instance.ID == "" && len(instance.Locations) > 0 && len(instance.Teams) > 0 && !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {

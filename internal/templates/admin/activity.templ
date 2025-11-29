@@ -60,20 +60,7 @@ templ ActivityTracker(instance models.Instance) {
 		<h1 class="text-2xl font-bold">
 			Activity tracker
 		</h1>
-		<div class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
-			<div class="inline-grid *:[grid-area:1/1]">
-				switch instance.GetStatus() {
-					case models.Active:
-						<div class="status status-lg status-success animate-ping"></div>
-						<div class="status status-lg status-success"></div>
-					case models.Scheduled:
-						<div class="status status-lg status-info"></div>
-					case models.Closed:
-						<div class="status status-lg"></div>
-				}
-			</div>
-			{ instance.GetStatus().String() }
-		</div>
+		@ActivityStatusBadge(instance)
 		<div class="flex gap-3">
 			@GameScheduleStatus(instance)
 			<button
@@ -381,6 +368,40 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 				}
 			</tbody>
 		</table>
+	</div>
+}
+
+templ ActivityStatusBadge(instance models.Instance) {
+	<div id="activity-status-badge" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
+		<div class="inline-grid *:[grid-area:1/1]">
+			switch instance.GetStatus() {
+				case models.Active:
+					<div class="status status-lg status-success animate-ping"></div>
+					<div class="status status-lg status-success"></div>
+				case models.Scheduled:
+					<div class="status status-lg status-info"></div>
+				case models.Closed:
+					<div class="status status-lg"></div>
+			}
+		</div>
+		{ instance.GetStatus().String() }
+	</div>
+}
+
+templ ActivityStatusBadgeOOB(instance models.Instance) {
+	<div id="activity-status-badge" hx-swap-oob="true" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
+		<div class="inline-grid *:[grid-area:1/1]">
+			switch instance.GetStatus() {
+				case models.Active:
+					<div class="status status-lg status-success animate-ping"></div>
+					<div class="status status-lg status-success"></div>
+				case models.Scheduled:
+					<div class="status status-lg status-info"></div>
+				case models.Closed:
+					<div class="status status-lg"></div>
+			}
+		</div>
+		{ instance.GetStatus().String() }
 	</div>
 }
 

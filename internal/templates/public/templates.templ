@@ -113,33 +113,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									>
 										Navigation
 									</option>
-									<option disabled>Locations</option>
-									for _, location := range link.Template.Locations {
-										<option
-											hx-trigger="chosen"
-											hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
-											value={ location.MarkerID }
-											class="location-option"
-											_="
-											on change from #pages
-												if #pages.options[#pages.selectedIndex].value == me.value then
-													send chosen to me	
-													call window.history.replaceState(null, '', '#' + me.value)
-												end
-											end
-											on load
-												if window.location.hash == '#' + me.value then
-													send chosen to me
-													set #pages's value to my.value
-												end
-											end
-											"
-											if location.Marker.IsMapped() {
-												data-lat={ fmt.Sprint(location.Marker.Lat) }
-												data-lng={ fmt.Sprint(location.Marker.Lng) }
-											}
-										>{ location.Name }</option>
-									}
+									@renderGroupedLocations(&link.Template.GameStructure, link.Template.Locations, 0)
 								</select>
 							</form>
 							<button
@@ -544,4 +518,60 @@ templ TemplateNotFound() {
     document.addEventListener('mousemove', flipBird);
     document.addEventListener('touchmove', flipBird);
 </script>
+}
+
+// renderGroupedLocations recursively renders locations grouped by the game structure hierarchy
+templ renderGroupedLocations(group *models.GameStructure, allLocations []models.Location, depth int) {
+	// Render group header if not root
+	if !group.IsRoot && group.Name != "" {
+		<option disabled>{ group.Name }</option>
+	} else if group.IsRoot {
+		// For root, only add "Locations" header if the first subgroup is not named "Locations"
+		if !hasFirstSubGroupNamed(group, "Locations") {
+			<option disabled>Locations</option>
+		}
+	}
+	// Render locations in this group
+	for _, locationID := range group.LocationIDs {
+		for _, location := range allLocations {
+			if location.ID == locationID {
+				<option
+					hx-trigger="chosen"
+					hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
+					value={ location.MarkerID }
+					class="location-option"
+					_="
+					on change from #pages
+						if #pages.options[#pages.selectedIndex].value == me.value then
+							send chosen to me
+							call window.history.replaceState(null, '', '#' + me.value)
+						end
+					end
+					on load
+						if window.location.hash == '#' + me.value then
+							send chosen to me
+							set #pages's value to my.value
+						end
+					end
+					"
+					if location.Marker.IsMapped() {
+						data-lat={ fmt.Sprint(location.Marker.Lat) }
+						data-lng={ fmt.Sprint(location.Marker.Lng) }
+					}
+				>{ location.Name }</option>
+			}
+		}
+	}
+	// Recursively render subgroups
+	for i := range group.SubGroups {
+		@renderGroupedLocations(&group.SubGroups[i], allLocations, depth+1)
+	}
+}
+
+// hasFirstSubGroupNamed checks if the first subgroup has the given name
+func hasFirstSubGroupNamed(group *models.GameStructure, name string) bool {
+	if len(group.SubGroups) > 0 && group.SubGroups[0].Name == name {
+		return true
+	}
+	return false
 }
