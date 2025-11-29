@@ -10,7 +10,7 @@ order: 100
 
 ### Added
 
-- Dedicated team overview page with detailed stats, progress tracking, and uploaded media gallery.
+- Dedicated team overview page with detailed stats, progress tracking, and uploaded media gallery closes [#104](https://github.com/nathanhollows/Rapua/issues/104)
 
 ### Fixed
 
