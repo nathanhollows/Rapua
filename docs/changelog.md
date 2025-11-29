@@ -8,6 +8,10 @@ order: 100
 
 ## 6.5.0
 
+### Added
+
+- Dedicated team overview page with detailed stats, progress tracking, and uploaded media gallery.
+
 ### Fixed
 
 - Admin alerts now use default alert styles for better visibility and consistency.
