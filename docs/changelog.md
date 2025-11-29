@@ -15,6 +15,7 @@ order: 100
 ### Fixed
 
 - Admin alerts now use default alert styles for better visibility and consistency.
+- Don't show markers with coordinates (0,0) on maps to avoid confusion.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.5.0)
 
