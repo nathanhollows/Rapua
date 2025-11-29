@@ -307,7 +307,7 @@ func nav(user models.User, section string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(user.Instances) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<li><h2 class=\"menu-title\">Switch games</h2><ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<li><h2 class=\"menu-title\">Switch games</h2><ul hx-boost=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
