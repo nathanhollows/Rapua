@@ -61,6 +61,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomClueAdmin(settings, *b)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerAdmin(settings, *b)
 	}
 	return nil
 }
@@ -112,6 +115,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomCluePlayer(settings, *b, state)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerPlayer(settings, *b)
 	}
 	return nil
 }
@@ -163,6 +169,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomCluePlayer(settings, *b, state)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerPlayer(settings, *b)
 	}
 	return nil
 }

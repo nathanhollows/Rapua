@@ -15,21 +15,27 @@ type CheckInViewData struct {
 }
 
 templ CheckInView(data CheckInViewData) {
-	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		if data.Settings.MustCheckOut && data.Scan.MustCheckOut {
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-		} else {
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
-		}
-		<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
-			{ data.Scan.Location.Name }
-		</h2>
-	</div>
+	if len(data.Blocks) > 0 && data.Blocks[0].GetType() == "header" {
+		@templates.RenderPlayerView(data.Settings, data.Blocks[0], data.States[data.Blocks[0].GetID()])
+	} else {
+		<div class="sm:mx-auto sm:w-full sm:max-w-sm">
+			if data.Settings.MustCheckOut && data.Scan.MustCheckOut {
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+			} else {
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
+			}
+			<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
+				{ data.Scan.Location.Name }
+			</h2>
+		</div>
+	}
 	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
-		for _, block := range data.Blocks {
-			<div class="block-view">
-				@templates.RenderPlayerView(data.Settings, block, data.States[block.GetID()])
-			</div>
+		for i, block := range data.Blocks {
+			if !(i == 0 && block.GetType() == "header") {
+				<div class="block-view">
+					@templates.RenderPlayerView(data.Settings, block, data.States[block.GetID()])
+				</div>
+			}
 		}
 		if data.Settings.MustCheckOut {
 			if data.Scan.MustCheckOut {

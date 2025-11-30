@@ -11,6 +11,7 @@ tag: updated
 
 ### Added
 
+- A new [Header](/docs/user/blocks/header) block with optional icons. This block can replace the default page header.
 - New tags in docs to show new and updates content.
 
 ## 6.5.0 (2025-11-29)

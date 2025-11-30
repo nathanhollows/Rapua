@@ -13,8 +13,8 @@ const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
 	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
-	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
-	// ContextEnd     BlockContext = "end"     // End pages.
+	ContextLobby           BlockContext = "lobby"            // Lobby pages - introductions, rules, set team name
+	ContextFinish          BlockContext = "finish"           // Finish/end pages
 )
 
 // RegisteredBlock holds block metadata for the registry.
@@ -114,6 +114,7 @@ func init() {
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
 }
 
 // Public API functions
@@ -188,6 +189,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewRandomClueBlock(baseBlock), nil
 	case "photo":
 		return NewPhotoBlock(baseBlock), nil
+	case "header":
+		return NewHeaderBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -274,6 +277,12 @@ func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
 
 func NewPhotoBlock(base BaseBlock) *PhotoBlock {
 	return &PhotoBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewHeaderBlock(base BaseBlock) *HeaderBlock {
+	return &HeaderBlock{
 		BaseBlock: base,
 	}
 }

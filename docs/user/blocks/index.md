@@ -19,6 +19,7 @@ These blocks are the foundation of your game and are used to provide information
 - [Alert Block](/docs/user/blocks/alert)
 - [Button Block](/docs/user/blocks/button)
 - [Divider Block](/docs/user/blocks/divider)
+- [Header Block](/docs/user/blocks/header)
 - [Image Block](/docs/user/blocks/image)
 - [Text Block](/docs/user/blocks/text)
 - [Random Clue Block](/docs/user/blocks/random-clue)

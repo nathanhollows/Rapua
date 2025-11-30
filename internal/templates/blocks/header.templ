@@ -1,0 +1,96 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) {
+	if block.TitleText != "" || block.Icon != "" {
+		<header class="w-full my-4 mx-auto">
+			<div class="flex flex-col gap-4 items-center">
+				if block.Icon != "" {
+					switch block.TitleSize {
+						case "large":
+							@icon(block.Icon, "w-16 h-16 stroke-base-content")
+						case "medium":
+							@icon(block.Icon, "w-14 h-14 stroke-base-content")
+						case "small":
+							@icon(block.Icon, "w-12 h-12 stroke-base-content")
+						default:
+							@icon(block.Icon, "w-16 h-16 stroke-base-content")
+					}
+				}
+				if block.TitleText != "" {
+					switch block.TitleSize {
+						case "large":
+							<h2 class="text-2xl font-bold">{ block.TitleText }</h2>
+						case "medium":
+							<h1 class="text-xl font-bold">{ block.TitleText }</h1>
+						case "small":
+							<h1 class="text-lg font-bold">{ block.TitleText }</h1>
+						default:
+							<h1 class="text-2xl font-bold">{ block.TitleText }</h1>
+					}
+				}
+			</div>
+		</header>
+	}
+}
+
+var headerTitleText = TextInputParams{
+	Name:         "title_text",
+	Title:        "Header Title",
+	Placeholder:  "Welcome!",
+	ExtraClasses: "w-full",
+}
+
+templ headerAdmin(_ models.InstanceSettings, block blocks.HeaderBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s select) delay:100ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.ID, block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextInputField(headerTitleText.SetValue(block.TitleText))
+		<div class="grid grid-col-1 md:grid-cols-2 gap-5">
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend justify-start w-full">
+					Icon name 
+					<span class="ml-auto badge badge-neutral badge-xs tooltip tooltip-left" data-tip="This field is optional">
+						Optional
+					</span>
+				</legend>
+				<input
+					type="text"
+					name="icon"
+					class="input w-full"
+					placeholder="map-pin"
+					value={ block.Icon }
+				/>
+				<div class="label text-wrap">
+					<span>
+						Enter the name of a Lucide icon (e.g., 'map-pin'). See <a href="https://lucide.dev/icons/?focus" target="_blank" class="link">Lucide Icons</a> { "for" } options.
+					</span>
+				</div>
+			</fieldset>
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Styling</legend>
+				<select
+					name="title_size"
+					class="select select-bordered w-full"
+				>
+					for size, label := range block.GetTitleSizes() {
+						<option
+							value={ size }
+							if block.TitleSize == size {
+								selected
+							}
+						>{ label }</option>
+					}
+				</select>
+			</fieldset>
+		</div>
+	</form>
+}

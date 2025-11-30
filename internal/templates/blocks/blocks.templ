@@ -53,6 +53,21 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomClueAdmin(settings, *b)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerAdmin(settings, *b)
+	case "team_name_changer":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerAdmin(settings, *b)
+	case "countdown":
+		b := block.(*blocks.CountdownBlock)
+		return countdownAdmin(settings, *b)
+	case "game_status":
+		b := block.(*blocks.GameStatusBlock)
+		return gameStatusAdmin(settings, *b)
+	case "completion_message":
+		b := block.(*blocks.CompletionMessageBlock)
+		return completionMessageAdmin(settings, *b)
 	}
 	return nil
 }
@@ -104,6 +119,21 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomCluePlayer(settings, *b, state)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerPlayer(settings, *b)
+	case "team_name_changer":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerPlayer(settings, *b)
+	case "countdown":
+		b := block.(*blocks.CountdownBlock)
+		return countdownPlayer(settings, *b)
+	case "game_status":
+		b := block.(*blocks.GameStatusBlock)
+		return gameStatusPlayer(settings, *b)
+	case "completion_message":
+		b := block.(*blocks.CompletionMessageBlock)
+		return completionMessagePlayer(settings, *b)
 	}
 	return nil
 }
@@ -155,6 +185,21 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "random_clue":
 		b := block.(*blocks.RandomClueBlock)
 		return randomCluePlayer(settings, *b, state)
+	case "header":
+		b := block.(*blocks.HeaderBlock)
+		return headerPlayer(settings, *b)
+	case "team_name_changer":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerPlayer(settings, *b)
+	case "countdown":
+		b := block.(*blocks.CountdownBlock)
+		return countdownPlayer(settings, *b)
+	case "game_status":
+		b := block.(*blocks.GameStatusBlock)
+		return gameStatusPlayer(settings, *b)
+	case "completion_message":
+		b := block.(*blocks.CompletionMessageBlock)
+		return completionMessagePlayer(settings, *b)
 	}
 	return nil
 }

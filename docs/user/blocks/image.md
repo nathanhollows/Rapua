@@ -1,7 +1,7 @@
 ---
 title: "Image Block"
 sidebar: true
-order: 7
+order: 8
 ---
 
 # Image Block
@@ -18,7 +18,7 @@ Image Blocks don't currently allow uploads, so you'll need to host your images e
 
 ## Example
 
-<iframe width="100%" class="rounded-2xl" style="aspect-ratio: 4/3;" src="/static/images/docs/user/blocks/block-image.mp4" frameborder="0" allowfullscreen></iframe>
+<iframe width="100%" class="rounded-2xl aspect-video" style="aspect-ratio: 4/3;" src="/static/images/docs/user/blocks/block-image.mp4" frameborder="0" allowfullscreen></iframe>
 
 **Player Perspective:**
 
