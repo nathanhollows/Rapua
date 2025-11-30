@@ -2,11 +2,18 @@
 title: "Changelog"
 sidebar: true
 order: 100
+tag: updated
 ---
 
 # Changelog
 
-## 6.5.0
+## 6.6.0 (2025-12-30)
+
+### Added
+
+- New tags in docs to show new and updates content.
+
+## 6.5.0 (2025-11-29)
 
 ### Added
 

@@ -22,6 +22,7 @@ type DocPage struct {
 	Path     string
 	Content  string
 	URL      string
+	Tag      string
 	Headings []Heading
 	Children []*DocPage
 }
@@ -266,6 +267,7 @@ func (ds *DocsService) loadDocs() error {
 		var meta struct {
 			Title string `yaml:"title"`
 			Order int    `yaml:"order"`
+			Tag   string `yaml:"tag"`
 		}
 		if err = yaml.Unmarshal([]byte(parts[1]), &meta); err != nil {
 			return fmt.Errorf("parsing YAML front matter in %s: %w", relativePath, err)
@@ -281,6 +283,7 @@ func (ds *DocsService) loadDocs() error {
 			Path:     relativePath,
 			URL:      "/docs/" + strings.TrimSuffix(relativePath, ".md"),
 			Content:  parts[2],
+			Tag:      meta.Tag,
 			Headings: headings,
 		}
 
@@ -349,6 +352,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 			existing.Title = page.Title
 			existing.Order = page.Order
 			existing.Content = page.Content
+			existing.Tag = page.Tag
 			existing.Headings = page.Headings
 			existing.URL = page.URL
 		} else {
@@ -358,6 +362,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 				existing.Title = page.Title
 				existing.Order = page.Order
 				existing.Content = page.Content
+				existing.Tag = page.Tag
 				existing.Headings = page.Headings
 				existing.URL = page.URL
 			}
@@ -385,6 +390,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 			newPage.Title = page.Title
 			newPage.Order = page.Order
 			newPage.Content = page.Content
+			newPage.Tag = page.Tag
 			newPage.Headings = page.Headings
 			newPage.URL = page.URL
 		} else {
@@ -394,6 +400,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 				newPage.Title = page.Title
 				newPage.Order = page.Order
 				newPage.Content = page.Content
+				newPage.Tag = page.Tag
 				newPage.Headings = page.Headings
 				newPage.URL = page.URL
 			}

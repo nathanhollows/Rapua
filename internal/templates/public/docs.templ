@@ -24,6 +24,16 @@ templ recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sideba
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked w-5 h-5 stroke-info"><path d="M10 2v8l3-3 3 3V2"></path><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"></path></svg>
 					}
 					{ page.Title }
+					if page.Tag != "" {
+						switch page.Tag {
+							case "new":
+								<span class="badge badge-success badge-xs ml-auto">New</span>
+							case "updated":
+								<span class="badge badge-info badge-xs ml-auto">Updated</span>
+							default:
+								<span class="badge badge-xs ml-auto">{ page.Tag }</span>
+						}
+					}
 				</a>
 			</li>
 		} else {

@@ -348,3 +348,59 @@ Final content`
 		}
 	}
 }
+
+func TestPageTags(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create pages with different tag scenarios
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"new-feature.md",
+		"---\ntitle: New Feature\norder: 1\ntag: new\n---\n# New Feature\nThis is a new feature.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"updated-feature.md",
+		"---\ntitle: Updated Feature\norder: 2\ntag: updated\n---\n# Updated Feature\nThis feature was updated.",
+	)
+	createTempMarkdownFile(
+		t,
+		tempDir,
+		"regular-page.md",
+		"---\ntitle: Regular Page\norder: 3\n---\n# Regular Page\nNo tag on this page.",
+	)
+
+	docsService, err := services.NewDocsService(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create DocsService: %v", err)
+	}
+
+	// Test page with "new" tag
+	newPage, err := docsService.GetPage("/docs/new-feature")
+	if err != nil {
+		t.Fatalf("failed to get new-feature page: %v", err)
+	}
+	if newPage.Tag != "new" {
+		t.Errorf("expected tag 'new', got '%s'", newPage.Tag)
+	}
+
+	// Test page with "updated" tag
+	updatedPage, err := docsService.GetPage("/docs/updated-feature")
+	if err != nil {
+		t.Fatalf("failed to get updated-feature page: %v", err)
+	}
+	if updatedPage.Tag != "updated" {
+		t.Errorf("expected tag 'updated', got '%s'", updatedPage.Tag)
+	}
+
+	// Test page without tag (should be empty string)
+	regularPage, err := docsService.GetPage("/docs/regular-page")
+	if err != nil {
+		t.Fatalf("failed to get regular-page: %v", err)
+	}
+	if regularPage.Tag != "" {
+		t.Errorf("expected empty tag, got '%s'", regularPage.Tag)
+	}
+}
