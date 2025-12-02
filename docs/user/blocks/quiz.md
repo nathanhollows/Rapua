@@ -1,5 +1,5 @@
 ---
-title: "Quiz Block"
+title: "Quiz"
 sidebar: true
 order: 12
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Header Block"
+title: "Header"
 sidebar: true
 order: 7
 tag: new

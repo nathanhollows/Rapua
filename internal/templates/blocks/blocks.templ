@@ -56,7 +56,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerAdmin(settings, *b)
-	case "team_name_changer":
+	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerAdmin(settings, *b)
 	case "countdown":
@@ -122,7 +122,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
-	case "team_name_changer":
+	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
 	case "countdown":
@@ -188,7 +188,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
-	case "team_name_changer":
+	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
 	case "countdown":

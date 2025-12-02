@@ -1,5 +1,5 @@
 ---
-title: "Photo Block"
+title: "Photo"
 sidebar: true
 order: 10
 ---

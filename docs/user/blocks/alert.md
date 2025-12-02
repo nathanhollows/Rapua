@@ -1,5 +1,5 @@
 ---
-title: "Alert Block"
+title: "Alert"
 sidebar: true
 order: 1
 ---

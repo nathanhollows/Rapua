@@ -1,5 +1,5 @@
 ---
-title: "Password Block"
+title: "Password"
 sidebar: true
 order: 9
 ---

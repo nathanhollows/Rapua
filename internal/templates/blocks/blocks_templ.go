@@ -64,6 +64,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerAdmin(settings, *b)
+	case "team_name":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerAdmin(settings, *b)
 	}
 	return nil
 }
@@ -118,6 +121,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
+	case "team_name":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerPlayer(settings, *b)
 	}
 	return nil
 }
@@ -172,6 +178,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
+	case "team_name":
+		b := block.(*blocks.TeamNameChangerBlock)
+		return teamNameChangerPlayer(settings, *b)
 	}
 	return nil
 }
@@ -204,7 +213,7 @@ func RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("block-", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 164, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 209, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

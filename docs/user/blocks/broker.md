@@ -1,5 +1,5 @@
 ---
-title: "Broker Block"
+title: "Broker"
 sidebar: true
 order: 3
 ---

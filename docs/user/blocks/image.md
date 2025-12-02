@@ -1,5 +1,5 @@
 ---
-title: "Image Block"
+title: "Image"
 sidebar: true
 order: 8
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Pincode Block"
+title: "Pincode"
 sidebar: true
 order: 11
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Clue Block"
+title: "Clue"
 sidebar: true
 order: 5
 ---

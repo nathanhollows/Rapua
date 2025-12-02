@@ -1,5 +1,5 @@
 ---
-title: "Button Block"
+title: "Button"
 sidebar: true
 order: 2
 ---

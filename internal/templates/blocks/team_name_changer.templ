@@ -1,0 +1,145 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChangerBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/team-name-block", block.GetID()) }
+		hx-trigger="load"
+		hx-swap="outerHTML"
+	>
+		<div class="indicator w-full">
+			<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+				<div class="flex justify-center py-4">
+					<span class="loading loading-spinner loading-md"></span>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
+	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="indicator w-full">
+		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			<p>
+				if block.ButtonText != "" {
+					{ block.ButtonText }
+				} else {
+					Set your team name!
+				}
+			</p>
+			<form hx-post="/lobby/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+				<input type="hidden" name="block" value={ block.GetID() }/>
+				<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
+					<div class="join w-full">
+						<input
+							id={ fmt.Sprintf("team-name-%s", block.GetID()) }
+							name="name"
+							type="text"
+							placeholder="Team name"
+							class="input input-primary join-item w-full max-w-xs"
+							autocomplete="off"
+							value={ teamName }
+							required
+						/>
+						<button
+							type="submit"
+							class="btn btn-primary btn-outline join-item rounded-r-full"
+							_="on htmx:beforeRequest from closest <form/> add .loading
+							   on htmx:afterRequest from closest <form/> wait 250ms then remove .loading"
+						>
+							Save
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+						</button>
+					</div>
+				</label>
+			</form>
+		</div>
+	</div>
+}
+
+templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string, allowChanging bool) {
+	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="indicator w-full">
+		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			if allowChanging {
+				<p>
+					if block.ButtonText != "" {
+						{ block.ButtonText }
+					} else {
+						Set your team name!
+					}
+				</p>
+				<form hx-post="/lobby/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+					<input type="hidden" name="block" value={ block.GetID() }/>
+					<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
+						<div class="join w-full">
+							<input
+								id={ fmt.Sprintf("team-name-%s", block.GetID()) }
+								name="name"
+								type="text"
+								placeholder="Team name"
+								class="input input-primary join-item w-full max-w-xs"
+								autocomplete="off"
+								value={ teamName }
+								required
+							/>
+							<button
+								type="submit"
+								class="btn btn-primary btn-outline join-item rounded-r-full"
+								_="on htmx:beforeRequest from closest <form/> add .loading
+								   on htmx:afterRequest from closest <form/> wait 250ms then remove .loading"
+							>
+								Update
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a .5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+							</button>
+						</div>
+					</label>
+				</form>
+			} else {
+				<p>Team name: <strong>{ teamName }</strong></p>
+			}
+		</div>
+	</div>
+}
+
+var teamNamePromptText = TextInputParams{
+	Name:         "button_text",
+	Title:        "Prompt Text",
+	Placeholder:  "Set your team name!",
+	ExtraClasses: "w-full",
+}
+
+templ teamNameChangerAdmin(settings models.InstanceSettings, block blocks.TeamNameChangerBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.GetID()) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.GetID()) }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.GetID(), block.GetID()) }
+		hx-swap="none"
+	>
+		if settings.EnablePoints {
+			@adminPointsField(block.GetPoints())
+		}
+		@TextInputField(teamNamePromptText.SetValue(block.ButtonText))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Options</legend>
+			<label class="label cursor-pointer justify-start gap-2">
+				<input
+					type="checkbox"
+					name="allow_changing"
+					class="checkbox checkbox-sm"
+					if block.AllowChanging {
+						checked
+					}
+				/>
+				<span class="label-text">Allow changing after set</span>
+			</label>
+		</fieldset>
+	</form>
+}

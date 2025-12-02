@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/nathanhollows/Rapua/v6/models"
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
 
 templ TeamID(team models.Team, oob bool) {
 	<div
@@ -189,5 +192,51 @@ templ instructions() {
 			<li>Keep traveling to new locations, checking in, and completing activities until the game ends.</li>
 			<li>Keep going and have fun!</li>
 		</ol>
+	</div>
+}
+
+templ TeamNameForm(team models.Team) {
+	<div class="card bg-base-200">
+		<div class="card-body">
+			<h3 class="card-title">Choose a team name</h3>
+			<form
+				hx-post="/lobby/team-name"
+				hx-swap="outerHTML"
+				class="flex flex-col gap-2"
+			>
+				<label class="input flex items-center gap-2">
+					Name:
+					<input
+						name="name"
+						type="text"
+						class="grow w-full"
+						value={ team.Name }
+						autocomplete="off"
+						placeholder="Enter team name..."
+					/>
+				</label>
+				<div class="flex gap-2 justify-end">
+					<button
+						type="button"
+						class="btn"
+						onclick="this.closest('.card').innerHTML = '<div class=\'card-body\'><button type=\'button\' class=\'btn btn-primary\' hx-get=\'/lobby/team-name-form\' hx-target=\'closest .card\' hx-swap=\'outerHTML\'>Set Team Name</button></div>'"
+					>
+						Cancel
+					</button>
+					<button type="submit" class="btn btn-primary">
+						Save
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}
+
+templ TeamNameComplete(team models.Team, blockID string) {
+	<div id={ fmt.Sprintf("player-block-%s", blockID) } class="indicator w-full">
+		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			<p>Team name set to: <strong>{ team.Name }</strong></p>
+		</div>
 	</div>
 }

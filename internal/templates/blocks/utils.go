@@ -16,7 +16,6 @@ func stringToMarkdown(s string) template.HTML {
 	return template.HTML(md)
 }
 
-func icon(icon string, class string) templ.Component {
-	i := lucide.Icon(icon, map[string]any{"class": class})
-	return templ.Raw(i)
+func icon(icon string, attrs templ.Attributes) templ.Component {
+	return templ.Raw(lucide.Icon(icon, attrs))
 }

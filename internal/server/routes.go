@@ -122,6 +122,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 			)
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
+		r.Get("/{id}/team-name-block", playerHandler.GetTeamNameBlock)
 	})
 
 	// Upload route for player media
@@ -144,6 +145,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 			)
 		})
 		r.Get("/", playerHandler.Lobby)
+		r.Get("/team-name-value", playerHandler.GetTeamNameValue)
+		r.Get("/team-name-form", playerHandler.GetTeamNameForm)
 		r.Post("/team-name", playerHandler.SetTeamName)
 	})
 

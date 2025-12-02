@@ -115,6 +115,7 @@ func init() {
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
+	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextLocationContent, ContextLobby})
 }
 
 // Public API functions
@@ -191,6 +192,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewPhotoBlock(baseBlock), nil
 	case "header":
 		return NewHeaderBlock(baseBlock), nil
+	case "team_name":
+		return NewTeamNameChangerBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -283,6 +286,12 @@ func NewPhotoBlock(base BaseBlock) *PhotoBlock {
 
 func NewHeaderBlock(base BaseBlock) *HeaderBlock {
 	return &HeaderBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewTeamNameChangerBlock(base BaseBlock) *TeamNameChangerBlock {
+	return &TeamNameChangerBlock{
 		BaseBlock: base,
 	}
 }

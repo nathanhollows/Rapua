@@ -1,5 +1,5 @@
 ---
-title: "Checklist Block"
+title: "Checklist"
 sidebar: true
 order: 4
 ---

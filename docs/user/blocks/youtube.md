@@ -1,7 +1,7 @@
 ---
-title: "YouTube Block"
+title: "YouTube"
 sidebar: true
-order: 16
+order: 17
 ---
 
 # YouTube Block

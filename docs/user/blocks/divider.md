@@ -1,5 +1,5 @@
 ---
-title: "Divider Block"
+title: "Divider"
 sidebar: true
 order: 6
 ---
