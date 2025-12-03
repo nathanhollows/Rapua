@@ -146,6 +146,25 @@ p.label {
   @apply hidden;
 }
 
+/* Preview Block Drag and Drop Styles */
+#mobile-preview-container .block-view {
+  @apply transition-all duration-100 cursor-grab rounded-xl;
+}
+
+#mobile-preview-container .block-view:hover {
+  @apply text-base-content cursor-move outline-2 outline-offset-4 outline-base-content rounded-2xl;
+}
+
+/* Remove top margin from blocks container when first block is a header */
+#mobile-preview-container .flex.flex-col.gap-8:has(.block-view:first-child header) {
+  @apply mt-0;
+}
+
+/* Also remove header's own top margin */
+#mobile-preview-container .block-view:first-child header {
+  @apply mt-0;
+}
+
 .prose blockquote {
   @apply font-normal not-italic;
 }

@@ -580,6 +580,7 @@ templ EditLocation(data EditLocationData) {
 			<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
 				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
 					<div
+						id="mobile-preview-container"
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
 						hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"
@@ -590,6 +591,15 @@ templ EditLocation(data EditLocationData) {
 			</div>
 		</div>
 	</div>
+	<!-- Hidden form for block reordering via HTMX -->
+	<form
+		id="block-reorder-form"
+		hx-post="/admin/blocks/reorder"
+		hx-swap="none"
+		style="display: none;"
+	>
+		<div id="block-order-inputs"></div>
+	</form>
 	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
 			<h3 class="text-lg font-bold">Delete this location?</h3>
@@ -613,6 +623,143 @@ templ EditLocation(data EditLocationData) {
 			</form>
 		</div>
 	</dialog>
+	<script src="/static/js/Sortable.min.js"></script>
+	<script>
+	(function() {
+		let sortableInstance = null;
+
+		function initializePreviewSortable() {
+			const previewContainer = document.getElementById('mobile-preview-container');
+			if (!previewContainer) return;
+
+			// Wait for HTMX to load preview content
+			const observer = new MutationObserver((mutations, obs) => {
+				const blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');
+
+				if (blocksContainer && !sortableInstance) {
+					// Clean up any existing instance
+					if (sortableInstance) {
+						sortableInstance.destroy();
+					}
+
+					// Initialize sortable.js
+					sortableInstance = new Sortable(blocksContainer, {
+						animation: 150,
+						draggable: '.block-view',
+						handle: '.block-view',
+						ghostClass: 'sortable-ghost-preview',
+						chosenClass: 'sortable-chosen-preview',
+						dragClass: 'sortable-drag-preview',
+
+						// Allow clicking interactive elements
+						filter: 'a, button, input, select, textarea, [contenteditable]',
+						preventOnFilter: false,
+
+						// Handle reordering
+						onEnd: function(evt) {
+							// Collect block IDs in new order from preview
+							// Extract block ID from id attribute: "preview-block-{uuid}"
+							const blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))
+								.map(block => block.id.replace('preview-block-', ''))
+								.filter(id => id); // Remove any nulls
+
+							// First, visually reorder admin blocks to match preview
+							const adminBlocksContainer = document.querySelector('.blocks');
+							if (adminBlocksContainer) {
+								// Get all admin block elements
+								const adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));
+
+								// Create a map of block ID to element
+								const blockMap = new Map();
+								adminBlocks.forEach(block => {
+									const hiddenInput = block.querySelector('input[name="block_id"]');
+									if (hiddenInput) {
+										blockMap.set(hiddenInput.value, block);
+									}
+								});
+
+								// Reorder admin blocks to match preview order
+								blockOrder.forEach(blockId => {
+									const adminBlock = blockMap.get(blockId);
+									if (adminBlock) {
+										adminBlocksContainer.appendChild(adminBlock);
+									}
+								});
+							}
+
+							// Populate hidden form with block IDs and submit via HTMX
+							const form = document.getElementById('block-reorder-form');
+							const inputsContainer = document.getElementById('block-order-inputs');
+
+							if (!form || !inputsContainer) {
+								console.error('Reorder form not found');
+								return;
+							}
+
+							// Clear existing inputs
+							inputsContainer.innerHTML = '';
+
+							// Add hidden input for each block ID
+							blockOrder.forEach(id => {
+								const input = document.createElement('input');
+								input.type = 'hidden';
+								input.name = 'block_id';
+								input.value = id;
+								inputsContainer.appendChild(input);
+							});
+
+							// Trigger form submission via HTMX
+							htmx.trigger(form, 'submit');
+						}
+					});
+
+					// Stop observing once initialized
+					obs.disconnect();
+				}
+			});
+
+			// Start observing for content changes
+			observer.observe(previewContainer, {
+				childList: true,
+				subtree: true
+			});
+		}
+
+		// Initialize on page load
+		document.addEventListener('DOMContentLoaded', initializePreviewSortable);
+
+		// Re-initialize after HTMX swaps content
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			// Check if the swapped content contains the preview container
+			if (evt.detail.target.querySelector('#mobile-preview-container') ||
+				evt.detail.target.id === 'mobile-preview-container') {
+				// Reset and reinitialize
+				if (sortableInstance) {
+					sortableInstance.destroy();
+					sortableInstance = null;
+				}
+				initializePreviewSortable();
+			}
+		});
+
+		// Re-initialize after browser back/forward navigation
+		document.addEventListener('htmx:historyRestore', function(evt) {
+			// Clear existing sortable instance since it's stale after history restore
+			if (sortableInstance) {
+				sortableInstance.destroy();
+				sortableInstance = null;
+			}
+			initializePreviewSortable();
+		});
+
+		// Cleanup on page unload
+		window.addEventListener('beforeunload', function() {
+			if (sortableInstance) {
+				sortableInstance.destroy();
+			}
+		});
+	})();
+	</script>
 	<script>
     function moveblock(event, direction) {
         event.preventDefault();
@@ -671,6 +818,26 @@ templ EditLocation(data EditLocationData) {
 	<style>
     .transitioning {
         transition: transform 0.3s ease;
+    }
+
+    /* Preview block sortable styles */
+    .sortable-ghost-preview {
+        opacity: 0.4;
+        background: hsl(var(--b2));
+    }
+
+    .sortable-chosen-preview {
+        outline: 2px solid hsl(var(--p)) !important;
+        outline-offset: 4px;
+    }
+
+    .sortable-drag-preview {
+        opacity: 0.8;
+        cursor: grabbing !important;
+    }
+
+    .preview-block:active {
+        cursor: grabbing !important;
     }
 		</style>
 	@locationScript()

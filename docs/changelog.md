@@ -11,6 +11,7 @@ tag: updated
 
 ### Added
 
+- Drag and drop content blocks in the preview pane to reorder them.
 - A new [Header](/docs/user/blocks/header) block with optional icons. This block can replace the default page header.
 - A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the lobby page.
 - New tags in docs to show new and updates content.
