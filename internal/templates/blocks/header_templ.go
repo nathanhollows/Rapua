@@ -43,22 +43,22 @@ func headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) templ.Com
 			if block.Icon != "" {
 				switch block.TitleSize {
 				case "large":
-					templ_7745c5c3_Err = icon(block.Icon, "w-16 h-16 stroke-base-content").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = icon(block.Icon, templ.Attributes{"class": "w-16 h-16"}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "medium":
-					templ_7745c5c3_Err = icon(block.Icon, "w-14 h-14 stroke-base-content").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = icon(block.Icon, templ.Attributes{"class": "w-14 h-14"}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "small":
-					templ_7745c5c3_Err = icon(block.Icon, "w-12 h-12 stroke-base-content").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = icon(block.Icon, templ.Attributes{"class": "w-12 h-12"}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				default:
-					templ_7745c5c3_Err = icon(block.Icon, "w-16 h-16 stroke-base-content").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = icon(block.Icon, templ.Attributes{"class": "w-16 h-16"}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

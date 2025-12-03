@@ -13,13 +13,13 @@ templ headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) {
 				if block.Icon != "" {
 					switch block.TitleSize {
 						case "large":
-							@icon(block.Icon, "w-16 h-16 stroke-base-content")
+							@icon(block.Icon, templ.Attributes{"class": "w-16 h-16"})
 						case "medium":
-							@icon(block.Icon, "w-14 h-14 stroke-base-content")
+							@icon(block.Icon, templ.Attributes{"class": "w-14 h-14"})
 						case "small":
-							@icon(block.Icon, "w-12 h-12 stroke-base-content")
+							@icon(block.Icon, templ.Attributes{"class": "w-12 h-12"})
 						default:
-							@icon(block.Icon, "w-16 h-16 stroke-base-content")
+							@icon(block.Icon, templ.Attributes{"class": "w-16 h-16"})
 					}
 				}
 				if block.TitleText != "" {
