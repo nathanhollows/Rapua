@@ -155,7 +155,7 @@ func dividerAdmin(_ models.InstanceSettings, block blocks.DividerBlock) templ.Co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"> <span class=\"badge badge-info\">Optional</span></label></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"> <span class=\"badge badge-neutral badge-sm\">Optional</span></label></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

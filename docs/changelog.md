@@ -16,6 +16,10 @@ tag: updated
 - A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the lobby page.
 - New tags in docs to show new and updates content.
 
+### Fixed
+
+- Minor UI fixes.
+
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
 
 ## 6.5.0 (2025-11-29)
