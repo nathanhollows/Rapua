@@ -115,7 +115,7 @@ func init() {
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
-	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextLocationContent, ContextLobby})
+	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextLobby})
 }
 
 // Public API functions
