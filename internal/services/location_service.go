@@ -2,9 +2,12 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 )
@@ -107,6 +110,11 @@ func (s locationService) CreateLocation(
 		return models.Location{}, fmt.Errorf("saving location: %w", err)
 	}
 
+	// Every location gets a default header block
+	if err := s.createDefaultHeaderBlock(ctx, &location); err != nil {
+		return models.Location{}, fmt.Errorf("creating default header block: %w", err)
+	}
+
 	return location, nil
 }
 
@@ -137,7 +145,53 @@ func (s locationService) CreateLocationFromMarker(
 		return models.Location{}, fmt.Errorf("saving location: %w", err)
 	}
 
+	// Every location gets a default header block
+	if err := s.createDefaultHeaderBlock(ctx, &location); err != nil {
+		return models.Location{}, fmt.Errorf("creating default header block: %w", err)
+	}
+
 	return location, nil
+}
+
+// createDefaultHeaderBlock creates a default header block for a newly created location.
+func (s locationService) createDefaultHeaderBlock(ctx context.Context, location *models.Location) error {
+	blockID := uuid.New().String()
+	headerData := map[string]string{
+		"icon":       "map-pin-check-inside",
+		"title_text": location.Name,
+		"title_size": "large",
+	}
+
+	jsonData, err := json.Marshal(headerData)
+	if err != nil {
+		return fmt.Errorf("marshaling header block data: %w", err)
+	}
+
+	baseBlock := blocks.BaseBlock{
+		ID:         blockID,
+		LocationID: location.ID,
+		Type:       "header",
+		Data:       jsonData,
+		Order:      0,
+		Points:     0,
+	}
+
+	block, err := blocks.CreateFromBaseBlock(baseBlock)
+	if err != nil {
+		return fmt.Errorf("creating header block instance: %w", err)
+	}
+
+	err = block.ParseData()
+	if err != nil {
+		return fmt.Errorf("parsing header block data: %w", err)
+	}
+
+	_, err = s.blockRepo.Create(ctx, block, location.ID, blocks.ContextLocationContent)
+	if err != nil {
+		return fmt.Errorf("saving header block: %w", err)
+	}
+
+	return nil
 }
 
 // GetByID finds a location by ID.
