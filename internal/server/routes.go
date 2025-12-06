@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
 )
 
@@ -198,6 +200,21 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 	router.Use(func(next http.Handler) http.Handler {
 		return middlewares.AuthStatusMiddleware(publicHandler.GetIdentityService(), next)
+	})
+
+	// CSRF token refresh endpoint
+	router.Get("/csrf-token", func(w http.ResponseWriter, r *http.Request) {
+		// Verify user has valid session
+		status := contextkeys.GetUserStatus(r.Context())
+		if !status.IsAdminLoggedIn {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := csrf.Token(r)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		json.NewEncoder(w).Encode(map[string]string{"token": token})
 	})
 
 	router.Get("/", publicHandler.Index)

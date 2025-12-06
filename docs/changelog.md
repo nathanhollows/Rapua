@@ -20,6 +20,7 @@ tag: updated
 ### Fixed
 
 - Minor UI fixes.
+- Invalid CSRF tokens are now gracefully refreshed.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
 
