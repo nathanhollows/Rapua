@@ -2,9 +2,9 @@ package blocks
 
 import (
 	"fmt"
-	"time"
 	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/models"
+	"time"
 )
 
 // Initial loading template - renders placeholder and triggers HTMX load
@@ -51,111 +51,61 @@ templ GameStatusAlertScheduled(block blocks.GameStatusAlertBlock, startTime time
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
-		<div role="alert" class="alert alert-info">
-			<div class="flex flex-col sm:flex-row items-center gap-2 w-full justify-center">
-				<span>
-					if block.ScheduledMessage != "" {
-						{ block.ScheduledMessage }
-					} else {
-						This game will start in
-					}
-				</span>
+		<div role="alert" class="alert alert-info flex">
+			<div class="flex flex-col items-center gap-2 w-full">
 				if block.ShowCountdown {
+					<span class="text-sm">
+						if block.ScheduledMessage != "" {
+							{ block.ScheduledMessage }
+						} else {
+							This game will start in
+						}
+					</span>
+					{{
+						remainingTime := time.Until(startTime)
+						seconds := int(remainingTime.Seconds()) % 60
+						minutes := int(remainingTime.Minutes()) % 60
+						hours := int(remainingTime.Hours()) % 24
+						days := int(remainingTime.Hours()) / 24
+					}}
 					<div
-						id={ fmt.Sprintf("countdown-%s", block.GetID()) }
+						class="game-countdown flex gap-3 justify-center w-full"
+						data-block-id={ block.GetID() }
 						data-start={ startTime.Format("02-Jan-2006 15:04:05") }
-						class="flex gap-1 countdown-container"
 					>
-						<div id={ fmt.Sprintf("days-container-%s", block.GetID()) } style="display:none;">
-							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("days-%s", block.GetID()) }>
-								<span style="--value:0;"></span>
+						<div class="days-container" { templ.Attributes{"style": templ.KV("display:none;", days <= 0)}... }>
+							<span class="countdown font-mono text-2xl">
+								<span class="days-value" style={ fmt.Sprintf("--value:%d;", days) } aria-live="polite" aria-label={ fmt.Sprint(days) }>{ fmt.Sprint(days) }</span>
 							</span>
-							<span class="text-xs">days</span>
+							days
 						</div>
-						<div id={ fmt.Sprintf("hours-container-%s", block.GetID()) } style="display:none;">
-							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("hours-%s", block.GetID()) }>
-								<span style="--value:0;"></span>
+						<div class="hours-container" { templ.Attributes{"style": templ.KV("display:none;", hours <= 0)}... }>
+							<span class="countdown font-mono text-2xl">
+								<span class="hours-value" style={ fmt.Sprintf("--value:%d;", hours) } aria-live="polite" aria-label={ fmt.Sprint(hours) }>{ fmt.Sprint(hours) }</span>
 							</span>
-							<span class="text-xs">hours</span>
-						</div>
-						<div>
-							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("minutes-%s", block.GetID()) }>
-								<span style="--value:0;"></span>
-							</span>
-							<span class="text-xs">min</span>
+							hours
 						</div>
 						<div>
-							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("seconds-%s", block.GetID()) }>
-								<span style="--value:0;"></span>
+							<span class="countdown font-mono text-2xl">
+								<span class="minutes-value" style={ fmt.Sprintf("--value:%d;", minutes) } aria-live="polite" aria-label={ fmt.Sprint(minutes) }>{ fmt.Sprint(minutes) }</span>
 							</span>
-							<span class="text-xs">sec</span>
+							min
+						</div>
+						<div>
+							<span class="countdown font-mono text-2xl">
+								<span class="seconds-value" style={ fmt.Sprintf("--value:%d;", seconds) } aria-live="polite" aria-label={ fmt.Sprint(seconds) }>{ fmt.Sprint(seconds) }</span>
+							</span>
+							sec
 						</div>
 					</div>
-					<style>
-					for i := range 60 {
-						{ fmt.Sprintf("[data-value=\"%d\"]", i) } {
-							--value: { fmt.Sprint(i) };
+				} else {
+					<span>
+						if block.ScheduledMessage != "" {
+							{ block.ScheduledMessage }
+						} else {
+							This game will start in
 						}
-					}
-					</style>
-					<script>
-						(function() {
-							const blockId = { fmt.Sprintf("%q", block.GetID()) };
-							const startTimeStr = document.getElementById(`countdown-${blockId}`).dataset.start;
-
-							function UTCtoLocal(time) {
-								const utc = new Date(`${time}`);
-								const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
-								return local;
-							}
-
-							const startTime = UTCtoLocal(startTimeStr);
-
-							function updateCountdown() {
-								const now = new Date();
-								const remainingTime = startTime - now;
-
-								if (remainingTime <= 0) {
-									// Countdown finished - trigger HTMX refresh immediately
-									htmx.trigger(`#player-block-${blockId}`, 'load');
-									return;
-								}
-
-								const seconds = Math.floor((remainingTime / 1000) % 60);
-								const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
-								const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
-								const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
-
-								document.getElementById(`seconds-${blockId}`).style.setProperty('--value', seconds);
-								document.getElementById(`minutes-${blockId}`).style.setProperty('--value', minutes);
-
-								const hoursContainer = document.getElementById(`hours-container-${blockId}`);
-								const daysContainer = document.getElementById(`days-container-${blockId}`);
-
-								if (hours > 0 || days > 0) {
-									hoursContainer.style.display = "block";
-									document.getElementById(`hours-${blockId}`).style.setProperty('--value', hours);
-								} else {
-									hoursContainer.style.display = "none";
-								}
-
-								if (days > 0) {
-									daysContainer.style.display = "block";
-									document.getElementById(`days-${blockId}`).style.setProperty('--value', days);
-								} else {
-									daysContainer.style.display = "none";
-								}
-							}
-
-							updateCountdown();
-							const interval = setInterval(updateCountdown, 1000);
-
-							// Clean up interval when element is removed
-							document.getElementById(`player-block-${blockId}`).addEventListener('htmx:beforeSwap', function() {
-								clearInterval(interval);
-							});
-						})();
-					</script>
+					</span>
 				}
 			</div>
 		</div>

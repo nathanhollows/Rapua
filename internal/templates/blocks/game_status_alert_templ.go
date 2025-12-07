@@ -195,141 +195,270 @@ func GameStatusAlertScheduled(block blocks.GameStatusAlertBlock, startTime time.
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\"><div role=\"alert\" class=\"alert alert-info\"><div class=\"flex flex-col sm:flex-row items-center gap-2 w-full justify-center\"><span>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if block.ScheduledMessage != "" {
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(block.ScheduledMessage)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 58, Col: 30}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "This game will start in")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\"><div role=\"alert\" class=\"alert alert-info flex\"><div class=\"flex flex-col items-center gap-2 w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ShowCountdown {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span class=\"text-sm\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if block.ScheduledMessage != "" {
+				var templ_7745c5c3_Var11 string
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(block.ScheduledMessage)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 59, Col: 31}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "This game will start in")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+
+			remainingTime := time.Until(startTime)
+			seconds := int(remainingTime.Seconds()) % 60
+			minutes := int(remainingTime.Minutes()) % 60
+			hours := int(remainingTime.Hours()) % 24
+			days := int(remainingTime.Hours()) / 24
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"game-countdown flex gap-3 justify-center w-full\" data-block-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("countdown-%s", block.GetID()))
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetID())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 65, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 73, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" data-start=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" data-start=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(startTime.Format("02-Jan-2006 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 66, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 74, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"flex gap-1 countdown-container\"><div id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><div class=\"days-container\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"style": templ.KV("display:none;", days <= 0)})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "><span class=\"countdown font-mono text-2xl\"><span class=\"days-value\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("days-container-%s", block.GetID()))
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value:%d;", days))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 69, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 78, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" style=\"display:none;\"><span class=\"countdown font-mono font-bold\" id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" aria-live=\"polite\" aria-label=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("days-%s", block.GetID()))
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(days))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 70, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 78, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"><span style=\"--value:0;\"></span></span> <span class=\"text-xs\">days</span></div><div id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("hours-container-%s", block.GetID()))
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(days))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 75, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 78, Col: 145}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" style=\"display:none;\"><span class=\"countdown font-mono font-bold\" id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span></span> days</div><div class=\"hours-container\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"style": templ.KV("display:none;", hours <= 0)})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "><span class=\"countdown font-mono text-2xl\"><span class=\"hours-value\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("hours-%s", block.GetID()))
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value:%d;", hours))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 76, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 84, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><span style=\"--value:0;\"></span></span> <span class=\"text-xs\">hours</span></div><div><span class=\"countdown font-mono font-bold\" id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" aria-live=\"polite\" aria-label=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("minutes-%s", block.GetID()))
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(hours))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 82, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 84, Col: 127}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><span style=\"--value:0;\"></span></span> <span class=\"text-xs\">min</span></div><div><span class=\"countdown font-mono font-bold\" id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("seconds-%s", block.GetID()))
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(hours))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 88, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 84, Col: 149}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><span style=\"--value:0;\"></span></span> <span class=\"text-xs\">sec</span></div></div><style>\n\t\t\t\t\tfor i := range 60 {\n\t\t\t\t\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t\t\t\t\t--value: { fmt.Sprint(i) };\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\t</style> <script>\n\t\t\t\t\t\t(function() {\n\t\t\t\t\t\t\tconst blockId = { fmt.Sprintf(\"%q\", block.GetID()) };\n\t\t\t\t\t\t\tconst startTimeStr = document.getElementById(`countdown-${blockId}`).dataset.start;\n\n\t\t\t\t\t\t\tfunction UTCtoLocal(time) {\n\t\t\t\t\t\t\t\tconst utc = new Date(`${time}`);\n\t\t\t\t\t\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\t\t\t\t\t\treturn local;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tconst startTime = UTCtoLocal(startTimeStr);\n\n\t\t\t\t\t\t\tfunction updateCountdown() {\n\t\t\t\t\t\t\t\tconst now = new Date();\n\t\t\t\t\t\t\t\tconst remainingTime = startTime - now;\n\n\t\t\t\t\t\t\t\tif (remainingTime <= 0) {\n\t\t\t\t\t\t\t\t\t// Countdown finished - trigger HTMX refresh immediately\n\t\t\t\t\t\t\t\t\thtmx.trigger(`#player-block-${blockId}`, 'load');\n\t\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\tconst seconds = Math.floor((remainingTime / 1000) % 60);\n\t\t\t\t\t\t\t\tconst minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n\t\t\t\t\t\t\t\tconst hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n\t\t\t\t\t\t\t\tconst days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n\t\t\t\t\t\t\t\tdocument.getElementById(`seconds-${blockId}`).style.setProperty('--value', seconds);\n\t\t\t\t\t\t\t\tdocument.getElementById(`minutes-${blockId}`).style.setProperty('--value', minutes);\n\n\t\t\t\t\t\t\t\tconst hoursContainer = document.getElementById(`hours-container-${blockId}`);\n\t\t\t\t\t\t\t\tconst daysContainer = document.getElementById(`days-container-${blockId}`);\n\n\t\t\t\t\t\t\t\tif (hours > 0 || days > 0) {\n\t\t\t\t\t\t\t\t\thoursContainer.style.display = \"block\";\n\t\t\t\t\t\t\t\t\tdocument.getElementById(`hours-${blockId}`).style.setProperty('--value', hours);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\thoursContainer.style.display = \"none\";\n\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\tif (days > 0) {\n\t\t\t\t\t\t\t\t\tdaysContainer.style.display = \"block\";\n\t\t\t\t\t\t\t\t\tdocument.getElementById(`days-${blockId}`).style.setProperty('--value', days);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tdaysContainer.style.display = \"none\";\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tupdateCountdown();\n\t\t\t\t\t\t\tconst interval = setInterval(updateCountdown, 1000);\n\n\t\t\t\t\t\t\t// Clean up interval when element is removed\n\t\t\t\t\t\t\tdocument.getElementById(`player-block-${blockId}`).addEventListener('htmx:beforeSwap', function() {\n\t\t\t\t\t\t\t\tclearInterval(interval);\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t})();\n\t\t\t\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span></span> hours</div><div><span class=\"countdown font-mono text-2xl\"><span class=\"minutes-value\" style=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value:%d;", minutes))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 90, Col: 79}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" aria-live=\"polite\" aria-label=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(minutes))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 90, Col: 133}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(minutes))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 90, Col: 157}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span></span> min</div><div><span class=\"countdown font-mono text-2xl\"><span class=\"seconds-value\" style=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var23 string
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value:%d;", seconds))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 96, Col: 79}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" aria-live=\"polite\" aria-label=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var24 string
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(seconds))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 96, Col: 133}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var25 string
+			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(seconds))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 96, Col: 157}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span></span> sec</div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if block.ScheduledMessage != "" {
+				var templ_7745c5c3_Var26 string
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(block.ScheduledMessage)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 104, Col: 31}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "This game will start in")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -354,38 +483,38 @@ func GameStatusAlertActive(block blocks.GameStatusAlertBlock) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("player-block-%s", block.GetID()))
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("player-block-%s", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 169, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 119, Col: 52}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" hx-get=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 170, Col: 69}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" style=\"display:none;\"></div>")
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 120, Col: 69}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" style=\"display:none;\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -410,87 +539,87 @@ func gameStatusAlertAdmin(_ models.InstanceSettings, block blocks.GameStatusAler
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var23 == nil {
-			templ_7745c5c3_Var23 = templ.NopComponent
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<form id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<form id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 180, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 130, Col: 39}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" hx-put=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/blocks/", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 181, Col: 49}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" hx-trigger=\"")
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/blocks/", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 131, Col: 49}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 182, Col: 115}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" hx-trigger=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-swap=\"none\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Closed message</legend> <input type=\"text\" name=\"closed_message\" class=\"input input-bordered w-full\" placeholder=\"Game closed\" value=\"")
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 132, Col: 115}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(block.ClosedMessage)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 192, Col: 31}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" hx-swap=\"none\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Closed message</legend> <input type=\"text\" name=\"closed_message\" class=\"input input-bordered w-full\" placeholder=\"Game closed\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"><div class=\"label text-wrap\"><span>Shown when game is closed</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Scheduled message</legend> <input type=\"text\" name=\"scheduled_message\" class=\"input input-bordered w-full\" placeholder=\"This game will start in\" value=\"")
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(block.ClosedMessage)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 142, Col: 31}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var28 string
-		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(block.ScheduledMessage)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 205, Col: 34}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"><div class=\"label text-wrap\"><span>Shown when game is closed</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Scheduled message</legend> <input type=\"text\" name=\"scheduled_message\" class=\"input input-bordered w-full\" placeholder=\"This game will start in\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><div class=\"label text-wrap\"><span>Shown when game is scheduled</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Options</legend><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-2\"><input type=\"checkbox\" name=\"show_countdown\" class=\"checkbox checkbox-sm\"")
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(block.ScheduledMessage)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/game_status_alert.templ`, Line: 155, Col: 34}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\"><div class=\"label text-wrap\"><span>Shown when game is scheduled</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Options</legend><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-2\"><input type=\"checkbox\" name=\"show_countdown\" class=\"checkbox checkbox-sm\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ShowCountdown {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "> <span class=\"label-text\">Show countdown timer</span></label></div></fieldset></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "> <span class=\"label-text\">Show countdown timer</span></label></div></fieldset></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

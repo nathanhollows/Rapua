@@ -147,7 +147,7 @@ func Lobby(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]bl
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><script type=\"text/javascript\">\n\t(function() {\n\t\tconst activeCountdowns = new Map();\n\n\t\tfunction UTCtoLocal(time) {\n\t\t\tconst utc = new Date(`${time}`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn local;\n\t\t}\n\n\t\tfunction initCountdown(countdownEl) {\n\t\t\tconst blockId = countdownEl.dataset.blockId;\n\t\t\tconst startTimeStr = countdownEl.dataset.start;\n\n\t\t\t// Clear existing interval if any\n\t\t\tif (activeCountdowns.has(blockId)) {\n\t\t\t\tclearInterval(activeCountdowns.get(blockId));\n\t\t\t}\n\n\t\t\tconst startTime = UTCtoLocal(startTimeStr);\n\n\t\t\tfunction updateCountdown() {\n\t\t\t\tconst now = new Date();\n\t\t\t\tconst remainingTime = startTime - now;\n\n\t\t\t\tif (remainingTime <= 0) {\n\t\t\t\t\twindow.location.reload();\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst seconds = Math.floor((remainingTime / 1000) % 60);\n\t\t\t\tconst minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n\t\t\t\tconst hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n\t\t\t\tconst days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n\t\t\t\tconst secondsEl = countdownEl.querySelector('.seconds-value');\n\t\t\t\tconst minutesEl = countdownEl.querySelector('.minutes-value');\n\t\t\t\tconst hoursEl = countdownEl.querySelector('.hours-value');\n\t\t\t\tconst daysEl = countdownEl.querySelector('.days-value');\n\n\t\t\t\tif (secondsEl) {\n\t\t\t\t\tsecondsEl.style.cssText = `--value:${seconds};`;\n\t\t\t\t\tsecondsEl.textContent = seconds;\n\t\t\t\t\tsecondsEl.setAttribute('aria-label', seconds);\n\t\t\t\t}\n\t\t\t\tif (minutesEl) {\n\t\t\t\t\tminutesEl.style.cssText = `--value:${minutes};`;\n\t\t\t\t\tminutesEl.textContent = minutes;\n\t\t\t\t\tminutesEl.setAttribute('aria-label', minutes);\n\t\t\t\t}\n\n\t\t\t\tconst hoursContainer = countdownEl.querySelector('.hours-container');\n\t\t\t\tif (hours > 0) {\n\t\t\t\t\tif (hoursContainer) hoursContainer.style.display = \"block\";\n\t\t\t\t\tif (hoursEl) {\n\t\t\t\t\t\thoursEl.style.cssText = `--value:${hours};`;\n\t\t\t\t\t\thoursEl.textContent = hours;\n\t\t\t\t\t\thoursEl.setAttribute('aria-label', hours);\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tif (hoursContainer) hoursContainer.style.display = \"none\";\n\t\t\t\t}\n\n\t\t\t\tconst daysContainer = countdownEl.querySelector('.days-container');\n\t\t\t\tif (days > 0) {\n\t\t\t\t\tif (daysContainer) daysContainer.style.display = \"block\";\n\t\t\t\t\tif (daysEl) {\n\t\t\t\t\t\tdaysEl.style.cssText = `--value:${days};`;\n\t\t\t\t\t\tdaysEl.textContent = days;\n\t\t\t\t\t\tdaysEl.setAttribute('aria-label', days);\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tif (daysContainer) daysContainer.style.display = \"none\";\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tupdateCountdown();\n\t\t\tconst intervalId = setInterval(updateCountdown, 1000);\n\t\t\tactiveCountdowns.set(blockId, intervalId);\n\t\t}\n\n\t\tfunction initAllCountdowns() {\n\t\t\tconst countdowns = document.querySelectorAll('.game-countdown');\n\t\t\tcountdowns.forEach(initCountdown);\n\t\t}\n\n\t\t// Initialize on page load\n\t\tif (document.readyState === 'loading') {\n\t\t\tdocument.addEventListener('DOMContentLoaded', initAllCountdowns);\n\t\t} else {\n\t\t\tinitAllCountdowns();\n\t\t}\n\n\t\t// Re-initialize after HTMX swaps\n\t\tdocument.body.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Small delay to ensure DOM is ready\n\t\t\tsetTimeout(initAllCountdowns, 50);\n\t\t});\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -212,7 +212,7 @@ func TeamNameForm(team models.Team) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 74, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 174, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -254,7 +254,7 @@ func TeamNameComplete(team models.Team, blockID string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("player-block-%s", blockID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 97, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 197, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -267,7 +267,7 @@ func TeamNameComplete(team models.Team, blockID string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 100, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/lobby.templ`, Line: 200, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {

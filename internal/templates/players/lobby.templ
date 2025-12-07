@@ -41,6 +41,106 @@ templ Lobby(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]b
 			</div>
 		}
 	</div>
+	<script type="text/javascript">
+	(function() {
+		const activeCountdowns = new Map();
+
+		function UTCtoLocal(time) {
+			const utc = new Date(`${time}`);
+			const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
+			return local;
+		}
+
+		function initCountdown(countdownEl) {
+			const blockId = countdownEl.dataset.blockId;
+			const startTimeStr = countdownEl.dataset.start;
+
+			// Clear existing interval if any
+			if (activeCountdowns.has(blockId)) {
+				clearInterval(activeCountdowns.get(blockId));
+			}
+
+			const startTime = UTCtoLocal(startTimeStr);
+
+			function updateCountdown() {
+				const now = new Date();
+				const remainingTime = startTime - now;
+
+				if (remainingTime <= 0) {
+					window.location.reload();
+					return;
+				}
+
+				const seconds = Math.floor((remainingTime / 1000) % 60);
+				const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
+				const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
+				const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
+
+				const secondsEl = countdownEl.querySelector('.seconds-value');
+				const minutesEl = countdownEl.querySelector('.minutes-value');
+				const hoursEl = countdownEl.querySelector('.hours-value');
+				const daysEl = countdownEl.querySelector('.days-value');
+
+				if (secondsEl) {
+					secondsEl.style.cssText = `--value:${seconds};`;
+					secondsEl.textContent = seconds;
+					secondsEl.setAttribute('aria-label', seconds);
+				}
+				if (minutesEl) {
+					minutesEl.style.cssText = `--value:${minutes};`;
+					minutesEl.textContent = minutes;
+					minutesEl.setAttribute('aria-label', minutes);
+				}
+
+				const hoursContainer = countdownEl.querySelector('.hours-container');
+				if (hours > 0) {
+					if (hoursContainer) hoursContainer.style.display = "block";
+					if (hoursEl) {
+						hoursEl.style.cssText = `--value:${hours};`;
+						hoursEl.textContent = hours;
+						hoursEl.setAttribute('aria-label', hours);
+					}
+				} else {
+					if (hoursContainer) hoursContainer.style.display = "none";
+				}
+
+				const daysContainer = countdownEl.querySelector('.days-container');
+				if (days > 0) {
+					if (daysContainer) daysContainer.style.display = "block";
+					if (daysEl) {
+						daysEl.style.cssText = `--value:${days};`;
+						daysEl.textContent = days;
+						daysEl.setAttribute('aria-label', days);
+					}
+				} else {
+					if (daysContainer) daysContainer.style.display = "none";
+				}
+			}
+
+			updateCountdown();
+			const intervalId = setInterval(updateCountdown, 1000);
+			activeCountdowns.set(blockId, intervalId);
+		}
+
+		function initAllCountdowns() {
+			const countdowns = document.querySelectorAll('.game-countdown');
+			countdowns.forEach(initCountdown);
+		}
+
+		// Initialize on page load
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initAllCountdowns);
+		} else {
+			initAllCountdowns();
+		}
+
+		// Re-initialize after HTMX swaps
+		document.body.addEventListener('htmx:afterSwap', function(evt) {
+			// Small delay to ensure DOM is ready
+			setTimeout(initAllCountdowns, 50);
+		});
+	})();
+	</script>
 }
 
 templ instructions() {
