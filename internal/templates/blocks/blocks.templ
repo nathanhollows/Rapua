@@ -59,15 +59,12 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerAdmin(settings, *b)
-	case "countdown":
-		b := block.(*blocks.CountdownBlock)
-		return countdownAdmin(settings, *b)
-	case "game_status":
-		b := block.(*blocks.GameStatusBlock)
-		return gameStatusAdmin(settings, *b)
-	case "completion_message":
-		b := block.(*blocks.CompletionMessageBlock)
-		return completionMessageAdmin(settings, *b)
+	case "game_status_alert":
+		b := block.(*blocks.GameStatusAlertBlock)
+		return gameStatusAlertAdmin(settings, *b)
+	case "start_game_button":
+		b := block.(*blocks.StartGameButtonBlock)
+		return startGameButtonAdmin(settings, *b)
 	}
 	return nil
 }
@@ -125,15 +122,12 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "countdown":
-		b := block.(*blocks.CountdownBlock)
-		return countdownPlayer(settings, *b)
-	case "game_status":
-		b := block.(*blocks.GameStatusBlock)
-		return gameStatusPlayer(settings, *b)
-	case "completion_message":
-		b := block.(*blocks.CompletionMessageBlock)
-		return completionMessagePlayer(settings, *b)
+	case "game_status_alert":
+		b := block.(*blocks.GameStatusAlertBlock)
+		return gameStatusAlertPlayer(settings, *b)
+	case "start_game_button":
+		b := block.(*blocks.StartGameButtonBlock)
+		return startGameButtonPlayer(settings, *b)
 	}
 	return nil
 }
@@ -191,15 +185,12 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "countdown":
-		b := block.(*blocks.CountdownBlock)
-		return countdownPlayer(settings, *b)
-	case "game_status":
-		b := block.(*blocks.GameStatusBlock)
-		return gameStatusPlayer(settings, *b)
-	case "completion_message":
-		b := block.(*blocks.CompletionMessageBlock)
-		return completionMessagePlayer(settings, *b)
+	case "game_status_alert":
+		b := block.(*blocks.GameStatusAlertBlock)
+		return gameStatusAlertPlayer(settings, *b)
+	case "start_game_button":
+		b := block.(*blocks.StartGameButtonBlock)
+		return startGameButtonPlayer(settings, *b)
 	}
 	return nil
 }
@@ -209,6 +200,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 		id={ fmt.Sprint("block-", block.GetID()) }
 		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"
 		data-block-id={ block.GetID() }
+		data-block-type={ block.GetType() }
 	>
 		<input
 			type="checkbox"

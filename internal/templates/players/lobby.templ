@@ -2,6 +2,8 @@ package templates
 
 import (
 	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
@@ -15,7 +17,7 @@ templ TeamID(team models.Team, oob bool) {
 	>
 		<p>Team code: <span class="font-mono font-bold">{ team.Code }</span></p>
 		<p>
-			Team name: 
+			Team name:
 			if team.Name == "" {
 				<a class="link font-bold whitespace-nowrap text-info" onclick="my_modal_5.showModal()">Click to set</a>
 			} else {
@@ -27,159 +29,18 @@ templ TeamID(team models.Team, oob bool) {
 	</div>
 }
 
-templ Lobby(team models.Team) {
+templ Lobby(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
 	<div hx-get="/lobby" hx-swap="none" hx-trigger="every 20s, timer" hx-boost="true"></div>
-	<!-- Header -->
-	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		<svg class="w-16 h-16 m-auto stroke-base-content fill-base-content mb-3" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
-		<h2 class="text-center text-2xl font-bold leading-9 tracking-tight">
-			{ team.Instance.Name }
-		</h2>
-	</div>
-	<!-- Content -->
-	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		switch team.Instance.GetStatus() {
-			case models.Closed:
-				<div role="alert" class="alert alert-warning w-min m-auto my-5">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock-icon lucide-lock w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-					<span class="text-nowrap">Game closed</span>
-				</div>
-			case models.Scheduled:
-				<div class="alert">
-					The game will start in
-					<div
-						id="start-time"
-						data-start={ team.Instance.StartTime.Format("02-Jan-2006 15:04:05") }
-						class="flex gap-1 justify-center"
-					>
-						<div id="days-container">
-							<span class="countdown font-mono font-bold" id="days">
-								<span></span>
-							</span>
-							days
-						</div>
-						<div id="hours-container">
-							<span class="countdown font-mono font-bold" id="hours">
-								<span></span>
-							</span>
-							hours
-						</div>
-						<div>
-							<span class="countdown font-mono font-bold" id="minutes">
-								<span></span>
-							</span>
-							min
-						</div>
-						<div>
-							<span class="countdown font-mono font-bold" id="seconds">
-								<span></span>
-							</span>
-							sec
-						</div>
-					</div>
-				</div>
-		}
-		@instructions()
-		<div class="divider mb-5 prose">Team Info</div>
-		@TeamID(team, false)
-		<div class="divider"></div>
-		<div class="text-center mt-12">
-			switch team.Instance.GetStatus() {
-				case models.Scheduled:
-					<a href="/lobby" hx-boost="true" class="btn btn-neutral" disabled>Waiting for game to start</a>
-				case models.Active:
-					<a href="/next" hx-boost="true" hx-swap="outerHTML" class="btn btn-primary">Start Playing</a>
-				default:
-			}
-		</div>
-	</div>
-	<dialog id="my_modal_5" class="modal modal-bottom sm:modal-middle">
-		<div class="modal-box">
-			<h3 class="text-lg font-bold">Choose a team name</h3>
-			<label class="input flex items-center gap-2 my-5 w-full">
-				Name:
-				<input form="team-name" name="name" type="text" class="grow w-full" value={ team.Name } autocomplete="off"/>
-			</label>
-			<input form="team-name" type="hidden" name="team_id" value={ team.Code }/>
-			<div class="modal-action">
-				<form method="dialog" id="team-name">
-					<!-- if there is a button in form, it will close the modal -->
-					<button
-						type="button"
-						class="btn"
-						onclick="my_modal_5.close()"
-					>Nevermind</button>
-					<button
-						type="submit"
-						class="btn btn-primary"
-						hx-post="/lobby/team-name"
-						hx-include="[form='team-name']"
-						hx-target="#team-id"
-						onclick="my_modal_5.close()"
-					>Save</button>
-				</form>
+	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+		for _, block := range pageBlocks {
+			<div
+				class="block-view"
+				id={ fmt.Sprint("preview-block-", block.GetID()) }
+			>
+				@templates.RenderPlayerView(team.Instance.Settings, block, blockStates[block.GetID()])
 			</div>
-		</div>
-	</dialog>
-	<style>
-	for i := range 60 {
-		{ fmt.Sprintf("[data-value=\"%d\"]", i) } {
-			--value: { fmt.Sprint(i) };
 		}
-	}
-	</style>
-	<script>
-  // JavaScript for countdown
-  function startCountdown(startTime) {
-    function updateCountdown() {
-      const now = new Date();
-      const remainingTime = new Date(startTime) - now;
-
-      if (remainingTime == 0) {
-		window.location.reload();
-        return;
-      }
-
-      const seconds = Math.floor((remainingTime / 1000) % 60);
-      const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
-      const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
-      const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
-
-      document.getElementById("seconds").style.setProperty('--value', seconds);
-      document.getElementById("minutes").style.setProperty('--value', minutes);
-
-      if (hours > 0) {
-        document.getElementById("hours-container").style.display = "block";
-        document.getElementById("hours").style.setProperty('--value', hours);
-      } else {
-        document.getElementById("hours-container").style.display = "none";
-      }
-
-      if (days > 0) {
-        document.getElementById("days-container").style.display = "block";
-        document.getElementById("days").style.setProperty('--value', days);
-      } else {
-        document.getElementById("days-container").style.display = "none";
-      }
-	  
-    }
-
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-
-  }
-
-  if (document.getElementById('start-time') != null) {
-		function UTCtoLocal(time) {
-			const utc = new Date(`${time}`);
-			const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
-			return local
-		}
-	  const startTimeElement = document.getElementById('start-time');
-	  const startTime = startTimeElement.dataset.start;
-	  startCountdown(UTCtoLocal(startTime));
-  }
-</script>
+	</div>
 }
 
 templ instructions() {

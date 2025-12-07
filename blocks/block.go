@@ -95,26 +95,28 @@ func registerBlock(instance Block, contexts []BlockContext) {
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
 	// Content blocks
-	registerBlock(&MarkdownBlock{}, []BlockContext{
-		ContextLocationContent, ContextLocationClues,
-	})
-	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby})
+	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
+	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
+	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
+	registerBlock(&ImageBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby})
+	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
-	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&ImageBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent})
 
 	// Interactive blocks
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextLobby})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
+
+	// System blocks
+	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextLobby})
+	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextLobby})
 	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextLobby})
 }
 
@@ -194,6 +196,10 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewHeaderBlock(baseBlock), nil
 	case "team_name":
 		return NewTeamNameChangerBlock(baseBlock), nil
+	case "game_status_alert":
+		return NewGameStatusAlertBlock(baseBlock), nil
+	case "start_game_button":
+		return NewStartGameButtonBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -292,6 +298,19 @@ func NewHeaderBlock(base BaseBlock) *HeaderBlock {
 
 func NewTeamNameChangerBlock(base BaseBlock) *TeamNameChangerBlock {
 	return &TeamNameChangerBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewGameStatusAlertBlock(base BaseBlock) *GameStatusAlertBlock {
+	return &GameStatusAlertBlock{
+		BaseBlock:     base,
+		ShowCountdown: true,
+	}
+}
+
+func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
+	return &StartGameButtonBlock{
 		BaseBlock: base,
 	}
 }

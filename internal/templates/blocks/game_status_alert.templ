@@ -1,0 +1,226 @@
+package blocks
+
+import (
+	"fmt"
+	"time"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+// Initial loading template - renders placeholder and triggers HTMX load
+templ gameStatusAlertPlayer(_ models.InstanceSettings, block blocks.GameStatusAlertBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="load, every 20s"
+		hx-swap="outerHTML"
+	>
+		<div class="alert">
+			<span class="loading loading-spinner loading-md"></span>
+			<span>Loading game status...</span>
+		</div>
+	</div>
+}
+
+// Closed state - show warning alert
+templ GameStatusAlertClosed(block blocks.GameStatusAlertBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		<div role="alert" class="alert alert-warning">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+			<span>
+				if block.ClosedMessage != "" {
+					{ block.ClosedMessage }
+				} else {
+					Game closed
+				}
+			</span>
+		</div>
+	</div>
+}
+
+// Scheduled state - show info alert with optional countdown
+templ GameStatusAlertScheduled(block blocks.GameStatusAlertBlock, startTime time.Time) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		<div role="alert" class="alert alert-info">
+			<div class="flex flex-col sm:flex-row items-center gap-2 w-full justify-center">
+				<span>
+					if block.ScheduledMessage != "" {
+						{ block.ScheduledMessage }
+					} else {
+						This game will start in
+					}
+				</span>
+				if block.ShowCountdown {
+					<div
+						id={ fmt.Sprintf("countdown-%s", block.GetID()) }
+						data-start={ startTime.Format("02-Jan-2006 15:04:05") }
+						class="flex gap-1 countdown-container"
+					>
+						<div id={ fmt.Sprintf("days-container-%s", block.GetID()) } style="display:none;">
+							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("days-%s", block.GetID()) }>
+								<span style="--value:0;"></span>
+							</span>
+							<span class="text-xs">days</span>
+						</div>
+						<div id={ fmt.Sprintf("hours-container-%s", block.GetID()) } style="display:none;">
+							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("hours-%s", block.GetID()) }>
+								<span style="--value:0;"></span>
+							</span>
+							<span class="text-xs">hours</span>
+						</div>
+						<div>
+							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("minutes-%s", block.GetID()) }>
+								<span style="--value:0;"></span>
+							</span>
+							<span class="text-xs">min</span>
+						</div>
+						<div>
+							<span class="countdown font-mono font-bold" id={ fmt.Sprintf("seconds-%s", block.GetID()) }>
+								<span style="--value:0;"></span>
+							</span>
+							<span class="text-xs">sec</span>
+						</div>
+					</div>
+					<style>
+					for i := range 60 {
+						{ fmt.Sprintf("[data-value=\"%d\"]", i) } {
+							--value: { fmt.Sprint(i) };
+						}
+					}
+					</style>
+					<script>
+						(function() {
+							const blockId = { fmt.Sprintf("%q", block.GetID()) };
+							const startTimeStr = document.getElementById(`countdown-${blockId}`).dataset.start;
+
+							function UTCtoLocal(time) {
+								const utc = new Date(`${time}`);
+								const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
+								return local;
+							}
+
+							const startTime = UTCtoLocal(startTimeStr);
+
+							function updateCountdown() {
+								const now = new Date();
+								const remainingTime = startTime - now;
+
+								if (remainingTime <= 0) {
+									// Countdown finished - trigger HTMX refresh immediately
+									htmx.trigger(`#player-block-${blockId}`, 'load');
+									return;
+								}
+
+								const seconds = Math.floor((remainingTime / 1000) % 60);
+								const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
+								const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
+								const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
+
+								document.getElementById(`seconds-${blockId}`).style.setProperty('--value', seconds);
+								document.getElementById(`minutes-${blockId}`).style.setProperty('--value', minutes);
+
+								const hoursContainer = document.getElementById(`hours-container-${blockId}`);
+								const daysContainer = document.getElementById(`days-container-${blockId}`);
+
+								if (hours > 0 || days > 0) {
+									hoursContainer.style.display = "block";
+									document.getElementById(`hours-${blockId}`).style.setProperty('--value', hours);
+								} else {
+									hoursContainer.style.display = "none";
+								}
+
+								if (days > 0) {
+									daysContainer.style.display = "block";
+									document.getElementById(`days-${blockId}`).style.setProperty('--value', days);
+								} else {
+									daysContainer.style.display = "none";
+								}
+							}
+
+							updateCountdown();
+							const interval = setInterval(updateCountdown, 1000);
+
+							// Clean up interval when element is removed
+							document.getElementById(`player-block-${blockId}`).addEventListener('htmx:beforeSwap', function() {
+								clearInterval(interval);
+							});
+						})();
+					</script>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+// Active state - hide block when game is active
+templ GameStatusAlertActive(block blocks.GameStatusAlertBlock) {
+	// Empty - block disappears when game is active
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+		style="display:none;"
+	></div>
+}
+
+// Admin configuration form
+templ gameStatusAlertAdmin(_ models.InstanceSettings, block blocks.GameStatusAlertBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Closed message</legend>
+			<input
+				type="text"
+				name="closed_message"
+				class="input input-bordered w-full"
+				placeholder="Game closed"
+				value={ block.ClosedMessage }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is closed</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Scheduled message</legend>
+			<input
+				type="text"
+				name="scheduled_message"
+				class="input input-bordered w-full"
+				placeholder="This game will start in"
+				value={ block.ScheduledMessage }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is scheduled</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Options</legend>
+			<div class="form-control">
+				<label class="label cursor-pointer justify-start gap-2">
+					<input
+						type="checkbox"
+						name="show_countdown"
+						class="checkbox checkbox-sm"
+						checked?={ block.ShowCountdown }
+					/>
+					<span class="label-text">Show countdown timer</span>
+				</label>
+			</div>
+		</fieldset>
+	</form>
+}

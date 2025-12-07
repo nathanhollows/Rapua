@@ -1,0 +1,126 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+// Initial loading template - renders placeholder and triggers HTMX load
+templ startGameButtonPlayer(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
+		hx-trigger="load, every 20s"
+		hx-swap="outerHTML"
+		class="text-center"
+	>
+		<div class="loading loading-spinner loading-md"></div>
+	</div>
+}
+
+// Scheduled state - always show disabled button
+templ StartGameButtonScheduled(block blocks.StartGameButtonBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+		class="text-center"
+	>
+		<button class="btn btn-neutral" disabled>
+			if block.ScheduledButtonText != "" {
+				{ block.ScheduledButtonText }
+			} else {
+				Waiting for game to start
+			}
+		</button>
+	</div>
+}
+
+// Active state - show enabled button
+templ StartGameButtonActive(block blocks.StartGameButtonBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+		class="text-center"
+	>
+		<a
+			href="/next"
+			hx-boost="true"
+			class={ fmt.Sprintf("btn btn-%s", block.ButtonStyle) }
+		>
+			if block.ActiveButtonText != "" {
+				{ block.ActiveButtonText }
+			} else {
+				Start Playing
+			}
+		</a>
+	</div>
+}
+
+// Closed state - hide button
+templ StartGameButtonClosed(block blocks.StartGameButtonBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+		style="display:none;"
+	></div>
+}
+
+// Admin configuration form
+templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s select) delay:100ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.ID, block.ID, block.ID) }
+		hx-swap="none"
+	>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Scheduled button text</legend>
+			<input
+				type="text"
+				name="scheduled_button_text"
+				class="input input-bordered w-full"
+				placeholder="Waiting for game to start"
+				value={ block.ScheduledButtonText }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is scheduled</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Active button text</legend>
+			<input
+				type="text"
+				name="active_button_text"
+				class="input input-bordered w-full"
+				placeholder="Start Playing"
+				value={ block.ActiveButtonText }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is active</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Button style</legend>
+			<select
+				name="button_style"
+				class="select select-bordered w-full"
+			>
+				for style, label := range block.GetButtonStyles() {
+					<option
+						value={ style }
+						if block.ButtonStyle == style {
+							selected
+						}
+					>{ label }</option>
+				}
+			</select>
+		</fieldset>
+	</form>
+}
