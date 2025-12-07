@@ -1,8 +1,8 @@
 ---
 title: "Team Name"
 sidebar: true
-order: 15
-tag: new
+order: 20
+tag: System
 ---
 
 # Team Name Block
