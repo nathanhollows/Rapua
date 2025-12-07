@@ -891,7 +891,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-outline btn-success flex join-item tooltip\" data-tip=\"Start the game early\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start now</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-primary flex join-item tooltip\" data-tip=\"Start the game early\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start now</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
