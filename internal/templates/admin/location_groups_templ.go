@@ -56,7 +56,15 @@ func LocationGroupList(settings models.InstanceSettings, groups models.GameStruc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</template><!-- Hidden form for htmx structure updates --><form id=\"structure-form\" hx-post=\"/admin/locations/structure\" hx-trigger=\"submit delay:100ms\" hx-swap=\"none\" hx-indicator=\".htmx-indicator\" style=\"display: none;\"><input type=\"hidden\" name=\"structure\" id=\"structure-input\"></form><div class=\"px-6\" id=\"root-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</template><!-- Hidden form for htmx structure updates -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = startLink().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form id=\"structure-form\" hx-post=\"/admin/locations/structure\" hx-trigger=\"submit delay:100ms\" hx-swap=\"none\" hx-indicator=\".htmx-indicator\" style=\"display: none;\"><input type=\"hidden\" name=\"structure\" id=\"structure-input\"></form><div class=\"px-6\" id=\"root-container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -64,7 +72,7 @@ func LocationGroupList(settings models.InstanceSettings, groups models.GameStruc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -98,20 +106,20 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 		}
 		ctx = templ.ClearChildren(ctx)
 		if group.IsRoot {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<!-- Root groups area --> <div class=\"groups-area space-y-6\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!-- Root groups area --> <div class=\"groups-area space-y-6\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 183, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 184, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -121,20 +129,28 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><!-- Hidden/unassigned locations area --> <div class=\"divider my-12 gap-2\">Unassigned locations<div class=\"dropdown dropdown-hover dropdown-top dropdown-center\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewbox=\"0 0 24 24\" fill=\"none\" stroke=\"currentcolor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m12 16v-4\"></path><path d=\"m12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Unassigned Locations</h2><p class=\"text-wrap\">Locations placed here will not be visible or accessible to players in the game.</p></div></div></div></div><div class=\"locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0\" data-unassigned=\"true\" data-nav-mode=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = finishLink().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <!-- Hidden/unassigned locations area --> <div class=\"divider my-12 gap-2\">Unassigned locations<div class=\"dropdown dropdown-hover dropdown-top dropdown-center\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewbox=\"0 0 24 24\" fill=\"none\" stroke=\"currentcolor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m12 16v-4\"></path><path d=\"m12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Unassigned Locations</h2><p class=\"text-wrap\">Locations placed here will not be visible or accessible to players in the game.</p></div></div></div></div><div class=\"locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0\" data-unassigned=\"true\" data-nav-mode=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(int(group.Navigation)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 203, Col: 168}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 205, Col: 168}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -144,38 +160,38 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<!-- Nested group card --> <div class=\"group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Nested group card --> <div class=\"group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 210, Col: 142}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 212, Col: 142}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" data-group-color=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" data-group-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(group.Color)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 210, Col: 175}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 212, Col: 175}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"><div class=\"card-body p-5 pt-3\"><div class=\"flex justify-between items-center\"><div class=\"flex items-center gap-3\"><div class=\"tooltip lg:tooltip-top tooltip-right\" data-tip=\"Drag to reorder group\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"card-body p-5 pt-3\"><div class=\"flex justify-between items-center\"><div class=\"flex items-center gap-3\"><div class=\"tooltip lg:tooltip-top tooltip-right\" data-tip=\"Drag to reorder group\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content flex-shrink-0 cursor-move group-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -183,20 +199,20 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<input type=\"text\" class=\"input input-ghost p-2 font-bold bg-transparent\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<input type=\"text\" class=\"input input-ghost p-2 font-bold bg-transparent\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(group.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 218, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 220, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"></div><div class=\"flex-grow\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"></div><div class=\"flex-grow\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -204,33 +220,33 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><!-- Locations area within group --><div class=\"locations-area join join-vertical\" data-group-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><!-- Locations area within group --><div class=\"locations-area join join-vertical\" data-group-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(group.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 224, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 226, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" data-nav-mode=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" data-nav-mode=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(int(group.Navigation)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 224, Col: 127}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 226, Col: 127}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -240,7 +256,7 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><!-- Subgroups area within group - always show -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div><!-- Subgroups area within group - always show -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -250,7 +266,7 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -280,120 +296,120 @@ func locationItem(location models.Location, settings models.InstanceSettings) te
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30\" data-location-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div class=\"location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30\" data-location-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(location.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 239, Col: 133}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 241, Col: 133}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-search-text=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-search-text=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 239, Col: 168}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 241, Col: 168}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"Drag to reorder location\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div><!-- Map marker icon - always rendered, visibility controlled by CSS -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"Drag to reorder location\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg></div><!-- Map marker icon - always rendered, visibility controlled by CSS -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if location.HasCoordinates() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"tooltip cursor-help location-marker-icon\" data-tip=\"Has map coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg></span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"tooltip cursor-help location-marker-icon\" data-tip=\"Has map coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin\"><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"></path><circle cx=\"12\" cy=\"10\" r=\"3\"></circle></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"tooltip cursor-help location-marker-icon text-base-content/30\" data-tip=\"Missing coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-off\"><path d=\"M12.75 7.09a3 3 0 0 1 2.16 2.16\"></path><path d=\"M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568\"></path><path d=\"m2 2 20 20\"></path><path d=\"M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533\"></path><path d=\"M9.13 9.13a3 3 0 0 0 3.74 3.74\"></path></svg></span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"tooltip cursor-help location-marker-icon text-base-content/30\" data-tip=\"Missing coordinates\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-off\"><path d=\"M12.75 7.09a3 3 0 0 1 2.16 2.16\"></path><path d=\"M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568\"></path><path d=\"m2 2 20 20\"></path><path d=\"M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533\"></path><path d=\"M9.13 9.13a3 3 0 0 0 3.74 3.74\"></path></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<!-- Clues icon - always rendered, visibility controlled by CSS -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<!-- Clues icon - always rendered, visibility controlled by CSS -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if location.HasCluesContext() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"tooltip cursor-help location-clues-icon\" data-tip=\"Has clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<span class=\"tooltip cursor-help location-clues-icon\" data-tip=\"Has clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"tooltip cursor-help location-clues-icon text-base-content/30\" data-tip=\"No clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-slash\"><path d=\"m13.5 8.5-5 5\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"tooltip cursor-help location-clues-icon text-base-content/30\" data-tip=\"No clues\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-slash\"><path d=\"m13.5 8.5-5 5\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"badge badge-sm badge-outline border-primary font-medium tooltip\" data-tip=\"Location ID\"><code>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"badge badge-sm badge-outline border-primary font-medium tooltip\" data-tip=\"Location ID\"><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 264, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 266, Col: 128}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</code></div><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</code></div><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 templ.SafeURL
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/locations/%s", location.MarkerID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 266, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 268, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" class=\"link link-hover font-medium\" hx-boost=\"true\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" class=\"link link-hover font-medium\" hx-boost=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 269, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 271, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</a><div class=\"flex-grow\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</a><div class=\"flex-grow\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"badge badge-primary badge-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"badge badge-primary badge-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 272, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 274, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " pts</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " pts</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -402,7 +418,65 @@ func locationItem(location models.Location, settings models.InstanceSettings) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func startLink() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"p-6 pt-0\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"System page - cannot be moved\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-5 h-5 text-primary\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div><span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in game\">System Page</span> <a href=\"/admin/locations/start\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">Start</a><div class=\"flex-grow\"></div><div class=\"tooltip tooltip-left\" data-tip=\"System page - cannot be deleted\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-4 h-4 text-base-content/40\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div></div></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func finishLink() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"pt-6\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"System page - cannot be moved\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-5 h-5 text-primary\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div><span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in game\">System Page</span> <a href=\"/admin/locations/finish\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">Finish</a><div class=\"flex-grow\"></div><div class=\"tooltip tooltip-left\" data-tip=\"System page - cannot be deleted\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-4 h-4 text-base-content/40\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -426,13 +500,13 @@ func publishedToggle() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if false {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div><label class=\"swap\"><input type=\"checkbox\"> <label class=\"swap tooltip\" data-tip=\"Published\"><input type=\"checkbox\" checked _=\"on change\n\t\t\t\t\t\t\tset parent to the closest parent <label />\n\t\t\t\t\t\tif my.checked then\n\t\t\t\t\t\t\tset parent's @data-tip to 'Published'\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tset parent's @data-tip to 'Draft'\n\t\t\t\t\t\tend\n\t\t\t\t\t\"> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-on lucide lucide-eye-icon lucide-eye w-5\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-off lucide lucide-eye-closed-icon lucide-eye-closed w-5\"><path d=\"m15 18-.722-3.25\"></path><path d=\"M2 8a10.645 10.645 0 0 0 20 0\"></path><path d=\"m20 15-1.726-2.05\"></path><path d=\"m4 15 1.726-2.05\"></path><path d=\"m9 18 .722-3.25\"></path></svg></label></label></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div><label class=\"swap\"><input type=\"checkbox\"> <label class=\"swap tooltip\" data-tip=\"Published\"><input type=\"checkbox\" checked _=\"on change\n\t\t\t\t\t\t\tset parent to the closest parent <label />\n\t\t\t\t\t\tif my.checked then\n\t\t\t\t\t\t\tset parent's @data-tip to 'Published'\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tset parent's @data-tip to 'Draft'\n\t\t\t\t\t\tend\n\t\t\t\t\t\"> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-on lucide lucide-eye-icon lucide-eye w-5\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"swap-off lucide lucide-eye-closed-icon lucide-eye-closed w-5\"><path d=\"m15 18-.722-3.25\"></path><path d=\"M2 8a10.645 10.645 0 0 0 20 0\"></path><path d=\"m20 15-1.726-2.05\"></path><path d=\"m4 15 1.726-2.05\"></path><path d=\"m9 18 .722-3.25\"></path></svg></label></label></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -457,132 +531,132 @@ func completionCount(group models.GameStructure) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"dropdown dropdown-bottom dropdown-center completion-dropdown\" data-completion-type=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(getCompletionTypeAttr(group))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 309, Col: 126}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Completion requirement\"><span class=\"completion-button-icon\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-check-icon lucide-check-check\"><path d=\"M18 6 7 17l-5-5\"></path><path d=\"m22 10-7.5 7.5L13 16\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-icon lucide-check\"><path d=\"M20 6 9 17l-5-5\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</span> <span class=\"completion-button-text\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "Complete All")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "Complete ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var20 string
-			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(group.MinimumRequired))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 322, Col: 49}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><div tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div class=\"p-3\"><label class=\"text-xs font-medium\">Completion requirement:</label><p class=\"text-xs text-base-content/60 mt-1\">Set how many locations players must complete to move on to the next group.</p><div class=\"flex items-center gap-2 mt-4\"><input type=\"range\" min=\"1\" max=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"dropdown dropdown-bottom dropdown-center completion-dropdown\" data-completion-type=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(group.Locations)))
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(getCompletionTypeAttr(group))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 335, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 361, Col: 126}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(getCompletionValue(group))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 336, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" class=\"range range-primary range-sm flex-1 completion-slider\" aria-label=\"Number of locations required to complete this group\" _=\"on input\n\t\t\t\t\t\t\t\tset dropdown to closest <.completion-dropdown/>\n\t\t\t\t\t\t\t\tset autoAdvanceCheckbox to dropdown.querySelector('.auto-advance-checkbox')\n\t\t\t\t\t\t\t\tif my.value == my.max then\n\t\t\t\t\t\t\t\t\t-- Slider at max - auto-enable auto-advance and show 'Complete All' mode\n\t\t\t\t\t\t\t\t\tjs(dropdown, autoAdvanceCheckbox)\n\t\t\t\t\t\t\t\t\t\t// Always set to 'Complete All' mode when slider reaches max\n\t\t\t\t\t\t\t\t\t\tdropdown.dataset.completionType = 'all';\n\t\t\t\t\t\t\t\t\t\tupdateCompletionButton(dropdown, 'all', null);\n\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox) {\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.checked = true;\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.disabled = true;\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t-- Slider below max - always 'minimum' mode (single tick, enabled checkbox)\n\t\t\t\t\t\t\t\t\tset dropdown's @data-completion-type to 'minimum'\n\t\t\t\t\t\t\t\t\tjs(dropdown, my, autoAdvanceCheckbox)\n\t\t\t\t\t\t\t\t\t\tupdateCompletionButton(dropdown, 'minimum', my.value);\n\t\t\t\t\t\t\t\t\t\t// Auto-advance is optional for Complete N\n\t\t\t\t\t\t\t\t\t\t// If transitioning from disabled state (was All), default to checked\n\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox) {\n\t\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox.disabled) {\n\t\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.checked = true;\n\t\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.disabled = false;\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tjs window.debouncedSave() end\"> <output class=\"badge badge-sm badge-primary min-w-[3rem] text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Completion requirement\"><span class=\"completion-button-icon\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "All")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-check-icon lucide-check-check\"><path d=\"M18 6 7 17l-5-5\"></path><path d=\"m22 10-7.5 7.5L13 16\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(group.MinimumRequired))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 374, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-icon lucide-check\"><path d=\"M20 6 9 17l-5-5\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</output></div><div class=\"text-xs text-base-content/60 text-center mt-2\"><span class=\"completion-disabled-msg hidden\">Disabled in Guided Path mode</span></div><!-- Auto Advance Toggle --><div class=\"divider my-2\"></div><label class=\"label cursor-pointer justify-start gap-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</span> <span class=\"completion-button-text\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "Complete All")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "Complete ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(group.MinimumRequired))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 374, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</span> <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><div tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] w-64 shadow\"><div class=\"p-3\"><label class=\"text-xs font-medium\">Completion requirement:</label><p class=\"text-xs text-base-content/60 mt-1\">Set how many locations players must complete to move on to the next group.</p><div class=\"flex items-center gap-2 mt-4\"><input type=\"range\" min=\"1\" max=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(group.Locations)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 387, Col: 44}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(getCompletionValue(group))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 388, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\" class=\"range range-primary range-sm flex-1 completion-slider\" aria-label=\"Number of locations required to complete this group\" _=\"on input\n\t\t\t\t\t\t\t\tset dropdown to closest <.completion-dropdown/>\n\t\t\t\t\t\t\t\tset autoAdvanceCheckbox to dropdown.querySelector('.auto-advance-checkbox')\n\t\t\t\t\t\t\t\tif my.value == my.max then\n\t\t\t\t\t\t\t\t\t-- Slider at max - auto-enable auto-advance and show 'Complete All' mode\n\t\t\t\t\t\t\t\t\tjs(dropdown, autoAdvanceCheckbox)\n\t\t\t\t\t\t\t\t\t\t// Always set to 'Complete All' mode when slider reaches max\n\t\t\t\t\t\t\t\t\t\tdropdown.dataset.completionType = 'all';\n\t\t\t\t\t\t\t\t\t\tupdateCompletionButton(dropdown, 'all', null);\n\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox) {\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.checked = true;\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.disabled = true;\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t-- Slider below max - always 'minimum' mode (single tick, enabled checkbox)\n\t\t\t\t\t\t\t\t\tset dropdown's @data-completion-type to 'minimum'\n\t\t\t\t\t\t\t\t\tjs(dropdown, my, autoAdvanceCheckbox)\n\t\t\t\t\t\t\t\t\t\tupdateCompletionButton(dropdown, 'minimum', my.value);\n\t\t\t\t\t\t\t\t\t\t// Auto-advance is optional for Complete N\n\t\t\t\t\t\t\t\t\t\t// If transitioning from disabled state (was All), default to checked\n\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox) {\n\t\t\t\t\t\t\t\t\t\t\tif (autoAdvanceCheckbox.disabled) {\n\t\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.checked = true;\n\t\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\t\t\tautoAdvanceCheckbox.disabled = false;\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tjs window.debouncedSave() end\"> <output class=\"badge badge-sm badge-primary min-w-[3rem] text-center\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "All")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			var templ_7745c5c3_Var25 string
+			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(group.MinimumRequired))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 426, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</output></div><div class=\"text-xs text-base-content/60 text-center mt-2\"><span class=\"completion-disabled-msg hidden\">Disabled in Guided Path mode</span></div><!-- Auto Advance Toggle --><div class=\"divider my-2\"></div><label class=\"label cursor-pointer justify-start gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if group.CompletionType == models.CompletionAll {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" checked disabled aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" checked disabled aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
 			if group.AutoAdvance {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" checked aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" checked aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<input type=\"checkbox\" class=\"checkbox checkbox-sm checkbox-primary auto-advance-checkbox\" aria-describedby=\"auto-advance-help\" _=\"on change js(me) handleAutoAdvanceChange(me) end\"> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"label-text font-medium\">Auto-advance to next group</span></label><p class=\"text-xs text-base-content/60 mt-1\">When enabled, players will automatically move to the next group after completing the required locations.</p></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<span class=\"label-text font-medium\">Auto-advance to next group</span></label><p class=\"text-xs text-base-content/60 mt-1\">When enabled, players will automatically move to the next group after completing the required locations.</p></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -606,12 +680,12 @@ func groupMenu(group models.GameStructure) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"flex gap-2 items-center\"><!-- Route Strategy Picker -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"flex gap-2 items-center\"><!-- Route Strategy Picker -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -619,7 +693,7 @@ func groupMenu(group models.GameStructure) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<!-- Navigation Display Picker -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<!-- Navigation Display Picker -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -627,7 +701,7 @@ func groupMenu(group models.GameStructure) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<!-- Completion Requirements Menu -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<!-- Completion Requirements Menu -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -636,7 +710,7 @@ func groupMenu(group models.GameStructure) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if false {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<!-- Auto Advance Picker --> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<!-- Auto Advance Picker --> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -645,7 +719,7 @@ func groupMenu(group models.GameStructure) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<button class=\"btn btn-sm btn-ghost tooltip delete-group-btn\" data-tip=\"Delete group\" _=\"on click\n\t\t\t\tif I match .confirming then\n\t\t\t\t\t-- Actually delete the group\n\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t-- Get ALL location items in this group (including nested ones)\n\t\t\t\t\tset allLocations to groupCard.querySelectorAll('.location-item')\n\t\t\t\t\t-- Find the unassigned locations area (the one at the bottom with data-unassigned)\n\t\t\t\t\tjs(allLocations)\n\t\t\t\t\t\tconst unassignedArea = document.querySelector('#root-container .locations-area[data-unassigned]');\n\t\t\t\t\t\tif (unassignedArea) {\n\t\t\t\t\t\t\tallLocations.forEach(location => {\n\t\t\t\t\t\t\t\tunassignedArea.appendChild(location);\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\tend\n\t\t\t\t\t-- Remove the group card\n\t\t\t\t\tremove groupCard\n\t\t\t\t\t-- Trigger save after deletion\n\t\t\t\t\tjs saveGameStructure() end\n\t\t\t\telse\n\t\t\t\t\t-- First click: show confirmation\n\t\t\t\t\tadd .confirming to me\n\t\t\t\t\tset my @data-tip to 'Are you sure?'\n\t\t\t\t\tadd .tooltip-warning to me\n\t\t\t\t\t-- Reset after 2 seconds (non-blocking)\n\t\t\t\tend\n\t\t\ton mouseleave\n\t\t\t\tif I match .confirming then\n\t\t\t\t\tremove .confirming from me\n\t\t\t\t\tset my @data-tip to 'Delete group'\n\t\t\t\t\tremove .tooltip-warning from me\n\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<button class=\"btn btn-sm btn-ghost tooltip delete-group-btn\" data-tip=\"Delete group\" _=\"on click\n\t\t\t\tif I match .confirming then\n\t\t\t\t\t-- Actually delete the group\n\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t-- Get ALL location items in this group (including nested ones)\n\t\t\t\t\tset allLocations to groupCard.querySelectorAll('.location-item')\n\t\t\t\t\t-- Find the unassigned locations area (the one at the bottom with data-unassigned)\n\t\t\t\t\tjs(allLocations)\n\t\t\t\t\t\tconst unassignedArea = document.querySelector('#root-container .locations-area[data-unassigned]');\n\t\t\t\t\t\tif (unassignedArea) {\n\t\t\t\t\t\t\tallLocations.forEach(location => {\n\t\t\t\t\t\t\t\tunassignedArea.appendChild(location);\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\tend\n\t\t\t\t\t-- Remove the group card\n\t\t\t\t\tremove groupCard\n\t\t\t\t\t-- Trigger save after deletion\n\t\t\t\t\tjs saveGameStructure() end\n\t\t\t\telse\n\t\t\t\t\t-- First click: show confirmation\n\t\t\t\t\tadd .confirming to me\n\t\t\t\t\tset my @data-tip to 'Are you sure?'\n\t\t\t\t\tadd .tooltip-warning to me\n\t\t\t\t\t-- Reset after 2 seconds (non-blocking)\n\t\t\t\tend\n\t\t\ton mouseleave\n\t\t\t\tif I match .confirming then\n\t\t\t\t\tremove .confirming from me\n\t\t\t\t\tset my @data-tip to 'Delete group'\n\t\t\t\t\tremove .tooltip-warning from me\n\t\t\t\tend\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -669,295 +743,295 @@ func routeStrategyPicker(group models.GameStructure) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div class=\"dropdown dropdown-bottom dropdown-center route-dropdown\" data-max-next=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<div class=\"dropdown dropdown-bottom dropdown-center route-dropdown\" data-max-next=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 475, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 527, Col: 108}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Route Strategy\"><div class=\"route-strat contents\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Route Strategy\"><div class=\"route-strat contents\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch group.Routing {
 		case models.RouteStrategyOrdered:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-milestone-icon lucide-milestone w-4\"><path d=\"M12 13v8\"></path><path d=\"M12 3v3\"></path><path d=\"M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z\"></path></svg> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 481, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case models.RouteStrategyFreeRoam:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 484, Col: 45}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case models.RouteStrategySecret:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gem-icon lucide-gem w-4 h-4\"><path d=\"M10.5 3 8 9l4 13 4-13-2.5-6\"></path><path d=\"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z\"></path><path d=\"M2 9h20\"></path></svg> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-milestone-icon lucide-milestone w-4\"><path d=\"M12 13v8\"></path><path d=\"M12 3v3\"></path><path d=\"M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z\"></path></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
-			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 487, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 533, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case models.RouteStrategyRandom:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random <span class=\"max-next-display\">")
+		case models.RouteStrategyFreeRoam:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
-			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 490, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 536, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</span>")
+		case models.RouteStrategySecret:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gem-icon lucide-gem w-4 h-4\"><path d=\"M10.5 3 8 9l4 13 4-13-2.5-6\"></path><path d=\"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z\"></path><path d=\"M2 9h20\"></path></svg> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var31 string
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 539, Col: 43}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		case models.RouteStrategyRandom:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> Random <span class=\"max-next-display\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var32 string
+			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 542, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><div class=\"dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><ul tabindex=\"0\" class=\"menu\"><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var31 string
-		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 501, Col: 54}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Disable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to completionDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tremove .hidden from groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-milestone-icon lucide-milestone w-4\"><path d=\"M12 13v8\"></path><path d=\"M12 3v3\"></path><path d=\"M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z\"></path></svg> <span class=\"font-medium\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 524, Col: 71}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</span></div><span class=\"text-xs text-base-content/60\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><div class=\"dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><ul tabindex=\"0\" class=\"menu\"><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.Description())
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 526, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 553, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty\" data-mode=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Disable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to completionDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tremove .hidden from groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-milestone-icon lucide-milestone w-4\"><path d=\"M12 13v8\"></path><path d=\"M12 3v3\"></path><path d=\"M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z\"></path></svg> <span class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
-		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 533, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 576, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Enable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from completionDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tadd .hidden to groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> <span class=\"font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</span></div><span class=\"text-xs text-base-content/60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
-		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyOrdered.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 556, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 578, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</span></div><span class=\"text-xs text-base-content/60 break-after-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3 text-pretty\" data-mode=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.Description())
+		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 558, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 585, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Enable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from completionDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tadd .hidden to groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-footprints-icon lucide-footprints w-4 h-5\"><path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"></path><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"></path><path d=\"M16 17h4\"></path><path d=\"M4 13h4\"></path></svg> <span class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var37 string
-		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
+		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 565, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 608, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Disable completion and navigation dropdowns for Secret\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to completionDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tremove .hidden from groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to navDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gem-icon lucide-gem w-4 h-4\"><path d=\"M10.5 3 8 9l4 13 4-13-2.5-6\"></path><path d=\"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z\"></path><path d=\"M2 9h20\"></path></svg> <span class=\"font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span></div><span class=\"text-xs text-base-content/60 break-after-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyFreeRoam.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 587, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 610, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span></div><span class=\"text-xs text-base-content/60\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.Description())
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 589, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 617, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset routeStrat's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t-- Hide max-next slider\n\t\t\t\t\t\tadd .hidden to dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Disable completion and navigation dropdowns for Secret\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to completionDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tremove .hidden from groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tadd .btn-disabled to navDropdown.querySelector('a')\n\t\t\t\t\t\tadd .hidden to navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gem-icon lucide-gem w-4 h-4\"><path d=\"M10.5 3 8 9l4 13 4-13-2.5-6\"></path><path d=\"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z\"></path><path d=\"M2 9h20\"></path></svg> <span class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var40 string
-		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.String())
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 596, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 639, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset maxNextValue to dropdown.querySelector('.max-next-slider').value\n\t\t\t\t\t\tset routeStrat's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>` + maxNextValue + `</span>`\n\t\t\t\t\t\t-- Show max-next slider\n\t\t\t\t\t\tremove .hidden from dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Enable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from completionDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tadd .hidden to groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> <span class=\"font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</span></div><span class=\"text-xs text-base-content/60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var41 string
-		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.String())
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategySecret.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 620, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 641, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</span></div><span class=\"text-xs text-base-content/60\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</span></button></li><li><button role=\"button\" class=\"route-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var42 string
-		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.Description())
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 622, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 648, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</span></button></li></ul><!-- MaxNext slider - shown only when Random routing is selected -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\" _=\"on click\n\t\t\t\t\t\tremove .bg-base-300 from <.route-option/>\n\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset routeStrat to dropdown.querySelector('.route-strat')\n\t\t\t\t\t\tset maxNextValue to dropdown.querySelector('.max-next-slider').value\n\t\t\t\t\t\tset routeStrat's innerHTML to `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-shuffle-icon lucide-shuffle h-4 w-4'><path d='m18 14 4 4-4 4'/><path d='m18 2 4 4-4 4'/><path d='M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22'/><path d='M2 6h1.972a4 4 0 0 1 3.6 2.2'/><path d='M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'/></svg>Random <span class='max-next-display'>` + maxNextValue + `</span>`\n\t\t\t\t\t\t-- Show max-next slider\n\t\t\t\t\t\tremove .hidden from dropdown.querySelector('.max-next-slider-container')\n\t\t\t\t\t\t-- Enable completion dropdown\n\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\tset completionDropdown to groupCard.querySelector('.completion-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from completionDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from completionDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tadd .hidden to groupCard.querySelector('.completion-disabled-msg')\n\t\t\t\t\t\t-- Enable navigation dropdown\n\t\t\t\t\t\tset navDropdown to groupCard.querySelector('.nav-display-dropdown')\n\t\t\t\t\t\tremove .btn-disabled from navDropdown.querySelector('a')\n\t\t\t\t\t\tremove .hidden from navDropdown.querySelector('.dropdown-content')\n\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle-icon lucide-shuffle h-4 w-4\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg> <span class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var43 = []any{"max-next-slider-container p-5 pt-0", templ.KV("hidden", group.Routing != models.RouteStrategyRandom)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var43...)
+		var templ_7745c5c3_Var43 string
+		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 672, Col: 70}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</span></div><span class=\"text-xs text-base-content/60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var44 string
-		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var43).String())
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(models.RouteStrategyRandom.Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 674, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\"><label class=\"text-xs font-medium\">Locations to show:</label><p class=\"text-xs text-base-content/60 mt-1 text-pretty\">How many random locations should players see at once?</p><div class=\"flex items-center gap-2 mt-2\"><input type=\"range\" min=\"1\" max=\"10\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</span></button></li></ul><!-- MaxNext slider - shown only when Random routing is selected -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var45 string
-		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 635, Col: 36}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		var templ_7745c5c3_Var45 = []any{"max-next-slider-container p-5 pt-0", templ.KV("hidden", group.Routing != models.RouteStrategyRandom)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var45...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\" class=\"range range-primary range-sm flex-1 max-next-slider\" _=\"on input\n\t\t\t\t\t\tset output to the next <output/>\n\t\t\t\t\t\tput my.value into output\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset dropdown's @data-max-next to my.value\n\t\t\t\t\t\tset maxNextDisplay to dropdown.querySelector('.max-next-display')\n\t\t\t\t\t\tif maxNextDisplay\n\t\t\t\t\t\t\tput my.value into maxNextDisplay\n\t\t\t\t\t\tend\n\t\t\t\t\t\tjs window.debouncedSave() end\"> <output class=\"badge badge-sm badge-primary min-w-[3rem] text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var46 string
-		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var45).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 648, Col: 99}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</output></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\"><label class=\"text-xs font-medium\">Locations to show:</label><p class=\"text-xs text-base-content/60 mt-1 text-pretty\">How many random locations should players see at once?</p><div class=\"flex items-center gap-2 mt-2\"><input type=\"range\" min=\"1\" max=\"10\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var47 string
+		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 687, Col: 36}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" class=\"range range-primary range-sm flex-1 max-next-slider\" _=\"on input\n\t\t\t\t\t\tset output to the next <output/>\n\t\t\t\t\t\tput my.value into output\n\t\t\t\t\t\tset dropdown to closest <.route-dropdown/>\n\t\t\t\t\t\tset dropdown's @data-max-next to my.value\n\t\t\t\t\t\tset maxNextDisplay to dropdown.querySelector('.max-next-display')\n\t\t\t\t\t\tif maxNextDisplay\n\t\t\t\t\t\t\tput my.value into maxNextDisplay\n\t\t\t\t\t\tend\n\t\t\t\t\t\tjs window.debouncedSave() end\"> <output class=\"badge badge-sm badge-primary min-w-[3rem] text-center\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var48 string
+		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(getMaxNextValue(group))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 700, Col: 99}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</output></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -981,181 +1055,181 @@ func navigationDisplayPicker(nav models.NavigationDisplayMode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var47 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var47 == nil {
-			templ_7745c5c3_Var47 = templ.NopComponent
+		templ_7745c5c3_Var49 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var49 == nil {
+			templ_7745c5c3_Var49 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<div class=\"dropdown dropdown-bottom dropdown-center nav-display-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Navigation Display\"><div class=\"nav-display contents\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<div class=\"dropdown dropdown-bottom dropdown-center nav-display-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Navigation Display\"><div class=\"nav-display contents\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch nav {
 		case models.NavigationDisplayMap:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map\"><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"></path><path d=\"M15 5.764v15\"></path><path d=\"M9 3.236v15\"></path></svg> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var48 string
-			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayMap.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 662, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case models.NavigationDisplayMapAndNames:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-house\"><path d=\"M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z\"></path><path d=\"M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2\"></path><path d=\"M18 22v-3\"></path><circle cx=\"10\" cy=\"10\" r=\"3\"></circle></svg> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var49 string
-			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayMapAndNames.String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 665, Col: 52}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case models.NavigationDisplayNames:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list\"><path d=\"M3 12h.01\"></path><path d=\"M3 18h.01\"></path><path d=\"M3 6h.01\"></path><path d=\"M8 12h13\"></path><path d=\"M8 18h13\"></path><path d=\"M8 6h13\"></path></svg> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map\"><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"></path><path d=\"M15 5.764v15\"></path><path d=\"M9 3.236v15\"></path></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var50 string
-			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayNames.String())
+			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayMap.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 668, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 714, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case models.NavigationDisplayClues:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> ")
+		case models.NavigationDisplayMapAndNames:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-house\"><path d=\"M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z\"></path><path d=\"M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2\"></path><path d=\"M18 22v-3\"></path><circle cx=\"10\" cy=\"10\" r=\"3\"></circle></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var51 string
-			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayClues.String())
+			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayMapAndNames.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 671, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 717, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case models.NavigationDisplayCustom:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-icon lucide-search\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg> ")
+		case models.NavigationDisplayNames:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list\"><path d=\"M3 12h.01\"></path><path d=\"M3 18h.01\"></path><path d=\"M3 6h.01\"></path><path d=\"M8 12h13\"></path><path d=\"M8 18h13\"></path><path d=\"M8 6h13\"></path></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var52 string
-			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayCustom.String())
+			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayNames.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 674, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 720, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, mode := range models.GetNavigationDisplayModes() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<li><button role=\"button\" class=\"nav-display-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
+		case models.NavigationDisplayClues:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var53 string
-			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(mode.String())
+			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayClues.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 685, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 723, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\" data-index=\"")
+		case models.NavigationDisplayCustom:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search-icon lucide-search\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var54 string
-			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(int(mode)))
+			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(models.NavigationDisplayCustom.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 686, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 726, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "\" _=\"on click\n\t\t\t\t\t\t\tremove .bg-base-300 from <.nav-display-option/>\n\t\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\t\tset navDisplay to (closest <.nav-display-dropdown/>).querySelector('.nav-display')\n\t\t\t\t\t\t\tset navDisplay's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t\t-- Update data-nav-mode attribute on locations-area to reflect new navigation mode\n\t\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\t\tif groupCard\n\t\t\t\t\t\t\t\tset locationsArea to groupCard.querySelector('.locations-area')\n\t\t\t\t\t\t\t\tif locationsArea\n\t\t\t\t\t\t\t\t\tset locationsArea's @data-nav-mode to my @data-index\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t-- For root group\n\t\t\t\t\t\t\t\tset rootLocationsArea to document.querySelector('#root-container .locations-area')\n\t\t\t\t\t\t\t\tif rootLocationsArea\n\t\t\t\t\t\t\t\t\tset rootLocationsArea's @data-nav-mode to my @data-index\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			switch mode {
-			case models.NavigationDisplayMap:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map\"><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"></path><path d=\"M15 5.764v15\"></path><path d=\"M9 3.236v15\"></path></svg> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case models.NavigationDisplayMapAndNames:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-house\"><path d=\"M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z\"></path><path d=\"M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2\"></path><path d=\"M18 22v-3\"></path><circle cx=\"10\" cy=\"10\" r=\"3\"></circle></svg> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case models.NavigationDisplayNames:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list\"><path d=\"M3 12h.01\"></path><path d=\"M3 18h.01\"></path><path d=\"M3 6h.01\"></path><path d=\"M8 12h13\"></path><path d=\"M8 18h13\"></path><path d=\"M8 6h13\"></path></svg> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case models.NavigationDisplayClues:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case models.NavigationDisplayCustom:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-blocks\"><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"></rect><path d=\"M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3\"></path></svg> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span class=\"font-medium\">")
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, mode := range models.GetNavigationDisplayModes() {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<li><button role=\"button\" class=\"nav-display-option grid-flow-row gap-1 whitespace-normal h-auto py-3\" data-mode=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var55 string
 			templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(mode.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 721, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 737, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</span></div><span class=\"text-xs text-base-content/60\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\" data-index=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var56 string
-			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(mode.Description())
+			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(int(mode)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 723, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 738, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</span></button></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\" _=\"on click\n\t\t\t\t\t\t\tremove .bg-base-300 from <.nav-display-option/>\n\t\t\t\t\t\t\tadd .bg-base-300 to me\n\t\t\t\t\t\t\tset navDisplay to (closest <.nav-display-dropdown/>).querySelector('.nav-display')\n\t\t\t\t\t\t\tset navDisplay's innerHTML to my.querySelector('div').innerHTML\n\t\t\t\t\t\t\t-- Update data-nav-mode attribute on locations-area to reflect new navigation mode\n\t\t\t\t\t\t\tset groupCard to closest <.group-item/>\n\t\t\t\t\t\t\tif groupCard\n\t\t\t\t\t\t\t\tset locationsArea to groupCard.querySelector('.locations-area')\n\t\t\t\t\t\t\t\tif locationsArea\n\t\t\t\t\t\t\t\t\tset locationsArea's @data-nav-mode to my @data-index\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t-- For root group\n\t\t\t\t\t\t\t\tset rootLocationsArea to document.querySelector('#root-container .locations-area')\n\t\t\t\t\t\t\t\tif rootLocationsArea\n\t\t\t\t\t\t\t\t\tset rootLocationsArea's @data-nav-mode to my @data-index\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tjs saveGameStructure() end\"><div class=\"flex items-center gap-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			switch mode {
+			case models.NavigationDisplayMap:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map\"><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"></path><path d=\"M15 5.764v15\"></path><path d=\"M9 3.236v15\"></path></svg> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case models.NavigationDisplayMapAndNames:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-map-pin-house\"><path d=\"M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z\"></path><path d=\"M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2\"></path><path d=\"M18 22v-3\"></path><circle cx=\"10\" cy=\"10\" r=\"3\"></circle></svg> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case models.NavigationDisplayNames:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list\"><path d=\"M3 12h.01\"></path><path d=\"M3 18h.01\"></path><path d=\"M3 6h.01\"></path><path d=\"M8 12h13\"></path><path d=\"M8 18h13\"></path><path d=\"M8 6h13\"></path></svg> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case models.NavigationDisplayClues:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case models.NavigationDisplayCustom:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-blocks\"><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"></rect><path d=\"M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3\"></path></svg> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span class=\"font-medium\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var57 string
+			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(mode.String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 773, Col: 48}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</span></div><span class=\"text-xs text-base-content/60\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var58 string
+			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(mode.Description())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 775, Col: 69}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</span></button></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1179,12 +1253,12 @@ func autoAdvancePicker(nav models.NavigationDisplayMode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var57 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var57 == nil {
-			templ_7745c5c3_Var57 = templ.NopComponent
+		templ_7745c5c3_Var59 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var59 == nil {
+			templ_7745c5c3_Var59 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<div class=\"dropdown dropdown-bottom dropdown-center nav-display-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Auto Advance\"><div class=\"nav-display contents\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" class=\"lucide lucide-circle-fading-arrow-up-icon lucide-circle-fading-arrow-right w-4 h-4\" viewBox=\"0 0 24 24\"><path d=\"M12 2a10 10 0 0 1 7.38 16.75M12 16l4-4-4-4M8 12h8M2.5 8.875a10 10 0 0 0-.5 3M2.83 16a10 10 0 0 0 2.43 3.4M4.636 5.235a10 10 0 0 1 .891-.857M8.644 21.42a10 10 0 0 0 7.631-.38\"></path></svg> Auto Advance</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow\"></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<div class=\"dropdown dropdown-bottom dropdown-center nav-display-dropdown\"><a tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-ghost tooltip\" data-tip=\"Auto Advance\"><div class=\"nav-display contents\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" class=\"lucide lucide-circle-fading-arrow-up-icon lucide-circle-fading-arrow-right w-4 h-4\" viewBox=\"0 0 24 24\"><path d=\"M12 2a10 10 0 0 1 7.38 16.75M12 16l4-4-4-4M8 12h8M2.5 8.875a10 10 0 0 0-.5 3M2.83 16a10 10 0 0 0 2.43 3.4M4.636 5.235a10 10 0 0 1 .891-.857M8.644 21.42a10 10 0 0 0 7.631-.38\"></path></svg> Auto Advance</div><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4\"><path d=\"m6 9 6 6 6-6\"></path></svg></a><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow\"></ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1242,57 +1316,57 @@ func picker(colour string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var58 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var58 == nil {
-			templ_7745c5c3_Var58 = templ.NopComponent
+		templ_7745c5c3_Var60 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var60 == nil {
+			templ_7745c5c3_Var60 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<div class=\"dropdown dropdown-bottom\"><div tabindex=\"0\" role=\"button\" class=\"w-4 h-4 rounded-full bg-primary cursor-pointer tooltip\" data-tip=\"Group color\"></div><ul tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-48\"><div class=\"hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content t\"></div><div class=\"menu menu-horizontal\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<div class=\"dropdown dropdown-bottom\"><div tabindex=\"0\" role=\"button\" class=\"w-4 h-4 rounded-full bg-primary cursor-pointer tooltip\" data-tip=\"Group color\"></div><ul tabindex=\"0\" class=\"dropdown-content bg-base-200 rounded-box z-[1] p-2 shadow w-48\"><div class=\"hidden bg-primary bg-secondary bg-accent bg-success bg-info bg-warning bg-error bg-base-content t\"></div><div class=\"menu menu-horizontal\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, color := range colours() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<li><a data-group-color=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var59 string
-			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(color)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 787, Col: 31}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\" class=\"cursor-pointer color-picker-option\" _=\"on click\n\t\t\t\t\t\t\t\tset (closest <.card />)'s @data-group-color to my @data-group-color\n\t\t\t\t\t\t\t\tjs saveGameStructure() end\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var60 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var60...)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<li><a data-group-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var61 string
-			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var60).String())
+			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(color)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 839, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\"></div></a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "\" class=\"cursor-pointer color-picker-option\" _=\"on click\n\t\t\t\t\t\t\t\tset (closest <.card />)'s @data-group-color to my @data-group-color\n\t\t\t\t\t\t\t\tjs saveGameStructure() end\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var62 = []any{fmt.Sprintf("w-4 h-4 rounded-full bg-%s", color)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var62...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var63 string
+			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var62).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/location_groups.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\"></div></a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</div></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</div></ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1316,12 +1390,12 @@ func sortableScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var62 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var62 == nil {
-			templ_7745c5c3_Var62 = templ.NopComponent
+		templ_7745c5c3_Var64 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var64 == nil {
+			templ_7745c5c3_Var64 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<script>\n\t\t// UUID generation function (v4)\n\t\tfunction generateUUID() {\n\t\t\treturn 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n\t\t\t\tconst r = Math.random() * 16 | 0;\n\t\t\t\tconst v = c === 'x' ? r : (r & 0x3 | 0x8);\n\t\t\t\treturn v.toString(16);\n\t\t\t});\n\t\t}\n\n\t\t// Helper: Update completion button UI\n\t\tfunction updateCompletionButton(dropdown, type, value) {\n\t\t\tconst buttonText = dropdown.querySelector('.completion-button-text');\n\t\t\tconst buttonIcon = dropdown.querySelector('.completion-button-icon');\n\t\t\tconst output = dropdown.querySelector('output');\n\n\t\t\tif (!buttonText || !buttonIcon || !output) return;\n\n\t\t\tif (type === 'all') {\n\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;\n\t\t\t\tbuttonText.textContent = 'Complete All';\n\t\t\t\toutput.textContent = 'All';\n\t\t\t} else {\n\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`;\n\t\t\t\tbuttonText.textContent = `Complete ${value}`;\n\t\t\t\toutput.textContent = value;\n\t\t\t}\n\t\t}\n\n\t\t// Helper: Handle auto-advance checkbox change\n\t\tfunction handleAutoAdvanceChange(checkbox) {\n\t\t\tconst dropdown = checkbox.closest('.completion-dropdown');\n\t\t\tif (!dropdown) return;\n\n\t\t\tconst slider = dropdown.querySelector('.completion-slider');\n\t\t\tif (!slider) return;\n\n\t\t\tconst isAtMax = slider.value == slider.max;\n\n\t\t\tif (isAtMax) {\n\t\t\t\t// Slider is at max - update mode based on checkbox state\n\t\t\t\tif (checkbox.checked) {\n\t\t\t\t\t// Auto-advance ON → 'Complete All' mode (double tick, disabled checkbox)\n\t\t\t\t\tdropdown.dataset.completionType = 'all';\n\t\t\t\t\tupdateCompletionButton(dropdown, 'all', null);\n\t\t\t\t\tcheckbox.disabled = true;\n\t\t\t\t} else {\n\t\t\t\t\t// Auto-advance OFF → 'Complete N of N' mode (single tick, enabled checkbox)\n\t\t\t\t\tdropdown.dataset.completionType = 'minimum';\n\t\t\t\t\tupdateCompletionButton(dropdown, 'minimum', slider.value);\n\t\t\t\t\tcheckbox.disabled = false;\n\t\t\t\t}\n\t\t\t}\n\t\t\t// If slider is not at max, checkbox state doesn't affect the display\n\t\t\t// (it's always \"Complete N\" with single tick)\n\n\t\t\twindow.debouncedSave();\n\t\t}\n\n\t\t// Encode game structure from DOM\n\t\tfunction encodeGameStructure() {\n\t\t\tconst rootContainer = document.getElementById('root-container');\n\t\t\tif (!rootContainer) {\n\t\t\t\tconsole.error('Root container not found');\n\t\t\t\treturn null;\n\t\t\t}\n\n\t\t\t// Find root group area and unassigned locations area\n\t\t\tconst rootGroupsArea = rootContainer.querySelector('.groups-area');\n\t\t\tconst rootLocationsArea = rootContainer.querySelector('.locations-area:not([data-unassigned])');\n\t\t\tconst unassignedLocationsArea = rootContainer.querySelector('.locations-area[data-unassigned]');\n\n\t\t\tconst rootGroupID = rootGroupsArea?.dataset.groupId || generateUUID();\n\n\t\t\tconst structure = {\n\t\t\t\tid: rootGroupID,\n\t\t\t\tname: '',\n\t\t\t\tcolor: '',\n\t\t\t\trouting: 1, // RouteStrategyFreeRoam\n\t\t\t\tnavigation: 4, // NavigationDisplayCustom\n\t\t\t\tcompletion_type: 'all',\n\t\t\t\tminimum_required: 0,\n\t\t\t\tmax_next: 0,\n\t\t\t\tauto_advance: false,\n\t\t\t\tis_root: true,\n\t\t\t\tlocation_ids: [],\n\t\t\t\tsub_groups: []\n\t\t\t};\n\n\t\t\t// Collect root-level locations from unassigned area\n\t\t\t// Unassigned locations ARE the root's location_ids\n\t\t\tif (unassignedLocationsArea) {\n\t\t\t\tconst locationItems = unassignedLocationsArea.querySelectorAll(':scope > .location-item');\n\t\t\t\tlocationItems.forEach(item => {\n\t\t\t\t\tconst locationId = item.dataset.locationId;\n\t\t\t\t\tif (locationId) {\n\t\t\t\t\t\tstructure.location_ids.push(locationId);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Collect sub-groups\n\t\t\tif (rootGroupsArea) {\n\t\t\t\tconst groupItems = rootGroupsArea.querySelectorAll(':scope > .group-item');\n\t\t\t\tgroupItems.forEach(groupCard => {\n\t\t\t\t\tconst subGroup = encodeGroup(groupCard);\n\t\t\t\t\tif (subGroup) {\n\t\t\t\t\t\tstructure.sub_groups.push(subGroup);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\treturn structure;\n\t\t}\n\n\t\t// Encode a single group (non-root)\n\t\tfunction encodeGroup(groupCard) {\n\t\t\tconst groupId = groupCard.dataset.groupId || generateUUID();\n\t\t\tconst groupColor = groupCard.dataset.groupColor || 'primary';\n\t\t\tconst nameInput = groupCard.querySelector('input[type=\"text\"]');\n\t\t\tconst name = nameInput ? nameInput.value : 'Unnamed Group';\n\n\t\t\t// Get routing strategy - map display name to integer\n\t\t\tconst routeStrat = groupCard.querySelector('.route-strat');\n\t\t\tlet routing = 1; // default: RouteStrategyFreeRoam\n\t\t\tlet maxNext = 0; // default: 0 (unlimited for non-random routes)\n\t\t\tif (routeStrat) {\n\t\t\t\tconst text = routeStrat.textContent?.trim() || '';\n\t\t\t\t// Map string to integer values matching models.RouteStrategy\n\t\t\t\tif (text.includes('Guided Path')) {\n\t\t\t\t\trouting = 2; // RouteStrategyOrdered\n\t\t\t\t} else if (text.includes('Secret')) {\n\t\t\t\t\trouting = 3; // RouteStrategySecret\n\t\t\t\t} else if (text.includes('Random')) {\n\t\t\t\t\trouting = 0; // RouteStrategyRandom\n\t\t\t\t\t// Get maxNext from dropdown data attribute\n\t\t\t\t\tconst dropdown = groupCard.querySelector('.route-dropdown');\n\t\t\t\t\tconst maxNextValue = dropdown?.dataset?.maxNext;\n\t\t\t\t\tmaxNext = maxNextValue ? parseInt(maxNextValue) || 3 : 3;\n\t\t\t\t} else {\n\t\t\t\t\trouting = 1; // RouteStrategyFreeRoam (Open Exploration)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get navigation display mode - map display name to integer\n\t\t\tconst navDisplay = groupCard.querySelector('.nav-display');\n\t\t\tlet navigation = 4; // default: NavigationDisplayCustom\n\t\t\tif (navDisplay) {\n\t\t\t\tconst text = navDisplay.textContent?.trim() || '';\n\t\t\t\t// Map string to integer values matching models.NavigationDisplayMode\n\t\t\t\tif (text.includes('Map Only')) {\n\t\t\t\t\tnavigation = 0; // NavigationDisplayMap\n\t\t\t\t} else if (text.includes('Labelled Map')) {\n\t\t\t\t\tnavigation = 1; // NavigationDisplayMapAndNames\n\t\t\t\t} else if (text.includes('Location List')) {\n\t\t\t\t\tnavigation = 2; // NavigationDisplayNames\n\t\t\t\t} else if (text.includes('Clue-Based')) {\n\t\t\t\t\tnavigation = 3; // NavigationDisplayClues\n\t\t\t\t} else {\n\t\t\t\t\tnavigation = 4; // NavigationDisplayCustom (Custom Clues)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get completion requirements\n\t\t\tconst completionDropdown = groupCard.querySelector('.completion-dropdown');\n\t\t\tconst completionSlider = groupCard.querySelector('.completion-slider');\n\n\t\t\t// Use the data attribute to preserve the actual completion type\n\t\t\t// This prevents inferring 'all' when slider is at max but user set 'minimum'\n\t\t\tlet completionType = completionDropdown?.dataset.completionType || 'all';\n\t\t\tlet minimumRequired = 0;\n\n\t\t\tif (completionSlider) {\n\t\t\t\tconst value = parseInt(completionSlider.value);\n\t\t\t\tconst max = parseInt(completionSlider.max);\n\n\t\t\t\t// Validate parsed values\n\t\t\t\tif (isNaN(value) || value < 1) {\n\t\t\t\t\tconsole.error('Invalid completion slider value:', completionSlider.value);\n\t\t\t\t\tminimumRequired = 1; // Safe default\n\t\t\t\t} else if (isNaN(max) || max < 1) {\n\t\t\t\t\tconsole.error('Invalid completion slider max:', completionSlider.max);\n\t\t\t\t\tminimumRequired = 1; // Safe default\n\t\t\t\t} else {\n\t\t\t\t\t// Ensure value doesn't exceed max (locations count)\n\t\t\t\t\tconst validValue = Math.min(value, max);\n\n\t\t\t\t\t// Only set minimumRequired if completion type is 'minimum'\n\t\t\t\t\tif (completionType === 'minimum') {\n\t\t\t\t\t\tminimumRequired = validValue;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get auto-advance setting\n\t\t\tconst autoAdvanceCheckbox = groupCard.querySelector('.auto-advance-checkbox');\n\t\t\tconst autoAdvance = autoAdvanceCheckbox?.checked ?? (completionType === 'all');\n\n\t\t\tconst group = {\n\t\t\t\tid: groupId,\n\t\t\t\tname: name,\n\t\t\t\tcolor: groupColor,\n\t\t\t\trouting: routing,\n\t\t\t\tnavigation: navigation,\n\t\t\t\tcompletion_type: completionType,\n\t\t\t\tminimum_required: minimumRequired,\n\t\t\t\tmax_next: maxNext,\n\t\t\t\tauto_advance: autoAdvance,\n\t\t\t\tis_root: false,\n\t\t\t\tlocation_ids: [],\n\t\t\t\tsub_groups: []\n\t\t\t};\n\n\t\t\t// Collect locations in this group\n\t\t\tconst locationsArea = groupCard.querySelector('.locations-area');\n\t\t\tif (locationsArea) {\n\t\t\t\tconst locationItems = locationsArea.querySelectorAll(':scope > .location-item');\n\t\t\t\tlocationItems.forEach(item => {\n\t\t\t\t\tconst locationId = item.dataset.locationId;\n\t\t\t\t\tif (locationId) {\n\t\t\t\t\t\tgroup.location_ids.push(locationId);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Edge case: If group has no locations, ensure minimumRequired is 0\n\t\t\tif (group.location_ids.length === 0) {\n\t\t\t\tgroup.minimum_required = 0;\n\t\t\t\tgroup.completion_type = 'all'; // Default for empty groups\n\t\t\t}\n\n\t\t\t// Recursively collect sub-groups (if any - though current UI doesn't support nesting)\n\t\t\tconst subGroupsArea = groupCard.querySelector('.groups-area');\n\t\t\tif (subGroupsArea) {\n\t\t\t\tconst subGroupItems = subGroupsArea.querySelectorAll(':scope > .group-item');\n\t\t\t\tsubGroupItems.forEach(subGroupCard => {\n\t\t\t\t\tconst subGroup = encodeGroup(subGroupCard);\n\t\t\t\t\tif (subGroup) {\n\t\t\t\t\t\tgroup.sub_groups.push(subGroup);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\treturn group;\n\t\t}\n\n\t\t// Update completion count slider for a group\n\t\tfunction updateCompletionSlider(groupCard) {\n\t\t\tconst locationsArea = groupCard.querySelector('.locations-area');\n\t\t\tconst slider = groupCard.querySelector('.completion-slider');\n\t\t\tconst output = groupCard.querySelector('.completion-dropdown output');\n\t\t\tconst buttonText = groupCard.querySelector('.completion-button-text');\n\t\t\tconst buttonIcon = groupCard.querySelector('.completion-button-icon');\n\n\t\t\tif (!locationsArea || !slider) return;\n\n\t\t\tconst locationCount = locationsArea.querySelectorAll('.location-item').length;\n\t\t\tconst oldMax = parseInt(slider.max);\n\t\t\tconst currentValue = parseInt(slider.value);\n\n\t\t\t// Update max value\n\t\t\tslider.max = locationCount;\n\n\t\t\t// If current value equals or exceeds new max, set to max (All)\n\t\t\tif (currentValue >= locationCount || currentValue === oldMax) {\n\t\t\t\tslider.value = locationCount;\n\t\t\t\tif (output) output.textContent = 'All';\n\t\t\t\tif (buttonText) buttonText.textContent = 'Complete All';\n\t\t\t\tif (buttonIcon) {\n\t\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// Save game structure to server using htmx\n\t\tfunction saveGameStructure() {\n\t\t\tconst structure = encodeGameStructure();\n\t\t\tif (!structure) {\n\t\t\t\tconsole.error('Failed to encode game structure');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Validate structure has valid data\n\t\t\tif (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0)) {\n\t\t\t\tconsole.warn('Structure has no groups or locations, skipping save');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Set the structure in the hidden input and submit via htmx\n\t\t\tconst structureInput = document.getElementById('structure-input');\n\t\t\tconst form = document.getElementById('structure-form');\n\n\t\t\tif (!structureInput || !form) {\n\t\t\t\tconsole.error('Form elements not found');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tstructureInput.value = JSON.stringify(structure);\n\t\t\thtmx.trigger(form, 'submit');\n\t\t}\n\n\t\t// Initialize all sortable areas and UI controls\n\t\tfunction initializeLocationGroups() {\n\t\t\t// Initialize sortable for all locations-area elements\n\t\t\tdocument.querySelectorAll('.locations-area').forEach(function(el) {\n\t\t\t\t// Skip if already initialized\n\t\t\t\tif (el.sortableInstance) return;\n\n\t\t\t\tel.sortableInstance = new Sortable(el, {\n\t\t\t\t\tgroup: 'locations',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.location-item',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tfilter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown',\n\t\t\t\t\tpreventOnFilter: false,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t// Update completion sliders for both source and destination groups\n\t\t\t\t\t\tconst fromGroup = evt.from.closest('.group-item');\n\t\t\t\t\t\tconst toGroup = evt.to.closest('.group-item');\n\t\t\t\t\t\tif (fromGroup) updateCompletionSlider(fromGroup);\n\t\t\t\t\t\tif (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);\n\n\t\t\t\t\t\tsaveGameStructure();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize sortable for all groups-area elements\n\t\t\tdocument.querySelectorAll('.groups-area').forEach(function(el) {\n\t\t\t\t// Skip if already initialized\n\t\t\t\tif (el.sortableInstance) return;\n\n\t\t\t\tel.sortableInstance = new Sortable(el, {\n\t\t\t\t\tgroup: 'groups',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.group-item',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tfilter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area',\n\t\t\t\t\tpreventOnFilter: false,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\tsaveGameStructure();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize route strategy highlighting and completion controls\n\t\t\tdocument.querySelectorAll('.route-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst currentText = dropdown.querySelector('.route-strat').textContent.trim();\n\t\t\t\tconst options = dropdown.querySelectorAll('.route-option');\n\t\t\t\tconst groupItem = dropdown.closest('.group-item');\n\t\t\t\tconst completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;\n\t\t\t\tconst navDropdown = groupItem ? groupItem.querySelector('.nav-display-dropdown') : null;\n\n\t\t\t\t// Initialize MaxNext slider for Random routing (mode 0)\n\t\t\t\tif (currentText.includes('Random')) {\n\t\t\t\t\tconst maxNext = parseInt(dropdown.dataset.maxNext) || 3;\n\t\t\t\t\tconst slider = dropdown.querySelector('.max-next-slider');\n\t\t\t\t\tconst output = dropdown.querySelector('.max-next-slider + output');\n\t\t\t\t\tif (slider) {\n\t\t\t\t\t\tslider.value = maxNext;\n\t\t\t\t\t}\n\t\t\t\t\tif (output) {\n\t\t\t\t\t\toutput.textContent = maxNext;\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Find and highlight the matching option\n\t\t\t\t// Strategy: compare the option's text content with what's currently displayed\n\t\t\t\tlet selectedOption = null;\n\t\t\t\toptions.forEach(function(option) {\n\t\t\t\t\tconst optionModeText = option.querySelector('.font-medium').textContent.trim();\n\t\t\t\t\t// Check if the current display contains the option's mode name\n\t\t\t\t\t// This handles both exact matches and partial matches (like \"Random 3\" contains part of \"Randomised Route\")\n\t\t\t\t\tif (currentText.includes(optionModeText) || optionModeText.includes(currentText.split(' ')[0])) {\n\t\t\t\t\t\toption.classList.add('bg-base-300');\n\t\t\t\t\t\tselectedOption = option;\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Disable completion dropdown for \"Guided Path\" and \"Secret\" modes\n\t\t\t\tif (selectedOption && (selectedOption.dataset.mode === 'Guided Path' || selectedOption.dataset.mode === 'Secret') && completionDropdown) {\n\t\t\t\t\tconst completionButton = completionDropdown.querySelector('a[role=button]');\n\t\t\t\t\tconst completionContent = completionDropdown.querySelector('.dropdown-content');\n\t\t\t\t\tconst completionMsg = groupItem.querySelector('.completion-disabled-msg');\n\n\t\t\t\t\tif (completionButton) {\n\t\t\t\t\t\tcompletionButton.classList.add('btn-disabled');\n\t\t\t\t\t}\n\t\t\t\t\tif (completionContent) {\n\t\t\t\t\t\tcompletionContent.classList.add('hidden');\n\t\t\t\t\t}\n\t\t\t\t\tif (completionMsg) {\n\t\t\t\t\t\tcompletionMsg.classList.remove('hidden');\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Disable navigation dropdown for \"Secret\" mode only\n\t\t\t\tif (selectedOption && selectedOption.dataset.mode === 'Secret' && navDropdown) {\n\t\t\t\t\tconst navButton = navDropdown.querySelector('a[role=button]');\n\t\t\t\t\tconst navContent = navDropdown.querySelector('.dropdown-content');\n\n\t\t\t\t\tif (navButton) {\n\t\t\t\t\t\tnavButton.classList.add('btn-disabled');\n\t\t\t\t\t}\n\t\t\t\t\tif (navContent) {\n\t\t\t\t\t\tnavContent.classList.add('hidden');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Initialize navigation display highlighting\n\t\t\tdocument.querySelectorAll('.nav-display-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst currentText = dropdown.querySelector('.nav-display').textContent.trim();\n\t\t\t\tconst options = dropdown.querySelectorAll('.nav-display-option');\n\n\t\t\t\toptions.forEach(function(option) {\n\t\t\t\t\tif (option.textContent.trim().includes(currentText)) {\n\t\t\t\t\t\toption.classList.add('bg-base-300');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\t// Debounce function to delay execution\n\t\tfunction debounce(func, delay) {\n\t\t\tlet timeout;\n\t\t\treturn function(...args) {\n\t\t\t\tclearTimeout(timeout);\n\t\t\t\ttimeout = setTimeout(() => func.apply(this, args), delay);\n\t\t\t};\n\t\t}\n\n\t\t// Create debounced version of saveGameStructure (500ms delay)\n\t\t// Use window to avoid redeclaration errors with HTMX content swaps\n\t\t// Use defensive assignment pattern to prevent race conditions\n\t\twindow.debouncedSave = window.debouncedSave || debounce(saveGameStructure, 500);\n\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tinitializeLocationGroups();\n\n\t\t\t// Add event listeners for group name changes (with debounce)\n\t\t\tdocument.addEventListener('input', function(e) {\n\t\t\t\tif (e.target.matches('.group-item input[type=\"text\"]')) {\n\t\t\t\t\twindow.debouncedSave();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Add event listeners for route strategy changes\n\t\t\tdocument.addEventListener('click', function(e) {\n\t\t\t\tif (e.target.matches('.route-option')) {\n\t\t\t\t\tsaveGameStructure();\n\t\t\t\t}\n\t\t\t});\n\t\t});\n\n\t\t// Re-initialize after htmx content swap\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Only reinitialize if the swapped content contains location groups\n\t\t\tif (evt.detail.target.querySelector('.locations-area') || evt.detail.target.querySelector('.groups-area')) {\n\t\t\t\tinitializeLocationGroups();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation (htmx history restore)\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instances since they're stale after history restore\n\t\t\tdocument.querySelectorAll('.locations-area, .groups-area').forEach(function(el) {\n\t\t\t\tif (el.sortableInstance) {\n\t\t\t\t\tel.sortableInstance.destroy();\n\t\t\t\t\tel.sortableInstance = null;\n\t\t\t\t}\n\t\t\t});\n\t\t\tinitializeLocationGroups();\n\t\t});\n\t</script><style>\n\t\t.sortable-ghost {\n\t\t\topacity: 0.4;\n\t\t\tbackground: hsl(var(--b2));\n\t\t}\n\t\t.sortable-chosen {\n\t\t\topacity: 0.8;\n\t\t}\n\t\t.sortable-drag {\n\t\t\topacity: 1;\n\t\t}\n\t\t/* Show drop zone hint when dragging */\n\t\t.sortable-drag ~ .locations-area:empty,\n\t\t.sortable-drag ~ .groups-area:empty,\n\t\t.locations-area:empty.sortable-drag-over,\n\t\t.groups-area:empty.sortable-drag-over {\n\t\t\tborder-color: hsl(var(--p) / 0.5);\n\t\t\tbackground: hsl(var(--p) / 0.05);\n\t\t}\n\n\t\t/* Location indicator visibility rules based on parent group navigation mode */\n\t\t/* Map marker: visible for Map Only (0) and Labelled Map (1) */\n\t\t.locations-area .location-marker-icon {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.locations-area[data-nav-mode=\"0\"] .location-marker-icon,\n\t\t.locations-area[data-nav-mode=\"1\"] .location-marker-icon {\n\t\t\tdisplay: inline-flex;\n\t\t}\n\n\t\t/* Clues: visible only for Custom Clues (4) */\n\t\t.locations-area .location-clues-icon {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.locations-area[data-nav-mode=\"4\"] .location-clues-icon {\n\t\t\tdisplay: inline-flex;\n\t\t}\n\t</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<script>\n\t\t// UUID generation function (v4)\n\t\tfunction generateUUID() {\n\t\t\treturn 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n\t\t\t\tconst r = Math.random() * 16 | 0;\n\t\t\t\tconst v = c === 'x' ? r : (r & 0x3 | 0x8);\n\t\t\t\treturn v.toString(16);\n\t\t\t});\n\t\t}\n\n\t\t// Helper: Update completion button UI\n\t\tfunction updateCompletionButton(dropdown, type, value) {\n\t\t\tconst buttonText = dropdown.querySelector('.completion-button-text');\n\t\t\tconst buttonIcon = dropdown.querySelector('.completion-button-icon');\n\t\t\tconst output = dropdown.querySelector('output');\n\n\t\t\tif (!buttonText || !buttonIcon || !output) return;\n\n\t\t\tif (type === 'all') {\n\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;\n\t\t\t\tbuttonText.textContent = 'Complete All';\n\t\t\t\toutput.textContent = 'All';\n\t\t\t} else {\n\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-icon lucide-check'><path d='M20 6 9 17l-5-5'/></svg>`;\n\t\t\t\tbuttonText.textContent = `Complete ${value}`;\n\t\t\t\toutput.textContent = value;\n\t\t\t}\n\t\t}\n\n\t\t// Helper: Handle auto-advance checkbox change\n\t\tfunction handleAutoAdvanceChange(checkbox) {\n\t\t\tconst dropdown = checkbox.closest('.completion-dropdown');\n\t\t\tif (!dropdown) return;\n\n\t\t\tconst slider = dropdown.querySelector('.completion-slider');\n\t\t\tif (!slider) return;\n\n\t\t\tconst isAtMax = slider.value == slider.max;\n\n\t\t\tif (isAtMax) {\n\t\t\t\t// Slider is at max - update mode based on checkbox state\n\t\t\t\tif (checkbox.checked) {\n\t\t\t\t\t// Auto-advance ON → 'Complete All' mode (double tick, disabled checkbox)\n\t\t\t\t\tdropdown.dataset.completionType = 'all';\n\t\t\t\t\tupdateCompletionButton(dropdown, 'all', null);\n\t\t\t\t\tcheckbox.disabled = true;\n\t\t\t\t} else {\n\t\t\t\t\t// Auto-advance OFF → 'Complete N of N' mode (single tick, enabled checkbox)\n\t\t\t\t\tdropdown.dataset.completionType = 'minimum';\n\t\t\t\t\tupdateCompletionButton(dropdown, 'minimum', slider.value);\n\t\t\t\t\tcheckbox.disabled = false;\n\t\t\t\t}\n\t\t\t}\n\t\t\t// If slider is not at max, checkbox state doesn't affect the display\n\t\t\t// (it's always \"Complete N\" with single tick)\n\n\t\t\twindow.debouncedSave();\n\t\t}\n\n\t\t// Encode game structure from DOM\n\t\tfunction encodeGameStructure() {\n\t\t\tconst rootContainer = document.getElementById('root-container');\n\t\t\tif (!rootContainer) {\n\t\t\t\tconsole.error('Root container not found');\n\t\t\t\treturn null;\n\t\t\t}\n\n\t\t\t// Find root group area and unassigned locations area\n\t\t\tconst rootGroupsArea = rootContainer.querySelector('.groups-area');\n\t\t\tconst rootLocationsArea = rootContainer.querySelector('.locations-area:not([data-unassigned])');\n\t\t\tconst unassignedLocationsArea = rootContainer.querySelector('.locations-area[data-unassigned]');\n\n\t\t\tconst rootGroupID = rootGroupsArea?.dataset.groupId || generateUUID();\n\n\t\t\tconst structure = {\n\t\t\t\tid: rootGroupID,\n\t\t\t\tname: '',\n\t\t\t\tcolor: '',\n\t\t\t\trouting: 1, // RouteStrategyFreeRoam\n\t\t\t\tnavigation: 4, // NavigationDisplayCustom\n\t\t\t\tcompletion_type: 'all',\n\t\t\t\tminimum_required: 0,\n\t\t\t\tmax_next: 0,\n\t\t\t\tauto_advance: false,\n\t\t\t\tis_root: true,\n\t\t\t\tlocation_ids: [],\n\t\t\t\tsub_groups: []\n\t\t\t};\n\n\t\t\t// Collect root-level locations from unassigned area\n\t\t\t// Unassigned locations ARE the root's location_ids\n\t\t\tif (unassignedLocationsArea) {\n\t\t\t\tconst locationItems = unassignedLocationsArea.querySelectorAll(':scope > .location-item');\n\t\t\t\tlocationItems.forEach(item => {\n\t\t\t\t\tconst locationId = item.dataset.locationId;\n\t\t\t\t\tif (locationId) {\n\t\t\t\t\t\tstructure.location_ids.push(locationId);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Collect sub-groups\n\t\t\tif (rootGroupsArea) {\n\t\t\t\tconst groupItems = rootGroupsArea.querySelectorAll(':scope > .group-item');\n\t\t\t\tgroupItems.forEach(groupCard => {\n\t\t\t\t\tconst subGroup = encodeGroup(groupCard);\n\t\t\t\t\tif (subGroup) {\n\t\t\t\t\t\tstructure.sub_groups.push(subGroup);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\treturn structure;\n\t\t}\n\n\t\t// Encode a single group (non-root)\n\t\tfunction encodeGroup(groupCard) {\n\t\t\tconst groupId = groupCard.dataset.groupId || generateUUID();\n\t\t\tconst groupColor = groupCard.dataset.groupColor || 'primary';\n\t\t\tconst nameInput = groupCard.querySelector('input[type=\"text\"]');\n\t\t\tconst name = nameInput ? nameInput.value : 'Unnamed Group';\n\n\t\t\t// Get routing strategy - map display name to integer\n\t\t\tconst routeStrat = groupCard.querySelector('.route-strat');\n\t\t\tlet routing = 1; // default: RouteStrategyFreeRoam\n\t\t\tlet maxNext = 0; // default: 0 (unlimited for non-random routes)\n\t\t\tif (routeStrat) {\n\t\t\t\tconst text = routeStrat.textContent?.trim() || '';\n\t\t\t\t// Map string to integer values matching models.RouteStrategy\n\t\t\t\tif (text.includes('Guided Path')) {\n\t\t\t\t\trouting = 2; // RouteStrategyOrdered\n\t\t\t\t} else if (text.includes('Secret')) {\n\t\t\t\t\trouting = 3; // RouteStrategySecret\n\t\t\t\t} else if (text.includes('Random')) {\n\t\t\t\t\trouting = 0; // RouteStrategyRandom\n\t\t\t\t\t// Get maxNext from dropdown data attribute\n\t\t\t\t\tconst dropdown = groupCard.querySelector('.route-dropdown');\n\t\t\t\t\tconst maxNextValue = dropdown?.dataset?.maxNext;\n\t\t\t\t\tmaxNext = maxNextValue ? parseInt(maxNextValue) || 3 : 3;\n\t\t\t\t} else {\n\t\t\t\t\trouting = 1; // RouteStrategyFreeRoam (Open Exploration)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get navigation display mode - map display name to integer\n\t\t\tconst navDisplay = groupCard.querySelector('.nav-display');\n\t\t\tlet navigation = 4; // default: NavigationDisplayCustom\n\t\t\tif (navDisplay) {\n\t\t\t\tconst text = navDisplay.textContent?.trim() || '';\n\t\t\t\t// Map string to integer values matching models.NavigationDisplayMode\n\t\t\t\tif (text.includes('Map Only')) {\n\t\t\t\t\tnavigation = 0; // NavigationDisplayMap\n\t\t\t\t} else if (text.includes('Labelled Map')) {\n\t\t\t\t\tnavigation = 1; // NavigationDisplayMapAndNames\n\t\t\t\t} else if (text.includes('Location List')) {\n\t\t\t\t\tnavigation = 2; // NavigationDisplayNames\n\t\t\t\t} else if (text.includes('Clue-Based')) {\n\t\t\t\t\tnavigation = 3; // NavigationDisplayClues\n\t\t\t\t} else {\n\t\t\t\t\tnavigation = 4; // NavigationDisplayCustom (Custom Clues)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get completion requirements\n\t\t\tconst completionDropdown = groupCard.querySelector('.completion-dropdown');\n\t\t\tconst completionSlider = groupCard.querySelector('.completion-slider');\n\n\t\t\t// Use the data attribute to preserve the actual completion type\n\t\t\t// This prevents inferring 'all' when slider is at max but user set 'minimum'\n\t\t\tlet completionType = completionDropdown?.dataset.completionType || 'all';\n\t\t\tlet minimumRequired = 0;\n\n\t\t\tif (completionSlider) {\n\t\t\t\tconst value = parseInt(completionSlider.value);\n\t\t\t\tconst max = parseInt(completionSlider.max);\n\n\t\t\t\t// Validate parsed values\n\t\t\t\tif (isNaN(value) || value < 1) {\n\t\t\t\t\tconsole.error('Invalid completion slider value:', completionSlider.value);\n\t\t\t\t\tminimumRequired = 1; // Safe default\n\t\t\t\t} else if (isNaN(max) || max < 1) {\n\t\t\t\t\tconsole.error('Invalid completion slider max:', completionSlider.max);\n\t\t\t\t\tminimumRequired = 1; // Safe default\n\t\t\t\t} else {\n\t\t\t\t\t// Ensure value doesn't exceed max (locations count)\n\t\t\t\t\tconst validValue = Math.min(value, max);\n\n\t\t\t\t\t// Only set minimumRequired if completion type is 'minimum'\n\t\t\t\t\tif (completionType === 'minimum') {\n\t\t\t\t\t\tminimumRequired = validValue;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Get auto-advance setting\n\t\t\tconst autoAdvanceCheckbox = groupCard.querySelector('.auto-advance-checkbox');\n\t\t\tconst autoAdvance = autoAdvanceCheckbox?.checked ?? (completionType === 'all');\n\n\t\t\tconst group = {\n\t\t\t\tid: groupId,\n\t\t\t\tname: name,\n\t\t\t\tcolor: groupColor,\n\t\t\t\trouting: routing,\n\t\t\t\tnavigation: navigation,\n\t\t\t\tcompletion_type: completionType,\n\t\t\t\tminimum_required: minimumRequired,\n\t\t\t\tmax_next: maxNext,\n\t\t\t\tauto_advance: autoAdvance,\n\t\t\t\tis_root: false,\n\t\t\t\tlocation_ids: [],\n\t\t\t\tsub_groups: []\n\t\t\t};\n\n\t\t\t// Collect locations in this group\n\t\t\tconst locationsArea = groupCard.querySelector('.locations-area');\n\t\t\tif (locationsArea) {\n\t\t\t\tconst locationItems = locationsArea.querySelectorAll(':scope > .location-item');\n\t\t\t\tlocationItems.forEach(item => {\n\t\t\t\t\tconst locationId = item.dataset.locationId;\n\t\t\t\t\tif (locationId) {\n\t\t\t\t\t\tgroup.location_ids.push(locationId);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Edge case: If group has no locations, ensure minimumRequired is 0\n\t\t\tif (group.location_ids.length === 0) {\n\t\t\t\tgroup.minimum_required = 0;\n\t\t\t\tgroup.completion_type = 'all'; // Default for empty groups\n\t\t\t}\n\n\t\t\t// Recursively collect sub-groups (if any - though current UI doesn't support nesting)\n\t\t\tconst subGroupsArea = groupCard.querySelector('.groups-area');\n\t\t\tif (subGroupsArea) {\n\t\t\t\tconst subGroupItems = subGroupsArea.querySelectorAll(':scope > .group-item');\n\t\t\t\tsubGroupItems.forEach(subGroupCard => {\n\t\t\t\t\tconst subGroup = encodeGroup(subGroupCard);\n\t\t\t\t\tif (subGroup) {\n\t\t\t\t\t\tgroup.sub_groups.push(subGroup);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\treturn group;\n\t\t}\n\n\t\t// Update completion count slider for a group\n\t\tfunction updateCompletionSlider(groupCard) {\n\t\t\tconst locationsArea = groupCard.querySelector('.locations-area');\n\t\t\tconst slider = groupCard.querySelector('.completion-slider');\n\t\t\tconst output = groupCard.querySelector('.completion-dropdown output');\n\t\t\tconst buttonText = groupCard.querySelector('.completion-button-text');\n\t\t\tconst buttonIcon = groupCard.querySelector('.completion-button-icon');\n\n\t\t\tif (!locationsArea || !slider) return;\n\n\t\t\tconst locationCount = locationsArea.querySelectorAll('.location-item').length;\n\t\t\tconst oldMax = parseInt(slider.max);\n\t\t\tconst currentValue = parseInt(slider.value);\n\n\t\t\t// Update max value\n\t\t\tslider.max = locationCount;\n\n\t\t\t// If current value equals or exceeds new max, set to max (All)\n\t\t\tif (currentValue >= locationCount || currentValue === oldMax) {\n\t\t\t\tslider.value = locationCount;\n\t\t\t\tif (output) output.textContent = 'All';\n\t\t\t\tif (buttonText) buttonText.textContent = 'Complete All';\n\t\t\t\tif (buttonIcon) {\n\t\t\t\t\tbuttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// Save game structure to server using htmx\n\t\tfunction saveGameStructure() {\n\t\t\tconst structure = encodeGameStructure();\n\t\t\tif (!structure) {\n\t\t\t\tconsole.error('Failed to encode game structure');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Validate structure has valid data\n\t\t\tif (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0)) {\n\t\t\t\tconsole.warn('Structure has no groups or locations, skipping save');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Set the structure in the hidden input and submit via htmx\n\t\t\tconst structureInput = document.getElementById('structure-input');\n\t\t\tconst form = document.getElementById('structure-form');\n\n\t\t\tif (!structureInput || !form) {\n\t\t\t\tconsole.error('Form elements not found');\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tstructureInput.value = JSON.stringify(structure);\n\t\t\thtmx.trigger(form, 'submit');\n\t\t}\n\n\t\t// Initialize all sortable areas and UI controls\n\t\tfunction initializeLocationGroups() {\n\t\t\t// Initialize sortable for all locations-area elements\n\t\t\tdocument.querySelectorAll('.locations-area').forEach(function(el) {\n\t\t\t\t// Skip if already initialized\n\t\t\t\tif (el.sortableInstance) return;\n\n\t\t\t\tel.sortableInstance = new Sortable(el, {\n\t\t\t\t\tgroup: 'locations',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.location-item',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tfilter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown',\n\t\t\t\t\tpreventOnFilter: false,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t// Update completion sliders for both source and destination groups\n\t\t\t\t\t\tconst fromGroup = evt.from.closest('.group-item');\n\t\t\t\t\t\tconst toGroup = evt.to.closest('.group-item');\n\t\t\t\t\t\tif (fromGroup) updateCompletionSlider(fromGroup);\n\t\t\t\t\t\tif (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);\n\n\t\t\t\t\t\tsaveGameStructure();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize sortable for all groups-area elements\n\t\t\tdocument.querySelectorAll('.groups-area').forEach(function(el) {\n\t\t\t\t// Skip if already initialized\n\t\t\t\tif (el.sortableInstance) return;\n\n\t\t\t\tel.sortableInstance = new Sortable(el, {\n\t\t\t\t\tgroup: 'groups',\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tdraggable: '.group-item',\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tinvertSwap: true,\n\t\t\t\t\tfilter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area',\n\t\t\t\t\tpreventOnFilter: false,\n\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\tsaveGameStructure();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\t// Initialize route strategy highlighting and completion controls\n\t\t\tdocument.querySelectorAll('.route-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst currentText = dropdown.querySelector('.route-strat').textContent.trim();\n\t\t\t\tconst options = dropdown.querySelectorAll('.route-option');\n\t\t\t\tconst groupItem = dropdown.closest('.group-item');\n\t\t\t\tconst completionDropdown = groupItem ? groupItem.querySelector('.completion-dropdown') : null;\n\t\t\t\tconst navDropdown = groupItem ? groupItem.querySelector('.nav-display-dropdown') : null;\n\n\t\t\t\t// Initialize MaxNext slider for Random routing (mode 0)\n\t\t\t\tif (currentText.includes('Random')) {\n\t\t\t\t\tconst maxNext = parseInt(dropdown.dataset.maxNext) || 3;\n\t\t\t\t\tconst slider = dropdown.querySelector('.max-next-slider');\n\t\t\t\t\tconst output = dropdown.querySelector('.max-next-slider + output');\n\t\t\t\t\tif (slider) {\n\t\t\t\t\t\tslider.value = maxNext;\n\t\t\t\t\t}\n\t\t\t\t\tif (output) {\n\t\t\t\t\t\toutput.textContent = maxNext;\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Find and highlight the matching option\n\t\t\t\t// Strategy: compare the option's text content with what's currently displayed\n\t\t\t\tlet selectedOption = null;\n\t\t\t\toptions.forEach(function(option) {\n\t\t\t\t\tconst optionModeText = option.querySelector('.font-medium').textContent.trim();\n\t\t\t\t\t// Check if the current display contains the option's mode name\n\t\t\t\t\t// This handles both exact matches and partial matches (like \"Random 3\" contains part of \"Randomised Route\")\n\t\t\t\t\tif (currentText.includes(optionModeText) || optionModeText.includes(currentText.split(' ')[0])) {\n\t\t\t\t\t\toption.classList.add('bg-base-300');\n\t\t\t\t\t\tselectedOption = option;\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Disable completion dropdown for \"Guided Path\" and \"Secret\" modes\n\t\t\t\tif (selectedOption && (selectedOption.dataset.mode === 'Guided Path' || selectedOption.dataset.mode === 'Secret') && completionDropdown) {\n\t\t\t\t\tconst completionButton = completionDropdown.querySelector('a[role=button]');\n\t\t\t\t\tconst completionContent = completionDropdown.querySelector('.dropdown-content');\n\t\t\t\t\tconst completionMsg = groupItem.querySelector('.completion-disabled-msg');\n\n\t\t\t\t\tif (completionButton) {\n\t\t\t\t\t\tcompletionButton.classList.add('btn-disabled');\n\t\t\t\t\t}\n\t\t\t\t\tif (completionContent) {\n\t\t\t\t\t\tcompletionContent.classList.add('hidden');\n\t\t\t\t\t}\n\t\t\t\t\tif (completionMsg) {\n\t\t\t\t\t\tcompletionMsg.classList.remove('hidden');\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Disable navigation dropdown for \"Secret\" mode only\n\t\t\t\tif (selectedOption && selectedOption.dataset.mode === 'Secret' && navDropdown) {\n\t\t\t\t\tconst navButton = navDropdown.querySelector('a[role=button]');\n\t\t\t\t\tconst navContent = navDropdown.querySelector('.dropdown-content');\n\n\t\t\t\t\tif (navButton) {\n\t\t\t\t\t\tnavButton.classList.add('btn-disabled');\n\t\t\t\t\t}\n\t\t\t\t\tif (navContent) {\n\t\t\t\t\t\tnavContent.classList.add('hidden');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Initialize navigation display highlighting\n\t\t\tdocument.querySelectorAll('.nav-display-dropdown').forEach(function(dropdown) {\n\t\t\t\tconst currentText = dropdown.querySelector('.nav-display').textContent.trim();\n\t\t\t\tconst options = dropdown.querySelectorAll('.nav-display-option');\n\n\t\t\t\toptions.forEach(function(option) {\n\t\t\t\t\tif (option.textContent.trim().includes(currentText)) {\n\t\t\t\t\t\toption.classList.add('bg-base-300');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\t// Debounce function to delay execution\n\t\tfunction debounce(func, delay) {\n\t\t\tlet timeout;\n\t\t\treturn function(...args) {\n\t\t\t\tclearTimeout(timeout);\n\t\t\t\ttimeout = setTimeout(() => func.apply(this, args), delay);\n\t\t\t};\n\t\t}\n\n\t\t// Create debounced version of saveGameStructure (500ms delay)\n\t\t// Use window to avoid redeclaration errors with HTMX content swaps\n\t\t// Use defensive assignment pattern to prevent race conditions\n\t\twindow.debouncedSave = window.debouncedSave || debounce(saveGameStructure, 500);\n\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tinitializeLocationGroups();\n\n\t\t\t// Add event listeners for group name changes (with debounce)\n\t\t\tdocument.addEventListener('input', function(e) {\n\t\t\t\tif (e.target.matches('.group-item input[type=\"text\"]')) {\n\t\t\t\t\twindow.debouncedSave();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Add event listeners for route strategy changes\n\t\t\tdocument.addEventListener('click', function(e) {\n\t\t\t\tif (e.target.matches('.route-option')) {\n\t\t\t\t\tsaveGameStructure();\n\t\t\t\t}\n\t\t\t});\n\t\t});\n\n\t\t// Re-initialize after htmx content swap\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Only reinitialize if the swapped content contains location groups\n\t\t\tif (evt.detail.target.querySelector('.locations-area') || evt.detail.target.querySelector('.groups-area')) {\n\t\t\t\tinitializeLocationGroups();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation (htmx history restore)\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instances since they're stale after history restore\n\t\t\tdocument.querySelectorAll('.locations-area, .groups-area').forEach(function(el) {\n\t\t\t\tif (el.sortableInstance) {\n\t\t\t\t\tel.sortableInstance.destroy();\n\t\t\t\t\tel.sortableInstance = null;\n\t\t\t\t}\n\t\t\t});\n\t\t\tinitializeLocationGroups();\n\t\t});\n\t</script><style>\n\t\t.sortable-ghost {\n\t\t\topacity: 0.4;\n\t\t\tbackground: hsl(var(--b2));\n\t\t}\n\t\t.sortable-chosen {\n\t\t\topacity: 0.8;\n\t\t}\n\t\t.sortable-drag {\n\t\t\topacity: 1;\n\t\t}\n\t\t/* Show drop zone hint when dragging */\n\t\t.sortable-drag ~ .locations-area:empty,\n\t\t.sortable-drag ~ .groups-area:empty,\n\t\t.locations-area:empty.sortable-drag-over,\n\t\t.groups-area:empty.sortable-drag-over {\n\t\t\tborder-color: hsl(var(--p) / 0.5);\n\t\t\tbackground: hsl(var(--p) / 0.05);\n\t\t}\n\n\t\t/* Location indicator visibility rules based on parent group navigation mode */\n\t\t/* Map marker: visible for Map Only (0) and Labelled Map (1) */\n\t\t.locations-area .location-marker-icon {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.locations-area[data-nav-mode=\"0\"] .location-marker-icon,\n\t\t.locations-area[data-nav-mode=\"1\"] .location-marker-icon {\n\t\t\tdisplay: inline-flex;\n\t\t}\n\n\t\t/* Clues: visible only for Custom Clues (4) */\n\t\t.locations-area .location-clues-icon {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.locations-area[data-nav-mode=\"4\"] .location-clues-icon {\n\t\t\tdisplay: inline-flex;\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
