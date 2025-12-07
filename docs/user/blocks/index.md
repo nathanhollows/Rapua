@@ -39,6 +39,12 @@ These blocks allow you to create interactive elements in your game that require 
 - [Sorting](/docs/user/blocks/sorting)
 - [Team Name](/docs/user/blocks/team-name)
 
-## Planned blocks 
+## System blocks
+
+These blocks are automatically created for specific page types and provide essential functionality. They cannot be deleted but can be moved and customised.
+
+- [Game Status Alert](/docs/user/blocks/game-status-alert) - Lobby page only
+
+## Planned blocks
 
 Many more content blocks are [planned](/docs/developer/roadmap#new-content-blocks) for the future, but these are the ones available now. If you have a suggestion for a new block, please [let us know](/docs/developer/contributing).
