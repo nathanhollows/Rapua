@@ -103,7 +103,7 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 					</label>
 				</form>
 			} else {
-				<p>Team name: <strong>{ teamName }</strong></p>
+				<p>Name: <strong>{ teamName }</strong></p>
 			}
 		</div>
 	</div>
@@ -120,7 +120,7 @@ templ teamNameChangerAdmin(settings models.InstanceSettings, block blocks.TeamNa
 	<form
 		id={ fmt.Sprintf("form-%s", block.GetID()) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.GetID()) }
-		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.GetID(), block.GetID()) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.GetID(), block.GetID()) }
 		hx-swap="none"
 	>
 		if settings.EnablePoints {

@@ -179,7 +179,7 @@ templ gameStatusAlertAdmin(_ models.InstanceSettings, block blocks.GameStatusAle
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
 		<fieldset class="fieldset">

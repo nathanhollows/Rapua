@@ -207,9 +207,9 @@ func imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) templ.Compon
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("change from:(#file-%s) delay:500ms", block.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("change from:#file-%s delay:500ms", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/image.templ`, Line: 43, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/image.templ`, Line: 43, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -302,9 +302,9 @@ func imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) templ.Compon
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("submit, htmx:afterSettle from:(#form-%s-upload), keyup change from:(#form-%s input) delay:500ms", block.ID, block.ID))
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("submit, htmx:afterSettle from:#form-%s-upload, keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/image.templ`, Line: 66, Col: 145}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/image.templ`, Line: 66, Col: 172}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {

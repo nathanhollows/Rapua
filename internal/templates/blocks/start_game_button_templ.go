@@ -353,9 +353,9 @@ func startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButto
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup change from:(#form-%s input) delay:1000ms, change from:(#form-%s select) delay:100ms, change from:(#form-%s input[type=checkbox]) delay:100ms", block.ID, block.ID, block.ID))
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/start_game_button.templ`, Line: 80, Col: 207}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/start_game_button.templ`, Line: 80, Col: 115}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {

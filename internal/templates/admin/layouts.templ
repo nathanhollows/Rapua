@@ -75,6 +75,13 @@ templ header(title string) {
 		<script src="/static/js/app.js"></script>
 		<script src="/static/js/mapbox-satellite-view.js"></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+		if os.Getenv("IS_PROD") != "1" {
+			<script>
+				htmx.on("htmx:syntaxError", (evt) => {
+					console.log("htmx.syntaxError", evt);
+				});
+			</script>
+		}
 	</head>
 }
 

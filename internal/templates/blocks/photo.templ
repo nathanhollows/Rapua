@@ -170,7 +170,7 @@ templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input:not([type=range])) delay:500ms, input from:(#form-%s input[type=range]) delay:500ms", block.ID, block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, input from:#form-%s delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
 		if settings.EnablePoints {
