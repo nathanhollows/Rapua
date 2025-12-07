@@ -32,9 +32,15 @@ func LobbyMiddleware(teamService teamService, next http.Handler) http.Handler {
 		}
 
 		// Redirect to lobby if game is scheduled
+		// Exception: allow block state endpoints needed for lobby page functionality
+		isBlockStateEndpoint := strings.HasPrefix(r.URL.Path, "/blocks/") &&
+			(strings.HasSuffix(r.URL.Path, "/team-name-block") ||
+				strings.HasSuffix(r.URL.Path, "/game-status-alert") ||
+				strings.HasSuffix(r.URL.Path, "/start-game-button"))
+
 		if foundTeam.Instance.GetStatus() != models.Active &&
 			!strings.HasPrefix(r.URL.Path, "/lobby") &&
-			!strings.HasPrefix(r.URL.Path, "lobby") {
+			!isBlockStateEndpoint {
 			http.Redirect(w, r, "/lobby", http.StatusFound)
 			return
 		}

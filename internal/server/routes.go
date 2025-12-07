@@ -125,6 +125,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
 		r.Get("/{id}/team-name-block", playerHandler.GetTeamNameBlock)
+		r.Get("/{id}/game-status-alert", playerHandler.GetGameStatusAlertBlock)
+		r.Get("/{id}/start-game-button", playerHandler.GetStartGameButtonBlock)
 	})
 
 	// Upload route for player media
@@ -155,7 +157,11 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Ending the game
 	router.Route("/finish", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+			)
 		})
 		r.Get("/", playerHandler.Finish)
 	})
@@ -285,6 +291,8 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/new", adminHandler.LocationNew)
 			r.Post("/new", adminHandler.LocationNewPost)
+			r.Get("/start", adminHandler.StartPageEdit)
+			r.Get("/finish", adminHandler.FinishPageEdit)
 			r.Get("/{id}", adminHandler.LocationEdit)
 			r.Post("/{id}", adminHandler.LocationEditPost)
 			r.Delete("/{id}", adminHandler.LocationDelete)
