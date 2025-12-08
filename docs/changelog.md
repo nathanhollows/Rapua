@@ -16,11 +16,13 @@ tag: updated
   - All locations now use the Header block for their title.
 - A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the lobby page.
 - New tags in docs to show new and updates content.
+- New [Scheduling Games](/docs/user/scheduling-games) documentation page.
 
 ### Fixed
 
 - Minor UI fixes.
 - Invalid CSRF tokens are now gracefully refreshed.
+- Game scheduler now loads and saves times correctly and is rendered consistently.
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
 

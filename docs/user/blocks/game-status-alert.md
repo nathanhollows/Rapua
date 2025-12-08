@@ -29,6 +29,8 @@ The block automatically adapts based on the game instance's status:
 
 The countdown timer, when enabled, displays the time remaining in a human-readable format (e.g., "2 hours 15 minutes", "30 seconds") and updates automatically.
 
+**Note:** To schedule when your game starts and ends, see [Scheduling Games](/docs/user/scheduling-games).
+
 ## Example
 
 <iframe width="100%" class="rounded-2xl aspect-square" style="aspect-ratio: 1/1;" src="/static/images/docs/user/blocks/block-game-status-preview.mp4" frameborder="0" allowfullscreen></iframe>

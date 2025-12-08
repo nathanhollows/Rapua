@@ -77,7 +77,7 @@ func (s *GameScheduleService) ScheduleGame(
 	start time.Time,
 	endTime time.Time,
 ) error {
-	if start.After(endTime) {
+	if !endTime.IsZero() && start.After(endTime) {
 		return ErrStartAfterEnd
 	}
 

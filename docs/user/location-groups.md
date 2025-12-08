@@ -1,7 +1,7 @@
 ---
 title: "Location Groups"
 sidebar: true
-order: 11
+order: 13
 ---
 
 # Location groups
@@ -14,6 +14,8 @@ Groups contain locations. They can represent anything you want:
 - An act in a story
 - A phase of your scavenger hunt
 - A themed section of your tour
+
+![](/static/images/docs/user/location-groups.webp)
 
 ## Creating a Group
 

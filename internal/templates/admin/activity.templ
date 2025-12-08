@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"time"
 	"github.com/SerhiiCho/timeago/v3"
 	"github.com/nathanhollows/Rapua/v6/internal/flash"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
@@ -458,26 +459,44 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 			data-tip="Sechedule"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
-			<div id="days-container">
-				<span class="countdown font-mono font-bold" id="days">
-					<span></span>
-				</span>
-				d
-			</div>
-			<div id="hours-container">
-				<span class="countdown font-mono font-bold" id="hours">
-					<span></span>
-				</span>
-				h
-			</div>
-			<div>
-				<span class="countdown font-mono font-bold" id="minutes">
+			if int(t.Time.Sub(time.Now()).Seconds()) / 86400 > 0 {
+				<div id="days-container" class="leading-none flex align-middle">
+					<span class="countdown font-bold leading-none" id="days" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds()) / 86400) }>
+						<span></span>
+					</span>
+					d
+				</div>
+			} else {
+				<div id="days-container" class="leading-none flex align-middle" style="display: none">
+					<span class="countdown font-bold leading-none" id="days" style="--value: 0">
+						<span></span>
+					</span>
+					d
+				</div>
+			}
+			if (int(t.Time.Sub(time.Now()).Seconds()) % 86400) / 3600 > 0 {
+				<div id="hours-container" class="leading-none flex align-middle">
+					<span class="countdown font-bold leading-none" id="hours" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds()) % 86400) / 3600) }>
+						<span></span>
+					</span>
+					h
+				</div>
+			} else {
+				<div id="hours-container" class="leading-none flex align-middle" style="display: none">
+					<span class="countdown font-bold leading-none" id="hours" style="--value: 0">
+						<span></span>
+					</span>
+					h
+				</div>
+			}
+			<div class="leading-none flex align-middle">
+				<span class="countdown font-bold" id="minutes" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds()) % 3600) / 60) }>
 					<span></span>
 				</span>
 				m
 			</div>
-			<div>
-				<span class="countdown font-mono font-bold" id="seconds">
+			<div class="leading-none flex align-middle">
+				<span class="countdown font-bold" id="seconds" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds()) % 60) }>
 					<span></span>
 				</span>
 				s
@@ -492,55 +511,75 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 				</style>
 		<script>
   // JavaScript for countdown
-  function startCountdown(startTime) {
-    function updateCountdown() {
-      const now = new Date();
-      const remainingTime = new Date(startTime) - now;
-
-      if (remainingTime == 0) {
-		window.location.reload();
-        return;
-      }
-
-      const seconds = Math.floor((remainingTime / 1000) % 60);
-      const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
-      const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
-      const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
-
-      document.getElementById("seconds").style.setProperty('--value', seconds);
-      document.getElementById("minutes").style.setProperty('--value', minutes);
-
-      if (hours > 0) {
-        document.getElementById("hours-container").style.display = "block";
-        document.getElementById("hours").style.setProperty('--value', hours);
-      } else {
-        document.getElementById("hours-container").style.display = "none";
-      }
-
-      if (days > 0) {
-        document.getElementById("days-container").style.display = "block";
-        document.getElementById("days").style.setProperty('--value', days);
-      } else {
-        document.getElementById("days-container").style.display = "none";
-      }
-	  
+  (function() {
+    // Store interval ID on window object to persist across HTMX swaps
+    if (!window.gameCountdownInterval) {
+      window.gameCountdownInterval = null;
     }
 
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+    function startCountdown(startTime) {
+      // Clear any existing interval before starting a new one
+      if (window.gameCountdownInterval) {
+        clearInterval(window.gameCountdownInterval);
+        window.gameCountdownInterval = null;
+      }
 
-  }
+      function updateCountdown() {
+        const now = new Date();
+        const remainingTime = new Date(startTime) - now;
 
-  if (document.getElementById('start-time') != null) {
-		function UTCtoLocal(time) {
-			const utc = new Date(`${time}`);
-			const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
-			return local
-		}
-	  const startTimeElement = document.getElementById('start-time');
-	  const startTime = startTimeElement.dataset.start;
-	  startCountdown(UTCtoLocal(startTime));
-  }
+        if (remainingTime == 0) {
+          window.location.reload();
+          return;
+        }
+
+        const seconds = Math.floor((remainingTime / 1000) % 60);
+        const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
+        const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
+        const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
+
+        const secondsEl = document.getElementById("seconds");
+        const minutesEl = document.getElementById("minutes");
+        const hoursContainer = document.getElementById("hours-container");
+        const hoursEl = document.getElementById("hours");
+        const daysContainer = document.getElementById("days-container");
+        const daysEl = document.getElementById("days");
+
+        if (!secondsEl || !minutesEl) return; // Elements removed, stop updating
+
+        secondsEl.style.setProperty('--value', seconds);
+        minutesEl.style.setProperty('--value', minutes);
+
+        if (hours > 0) {
+          hoursContainer.style.display = "flex";
+          hoursEl.style.setProperty('--value', hours);
+        } else {
+          hoursContainer.style.display = "none";
+        }
+
+        if (days > 0) {
+          daysContainer.style.display = "flex";
+          daysEl.style.setProperty('--value', days);
+        } else {
+          daysContainer.style.display = "none";
+        }
+      }
+
+      updateCountdown();
+      window.gameCountdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    if (document.getElementById('start-time') != null) {
+      function UTCtoLocal(time) {
+        const utc = new Date(`${time}`);
+        const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
+        return local
+      }
+      const startTimeElement = document.getElementById('start-time');
+      const startTime = startTimeElement.dataset.start;
+      startCountdown(UTCtoLocal(startTime));
+    }
+  })();
 </script>
 	}
 }
@@ -654,7 +693,7 @@ templ scheduleModal(instance models.Instance) {
 			<p class="py-3">
 				Schedule a game to start and/or end at a specific time. 
 			</p>
-			<form hx-post="/admin/schedule/" hx-swap="none">
+			<form hx-post="/admin/schedule/" hx-target="#schedule-status" hx-swap="outerHTML">
 				<div class="divider py-5">
 					<div class="form-control">
 						<label class="label cursor-pointer flex gap-3">
@@ -746,8 +785,11 @@ templ scheduleModal(instance models.Instance) {
 			const endDateInput = document.querySelector('input[name="end_date"]');
 			const endTimeInput = document.querySelector('input[name="end_time"]');
 
-			const utcStart = document.getElementById('utc-start-time').dataset.start.split(' ');
-			const utcEnd = document.getElementById('utc-end-time').dataset.end.split(' ');
+			const utcStartElement = document.getElementById('utc-start-time');
+			const utcEndElement = document.getElementById('utc-end-time');
+
+			const utcStart = utcStartElement.dataset.start.split(' ');
+			const utcEnd = utcEndElement.dataset.end.split(' ');
 
 			// Check the time is not empty: 0001-01-01 00:00
 			if (utcStart[0] != '0001-01-01') {
@@ -768,9 +810,11 @@ templ scheduleModal(instance models.Instance) {
             const startTimeInput = document.querySelector('input[name="start_time"]');
             const endDateInput = document.querySelector('input[name="end_date"]');
             const endTimeInput = document.querySelector('input[name="end_time"]');
-            
-            // Only convert if both date and time have values
-            if (startDateInput.value && startTimeInput.value) {
+            const setStartCheckbox = document.querySelector('input[name="set_start"]');
+            const setEndCheckbox = document.querySelector('input[name="set_end"]');
+
+            // Only convert if checkbox is checked AND both date and time have values
+            if (setStartCheckbox.checked && startDateInput.value && startTimeInput.value) {
                 const utcStart = localToUTC(startDateInput.value, startTimeInput.value);
                 document.querySelector('input[name="utc_start_date"]').value = utcStart.date;
                 document.querySelector('input[name="utc_start_time"]').value = utcStart.time;
@@ -778,8 +822,8 @@ templ scheduleModal(instance models.Instance) {
                 document.querySelector('input[name="utc_start_date"]').value = '';
                 document.querySelector('input[name="utc_start_time"]').value = '';
             }
-            
-            if (endDateInput.value && endTimeInput.value) {
+
+            if (setEndCheckbox.checked && endDateInput.value && endTimeInput.value) {
                 const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);
                 document.querySelector('input[name="utc_end_date"]').value = utcEnd.date;
                 document.querySelector('input[name="utc_end_time"]').value = utcEnd.time;
@@ -789,13 +833,24 @@ templ scheduleModal(instance models.Instance) {
             }
         }
 
-		populateDateTimeInputs();
-        document.addEventListener('DOMContentLoaded', function () {
-            const inputs = document.querySelectorAll('input[type="date"], input[type="time"]');
+		function initScheduleModal() {
+			populateDateTimeInputs();
+			handleDateTimeChange();
+		}
+
+		// Set up event listeners once when the script loads
+		(function() {
+            const inputs = document.querySelectorAll('#schedule_modal input[type="date"], #schedule_modal input[type="time"]');
+            const checkboxes = document.querySelectorAll('#schedule_modal input[type="checkbox"]');
             const form = document.querySelector('#schedule_modal form');
+			const modal = document.getElementById('schedule_modal');
 
             inputs.forEach(input => {
                 input.addEventListener('change', handleDateTimeChange);
+            });
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', handleDateTimeChange);
             });
 
             // Ensure UTC conversion happens on form submission
@@ -803,8 +858,21 @@ templ scheduleModal(instance models.Instance) {
                 handleDateTimeChange();
             });
 
-			handleDateTimeChange();
-        });
+			// Initialize whenever the modal is opened
+			const observer = new MutationObserver(function(mutations) {
+				mutations.forEach(function(mutation) {
+					if (mutation.type === 'attributes' && mutation.attributeName === 'open') {
+						if (modal.hasAttribute('open')) {
+							initScheduleModal();
+						}
+					}
+				});
+			});
+
+			if (modal) {
+				observer.observe(modal, { attributes: true });
+			}
+		})();
     </script>
 }
 
