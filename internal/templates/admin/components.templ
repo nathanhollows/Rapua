@@ -1,0 +1,393 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+)
+
+// blockAddDropdown renders a dropdown for adding blocks to a container
+templ blockAddDropdown(ownerID string, context blocks.BlockContext, targetSelector string) {
+	<div class="divider my-10">
+		<div class="dropdown dropdown-center">
+			<div class="block">
+				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
+					<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+					Add content
+				</div>
+			</div>
+			<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
+				<div class="card-body pt-3">
+					<div class="divider">
+						<span class="badge badge-ghost">Static content</span>
+					</div>
+					<div class="grid grid-cols-3 grid-flow-row gap-5">
+						for _, block := range blocks.GetBlocksForContext(context) {
+							if !block.RequiresValidation() {
+								<form
+									class="indicator w-full"
+									hx-post="/admin/blocks/"
+									hx-target={ fmt.Sprintf("next %s", targetSelector) }
+									hx-swap="beforeend"
+								>
+									<input type="hidden" name="owner" value={ ownerID }/>
+									<input type="hidden" name="context" value={ string(context) }/>
+									<input type="hidden" name="type" value={ block.GetType() }/>
+									<button
+										type="submit"
+										class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+										data-tip={ block.GetDescription() }
+									>
+										@templ.Raw(block.GetIconSVG())
+										{ block.GetName() }
+									</button>
+								</form>
+							}
+						}
+					</div>
+					<div class="divider">
+						<span class="badge badge-ghost">Interactive</span>
+					</div>
+					<div class="grid grid-cols-3 grid-flow-row gap-5">
+						for _, block := range blocks.GetBlocksForContext(context) {
+							if block.RequiresValidation() {
+								<form
+									class="indicator w-full"
+									hx-post="/admin/blocks/"
+									hx-target={ fmt.Sprintf("next %s", targetSelector) }
+									hx-swap="beforeend"
+								>
+									<input type="hidden" name="owner" value={ ownerID }/>
+									<input type="hidden" name="context" value={ string(context) }/>
+									<input type="hidden" name="type" value={ block.GetType() }/>
+									<button
+										type="submit"
+										class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
+										data-tip={ block.GetDescription() }
+									>
+										@templ.Raw(block.GetIconSVG())
+										{ block.GetName() }
+									</button>
+								</form>
+							}
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// deleteBlockModal renders the confirmation modal for block deletion
+templ deleteBlockModal() {
+	<dialog id="confirm_delete_block" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete this block?</h3>
+			<p class="pt-4">You are about to delete this block. Are you sure?</p>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick="confirm_delete_block.close()"
+				>Nevermind</button>
+				<button
+					id="delete-block-btn"
+					type="button"
+					class="btn btn-error"
+					onclick="confirm_delete_block.close()"
+				>Delete</button>
+			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	<script>
+function attachDeleteBlockHandlers() {
+  // Delete block confirmation dialog
+  function confirmDeleteBlock(event) {
+    const modal = document.getElementById("confirm_delete_block");
+    const url = "/admin/blocks/" + event.currentTarget.dataset.block;
+    const btn = modal.querySelector("button.btn-error");
+    btn.setAttribute("hx-delete", url);
+    btn.setAttribute("hx-swap", "outerHTML");
+    btn.setAttribute("hx-target", "#" + event.target.closest(".content-block").id);
+    modal.showModal();
+    htmx.process(modal);
+  }
+
+  // Attach click handlers to delete buttons
+  document.querySelectorAll('.block-delete').forEach(el => {
+    // Avoid double binding
+    if (!el.dataset.listenerAttached) {
+      el.addEventListener('click', confirmDeleteBlock);
+      el.dataset.listenerAttached = "true";
+    }
+  });
+}
+
+// Run after page load
+document.addEventListener("DOMContentLoaded", attachDeleteBlockHandlers);
+
+// Run after any HTMX content load or swap
+document.body.addEventListener('htmx:load', attachDeleteBlockHandlers);
+</script>
+}
+
+// blockReorderForm renders the hidden form for block reordering
+templ blockReorderForm() {
+	<form
+		id="block-reorder-form"
+		hx-post="/admin/blocks/reorder"
+		hx-swap="none"
+		style="display: none;"
+	>
+		<div id="block-order-inputs"></div>
+	</form>
+}
+
+// mobilePreview renders the mobile phone preview mockup
+templ mobilePreview(instanceID, previewURL, htmxTrigger string) {
+	<div class="h-min-content">
+		<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
+			<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
+				<div
+					id="mobile-preview-container"
+					class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
+					hx-get={ previewURL }
+					hx-trigger={ fmt.Sprintf("load, %s", htmxTrigger) }
+					hx-vals={ fmt.Sprint(`{"instanceID": "`, instanceID, `"}`) }
+					hx-swap="innerHTML"
+				></div>
+			</div>
+		</div>
+	</div>
+}
+
+// previewSortableScript renders the sortable.js initialization for preview
+templ previewSortableScript() {
+	<script src="/static/js/Sortable.min.js"></script>
+	<script>
+	(function() {
+		let sortableInstance = null;
+
+		function initializePreviewSortable() {
+			const previewContainer = document.getElementById('mobile-preview-container');
+			if (!previewContainer) return;
+
+			// Wait for HTMX to load preview content
+			const observer = new MutationObserver((mutations, obs) => {
+				const blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');
+
+				if (blocksContainer && !sortableInstance) {
+					// Clean up any existing instance
+					if (sortableInstance) {
+						sortableInstance.destroy();
+					}
+
+					// Initialize sortable.js
+					sortableInstance = new Sortable(blocksContainer, {
+						animation: 150,
+						draggable: '.block-view',
+						handle: '.block-view',
+						ghostClass: 'sortable-ghost-preview',
+						chosenClass: 'sortable-chosen-preview',
+						dragClass: 'sortable-drag-preview',
+
+						// Allow clicking interactive elements
+						filter: 'a, button, input, select, textarea, [contenteditable]',
+						preventOnFilter: false,
+
+						// Handle reordering
+						onEnd: function(evt) {
+							// Collect block IDs in new order from preview
+							// Extract block ID from id attribute: "preview-block-{uuid}"
+							const blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))
+								.map(block => block.id.replace('preview-block-', ''))
+								.filter(id => id); // Remove any nulls
+
+							// First, visually reorder admin blocks to match preview
+							const adminBlocksContainer = document.querySelector('.blocks');
+							if (adminBlocksContainer) {
+								// Get all admin block elements
+								const adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));
+
+								// Create a map of block ID to element
+								const blockMap = new Map();
+								adminBlocks.forEach(block => {
+									const hiddenInput = block.querySelector('input[name="block_id"]');
+									if (hiddenInput) {
+										blockMap.set(hiddenInput.value, block);
+									}
+								});
+
+								// Reorder admin blocks to match preview order
+								blockOrder.forEach(blockId => {
+									const adminBlock = blockMap.get(blockId);
+									if (adminBlock) {
+										adminBlocksContainer.appendChild(adminBlock);
+									}
+								});
+							}
+
+							// Populate hidden form with block IDs and submit via HTMX
+							const form = document.getElementById('block-reorder-form');
+							const inputsContainer = document.getElementById('block-order-inputs');
+
+							if (!form || !inputsContainer) {
+								console.error('Reorder form not found');
+								return;
+							}
+
+							// Clear existing inputs
+							inputsContainer.innerHTML = '';
+
+							// Add hidden input for each block ID
+							blockOrder.forEach(id => {
+								const input = document.createElement('input');
+								input.type = 'hidden';
+								input.name = 'block_id';
+								input.value = id;
+								inputsContainer.appendChild(input);
+							});
+
+							// Trigger form submission via HTMX
+							htmx.trigger(form, 'submit');
+						}
+					});
+
+					// Stop observing once initialized
+					obs.disconnect();
+				}
+			});
+
+			// Start observing for content changes
+			observer.observe(previewContainer, {
+				childList: true,
+				subtree: true
+			});
+		}
+
+		// Initialize on page load
+		document.addEventListener('DOMContentLoaded', initializePreviewSortable);
+
+		// Re-initialize after HTMX swaps content
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			// Check if the swapped content contains the preview container
+			if (evt.detail.target.querySelector('#mobile-preview-container') ||
+				evt.detail.target.id === 'mobile-preview-container') {
+				// Reset and reinitialize
+				if (sortableInstance) {
+					sortableInstance.destroy();
+					sortableInstance = null;
+				}
+				initializePreviewSortable();
+			}
+		});
+
+		// Re-initialize after browser back/forward navigation
+		document.addEventListener('htmx:historyRestore', function(evt) {
+			// Clear existing sortable instance since it's stale after history restore
+			if (sortableInstance) {
+				sortableInstance.destroy();
+				sortableInstance = null;
+			}
+			initializePreviewSortable();
+		});
+
+		// Cleanup on page unload
+		window.addEventListener('beforeunload', function() {
+			if (sortableInstance) {
+				sortableInstance.destroy();
+			}
+		});
+	})();
+	</script>
+}
+
+// blockMoveScript renders the script for manual block movement
+templ blockMoveScript() {
+	<script>
+    function moveblock(event, direction) {
+        event.preventDefault();
+        const block = event.target.closest('.content-block');
+        if (block) {
+            let sibling;
+            if (direction === 'up') {
+                sibling = block.previousElementSibling;
+            } else if (direction === 'down') {
+                sibling = block.nextElementSibling;
+            }
+
+            if (sibling && sibling.classList.contains('content-block')) {
+                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)
+                const blockHeight = block.offsetHeight;
+                const siblingHeight = sibling.offsetHeight;
+                const gap = 20; // gap-5 in pixels
+
+                // Apply a relative position and initial offset for a smooth transition
+                block.style.position = 'relative';
+                sibling.style.position = 'relative';
+
+                if (direction === 'up') {
+                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;
+                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;
+                } else {
+                    block.style.transform = `translateY(${siblingHeight + gap}px)`;
+                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;
+                }
+
+                // Trigger reflow to apply the animation
+                requestAnimationFrame(() => {
+                    block.classList.add('transitioning');
+                    sibling.classList.add('transitioning');
+
+                    // Reset transforms and swap elements after animation duration
+                    setTimeout(() => {
+                        block.style.transform = '';
+                        sibling.style.transform = '';
+                        block.classList.remove('transitioning');
+                        sibling.classList.remove('transitioning');
+
+                        block.style.position = '';
+                        sibling.style.position = '';
+
+                        block.parentNode.insertBefore(
+                            direction === 'up' ? block : sibling,
+                            direction === 'up' ? sibling : block
+                        );
+                    }, 300);
+                });
+            }
+        }
+    }
+</script>
+}
+
+// sortableStyles renders the CSS for sortable elements
+templ sortableStyles() {
+	<style>
+    .transitioning {
+        transition: transform 0.3s ease;
+    }
+
+    /* Preview block sortable styles */
+    .sortable-ghost-preview {
+        opacity: 0.4;
+        background: hsl(var(--b2));
+    }
+
+    .sortable-chosen-preview {
+        outline: 2px solid hsl(var(--p)) !important;
+        outline-offset: 4px;
+    }
+
+    .sortable-drag-preview {
+        opacity: 0.8;
+        cursor: grabbing !important;
+    }
+
+    .preview-block:active {
+        cursor: grabbing !important;
+    }
+	</style>
+}
