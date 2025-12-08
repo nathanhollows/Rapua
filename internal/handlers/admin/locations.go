@@ -587,3 +587,75 @@ func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locati
 
 	return nil
 }
+
+// StartPageEdit shows the start page editor (lobby).
+func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	// Get blocks for the start page (lobby context)
+	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
+		r.Context(),
+		user.CurrentInstanceID,
+		blocks.ContextLobby,
+	)
+	if err != nil {
+		h.logger.Error(
+			"StartPageEdit: getting blocks",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		h.redirect(w, r, "/admin/locations")
+		return
+	}
+
+	data := templates.EditPageData{
+		Settings:   user.CurrentInstance.Settings,
+		PageBlocks: pageBlocks,
+		PageTitle:  "Start",
+		PageType:   "start",
+	}
+
+	c := templates.EditPage(data)
+	err = templates.Layout(c, *user, "Locations", "Edit Start Page").Render(r.Context(), w)
+	if err != nil {
+		h.handleError(w, r, "StartPageEdit: rendering template", "Error rendering template", "error", err)
+	}
+}
+
+// FinishPageEdit shows the finish page editor.
+func (h *Handler) FinishPageEdit(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	// Get blocks for the finish page
+	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
+		r.Context(),
+		user.CurrentInstanceID,
+		blocks.ContextFinish,
+	)
+	if err != nil {
+		h.logger.Error(
+			"FinishPageEdit: getting blocks",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		h.redirect(w, r, "/admin/locations")
+		return
+	}
+
+	data := templates.EditPageData{
+		Settings:   user.CurrentInstance.Settings,
+		PageBlocks: pageBlocks,
+		PageTitle:  "Finish",
+		PageType:   "finish",
+	}
+
+	c := templates.EditPage(data)
+	err = templates.Layout(c, *user, "Locations", "Edit Finish Page").Render(r.Context(), w)
+	if err != nil {
+		h.handleError(w, r, "FinishPageEdit: rendering template", "Error rendering template", "error", err)
+	}
+}
