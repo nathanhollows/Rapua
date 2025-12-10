@@ -83,9 +83,14 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		err = service.LoadBlocksForStructure(ctx, &structure, false)
 		require.NoError(t, err)
 
-		// Verify blocks are loaded
-		assert.Len(t, structure.Locations[0].Blocks, 1)
-		assert.Equal(t, blocks.ContextLocationClues, structure.Locations[0].Blocks[0].Context)
+		// Verify blocks are loaded (default header + manually created markdown)
+		assert.Len(t, structure.Locations[0].Blocks, 2)
+		// First block should be the default header with location_content context
+		assert.Equal(t, blocks.ContextLocationContent, structure.Locations[0].Blocks[0].Context)
+		assert.Equal(t, "header", structure.Locations[0].Blocks[0].Type)
+		// Second block should be the manually created markdown with location_clues context
+		assert.Equal(t, blocks.ContextLocationClues, structure.Locations[0].Blocks[1].Context)
+		assert.Equal(t, "markdown", structure.Locations[0].Blocks[1].Type)
 	})
 
 	t.Run("Load blocks recursively for nested structure", func(t *testing.T) {
@@ -133,9 +138,9 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		err = service.LoadBlocksForStructure(ctx, &structure, true)
 		require.NoError(t, err)
 
-		// Verify blocks are loaded at both levels
-		assert.Len(t, structure.Locations[0].Blocks, 1, "Root location should have blocks")
-		assert.Len(t, structure.SubGroups[0].Locations[0].Blocks, 1, "Subgroup location should have blocks")
+		// Verify blocks are loaded at both levels (default header + manually created markdown)
+		assert.Len(t, structure.Locations[0].Blocks, 2, "Root location should have blocks")
+		assert.Len(t, structure.SubGroups[0].Locations[0].Blocks, 2, "Subgroup location should have blocks")
 	})
 
 	t.Run("Non-recursive load only loads current level", func(t *testing.T) {
@@ -183,8 +188,8 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		err = service.LoadBlocksForStructure(ctx, &structure, false)
 		require.NoError(t, err)
 
-		// Verify only root level has blocks loaded
-		assert.Len(t, structure.Locations[0].Blocks, 1, "Root location should have blocks")
+		// Verify only root level has blocks loaded (default header + manually created markdown)
+		assert.Len(t, structure.Locations[0].Blocks, 2, "Root location should have blocks")
 		assert.Empty(t, structure.SubGroups[0].Locations[0].Blocks, "Subgroup location should NOT have blocks")
 	})
 }
