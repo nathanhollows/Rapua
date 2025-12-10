@@ -9,7 +9,7 @@ type Location struct {
 	Name         string  `bun:"name,type:varchar(255)"`
 	InstanceID   string  `bun:"instance_id,notnull"`
 	MarkerID     string  `bun:"marker_id,notnull"`
-	ContentID    string  `bun:"content_id,notnull"`
+	ContentID    string  `bun:"content_id,notnull"` // TODO: Remove contentID as content is fully deprecated
 	Criteria     string  `bun:"criteria,type:varchar(255)"`
 	Order        int     `bun:"order,type:int"`
 	TotalVisits  int     `bun:"total_visits,type:int"`

@@ -1380,3 +1380,172 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 		assert.Empty(t, newBlocks)
 	})
 }
+
+func TestBlockRepository_UserOwnsBlock(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	repo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	transactor := db.NewTransactor(dbc)
+
+	ctx := context.Background()
+
+	t.Run("user owns lobby block through instances", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create lobby block
+		block, err := repo.Create(ctx, blocks.NewHeaderBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "header",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextLobby)
+		require.NoError(t, err)
+
+		// Check ownership
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.True(t, owns, "User should own their instance's lobby block")
+	})
+
+	t.Run("user owns location block through instances and locations", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+		locationID := gofakeit.UUID()
+
+		// Create instance in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create location in locations table
+		_, err = dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":          locationID,
+				"instance_id": instanceID,
+				"name":        gofakeit.Word(),
+				"marker_id":   gofakeit.UUID(),
+				"content_id":  gofakeit.UUID(),
+			}).
+			TableExpr("locations").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create location block
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: locationID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), locationID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+
+		// Check ownership
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.True(t, owns, "User should own their instance's location blocks")
+	})
+
+	t.Run("user does not own block from different user's instance", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		otherUserID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by other user in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": otherUserID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create block
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextLobby)
+		require.NoError(t, err)
+
+		// Check ownership with wrong user
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.False(t, owns, "User should not own another user's instance blocks")
+	})
+
+	t.Run("returns false for non-existent block", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		nonExistentBlockID := gofakeit.UUID()
+
+		owns, err := repo.UserOwnsBlock(ctx, userID, nonExistentBlockID)
+		require.NoError(t, err)
+		assert.False(t, owns, "User should not own non-existent block")
+	})
+
+	t.Run("empty userID returns false", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance and block in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextLobby)
+		require.NoError(t, err)
+
+		owns, err := repo.UserOwnsBlock(ctx, "", block.GetID())
+		require.NoError(t, err)
+		assert.False(t, owns, "Empty userID should return false")
+	})
+
+	t.Run("empty blockID returns false", func(t *testing.T) {
+		userID := gofakeit.UUID()
+
+		owns, err := repo.UserOwnsBlock(ctx, userID, "")
+		require.NoError(t, err)
+		assert.False(t, owns, "Empty blockID should return false")
+	})
+
+	// Cleanup
+	tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+	_ = tx.Commit()
+}

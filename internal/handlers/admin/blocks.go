@@ -60,12 +60,10 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Validate required parameters
 	if ownerID == "" {
-		w.WriteHeader(http.StatusBadRequest)
 		h.handleError(w, r, "BlockCreate: missing owner parameter", "Owner parameter is required", "owner", ownerID)
 		return
 	}
 	if contextParam == "" {
-		w.WriteHeader(http.StatusBadRequest)
 		h.handleError(
 			w,
 			r,
@@ -77,7 +75,6 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if blockType == "" {
-		w.WriteHeader(http.StatusBadRequest)
 		h.handleError(w, r, "BlockCreate: missing type parameter", "Type parameter is required", "type", blockType)
 		return
 	}
@@ -86,11 +83,13 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 	validContexts := []blocks.BlockContext{
 		blocks.ContextLocationContent,
 		blocks.ContextLocationClues,
+		blocks.ContextCheckpoint,
+		blocks.ContextLobby,
+		blocks.ContextFinish,
 	}
 	blockContext := blocks.BlockContext(contextParam)
 	isValidContext := slices.Contains(validContexts, blocks.BlockContext(contextParam))
 	if !isValidContext {
-		w.WriteHeader(http.StatusBadRequest)
 		h.handleError(
 			w,
 			r,
@@ -102,14 +101,14 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For now, assume if owner is a location, we can check location access
-	// In the future, this could be expanded to handle different owner types
-	access, err := h.accessService.CanAdminAccessLocation(r.Context(), user.ID, ownerID)
+	// Check access based on context type (instance for lobby/finish, location otherwise)
+	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.handleError(w, r, "BlockCreate: checking access", "Could not create block", "error", err)
 		return
 	}
+
 	if !access {
 		w.WriteHeader(http.StatusForbidden)
 		h.handleError(w, r, "BlockCreate: access denied", "Could not create block. Access denied", "owner", ownerID)
@@ -332,13 +331,21 @@ func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if ownerID == "" {
-		w.WriteHeader(http.StatusBadRequest)
 		h.handleError(w, r, "BlockList: missing owner parameter", "Owner parameter is required", "owner", ownerID)
 		return
 	}
 
-	// Check access to the owner (assuming it's a location for now)
-	access, err := h.accessService.CanAdminAccessLocation(r.Context(), user.ID, ownerID)
+	// Determine context for access check
+	var blockContext blocks.BlockContext
+	if contextParam != "" {
+		blockContext = blocks.BlockContext(contextParam)
+	} else {
+		// Default to location context for context-agnostic queries
+		blockContext = blocks.ContextLocationContent
+	}
+
+	// Check access to the owner (instance for lobby/finish, location otherwise)
+	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		h.handleError(w, r, "BlockList: checking access", "Could not list blocks", "error", err)
 		return
@@ -350,7 +357,6 @@ func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 
 	if contextParam != "" {
 		// List blocks for specific owner and context
-		blockContext := blocks.BlockContext(contextParam)
 		foundBlocks, err = h.blockService.FindByOwnerIDAndContext(r.Context(), ownerID, blockContext)
 	} else {
 		// List all blocks for owner (context agnostic)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
@@ -102,10 +103,23 @@ func (s *AccessService) CanAdminAccessBlock(ctx context.Context, userID, blockID
 		return false, errors.New("block ID cannot be empty")
 	}
 
-	block, err := s.blockRepo.GetByID(ctx, blockID)
-	if err != nil {
-		return false, err
+	return s.blockRepo.UserOwnsBlock(ctx, userID, blockID)
+}
+
+// CanAdminAccessBlockOwner checks if the user can access an owner (instance or location) based on context.
+func (s *AccessService) CanAdminAccessBlockOwner(ctx context.Context, userID, ownerID string, blockContext blocks.BlockContext) (bool, error) {
+	if userID == "" {
+		return false, errors.New("user ID cannot be empty")
+	}
+	if ownerID == "" {
+		return false, errors.New("owner ID cannot be empty")
 	}
 
-	return s.CanAdminAccessLocation(ctx, userID, block.GetLocationID())
+	// For lobby/finish blocks, owner is instanceID
+	if blockContext == blocks.ContextLobby || blockContext == blocks.ContextFinish {
+		return s.CanAdminAccessInstance(ctx, userID, ownerID)
+	}
+
+	// For location blocks, owner is locationID
+	return s.CanAdminAccessLocation(ctx, userID, ownerID)
 }

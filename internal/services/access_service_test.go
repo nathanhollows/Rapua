@@ -6,6 +6,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
+	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -499,5 +500,182 @@ func TestAccessService_ConcurrentAccess(t *testing.T) {
 			require.NoError(t, err)
 			assert.False(t, canAccess)
 		}
+	})
+}
+
+func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
+	// This test requires full integration setup with database
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	instanceRepo := repositories.NewInstanceRepository(dbc)
+	locationRepo := repositories.NewLocationRepository(dbc)
+	markerRepo := repositories.NewMarkerRepository(dbc)
+
+	service := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
+
+	ctx := context.Background()
+
+	t.Run("Owner can access lobby block through instance", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by user using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: userID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Test access to lobby block owner (instance)
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, "lobby")
+		require.NoError(t, err)
+		assert.True(t, canAccess, "User should have access to their own instance for lobby blocks")
+	})
+
+	t.Run("Owner can access finish block through instance", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by user using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: userID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Test access to finish block owner (instance)
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, "finish")
+		require.NoError(t, err)
+		assert.True(t, canAccess, "User should have access to their own instance for finish blocks")
+	})
+
+	t.Run("Owner can access location block through location", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by user using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: userID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Create location in that instance using repository (let ID auto-generate)
+		loc := &models.Location{
+			InstanceID: instanceID,
+			Name:       gofakeit.Word(),
+			MarkerID:   gofakeit.UUID(),
+			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
+		}
+		err = locationRepo.Create(ctx, loc)
+		require.NoError(t, err)
+
+		// Test access to location block owner (location)
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
+		require.NoError(t, err)
+		assert.True(t, canAccess, "User should have access to locations in their own instance")
+	})
+
+	t.Run("Non-owner cannot access instance", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		otherUserID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by another user using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: otherUserID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Test access to lobby block - should fail
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, "lobby")
+		require.NoError(t, err)
+		assert.False(t, canAccess, "User should not have access to another user's instance")
+	})
+
+	t.Run("Non-owner cannot access location", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		otherUserID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by another user using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: otherUserID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Create location in that instance using repository (let ID auto-generate)
+		loc := &models.Location{
+			InstanceID: instanceID,
+			Name:       gofakeit.Word(),
+			MarkerID:   gofakeit.UUID(),
+			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
+		}
+		err = locationRepo.Create(ctx, loc)
+		require.NoError(t, err)
+
+		// Test access to location block - should fail
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
+		require.NoError(t, err)
+		assert.False(t, canAccess, "User should not have access to locations in another user's instance")
+	})
+
+	t.Run("Context routing: lobby and finish -> instance, location contexts -> location", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance using repository
+		inst := &models.Instance{
+			ID:     instanceID,
+			Name:   gofakeit.Word(),
+			UserID: userID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		// Create location using repository (let ID auto-generate)
+		loc := &models.Location{
+			InstanceID: instanceID,
+			Name:       gofakeit.Word(),
+			MarkerID:   gofakeit.UUID(),
+			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
+		}
+		err = locationRepo.Create(ctx, loc)
+		require.NoError(t, err)
+
+		// Test lobby context routes to instance check
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, "lobby")
+		require.NoError(t, err)
+		assert.True(t, canAccess)
+
+		// Test finish context routes to instance check
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, instanceID, "finish")
+		require.NoError(t, err)
+		assert.True(t, canAccess)
+
+		// Test location_content context routes to location check
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
+		require.NoError(t, err)
+		assert.True(t, canAccess)
+
+		// Test location_clues context routes to location check
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_clues")
+		require.NoError(t, err)
+		assert.True(t, canAccess)
 	})
 }

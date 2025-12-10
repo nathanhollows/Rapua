@@ -20,6 +20,7 @@ type AccessService interface {
 	CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error)
 	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
 	CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error)
+	CanAdminAccessBlockOwner(ctx context.Context, userID, ownerID string, blockContext blocks.BlockContext) (bool, error)
 }
 
 type BlockService interface {

@@ -27,6 +27,8 @@ type BlockRepository interface {
 		blockID string,
 		teamCode string,
 	) (blocks.Block, blocks.PlayerState, error)
+	// UserOwnsBlock checks if a user owns a block
+	UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error)
 	// FindByOwnerID fetches all blocks for an owner (context agnostic)
 	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
 	// FindByOwnerIDAndContext fetches all blocks for an owner with specific context
@@ -124,6 +126,34 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 		return nil, err
 	}
 	return convertModelToBlock(modelBlock)
+}
+
+// UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
+func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
+	// Query to check block ownership through instances
+	// For lobby/finish blocks: owner_id IS the instance_id
+	// For location blocks: owner_id IS the location_id, which belongs to an instance
+	count, err := r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		ColumnExpr("1").
+		Where("id = ?", blockID).
+		Where(`(
+			(context IN ('lobby', 'finish') AND owner_id IN (
+				SELECT id FROM instances WHERE user_id = ?
+			))
+			OR
+			(context NOT IN ('lobby', 'finish') AND owner_id IN (
+				SELECT id FROM locations WHERE instance_id IN (
+					SELECT id FROM instances WHERE user_id = ?
+				)
+			))
+		)`, userID, userID).
+		Limit(1).
+		Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // Create saves a new block to the database.
