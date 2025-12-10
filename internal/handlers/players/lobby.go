@@ -30,10 +30,23 @@ func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get blocks for the start page (lobby context)
+	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+		r.Context(),
+		team.InstanceID,
+		team.Code,
+		blocks.ContextLobby,
+	)
+	if err != nil {
+		h.logger.Error("getting lobby blocks", "error", err.Error())
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+		return
+	}
+
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Lobby(*team)
+	template := templates.Lobby(*team, pageBlocks, blockStates)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		template = templates.Layout(template, "Lobby", team.Messages)
+		template = templates.Layout(template, "Start", team.Messages)
 	}
 
 	err = template.Render(r.Context(), w)
