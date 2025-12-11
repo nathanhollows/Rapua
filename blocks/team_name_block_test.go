@@ -59,7 +59,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	// Empty button text in form data updates to empty (allows admin to clear it)
-	assert.Equal(t, "", block.ButtonText, "Empty button text should update to empty string")
+	assert.Empty(t, block.ButtonText, "Empty button text should update to empty string")
 	assert.True(t, block.AllowChanging)
 }
 

@@ -47,7 +47,8 @@ type UserService interface {
 	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
 }
 
-type PublicHandler struct {
+// Handler handles public-facing HTTP requests.
+type Handler struct {
 	logger          *slog.Logger
 	identityService IdentityService
 	deleteService   DeleteService
@@ -56,15 +57,16 @@ type PublicHandler struct {
 	userService     UserService
 }
 
-func NewPublicHandler(
+// NewHandler creates a new public handler.
+func NewHandler(
 	logger *slog.Logger,
 	identityService IdentityService,
 	deleteService DeleteService,
 	emailService EmailService,
 	templateService TemplateService,
 	userService UserService,
-) *PublicHandler {
-	return &PublicHandler{
+) *Handler {
+	return &Handler{
 		logger:          logger,
 		identityService: identityService,
 		deleteService:   deleteService,
@@ -74,7 +76,7 @@ func NewPublicHandler(
 	}
 }
 
-func (h *PublicHandler) handleError(
+func (h *Handler) handleError(
 	w http.ResponseWriter,
 	r *http.Request,
 	logMsg string,
@@ -90,7 +92,7 @@ func (h *PublicHandler) handleError(
 
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests and redirects the user to the referer.
-func (h *PublicHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
+func (h *Handler) redirect(w http.ResponseWriter, r *http.Request, path string) {
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Redirect", path)
 		return
@@ -99,6 +101,6 @@ func (h *PublicHandler) redirect(w http.ResponseWriter, r *http.Request, path st
 }
 
 // GetIdentityService returns the identity service for use in middleware.
-func (h *PublicHandler) GetIdentityService() IdentityService {
+func (h *Handler) GetIdentityService() IdentityService {
 	return h.identityService
 }

@@ -35,8 +35,8 @@ func TestStartGameButtonBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "", block.ScheduledButtonText)
-	assert.Equal(t, "", block.ActiveButtonText)
+	assert.Empty(t, block.ScheduledButtonText)
+	assert.Empty(t, block.ActiveButtonText)
 }
 
 func TestStartGameButtonBlock_UpdateBlockData_ButtonStyle(t *testing.T) {

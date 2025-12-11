@@ -514,7 +514,12 @@ func (r *blockRepository) DuplicateBlocksByOwnerTx(
 
 // BulkCreate inserts multiple blocks for an owner with specific context.
 // Converts domain blocks to models and inserts them efficiently.
-func (r *blockRepository) BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error {
+func (r *blockRepository) BulkCreate(
+	ctx context.Context,
+	blockList []blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) error {
 	if len(blockList) == 0 {
 		return nil
 	}

@@ -10,7 +10,7 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
 )
 
-func (h *PublicHandler) Docs(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	docsService, err := services.NewDocsService("./docs")
 	if err != nil {
 		h.logger.Error("Docs: creating docs service", "error", err)
@@ -25,12 +25,11 @@ func (h *PublicHandler) Docs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page, err := docsService.GetPage(path)
-	if err == nil {
-		// Page found, render it
-	} else if errors.Is(err, os.ErrNotExist) {
+	if errors.Is(err, os.ErrNotExist) {
 		h.NotFound(w, r)
 		return
-	} else {
+	}
+	if err != nil {
 		var redirectErr *services.RedirectError
 		if errors.As(err, &redirectErr) {
 			h.redirect(w, r, redirectErr.RedirectTo)

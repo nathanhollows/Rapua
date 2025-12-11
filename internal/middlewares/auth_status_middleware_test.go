@@ -15,7 +15,7 @@ type mockAuthChecker struct {
 	isAuthenticated bool
 }
 
-func (m *mockAuthChecker) IsUserAuthenticated(r *http.Request) bool {
+func (m *mockAuthChecker) IsUserAuthenticated(_ *http.Request) bool {
 	return m.isAuthenticated
 }
 
@@ -46,8 +46,8 @@ func TestAuthStatusMiddleware(t *testing.T) {
 
 			// Create a test handler that will verify the context
 			var capturedCtx context.Context
-			testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				capturedCtx = r.Context()
+			testHandler := http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				capturedCtx = r.Context() //nolint:fatcontext // Test needs to capture context
 			})
 
 			// Create the middleware
@@ -99,5 +99,5 @@ func TestAuthStatusMiddleware_NilAuthService(t *testing.T) {
 	}()
 
 	// This should panic
-	middlewares.AuthStatusMiddleware(nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	middlewares.AuthStatusMiddleware(nil, http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}))
 }

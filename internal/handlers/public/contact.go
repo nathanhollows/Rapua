@@ -7,7 +7,7 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
 )
 
-func (h *PublicHandler) Contact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Contact(w http.ResponseWriter, r *http.Request) {
 	c := templates.Contact()
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
@@ -16,7 +16,7 @@ func (h *PublicHandler) Contact(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *PublicHandler) ContactPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ContactPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "ContactPost: parsing form", "Error parsing form", "error", err)

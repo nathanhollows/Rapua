@@ -268,7 +268,7 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	pdf.Cell(40, 70, scanText)
 }
 
-func (s *assetGenerator) GetQRCodePathAndContent(action, id, name, extension string) (string, string) {
+func (s *assetGenerator) GetQRCodePathAndContent(_, id, name, extension string) (string, string) {
 	content := os.Getenv("SITE_URL")
 	path := "assets/codes/"
 	name = strings.Trim(name, " ")

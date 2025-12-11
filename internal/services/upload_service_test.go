@@ -15,8 +15,8 @@ import (
 type mockUploadStorage struct{}
 
 func (m *mockUploadStorage) Upload(
-	ctx context.Context,
-	file multipart.File,
+	_ context.Context,
+	_ multipart.File,
 	filename string,
 ) (map[string]string, string, error) {
 	if filename == "error.jpg" {

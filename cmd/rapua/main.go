@@ -82,7 +82,11 @@ func main() {
 	}
 }
 
-func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command {
+//nolint:gocognit // CLI complexity acceptable
+func newDBCommand(
+	migrator *migrate.Migrator,
+	logger *slog.Logger,
+) *cli.Command {
 	return &cli.Command{
 		Name:  "db",
 		Usage: "database migrations",
@@ -312,7 +316,7 @@ func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 	}
 }
 
-func runApp(logger *slog.Logger, dbc *bun.DB) {
+func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup function
 	initialiseFolders(logger)
 
 	// Initialize repositories
@@ -459,7 +463,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	jobs.Start()
 
 	// Construct handlers (dependency injection root)
-	publicHandler := public.NewPublicHandler(
+	publicHandler := public.NewHandler(
 		logger,
 		identityService,
 		deleteService,

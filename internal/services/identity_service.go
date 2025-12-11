@@ -110,7 +110,7 @@ func (s *AuthService) AllowGoogleLogin() bool {
 }
 
 // OAuthLogin handles User Login via OAuth.
-func (s *AuthService) OAuthLogin(ctx context.Context, provider string, oauthUser goth.User) (*models.User, error) {
+func (s *AuthService) OAuthLogin(ctx context.Context, _ string, oauthUser goth.User) (*models.User, error) {
 	existingUser, err := s.userRepository.GetByEmail(ctx, oauthUser.Email)
 	if err != nil {
 		// User doesn't exist, create a new one

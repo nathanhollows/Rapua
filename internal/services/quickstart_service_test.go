@@ -68,7 +68,7 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 		},
 		{
 			name: "Dismiss quickstart for non-existent instance",
-			setupFn: func(dbc *bun.DB) (string, bool) {
+			setupFn: func(_ *bun.DB) (string, bool) {
 				return gofakeit.UUID(), false
 			},
 			wantErr:           false, // Repository doesn't check existence, just updates
@@ -76,7 +76,7 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 		},
 		{
 			name: "Dismiss quickstart with empty instance ID",
-			setupFn: func(dbc *bun.DB) (string, bool) {
+			setupFn: func(_ *bun.DB) (string, bool) {
 				return "", false
 			},
 			wantErr:           false, // Repository will accept empty string

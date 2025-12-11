@@ -107,7 +107,11 @@ func (s *AccessService) CanAdminAccessBlock(ctx context.Context, userID, blockID
 }
 
 // CanAdminAccessBlockOwner checks if the user can access an owner (instance or location) based on context.
-func (s *AccessService) CanAdminAccessBlockOwner(ctx context.Context, userID, ownerID string, blockContext blocks.BlockContext) (bool, error) {
+func (s *AccessService) CanAdminAccessBlockOwner(
+	ctx context.Context,
+	userID, ownerID string,
+	blockContext blocks.BlockContext,
+) (bool, error) {
 	if userID == "" {
 		return false, errors.New("user ID cannot be empty")
 	}

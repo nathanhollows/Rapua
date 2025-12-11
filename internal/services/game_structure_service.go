@@ -292,7 +292,7 @@ func (s *GameStructureService) collectAllLocationIDs(group *models.GameStructure
 }
 
 // Validate checks the GameStructure for errors.
-func (s *GameStructureService) Validate(group *models.GameStructure, instanceID string) error {
+func (s *GameStructureService) Validate(group *models.GameStructure, _ string) error {
 	if group == nil {
 		return errors.New("group cannot be nil")
 	}
@@ -407,9 +407,9 @@ func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []
 
 // GetNextItemType returns what type of item should be next (placeholder implementation).
 func (s *GameStructureService) GetNextItemType(
-	group *models.GameStructure,
-	completedLocationIDs map[string]bool,
-	completedGroupIDs map[string]bool,
+	_ *models.GameStructure,
+	_ map[string]bool,
+	_ map[string]bool,
 ) interface{} {
 	// TODO: Implement based on routing strategy
 	return nil
@@ -417,9 +417,9 @@ func (s *GameStructureService) GetNextItemType(
 
 // GetNextLocation returns the next location based on routing strategy (placeholder implementation).
 func (s *GameStructureService) GetNextLocation(
-	group *models.GameStructure,
-	completedLocationIDs map[string]bool,
-	teamID string,
+	_ *models.GameStructure,
+	_ map[string]bool,
+	_ string,
 ) string {
 	// TODO: Implement based on routing strategy
 	return ""
@@ -427,8 +427,8 @@ func (s *GameStructureService) GetNextLocation(
 
 // GetNextGroup returns the next group based on routing strategy (placeholder implementation).
 func (s *GameStructureService) GetNextGroup(
-	group *models.GameStructure,
-	completedGroups map[string]bool,
+	_ *models.GameStructure,
+	_ map[string]bool,
 ) *models.GameStructure {
 	// TODO: Implement based on routing strategy
 	return nil

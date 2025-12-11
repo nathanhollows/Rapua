@@ -22,21 +22,36 @@ func (h *PlayerHandler) GetTeamNameBlock(w http.ResponseWriter, r *http.Request)
 			"error", err.Error(),
 			"block_id", blockID,
 		)
-		h.handleError(w, r, "getting team from context", "Unable to load your team information. Please try refreshing the page.")
+		h.handleError(
+			w,
+			r,
+			"getting team from context",
+			"Unable to load your team information. Please try refreshing the page.",
+		)
 		return
 	}
 
 	// Get the block
 	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
-		h.handleError(w, r, fmt.Errorf("getting block %s: %w", blockID, err).Error(), "This block could not be found. It may have been deleted by the game organiser.")
+		h.handleError(
+			w,
+			r,
+			fmt.Errorf("getting block %s: %w", blockID, err).Error(),
+			"This block could not be found. It may have been deleted by the game organiser.",
+		)
 		return
 	}
 
 	// Ensure it's a team name block
 	teamNameBlock, ok := block.(*blocks.TeamNameChangerBlock)
 	if !ok {
-		h.handleError(w, r, "invalid block type", "This block has an unexpected configuration. Please contact the game organiser.")
+		h.handleError(
+			w,
+			r,
+			"invalid block type",
+			"This block has an unexpected configuration. Please contact the game organiser.",
+		)
 		return
 	}
 

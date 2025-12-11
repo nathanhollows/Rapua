@@ -11,10 +11,10 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
 	"github.com/nathanhollows/Rapua/v6/filesystem"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
 )
 
@@ -25,7 +25,7 @@ const (
 
 func setupRouter(
 	logger *slog.Logger,
-	publicHandler *public.PublicHandler,
+	publicHandler *public.Handler,
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.Handler,
 ) *chi.Mux {
@@ -203,7 +203,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
 }
 
-func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
+func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 	router.Use(func(next http.Handler) http.Handler {
 		return middlewares.AuthStatusMiddleware(publicHandler.GetIdentityService(), next)
 	})
@@ -220,7 +220,10 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
 		token := csrf.Token(r)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		json.NewEncoder(w).Encode(map[string]string{"token": token})
+		if err := json.NewEncoder(w).Encode(map[string]string{"token": token}); err != nil {
+			http.Error(w, "Failed to encode token", http.StatusInternalServerError)
+			return
+		}
 	})
 
 	router.Get("/", publicHandler.Index)

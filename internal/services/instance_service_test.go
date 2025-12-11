@@ -32,7 +32,14 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	return *instanceService, *userService, cleanup
 }
 
-func setupInstanceServiceWithBlockRepo(t *testing.T) (services.InstanceService, services.UserService, repositories.BlockRepository, func()) {
+func setupInstanceServiceWithBlockRepo(
+	t *testing.T,
+) (
+	services.InstanceService,
+	services.UserService,
+	repositories.BlockRepository,
+	func(),
+) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
@@ -65,12 +72,24 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	require.NotNil(t, instance)
 
 	t.Run("creates default lobby blocks", func(t *testing.T) {
-		lobbyBlocks, err := blockRepo.FindByOwnerIDAndContext(context.Background(), instance.ID, blocks.ContextLobby)
-		require.NoError(t, err)
+		lobbyBlocks, lobbyErr := blockRepo.FindByOwnerIDAndContext(
+			context.Background(),
+			instance.ID,
+			blocks.ContextLobby,
+		)
+		require.NoError(t, lobbyErr)
 		assert.Len(t, lobbyBlocks, 7, "should create 7 lobby blocks")
 
 		// Verify block types in order
-		expectedTypes := []string{"header", "game_status_alert", "divider", "markdown", "divider", "team_name", "start_game_button"}
+		expectedTypes := []string{
+			"header",
+			"game_status_alert",
+			"divider",
+			"markdown",
+			"divider",
+			"team_name",
+			"start_game_button",
+		}
 		for i, block := range lobbyBlocks {
 			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
 			assert.Equal(t, i, block.GetOrder(), "block %d should have order %d", i, i)
@@ -90,8 +109,12 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	})
 
 	t.Run("creates default finish blocks", func(t *testing.T) {
-		finishBlocks, err := blockRepo.FindByOwnerIDAndContext(context.Background(), instance.ID, blocks.ContextFinish)
-		require.NoError(t, err)
+		finishBlocks, finishErr := blockRepo.FindByOwnerIDAndContext(
+			context.Background(),
+			instance.ID,
+			blocks.ContextFinish,
+		)
+		require.NoError(t, finishErr)
 		assert.Len(t, finishBlocks, 2, "should create 2 finish blocks")
 
 		// Verify block types in order
@@ -109,7 +132,7 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	})
 }
 
-func TestInstanceService(t *testing.T) {
+func TestInstanceService(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	svc, userService, cleanup := setupInstanceService(t)
 	defer cleanup()
 

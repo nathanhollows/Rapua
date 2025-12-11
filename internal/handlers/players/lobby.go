@@ -102,13 +102,23 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	// Get the block BEFORE saving to check current settings
 	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
 	if err != nil {
-		h.handleError(w, r, fmt.Errorf("getting block %s: %w", blockID, err).Error(), "Unable to save team name. The block configuration could not be loaded.")
+		h.handleError(
+			w,
+			r,
+			fmt.Errorf("getting block %s: %w", blockID, err).Error(),
+			"Unable to save team name. The block configuration could not be loaded.",
+		)
 		return
 	}
 
 	teamNameBlock, ok := block.(*blocks.TeamNameChangerBlock)
 	if !ok {
-		h.handleError(w, r, "invalid block type", "Unable to save team name. This block has an unexpected configuration.")
+		h.handleError(
+			w,
+			r,
+			"invalid block type",
+			"Unable to save team name. This block has an unexpected configuration.",
+		)
 		return
 	}
 
@@ -119,7 +129,12 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(teamName) > teamNameMaxLength {
-		h.handleError(w, r, "Team name too long", fmt.Sprintf("Team name cannot be longer than %d characters.", teamNameMaxLength))
+		h.handleError(
+			w,
+			r,
+			"Team name too long",
+			fmt.Sprintf("Team name cannot be longer than %d characters.", teamNameMaxLength),
+		)
 		return
 	}
 
@@ -131,7 +146,8 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the complete block state
-	err = blockstemplates.TeamNameChangerComplete(*teamNameBlock, team.Name, teamNameBlock.AllowChanging).Render(r.Context(), w)
+	err = blockstemplates.TeamNameChangerComplete(*teamNameBlock, team.Name, teamNameBlock.AllowChanging).
+		Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering team name complete", "error", err.Error())
 	}

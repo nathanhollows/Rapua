@@ -18,7 +18,7 @@ import (
 )
 
 // Login is the handler for the admin login page.
-func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	if authed {
 		// User is already authenticated, redirect to the admin page
@@ -35,7 +35,7 @@ func (h *PublicHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginPost handles the login form submission.
-func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "LoginPost: parsing form", "Error logging in", "error", err)
@@ -79,7 +79,7 @@ func (h *PublicHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logout destroys the user session.
-func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
 		h.logger.Error("getting session for logout", "err", err)
@@ -97,7 +97,7 @@ func (h *PublicHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // Register is the handler for the admin register page.
-func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	// User is already authenticated, redirect to the admin page
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	if authed {
@@ -114,7 +114,7 @@ func (h *PublicHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // RegisterPost handles the form submission for creating a new user.
-func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
@@ -177,7 +177,7 @@ func (h *PublicHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // ForgotPassword is the handler for the forgot password page.
-func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// User is already authenticated, redirect to the admin page
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	if authed {
@@ -194,7 +194,7 @@ func (h *PublicHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // ForgotPasswordPost handles the form submission for the forgot password page.
-func (h *PublicHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement
 
 	c := templates.ForgotMessage(
@@ -214,7 +214,7 @@ func (h *PublicHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Reques
 }
 
 // Auth redirects the user to the Google OAuth page.
-func (h *PublicHandler) Auth(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 	// Include the provider to the query string
 	// since Chi doesn't do this automatically
 	provider := chi.URLParam(r, "provider")
@@ -231,7 +231,7 @@ func (h *PublicHandler) Auth(w http.ResponseWriter, r *http.Request) {
 }
 
 // AuthCallback handles the callback from Google OAuth.
-func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	// Include the provider to the query string
 	// since Chi doesn't do this automatically
 	provider := chi.URLParam(r, "provider")
@@ -281,7 +281,7 @@ func (h *PublicHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 // VerifyEmail shows the user the verify email page, the first step in the email verification process.
-func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
 	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil && user != nil && user.EmailVerified {
@@ -299,7 +299,7 @@ func (h *PublicHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 // VerifyEmailWithToken verifies the user's email address and redirects upon error or success.
-func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
 	// If the user is authenticated without error, we will redirect them to the admin page
 	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err == nil && user != nil && user.EmailVerified {
@@ -335,7 +335,7 @@ func (h *PublicHandler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Requ
 }
 
 // VerifyEmailStatus checks the status of the email verification and redirects accordingly.
-func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
 	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -352,7 +352,7 @@ func (h *PublicHandler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request
 }
 
 // ResendEmailVerification resends the email verification email.
-func (h *PublicHandler) ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	user, err := h.identityService.GetAuthenticatedUser(r)
 	if err != nil || user == nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)

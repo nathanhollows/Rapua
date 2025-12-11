@@ -15,21 +15,22 @@ func init() {
 type Message struct {
 	Title   string
 	Message string
-	Style   FlashStyle
+	Style   Style
 }
 
-type FlashStyle string
+// Style represents the visual style of a flash message.
+type Style string
 
 const (
-	Default FlashStyle = ""
-	Success FlashStyle = "success"
-	Error   FlashStyle = "error"
-	Warning FlashStyle = "warning"
-	Info    FlashStyle = "info"
+	Default Style = ""
+	Success Style = "success"
+	Error   Style = "error"
+	Warning Style = "warning"
+	Info    Style = "info"
 )
 
 // New adds a new message into the cookie storage.
-func New(w http.ResponseWriter, r *http.Request, title string, message string, style FlashStyle) error {
+func New(w http.ResponseWriter, r *http.Request, title string, message string, style Style) error {
 	flash := Message{Title: title, Message: message, Style: style}
 	return flash.Save(w, r)
 }

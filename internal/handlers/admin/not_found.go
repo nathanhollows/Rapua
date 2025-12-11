@@ -12,7 +12,7 @@ func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 
-	if r.Header.Get("Hx-Boosted") != "true" {
+	if r.Header.Get("Hx-Boosted") != htmxHeaderTrue {
 		h.logger.Warn("NotFound called without HTMX boost", "path", r.URL.Path)
 		err := templates.NotFound().Render(r.Context(), w)
 		if err != nil {

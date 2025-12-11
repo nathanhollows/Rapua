@@ -17,6 +17,9 @@ const (
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
 )
 
+// FormValueTrue is the string value "true" used in form checkbox comparisons.
+const FormValueTrue = "true"
+
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
 	BlockType         string
@@ -95,11 +98,17 @@ func registerBlock(instance Block, contexts []BlockContext) {
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
 	// Content blocks
-	registerBlock(&MarkdownBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby})
+	registerBlock(
+		&MarkdownBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby},
+	)
 	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
 	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
 	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
-	registerBlock(&ImageBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby})
+	registerBlock(
+		&ImageBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby},
+	)
 	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
 	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})

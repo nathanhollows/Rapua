@@ -30,7 +30,7 @@ func setupBlockRepo(t *testing.T) (
 	return blockRepo, blockStateRepo, transactor, cleanup
 }
 
-func TestBlockRepository(t *testing.T) {
+func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -257,7 +257,7 @@ func TestBlockRepository(t *testing.T) {
 	}
 }
 
-func TestBlockRepository_Bulk(t *testing.T) {
+func TestBlockRepository_Bulk(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 

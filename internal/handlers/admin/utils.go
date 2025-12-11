@@ -15,12 +15,19 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
+// htmxHeaderTrue is the string value "true" used in HTMX header comparisons.
+const htmxHeaderTrue = "true"
+
 type AccessService interface {
 	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
 	CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error)
 	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
 	CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error)
-	CanAdminAccessBlockOwner(ctx context.Context, userID, ownerID string, blockContext blocks.BlockContext) (bool, error)
+	CanAdminAccessBlockOwner(
+		ctx context.Context,
+		userID, ownerID string,
+		blockContext blocks.BlockContext,
+	) (bool, error)
 }
 
 type BlockService interface {
@@ -388,7 +395,7 @@ func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests and redirects the user to the referer.
 func (h *Handler) redirect(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Header.Get("Hx-Request") == "true" {
+	if r.Header.Get("Hx-Request") == htmxHeaderTrue {
 		w.Header().Set("Hx-Redirect", path)
 		return
 	}

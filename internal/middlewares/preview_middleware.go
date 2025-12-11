@@ -85,7 +85,7 @@ func isPreviewRequest(r *http.Request) bool {
 		return false
 	}
 
-	return r.Header.Get("HX-Request") == "true" &&
+	return r.Header.Get("Hx-Request") == "true" &&
 		(strings.HasPrefix(u.Path, "/templates") ||
 			strings.HasPrefix(u.Path, "/admin"))
 }

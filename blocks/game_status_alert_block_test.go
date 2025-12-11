@@ -51,7 +51,7 @@ func TestGameStatusAlertBlock_UpdateBlockData_EmptyMessages(t *testing.T) {
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "", block.ClosedMessage)
-	assert.Equal(t, "", block.ScheduledMessage)
+	assert.Empty(t, block.ClosedMessage)
+	assert.Empty(t, block.ScheduledMessage)
 	assert.True(t, block.ShowCountdown)
 }

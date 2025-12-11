@@ -13,6 +13,7 @@ type locationStatsService struct {
 	locationRepo repositories.LocationRepository
 }
 
+//nolint:revive // Returns unexported type that implements LocationStatsService interface
 func NewLocationStatsService(locationRepo repositories.LocationRepository) *locationStatsService {
 	return &locationStatsService{
 		locationRepo: locationRepo,

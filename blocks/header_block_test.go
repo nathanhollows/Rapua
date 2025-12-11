@@ -123,7 +123,7 @@ func TestHeaderBlock_UpdateBlockData_OnlyIcon(t *testing.T) {
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com/logo.png", block.Icon)
-	assert.Equal(t, "", block.TitleText)
+	assert.Empty(t, block.TitleText)
 }
 
 func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
@@ -135,7 +135,7 @@ func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "", block.Icon)
+	assert.Empty(t, block.Icon)
 	assert.Equal(t, "My Title", block.TitleText)
 }
 

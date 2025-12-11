@@ -26,7 +26,7 @@ type mockUploadService struct {
 }
 
 func (m *mockUploadService) UploadFile(
-	ctx context.Context,
+	_ context.Context,
 	file multipart.File,
 	fileHeader *multipart.FileHeader,
 	data services.UploadMetadata,

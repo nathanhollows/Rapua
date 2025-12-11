@@ -275,7 +275,7 @@ func (h *Handler) createLocationWithOrWithoutMarker(
 // Otherwise, returns a 500 status code.
 func (h *Handler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
 	// Check HTMX headers
-	if r.Header.Get("Hx-Request") != "true" {
+	if r.Header.Get("Hx-Request") != htmxHeaderTrue {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
@@ -506,7 +506,7 @@ func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 // SaveGameStructure handles saving the game structure from the browser.
 func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 	// Check HTMX headers
-	if r.Header.Get("Hx-Request") != "true" {
+	if r.Header.Get("Hx-Request") != htmxHeaderTrue {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}

@@ -56,7 +56,7 @@ func (b *GameStatusAlertBlock) UpdateBlockData(input map[string][]string) error 
 
 	// Checkboxes
 	if showCountdown, exists := input["show_countdown"]; exists && len(showCountdown) > 0 {
-		b.ShowCountdown = showCountdown[0] == "true" || showCountdown[0] == "on"
+		b.ShowCountdown = showCountdown[0] == FormValueTrue || showCountdown[0] == "on"
 	} else {
 		b.ShowCountdown = false
 	}

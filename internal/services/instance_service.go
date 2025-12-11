@@ -64,7 +64,7 @@ func (s *InstanceService) CreateInstance(
 					Routing:        models.RouteStrategyRandom,
 					Navigation:     models.NavigationDisplayCustom,
 					CompletionType: models.CompletionAll,
-					MaxNext:        3,
+					MaxNext:        3, //nolint:mnd // Default max next locations
 					AutoAdvance:    true,
 					IsRoot:         false,
 					LocationIDs:    []string{},
@@ -174,28 +174,28 @@ func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance
 		},
 		// 3. Divider - "How to play"
 		&blocks.DividerBlock{
-			BaseBlock: blocks.BaseBlock{Order: 2},
+			BaseBlock: blocks.BaseBlock{Order: 2}, //nolint:mnd // Sequential ordering
 			Title:     "How to play",
 		},
 		// 4. Markdown - Instructions content
 		&blocks.MarkdownBlock{
-			BaseBlock: blocks.BaseBlock{Order: 3},
+			BaseBlock: blocks.BaseBlock{Order: 3}, //nolint:mnd // Sequential ordering
 			Content:   lobbyInstructionsContent,
 		},
 		// 5. Divider - "Team Info"
 		&blocks.DividerBlock{
-			BaseBlock: blocks.BaseBlock{Order: 4},
+			BaseBlock: blocks.BaseBlock{Order: 4}, //nolint:mnd // Sequential ordering
 			Title:     "Team Info",
 		},
 		// 6. Team name changer
 		&blocks.TeamNameChangerBlock{
-			BaseBlock:     blocks.BaseBlock{Order: 5},
+			BaseBlock:     blocks.BaseBlock{Order: 5}, //nolint:mnd // Sequential ordering
 			ButtonText:    "Save",
 			AllowChanging: true,
 		},
 		// 7. Start game button
 		&blocks.StartGameButtonBlock{
-			BaseBlock:           blocks.BaseBlock{Order: 6},
+			BaseBlock:           blocks.BaseBlock{Order: 6}, //nolint:mnd // Sequential ordering
 			ScheduledButtonText: "Game starts soon...",
 			ActiveButtonText:    "Start Game",
 			ButtonStyle:         "primary",
