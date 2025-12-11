@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 )
@@ -13,15 +14,18 @@ import (
 type InstanceService struct {
 	instanceRepo         repositories.InstanceRepository
 	instanceSettingsRepo repositories.InstanceSettingsRepository
+	blockRepo            repositories.BlockRepository
 }
 
 func NewInstanceService(
 	instanceRepo repositories.InstanceRepository,
 	instanceSettingsRepo repositories.InstanceSettingsRepository,
+	blockRepo repositories.BlockRepository,
 ) *InstanceService {
 	return &InstanceService{
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
+		blockRepo:            blockRepo,
 	}
 }
 
@@ -81,6 +85,16 @@ func (s *InstanceService) CreateInstance(
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
 
+	// Create default lobby blocks
+	if err := s.createDefaultLobbyBlocks(ctx, instance); err != nil {
+		return nil, fmt.Errorf("creating default lobby blocks: %w", err)
+	}
+
+	// Create default finish blocks
+	if err := s.createDefaultFinishBlocks(ctx, instance); err != nil {
+		return nil, fmt.Errorf("creating default finish blocks: %w", err)
+	}
+
 	return instance, nil
 }
 
@@ -131,4 +145,82 @@ func (s *InstanceService) Update(ctx context.Context, instance *models.Instance)
 	}
 
 	return nil
+}
+
+const lobbyInstructionsContent = `- Navigate to each location using the clues, maps, or directions provided.
+- When you arrive, check in by scanning the QR code or following the link.
+- Complete the activity at each stop.
+- Continue moving through all locations and completing their activities until you reach the final checkpoint.
+- Have fun exploring!`
+
+const finishCongratulationsContent = `You’ve wrapped up the entire route. Thanks for being part of the adventure.`
+
+// createDefaultLobbyBlocks creates the default blocks for an instance's start/lobby page.
+func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance *models.Instance) error {
+	lobbyBlocks := []blocks.Block{
+		// 1. Header block
+		&blocks.HeaderBlock{
+			BaseBlock: blocks.BaseBlock{Order: 0},
+			Icon:      "map-pin-check-inside",
+			TitleText: instance.Name,
+			TitleSize: "large",
+		},
+		// 2. Game status alert
+		&blocks.GameStatusAlertBlock{
+			BaseBlock:        blocks.BaseBlock{Order: 1},
+			ClosedMessage:    "This game is not yet open.",
+			ScheduledMessage: "This game will start soon.",
+			ShowCountdown:    true,
+		},
+		// 3. Divider - "How to play"
+		&blocks.DividerBlock{
+			BaseBlock: blocks.BaseBlock{Order: 2},
+			Title:     "How to play",
+		},
+		// 4. Markdown - Instructions content
+		&blocks.MarkdownBlock{
+			BaseBlock: blocks.BaseBlock{Order: 3},
+			Content:   lobbyInstructionsContent,
+		},
+		// 5. Divider - "Team Info"
+		&blocks.DividerBlock{
+			BaseBlock: blocks.BaseBlock{Order: 4},
+			Title:     "Team Info",
+		},
+		// 6. Team name changer
+		&blocks.TeamNameChangerBlock{
+			BaseBlock:     blocks.BaseBlock{Order: 5},
+			ButtonText:    "Save",
+			AllowChanging: true,
+		},
+		// 7. Start game button
+		&blocks.StartGameButtonBlock{
+			BaseBlock:           blocks.BaseBlock{Order: 6},
+			ScheduledButtonText: "Game starts soon...",
+			ActiveButtonText:    "Start Game",
+			ButtonStyle:         "primary",
+		},
+	}
+
+	return s.blockRepo.BulkCreate(ctx, lobbyBlocks, instance.ID, blocks.ContextLobby)
+}
+
+// createDefaultFinishBlocks creates the default blocks for an instance's finish page.
+func (s *InstanceService) createDefaultFinishBlocks(ctx context.Context, instance *models.Instance) error {
+	finishBlocks := []blocks.Block{
+		// 1. Header block
+		&blocks.HeaderBlock{
+			BaseBlock: blocks.BaseBlock{Order: 0},
+			Icon:      "party-popper",
+			TitleText: "Congratulations!",
+			TitleSize: "large",
+		},
+		// 2. Markdown - Congratulations text
+		&blocks.MarkdownBlock{
+			BaseBlock: blocks.BaseBlock{Order: 1},
+			Content:   finishCongratulationsContent,
+		},
+	}
+
+	return s.blockRepo.BulkCreate(ctx, finishBlocks, instance.ID, blocks.ContextFinish)
 }

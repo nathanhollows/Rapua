@@ -1549,3 +1549,149 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 	tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
 	_ = tx.Commit()
 }
+
+func TestBlockRepository_BulkCreate(t *testing.T) {
+	repo, _, transactor, cleanup := setupBlockRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("bulk creates multiple blocks with explicit ordering", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextLobby
+
+		// Create a slice of domain blocks with explicit ordering
+		blockList := []blocks.Block{
+			&blocks.HeaderBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Icon:      "star",
+				TitleText: "Welcome",
+				TitleSize: "large",
+			},
+			&blocks.DividerBlock{
+				BaseBlock: blocks.BaseBlock{Order: 1},
+				Title:     "Instructions",
+			},
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 2},
+				Content:   "Some content here",
+			},
+		}
+
+		// Bulk create
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		// Verify blocks were created
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 3)
+
+		// Verify ordering is preserved
+		for i, block := range createdBlocks {
+			assert.Equal(t, i, block.GetOrder(), "Block at index %d should have order %d", i, i)
+		}
+
+		// Verify types are correct
+		assert.Equal(t, "header", createdBlocks[0].GetType())
+		assert.Equal(t, "divider", createdBlocks[1].GetType())
+		assert.Equal(t, "markdown", createdBlocks[2].GetType())
+
+		// Verify header block data is preserved
+		headerBlock := createdBlocks[0].(*blocks.HeaderBlock)
+		assert.Equal(t, "star", headerBlock.Icon)
+		assert.Equal(t, "Welcome", headerBlock.TitleText)
+		assert.Equal(t, "large", headerBlock.TitleSize)
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("bulk create with empty slice does nothing", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextLobby
+
+		// Bulk create empty slice
+		err := repo.BulkCreate(ctx, []blocks.Block{}, ownerID, blockContext)
+		require.NoError(t, err)
+
+		// Verify no blocks were created
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Empty(t, createdBlocks)
+	})
+
+	t.Run("bulk create preserves validation required flag", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextLobby
+
+		// TeamNameChangerBlock requires validation
+		blockList := []blocks.Block{
+			&blocks.TeamNameChangerBlock{
+				BaseBlock:     blocks.BaseBlock{Order: 0},
+				ButtonText:    "Save",
+				AllowChanging: true,
+			},
+			&blocks.StartGameButtonBlock{
+				BaseBlock:           blocks.BaseBlock{Order: 1},
+				ScheduledButtonText: "Starting soon...",
+				ActiveButtonText:    "Start",
+				ButtonStyle:         "primary",
+			},
+		}
+
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 2)
+
+		// Verify TeamNameChangerBlock requires validation
+		assert.True(t, createdBlocks[0].RequiresValidation(), "TeamNameChangerBlock should require validation")
+		// Verify StartGameButtonBlock does not require validation
+		assert.False(t, createdBlocks[1].RequiresValidation(), "StartGameButtonBlock should not require validation")
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("bulk create with finish context", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextFinish
+
+		blockList := []blocks.Block{
+			&blocks.HeaderBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Icon:      "party-popper",
+				TitleText: "Congratulations!",
+				TitleSize: "large",
+			},
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 1},
+				Content:   "Well done!",
+			},
+		}
+
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 2)
+
+		// Verify header block data
+		headerBlock := createdBlocks[0].(*blocks.HeaderBlock)
+		assert.Equal(t, "party-popper", headerBlock.Icon)
+		assert.Equal(t, "Congratulations!", headerBlock.TitleText)
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
+	})
+}

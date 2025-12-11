@@ -69,6 +69,10 @@ type BlockRepository interface {
 	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
 	// DuplicateBlocksByOwnerTx duplicates all blocks within a transaction
 	DuplicateBlocksByOwnerTx(ctx context.Context, tx *bun.Tx, oldOwnerID, newOwnerID string) error
+
+	// BulkCreate inserts multiple blocks for an owner with specific context
+	// Blocks should have Order set explicitly; IDs will be generated
+	BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error
 }
 
 type blockRepository struct {
@@ -505,5 +509,30 @@ func (r *blockRepository) DuplicateBlocksByOwnerTx(
 		Model(&newBlocks).
 		Exec(ctx)
 
+	return err
+}
+
+// BulkCreate inserts multiple blocks for an owner with specific context.
+// Converts domain blocks to models and inserts them efficiently.
+func (r *blockRepository) BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error {
+	if len(blockList) == 0 {
+		return nil
+	}
+
+	modelBlocks := make([]models.Block, len(blockList))
+	for i, block := range blockList {
+		modelBlocks[i] = models.Block{
+			ID:                 uuid.New().String(),
+			OwnerID:            ownerID,
+			Type:               block.GetType(),
+			Context:            blockContext,
+			Data:               block.GetData(),
+			Ordering:           block.GetOrder(),
+			Points:             block.GetPoints(),
+			ValidationRequired: block.RequiresValidation(),
+		}
+	}
+
+	_, err := r.db.NewInsert().Model(&modelBlocks).Exec(ctx)
 	return err
 }

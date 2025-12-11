@@ -33,7 +33,7 @@ func setupGameStructureService(
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo)
+	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo, blockRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 
 	// Set up relation loader

@@ -426,7 +426,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) {
 	)
 	leaderBoardService := services.NewLeaderBoardService(teamRepo)
 	instanceService := services.NewInstanceService(
-		instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
