@@ -11,6 +11,7 @@ order: 100
 ### Fixed
 
 - Templates can now be launched correctly from non-owner accounts.
+- The template name field is now pre-populated when launching a template.
 
 ## 6.5.0 (29-11-2025)
 

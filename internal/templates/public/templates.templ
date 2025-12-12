@@ -289,7 +289,14 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 				<form hx-post="/admin/templates/launch-from-link" hx-swap="none">
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Game name</legend>
-						<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+						<input
+							type="text"
+							class="input w-full"
+							name="name"
+							required
+							autocomplete="off"
+							value={ link.Template.Name }
+						/>
 						<p class="label">You can edit this later on.</p>
 						<input type="hidden" name="link" value={ link.ID }/>
 					</fieldset>
