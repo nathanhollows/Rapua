@@ -386,22 +386,6 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		assert.Contains(t, err.Error(), "source is not a template")
 	})
 
-	t.Run("validates ownership", func(t *testing.T) {
-		user1 := &models.User{ID: gofakeit.UUID()}
-		user2 := &models.User{ID: gofakeit.UUID()}
-
-		template := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     user1.ID,
-			IsTemplate: true,
-		}
-		err := instanceRepo.Create(ctx, template)
-		require.NoError(t, err)
-
-		_, err = svc.CreateInstanceFromTemplate(ctx, user2, template.ID, gofakeit.Word())
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user not authenticated")
-	})
 }
 
 func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {

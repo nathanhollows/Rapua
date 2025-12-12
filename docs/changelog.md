@@ -6,7 +6,13 @@ order: 100
 
 # Changelog
 
-## 6.5.0
+## 6.5.1 (12-12-2025)
+
+### Fixed
+
+- Templates can now be launched correctly from non-owner accounts.
+
+## 6.5.0 (29-11-2025)
 
 ### Added
 
