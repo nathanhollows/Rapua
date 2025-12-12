@@ -37,14 +37,14 @@ These blocks allow you to create interactive elements in your game that require 
 - [Pincode](/docs/user/blocks/pincode)
 - [Quiz](/docs/user/blocks/quiz)
 - [Sorting](/docs/user/blocks/sorting)
-- [Team Name](/docs/user/blocks/team-name)
 
 ## System blocks
 
 These blocks are automatically created for specific page types and provide essential functionality. They cannot be deleted but can be moved and customised.
 
-- [Game Status Alert](/docs/user/blocks/game-status-alert) - Lobby page only
-- [Start Game Button](/docs/user/blocks/start-game-button) - Lobby page only
+- [Team Name](/docs/user/blocks/team-name)
+- [Game Status Alert](/docs/user/blocks/game-status-alert) - Start page only
+- [Start Game Button](/docs/user/blocks/start-game-button) - Start page only
 
 ## Planned blocks
 

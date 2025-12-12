@@ -14,10 +14,14 @@ tag: updated
 - Drag and drop content blocks in the preview pane to reorder them.
 - A new [Header](/docs/user/blocks/header) block with optional icons. This block can replace the default page header.
   - All locations now use the Header block for their title.
-- A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the lobby page.
+- A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the Start page.
 - New tags in docs to show new and updates content.
 - New [Scheduling Games](/docs/user/scheduling-games) documentation page.
 - Hovering over blocks in preview mode now highlights the matching admin block for easier identification.
+
+### Changed
+
+- `/lobby` route renamed to `/start` for clarity.
 
 ### Fixed
 

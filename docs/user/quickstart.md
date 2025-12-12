@@ -71,7 +71,7 @@ Customize the gameplay experience.
    - **Enable Points:**: Enable or disable scoring mechanisms (optional).  
 3. Save your changes.
 
-Rapua automatically generates a set of rules based on your selections. Players will be shown these rules in the lobby after beginning the game.
+Rapua automatically generates a set of rules based on your selections. Players will be shown these rules in the Start page after beginning the game.
 
 **Tip:** Hover over the information icons 🛈 for additional guidance. Each setting influences the gameplay, so choose wisely.
 

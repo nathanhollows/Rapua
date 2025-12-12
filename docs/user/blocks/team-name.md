@@ -7,9 +7,9 @@ tag: System
 
 # Team Name Block
 
-The team name block allows teams to set or change their team name on the lobby page. This block lets admins choose whether teams can update their name after initially setting it. The old approach was built in and always allowed changing.
+The team name block allows teams to set or change their team name on the Start page. This block lets admins choose whether teams can update their name after initially setting it. The old approach was built in and always allowed changing.
 
-**Important:** This block can only be placed on the lobby page, which is where teams wait before the experience begins.
+**Important:** This block can only be placed on the Start page, which is where teams wait before the experience begins.
 
 ## Options
 

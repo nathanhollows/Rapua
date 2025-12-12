@@ -75,7 +75,7 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 		lobbyBlocks, lobbyErr := blockRepo.FindByOwnerIDAndContext(
 			context.Background(),
 			instance.ID,
-			blocks.ContextLobby,
+			blocks.ContextStart,
 		)
 		require.NoError(t, lobbyErr)
 		assert.Len(t, lobbyBlocks, 7, "should create 7 lobby blocks")

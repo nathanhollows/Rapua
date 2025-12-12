@@ -120,7 +120,7 @@ func (s *AccessService) CanAdminAccessBlockOwner(
 	}
 
 	// For lobby/finish blocks, owner is instanceID
-	if blockContext == blocks.ContextLobby || blockContext == blocks.ContextFinish {
+	if blockContext == blocks.ContextStart || blockContext == blocks.ContextFinish {
 		return s.CanAdminAccessInstance(ctx, userID, ownerID)
 	}
 

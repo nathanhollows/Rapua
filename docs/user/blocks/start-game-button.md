@@ -9,7 +9,7 @@ tag: System
 
 The start game button block displays a button that allows teams to begin the game when it's active. The button text and style automatically adapt based on the game's current status.
 
-**Important:** This block can only be placed on the lobby page. It is automatically created for all new lobby pages and cannot be deleted, though it can be moved and edited to customise the appearance.
+**Important:** This block can only be placed on the Start page. It is automatically created for all new Start pages and cannot be deleted, though it can be moved and edited to customise the appearance.
 
 ## Options
 

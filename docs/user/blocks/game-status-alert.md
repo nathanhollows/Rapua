@@ -7,9 +7,9 @@ tag: System
 
 # Game Status
 
-The game status alert block automatically displays the current game status to teams on the lobby page. It shows different messages based on whether the game is scheduled, active, or closed, with an optional countdown timer.
+The game status alert block automatically displays the current game status to teams on the Start page. It shows different messages based on whether the game is scheduled, active, or closed, with an optional countdown timer.
 
-**Important:** This block can only be placed on the lobby page. It is automatically created for all new lobby pages and cannot be deleted, though it can be moved and edited to customise the messages.
+**Important:** This block can only be placed on the Start page. It is automatically created for all new Start pages and cannot be deleted, though it can be moved and edited to customise the messages.
 
 ## Options
 

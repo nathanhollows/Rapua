@@ -51,11 +51,11 @@ middleware := TeamMiddleware(teamService, nextHandler)
 **File:** `/internal/middlewares/lobby_middleware.go`
 
 **Purpose:**
-The Lobby Middleware manages team access based on the game instance status, redirecting users to the lobby when necessary.
+The Lobby Middleware manages team access based on the game instance status, redirecting users to the Start page when necessary.
 
 **Key Features:**
 - Checks game instance status
-- Redirects to lobby for inactive game instances
+- Redirects to Start page for inactive game instances
 - Adds team context to the request
 
 **Usage Example:**

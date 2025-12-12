@@ -124,7 +124,7 @@ func EditPage(data EditPageData) templ.Component {
 
 func getContextForPageType(pageType string) blocks.BlockContext {
 	if pageType == "start" {
-		return blocks.ContextLobby
+		return blocks.ContextStart
 	}
 	return blocks.ContextFinish
 }

@@ -35,7 +35,7 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		team.InstanceID,
 		team.Code,
-		blocks.ContextLobby,
+		blocks.ContextStart,
 	)
 	if err != nil {
 		h.logger.Error("getting lobby blocks", "error", err.Error())

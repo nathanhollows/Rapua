@@ -596,7 +596,7 @@ func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
 	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
 		r.Context(),
 		user.CurrentInstanceID,
-		blocks.ContextLobby,
+		blocks.ContextStart,
 	)
 	if err != nil {
 		h.logger.Error(

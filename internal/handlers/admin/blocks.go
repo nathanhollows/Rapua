@@ -84,7 +84,7 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextLocationContent,
 		blocks.ContextLocationClues,
 		blocks.ContextCheckpoint,
-		blocks.ContextLobby,
+		blocks.ContextStart,
 		blocks.ContextFinish,
 	}
 	blockContext := blocks.BlockContext(contextParam)

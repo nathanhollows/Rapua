@@ -13,7 +13,7 @@ const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
 	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
-	ContextLobby           BlockContext = "lobby"            // Lobby pages - introductions, rules, set team name
+	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
 )
 
@@ -100,22 +100,22 @@ func init() {
 	// Content blocks
 	registerBlock(
 		&MarkdownBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
 	)
-	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
-	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
-	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
+	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(
 		&ImageBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextLobby},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
 	)
-	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextLobby})
-	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextLobby, ContextFinish})
+	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
 
 	// Interactive blocks
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextLobby})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
@@ -124,9 +124,9 @@ func init() {
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 
 	// System blocks
-	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextLobby})
-	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextLobby})
-	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextLobby})
+	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
+	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextStart})
+	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextStart})
 }
 
 // Public API functions

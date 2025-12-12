@@ -1413,7 +1413,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 				Type:       "header",
 				Points:     0,
 			},
-		), instanceID, blocks.ContextLobby)
+		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		// Check ownership
@@ -1490,7 +1490,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 				Type:       "markdown",
 				Points:     0,
 			},
-		), instanceID, blocks.ContextLobby)
+		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		// Check ownership with wrong user
@@ -1529,7 +1529,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 				Type:       "markdown",
 				Points:     0,
 			},
-		), instanceID, blocks.ContextLobby)
+		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		owns, err := repo.UserOwnsBlock(ctx, "", block.GetID())
@@ -1558,7 +1558,7 @@ func TestBlockRepository_BulkCreate(t *testing.T) {
 
 	t.Run("bulk creates multiple blocks with explicit ordering", func(t *testing.T) {
 		ownerID := gofakeit.UUID()
-		blockContext := blocks.ContextLobby
+		blockContext := blocks.ContextStart
 
 		// Create a slice of domain blocks with explicit ordering
 		blockList := []blocks.Block{
@@ -1611,7 +1611,7 @@ func TestBlockRepository_BulkCreate(t *testing.T) {
 
 	t.Run("bulk create with empty slice does nothing", func(t *testing.T) {
 		ownerID := gofakeit.UUID()
-		blockContext := blocks.ContextLobby
+		blockContext := blocks.ContextStart
 
 		// Bulk create empty slice
 		err := repo.BulkCreate(ctx, []blocks.Block{}, ownerID, blockContext)
@@ -1625,7 +1625,7 @@ func TestBlockRepository_BulkCreate(t *testing.T) {
 
 	t.Run("bulk create preserves validation required flag", func(t *testing.T) {
 		ownerID := gofakeit.UUID()
-		blockContext := blocks.ContextLobby
+		blockContext := blocks.ContextStart
 
 		// TeamNameChangerBlock requires validation
 		blockList := []blocks.Block{

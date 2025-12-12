@@ -27,8 +27,8 @@ Individual and team play with the same way in Rapua. Players can either play sol
    - Instruct players to visit `rapua.nz` and enter their team code.
    - Registered teams appear active on the teams page and will show up in the [Activity](/admin/activity) view.
 4. **Begin Play**:
-   - Players will automatically be directed to the lobby to set their team name and start the game.
-   - The lobby is also where players will wait for the game to start if it's scheduled.
+   - Players will automatically be directed to the Start page to set their team name and start the game.
+   - The Start page is also where players will wait for the game to start if it's scheduled.
 
 <video autoplay loop muted src="/static/images/docs/user/teams-start-test.webm" frameborder="0" allowfullscreen controls></video>
 
@@ -40,7 +40,7 @@ Individual and team play with the same way in Rapua. Players can either play sol
     - Teams are automatically assigned unique codes for players to join.
 3. Click `Create` to add the teams. They will appear in the list where you can manage them further.
 
-Rapua generates random team codes. Team names are blank by default and players will have the option to set their own team names when they start playing and enter the lobby.
+Rapua generates random team codes. Team names are blank by default and players will have the option to set their own team names when they start playing.
 
 ## Copying Team Codes
 

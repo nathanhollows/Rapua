@@ -32,8 +32,8 @@ type m20251205061242_MarkdownBlockData struct {
 
 //nolint:revive // Migration-specific naming convention
 type m20251205061242_TeamNameChangerBlockData struct {
-	BlockText		string `json:"block_text"`
-	AllowChanging       bool   `json:"allow_changing"`
+	BlockText     string `json:"block_text"`
+	AllowChanging bool   `json:"allow_changing"`
 }
 
 //nolint:revive // Migration-specific naming convention
@@ -164,7 +164,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 		// ROLLBACK PART 2: Delete all lobby and finish blocks
 		_, err = db.NewDelete().
 			Model((*models.Block)(nil)).
-			Where("context IN (?, ?)", blocks.ContextLobby, blocks.ContextFinish).
+			Where("context IN (?, ?)", blocks.ContextStart, blocks.ContextFinish).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to delete lobby/finish blocks: %w", err)
@@ -190,7 +190,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "header",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               headerData,
 		Ordering:           0,
 		Points:             0,
@@ -207,7 +207,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "game_status_alert",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               gameStatusData,
 		Ordering:           1,
 		Points:             0,
@@ -220,7 +220,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "divider",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               divider1Data,
 		Ordering:           2, //nolint:mnd // Sequential ordering
 		Points:             0,
@@ -233,7 +233,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "markdown",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               markdownData,
 		Ordering:           3, //nolint:mnd // Sequential ordering
 		Points:             0,
@@ -246,7 +246,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "divider",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               divider2Data,
 		Ordering:           4, //nolint:mnd // Sequential ordering
 		Points:             0,
@@ -255,14 +255,14 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 
 	// 6. Team name changer
 	teamNameData, _ := json.Marshal(m20251205061242_TeamNameChangerBlockData{
-		BlockText: "Set your team name",
+		BlockText:     "Set your team name",
 		AllowChanging: true,
 	})
 	result[5] = models.Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "team_name",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               teamNameData,
 		Ordering:           5, //nolint:mnd // Sequential ordering
 		Points:             0,
@@ -279,7 +279,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "start_game_button",
-		Context:            blocks.ContextLobby,
+		Context:            blocks.ContextStart,
 		Data:               startData,
 		Ordering:           6, //nolint:mnd // Sequential ordering
 		Points:             0,
