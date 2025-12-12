@@ -300,6 +300,45 @@ templ previewSortableScript() {
 				sortableInstance.destroy();
 			}
 		});
+
+		// Hover highlighting between preview and admin blocks
+		function attachPreviewHoverHandlers() {
+			const previewContainer = document.getElementById('mobile-preview-container');
+			if (!previewContainer) return;
+
+			const previewBlocks = previewContainer.querySelectorAll('.block-view');
+
+			previewBlocks.forEach(previewBlock => {
+				// Extract UUID from preview-block-{uuid}
+				const blockId = previewBlock.id.replace('preview-block-', '');
+				if (!blockId) return;
+
+				// Find corresponding admin block
+				const adminBlock = document.getElementById('block-' + blockId) ||
+				                  document.querySelector(`[data-block-id="${blockId}"]`);
+
+				if (adminBlock) {
+					previewBlock.addEventListener('mouseenter', function() {
+						adminBlock.classList.add('admin-block-highlighted');
+					});
+
+					previewBlock.addEventListener('mouseleave', function() {
+						adminBlock.classList.remove('admin-block-highlighted');
+					});
+				}
+			});
+		}
+
+		// Attach hover handlers on page load
+		document.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);
+
+		// Re-attach after HTMX content updates
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			if (evt.detail.target.querySelector('#mobile-preview-container') ||
+				evt.detail.target.id === 'mobile-preview-container') {
+				attachPreviewHoverHandlers();
+			}
+		});
 	})();
 	</script>
 }
@@ -364,30 +403,6 @@ templ blockMoveScript() {
 }
 
 // sortableStyles renders the CSS for sortable elements
+// Note: Styles are now in static/css/main.css
 templ sortableStyles() {
-	<style>
-    .transitioning {
-        transition: transform 0.3s ease;
-    }
-
-    /* Preview block sortable styles */
-    .sortable-ghost-preview {
-        opacity: 0.4;
-        background: hsl(var(--b2));
-    }
-
-    .sortable-chosen-preview {
-        outline: 2px solid hsl(var(--p)) !important;
-        outline-offset: 4px;
-    }
-
-    .sortable-drag-preview {
-        opacity: 0.8;
-        cursor: grabbing !important;
-    }
-
-    .preview-block:active {
-        cursor: grabbing !important;
-    }
-	</style>
 }

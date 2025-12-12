@@ -165,6 +165,28 @@ p.label {
   @apply mt-0;
 }
 
+/* Sortable.js drag states */
+.sortable-ghost-preview {
+  @apply opacity-40 bg-base-200;
+}
+
+.sortable-chosen-preview {
+  @apply outline outline-2 outline-primary outline-offset-[4px];
+}
+
+.sortable-drag-preview {
+  @apply opacity-80 cursor-grabbing;
+}
+
+.transitioning {
+  @apply transition-transform duration-300;
+}
+
+/* Hover highlighting for admin blocks when preview is hovered */
+.admin-block-highlighted {
+  @apply outline-2 outline-offset-4 outline-base-content rounded-2xl transition-all duration-100;
+}
+
 .prose blockquote {
   @apply font-normal not-italic;
 }
