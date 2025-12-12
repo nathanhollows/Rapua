@@ -11,7 +11,7 @@ templ teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChan
 		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
 		hx-get={ fmt.Sprintf("/blocks/%s/team-name-block", block.GetID()) }
 		hx-trigger="load"
-		hx-swap="outerHTML"
+		hx-swap="outerHTML swap:1.5s"
 	>
 		<div class="indicator w-full">
 			<div class="card prose p-5 bg-base-200 shadow-lg w-full">
@@ -34,7 +34,7 @@ templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
 					Set your team name!
 				}
 			</p>
-			<form hx-post="/start/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+			<form hx-post="/start/team-name" hx-swap="outerHTML swap:1.5s" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
 				<input type="hidden" name="block" value={ block.GetID() }/>
 				<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
 					<div class="join w-full">
@@ -48,24 +48,34 @@ templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
 							value={ teamName }
 							required
 						/>
+						<template id={ fmt.Sprintf("btn-save-loading-%s", block.GetID()) }>
+							<span class="loading loading-dots loading-md"></span>
+						</template>
+						<template id={ fmt.Sprintf("btn-save-success-%s", block.GetID()) }>
+							<span class="flex items-center gap-2">
+								<span>Saved!</span>
+								@icon("check", templ.Attributes{"class": "w-4 h-4"})
+							</span>
+						</template>
+						<template id={ fmt.Sprintf("btn-save-normal-%s", block.GetID()) }>
+							<span class="flex items-center gap-2">
+								<span>Save</span>
+								@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
+							</span>
+						</template>
 						<button
 							type="submit"
-							class="btn btn-primary btn-outline join-item rounded-r-full"
-							_="on htmx:beforeRequest from closest <form/> add .loading
+							class="btn btn-primary btn-outline join-item rounded-r-full flex items-center gap-2"
+							_={ fmt.Sprintf(`on htmx:beforeRequest from closest <form/>
+							     put #btn-save-loading-%s.content.cloneNode(true) into me
 							   on htmx:afterRequest from closest <form/>
-							     add .btn-success then remove .btn-outline then remove .loading
-							     put #save-success.cloneNode(true) into me
-							     wait 1.5s
-							     then remove .btn-success then add .btn-outline
-							     then put #save-normal.cloneNode(true) into me"
+							     put #btn-save-success-%s.content.cloneNode(true) into me
+							     wait 1s
+							     put #btn-save-normal-%s.content.cloneNode(true) into me`, block.GetID(), block.GetID(), block.GetID()) }
 						>
-							<span id="save-normal">
+							<span class="flex items-center gap-2">
 								<span>Save</span>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-							</span>
-							<span id="save-success" class="hidden">
-								<span>Saved</span>
-								@icon("check", templ.Attributes{"class": "w-4 h-5"})
+								@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
 							</span>
 						</button>
 					</div>
@@ -87,7 +97,7 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 						Set your team name!
 					}
 				</p>
-				<form hx-post="/start/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+				<form hx-post="/start/team-name" hx-swap="outerHTML swap:1.5s" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
 					<input type="hidden" name="block" value={ block.GetID() }/>
 					<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
 						<div class="join w-full">
@@ -101,24 +111,34 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 								value={ teamName }
 								required
 							/>
+							<template id={ fmt.Sprintf("btn-update-loading-%s", block.GetID()) }>
+								<span class="loading loading-dots loading-md"></span>
+							</template>
+							<template id={ fmt.Sprintf("btn-update-success-%s", block.GetID()) }>
+								<span class="flex items-center gap-2">
+									<span>Updated!</span>
+									@icon("check", templ.Attributes{"class": "w-4 h-4"})
+								</span>
+							</template>
+							<template id={ fmt.Sprintf("btn-update-normal-%s", block.GetID()) }>
+								<span class="flex items-center gap-2">
+									<span>Update</span>
+									@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
+								</span>
+							</template>
 							<button
 								type="submit"
-								class="btn btn-primary btn-outline join-item rounded-r-full"
-								_="on htmx:beforeRequest from closest <form/> add .loading
+								class="btn btn-primary btn-outline join-item rounded-r-full flex items-center gap-2"
+								_={ fmt.Sprintf(`on htmx:beforeRequest from closest <form/>
+								     put #btn-update-loading-%s.content.cloneNode(true) into me
 								   on htmx:afterRequest from closest <form/>
-								          add .btn-success then remove .btn-outline then remove .loading
-								     put #update-success.cloneNode(true) into me
-								     wait 1.5s
-								     then remove .btn-success then add .btn-outline
-								     then put #update-normal.cloneNode(true) into me"
+								     put #btn-update-success-%s.content.cloneNode(true) into me
+								     wait 1s
+								     put #btn-update-normal-%s.content.cloneNode(true) into me`, block.GetID(), block.GetID(), block.GetID()) }
 							>
-								<span id="update-normal">
+								<span class="flex items-center gap-2">
 									<span>Update</span>
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a .5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-								</span>
-								<span id="update-success" class="hidden">
-									<span>Saved</span>
-									@icon("check", templ.Attributes{"class": "w-4 h-5"})
+									@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
 								</span>
 							</button>
 						</div>
