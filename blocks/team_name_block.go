@@ -8,7 +8,7 @@ import (
 
 type TeamNameChangerBlock struct {
 	BaseBlock
-	ButtonText    string `json:"button_text"`
+	BlockText     string `json:"block_text"`
 	AllowChanging bool   `json:"allow_changing"`
 }
 
@@ -47,12 +47,12 @@ func (b *TeamNameChangerBlock) UpdateBlockData(input map[string][]string) error 
 		b.Points = points
 	}
 
-	if buttonText, exists := input["button_text"]; exists && len(buttonText) > 0 {
-		b.ButtonText = buttonText[0]
+	if buttonText, exists := input["block_text"]; exists && len(buttonText) > 0 {
+		b.BlockText = buttonText[0]
 	}
 	// Checkbox: if present in form data, it's checked; if absent, it's unchecked
 	if allowChanging, exists := input["allow_changing"]; exists && len(allowChanging) > 0 {
-		b.AllowChanging = allowChanging[0] == "true" || allowChanging[0] == "on"
+		b.AllowChanging = allowChanging[0] == FormValueTrue || allowChanging[0] == "on"
 	} else {
 		b.AllowChanging = false
 	}

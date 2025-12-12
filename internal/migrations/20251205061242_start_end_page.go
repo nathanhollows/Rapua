@@ -32,8 +32,8 @@ type m20251205061242_MarkdownBlockData struct {
 
 //nolint:revive // Migration-specific naming convention
 type m20251205061242_TeamNameChangerBlockData struct {
-	ButtonText    string `json:"button_text"`
-	AllowChanging bool   `json:"allow_changing"`
+	BlockText		string `json:"block_text"`
+	AllowChanging       bool   `json:"allow_changing"`
 }
 
 //nolint:revive // Migration-specific naming convention
@@ -255,7 +255,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 
 	// 6. Team name changer
 	teamNameData, _ := json.Marshal(m20251205061242_TeamNameChangerBlockData{
-		ButtonText:    "Save",
+		BlockText: "Set your team name",
 		AllowChanging: true,
 	})
 	result[5] = models.Block{

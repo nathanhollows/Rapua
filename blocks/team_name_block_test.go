@@ -11,20 +11,20 @@ import (
 func TestTeamNameChangerBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"button_text":    {"Choose your team name!"},
+		"block_text":     {"Choose your team name!"},
 		"allow_changing": {"on"},
 	}
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "Choose your team name!", block.ButtonText)
+	assert.Equal(t, "Choose your team name!", block.BlockText)
 	assert.True(t, block.AllowChanging)
 }
 
 func TestTeamNameChangerBlock_UpdateBlockData_CheckboxChecked(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"button_text":    {"Set your name"},
+		"block_text":     {"Set your name"},
 		"allow_changing": {"true"},
 	}
 
@@ -38,7 +38,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_CheckboxUnchecked(t *testing.T) {
 		AllowChanging: true, // Start with it checked
 	}
 	data := map[string][]string{
-		"button_text": {"Set your name"},
+		"block_text": {"Set your name"},
 		// allow_changing not present = unchecked
 	}
 
@@ -49,17 +49,17 @@ func TestTeamNameChangerBlock_UpdateBlockData_CheckboxUnchecked(t *testing.T) {
 
 func TestTeamNameChangerBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{
-		ButtonText: "Original text",
+		BlockText: "Original text",
 	}
 	data := map[string][]string{
-		"button_text":    {""},
+		"block_text":     {""},
 		"allow_changing": {"on"},
 	}
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	// Empty button text in form data updates to empty (allows admin to clear it)
-	assert.Empty(t, block.ButtonText, "Empty button text should update to empty string")
+	assert.Empty(t, block.BlockText, "Empty button text should update to empty string")
 	assert.True(t, block.AllowChanging)
 }
 
@@ -68,12 +68,12 @@ func TestTeamNameChangerBlock_UpdateBlockData_OnlyButtonText(t *testing.T) {
 		AllowChanging: true,
 	}
 	data := map[string][]string{
-		"button_text": {"New prompt text"},
+		"block_text": {"New prompt text"},
 	}
 
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
-	assert.Equal(t, "New prompt text", block.ButtonText)
+	assert.Equal(t, "New prompt text", block.BlockText)
 	assert.False(t, block.AllowChanging, "AllowChanging should be false when not in form data")
 }
 
@@ -87,7 +87,7 @@ func TestTeamNameChangerBlock_ValidatePlayerInput(t *testing.T) {
 		BaseBlock: blocks.BaseBlock{
 			Points: 10,
 		},
-		ButtonText:    "Set your team name!",
+		BlockText:     "Set your team name!",
 		AllowChanging: true,
 	}
 

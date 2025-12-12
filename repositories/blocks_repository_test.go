@@ -1631,7 +1631,7 @@ func TestBlockRepository_BulkCreate(t *testing.T) {
 		blockList := []blocks.Block{
 			&blocks.TeamNameChangerBlock{
 				BaseBlock:     blocks.BaseBlock{Order: 0},
-				ButtonText:    "Save",
+				BlockText:     "Save",
 				AllowChanging: true,
 			},
 			&blocks.StartGameButtonBlock{

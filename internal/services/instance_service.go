@@ -189,8 +189,8 @@ func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance
 		},
 		// 6. Team name changer
 		&blocks.TeamNameChangerBlock{
-			BaseBlock:     blocks.BaseBlock{Order: 5}, //nolint:mnd // Sequential ordering
-			ButtonText:    "Save",
+			BaseBlock: blocks.BaseBlock{Order: 5}, //nolint:mnd // Sequential ordering
+			BlockText: "Set your team name", 
 			AllowChanging: true,
 		},
 		// 7. Start game button

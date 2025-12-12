@@ -28,13 +28,13 @@ templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
 		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			<p>
-				if block.ButtonText != "" {
-					{ block.ButtonText }
+				if block.BlockText != "" {
+					{ block.BlockText }
 				} else {
 					Set your team name!
 				}
 			</p>
-			<form hx-post="/lobby/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+			<form hx-post="/start/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
 				<input type="hidden" name="block" value={ block.GetID() }/>
 				<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
 					<div class="join w-full">
@@ -52,10 +52,21 @@ templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
 							type="submit"
 							class="btn btn-primary btn-outline join-item rounded-r-full"
 							_="on htmx:beforeRequest from closest <form/> add .loading
-							   on htmx:afterRequest from closest <form/> wait 250ms then remove .loading"
+							   on htmx:afterRequest from closest <form/>
+							     add .btn-success then remove .btn-outline then remove .loading
+							     put #save-success.cloneNode(true) into me
+							     wait 1.5s
+							     then remove .btn-success then add .btn-outline
+							     then put #save-normal.cloneNode(true) into me"
 						>
-							Save
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+							<span id="save-normal">
+								<span>Save</span>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+							</span>
+							<span id="save-success" class="hidden">
+								<span>Saved</span>
+								@icon("check", templ.Attributes{"class": "w-4 h-5"})
+							</span>
 						</button>
 					</div>
 				</label>
@@ -70,13 +81,13 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
 			if allowChanging {
 				<p>
-					if block.ButtonText != "" {
-						{ block.ButtonText }
+					if block.BlockText != "" {
+						{ block.BlockText }
 					} else {
 						Set your team name!
 					}
 				</p>
-				<form hx-post="/lobby/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
+				<form hx-post="/start/team-name" hx-swap="outerHTML swap:250ms" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
 					<input type="hidden" name="block" value={ block.GetID() }/>
 					<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
 						<div class="join w-full">
@@ -94,10 +105,21 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 								type="submit"
 								class="btn btn-primary btn-outline join-item rounded-r-full"
 								_="on htmx:beforeRequest from closest <form/> add .loading
-								   on htmx:afterRequest from closest <form/> wait 250ms then remove .loading"
+								   on htmx:afterRequest from closest <form/>
+								          add .btn-success then remove .btn-outline then remove .loading
+								     put #update-success.cloneNode(true) into me
+								     wait 1.5s
+								     then remove .btn-success then add .btn-outline
+								     then put #update-normal.cloneNode(true) into me"
 							>
-								Update
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a .5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+								<span id="update-normal">
+									<span>Update</span>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a .498.498 0 0 0 .682.627l18-8.5a .5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
+								</span>
+								<span id="update-success" class="hidden">
+									<span>Saved</span>
+									@icon("check", templ.Attributes{"class": "w-4 h-5"})
+								</span>
 							</button>
 						</div>
 					</label>
@@ -110,7 +132,7 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 }
 
 var teamNamePromptText = TextInputParams{
-	Name:         "button_text",
+	Name:         "block_text",
 	Title:        "Prompt Text",
 	Placeholder:  "Set your team name!",
 	ExtraClasses: "w-full",
@@ -126,7 +148,7 @@ templ teamNameChangerAdmin(settings models.InstanceSettings, block blocks.TeamNa
 		if settings.EnablePoints {
 			@adminPointsField(block.GetPoints())
 		}
-		@TextInputField(teamNamePromptText.SetValue(block.ButtonText))
+		@TextInputField(teamNamePromptText.SetValue(block.BlockText))
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Options</legend>
 			<label class="label cursor-pointer justify-start gap-2">
