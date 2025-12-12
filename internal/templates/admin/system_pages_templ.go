@@ -131,7 +131,7 @@ func getContextForPageType(pageType string) blocks.BlockContext {
 
 func getPreviewURLForPageType(pageType string) string {
 	if pageType == "start" {
-		return "/lobby"
+		return "/start"
 	}
 	return "/finish"
 }

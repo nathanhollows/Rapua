@@ -8,7 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
-// LobbyMiddleware redirects to the lobby if the game is scheduled to start.
+// LobbyMiddleware redirects to the start if the game is scheduled to start.
 func LobbyMiddleware(teamService teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Preview requests should pass through
@@ -31,17 +31,17 @@ func LobbyMiddleware(teamService teamService, next http.Handler) http.Handler {
 			return
 		}
 
-		// Redirect to lobby if game is scheduled
-		// Exception: allow block state endpoints needed for lobby page functionality
+		// Redirect to start if game is scheduled
+		// Exception: allow block state endpoints needed for start page functionality
 		isBlockStateEndpoint := strings.HasPrefix(r.URL.Path, "/blocks/") &&
 			(strings.HasSuffix(r.URL.Path, "/team-name-block") ||
 				strings.HasSuffix(r.URL.Path, "/game-status-alert") ||
 				strings.HasSuffix(r.URL.Path, "/start-game-button"))
 
 		if foundTeam.Instance.GetStatus() != models.Active &&
-			!strings.HasPrefix(r.URL.Path, "/lobby") &&
+			!strings.HasPrefix(r.URL.Path, "/start") &&
 			!isBlockStateEndpoint {
-			http.Redirect(w, r, "/lobby", http.StatusFound)
+			http.Redirect(w, r, "/start", http.StatusFound)
 			return
 		}
 

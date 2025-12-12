@@ -116,7 +116,7 @@ func Lobby(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]bl
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div hx-get=\"/lobby\" hx-swap=\"none\" hx-trigger=\"every 20s, timer\" hx-boost=\"true\"></div><div class=\"mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div hx-get=\"/start\" hx-swap=\"none\" hx-trigger=\"every 20s, timer\" hx-boost=\"true\"></div><div class=\"mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -205,7 +205,7 @@ func TeamNameForm(team models.Team) templ.Component {
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"card bg-base-200\"><div class=\"card-body\"><h3 class=\"card-title\">Choose a team name</h3><form hx-post=\"/lobby/team-name\" hx-swap=\"outerHTML\" class=\"flex flex-col gap-2\"><label class=\"input flex items-center gap-2\">Name: <input name=\"name\" type=\"text\" class=\"grow w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"card bg-base-200\"><div class=\"card-body\"><h3 class=\"card-title\">Choose a team name</h3><form hx-post=\"/start/team-name\" hx-swap=\"outerHTML\" class=\"flex flex-col gap-2\"><label class=\"input flex items-center gap-2\">Name: <input name=\"name\" type=\"text\" class=\"grow w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -218,7 +218,7 @@ func TeamNameForm(team models.Team) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" autocomplete=\"off\" placeholder=\"Enter team name...\"></label><div class=\"flex gap-2 justify-end\"><button type=\"button\" class=\"btn\" onclick=\"this.closest('.card').innerHTML = '<div class=\\'card-body\\'><button type=\\'button\\' class=\\'btn btn-primary\\' hx-get=\\'/lobby/team-name-form\\' hx-target=\\'closest .card\\' hx-swap=\\'outerHTML\\'>Set Team Name</button></div>'\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" autocomplete=\"off\" placeholder=\"Enter team name...\"></label><div class=\"flex gap-2 justify-end\"><button type=\"button\" class=\"btn\" onclick=\"this.closest('.card').innerHTML = '<div class=\\'card-body\\'><button type=\\'button\\' class=\\'btn btn-primary\\' hx-get=\\'/start/team-name-form\\' hx-target=\\'closest .card\\' hx-swap=\\'outerHTML\\'>Set Team Name</button></div>'\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

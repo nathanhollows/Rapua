@@ -175,8 +175,8 @@ func TestLobbyMiddleware_ScheduledGameRedirectsToLobby(t *testing.T) {
 		t.Errorf("expected status code %d, got %d", http.StatusFound, rr.Code)
 	}
 
-	if location := rr.Header().Get("Location"); location != "/lobby" {
-		t.Errorf("expected redirect to /lobby, got %s", location)
+	if location := rr.Header().Get("Location"); location != "/start" {
+		t.Errorf("expected redirect to /start, got %s", location)
 	}
 }
 
@@ -193,7 +193,7 @@ func TestLobbyMiddleware_AlreadyInLobby(t *testing.T) {
 	middleware := LobbyMiddleware(dummyService, nextHandler)
 
 	// Create a request with team and scheduled game instance but already in lobby
-	req := httptest.NewRequest(http.MethodGet, "http://example.com/lobby", nil)
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/start", nil)
 
 	// Mock instance with non-active status
 	instance := models.Instance{Status: models.Scheduled}
@@ -209,7 +209,7 @@ func TestLobbyMiddleware_AlreadyInLobby(t *testing.T) {
 	middleware.ServeHTTP(rr, req)
 
 	if !nextCalled {
-		t.Error("expected next handler to be called when already in lobby")
+		t.Error("expected next handler to be called when already in start")
 	}
 
 	if rr.Code != http.StatusOK {

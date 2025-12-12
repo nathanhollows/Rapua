@@ -34,7 +34,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								class="btn btn-sm btn-circle btn-ghost btn-disabled"
 								_="
 									on change from <select /> or load
-										if its value is not 'lobby' then remove .btn-disabled from me
+										if its value is not 'start' then remove .btn-disabled from me
 										else add .btn-disabled to me 
 									end
 									on click 
@@ -72,9 +72,9 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									<option disabled class="font-bold">Pages</option>
 									<option
 										hx-trigger="chosen"
-										hx-get="/lobby"
+										hx-get="/start"
 										selected
-										value="lobby"
+										value="start"
 										_="
 											on change from #pages
 												if #pages.options[#pages.selectedIndex].value == me.value then
@@ -83,14 +83,14 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 												end
 											end
 											on load
-												if window.location.hash == '#lobby' then
+												if window.location.hash == '#start' then
 													send chosen to me
 													set #pages's value to my.value
 												end
 											end
 											"
 									>
-										Lobby
+										Start
 									</option>
 									<option
 										hx-trigger="chosen"

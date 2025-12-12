@@ -138,8 +138,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Post("/image", playerHandler.UploadImage)
 	})
 
-	// Show the lobby page
-	router.Route("/lobby", func(r chi.Router) {
+	// Show the start page
+	router.Route("/start", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
@@ -148,7 +148,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
 			)
 		})
-		r.Get("/", playerHandler.Lobby)
+		r.Get("/", playerHandler.Start)
 		r.Get("/team-name-value", playerHandler.GetTeamNameValue)
 		r.Get("/team-name-form", playerHandler.GetTeamNameForm)
 		r.Post("/team-name", playerHandler.SetTeamName)

@@ -15,8 +15,8 @@ const (
 	teamNameMaxLength = 50
 )
 
-// Lobby is where teams wait for the game to begin.
-func (h *PlayerHandler) Lobby(w http.ResponseWriter, r *http.Request) {
+// Start is where teams wait for the game to begin.
+func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
