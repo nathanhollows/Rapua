@@ -27,7 +27,14 @@ tag: updated
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
 
-## 6.5.0 (2025-11-29)
+## 6.5.1 (12-12-2025)
+
+### Fixed
+
+- Templates can now be launched correctly from non-owner accounts.
+- The template name field is now pre-populated when launching a template.
+
+## 6.5.0 (29-11-2025)
 
 ### Added
 

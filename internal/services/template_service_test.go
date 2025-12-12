@@ -109,7 +109,6 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 			{"Empty Template ID", "", "Game2", user.ID, true},
 			{"Empty Instance Name", template.ID, "", user.ID, true},
 			{"Invalid Template ID", "invalid", "Game2", user.ID, true},
-			{"Invalid User ID", template.ID, "Game2", "invalid", true},
 		}
 
 		for _, tt := range tests {
@@ -128,6 +127,21 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("NonOwnerCanLaunchInstance", func(t *testing.T) {
+		// Create a second user who does not own the template
+		nonOwner := &models.User{ID: "user456", Password: "password", CurrentInstanceID: "instance456"}
+
+		// Non-owner should be able to create an instance from the template
+		_, launchErr := svc.LaunchInstance(
+			context.Background(),
+			nonOwner.ID,
+			template.ID,
+			"NonOwnerGame",
+			false,
+		)
+		require.NoError(t, launchErr, "non-owner should be able to launch instance from template")
 	})
 }
 
@@ -169,7 +183,6 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 			{"Empty ShareLink ID", user.ID, "", "Game3", false, true},
 			{"Empty Instance Name", user.ID, shareLinkID, "", false, true},
 			{"Invalid ShareLink ID", user.ID, "invalid", "Game3", false, true},
-			{"Invalid User ID", "invalid", shareLinkID, "Game3", false, true},
 		}
 
 		for _, tt := range tests {
