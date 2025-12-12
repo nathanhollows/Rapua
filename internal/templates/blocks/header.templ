@@ -24,14 +24,14 @@ templ headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) {
 				}
 				if block.TitleText != "" {
 					switch block.TitleSize {
-						case "large":
-							<h2 class="text-2xl font-bold">{ block.TitleText }</h2>
-						case "medium":
-							<h1 class="text-xl font-bold">{ block.TitleText }</h1>
 						case "small":
-							<h1 class="text-lg font-bold">{ block.TitleText }</h1>
+							<h1 class="text-lg font-bold text-center">{ block.TitleText }</h1>
+						case "medium":
+							<h1 class="text-xl font-bold text-center">{ block.TitleText }</h1>
+						case "large":
+							<h1 class="text-2xl font-bold text-center">{ block.TitleText }</h1>
 						default:
-							<h1 class="text-2xl font-bold">{ block.TitleText }</h1>
+							<h1 class="text-2xl font-bold text-center">{ block.TitleText }</h1>
 					}
 				}
 			</div>
