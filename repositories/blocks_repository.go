@@ -135,23 +135,27 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 // UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
 func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	// Query to check block ownership through instances
-	// For lobby/finish blocks: owner_id IS the instance_id
+	// For start/finish blocks: owner_id IS the instance_id
 	// For location blocks: owner_id IS the location_id, which belongs to an instance
 	count, err := r.db.NewSelect().
 		Model((*models.Block)(nil)).
 		ColumnExpr("1").
 		Where("id = ?", blockID).
-		Where(`(
-			(context IN ('lobby', 'finish') AND owner_id IN (
-				SELECT id FROM instances WHERE user_id = ?
-			))
-			OR
-			(context NOT IN ('lobby', 'finish') AND owner_id IN (
-				SELECT id FROM locations WHERE instance_id IN (
-					SELECT id FROM instances WHERE user_id = ?
-				)
-			))
-		)`, userID, userID).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				// Instance-owned blocks (start/finish contexts)
+				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
+					return q.
+						Where("context IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
+						Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID)
+				}).
+				// Location-owned blocks (all other contexts)
+				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
+					return q.
+						Where("context NOT IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
+						Where("owner_id IN (SELECT id FROM locations WHERE instance_id IN (SELECT id FROM instances WHERE user_id = ?))", userID)
+				})
+		}).
 		Limit(1).
 		Count(ctx)
 	if err != nil {

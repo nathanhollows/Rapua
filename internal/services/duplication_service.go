@@ -315,6 +315,12 @@ func (s *DuplicationService) duplicateInstance(
 		locationIDMap[location.ID] = newLocation.ID
 	}
 
+	// Duplicate blocks that belong directly to the instance (e.g., ContextStart and ContextFinish)
+	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceInstance.ID, newInstance.ID)
+	if err != nil {
+		return nil, fmt.Errorf("duplicating instance blocks: %w", err)
+	}
+
 	// Remap location IDs in the game structure
 	s.remapLocationIDs(&newInstance.GameStructure, locationIDMap)
 

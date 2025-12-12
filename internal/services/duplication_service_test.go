@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/db"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	"github.com/nathanhollows/Rapua/v6/models"
@@ -334,7 +335,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 }
 
 func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, blockRepo, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -384,6 +385,89 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		_, err = svc.CreateInstanceFromTemplate(ctx, user, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "source is not a template")
+	})
+
+	t.Run("copies instance-owned blocks (ContextStart and ContextFinish)", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+
+		// Create template
+		template := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: true,
+		}
+		err := instanceRepo.Create(ctx, template)
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{
+			InstanceID: template.ID,
+		}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		// Create ContextStart blocks for the template (owner_id = template.ID)
+		startBlocks := []blocks.Block{
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Content:   "Welcome to the game!",
+			},
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 1},
+				Content:   "These are the rules.",
+			},
+		}
+		err = blockRepo.BulkCreate(ctx, startBlocks, template.ID, blocks.ContextStart)
+		require.NoError(t, err)
+
+		// Create ContextFinish blocks for the template (owner_id = template.ID)
+		finishBlocks := []blocks.Block{
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Content:   "Congratulations!",
+			},
+		}
+		err = blockRepo.BulkCreate(ctx, finishBlocks, template.ID, blocks.ContextFinish)
+		require.NoError(t, err)
+
+		// Verify template has the blocks we created
+		templateStartBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, template.ID, blocks.ContextStart)
+		require.NoError(t, err)
+		require.Len(t, templateStartBlocks, 2, "template should have 2 ContextStart blocks")
+
+		templateFinishBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, template.ID, blocks.ContextFinish)
+		require.NoError(t, err)
+		require.Len(t, templateFinishBlocks, 1, "template should have 1 ContextFinish block")
+
+		// Create instance from template
+		instanceName := gofakeit.Word()
+		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, instanceName)
+		require.NoError(t, err)
+
+		// Verify ContextStart blocks were copied to new instance
+		instanceStartBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, instance.ID, blocks.ContextStart)
+		require.NoError(t, err)
+		assert.Len(t, instanceStartBlocks, 2, "instance should have 2 ContextStart blocks")
+
+		// Verify ContextFinish blocks were copied to new instance
+		instanceFinishBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, instance.ID, blocks.ContextFinish)
+		require.NoError(t, err)
+		assert.Len(t, instanceFinishBlocks, 1, "instance should have 1 ContextFinish block")
+
+		// Verify ContextStart blocks have different IDs but same types and order
+		for i, templateBlock := range templateStartBlocks {
+			instanceBlock := instanceStartBlocks[i]
+			assert.NotEqual(t, templateBlock.GetID(), instanceBlock.GetID(), "block IDs should be different")
+			assert.Equal(t, templateBlock.GetType(), instanceBlock.GetType(), "block types should match")
+			assert.Equal(t, templateBlock.GetOrder(), instanceBlock.GetOrder(), "block order should match")
+		}
+
+		// Verify ContextFinish blocks have different IDs but same types and order
+		for i, templateBlock := range templateFinishBlocks {
+			instanceBlock := instanceFinishBlocks[i]
+			assert.NotEqual(t, templateBlock.GetID(), instanceBlock.GetID(), "block IDs should be different")
+			assert.Equal(t, templateBlock.GetType(), instanceBlock.GetType(), "block types should match")
+			assert.Equal(t, templateBlock.GetOrder(), instanceBlock.GetOrder(), "block order should match")
+		}
 	})
 
 }
