@@ -93,8 +93,8 @@ func (h *Handler) handleError(
 // redirect is a helper function to redirect the user to a new page.
 // It accounts for htmx requests and redirects the user to the referer.
 func (h *Handler) redirect(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", path)
+	if r.Header.Get("Hx-Request") == "true" {
+		w.Header().Set("Hx-Redirect", path)
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)

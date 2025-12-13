@@ -146,7 +146,10 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 				// Instance-owned blocks (start/finish contexts)
 				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
 					return q.
-						Where("context IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
+						Where(
+							"context IN (?)",
+							bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish}),
+						).
 						Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID)
 				}).
 				// Location-owned blocks (all other contexts)

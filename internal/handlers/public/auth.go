@@ -75,7 +75,7 @@ func (h *Handler) LoginPost(w http.ResponseWriter, r *http.Request) {
 		h.handleError(w, r, "LoginPost: saving session", "Error logging in", "error", err)
 		return
 	}
-	w.Header().Add("hx-redirect", "/admin")
+	w.Header().Add("Hx-Redirect", "/admin")
 }
 
 // Logout destroys the user session.
@@ -343,7 +343,7 @@ func (h *Handler) VerifyEmailStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user.EmailVerified {
-		w.Header().Add("HX-Redirect", "/admin")
+		w.Header().Add("Hx-Redirect", "/admin")
 		return
 	}
 

@@ -469,7 +469,6 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 			assert.Equal(t, templateBlock.GetOrder(), instanceBlock.GetOrder(), "block order should match")
 		}
 	})
-
 }
 
 func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
