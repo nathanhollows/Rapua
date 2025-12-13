@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.6.2 (13-12-2025)
+
+### Fixed
+
+- Replaced SendGrid integration with SMTP so emails work again, and reliably. Updated `.env.template` with new SMTP fields.
+
 ## 6.6.1 (13-12-2025)
 
 ### Fixed

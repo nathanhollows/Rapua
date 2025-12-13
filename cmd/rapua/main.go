@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	version    = "v6.6.1"
+	version    = "v6.6.2"
 	uploadsDir = "static/uploads/"
 )
 
