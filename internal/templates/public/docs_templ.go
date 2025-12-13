@@ -86,67 +86,103 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</a></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if page.Tag != "" {
+					switch page.Tag {
+					case "new":
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"badge badge-success badge-xs ml-auto\">New</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					case "updated":
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span class=\"badge badge-info badge-xs ml-auto\">Updated</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					default:
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"badge badge-xs ml-auto\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var4 string
+						templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(page.Tag)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 34, Col: 55}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</a></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<li><details open><summary>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<li><details open><summary>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				switch page.Title {
 				case "User Docs":
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-5 h-5 text-accent\"><path d=\"M12 7v14\"></path><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"></path></svg> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-5 h-5 text-accent\"><path d=\"M12 7v14\"></path><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Developer Docs":
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-code w-5 h-5 stroke-primary\"><polyline points=\"16 18 22 12 16 6\"></polyline><polyline points=\"8 6 2 12 8 18\"></polyline></svg> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-code w-5 h-5 stroke-primary\"><polyline points=\"16 18 22 12 16 6\"></polyline><polyline points=\"8 6 2 12 8 18\"></polyline></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Guides":
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lightbulb w-5 h-5\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"></path><path d=\"M9 18h6\"></path><path d=\"M10 22h4\"></path></svg> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lightbulb w-5 h-5\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"></path><path d=\"M9 18h6\"></path><path d=\"M10 22h4\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				case "Content Blocks":
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grid-2x2-plus w-5 h-5\"><path d=\"M12 3v17a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1H3\"></path><path d=\"M16 19h6\"></path><path d=\"M19 22v-6\"></path></svg> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grid-2x2-plus w-5 h-5\"><path d=\"M12 3v17a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1H3\"></path><path d=\"M16 19h6\"></path><path d=\"M19 22v-6\"></path></svg> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if isChild {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<h2 class=\"py-0 menu-title flex items-center gap-4 px-1.5\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<h2 class=\"py-0 menu-title flex items-center gap-4 px-1.5\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var4 string
-					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 44, Col: 78}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</h2>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 46, Col: 19}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 54, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</h2>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					var templ_7745c5c3_Var6 string
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 56, Col: 19}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</summary><ul>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</summary><ul>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -156,7 +192,7 @@ func recursiveSidebar(topPage *services.DocPage, page *services.DocPage, sidebar
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</ul></details></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</ul></details></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -182,12 +218,12 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var7 == nil {
+			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"drawer\"><input id=\"my-drawer\" type=\"checkbox\" class=\"drawer-toggle\"><div class=\"drawer-side z-20\"><label for=\"my-drawer\" aria-label=\"close sidebar\" class=\"drawer-overlay\"></label><ul hx-boost=\"true\" class=\"menu bg-base-200 w-80 min-h-full overflow-y-scroll\"><li><a href=\"/about\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-4 h-4\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"></path><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"></path></svg> About</a></li><li><a href=\"/pricing\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign w-4 h-4\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg> Pricing</a></li><div class=\"divider px-4\">Docs</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<main class=\"max-w-7xl m-auto pb-8\"><div class=\"drawer\"><input id=\"my-drawer\" type=\"checkbox\" class=\"drawer-toggle\"><div class=\"drawer-side z-20\"><label for=\"my-drawer\" aria-label=\"close sidebar\" class=\"drawer-overlay\"></label><ul hx-boost=\"true\" class=\"menu bg-base-200 w-80 min-h-full overflow-y-scroll\"><li><a href=\"/about\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-open w-4 h-4\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"></path><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"></path></svg> About</a></li><li><a href=\"/pricing\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-dollar-sign w-4 h-4\"><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\"></line><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"></path></svg> Pricing</a></li><div class=\"divider px-4\">Docs</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -197,7 +233,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</ul></div></div><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><div class=\"md:w-min-content hidden lg:block\"><ul hx-boost=\"true\" class=\"menu rounded-box w-full md:w-72\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</ul></div></div><div class=\"flex flex-col md:flex-row w-full gap-8 p-5\"><div class=\"md:w-min-content hidden lg:block\"><ul hx-boost=\"true\" class=\"menu rounded-box w-full md:w-72\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -207,55 +243,55 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(page.Headings) > 2 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"md:w-min-content order-2 md:order-4\"><ul id=\"toc\" class=\"menu bg-base-200 rounded-box w-full md:w-72 sticky top-12\"><li><a class=\"menu-title\">Table of Contents</a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"md:w-min-content order-2 md:order-4\"><ul id=\"toc\" class=\"menu bg-base-200 rounded-box w-full md:w-72 sticky top-12\"><li><a class=\"menu-title\">Table of Contents</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, item := range page.Headings {
 				if item.Level < 3 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<li><a href=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<li><a href=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var7 templ.SafeURL
-					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("#" + item.ID))
+					var templ_7745c5c3_Var8 templ.SafeURL
+					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("#" + item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 96, Col: 50}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Text)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 96, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 106, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</a></li>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var9 string
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.Text)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/docs.templ`, Line: 106, Col: 64}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</a></li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</ul></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<section class=\"w-full prose prose-sm md:prose-base order-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<section class=\"w-full prose prose-sm md:prose-base order-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -263,7 +299,7 @@ func Docs(page *services.DocPage, sidebar []*services.DocPage) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</section></div></main><style>\n\th1 a, h2 a, h3 a {\n\t\topacity: 0.4;\n  }\n.prose pre code{\n  text-wrap: auto;\n  display: inline-flex;\n  padding-right: 4em;\n}\n.mockup-code pre {\n  overflow: hidden;\n}\n</style><script>\n(function() {\n  function initScrollSpy() {\n    // Remove previous event listeners if any\n    if (window._onScrollSpyScroll) {\n      window.removeEventListener(\"scroll\", window._onScrollSpyScroll);\n    }\n    if (window._scrollSpyMenuLinks) {\n      window._scrollSpyMenuLinks.forEach(link => {\n        link.removeEventListener(\"click\", link._onScrollSpyClick);\n      });\n    }\n\n    // Get all navigation links and sections\n    const menuLinks = document.querySelectorAll(\"#toc a\");\n    const sections = document.querySelectorAll(\".prose h1, .prose h2\");\n    const scrollMargin = 7 * 16; // 3rem in pixels\n\n    function onScroll() {\n      let scrollPos = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;\n      let offset = scrollMargin; // Offset for highlighting\n      let found = false; // Flag to check if a section is matched\n\n      sections.forEach(section => {\n        let top = section.offsetTop - offset;\n        let bottom = top + section.offsetHeight;\n\n        if (scrollPos >= top && scrollPos < bottom) {\n          found = true;\n          menuLinks.forEach(link => {\n            link.classList.remove(\"menu-active\");\n            if (link.hasAttribute(\"href\") && link.getAttribute(\"href\").substring(1) === section.id) {\n              link.classList.add(\"menu-active\");\n            }\n          });\n        }\n      });\n\n      // If no section is matched and scrollPos is at the top, highlight the first menu link\n      if (!found && scrollPos === 0) {\n        menuLinks.forEach(link => link.classList.remove(\"menu-active\"));\n        if (menuLinks.length > 0) {\n          menuLinks[0].classList.add(\"menu-active\");\n        }\n      }\n    }\n\n    function onClick(event) {\n      menuLinks.forEach(link => link.classList.remove(\"menu-active\"));\n      event.currentTarget.classList.add(\"menu-active\");\n    }\n\n    // Attach the scroll event listener\n    window._onScrollSpyScroll = onScroll;\n    window.addEventListener(\"scroll\", window._onScrollSpyScroll);\n\n    // Attach click event listeners to menu links\n    window._scrollSpyMenuLinks = menuLinks;\n    menuLinks.forEach(link => {\n      link._onScrollSpyClick = function(event) {\n        onClick(event);\n        setTimeout(onScroll, 100); // Re-run onScroll after a short delay\n      };\n      link.addEventListener(\"click\", link._onScrollSpyClick);\n    });\n\n    // Initial check in case the page is already scrolled\n    onScroll();\n  }\n\n  // Initialize scrollspy when the DOM is ready\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", initScrollSpy);\n  } else {\n    initScrollSpy();\n  }\n\n  // Re-initialize after htmx content is swapped\n  document.body.addEventListener(\"htmx:afterSwap\", function(evt) {\n    initScrollSpy();\n  });\n})();\n</script><style>\n.prose img {\n\t\t\t\tborder-radius: var(--rounded-box, 1rem);\n}\n</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</section></div></main><style>\n\th1 a, h2 a, h3 a {\n\t\topacity: 0.4;\n  }\n.prose pre code{\n  text-wrap: auto;\n  display: inline-flex;\n  padding-right: 4em;\n}\n.mockup-code pre {\n  overflow: hidden;\n}\n</style><script>\n(function() {\n  function initScrollSpy() {\n    // Remove previous event listeners if any\n    if (window._onScrollSpyScroll) {\n      window.removeEventListener(\"scroll\", window._onScrollSpyScroll);\n    }\n    if (window._scrollSpyMenuLinks) {\n      window._scrollSpyMenuLinks.forEach(link => {\n        link.removeEventListener(\"click\", link._onScrollSpyClick);\n      });\n    }\n\n    // Get all navigation links and sections\n    const menuLinks = document.querySelectorAll(\"#toc a\");\n    const sections = document.querySelectorAll(\".prose h1, .prose h2\");\n    const scrollMargin = 7 * 16; // 3rem in pixels\n\n    function onScroll() {\n      let scrollPos = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;\n      let offset = scrollMargin; // Offset for highlighting\n      let found = false; // Flag to check if a section is matched\n\n      sections.forEach(section => {\n        let top = section.offsetTop - offset;\n        let bottom = top + section.offsetHeight;\n\n        if (scrollPos >= top && scrollPos < bottom) {\n          found = true;\n          menuLinks.forEach(link => {\n            link.classList.remove(\"menu-active\");\n            if (link.hasAttribute(\"href\") && link.getAttribute(\"href\").substring(1) === section.id) {\n              link.classList.add(\"menu-active\");\n            }\n          });\n        }\n      });\n\n      // If no section is matched and scrollPos is at the top, highlight the first menu link\n      if (!found && scrollPos === 0) {\n        menuLinks.forEach(link => link.classList.remove(\"menu-active\"));\n        if (menuLinks.length > 0) {\n          menuLinks[0].classList.add(\"menu-active\");\n        }\n      }\n    }\n\n    function onClick(event) {\n      menuLinks.forEach(link => link.classList.remove(\"menu-active\"));\n      event.currentTarget.classList.add(\"menu-active\");\n    }\n\n    // Attach the scroll event listener\n    window._onScrollSpyScroll = onScroll;\n    window.addEventListener(\"scroll\", window._onScrollSpyScroll);\n\n    // Attach click event listeners to menu links\n    window._scrollSpyMenuLinks = menuLinks;\n    menuLinks.forEach(link => {\n      link._onScrollSpyClick = function(event) {\n        onClick(event);\n        setTimeout(onScroll, 100); // Re-run onScroll after a short delay\n      };\n      link.addEventListener(\"click\", link._onScrollSpyClick);\n    });\n\n    // Initial check in case the page is already scrolled\n    onScroll();\n  }\n\n  // Initialize scrollspy when the DOM is ready\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", initScrollSpy);\n  } else {\n    initScrollSpy();\n  }\n\n  // Re-initialize after htmx content is swapped\n  document.body.addEventListener(\"htmx:afterSwap\", function(evt) {\n    initScrollSpy();\n  });\n})();\n</script><style>\n.prose img {\n\t\t\t\tborder-radius: var(--rounded-box, 1rem);\n}\n</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -287,12 +323,12 @@ func MarkdownPreview(md template.HTML) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var9 == nil {
-			templ_7745c5c3_Var9 = templ.NopComponent
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"prose w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"prose w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -300,7 +336,7 @@ func MarkdownPreview(md template.HTML) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

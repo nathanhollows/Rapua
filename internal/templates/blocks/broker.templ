@@ -133,7 +133,7 @@ templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, resubmit delay:500ms", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, resubmit delay:500ms", block.ID) }
 		hx-swap="none"
 		_="
 		init send recount to me

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
@@ -19,17 +20,119 @@ func setupInstanceService(t *testing.T) (services.InstanceService, services.User
 	instanceRepo := repositories.NewInstanceRepository(dbc)
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, instanceRepo)
 	instanceService := services.NewInstanceService(
-		instanceRepo, instanceSettingsRepo,
+		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 
 	return *instanceService, *userService, cleanup
 }
 
-func TestInstanceService(t *testing.T) {
+func setupInstanceServiceWithBlockRepo(
+	t *testing.T,
+) (
+	services.InstanceService,
+	services.UserService,
+	repositories.BlockRepository,
+	func(),
+) {
+	t.Helper()
+	dbc, cleanup := setupDB(t)
+
+	// Initialize repositories
+	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	userRepo := repositories.NewUserRepository(dbc)
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+
+	// Initialize services
+	userService := services.NewUserService(userRepo, instanceRepo)
+	instanceService := services.NewInstanceService(
+		instanceRepo, instanceSettingsRepo, blockRepo,
+	)
+
+	return *instanceService, *userService, blockRepo, cleanup
+}
+
+func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
+	svc, userService, blockRepo, cleanup := setupInstanceServiceWithBlockRepo(t)
+	defer cleanup()
+
+	user := &models.User{Email: "blockstest@example.com", Password: "password"}
+	err := userService.CreateUser(context.Background(), user, "password")
+	require.NoError(t, err)
+
+	instance, err := svc.CreateInstance(context.Background(), "Test Game", user)
+	require.NoError(t, err)
+	require.NotNil(t, instance)
+
+	t.Run("creates default start blocks", func(t *testing.T) {
+		startBlocks, startErr := blockRepo.FindByOwnerIDAndContext(
+			context.Background(),
+			instance.ID,
+			blocks.ContextStart,
+		)
+		require.NoError(t, startErr)
+		assert.Len(t, startBlocks, 7, "should create 7 start blocks")
+
+		// Verify block types in order
+		expectedTypes := []string{
+			"header",
+			"game_status_alert",
+			"divider",
+			"markdown",
+			"divider",
+			"team_name",
+			"start_game_button",
+		}
+		for i, block := range startBlocks {
+			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
+			assert.Equal(t, i, block.GetOrder(), "block %d should have order %d", i, i)
+		}
+
+		// Verify header block content
+		headerBlock, ok := startBlocks[0].(*blocks.HeaderBlock)
+		require.True(t, ok, "first block should be HeaderBlock")
+		assert.Equal(t, "Test Game", headerBlock.TitleText)
+		assert.Equal(t, "map-pin-check-inside", headerBlock.Icon)
+
+		// Verify game status alert block content
+		gameStatusBlock, ok := startBlocks[1].(*blocks.GameStatusAlertBlock)
+		require.True(t, ok, "second block should be GameStatusAlertBlock")
+		assert.Equal(t, "This game is not yet open.", gameStatusBlock.ClosedMessage)
+		assert.True(t, gameStatusBlock.ShowCountdown)
+	})
+
+	t.Run("creates default finish blocks", func(t *testing.T) {
+		finishBlocks, finishErr := blockRepo.FindByOwnerIDAndContext(
+			context.Background(),
+			instance.ID,
+			blocks.ContextFinish,
+		)
+		require.NoError(t, finishErr)
+		assert.Len(t, finishBlocks, 2, "should create 2 finish blocks")
+
+		// Verify block types in order
+		expectedTypes := []string{"header", "markdown"}
+		for i, block := range finishBlocks {
+			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
+			assert.Equal(t, i, block.GetOrder(), "block %d should have order %d", i, i)
+		}
+
+		// Verify header block content
+		headerBlock, ok := finishBlocks[0].(*blocks.HeaderBlock)
+		require.True(t, ok, "first block should be HeaderBlock")
+		assert.Equal(t, "Congratulations!", headerBlock.TitleText)
+		assert.Equal(t, "party-popper", headerBlock.Icon)
+	})
+}
+
+func TestInstanceService(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	svc, userService, cleanup := setupInstanceService(t)
 	defer cleanup()
 

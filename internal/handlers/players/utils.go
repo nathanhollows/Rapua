@@ -18,6 +18,8 @@ import (
 )
 
 type BlockService interface {
+	// GetByBlockID fetches a content block by its ID
+	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
 	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
 	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
 	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context

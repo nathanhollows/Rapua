@@ -45,7 +45,7 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
-		receivedCtx = r.Context()
+		receivedCtx = r.Context() //nolint:fatcontext // Test needs to capture context
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -78,7 +78,7 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
-		receivedCtx = r.Context()
+		receivedCtx = r.Context() //nolint:fatcontext // Test needs to capture context
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -89,7 +89,7 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 	// Create a preview request (HX-Request header is "true" and referer starts with "/templates")
 	// but without an "instanceID" form value.
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/templates/some", strings.NewReader(""))
-	req.Header.Set("HX-Request", "true")
+	req.Header.Set("Hx-Request", "true")
 	req.Header.Set("Referer", "http://example.com/templates/some")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
@@ -115,7 +115,7 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
-		receivedCtx = r.Context()
+		receivedCtx = r.Context() //nolint:fatcontext // Test needs to capture context
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -127,7 +127,7 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 	form := url.Values{}
 	form.Set("instanceID", "instance123")
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/dashboard", strings.NewReader(form.Encode()))
-	req.Header.Set("HX-Request", "true")
+	req.Header.Set("Hx-Request", "true")
 	req.Header.Set("Referer", "http://example.com/admin/dashboard")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()

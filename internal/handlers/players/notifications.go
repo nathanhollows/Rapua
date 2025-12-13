@@ -12,7 +12,7 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 	err := h.notificationService.DismissNotification(r.Context(), notificationID)
 
 	// Handle HTMX request
-	if r.Header.Get("HX-Request") == "true" {
+	if r.Header.Get("Hx-Request") == "true" {
 		if err != nil {
 			h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

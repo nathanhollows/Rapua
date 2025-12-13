@@ -201,7 +201,7 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 
 	t.Run("Find markers with nil other instances", func(t *testing.T) {
 		instanceID := gofakeit.UUID()
-		var otherInstances []string = nil
+		var otherInstances []string
 
 		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
 		require.Error(t, err)

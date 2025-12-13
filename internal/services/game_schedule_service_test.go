@@ -375,6 +375,15 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 			endTime:   time.Now().Add(4 * time.Hour),
 			wantErr:   false,
 		},
+		{
+			name: "Schedule game with zero end time (end time not set)",
+			setupFn: func(dbc *bun.DB) *models.Instance {
+				return createTestInstance(t, dbc)
+			},
+			startTime: time.Now().Add(1 * time.Hour),
+			endTime:   time.Time{}, // Zero value - end time not set
+			wantErr:   false,
+		},
 	}
 
 	for _, tc := range testCases {

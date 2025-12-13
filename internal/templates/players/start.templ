@@ -1,0 +1,203 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ TeamID(team models.Team, oob bool) {
+	<div
+		id="team-id"
+		class="flex gap-3 justify-center not-prose"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
+		<p>Team code: <span class="font-mono font-bold">{ team.Code }</span></p>
+		<p>
+			Team name:
+			if team.Name == "" {
+				<a class="link font-bold whitespace-nowrap text-info" onclick="my_modal_5.showModal()">Click to set</a>
+			} else {
+				<a class="link font-bold whitespace-nowrap" onclick="my_modal_5.showModal()">
+					{ team.Name }
+				</a>
+			}
+		</p>
+	</div>
+}
+
+templ Start(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
+	<div hx-get="/start" hx-swap="none" hx-trigger="every 20s, timer" hx-boost="true"></div>
+	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+		for _, block := range pageBlocks {
+			<div
+				class="block-view"
+				id={ fmt.Sprint("preview-block-", block.GetID()) }
+			>
+				@templates.RenderPlayerView(team.Instance.Settings, block, blockStates[block.GetID()])
+			</div>
+		}
+	</div>
+	<script type="text/javascript">
+	(function() {
+		const activeCountdowns = new Map();
+
+		function UTCtoLocal(time) {
+			const utc = new Date(`${time}`);
+			const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
+			return local;
+		}
+
+		function initCountdown(countdownEl) {
+			const blockId = countdownEl.dataset.blockId;
+			const startTimeStr = countdownEl.dataset.start;
+
+			// Clear existing interval if any
+			if (activeCountdowns.has(blockId)) {
+				clearInterval(activeCountdowns.get(blockId));
+			}
+
+			const startTime = UTCtoLocal(startTimeStr);
+
+			function updateCountdown() {
+				const now = new Date();
+				const remainingTime = startTime - now;
+
+				if (remainingTime <= 0) {
+					window.location.reload();
+					return;
+				}
+
+				const seconds = Math.floor((remainingTime / 1000) % 60);
+				const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
+				const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
+				const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
+
+				const secondsEl = countdownEl.querySelector('.seconds-value');
+				const minutesEl = countdownEl.querySelector('.minutes-value');
+				const hoursEl = countdownEl.querySelector('.hours-value');
+				const daysEl = countdownEl.querySelector('.days-value');
+
+				if (secondsEl) {
+					secondsEl.style.cssText = `--value:${seconds};`;
+					secondsEl.textContent = seconds;
+					secondsEl.setAttribute('aria-label', seconds);
+				}
+				if (minutesEl) {
+					minutesEl.style.cssText = `--value:${minutes};`;
+					minutesEl.textContent = minutes;
+					minutesEl.setAttribute('aria-label', minutes);
+				}
+
+				const hoursContainer = countdownEl.querySelector('.hours-container');
+				if (hours > 0) {
+					if (hoursContainer) hoursContainer.style.display = "block";
+					if (hoursEl) {
+						hoursEl.style.cssText = `--value:${hours};`;
+						hoursEl.textContent = hours;
+						hoursEl.setAttribute('aria-label', hours);
+					}
+				} else {
+					if (hoursContainer) hoursContainer.style.display = "none";
+				}
+
+				const daysContainer = countdownEl.querySelector('.days-container');
+				if (days > 0) {
+					if (daysContainer) daysContainer.style.display = "block";
+					if (daysEl) {
+						daysEl.style.cssText = `--value:${days};`;
+						daysEl.textContent = days;
+						daysEl.setAttribute('aria-label', days);
+					}
+				} else {
+					if (daysContainer) daysContainer.style.display = "none";
+				}
+			}
+
+			updateCountdown();
+			const intervalId = setInterval(updateCountdown, 1000);
+			activeCountdowns.set(blockId, intervalId);
+		}
+
+		function initAllCountdowns() {
+			const countdowns = document.querySelectorAll('.game-countdown');
+			countdowns.forEach(initCountdown);
+		}
+
+		// Initialize on page load
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initAllCountdowns);
+		} else {
+			initAllCountdowns();
+		}
+
+		// Re-initialize after HTMX swaps
+		document.body.addEventListener('htmx:afterSwap', function(evt) {
+			// Small delay to ensure DOM is ready
+			setTimeout(initAllCountdowns, 50);
+		});
+	})();
+	</script>
+}
+
+templ instructions() {
+	<div class="prose my-5">
+		<div class="divider my-5">Instructions</div>
+		<ol>
+			<li>Follow the clues to find your next location. There may be multiple possible spots to choose from.</li>
+			<li>Scan the QR code or follow the link in the app to confirm your location.</li>
+			<li>Solve the clue, answer a question, or finish a quick task.</li>
+			<li>Keep traveling to new locations, checking in, and completing activities until the game ends.</li>
+			<li>Keep going and have fun!</li>
+		</ol>
+	</div>
+}
+
+templ TeamNameForm(team models.Team) {
+	<div class="card bg-base-200">
+		<div class="card-body">
+			<h3 class="card-title">Choose a team name</h3>
+			<form
+				hx-post="/start/team-name"
+				hx-swap="outerHTML"
+				class="flex flex-col gap-2"
+			>
+				<label class="input flex items-center gap-2">
+					Name:
+					<input
+						name="name"
+						type="text"
+						class="grow w-full"
+						value={ team.Name }
+						autocomplete="off"
+						placeholder="Enter team name..."
+					/>
+				</label>
+				<div class="flex gap-2 justify-end">
+					<button
+						type="button"
+						class="btn"
+						onclick="this.closest('.card').innerHTML = '<div class=\'card-body\'><button type=\'button\' class=\'btn btn-primary\' hx-get=\'/start/team-name-form\' hx-target=\'closest .card\' hx-swap=\'outerHTML\'>Set Team Name</button></div>'"
+					>
+						Cancel
+					</button>
+					<button type="submit" class="btn btn-primary">
+						Save
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}
+
+templ TeamNameComplete(team models.Team, blockID string) {
+	<div id={ fmt.Sprintf("player-block-%s", blockID) } class="indicator w-full">
+		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			<p>Team name set to: <strong>{ team.Name }</strong></p>
+		</div>
+	</div>
+}

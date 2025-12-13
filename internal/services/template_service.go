@@ -76,7 +76,7 @@ func (s *TemplateService) LaunchInstance(
 	// Get user for duplication service
 	user := &models.User{ID: userID}
 
-	// Use duplication service - it validates template ownership and status
+	// Use duplication service to create instance from template
 	newInstance, err := s.duplicationService.CreateInstanceFromTemplate(ctx, user, templateID, name)
 	if err != nil {
 		return nil, errors.New("creating instance from template: " + err.Error())
@@ -109,10 +109,6 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	// Thankfully this checks the expiration date and max uses
 	if shareLink.IsExpired() {
 		return nil, errors.New("share link is expired")
-	}
-
-	if shareLink.UserID != userID {
-		return nil, ErrPermissionDenied
 	}
 
 	// Get template owner for duplication (share links use template owner's ID)

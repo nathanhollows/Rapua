@@ -409,9 +409,9 @@ func photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) templ
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input:not([type=range])) delay:500ms, input from:(#form-%s input[type=range]) delay:500ms", block.ID, block.ID, block.ID))
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, input from:#form-%s delay:500ms", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/photo.templ`, Line: 173, Col: 196}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/photo.templ`, Line: 173, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {

@@ -19,6 +19,8 @@
 - /docs/user/blocks/checklist
 - /docs/user/blocks/clue
 - /docs/user/blocks/divider
+- /docs/user/blocks/game-status-alert
+- /docs/user/blocks/header
 - /docs/user/blocks/image
 - /docs/user/blocks/index
 - /docs/user/blocks/password
@@ -27,6 +29,8 @@
 - /docs/user/blocks/quiz
 - /docs/user/blocks/random-clue
 - /docs/user/blocks/sorting
+- /docs/user/blocks/start-game-button
+- /docs/user/blocks/team-name
 - /docs/user/blocks/text
 - /docs/user/blocks/youtube
 - /docs/user/facilitator-dashboard
@@ -41,4 +45,5 @@
 - /docs/user/phases-of-game-setup
 - /docs/user/players-and-teams
 - /docs/user/quickstart
+- /docs/user/scheduling-games
 - /docs/user/templates

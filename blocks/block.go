@@ -13,9 +13,12 @@ const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
 	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
-	// ContextStart   BlockContext = "start"   // Start pages - introductions, rules, set team name
-	// ContextEnd     BlockContext = "end"     // End pages.
+	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
+	ContextFinish          BlockContext = "finish"           // Finish/end pages
 )
+
+// FormValueTrue is the string value "true" used in form checkbox comparisons.
+const FormValueTrue = "true"
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
@@ -95,25 +98,35 @@ func registerBlock(instance Block, contexts []BlockContext) {
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
 	// Content blocks
-	registerBlock(&MarkdownBlock{}, []BlockContext{
-		ContextLocationContent, ContextLocationClues,
-	})
-	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(
+		&MarkdownBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+	)
+	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(
+		&ImageBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+	)
+	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
-	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent})
-	registerBlock(&ImageBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent})
 
 	// Interactive blocks
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+
+	// System blocks
+	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
+	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextStart})
+	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextStart})
 }
 
 // Public API functions
@@ -188,6 +201,14 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewRandomClueBlock(baseBlock), nil
 	case "photo":
 		return NewPhotoBlock(baseBlock), nil
+	case "header":
+		return NewHeaderBlock(baseBlock), nil
+	case "team_name":
+		return NewTeamNameChangerBlock(baseBlock), nil
+	case "game_status_alert":
+		return NewGameStatusAlertBlock(baseBlock), nil
+	case "start_game_button":
+		return NewStartGameButtonBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -274,6 +295,31 @@ func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
 
 func NewPhotoBlock(base BaseBlock) *PhotoBlock {
 	return &PhotoBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewHeaderBlock(base BaseBlock) *HeaderBlock {
+	return &HeaderBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewTeamNameChangerBlock(base BaseBlock) *TeamNameChangerBlock {
+	return &TeamNameChangerBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewGameStatusAlertBlock(base BaseBlock) *GameStatusAlertBlock {
+	return &GameStatusAlertBlock{
+		BaseBlock:     base,
+		ShowCountdown: true,
+	}
+}
+
+func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
+	return &StartGameButtonBlock{
 		BaseBlock: base,
 	}
 }

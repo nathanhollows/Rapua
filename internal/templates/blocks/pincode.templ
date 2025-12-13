@@ -185,7 +185,7 @@ templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) 
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup change from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
 		if settings.EnablePoints {

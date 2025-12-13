@@ -54,7 +54,7 @@ func TestHtmxOnlyMiddleware(t *testing.T) {
 
 			// Add HX-Request header if this is an HTMX request
 			if tc.isHtmxRequest {
-				req.Header.Set("HX-Request", "true")
+				req.Header.Set("Hx-Request", "true")
 			}
 
 			// Create a ResponseRecorder to record the response

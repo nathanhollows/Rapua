@@ -1,0 +1,176 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+	"time"
+)
+
+// Initial loading template - renders placeholder and triggers HTMX load
+templ gameStatusAlertPlayer(_ models.InstanceSettings, block blocks.GameStatusAlertBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="load, every 20s"
+		hx-swap="outerHTML"
+	>
+		<div class="alert">
+			<span class="loading loading-spinner loading-md"></span>
+			<span>Loading game status...</span>
+		</div>
+	</div>
+}
+
+// Closed state - show warning alert
+templ GameStatusAlertClosed(block blocks.GameStatusAlertBlock) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		<div role="alert" class="alert alert-warning">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+			<span>
+				if block.ClosedMessage != "" {
+					{ block.ClosedMessage }
+				} else {
+					Game closed
+				}
+			</span>
+		</div>
+	</div>
+}
+
+// Scheduled state - show info alert with optional countdown
+templ GameStatusAlertScheduled(block blocks.GameStatusAlertBlock, startTime time.Time) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		<div role="alert" class="alert alert-info flex">
+			<div class="flex flex-col items-center gap-2 w-full">
+				if block.ShowCountdown {
+					<span class="text-sm">
+						if block.ScheduledMessage != "" {
+							{ block.ScheduledMessage }
+						} else {
+							This game will start in
+						}
+					</span>
+					{{
+						remainingTime := time.Until(startTime)
+						seconds := int(remainingTime.Seconds()) % 60
+						minutes := int(remainingTime.Minutes()) % 60
+						hours := int(remainingTime.Hours()) % 24
+						days := int(remainingTime.Hours()) / 24
+					}}
+					<div
+						class="game-countdown flex gap-3 justify-center w-full"
+						data-block-id={ block.GetID() }
+						data-start={ startTime.Format("02-Jan-2006 15:04:05") }
+					>
+						<div class="days-container" { templ.Attributes{"style": templ.KV("display:none;", days <= 0)}... }>
+							<span class="countdown font-mono text-2xl">
+								<span class="days-value" style={ fmt.Sprintf("--value:%d;", days) } aria-live="polite" aria-label={ fmt.Sprint(days) }>{ fmt.Sprint(days) }</span>
+							</span>
+							days
+						</div>
+						<div class="hours-container" { templ.Attributes{"style": templ.KV("display:none;", hours <= 0)}... }>
+							<span class="countdown font-mono text-2xl">
+								<span class="hours-value" style={ fmt.Sprintf("--value:%d;", hours) } aria-live="polite" aria-label={ fmt.Sprint(hours) }>{ fmt.Sprint(hours) }</span>
+							</span>
+							hours
+						</div>
+						<div>
+							<span class="countdown font-mono text-2xl">
+								<span class="minutes-value" style={ fmt.Sprintf("--value:%d;", minutes) } aria-live="polite" aria-label={ fmt.Sprint(minutes) }>{ fmt.Sprint(minutes) }</span>
+							</span>
+							min
+						</div>
+						<div>
+							<span class="countdown font-mono text-2xl">
+								<span class="seconds-value" style={ fmt.Sprintf("--value:%d;", seconds) } aria-live="polite" aria-label={ fmt.Sprint(seconds) }>{ fmt.Sprint(seconds) }</span>
+							</span>
+							sec
+						</div>
+					</div>
+				} else {
+					<span>
+						if block.ScheduledMessage != "" {
+							{ block.ScheduledMessage }
+						} else {
+							This game will start in
+						}
+					</span>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+// Active state - hide block when game is active
+templ GameStatusAlertActive(block blocks.GameStatusAlertBlock) {
+	// Empty - block disappears when game is active
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
+		hx-get={ fmt.Sprintf("/blocks/%s/game-status-alert", block.GetID()) }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+		style="display:none;"
+	></div>
+}
+
+// Admin configuration form
+templ gameStatusAlertAdmin(_ models.InstanceSettings, block blocks.GameStatusAlertBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Closed message</legend>
+			<input
+				type="text"
+				name="closed_message"
+				class="input input-bordered w-full"
+				placeholder="Game closed"
+				value={ block.ClosedMessage }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is closed</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Scheduled message</legend>
+			<input
+				type="text"
+				name="scheduled_message"
+				class="input input-bordered w-full"
+				placeholder="This game will start in"
+				value={ block.ScheduledMessage }
+			/>
+			<div class="label text-wrap">
+				<span>Shown when game is scheduled</span>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset mt-4">
+			<legend class="fieldset-legend">Options</legend>
+			<div class="form-control">
+				<label class="label cursor-pointer justify-start gap-2">
+					<input
+						type="checkbox"
+						name="show_countdown"
+						class="checkbox checkbox-sm"
+						checked?={ block.ShowCountdown }
+					/>
+					<span class="label-text">Show countdown timer</span>
+				</label>
+			</div>
+		</fieldset>
+	</form>
+}

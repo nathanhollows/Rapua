@@ -2,11 +2,49 @@
 title: "Changelog"
 sidebar: true
 order: 100
+tag: updated
 ---
 
 # Changelog
 
-## 6.5.0
+## 6.6.1 (13-12-2025)
+
+### Fixed
+
+- Start and Finish pages now render correctly in preview mode.
+
+## 6.6.0 (13-12-2025)
+
+### Added
+
+- Drag and drop content blocks in the preview pane to reorder them.
+- A new [Header](/docs/user/blocks/header) block with optional icons. This block can replace the default page header.
+  - All locations now use the Header block for their title.
+- A new [Team Name Changer](/docs/user/blocks/team-name) block that enables teams to set or change their team name on the Start page.
+- New tags in docs to show new and updates content.
+- New [Scheduling Games](/docs/user/scheduling-games) documentation page.
+- Hovering over blocks in preview mode now highlights the matching admin block for easier identification.
+
+### Changed
+
+- `/lobby` renamed to `/start` in routes, services, and documentation for clarity.
+
+### Fixed
+
+- Minor UI fixes.
+- Invalid CSRF tokens are now gracefully refreshed.
+- Game scheduler now loads and saves times correctly and is rendered consistently.
+
+[Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
+
+## 6.5.1 (12-12-2025)
+
+### Fixed
+
+- Templates can now be launched correctly from non-owner accounts.
+- The template name field is now pre-populated when launching a template.
+
+## 6.5.0 (29-11-2025)
 
 ### Added
 

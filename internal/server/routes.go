@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
 	"github.com/nathanhollows/Rapua/v6/filesystem"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
@@ -23,7 +25,7 @@ const (
 
 func setupRouter(
 	logger *slog.Logger,
-	publicHandler *public.PublicHandler,
+	publicHandler *public.Handler,
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.Handler,
 ) *chi.Mux {
@@ -94,7 +96,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 				playerHandler.GetTeamService(),
 				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
 		})
 		r.Get("/", playerHandler.Next)
@@ -106,7 +108,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.TeamMiddleware(
 				playerHandler.GetTeamService(),
-				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next),
+				middlewares.StartMiddleware(playerHandler.GetTeamService(), next),
 			)
 		})
 		r.Post("/", playerHandler.AdvanceGroup)
@@ -118,39 +120,48 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 				playerHandler.GetTeamService(),
 				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
+		r.Get("/{id}/team-name-block", playerHandler.GetTeamNameBlock)
+		r.Get("/{id}/game-status-alert", playerHandler.GetGameStatusAlertBlock)
+		r.Get("/{id}/start-game-button", playerHandler.GetStartGameButtonBlock)
 	})
 
 	// Upload route for player media
 	router.Route("/upload", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
+				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
 		})
 		r.Post("/image", playerHandler.UploadImage)
 	})
 
-	// Show the lobby page
-	router.Route("/lobby", func(r chi.Router) {
+	// Show the start page
+	router.Route("/start", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
 				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
 		})
-		r.Get("/", playerHandler.Lobby)
+		r.Get("/", playerHandler.Start)
+		r.Get("/team-name-value", playerHandler.GetTeamNameValue)
+		r.Get("/team-name-form", playerHandler.GetTeamNameForm)
 		r.Post("/team-name", playerHandler.SetTeamName)
 	})
 
 	// Ending the game
 	router.Route("/finish", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+			)
 		})
 		r.Get("/", playerHandler.Finish)
 	})
@@ -159,7 +170,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
+				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
 		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)
@@ -169,7 +180,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next))
+				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
 		})
 		r.Get("/", playerHandler.CheckOut)
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)
@@ -182,7 +193,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 				playerHandler.GetTeamService(),
 				playerHandler.GetInstanceSettingsService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.LobbyMiddleware(playerHandler.GetTeamService(), next)),
+					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
 		})
 		r.Get("/", playerHandler.MyCheckins)
@@ -192,9 +203,27 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
 }
 
-func setupPublicRoutes(router chi.Router, publicHandler *public.PublicHandler) {
+func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 	router.Use(func(next http.Handler) http.Handler {
 		return middlewares.AuthStatusMiddleware(publicHandler.GetIdentityService(), next)
+	})
+
+	// CSRF token refresh endpoint
+	router.Get("/csrf-token", func(w http.ResponseWriter, r *http.Request) {
+		// Verify user has valid session
+		status := contextkeys.GetUserStatus(r.Context())
+		if !status.IsAdminLoggedIn {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := csrf.Token(r)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		if err := json.NewEncoder(w).Encode(map[string]string{"token": token}); err != nil {
+			http.Error(w, "Failed to encode token", http.StatusInternalServerError)
+			return
+		}
 	})
 
 	router.Get("/", publicHandler.Index)
@@ -265,6 +294,8 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/new", adminHandler.LocationNew)
 			r.Post("/new", adminHandler.LocationNewPost)
+			r.Get("/start", adminHandler.StartPageEdit)
+			r.Get("/finish", adminHandler.FinishPageEdit)
 			r.Get("/{id}", adminHandler.LocationEdit)
 			r.Post("/{id}", adminHandler.LocationEditPost)
 			r.Delete("/{id}", adminHandler.LocationDelete)

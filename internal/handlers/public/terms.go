@@ -7,7 +7,7 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
 )
 
-func (h *PublicHandler) Terms(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Terms(w http.ResponseWriter, r *http.Request) {
 	c := templates.Terms()
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Terms and Conditions", authed).Render(r.Context(), w)

@@ -30,7 +30,7 @@ func setupBlockRepo(t *testing.T) (
 	return blockRepo, blockStateRepo, transactor, cleanup
 }
 
-func TestBlockRepository(t *testing.T) {
+func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -257,7 +257,7 @@ func TestBlockRepository(t *testing.T) {
 	}
 }
 
-func TestBlockRepository_Bulk(t *testing.T) {
+func TestBlockRepository_Bulk(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -1378,5 +1378,320 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 		newBlocks, err := repo.FindByOwnerID(ctx, newOwnerID)
 		require.NoError(t, err)
 		assert.Empty(t, newBlocks)
+	})
+}
+
+func TestBlockRepository_UserOwnsBlock(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	repo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	transactor := db.NewTransactor(dbc)
+
+	ctx := context.Background()
+
+	t.Run("user owns start block through instances", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create start block
+		block, err := repo.Create(ctx, blocks.NewHeaderBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "header",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextStart)
+		require.NoError(t, err)
+
+		// Check ownership
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.True(t, owns, "User should own their instance's start block")
+	})
+
+	t.Run("user owns location block through instances and locations", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+		locationID := gofakeit.UUID()
+
+		// Create instance in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create location in locations table
+		_, err = dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":          locationID,
+				"instance_id": instanceID,
+				"name":        gofakeit.Word(),
+				"marker_id":   gofakeit.UUID(),
+				"content_id":  gofakeit.UUID(),
+			}).
+			TableExpr("locations").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create location block
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: locationID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), locationID, blocks.ContextLocationContent)
+		require.NoError(t, err)
+
+		// Check ownership
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.True(t, owns, "User should own their instance's location blocks")
+	})
+
+	t.Run("user does not own block from different user's instance", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		otherUserID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance owned by other user in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": otherUserID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		// Create block
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextStart)
+		require.NoError(t, err)
+
+		// Check ownership with wrong user
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.False(t, owns, "User should not own another user's instance blocks")
+	})
+
+	t.Run("returns false for non-existent block", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		nonExistentBlockID := gofakeit.UUID()
+
+		owns, err := repo.UserOwnsBlock(ctx, userID, nonExistentBlockID)
+		require.NoError(t, err)
+		assert.False(t, owns, "User should not own non-existent block")
+	})
+
+	t.Run("empty userID returns false", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		instanceID := gofakeit.UUID()
+
+		// Create instance and block in instances table
+		_, err := dbc.NewInsert().
+			Model(&map[string]interface{}{
+				"id":      instanceID,
+				"user_id": userID,
+				"name":    gofakeit.Word(),
+			}).
+			TableExpr("instances").
+			Exec(ctx)
+		require.NoError(t, err)
+
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				LocationID: instanceID,
+				Type:       "markdown",
+				Points:     0,
+			},
+		), instanceID, blocks.ContextStart)
+		require.NoError(t, err)
+
+		owns, err := repo.UserOwnsBlock(ctx, "", block.GetID())
+		require.NoError(t, err)
+		assert.False(t, owns, "Empty userID should return false")
+	})
+
+	t.Run("empty blockID returns false", func(t *testing.T) {
+		userID := gofakeit.UUID()
+
+		owns, err := repo.UserOwnsBlock(ctx, userID, "")
+		require.NoError(t, err)
+		assert.False(t, owns, "Empty blockID should return false")
+	})
+
+	// Cleanup
+	tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+	_ = tx.Commit()
+}
+
+func TestBlockRepository_BulkCreate(t *testing.T) {
+	repo, _, transactor, cleanup := setupBlockRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("bulk creates multiple blocks with explicit ordering", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextStart
+
+		// Create a slice of domain blocks with explicit ordering
+		blockList := []blocks.Block{
+			&blocks.HeaderBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Icon:      "star",
+				TitleText: "Welcome",
+				TitleSize: "large",
+			},
+			&blocks.DividerBlock{
+				BaseBlock: blocks.BaseBlock{Order: 1},
+				Title:     "Instructions",
+			},
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 2},
+				Content:   "Some content here",
+			},
+		}
+
+		// Bulk create
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		// Verify blocks were created
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 3)
+
+		// Verify ordering is preserved
+		for i, block := range createdBlocks {
+			assert.Equal(t, i, block.GetOrder(), "Block at index %d should have order %d", i, i)
+		}
+
+		// Verify types are correct
+		assert.Equal(t, "header", createdBlocks[0].GetType())
+		assert.Equal(t, "divider", createdBlocks[1].GetType())
+		assert.Equal(t, "markdown", createdBlocks[2].GetType())
+
+		// Verify header block data is preserved
+		headerBlock := createdBlocks[0].(*blocks.HeaderBlock)
+		assert.Equal(t, "star", headerBlock.Icon)
+		assert.Equal(t, "Welcome", headerBlock.TitleText)
+		assert.Equal(t, "large", headerBlock.TitleSize)
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("bulk create with empty slice does nothing", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextStart
+
+		// Bulk create empty slice
+		err := repo.BulkCreate(ctx, []blocks.Block{}, ownerID, blockContext)
+		require.NoError(t, err)
+
+		// Verify no blocks were created
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Empty(t, createdBlocks)
+	})
+
+	t.Run("bulk create preserves validation required flag", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextStart
+
+		// TeamNameChangerBlock requires validation
+		blockList := []blocks.Block{
+			&blocks.TeamNameChangerBlock{
+				BaseBlock:     blocks.BaseBlock{Order: 0},
+				BlockText:     "Save",
+				AllowChanging: true,
+			},
+			&blocks.StartGameButtonBlock{
+				BaseBlock:           blocks.BaseBlock{Order: 1},
+				ScheduledButtonText: "Starting soon...",
+				ActiveButtonText:    "Start",
+				ButtonStyle:         "primary",
+			},
+		}
+
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 2)
+
+		// Verify TeamNameChangerBlock requires validation
+		assert.True(t, createdBlocks[0].RequiresValidation(), "TeamNameChangerBlock should require validation")
+		// Verify StartGameButtonBlock does not require validation
+		assert.False(t, createdBlocks[1].RequiresValidation(), "StartGameButtonBlock should not require validation")
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
+	})
+
+	t.Run("bulk create with finish context", func(t *testing.T) {
+		ownerID := gofakeit.UUID()
+		blockContext := blocks.ContextFinish
+
+		blockList := []blocks.Block{
+			&blocks.HeaderBlock{
+				BaseBlock: blocks.BaseBlock{Order: 0},
+				Icon:      "party-popper",
+				TitleText: "Congratulations!",
+				TitleSize: "large",
+			},
+			&blocks.MarkdownBlock{
+				BaseBlock: blocks.BaseBlock{Order: 1},
+				Content:   "Well done!",
+			},
+		}
+
+		err := repo.BulkCreate(ctx, blockList, ownerID, blockContext)
+		require.NoError(t, err)
+
+		createdBlocks, err := repo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		require.NoError(t, err)
+		assert.Len(t, createdBlocks, 2)
+
+		// Verify header block data
+		headerBlock := createdBlocks[0].(*blocks.HeaderBlock)
+		assert.Equal(t, "party-popper", headerBlock.Icon)
+		assert.Equal(t, "Congratulations!", headerBlock.TitleText)
+
+		// Cleanup
+		tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
+		_ = repo.DeleteByOwnerID(ctx, tx, ownerID)
+		_ = tx.Commit()
 	})
 }

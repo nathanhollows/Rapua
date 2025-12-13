@@ -7,7 +7,7 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
 )
 
-func (h *PublicHandler) About(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) About(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	c := templates.About()
 	err := templates.PublicLayout(c, "About", authed).Render(r.Context(), w)

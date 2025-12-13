@@ -93,7 +93,7 @@ func (b *ClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	}
 
 	// Check if the player is trying to reveal the clue
-	if revealInput, exists := input["reveal_clue"]; exists && len(revealInput) > 0 && revealInput[0] == "true" {
+	if revealInput, exists := input["reveal_clue"]; exists && len(revealInput) > 0 && revealInput[0] == FormValueTrue {
 		// Mark the clue as revealed
 		playerData.IsRevealed = true
 

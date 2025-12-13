@@ -1,7 +1,7 @@
 ---
-title: "Pincode Block"
+title: "Pincode"
 sidebar: true
-order: 10
+order: 11
 ---
 
 # Pincode Block

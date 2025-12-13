@@ -19,7 +19,7 @@ func NewEmailService() *EmailService {
 	return &EmailService{}
 }
 
-func (s EmailService) SendContactEmail(ctx context.Context, name, contactEmail, content string) error {
+func (s EmailService) SendContactEmail(_ context.Context, name, contactEmail, content string) error {
 	sentFrom := mail.NewEmail("Rapua Contact Form", os.Getenv("CONTACT_EMAIL"))
 	sentTo := mail.NewEmail("Rapua", os.Getenv("CONTACT_EMAIL"))
 	subject := "New message from Rapua contact form"

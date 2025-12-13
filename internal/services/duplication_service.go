@@ -138,7 +138,6 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 }
 
 // CreateInstanceFromTemplate creates a regular instance from a template.
-// Returns ErrUserNotAuthenticated if user doesn't own the template.
 // Returns error if source is not a template.
 func (s *DuplicationService) CreateInstanceFromTemplate(
 	ctx context.Context,
@@ -146,7 +145,7 @@ func (s *DuplicationService) CreateInstanceFromTemplate(
 	templateID string,
 	name string,
 ) (*models.Instance, error) {
-	return s.createInstanceFromTemplate(ctx, user, templateID, name, true)
+	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
 // CreateInstanceFromSharedTemplate creates a regular instance from a shared template.
@@ -314,6 +313,12 @@ func (s *DuplicationService) duplicateInstance(
 			return nil, fmt.Errorf("duplicating location %s: %w", location.ID, dupErr)
 		}
 		locationIDMap[location.ID] = newLocation.ID
+	}
+
+	// Duplicate blocks that belong directly to the instance (e.g., ContextStart and ContextFinish)
+	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceInstance.ID, newInstance.ID)
+	if err != nil {
+		return nil, fmt.Errorf("duplicating instance blocks: %w", err)
 	}
 
 	// Remap location IDs in the game structure

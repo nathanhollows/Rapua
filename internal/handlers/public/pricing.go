@@ -8,7 +8,7 @@ import (
 )
 
 // Pricing shows the pricing page.
-func (h *PublicHandler) Pricing(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Pricing(w http.ResponseWriter, r *http.Request) {
 	c := templates.Pricing()
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Pricing", authed).Render(r.Context(), w)

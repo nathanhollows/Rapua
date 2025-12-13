@@ -27,6 +27,8 @@ type BlockRepository interface {
 		blockID string,
 		teamCode string,
 	) (blocks.Block, blocks.PlayerState, error)
+	// UserOwnsBlock checks if a user owns a block
+	UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error)
 	// FindByOwnerID fetches all blocks for an owner (context agnostic)
 	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
 	// FindByOwnerIDAndContext fetches all blocks for an owner with specific context
@@ -67,6 +69,10 @@ type BlockRepository interface {
 	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
 	// DuplicateBlocksByOwnerTx duplicates all blocks within a transaction
 	DuplicateBlocksByOwnerTx(ctx context.Context, tx *bun.Tx, oldOwnerID, newOwnerID string) error
+
+	// BulkCreate inserts multiple blocks for an owner with specific context
+	// Blocks should have Order set explicitly; IDs will be generated
+	BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error
 }
 
 type blockRepository struct {
@@ -124,6 +130,41 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 		return nil, err
 	}
 	return convertModelToBlock(modelBlock)
+}
+
+// UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
+func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
+	// Query to check block ownership through instances
+	// For start/finish blocks: owner_id IS the instance_id
+	// For location blocks: owner_id IS the location_id, which belongs to an instance
+	count, err := r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		ColumnExpr("1").
+		Where("id = ?", blockID).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				// Instance-owned blocks (start/finish contexts)
+				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
+					return q.
+						Where(
+							"context IN (?)",
+							bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish}),
+						).
+						Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID)
+				}).
+				// Location-owned blocks (all other contexts)
+				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
+					return q.
+						Where("context NOT IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
+						Where("owner_id IN (SELECT id FROM locations WHERE instance_id IN (SELECT id FROM instances WHERE user_id = ?))", userID)
+				})
+		}).
+		Limit(1).
+		Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // Create saves a new block to the database.
@@ -475,5 +516,35 @@ func (r *blockRepository) DuplicateBlocksByOwnerTx(
 		Model(&newBlocks).
 		Exec(ctx)
 
+	return err
+}
+
+// BulkCreate inserts multiple blocks for an owner with specific context.
+// Converts domain blocks to models and inserts them efficiently.
+func (r *blockRepository) BulkCreate(
+	ctx context.Context,
+	blockList []blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) error {
+	if len(blockList) == 0 {
+		return nil
+	}
+
+	modelBlocks := make([]models.Block, len(blockList))
+	for i, block := range blockList {
+		modelBlocks[i] = models.Block{
+			ID:                 uuid.New().String(),
+			OwnerID:            ownerID,
+			Type:               block.GetType(),
+			Context:            blockContext,
+			Data:               block.GetData(),
+			Ordering:           block.GetOrder(),
+			Points:             block.GetPoints(),
+			ValidationRequired: block.RequiresValidation(),
+		}
+	}
+
+	_, err := r.db.NewInsert().Model(&modelBlocks).Exec(ctx)
 	return err
 }

@@ -22,7 +22,7 @@ func NewLeaderBoardService(teamRepo repositories.TeamRepository) *LeaderBoardSer
 
 // GetLeaderBoardData returns sorted and ranked leaderboard data.
 func (s *LeaderBoardService) GetLeaderBoardData(
-	ctx context.Context,
+	_ context.Context,
 	teams []models.Team,
 	locationCount int,
 	rankingScheme string,

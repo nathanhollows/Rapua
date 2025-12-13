@@ -270,9 +270,9 @@ func checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBloc
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, click from:(#form-%s button) delay:100ms, keyup change from:(#form-%s input) delay:500ms", block.ID, block.ID, block.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms", block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 84, Col: 200}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/checklist.templ`, Line: 84, Col: 158}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {

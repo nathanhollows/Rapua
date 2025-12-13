@@ -30,7 +30,7 @@ var server *http.Server
 
 func Start(
 	logger *slog.Logger,
-	publicHandler *public.PublicHandler,
+	publicHandler *public.Handler,
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.Handler,
 	scheduler *scheduler.Scheduler,

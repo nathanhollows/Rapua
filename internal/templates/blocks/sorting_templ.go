@@ -671,9 +671,9 @@ func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) t
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, click from:(#form-%s button) delay:100ms, keyup change from:(#form-%s input) delay:500ms, change from:(#form-%s select) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID, block.ID))
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms, save delay:500ms", block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 380, Col: 271}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 380, Col: 176}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {

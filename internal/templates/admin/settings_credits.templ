@@ -171,10 +171,10 @@ templ CreditTopupModal() {
 						if detail.xhr.status == 200
 							set response to JSON.parse(detail.xhr.responseText)
 							if response.url
-								window.location.href = response.url
+								set window.location.href to response.url
 							end
 						else
-							alert('Failed to create checkout session. Please try again.')
+							call alert('Failed to create checkout session. Please try again.')
 						end
 					"
 				>

@@ -8,7 +8,7 @@ import (
 )
 
 // NotFound shows the not found page.
-func (h *PublicHandler) NotFound(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
 	c := templates.NotFound()
