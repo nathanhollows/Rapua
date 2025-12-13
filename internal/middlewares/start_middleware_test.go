@@ -12,8 +12,8 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
-// TestLobbyMiddleware_PreviewRequest ensures preview requests bypass the middleware.
-func TestLobbyMiddleware_PreviewRequest(t *testing.T) {
+// TestStartMiddleware_PreviewRequest ensures preview requests bypass the middleware.
+func TestStartMiddleware_PreviewRequest(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,7 @@ func TestLobbyMiddleware_PreviewRequest(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request with preview context
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
@@ -41,8 +41,8 @@ func TestLobbyMiddleware_PreviewRequest(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_NoTeamInContext tests redirection when no team is in context.
-func TestLobbyMiddleware_NoTeamInContext(t *testing.T) {
+// TestStartMiddleware_NoTeamInContext tests redirection when no team is in context.
+func TestStartMiddleware_NoTeamInContext(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func TestLobbyMiddleware_NoTeamInContext(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request without team in context
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
@@ -72,8 +72,8 @@ func TestLobbyMiddleware_NoTeamInContext(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_InvalidTeamType tests redirection when team is not of proper type.
-func TestLobbyMiddleware_InvalidTeamType(t *testing.T) {
+// TestStartMiddleware_InvalidTeamType tests redirection when team is not of proper type.
+func TestStartMiddleware_InvalidTeamType(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +82,7 @@ func TestLobbyMiddleware_InvalidTeamType(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request with wrong team type in context
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
@@ -105,8 +105,8 @@ func TestLobbyMiddleware_InvalidTeamType(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_NilTeamOrEmptyCode tests redirection when team is nil or has empty code.
-func TestLobbyMiddleware_NilTeamOrEmptyCode(t *testing.T) {
+// TestStartMiddleware_NilTeamOrEmptyCode tests redirection when team is nil or has empty code.
+func TestStartMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func TestLobbyMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request with team having empty code
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
@@ -139,8 +139,8 @@ func TestLobbyMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_ScheduledGameRedirectsToLobby tests redirection to lobby when game status is not active.
-func TestLobbyMiddleware_ScheduledGameRedirectsToLobby(t *testing.T) {
+// TestStartMiddleware_ScheduledGameRedirectsToStart tests redirection to Start when game status is not active.
+func TestStartMiddleware_ScheduledGameRedirectsToStart(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +149,7 @@ func TestLobbyMiddleware_ScheduledGameRedirectsToLobby(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request with team and scheduled game instance
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
@@ -180,8 +180,8 @@ func TestLobbyMiddleware_ScheduledGameRedirectsToLobby(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_AlreadyInLobby tests that when already in lobby, no redirection happens.
-func TestLobbyMiddleware_AlreadyInLobby(t *testing.T) {
+// TestStartMiddleware_AlreadyInStart tests that when already in Start, no redirection happens.
+func TestStartMiddleware_AlreadyInStart(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -190,9 +190,9 @@ func TestLobbyMiddleware_AlreadyInLobby(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
-	// Create a request with team and scheduled game instance but already in lobby
+	// Create a request with team and scheduled game instance but already in Start
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/start", nil)
 
 	// Mock instance with non-active status
@@ -217,8 +217,8 @@ func TestLobbyMiddleware_AlreadyInLobby(t *testing.T) {
 	}
 }
 
-// TestLobbyMiddleware_ActiveGameProceedsNormally tests that active games proceed without redirection.
-func TestLobbyMiddleware_ActiveGameProceedsNormally(t *testing.T) {
+// TestStartMiddleware_ActiveGameProceedsNormally tests that active games proceed without redirection.
+func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	nextCalled := false
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -227,7 +227,7 @@ func TestLobbyMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	})
 
 	dummyService := &dummyTeamService{}
-	middleware := LobbyMiddleware(dummyService, nextHandler)
+	middleware := StartMiddleware(dummyService, nextHandler)
 
 	// Create a request with team and active game instance
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)

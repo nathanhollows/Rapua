@@ -119,7 +119,7 @@ func (s *AccessService) CanAdminAccessBlockOwner(
 		return false, errors.New("owner ID cannot be empty")
 	}
 
-	// For lobby/finish blocks, owner is instanceID
+	// For start/finish blocks, owner is instanceID
 	if blockContext == blocks.ContextStart || blockContext == blocks.ContextFinish {
 		return s.CanAdminAccessInstance(ctx, userID, ownerID)
 	}

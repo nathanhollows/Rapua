@@ -46,12 +46,12 @@ The Team Middleware extracts team information from the session and loads the ass
 middleware := TeamMiddleware(teamService, nextHandler)
 ```
 
-### 3. Lobby Middleware
+### 3. Start Middleware
 
-**File:** `/internal/middlewares/lobby_middleware.go`
+**File:** `/internal/middlewares/start_middleware.go`
 
 **Purpose:**
-The Lobby Middleware manages team access based on the game instance status, redirecting users to the Start page when necessary.
+The Start Middleware manages team access based on the game instance status, redirecting users to the Start page when necessary.
 
 **Key Features:**
 - Checks game instance status
@@ -60,7 +60,7 @@ The Lobby Middleware manages team access based on the game instance status, redi
 
 **Usage Example:**
 ```go
-middleware := LobbyMiddleware(teamService, nextHandler)
+middleware := StartMiddleware(teamService, nextHandler)
 ```
 
 ### 4. Admin Authentication Middleware

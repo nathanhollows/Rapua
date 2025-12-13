@@ -101,7 +101,7 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check access based on context type (instance for lobby/finish, location otherwise)
+	// Check access based on context type (instance for start/finish, location otherwise)
 	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -344,7 +344,7 @@ func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 		blockContext = blocks.ContextLocationContent
 	}
 
-	// Check access to the owner (instance for lobby/finish, location otherwise)
+	// Check access to the owner (instance for start/finish, location otherwise)
 	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		h.handleError(w, r, "BlockList: checking access", "Could not list blocks", "error", err)

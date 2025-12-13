@@ -51,7 +51,7 @@ type m20251205061242_GameStatusAlertBlockData struct {
 }
 
 //nolint:revive // Migration-specific naming convention
-const m20251205061242_LobbyInstructions = `` +
+const m20251205061242_StartInstructions = `` +
 	`- Navigate to each location using the clues, maps, or directions provided.
 - When you arrive, check in by scanning the QR code or following the link.
 - Complete the activity at each stop.
@@ -109,7 +109,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 			}
 		}
 
-		// PART 2: Add lobby and finish blocks to all existing instances
+		// PART 2: Add start and finish blocks to all existing instances
 		var instances []models.Instance
 		err = db.NewSelect().
 			Model(&instances).
@@ -119,12 +119,12 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 		}
 
 		for _, instance := range instances {
-			// Create lobby blocks
-			lobbyBlocks := m20251205061242_createLobbyBlocks(instance.ID, instance.Name)
-			if len(lobbyBlocks) > 0 {
-				_, err = db.NewInsert().Model(&lobbyBlocks).Exec(ctx)
+			// Create start blocks
+			startBlocks := m20251205061242_createStartBlocks(instance.ID, instance.Name)
+			if len(startBlocks) > 0 {
+				_, err = db.NewInsert().Model(&startBlocks).Exec(ctx)
 				if err != nil {
-					return fmt.Errorf("failed to insert lobby blocks for instance %s: %w", instance.ID, err)
+					return fmt.Errorf("failed to insert start blocks for instance %s: %w", instance.ID, err)
 				}
 			}
 
@@ -161,24 +161,24 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 			return fmt.Errorf("failed to restore block ordering: %w", err)
 		}
 
-		// ROLLBACK PART 2: Delete all lobby and finish blocks
+		// ROLLBACK PART 2: Delete all start and finish blocks
 		_, err = db.NewDelete().
 			Model((*models.Block)(nil)).
 			Where("context IN (?, ?)", blocks.ContextStart, blocks.ContextFinish).
 			Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to delete lobby/finish blocks: %w", err)
+			return fmt.Errorf("failed to delete start/finish blocks: %w", err)
 		}
 
 		return nil
 	})
 }
 
-// m20251205061242_createLobbyBlocks creates the default blocks for an instance's start/lobby page.
+// m20251205061242_createStartlocks creates the default blocks for an instance's start page.
 //
 //nolint:revive // Migration-specific naming convention
-func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models.Block {
-	result := make([]models.Block, 7) //nolint:mnd // 7 blocks for lobby page
+func m20251205061242_createStartBlocks(instanceID, instanceName string) []models.Block {
+	result := make([]models.Block, 7) //nolint:mnd // 7 blocks for start page
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
@@ -228,7 +228,7 @@ func m20251205061242_createLobbyBlocks(instanceID, instanceName string) []models
 	}
 
 	// 4. Markdown - Instructions
-	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_LobbyInstructions})
+	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_StartInstructions})
 	result[3] = models.Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,

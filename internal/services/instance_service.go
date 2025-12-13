@@ -85,9 +85,9 @@ func (s *InstanceService) CreateInstance(
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
 
-	// Create default lobby blocks
-	if err := s.createDefaultLobbyBlocks(ctx, instance); err != nil {
-		return nil, fmt.Errorf("creating default lobby blocks: %w", err)
+	// Create default start blocks
+	if err := s.createDefaultStartBlocks(ctx, instance); err != nil {
+		return nil, fmt.Errorf("creating default start blocks: %w", err)
 	}
 
 	// Create default finish blocks
@@ -147,7 +147,7 @@ func (s *InstanceService) Update(ctx context.Context, instance *models.Instance)
 	return nil
 }
 
-const lobbyInstructionsContent = `- Navigate to each location using the clues, maps, or directions provided.
+const startInstructionsContent = `- Navigate to each location using the clues, maps, or directions provided.
 - When you arrive, check in by scanning the QR code or following the link.
 - Complete the activity at each stop.
 - Continue moving through all locations and completing their activities until you reach the final checkpoint.
@@ -155,9 +155,9 @@ const lobbyInstructionsContent = `- Navigate to each location using the clues, m
 
 const finishCongratulationsContent = `You’ve wrapped up the entire route. Thanks for being part of the adventure.`
 
-// createDefaultLobbyBlocks creates the default blocks for an instance's start/lobby page.
-func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance *models.Instance) error {
-	lobbyBlocks := []blocks.Block{
+// createDefaultStartBlocks creates the default blocks for an instance's start page.
+func (s *InstanceService) createDefaultStartBlocks(ctx context.Context, instance *models.Instance) error {
+	startBlocks := []blocks.Block{
 		// 1. Header block
 		&blocks.HeaderBlock{
 			BaseBlock: blocks.BaseBlock{Order: 0},
@@ -180,7 +180,7 @@ func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance
 		// 4. Markdown - Instructions content
 		&blocks.MarkdownBlock{
 			BaseBlock: blocks.BaseBlock{Order: 3}, //nolint:mnd // Sequential ordering
-			Content:   lobbyInstructionsContent,
+			Content:   startInstructionsContent,
 		},
 		// 5. Divider - "Team Info"
 		&blocks.DividerBlock{
@@ -202,7 +202,7 @@ func (s *InstanceService) createDefaultLobbyBlocks(ctx context.Context, instance
 		},
 	}
 
-	return s.blockRepo.BulkCreate(ctx, lobbyBlocks, instance.ID, blocks.ContextStart)
+	return s.blockRepo.BulkCreate(ctx, startBlocks, instance.ID, blocks.ContextStart)
 }
 
 // createDefaultFinishBlocks creates the default blocks for an instance's finish page.

@@ -519,7 +519,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("Owner can access lobby block through instance", func(t *testing.T) {
+	t.Run("Owner can access start block through instance", func(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
 
@@ -532,10 +532,10 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		err := instanceRepo.Create(ctx, inst)
 		require.NoError(t, err)
 
-		// Test access to lobby block owner (instance)
+		// Test access to start block owner (instance)
 		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, blocks.ContextStart)
 		require.NoError(t, err)
-		assert.True(t, canAccess, "User should have access to their own instance for lobby blocks")
+		assert.True(t, canAccess, "User should have access to their own instance for start blocks")
 	})
 
 	t.Run("Owner can access finish block through instance", func(t *testing.T) {
@@ -600,7 +600,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		err := instanceRepo.Create(ctx, inst)
 		require.NoError(t, err)
 
-		// Test access to lobby block - should fail
+		// Test access to start block - should fail
 		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, blocks.ContextStart)
 		require.NoError(t, err)
 		assert.False(t, canAccess, "User should not have access to another user's instance")
@@ -636,7 +636,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		assert.False(t, canAccess, "User should not have access to locations in another user's instance")
 	})
 
-	t.Run("Context routing: lobby and finish -> instance, location contexts -> location", func(t *testing.T) {
+	t.Run("Context routing: start and finish -> instance, location contexts -> location", func(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
 
@@ -659,7 +659,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
 
-		// Test lobby context routes to instance check
+		// Test start context routes to instance check
 		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, instanceID, blocks.ContextStart)
 		require.NoError(t, err)
 		assert.True(t, canAccess)

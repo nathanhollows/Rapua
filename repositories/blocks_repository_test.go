@@ -1391,7 +1391,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("user owns lobby block through instances", func(t *testing.T) {
+	t.Run("user owns start block through instances", func(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
 
@@ -1406,7 +1406,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 			Exec(ctx)
 		require.NoError(t, err)
 
-		// Create lobby block
+		// Create start block
 		block, err := repo.Create(ctx, blocks.NewHeaderBlock(
 			blocks.BaseBlock{
 				LocationID: instanceID,
@@ -1419,7 +1419,7 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		// Check ownership
 		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
 		require.NoError(t, err)
-		assert.True(t, owns, "User should own their instance's lobby block")
+		assert.True(t, owns, "User should own their instance's start block")
 	})
 
 	t.Run("user owns location block through instances and locations", func(t *testing.T) {

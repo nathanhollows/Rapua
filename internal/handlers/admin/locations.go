@@ -588,11 +588,11 @@ func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locati
 	return nil
 }
 
-// StartPageEdit shows the start page editor (lobby).
+// StartPageEdit shows the start page editor.
 func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	// Get blocks for the start page (lobby context)
+	// Get blocks for the start page.
 	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
 		r.Context(),
 		user.CurrentInstanceID,

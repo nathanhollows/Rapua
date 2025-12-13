@@ -71,14 +71,14 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, instance)
 
-	t.Run("creates default lobby blocks", func(t *testing.T) {
-		lobbyBlocks, lobbyErr := blockRepo.FindByOwnerIDAndContext(
+	t.Run("creates default start blocks", func(t *testing.T) {
+		startBlocks, startErr := blockRepo.FindByOwnerIDAndContext(
 			context.Background(),
 			instance.ID,
 			blocks.ContextStart,
 		)
-		require.NoError(t, lobbyErr)
-		assert.Len(t, lobbyBlocks, 7, "should create 7 lobby blocks")
+		require.NoError(t, startErr)
+		assert.Len(t, startBlocks, 7, "should create 7 start blocks")
 
 		// Verify block types in order
 		expectedTypes := []string{
@@ -90,19 +90,19 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 			"team_name",
 			"start_game_button",
 		}
-		for i, block := range lobbyBlocks {
+		for i, block := range startBlocks {
 			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
 			assert.Equal(t, i, block.GetOrder(), "block %d should have order %d", i, i)
 		}
 
 		// Verify header block content
-		headerBlock, ok := lobbyBlocks[0].(*blocks.HeaderBlock)
+		headerBlock, ok := startBlocks[0].(*blocks.HeaderBlock)
 		require.True(t, ok, "first block should be HeaderBlock")
 		assert.Equal(t, "Test Game", headerBlock.TitleText)
 		assert.Equal(t, "map-pin-check-inside", headerBlock.Icon)
 
 		// Verify game status alert block content
-		gameStatusBlock, ok := lobbyBlocks[1].(*blocks.GameStatusAlertBlock)
+		gameStatusBlock, ok := startBlocks[1].(*blocks.GameStatusAlertBlock)
 		require.True(t, ok, "second block should be GameStatusAlertBlock")
 		assert.Equal(t, "This game is not yet open.", gameStatusBlock.ClosedMessage)
 		assert.True(t, gameStatusBlock.ShowCountdown)

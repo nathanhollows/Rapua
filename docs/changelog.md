@@ -21,7 +21,7 @@ tag: updated
 
 ### Changed
 
-- `/lobby` route renamed to `/start` for clarity.
+- `/lobby` renamed to `/start` in routes, services, and documentation for clarity.
 
 ### Fixed
 
