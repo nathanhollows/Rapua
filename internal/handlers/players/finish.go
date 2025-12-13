@@ -51,16 +51,15 @@ func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
+
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Start(*team, pageBlocks, blockStates)
+	template := templates.Finish(*team, pageBlocks, blockStates)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		template = templates.Layout(template, "Start", team.Messages)
+		template = templates.Layout(template, "Finish", team.Messages)
 	}
 
-	// data["notifications"], _ = h.NotificationService.GetNotifications(r.Context(), team.Code)
-	c := templates.Finish(*team, pageBlocks, blockStates)
-	err = templates.Layout(c, "Finish", team.Messages).Render(r.Context(), w)
+	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "Next: rendering template", "Error rendering template", "Could not render template", err)
+		h.logger.Error("rendering finish", "error", err.Error())
 	}
 }

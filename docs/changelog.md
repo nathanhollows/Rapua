@@ -7,7 +7,13 @@ tag: updated
 
 # Changelog
 
-## 6.6.0 (2025-12-01)
+## 6.6.1 (13-12-2025)
+
+### Fixed
+
+- Start and Finish pages now render correctly in preview mode.
+
+## 6.6.0 (13-12-2025)
 
 ### Added
 
