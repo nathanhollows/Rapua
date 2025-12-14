@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.6.3 (2025-12-14)
+
+### Fixed
+
+- Markers can now be added to existing locations without coordinates. Fixes [#67](https://github.com/nathanhollows/Rapua/issues/67)
+
 ## 6.6.2 (2025-12-13)
 
 ### Fixed

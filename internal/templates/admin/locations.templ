@@ -323,6 +323,19 @@ templ EditLocation(data EditLocationData) {
 					<input type="hidden" name="points" value={ fmt.Sprint(data.Location.Points) }/>
 				}
 			</div>
+			if (data.NavigationMode == models.NavigationDisplayMap || 
+				data.NavigationMode == models.NavigationDisplayMapAndNames) &&
+					!data.Location.Marker.IsMapped() {
+				<div id="missing-marker" role="alert" class="alert alert-warning">
+					@icon("map-pin-x-inside", nil)
+					<span>
+						<strong>
+							This location is missing coordinates!
+						</strong>
+						Set the marker <span class="link" _="on click go to #map smoothly">below</span> then click "Save".
+					</span>
+				</div>
+			}
 			@deleteBlockModal()
 			<!-- Clues (only show when navigation mode is Custom Clues) -->
 			if data.NavigationMode == models.NavigationDisplayCustom {
@@ -347,14 +360,35 @@ templ EditLocation(data EditLocationData) {
 				</div>
 			</section>
 			<!-- Map -->
-			if data.Location.Marker.IsMapped() {
+			if data.NavigationMode == models.NavigationDisplayMap || data.NavigationMode == models.NavigationDisplayMapAndNames {
 				<section>
 					<div class="divider mt-5 mb-10"></div>
-					<div class="label">
-						<span class="label-text font-bold">Map marker</span>
-					</div>
-					<div id="map-container" class="relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg">
+					<legend class="fieldset-legend text-sm">Marker</legend>
+					<div
+						id="map-container"
+						if data.Location.Marker.IsMapped() {
+							class="relative w-full aspect-square h-80 md:h-48 rounded-lg shadow-lg"
+						} else {
+							class="relative w-full aspect-square h-96 md:h-80 rounded-lg shadow-lg"
+						}
+					>
 						<div id="map" class="map w-full h-full rounded-lg"></div>
+						<!-- Save button -->
+						<div id="map-save-button" class="absolute top-0 right-0" tabindex="0">
+							<button
+								id="save-map-btn"
+								class="btn btn-primary btn-xs mt-2 mr-2 hidden"
+								_="on click
+									if #missing-marker exists then
+										remove #missing-marker
+									end
+									trigger click on #edit-location-btn
+									"
+							>
+								@icon("map-pin-check", templ.Attributes{"class": "w-4 h-4 mr-1"})
+								Save marker
+							</button>
+						</div>
 						<!-- Overlay Button and Backdrop -->
 						<div id="map-lock-overlay" class="absolute inset-0 bg-base-300 bg-opacity-70 flex justify-center items-center opacity-0 hover:opacity-100 transition rounded-lg focus:opacity-100" tabindex="0">
 							<button
@@ -362,6 +396,7 @@ templ EditLocation(data EditLocationData) {
 								class="btn btn-neutral"
 								_="on click
 									remove #map-lock-overlay then
+									remove .hidden from #save-map-btn then
 									transition #map-note's opacity to 1
 									"
 							>
@@ -370,17 +405,17 @@ templ EditLocation(data EditLocationData) {
 							</button>
 						</div>
 					</div>
-					<div id="map-note" class="label opacity-0 text-wrap">
-						<span class="label-text">
-							<strong>Note:</strong> Changing the map marker might change the location code.
-						</span>
-						<span class="label-text">
-							Autosave is disabled for map markers.
-						</span>
+					<div id="map-note" class="opacity-0 text-wrap text-sm">
+						<p class="label">Changing the map marker might change the location code.</p>
 					</div>
 					<!-- Hidden inputs for form handling -->
 					<input type="hidden" name="code" form="edit-location" value={ data.Location.Marker.Code }/>
-					<input type="hidden" name="latitude" form="edit-location" value={ floatToString(data.Location.Marker.Lat) }/>
+					<input
+						type="hidden"
+						name="latitude"
+						form="edit-location"
+						value={ floatToString(data.Location.Marker.Lat) }
+					/>
 					<input type="hidden" name="longitude" form="edit-location" value={ floatToString(data.Location.Marker.Lng) }/>
 				</section>
 			}
