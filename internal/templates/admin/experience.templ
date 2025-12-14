@@ -20,7 +20,10 @@ templ Experience(settings models.InstanceSettings, locationCount int) {
 					_="on change from <form input/>
 						remove @disabled
 					"
-				>Save</button>
+				>
+					@icon("save", templ.Attributes{"class": "w-4 h-4"})
+					Save
+				</button>
 			</div>
 			<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
 				<!-- Settings Panel -->

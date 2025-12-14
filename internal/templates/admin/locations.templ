@@ -24,7 +24,10 @@ templ AddLocation(data AddLocationData) {
 			<h1 class="text-2xl font-bold">
 				Add a location
 			</h1>
-			<button type="submit" class="btn btn-primary hidden md:inline-flex">Save</button>
+			<button type="submit" class="btn btn-primary hidden md:inline-flex">
+				@icon("save", templ.Attributes{"class": "w-4 h-4"})
+				Save
+			</button>
 		</div>
 		<div class="flex flex-col md:flex-row gap-3">
 			<fieldset class="fieldset w-full">
@@ -276,7 +279,10 @@ templ EditLocation(data EditLocationData) {
 					}
 				</ul>
 			</div>
-			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">Delete</button>
+			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
+				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
+				Delete
+			</button>
 			<form
 				id="edit-location"
 				hx-post={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
@@ -287,7 +293,10 @@ templ EditLocation(data EditLocationData) {
 					id="edit-location-btn"
 					class="btn btn-primary"
 					type="submit"
-				>Save</button>
+				>
+					@icon("save", templ.Attributes{"class": "w-4 h-4"})
+					Save
+				</button>
 			</form>
 		</div>
 	</div>
