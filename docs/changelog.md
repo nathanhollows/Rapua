@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.6.4 (2025-12-14)
+
+### Fixed
+
+- Hide marker and clues icons when `Secret` routing strategy is selected.
+
 ## 6.6.3 (2025-12-14)
 
 ### Fixed

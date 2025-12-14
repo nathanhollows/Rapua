@@ -202,7 +202,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 				</div>
 			</div>
 		</div>
-		<div class="locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0" data-unassigned="true" data-nav-mode={ fmt.Sprint(int(group.Navigation)) }>
+		<div class="locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0" data-unassigned="true" data-nav-mode={ fmt.Sprint(int(group.Navigation)) } data-route-mode={ fmt.Sprint(int(group.Routing)) }>
 			for _, location := range group.Locations {
 				@locationItem(*location, settings)
 			}
@@ -223,7 +223,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 					@groupMenu(group)
 				</div>
 				<!-- Locations area within group -->
-				<div class="locations-area join join-vertical" data-group-id={ group.ID } data-nav-mode={ fmt.Sprint(int(group.Navigation)) }>
+				<div class="locations-area join join-vertical" data-group-id={ group.ID } data-nav-mode={ fmt.Sprint(int(group.Navigation)) } data-route-mode={ fmt.Sprint(int(group.Routing)) }>
 					for _, location := range group.Locations {
 						@locationItem(*location, settings)
 					}
@@ -569,6 +569,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
 						remove .btn-disabled from navDropdown.querySelector('a')
 						remove .hidden from navDropdown.querySelector('.dropdown-content')
+						-- Update route mode attribute (2 = Ordered)
+						set locationsArea to groupCard.querySelector('.locations-area')
+						set locationsArea's @data-route-mode to '2'
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -601,6 +604,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
 						remove .btn-disabled from navDropdown.querySelector('a')
 						remove .hidden from navDropdown.querySelector('.dropdown-content')
+						-- Update route mode attribute (1 = FreeRoam)
+						set locationsArea to groupCard.querySelector('.locations-area')
+						set locationsArea's @data-route-mode to '1'
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -632,6 +638,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
 						add .btn-disabled to navDropdown.querySelector('a')
 						add .hidden to navDropdown.querySelector('.dropdown-content')
+						-- Update route mode attribute (3 = Secret) to hide icons
+						set locationsArea to groupCard.querySelector('.locations-area')
+						set locationsArea's @data-route-mode to '3'
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -665,6 +674,9 @@ templ routeStrategyPicker(group models.GameStructure) {
 						set navDropdown to groupCard.querySelector('.nav-display-dropdown')
 						remove .btn-disabled from navDropdown.querySelector('a')
 						remove .hidden from navDropdown.querySelector('.dropdown-content')
+						-- Update route mode attribute (0 = Random)
+						set locationsArea to groupCard.querySelector('.locations-area')
+						set locationsArea's @data-route-mode to '0'
 						js saveGameStructure() end"
 					>
 						<div class="flex items-center gap-2">
@@ -1369,6 +1381,12 @@ templ sortableScript() {
 		}
 		.locations-area[data-nav-mode="4"] .location-clues-icon {
 			display: inline-flex;
+		}
+
+		/* Secret mode (route-mode 3): hide all icons regardless of nav mode */
+		.locations-area[data-route-mode="3"] .location-marker-icon,
+		.locations-area[data-route-mode="3"] .location-clues-icon {
+			display: none !important;
 		}
 	</style>
 }
