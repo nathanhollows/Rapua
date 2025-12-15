@@ -15,6 +15,7 @@ import (
 	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v6/internal/handlers/static"
 	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
 )
 
@@ -70,6 +71,10 @@ func setupRouter(
 	// Static files
 	workDir, _ := os.Getwd()
 	filesDir := filesystem.Myfs{Dir: http.Dir(filepath.Join(workDir, "static"))}
+
+	// Image resizing handler for uploads (must come before general static handler)
+	router.Get("/static/uploads/*", static.ServeResizedImage(workDir))
+
 	filesystem.FileServer(router, "/static", filesDir)
 
 	return router

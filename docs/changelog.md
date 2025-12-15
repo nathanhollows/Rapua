@@ -7,7 +7,12 @@ tag: updated
 
 # Changelog
 
-## 6.6.4 (2025-12-14)
+## 6.7.0 (2025-12-15)
+
+### Added
+
+- Uploaded images are now resized using `?size=` query parameter. Supported sizes are `small`, `medium`, `large`, and `original`. Closes [#105](https://github.com/nathanhollows/Rapua/issues/105).
+  - This improves performance, especially on mobile devices.
 
 ### Fixed
 
