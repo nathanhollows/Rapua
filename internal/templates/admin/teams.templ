@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
+	"github.com/nathanhollows/Rapua/v6/helpers"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	"github.com/nathanhollows/Rapua/v6/models"
 )
@@ -807,8 +808,24 @@ templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
 			<div class="mt-2 columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3">
 				for _, upload := range uploads {
 					if upload.Type == models.MediaTypeImage {
-						<a href={ templ.URL(upload.OriginalURL) } target="_blank" class="block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out group break-inside-avoid hover:scale-105">
-							<img src={ upload.OriginalURL } alt={ fmt.Sprintf("Upload by team %s on %s", teamCode, upload.Timestamp.Format("Jan 2, 2006")) } class="w-full h-auto object-cover"/>
+						<a
+							if helpers.IsLocalURL(upload.OriginalURL) {
+								href={ templ.URL(upload.OriginalURL + "?size=large") }
+							} else {
+								href={ templ.URL(upload.OriginalURL) }
+							}
+							target="_blank"
+							class="block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out group break-inside-avoid hover:scale-105"
+						>
+							<img
+								if helpers.IsLocalURL(upload.OriginalURL) {
+									src={ upload.OriginalURL + "?size=small" }
+								} else {
+									src={ upload.OriginalURL }
+								}
+								alt={ fmt.Sprintf("Upload by team %s on %s", teamCode, upload.Timestamp.Format("Jan 2, 2006")) }
+								class="w-full h-auto object-cover"
+							/>
 						</a>
 					} else if upload.Type == models.MediaTypeVideo {
 						<a href={ templ.URL(upload.OriginalURL) } target="_blank" class="block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out relative group break-inside-avoid hover:scale-105">

@@ -5,6 +5,9 @@ import (
 	"os"
 	"strconv"
 	"sync"
+
+	"github.com/a-h/templ"
+	"github.com/kaugesaar/lucide-go"
 )
 
 var cssVersion string
@@ -34,4 +37,8 @@ func filter[T any](items []T, fn func(T) bool) []T {
 		}
 	}
 	return filtered
+}
+
+func icon(icon string, attrs templ.Attributes) templ.Component {
+	return templ.Raw(lucide.Icon(icon, attrs))
 }

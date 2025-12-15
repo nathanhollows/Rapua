@@ -7,13 +7,37 @@ tag: updated
 
 # Changelog
 
-## 6.6.1 (13-12-2025)
+## 6.7.0 (2025-12-15)
+
+### Added
+
+- Uploaded images are now resized using `?size=` query parameter. Supported sizes are `small`, `medium`, `large`, and `original`. Closes [#105](https://github.com/nathanhollows/Rapua/issues/105).
+  - This improves performance, especially on mobile devices.
+
+### Fixed
+
+- Hide marker and clues icons when `Secret` routing strategy is selected.
+- More buttons nows have icons for better visibility.
+
+## 6.6.3 (2025-12-14)
+
+### Fixed
+
+- Markers can now be added to existing locations without coordinates. Fixes [#67](https://github.com/nathanhollows/Rapua/issues/67)
+
+## 6.6.2 (2025-12-13)
+
+### Fixed
+
+- Replaced SendGrid integration with SMTP so emails work again, and reliably. Updated `.env.template` with new SMTP fields.
+
+## 6.6.1 (2025-12-13)
 
 ### Fixed
 
 - Start and Finish pages now render correctly in preview mode.
 
-## 6.6.0 (13-12-2025)
+## 6.6.0 (2025-12-13)
 
 ### Added
 
@@ -37,14 +61,14 @@ tag: updated
 
 [Full Changelog](https://github.com/nathanhollows/Rapua/releases/tag/v6.6.0)
 
-## 6.5.1 (12-12-2025)
+## 6.5.1 (2025-12-12)
 
 ### Fixed
 
 - Templates can now be launched correctly from non-owner accounts.
 - The template name field is now pre-populated when launching a template.
 
-## 6.5.0 (29-11-2025)
+## 6.5.0 (2025-11-29)
 
 ### Added
 

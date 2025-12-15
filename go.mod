@@ -18,7 +18,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/phsym/console-slog v0.3.1
 	github.com/piglig/go-qr v0.2.5
-	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/stripe/stripe-go/v83 v83.0.1
 	github.com/uptrace/bun v1.2.1
 	github.com/yuin/goldmark v1.7.4
@@ -33,6 +32,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -48,8 +48,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect

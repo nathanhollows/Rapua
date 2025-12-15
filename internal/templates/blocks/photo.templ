@@ -3,6 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/helpers"
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
@@ -32,7 +33,15 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
 									</button>
 								}
-								<img src={ imageURL } alt="Uploaded photo" class="rounded-lg max-w-full max-h-full object-contain"/>
+								<img
+									if helpers.IsLocalURL(imageURL) {
+										src={ imageURL + "?size=small" }
+									} else {
+										src={ imageURL }
+									}
+									alt="Uploaded photo"
+									class="rounded-lg max-w-full max-h-full object-contain"
+								/>
 							</div>
 						}
 					</div>
