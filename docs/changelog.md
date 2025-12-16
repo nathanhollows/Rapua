@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.8.0 (2025-12-16)
+
+### Added
+
+- New [Task List](/docs/user/game-settings) navigation display mode to show players a checklist of locations to visit.
+
 ## 6.7.0 (2025-12-15)
 
 ### Added

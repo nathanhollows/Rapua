@@ -31,6 +31,7 @@ const (
 	NavigationDisplayNames
 	NavigationDisplayClues  // Deprecated
 	NavigationDisplayCustom // For Block content
+	NavigationDisplayTaskList
 )
 
 const (
@@ -81,6 +82,7 @@ func GetNavigationDisplayModes() NavigationDisplayModes {
 		NavigationDisplayMapAndNames,
 		NavigationDisplayNames,
 		NavigationDisplayCustom,
+		NavigationDisplayTaskList,
 	}
 }
 
@@ -96,7 +98,7 @@ func (n RouteStrategy) String() string {
 
 // String returns the string representation of the NavigationDisplayMode.
 func (n NavigationDisplayMode) String() string {
-	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues"}[n]
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues", "Task List"}[n]
 }
 
 // String returns the string representation of the GameStatus.
@@ -122,6 +124,7 @@ func (n NavigationDisplayMode) Description() string {
 		"Players are shown a list of locations by name.",
 		"Players are shown clues but not the location or name.", // Deprecated
 		"Players are shown custom content, e.g., randomised clues or images, using the block builder.",
+		"Players complete a set of tasks in any order, like a scavenger hunt or checklist.",
 	}[n]
 }
 
@@ -163,6 +166,8 @@ func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 		return NavigationDisplayClues, nil
 	case "Custom Content", "Custom Clues":
 		return NavigationDisplayCustom, nil
+	case "Task List":
+		return NavigationDisplayTaskList, nil
 	default:
 		return NavigationDisplayMap, errors.New("invalid NavigationDisplayMode")
 	}

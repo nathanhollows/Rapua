@@ -2,6 +2,7 @@
 title: "Game Settings"
 sidebar: true
 order: 9
+tag: "updated"
 ---
 
 # Game Settings

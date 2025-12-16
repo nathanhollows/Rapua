@@ -15,6 +15,7 @@ const (
 	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
 	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
+	ContextTasks           BlockContext = "tasks"            // Task lists or similar
 )
 
 // FormValueTrue is the string value "true" used in form checkbox comparisons.
