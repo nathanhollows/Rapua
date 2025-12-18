@@ -16,6 +16,7 @@ const (
 	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
 	ContextTasks           BlockContext = "tasks"            // Task lists or similar
+	ContextTaskValidation  BlockContext = "task_validation"  // Blocks that can validate tasks
 )
 
 // FormValueTrue is the string value "true" used in form checkbox comparisons.
@@ -116,18 +117,22 @@ func init() {
 
 	// Interactive blocks
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
+	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextTaskValidation})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
+	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextTaskValidation})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
+	registerBlock(&QRCodeBlock{}, []BlockContext{ContextTaskValidation})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
 	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextStart})
 	registerBlock(&TeamNameChangerBlock{}, []BlockContext{ContextStart})
+
+	// Task blocks
+	registerBlock(&TaskBlock{}, []BlockContext{ContextTasks, ContextLocationContent})
 }
 
 // Public API functions
@@ -210,6 +215,10 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewGameStatusAlertBlock(baseBlock), nil
 	case "start_game_button":
 		return NewStartGameButtonBlock(baseBlock), nil
+	case "task":
+		return NewTaskBlock(baseBlock), nil
+	case "qr_code":
+		return NewQRCodeBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}
@@ -321,6 +330,19 @@ func NewGameStatusAlertBlock(base BaseBlock) *GameStatusAlertBlock {
 
 func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
 	return &StartGameButtonBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewTaskBlock(base BaseBlock) *TaskBlock {
+	return &TaskBlock{
+		BaseBlock: base,
+		InnerType: "qr_code", // Default validation type
+	}
+}
+
+func NewQRCodeBlock(base BaseBlock) *QRCodeBlock {
+	return &QRCodeBlock{
 		BaseBlock: base,
 	}
 }

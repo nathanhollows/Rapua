@@ -316,10 +316,11 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			// Primary RESTful endpoints
 			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
 			r.Get("/", adminHandler.BlockList)            // GET /admin/blocks?owner=uuid&context=ctx
-			r.Get("/{id}", adminHandler.BlockGet)         // GET /admin/blocks/{id}
-			r.Put("/{id}", adminHandler.BlockUpdate)      // PUT /admin/blocks/{id}
-			r.Delete("/{id}", adminHandler.BlockDelete)   // DELETE /admin/blocks/{id}
-			r.Post("/reorder", adminHandler.BlockReorder) // POST /admin/blocks/reorder
+			r.Get("/{id}", adminHandler.BlockGet)                     // GET /admin/blocks/{id}
+			r.Put("/{id}", adminHandler.BlockUpdate)                  // PUT /admin/blocks/{id}
+			r.Delete("/{id}", adminHandler.BlockDelete)               // DELETE /admin/blocks/{id}
+			r.Get("/{id}/inner-editor", adminHandler.BlockInnerEditor) // GET /admin/blocks/{id}/inner-editor
+			r.Post("/reorder", adminHandler.BlockReorder)             // POST /admin/blocks/reorder
 		})
 		r.Route("/teams", func(r chi.Router) {
 			r.Get("/", adminHandler.Teams)

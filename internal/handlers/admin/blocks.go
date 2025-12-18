@@ -275,6 +275,74 @@ func (h *Handler) BlockUpdate(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Block updated")
 }
 
+// BlockInnerEditor returns the inner block editor for a task block.
+// GET /admin/blocks/{id}/inner-editor.
+func (h *Handler) BlockInnerEditor(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	blockID := chi.URLParam(r, "id")
+	if blockID == "" {
+		h.handleError(w, r, "BlockInnerEditor: missing block ID", "Block ID is required", "id", blockID)
+		return
+	}
+
+	access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
+	if err != nil {
+		h.handleError(w, r, "BlockInnerEditor: checking access", "Could not retrieve block", "error", err)
+		return
+	}
+	if !access {
+		h.handleError(w, r, "BlockInnerEditor: access denied", "Access denied", "blockID", blockID)
+		return
+	}
+
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
+	if err != nil {
+		h.handleError(w, r, "BlockInnerEditor: getting block", "Could not find block", "error", err)
+		return
+	}
+
+	// Ensure it's a task block
+	taskBlock, ok := block.(*blocks.TaskBlock)
+	if !ok {
+		h.handleError(w, r, "BlockInnerEditor: block is not a task", "Block is not a task block", "blockID", blockID)
+		return
+	}
+
+	// Get inner_type from query params
+	innerType := r.URL.Query().Get("inner_type")
+	if innerType != "" && innerType != taskBlock.InnerType {
+		// Create temporary task block with new inner type
+		taskBlock = &blocks.TaskBlock{
+			BaseBlock: taskBlock.BaseBlock,
+			TaskName:  taskBlock.TaskName,
+			InnerType: innerType,
+		}
+
+		// Create and parse new inner block
+		innerBase := blocks.BaseBlock{
+			ID:         taskBlock.ID + "_inner",
+			LocationID: taskBlock.LocationID,
+			Type:       innerType,
+			Order:      0,
+			Points:     taskBlock.Points,
+		}
+		inner, err := blocks.CreateFromBaseBlock(innerBase)
+		if err == nil {
+			// Set inner block directly to avoid serialization
+			taskBlock.SetInnerBlock(inner)
+		}
+	}
+
+	// Render just the inner editor section
+	err = templates.TaskInnerEditor(user.CurrentInstance.Settings, *taskBlock).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("BlockInnerEditor: rendering template", "error", err)
+		h.handleError(w, r, "BlockInnerEditor: render failed", "Could not load editor", "error", err)
+		return
+	}
+}
+
 // BlockDelete deletes a block by ID.
 // DELETE /admin/blocks/{id}.
 func (h *Handler) BlockDelete(w http.ResponseWriter, r *http.Request) {

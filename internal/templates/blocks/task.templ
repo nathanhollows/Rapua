@@ -1,0 +1,127 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ taskPlayer(settings models.InstanceSettings, task blocks.TaskBlock, state blocks.PlayerState) {
+	<!-- Task Item Button -->
+	<button
+		type="button"
+		class="flex items-center gap-3 p-4 bg-base-100 rounded-lg shadow-sm border border-base-300 w-full text-left hover:bg-base-200 transition-colors"
+		onclick={ templ.ComponentScript{Call: fmt.Sprintf("document.getElementById('task_modal_%s').showModal()", task.ID)} }
+	>
+		<!-- Points Badge -->
+		if settings.EnablePoints && task.GetPoints() > 0 {
+			<div class="badge badge-circle badge-lg font-bold text-base">
+				{ fmt.Sprint(task.GetPoints()) }
+			</div>
+		}
+		<!-- Task Name -->
+		<div class="flex-1 font-medium">
+			{ task.TaskName }
+		</div>
+		<!-- Completion Badge -->
+		if state.IsComplete() {
+			<div class="badge badge-success badge-sm">Complete</div>
+		}
+		<!-- Validation Type Icon -->
+		<div class="btn btn-circle btn-ghost btn-sm">
+			@templ.Raw(task.GetIconSVG())
+		</div>
+		<!-- Chevron -->
+		@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+	</button>
+	<!-- Task Modal -->
+	<dialog id={ fmt.Sprintf("task_modal_%s", task.ID) } class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box max-w-2xl">
+			<!-- Modal Header -->
+			<h3 class="text-lg font-bold mb-4">{ task.TaskName }</h3>
+			<!-- Inner Block Player View -->
+			if task.GetInnerBlock() != nil {
+				@RenderPlayerView(settings, task.GetInnerBlock(), state)
+			}
+			<!-- Modal Actions -->
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Close</button>
+				</form>
+			</div>
+		</div>
+		<!-- Backdrop -->
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+}
+
+templ taskAdmin(settings models.InstanceSettings, task blocks.TaskBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", task.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", task.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", task.ID, task.ID) }
+		hx-swap="none"
+		novalidate
+	>
+		<!-- Task Name -->
+		<fieldset class="fieldset w-full">
+			<legend class="fieldset-legend">Task Name</legend>
+			<label class="input">
+				<input
+					type="text"
+					name="task_name"
+					class="grow"
+					placeholder="e.g., Find the hidden treasure"
+					value={ task.TaskName }
+					required
+				/>
+			</label>
+		</fieldset>
+		<!-- Points and Validation Type -->
+		<div class="flex flex-col md:flex-row gap-4">
+			<!-- Points -->
+			if settings.EnablePoints {
+				<div class="md:w-1/2">
+					@adminPointsField(task.Points)
+				</div>
+			}
+			<!-- Validation Type -->
+			<fieldset class="fieldset md:w-1/2">
+				<legend class="fieldset-legend">Validation Type</legend>
+				<select
+					name="inner_type"
+					class="select select-bordered w-full"
+					hx-get={ fmt.Sprintf("/admin/blocks/%s/inner-editor", task.ID) }
+					hx-target={ fmt.Sprintf("#inner-editor-%s", task.ID) }
+					hx-swap="outerHTML"
+					hx-include={ fmt.Sprintf("#form-%s", task.ID) }
+				>
+					for _, block := range blocks.GetBlocksForContext(blocks.ContextTaskValidation) {
+						<option
+							value={ block.GetType() }
+							if task.InnerType == block.GetType() {
+								selected
+							}
+						>
+							{ block.GetName() }
+						</option>
+					}
+				</select>
+				<p class="label">How players will validate this task</p>
+			</fieldset>
+		</div>
+		<!-- Nested Inner Block Editor -->
+		@TaskInnerEditor(settings, task)
+	</form>
+}
+
+templ TaskInnerEditor(settings models.InstanceSettings, task blocks.TaskBlock) {
+	<div id={ fmt.Sprintf("inner-editor-%s", task.ID) } class="border-l-2 border-primary pl-4 mt-4">
+		if task.GetInnerBlock() != nil {
+			<p class="text-sm font-semibold mb-2 opacity-60">{ task.GetInnerBlock().GetName() } Configuration</p>
+			@RenderAdminEdit(settings, task.GetInnerBlock())
+		}
+	</div>
+}

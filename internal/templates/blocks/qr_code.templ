@@ -1,0 +1,35 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ qrCodePlayer(settings models.InstanceSettings, block blocks.QRCodeBlock) {
+	if block.Instructions != "" {
+		<div class="prose w-full">
+			@templ.Raw(stringToMarkdown(block.Instructions))
+		</div>
+	}
+}
+
+var qrCodeInstructionsTextarea = TextareaParams{
+	Name:        "instructions",
+	Title:       "Instructions",
+	Placeholder: "Scan the QR code on the statue",
+	HelpText:    "Additional instructions to help players find or use the QR code.",
+	Markdown:    true,
+	Required:    false,
+}
+
+templ qrCodeAdmin(settings models.InstanceSettings, block blocks.QRCodeBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextareaField(qrCodeInstructionsTextarea.SetValue(block.Instructions))
+	</form>
+}

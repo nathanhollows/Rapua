@@ -65,6 +65,12 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "start_game_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonAdmin(settings, *b)
+	case "task":
+		b := block.(*blocks.TaskBlock)
+		return taskAdmin(settings, *b)
+	case "qr_code":
+		b := block.(*blocks.QRCodeBlock)
+		return qrCodeAdmin(settings, *b)
 	}
 	return nil
 }
@@ -128,6 +134,12 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "start_game_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
+	case "task":
+		b := block.(*blocks.TaskBlock)
+		return taskPlayer(settings, *b, state)
+	case "qr_code":
+		b := block.(*blocks.QRCodeBlock)
+		return qrCodePlayer(settings, *b)
 	}
 	return nil
 }
@@ -191,6 +203,12 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "start_game_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
+	case "task":
+		b := block.(*blocks.TaskBlock)
+		return taskPlayer(settings, *b, state)
+	case "qr_code":
+		b := block.(*blocks.QRCodeBlock)
+		return qrCodePlayer(settings, *b)
 	}
 	return nil
 }
