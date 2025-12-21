@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
@@ -307,6 +308,15 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 		return nil, nil, errors.New("blockID must be set")
 	}
 
+	// Handle task inner blocks - if block ID ends with "_inner",
+	// it's from a task block's inner validation block
+	const innerSuffix = "_inner"
+	actualBlockID := blockID
+	if strings.HasSuffix(blockID, innerSuffix) {
+		// Strip the suffix to get the task block ID
+		actualBlockID = strings.TrimSuffix(blockID, innerSuffix)
+	}
+
 	// Check if we're in preview mode - preview mode should use fresh mock state
 	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
 
@@ -316,18 +326,18 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 
 	if isPreview {
 		// In preview mode, always get a fresh block and create a new mock state
-		block, err = s.blockService.GetByBlockID(ctx, blockID)
+		block, err = s.blockService.GetByBlockID(ctx, actualBlockID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
 		}
 
-		state, err = s.blockService.NewMockBlockState(ctx, blockID, team.Code)
+		state, err = s.blockService.NewMockBlockState(ctx, actualBlockID, team.Code)
 		if err != nil {
 			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
 		}
 	} else {
 		// In regular mode, get the existing block and state
-		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
+		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, actualBlockID, team.Code)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block with state: %w", err)
 		}

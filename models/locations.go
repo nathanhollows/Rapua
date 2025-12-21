@@ -1,6 +1,10 @@
 package models
 
-import "github.com/nathanhollows/Rapua/v6/blocks"
+import (
+	"encoding/json"
+
+	"github.com/nathanhollows/Rapua/v6/blocks"
+)
 
 type Location struct {
 	baseModel
@@ -32,6 +36,24 @@ func (l *Location) HasCluesContext() bool {
 	for i := range l.Blocks {
 		if l.Blocks[i].Context == blocks.ContextLocationClues {
 			return true
+		}
+	}
+	return false
+}
+
+// HasTaskContext returns true if the location has any blocks with task context and a task name.
+func (l *Location) HasTaskContext() bool {
+	type task struct {
+		TaskName string `json:"task_name"`
+	}
+	for i := range l.Blocks {
+		if l.Blocks[i].Context == blocks.ContextTasks {
+			block := l.Blocks[i]
+			var t task
+			_ = json.Unmarshal(block.Data, &t)
+			if t.TaskName != "" {
+				return true
+			}
 		}
 	}
 	return false

@@ -259,6 +259,16 @@ templ locationItem(location models.Location, settings models.InstanceSettings) {
 					@icon("search-slash", templ.Attributes{"class": "w-4 h-4 opacity-40"})
 				</span>
 			}
+			<!-- Tasks icon - always rendered, visibility controlled by CSS -->
+			if location.HasTaskContext() {
+				<span class="tooltip cursor-help location-task-icon" data-tip="Task is assigned">
+					@icon("circle-check-big", templ.Attributes{"class": "w-4 h-4"})
+				</span>
+			} else {
+				<span class="tooltip cursor-help location-task-icon text-base-content" data-tip="No task">
+					@icon("circle", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+				</span>
+			}
 			<div class="badge badge-sm badge-outline border-primary font-medium tooltip" data-tip="Location ID"><code>{ location.MarkerID }</code></div>
 			<a
 				href={ templ.SafeURL(fmt.Sprintf("/admin/locations/%s", location.MarkerID)) }
@@ -1383,6 +1393,14 @@ templ sortableScript() {
 			display: none;
 		}
 		.locations-area[data-nav-mode="4"] .location-clues-icon {
+			display: inline-flex;
+		}
+
+		/* Tasks: visible only for Task List (5) */
+		.locations-area .location-task-icon {
+			display: none;
+		}
+		.locations-area[data-nav-mode="5"] .location-task-icon {
 			display: inline-flex;
 		}
 

@@ -207,14 +207,22 @@ func (s *NavigationService) GetPlayerNavigationView(
 	}
 	view.NextLocations = locations
 
-	// Load navigation blocks if using custom display mode
-	if view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	// Load navigation blocks if using custom display mode or task list mode
+	var navigationContext blocks.BlockContext
+	switch view.CurrentGroup.Navigation {
+	case models.NavigationDisplayCustom:
+		navigationContext = blocks.ContextLocationClues
+	case models.NavigationDisplayTaskList:
+		navigationContext = blocks.ContextTasks
+	}
+
+	if navigationContext != "" {
 		for _, location := range locations {
 			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 				ctx,
 				location.ID,
 				team.Code,
-				blocks.ContextLocationClues,
+				navigationContext,
 			)
 			if blockErr != nil {
 				return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
