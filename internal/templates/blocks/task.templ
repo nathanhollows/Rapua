@@ -6,6 +6,13 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
+// disablePoints returns a copy of settings with EnablePoints set to false.
+// This prevents inner blocks from displaying points, since the task shows them.
+func disablePoints(s models.InstanceSettings) models.InstanceSettings {
+	s.EnablePoints = false
+	return s
+}
+
 templ taskPlayer(settings models.InstanceSettings, task blocks.TaskBlock, state blocks.PlayerState) {
 	<!-- Task Accordion Item -->
 	<div class="collapse collapse-arrow bg-base-200 border-base-300 border" id={ fmt.Sprintf("task-%s", task.ID) }>
@@ -42,7 +49,7 @@ templ taskPlayer(settings models.InstanceSettings, task blocks.TaskBlock, state 
 				#task-inner-content-{ task.ID } .indicator { width: auto; }
 			</style>
 			if task.GetInnerBlock() != nil {
-				@RenderPlayerView(settings, task.GetInnerBlock(), state)
+				@RenderPlayerView(disablePoints(settings), task.GetInnerBlock(), state)
 			}
 		</div>
 	</div>
@@ -68,7 +75,7 @@ templ taskPlayerUpdate(settings models.InstanceSettings, task blocks.TaskBlock, 
 			#task-inner-content-{ task.ID } .indicator { width: auto; }
 		</style>
 		if task.GetInnerBlock() != nil {
-			@RenderPlayerView(settings, task.GetInnerBlock(), state)
+			@RenderPlayerView(disablePoints(settings), task.GetInnerBlock(), state)
 		}
 	</div>
 }
@@ -137,7 +144,7 @@ templ TaskInnerEditor(settings models.InstanceSettings, task blocks.TaskBlock) {
 	<div id={ fmt.Sprintf("inner-editor-%s", task.ID) } class="border-l-2 border-primary pl-4 mt-4">
 		if task.GetInnerBlock() != nil {
 			<p class="text-sm font-semibold mb-2 opacity-60">{ task.GetInnerBlock().GetName() } Configuration</p>
-			@RenderAdminEdit(settings, task.GetInnerBlock())
+			@RenderAdminEdit(disablePoints(settings), task.GetInnerBlock())
 		}
 	</div>
 }
