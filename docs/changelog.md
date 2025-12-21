@@ -11,7 +11,10 @@ tag: updated
 
 ### Added
 
-- New [Task List](/docs/user/game-settings) navigation display mode to show players a checklist of locations to visit.
+- New [Task List](/docs/user/game-settings) navigation display mode to show players a list of tasks to complete.
+- New [Task](/docs/user/blocks/task) block to support the Task List mode.
+  - Tasks blocks contain a task description and another block to validate completion (e.g., quiz, checklist, etc.)
+- New Task-specific validation blocks: QR Code and Complete Button.
 
 ## 6.7.0 (2025-12-15)
 

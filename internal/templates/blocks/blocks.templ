@@ -71,6 +71,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "qr_code":
 		b := block.(*blocks.QRCodeBlock)
 		return qrCodeAdmin(settings, *b)
+	case "complete_button":
+		b := block.(*blocks.CompleteButtonBlock)
+		return completeButtonAdmin(settings, *b)
 	}
 	return nil
 }
@@ -140,6 +143,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "qr_code":
 		b := block.(*blocks.QRCodeBlock)
 		return qrCodePlayer(settings, *b)
+	case "complete_button":
+		b := block.(*blocks.CompleteButtonBlock)
+		return completeButtonPlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -205,10 +211,13 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 		return startGameButtonPlayer(settings, *b)
 	case "task":
 		b := block.(*blocks.TaskBlock)
-		return taskPlayer(settings, *b, state)
+		return taskPlayerUpdate(settings, *b, state)
 	case "qr_code":
 		b := block.(*blocks.QRCodeBlock)
 		return qrCodePlayer(settings, *b)
+	case "complete_button":
+		b := block.(*blocks.CompleteButtonBlock)
+		return completeButtonPlayerUpdate(settings, *b, state)
 	}
 	return nil
 }
@@ -245,46 +254,48 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 							end"
 				>{ fmt.Sprint(block.GetPoints()) } pts</span>
 			}
-			<div class="flex gap-3 z-10 ml-auto">
-				<button
-					type="button"
-					class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
-					data-tip="Delete"
-					data-location={ block.GetLocationID() }
-					data-block={ block.GetID() }
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-				</button>
-				<span class="join join-horizontal">
+			if block.GetType() != "task" {
+				<div class="flex gap-3 z-10 ml-auto">
 					<button
 						type="button"
-						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-up-btn"
-						data-tip="Move up"
-						onclick="moveblock(event, 'up')"
-						hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-						hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
-						hx-trigger="click delay:400ms"
-						hx-swap="none"
-						hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
-						:disabled="{ block.IsFirst() }"
+						class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
+						data-tip="Delete"
+						data-location={ block.GetLocationID() }
+						data-block={ block.GetID() }
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-up w-3 h-3"><path d="M8 6L12 2L16 6"></path><path d="M12 2V22"></path></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
 					</button>
-					<button
-						type="button"
-						class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-down-btn"
-						data-tip="Move down"
-						onclick="moveblock(event, 'down')"
-						hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-						hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
-						hx-trigger="click delay:400ms"
-						hx-swap="none"
-						hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-down w-3 h-3"><path d="M8 18L12 22L16 18"></path><path d="M12 2V22"></path></svg>
-					</button>
-				</span>
-			</div>
+					<span class="join join-horizontal">
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-up-btn"
+							data-tip="Move up"
+							onclick="moveblock(event, 'up')"
+							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
+							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
+							hx-trigger="click delay:400ms"
+							hx-swap="none"
+							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
+							:disabled="{ block.IsFirst() }"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-up w-3 h-3"><path d="M8 6L12 2L16 6"></path><path d="M12 2V22"></path></svg>
+						</button>
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-down-btn"
+							data-tip="Move down"
+							onclick="moveblock(event, 'down')"
+							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
+							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
+							hx-trigger="click delay:400ms"
+							hx-swap="none"
+							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-down w-3 h-3"><path d="M8 18L12 22L16 18"></path><path d="M12 2V22"></path></svg>
+						</button>
+					</span>
+				</div>
+			}
 			<input type="hidden" name="block_id" value={ block.GetID() }/>
 		</div>
 		<div class="collapse-content">

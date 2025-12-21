@@ -123,6 +123,7 @@ func init() {
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextTaskValidation})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
 	registerBlock(&QRCodeBlock{}, []BlockContext{ContextTaskValidation})
+	registerBlock(&CompleteButtonBlock{}, []BlockContext{ContextTaskValidation})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint, ContextTaskValidation})
 
@@ -219,6 +220,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewTaskBlock(baseBlock), nil
 	case "qr_code":
 		return NewQRCodeBlock(baseBlock), nil
+	case "complete_button":
+		return NewCompleteButtonBlockFromBase(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
 	}

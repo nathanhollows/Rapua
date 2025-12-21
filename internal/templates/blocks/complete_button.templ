@@ -1,0 +1,83 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ completeButtonPlayer(settings models.InstanceSettings, block blocks.CompleteButtonBlock, state blocks.PlayerState) {
+	<div class="text-center">
+		<form
+			hx-post={ fmt.Sprint("/blocks/validate") }
+			hx-swap="none"
+		>
+			<input type="hidden" name="block" value={ block.ID }/>
+			if state.IsComplete() {
+				<button
+					type="button"
+					class="btn btn-success"
+					disabled
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+					<span>Completed</span>
+				</button>
+			} else {
+				<button
+					type="submit"
+					class="btn btn-primary"
+				>
+					<span>{ block.Text }</span>
+				</button>
+			}
+		</form>
+	</div>
+}
+
+templ completeButtonPlayerUpdate(settings models.InstanceSettings, block blocks.CompleteButtonBlock, state blocks.PlayerState) {
+	<div class="text-center" hx-swap-oob="true" id={ fmt.Sprintf("player-block-%s", block.ID) }>
+		<form
+			hx-post={ fmt.Sprint("/blocks/validate") }
+			hx-swap="none"
+		>
+			<input type="hidden" name="block" value={ block.ID }/>
+			if state.IsComplete() {
+				<button
+					type="button"
+					class="btn btn-success"
+					disabled
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+					<span>Completed</span>
+				</button>
+			} else {
+				<button
+					type="submit"
+					class="btn btn-primary"
+				>
+					<span>{ block.Text }</span>
+				</button>
+			}
+		</form>
+	</div>
+}
+
+var completeButtonTextInput = TextInputParams{
+	Name:         "text",
+	Title:        "Button Text",
+	Placeholder:  "Mark as complete",
+	Required:     true,
+	ExtraClasses: "w-full",
+	HelpText:     "The text displayed on the completion button.",
+}
+
+templ completeButtonAdmin(settings models.InstanceSettings, block blocks.CompleteButtonBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextInputField(completeButtonTextInput.SetValue(block.Text))
+	</form>
+}
