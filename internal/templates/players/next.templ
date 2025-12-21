@@ -59,6 +59,8 @@ templ Next(data NextParams) {
 					@showNames(data.View.Settings, data.View.NextLocations)
 				case models.NavigationDisplayCustom:
 					@showCustom(prepareCustomContentViewData(data))
+				case models.NavigationDisplayTaskList:
+					@showTaskList(prepareCustomContentViewData(data))
 			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center mt-12">
@@ -219,6 +221,24 @@ templ showCustom(data customContentViewData) {
 			}
 		</div>
 	}
+}
+
+templ showTaskList(data customContentViewData) {
+	<div class="prose">
+		<p class="text-center pb-5">
+			Complete the following tasks in any order. Check them off as you go!
+		</p>
+	</div>
+	<div class="flex flex-col gap-3">
+		for _, locWithBlocks := range data.LocationsWithBlocks {
+			for _, block := range locWithBlocks.Blocks {
+				if block.GetLocationID() != locWithBlocks.Location.ID {
+					continue
+				}
+				@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
+			}
+		}
+	</div>
 }
 
 templ mapScript() {

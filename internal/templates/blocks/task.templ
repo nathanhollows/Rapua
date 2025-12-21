@@ -7,54 +7,70 @@ import (
 )
 
 templ taskPlayer(settings models.InstanceSettings, task blocks.TaskBlock, state blocks.PlayerState) {
-	<!-- Task Item Button -->
-	<button
-		type="button"
-		class="flex items-center gap-3 p-4 bg-base-100 rounded-lg shadow-sm border border-base-300 w-full text-left hover:bg-base-200 transition-colors"
-		onclick={ templ.ComponentScript{Call: fmt.Sprintf("document.getElementById('task_modal_%s').showModal()", task.ID)} }
-	>
-		<!-- Points Badge -->
-		if settings.EnablePoints && task.GetPoints() > 0 {
-			<div class="badge badge-circle badge-lg font-bold text-base">
-				{ fmt.Sprint(task.GetPoints()) }
+	<!-- Task Accordion Item -->
+	<div class="collapse collapse-arrow bg-base-200 border-base-300 border" id={ fmt.Sprintf("task-%s", task.ID) }>
+		<input type="radio" name="task-accordion" id={ fmt.Sprintf("task-radio-%s", task.ID) }/>
+		<div class="collapse-title flex items-center gap-3 min-h-0 py-4">
+			<!-- Points -->
+			if settings.EnablePoints && task.GetPoints() > 0 {
+				<div class="avatar avatar-placeholder">
+					<div class="bg-base-100 text-base-content text-xs font-bold w-8 rounded-full border-2 border-base-300">
+						<span>{ fmt.Sprint(task.GetPoints()) }</span>
+					</div>
+				</div>
+			}
+			<!-- Task Name -->
+			<div
+				if state.IsComplete() {
+					class="flex-1 flex items-baseline gap-2 line-through opacity-50"
+				} else {
+					class="flex-1 flex items-baseline gap-2"
+				}
+			>
+				<span class="font-medium">{ task.TaskName }</span>
 			</div>
-		}
-		<!-- Task Name -->
-		<div class="flex-1 font-medium">
-			{ task.TaskName }
+			<!-- Validation Type Icon (subtle) -->
+			<div class="shrink-0 w-5 h-5">
+				@templ.Raw(task.GetIconSVG())
+			</div>
 		</div>
-		<!-- Completion Badge -->
-		if state.IsComplete() {
-			<div class="badge badge-success badge-sm">Complete</div>
-		}
-		<!-- Validation Type Icon -->
-		<div class="btn btn-circle btn-ghost btn-sm">
-			@templ.Raw(task.GetIconSVG())
-		</div>
-		<!-- Chevron -->
-		@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 opacity-40"})
-	</button>
-	<!-- Task Modal -->
-	<dialog id={ fmt.Sprintf("task_modal_%s", task.ID) } class="modal modal-bottom sm:modal-middle">
-		<div class="modal-box max-w-2xl">
-			<!-- Modal Header -->
-			<h3 class="text-lg font-bold mb-4">{ task.TaskName }</h3>
-			<!-- Inner Block Player View -->
+		<div class="collapse-content" id={ fmt.Sprintf("task-inner-content-%s", task.ID) }>
+			<!-- Inner Block Player View (minimal styling) -->
+			<style>
+				#task-inner-content-{ task.ID } .indicator-item { display: none; }
+				#task-inner-content-{ task.ID } .card { padding: 0; box-shadow: none; background: transparent; }
+				#task-inner-content-{ task.ID } .indicator { width: auto; }
+			</style>
 			if task.GetInnerBlock() != nil {
 				@RenderPlayerView(settings, task.GetInnerBlock(), state)
 			}
-			<!-- Modal Actions -->
-			<div class="modal-action">
-				<form method="dialog">
-					<button class="btn">Close</button>
-				</form>
-			</div>
 		</div>
-		<!-- Backdrop -->
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
+	</div>
+}
+
+templ taskPlayerUpdate(settings models.InstanceSettings, task blocks.TaskBlock, state blocks.PlayerState) {
+	<!-- Update checkbox icon (OOB swap) -->
+	<div id={ fmt.Sprintf("task-completion-%s", task.ID) } hx-swap-oob="true" class="shrink-0">
+		if state.IsComplete() {
+			<!-- Checked -->
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-success"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+		} else {
+			<!-- Unchecked -->
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 opacity-40"><circle cx="12" cy="12" r="10"></circle></svg>
+		}
+	</div>
+	<!-- Update inner block content (OOB swap) -->
+	<div class="collapse-content" id={ fmt.Sprintf("task-inner-content-%s", task.ID) } hx-swap-oob="true">
+		<!-- Inner Block Player View (minimal styling) -->
+		<style>
+			#task-inner-content-{ task.ID } .indicator-item { display: none; }
+			#task-inner-content-{ task.ID } .card { padding: 0; box-shadow: none; background: transparent; }
+			#task-inner-content-{ task.ID } .indicator { width: auto; }
+		</style>
+		if task.GetInnerBlock() != nil {
+			@RenderPlayerView(settings, task.GetInnerBlock(), state)
+		}
+	</div>
 }
 
 templ taskAdmin(settings models.InstanceSettings, task blocks.TaskBlock) {

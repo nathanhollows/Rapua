@@ -357,6 +357,37 @@ templ EditLocation(data EditLocationData) {
 					}
 				</div>
 			}
+			<!-- Tasks (only show when navigation mode is Task List) -->
+			if data.NavigationMode == models.NavigationDisplayTaskList {
+				<div id="task-add-container">
+					if len(data.NavigationBlocks) == 0 {
+						<form
+							id="add-task-form"
+							hx-post="/admin/blocks/"
+							hx-target="next .task-blocks"
+							hx-swap="beforeend"
+							_="on htmx:afterRequest remove #task-add-container"
+						>
+							<input type="hidden" name="owner" value={ data.Location.ID }/>
+							<input type="hidden" name="context" value="tasks"/>
+							<input type="hidden" name="type" value="task"/>
+							<button
+								id="add-task-btn"
+								type="submit"
+								class="btn btn-ghost"
+								_="init click() me"
+							></button>
+						</form>
+					}
+				</div>
+				<div
+					class="task-blocks flex flex-col gap-5"
+				>
+					for _, block := range data.NavigationBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, true)
+					}
+				</div>
+			}
 			<!-- Blocks -->
 			<section>
 				@blockAddDropdown(data.Location.ID, blocks.ContextLocationContent, ".blocks")
