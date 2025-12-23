@@ -2,6 +2,7 @@ package blocks_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v6/blocks"
@@ -46,6 +47,8 @@ func TestCreateFromBaseBlockUnknownType(t *testing.T) {
 	newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
 	require.Error(t, err)
 	assert.Nil(t, newBlock)
+	assert.True(t, errors.Is(err, blocks.ErrBlockTypeNotFound), "error should wrap ErrBlockTypeNotFound")
+	assert.Contains(t, err.Error(), "unknown", "error message should contain the block type")
 }
 
 // Ensure that blocks have unique types, names, icons, and descriptions.

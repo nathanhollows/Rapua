@@ -2,9 +2,13 @@ package blocks
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 )
+
+// ErrBlockTypeNotFound is returned when a block type is not registered.
+var ErrBlockTypeNotFound = errors.New("block type not found")
 
 // BlockContext represents where a block can be used.
 type BlockContext string
@@ -166,7 +170,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]
 	if registration == nil {
-		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
+		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
 
 	// Use the existing constructor functions
@@ -210,7 +214,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 	case "start_game_button":
 		return NewStartGameButtonBlock(baseBlock), nil
 	default:
-		return nil, fmt.Errorf("block type %s not found", baseBlock.Type)
+		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
 }
 

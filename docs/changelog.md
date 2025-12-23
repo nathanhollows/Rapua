@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.7.1 (2024-12-24)
+
+### Fixed
+
+- Blocks of a type in another branch no longer break rendering.
+
 ## 6.7.0 (2025-12-15)
 
 ### Added

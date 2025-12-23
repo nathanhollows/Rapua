@@ -98,7 +98,7 @@ func (r *blockRepository) FindByOwnerID(ctx context.Context, ownerID string) (bl
 	if err != nil {
 		return nil, err
 	}
-	return convertModelsToBlocks(modelBlocks)
+	return r.convertModelsToBlocks(modelBlocks)
 }
 
 // FindByOwnerIDAndContext fetches all blocks for an owner with specific context.
@@ -116,7 +116,7 @@ func (r *blockRepository) FindByOwnerIDAndContext(
 	if err != nil {
 		return nil, err
 	}
-	return convertModelsToBlocks(modelBlocks)
+	return r.convertModelsToBlocks(modelBlocks)
 }
 
 // GetByID fetches a block by its ID.
@@ -241,14 +241,18 @@ func convertBlockToModel(block blocks.Block) models.Block {
 	}
 }
 
-func convertModelsToBlocks(modelBlocks []models.Block) (blocks.Blocks, error) {
-	b := make(blocks.Blocks, len(modelBlocks))
-	for i, modelBlock := range modelBlocks {
+func (r *blockRepository) convertModelsToBlocks(modelBlocks []models.Block) (blocks.Blocks, error) {
+	b := make(blocks.Blocks, 0, len(modelBlocks))
+	for _, modelBlock := range modelBlocks {
 		block, err := convertModelToBlock(&modelBlock)
 		if err != nil {
+			// Skip unknown block types gracefully - they may exist in another branch
+			if errors.Is(err, blocks.ErrBlockTypeNotFound) {
+				continue
+			}
 			return nil, err
 		}
-		b[i] = block
+		b = append(b, block)
 	}
 	return b, nil
 }
@@ -338,7 +342,7 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 		return nil, nil, err
 	}
 
-	foundBlocks, err := convertModelsToBlocks(modelBlocks)
+	foundBlocks, err := r.convertModelsToBlocks(modelBlocks)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -384,7 +388,7 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
 		return nil, nil, err
 	}
 
-	foundBlocks, err := convertModelsToBlocks(modelBlocks)
+	foundBlocks, err := r.convertModelsToBlocks(modelBlocks)
 	if err != nil {
 		return nil, nil, err
 	}
