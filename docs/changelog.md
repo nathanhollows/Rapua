@@ -7,9 +7,9 @@ tag: updated
 
 # Changelog
 
-## 6.8.0 (2024-12-27)
+## 6.8.0 (2025-12-27)
 
-## Added
+### Added
 
 - Location edit page now shows previews for the navigation display and check in page in addition to the content preview.
 
