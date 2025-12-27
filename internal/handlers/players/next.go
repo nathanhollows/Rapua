@@ -59,22 +59,37 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get complete navigation view from service
-	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
-	if err != nil {
-		if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
-			h.redirect(w, r, "/finish")
+	var view *services.PlayerNavigationView
+
+	// Check for location_id query param to preview a specific location
+	targetLocationID := r.URL.Query().Get("location_id")
+	if targetLocationID != "" {
+		view, err = h.navigationService.GetPreviewNavigationView(r.Context(), team, targetLocationID)
+		if err != nil {
+			h.handleError(w, r, "NextPreview: building location view", "Error loading location", "error", err)
 			return
 		}
-		h.handleError(
-			w,
-			r,
-			"NextPreview: getting navigation view",
-			"Error loading navigation",
-			"Could not load data",
-			err,
-		)
-		return
+	} else {
+		// No specific location - preview first location in first group
+		if len(team.Instance.GameStructure.SubGroups) > 0 && len(team.Instance.GameStructure.SubGroups[0].LocationIDs) > 0 {
+			firstLocationID := team.Instance.GameStructure.SubGroups[0].LocationIDs[0]
+			view, err = h.navigationService.GetPreviewNavigationView(r.Context(), team, firstLocationID)
+			if err != nil {
+				h.handleError(w, r, "NextPreview: building first group view", "Error loading first group", "error", err)
+				return
+			}
+		} else {
+			// Fallback to normal navigation view if no groups/locations configured
+			view, err = h.navigationService.GetPlayerNavigationView(r.Context(), team)
+			if err != nil {
+				if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
+					h.redirect(w, r, "/finish")
+					return
+				}
+				h.handleError(w, r, "NextPreview: getting navigation view", "Error loading navigation", "error", err)
+				return
+			}
+		}
 	}
 
 	nextData := templates.NextParams{

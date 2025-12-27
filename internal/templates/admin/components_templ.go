@@ -291,8 +291,8 @@ func blockReorderForm() templ.Component {
 	})
 }
 
-// mobilePreview renders the mobile phone preview mockup
-func mobilePreview(instanceID, previewURL, htmxTrigger string) templ.Component {
+// previewSortableScript renders the sortable.js initialization for preview
+func previewSortableScript() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -313,76 +313,7 @@ func mobilePreview(instanceID, previewURL, htmxTrigger string) templ.Component {
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"h-min-content\"><div class=\"mockup-phone bg-black h-min sticky top-8 shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96\"><div id=\"mobile-preview-container\" class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full\" hx-get=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(previewURL)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 156, Col: 24}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" hx-trigger=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("load, %s", htmxTrigger))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 157, Col: 54}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-vals=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, instanceID, `"}`))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 158, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" hx-swap=\"innerHTML\"></div></div></div></div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		return nil
-	})
-}
-
-// previewSortableScript renders the sortable.js initialization for preview
-func previewSortableScript() templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tlet sortableInstance = null;\n\n\t\tfunction initializePreviewSortable() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !sortableInstance) {\n\t\t\t\t\t// Clean up any existing instance\n\t\t\t\t\tif (sortableInstance) {\n\t\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\tsortableInstance = new Sortable(blocksContainer, {\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.querySelector('.blocks');\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Re-initialize after HTMX swaps content\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Check if the swapped content contains the preview container\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\t// Reset and reinitialize\n\t\t\t\tif (sortableInstance) {\n\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\tsortableInstance = null;\n\t\t\t\t}\n\t\t\t\tinitializePreviewSortable();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instance since it's stale after history restore\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t\tsortableInstance = null;\n\t\t\t}\n\t\t\tinitializePreviewSortable();\n\t\t});\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t}\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t\tfunction attachPreviewHoverHandlers() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\tconst previewBlocks = previewContainer.querySelectorAll('.block-view');\n\n\t\t\tpreviewBlocks.forEach(previewBlock => {\n\t\t\t\t// Extract UUID from preview-block-{uuid}\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t                  document.querySelector(`[data-block-id=\"${blockId}\"]`);\n\n\t\t\t\tif (adminBlock) {\n\t\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\t\t});\n\n\t\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Attach hover handlers on page load\n\t\tdocument.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);\n\n\t\t// Re-attach after HTMX content updates\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\tattachPreviewHoverHandlers();\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tlet sortableInstance = null;\n\n\t\tfunction initializePreviewSortable() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !sortableInstance) {\n\t\t\t\t\t// Clean up any existing instance\n\t\t\t\t\tif (sortableInstance) {\n\t\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\tsortableInstance = new Sortable(blocksContainer, {\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.querySelector('.blocks');\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Re-initialize after HTMX swaps content\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Check if the swapped content contains the preview container\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\t// Reset and reinitialize\n\t\t\t\tif (sortableInstance) {\n\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\tsortableInstance = null;\n\t\t\t\t}\n\t\t\t\tinitializePreviewSortable();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instance since it's stale after history restore\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t\tsortableInstance = null;\n\t\t\t}\n\t\t\tinitializePreviewSortable();\n\t\t});\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t}\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t\tfunction attachPreviewHoverHandlers() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\tconst previewBlocks = previewContainer.querySelectorAll('.block-view');\n\n\t\t\tpreviewBlocks.forEach(previewBlock => {\n\t\t\t\t// Extract UUID from preview-block-{uuid}\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t                  document.querySelector(`[data-block-id=\"${blockId}\"]`);\n\n\t\t\t\tif (adminBlock) {\n\t\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\t\t});\n\n\t\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Attach hover handlers on page load\n\t\tdocument.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);\n\n\t\t// Re-attach after HTMX content updates\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\tattachPreviewHoverHandlers();\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -407,12 +338,12 @@ func blockMoveScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var21 == nil {
-			templ_7745c5c3_Var21 = templ.NopComponent
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -438,9 +369,9 @@ func sortableStyles() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		return nil

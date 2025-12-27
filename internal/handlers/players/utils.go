@@ -59,7 +59,17 @@ type NavigationService interface {
 	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
 	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
 	GetPlayerNavigationView(ctx context.Context, team *models.Team) (*services.PlayerNavigationView, error)
+	GetPreviewNavigationView(
+		ctx context.Context,
+		team *models.Team,
+		locationID string,
+	) (*services.PlayerNavigationView, error)
 	// HasVisited(checkins []models.CheckIn, locationID string) bool
+}
+
+type LocationService interface {
+	GetByID(ctx context.Context, locationID string) (*models.Location, error)
+	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
 type NotificationService interface {
@@ -95,6 +105,7 @@ type PlayerHandler struct {
 	blockService            BlockService
 	checkInService          CheckInService
 	instanceSettingsService InstanceSettingsService
+	locationService         LocationService
 	markerService           MarkerService
 	navigationService       NavigationService
 	notificationService     NotificationService
@@ -107,6 +118,7 @@ func NewPlayerHandler(
 	blockService BlockService,
 	checkInService CheckInService,
 	instanceSettingsService InstanceSettingsService,
+	locationService LocationService,
 	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService NotificationService,
@@ -118,6 +130,7 @@ func NewPlayerHandler(
 		blockService:            blockService,
 		checkInService:          checkInService,
 		instanceSettingsService: instanceSettingsService,
+		locationService:         locationService,
 		markerService:           markerService,
 		navigationService:       navigationService,
 		notificationService:     notificationService,

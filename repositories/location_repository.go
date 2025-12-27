@@ -88,7 +88,10 @@ func (r *locationRepository) Update(ctx context.Context, location *models.Locati
 // GetByID finds a location by ID.
 func (r *locationRepository) GetByID(ctx context.Context, locationID string) (*models.Location, error) {
 	var location models.Location
-	err := r.db.NewSelect().Model(&location).Where("id = ?", locationID).Scan(ctx)
+	err := r.db.NewSelect().
+		Model(&location).
+		Where("id = ?", locationID).
+		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("finding location: %w", err)
 	}
@@ -226,6 +229,7 @@ func (r *locationRepository) LoadRelations(ctx context.Context, location *models
 		Relation("Instance").
 		Relation("Instance.Settings").
 		Relation("Marker").
+		Relation("Blocks").
 		WherePK().
 		Scan(ctx)
 	if err != nil {

@@ -197,26 +197,250 @@ func TestLocationService_FindByInstance(t *testing.T) {
 	})
 }
 
-// TODO: Test the following methods:
-// 	// FindMarkersNotInInstance finds all markers that are not in the given instance
-// 	FindMarkersNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
+func TestLocationService_UpdateCoords(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
 
-// TODO: Test the following methods:
-// 	// Update visitor stats for a location
-// 	IncrementVisitorStats(ctx context.Context, location *models.Location) error
-// 	// UpdateCoords updates the coordinates for a location
-// 	UpdateCoords(ctx context.Context, location *models.Location, lat, lng float64) error
-// 	// UpdateName updates the name of a location
-// 	UpdateName(ctx context.Context, location *models.Location, name string) error
-// 	// UpdateLocation updates a location
-// 	UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error
-// 	// ReorderLocations accepts IDs of locations and reorders them
-// 	ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error
-//
-// 	// DeleteLocation deletes a location
-// 	DeleteLocation(ctx context.Context, locationID string) error
-// 	// DeleteByInstanceID deletes all locations for an instance
-// 	DeleteLocations(ctx context.Context, tx *bun.Tx, locations []models.Location) error
-//
-// 	// LoadRelations loads the related data for a location
-// 	LoadRelations(ctx context.Context, location *models.Location) error
+	// Create location with initial coords
+	location, err := service.CreateLocation(
+		ctx,
+		gofakeit.UUID(),
+		gofakeit.Name(),
+		10.0,
+		20.0,
+		gofakeit.Number(0, 100))
+	require.NoError(t, err)
+
+	// Load marker relation
+	err = service.LoadRelations(ctx, &location)
+	require.NoError(t, err)
+
+	// Update coords
+	newLat := 30.5
+	newLng := 40.5
+	err = service.UpdateCoords(ctx, &location, newLat, newLng)
+	require.NoError(t, err)
+
+	// Verify update
+	updatedLocation, err := service.GetByID(ctx, location.ID)
+	require.NoError(t, err)
+	err = service.LoadRelations(ctx, updatedLocation)
+	require.NoError(t, err)
+
+	assert.Equal(t, newLat, updatedLocation.Marker.Lat)
+	assert.Equal(t, newLng, updatedLocation.Marker.Lng)
+}
+
+func TestLocationService_UpdateName(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create location
+	location, err := service.CreateLocation(
+		ctx,
+		gofakeit.UUID(),
+		"Original Name",
+		gofakeit.Latitude(),
+		gofakeit.Longitude(),
+		gofakeit.Number(0, 100))
+	require.NoError(t, err)
+
+	// Update name
+	newName := "Updated Name"
+	err = service.UpdateName(ctx, &location, newName)
+	require.NoError(t, err)
+
+	// Verify update
+	updatedLocation, err := service.GetByID(ctx, location.ID)
+	require.NoError(t, err)
+	assert.Equal(t, newName, updatedLocation.Name)
+}
+
+func TestLocationService_UpdateLocation(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("Update all fields", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx,
+			gofakeit.UUID(),
+			"Original Name",
+			10.0,
+			20.0,
+			50)
+		require.NoError(t, err)
+
+		// Update location with new data
+		updateData := services.LocationUpdateData{
+			Name:      "New Name",
+			Latitude:  30.5,
+			Longitude: 40.5,
+			Points:    100,
+		}
+		err = service.UpdateLocation(ctx, &location, updateData)
+		require.NoError(t, err)
+
+		// Verify update
+		updatedLocation, err := service.GetByID(ctx, location.ID)
+		require.NoError(t, err)
+		err = service.LoadRelations(ctx, updatedLocation)
+		require.NoError(t, err)
+
+		assert.Equal(t, updateData.Name, updatedLocation.Name)
+		assert.Equal(t, updateData.Latitude, updatedLocation.Marker.Lat)
+		assert.Equal(t, updateData.Longitude, updatedLocation.Marker.Lng)
+		assert.Equal(t, updateData.Points, updatedLocation.Points)
+	})
+
+	t.Run("Invalid latitude", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx,
+			gofakeit.UUID(),
+			"Test Location",
+			10.0,
+			20.0,
+			50)
+		require.NoError(t, err)
+
+		updateData := services.LocationUpdateData{
+			Latitude: 100.0, // Invalid: > 90
+		}
+		err = service.UpdateLocation(ctx, &location, updateData)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "latitude must be between -90 and 90")
+	})
+
+	t.Run("Invalid longitude", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx,
+			gofakeit.UUID(),
+			"Test Location",
+			10.0,
+			20.0,
+			50)
+		require.NoError(t, err)
+
+		updateData := services.LocationUpdateData{
+			Longitude: 200.0, // Invalid: > 180
+		}
+		err = service.UpdateLocation(ctx, &location, updateData)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "longitude must be between -180 and 180")
+	})
+}
+
+func TestLocationService_ReorderLocations(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("Reorder locations successfully", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+
+		// Create 3 locations
+		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
+		require.NoError(t, err)
+		loc2, err := service.CreateLocation(ctx, instanceID, "Location 2", 11.0, 21.0, 20)
+		require.NoError(t, err)
+		loc3, err := service.CreateLocation(ctx, instanceID, "Location 3", 12.0, 22.0, 30)
+		require.NoError(t, err)
+
+		// Reorder: 3, 1, 2
+		newOrder := []string{loc3.ID, loc1.ID, loc2.ID}
+		err = service.ReorderLocations(ctx, instanceID, newOrder)
+		require.NoError(t, err)
+
+		// Verify new order
+		locations, err := service.FindByInstance(ctx, instanceID)
+		require.NoError(t, err)
+
+		orderMap := make(map[string]int)
+		for _, loc := range locations {
+			orderMap[loc.ID] = loc.Order
+		}
+
+		assert.Equal(t, 0, orderMap[loc3.ID])
+		assert.Equal(t, 1, orderMap[loc1.ID])
+		assert.Equal(t, 2, orderMap[loc2.ID])
+	})
+
+	t.Run("Invalid location ID", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
+		require.NoError(t, err)
+
+		// Try to reorder with invalid ID
+		invalidOrder := []string{loc1.ID, "invalid-id"}
+		err = service.ReorderLocations(ctx, instanceID, invalidOrder)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid location ID")
+	})
+
+	t.Run("Mismatched list length", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
+		require.NoError(t, err)
+		_, err = service.CreateLocation(ctx, instanceID, "Location 2", 11.0, 21.0, 20)
+		require.NoError(t, err)
+
+		// Try to reorder with only one ID (should have 2)
+		invalidOrder := []string{loc1.ID}
+		err = service.ReorderLocations(ctx, instanceID, invalidOrder)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "list length does not match")
+	})
+}
+
+func TestLocationService_LoadRelations(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create location
+	location, err := service.CreateLocation(
+		ctx,
+		gofakeit.UUID(),
+		gofakeit.Name(),
+		gofakeit.Latitude(),
+		gofakeit.Longitude(),
+		gofakeit.Number(0, 100))
+	require.NoError(t, err)
+
+	// Initially, marker should not be loaded
+	assert.Empty(t, location.Marker.Code)
+
+	// Load relations
+	err = service.LoadRelations(ctx, &location)
+	require.NoError(t, err)
+
+	// Verify marker is loaded
+	assert.NotEmpty(t, location.Marker.Code)
+	assert.Equal(t, location.MarkerID, location.Marker.Code)
+}
+
+func TestLocationService_LoadBlocks(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create location (which creates a default header block)
+	location, err := service.CreateLocation(
+		ctx,
+		gofakeit.UUID(),
+		gofakeit.Name(),
+		gofakeit.Latitude(),
+		gofakeit.Longitude(),
+		gofakeit.Number(0, 100))
+	require.NoError(t, err)
+
+	// Load blocks
+	err = service.LoadBlocks(ctx, &location)
+	require.NoError(t, err)
+
+	// Verify at least the default header block is loaded
+	assert.NotEmpty(t, location.Blocks)
+	assert.GreaterOrEqual(t, len(location.Blocks), 1)
+}

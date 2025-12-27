@@ -384,6 +384,30 @@ func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStruc
 	return nil
 }
 
+// FindGroupContainingLocation recursively searches for a group containing the specified location ID.
+// Returns nil if not found.
+func FindGroupContainingLocation(root *models.GameStructure, locationID string) *models.GameStructure {
+	if root == nil {
+		return nil
+	}
+
+	// Check if this group contains the location
+	for _, id := range root.LocationIDs {
+		if id == locationID {
+			return root
+		}
+	}
+
+	// Recursively search subgroups
+	for i := range root.SubGroups {
+		if found := FindGroupContainingLocation(&root.SubGroups[i], locationID); found != nil {
+			return found
+		}
+	}
+
+	return nil
+}
+
 // GetFirstVisibleGroup returns the first non-root, non-secret subgroup, which is where teams should start.
 // Secret groups are never the current group - they're accessible but don't affect progression.
 // Returns nil if structure has no non-secret subgroups.

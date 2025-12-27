@@ -145,24 +145,6 @@ templ blockReorderForm() {
 	</form>
 }
 
-// mobilePreview renders the mobile phone preview mockup
-templ mobilePreview(instanceID, previewURL, htmxTrigger string) {
-	<div class="h-min-content">
-		<div class="mockup-phone bg-black h-min sticky top-8 shadow-2xl">
-			<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
-				<div
-					id="mobile-preview-container"
-					class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
-					hx-get={ previewURL }
-					hx-trigger={ fmt.Sprintf("load, %s", htmxTrigger) }
-					hx-vals={ fmt.Sprint(`{"instanceID": "`, instanceID, `"}`) }
-					hx-swap="innerHTML"
-				></div>
-			</div>
-		</div>
-	</div>
-}
-
 // previewSortableScript renders the sortable.js initialization for preview
 templ previewSortableScript() {
 	<script src="/static/js/Sortable.min.js"></script>

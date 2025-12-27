@@ -1427,3 +1427,37 @@ func TestGetNextGroup_SkipsSecretGroups(t *testing.T) {
 	assert.Equal(t, "group2", nextGroup.ID, "should skip secret_group and return group2")
 	assert.Equal(t, navigation.ReasonNextSibling, reason, "should report correct reason")
 }
+
+// === FindGroupContainingLocation Tests ===
+
+func TestFindGroupContainingLocation_FirstGroup(t *testing.T) {
+	structure := makeTestStructure()
+	found := navigation.FindGroupContainingLocation(structure, "loc1")
+	assert.NotNil(t, found)
+	assert.Equal(t, "group1", found.ID)
+}
+
+func TestFindGroupContainingLocation_SecondGroup(t *testing.T) {
+	structure := makeTestStructure()
+	found := navigation.FindGroupContainingLocation(structure, "loc4")
+	assert.NotNil(t, found)
+	assert.Equal(t, "group2", found.ID)
+}
+
+func TestFindGroupContainingLocation_ThirdGroup(t *testing.T) {
+	structure := makeTestStructure()
+	found := navigation.FindGroupContainingLocation(structure, "loc6")
+	assert.NotNil(t, found)
+	assert.Equal(t, "group3", found.ID)
+}
+
+func TestFindGroupContainingLocation_NotFound(t *testing.T) {
+	structure := makeTestStructure()
+	found := navigation.FindGroupContainingLocation(structure, "nonexistent")
+	assert.Nil(t, found)
+}
+
+func TestFindGroupContainingLocation_NilStructure(t *testing.T) {
+	found := navigation.FindGroupContainingLocation(nil, "loc1")
+	assert.Nil(t, found)
+}

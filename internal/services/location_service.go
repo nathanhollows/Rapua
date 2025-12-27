@@ -41,6 +41,8 @@ type LocationService interface {
 
 	// LoadRelations loads the related data for a location
 	LoadRelations(ctx context.Context, location *models.Location) error
+	// LoadBlocks loads the blocks for a location
+	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
 type locationService struct {
@@ -360,6 +362,15 @@ func (s locationService) LoadRelations(ctx context.Context, location *models.Loc
 	err := s.locationRepo.LoadRelations(ctx, location)
 	if err != nil {
 		return fmt.Errorf("loading relations: %w", err)
+	}
+	return nil
+}
+
+// LoadBlocks loads the blocks for a location.
+func (s locationService) LoadBlocks(ctx context.Context, location *models.Location) error {
+	err := s.locationRepo.LoadBlocks(ctx, location)
+	if err != nil {
+		return fmt.Errorf("loading blocks for location: %w", err)
 	}
 	return nil
 }

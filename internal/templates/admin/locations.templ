@@ -430,7 +430,63 @@ templ EditLocation(data EditLocationData) {
 			}
 		</div>
 		<!-- Preview -->
-		@mobilePreview(data.Settings.InstanceID, fmt.Sprint("/checkins/", data.Location.MarkerID), "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn")
+		<div class="h-min sticky top-3">
+			<div id="preview-nav" role="tablist" class="tabs tabs-box tabs-sm font-bold m-auto mb-3">
+				<a
+					id="new-marker-tab"
+					role="tab"
+					data-url={ fmt.Sprint("/next?location_id=", data.Location.ID) }
+					class="tab transition-colors grow"
+					_="on click
+					remove .tab-active from <#preview-nav a.tab-active />
+					add .tab-active to me
+					trigger changePreviewPage
+				"
+				>
+					Nav
+				</a>
+				<a
+					role="tab"
+					class="tab transition-colors grow"
+					data-url={ fmt.Sprint("/s/", data.Location.MarkerID) }
+					_="on click
+					remove .tab-active from <#preview-nav a.tab-active />
+					add .tab-active to me
+					trigger changePreviewPage
+				"
+				>
+					Check-in
+				</a>
+				<a
+					role="tab"
+					class="tab transition-colors grow tab-active"
+					data-url={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
+					_="on click
+					remove .tab-active from <#preview-nav a.tab-active />
+					add .tab-active to me
+					trigger changePreviewPage
+				"
+				>
+					Content
+				</a>
+			</div>
+			<div class="mockup-phone bg-black h-min shadow-2xl">
+				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
+					<div
+						id="mobile-preview-container"
+						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
+						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
+						hx-trigger={ fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn") }
+						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
+						hx-swap="innerHTML"
+						_="on changePreviewPage from <body/> 
+					set @hx-get to event.detail.sender.dataset.url
+					then call htmx.process(me)
+					then trigger load"
+					></div>
+				</div>
+			</div>
+		</div>
 	</div>
 	<!-- Hidden form for block reordering via HTMX -->
 	@blockReorderForm()

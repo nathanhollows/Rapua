@@ -174,8 +174,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 	// Check in to a location
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceSettingsService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
+					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+			)
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
 		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)

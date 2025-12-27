@@ -316,6 +316,63 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 	return locations, nil
 }
 
+// GetPreviewNavigationView creates a simplified navigation view showing only
+// the specified location within its containing group for preview mode.
+func (s *NavigationService) GetPreviewNavigationView(
+	ctx context.Context,
+	team *models.Team,
+	locationID string,
+) (*PlayerNavigationView, error) {
+	// Load team relations if not already loaded
+	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
+		return nil, fmt.Errorf("loading team relations: %w", err)
+	}
+
+	// Find the group containing this location
+	group := navigation.FindGroupContainingLocation(&team.Instance.GameStructure, locationID)
+	if group == nil {
+		return nil, errors.New("location not found in game structure")
+	}
+
+	// Load the location
+	location, err := s.locationRepo.GetByID(ctx, locationID)
+	if err != nil {
+		return nil, fmt.Errorf("loading location: %w", err)
+	}
+
+	// Load location relations (including blocks)
+	if err := s.locationRepo.LoadRelations(ctx, location); err != nil {
+		return nil, fmt.Errorf("loading location relations: %w", err)
+	}
+
+	view := &PlayerNavigationView{
+		Settings:        team.Instance.Settings,
+		CurrentGroup:    group,
+		NextLocations:   []models.Location{*location},
+		MustCheckOut:    false,
+		CanAdvanceEarly: false,
+		Blocks:          make([]blocks.Block, 0),
+		BlockStates:     make(map[string]blocks.PlayerState),
+	}
+
+	// Load navigation blocks for custom display mode
+	if group.Navigation == models.NavigationDisplayCustom {
+		locationBlocks, blockStates, err := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+			ctx,
+			location.ID,
+			team.Code,
+			blocks.ContextLocationClues,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("loading navigation blocks: %w", err)
+		}
+		view.Blocks = locationBlocks
+		view.BlockStates = blockStates
+	}
+
+	return view, nil
+}
+
 // getCompletedLocationIDs extracts location IDs from check-ins.
 func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) []string {
 	completed := make([]string, 0, len(checkIns))

@@ -615,15 +615,85 @@ func EditLocation(data EditLocationData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</div><!-- Preview -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</div><!-- Preview --><div class=\"h-min sticky top-3\"><div id=\"preview-nav\" role=\"tablist\" class=\"tabs tabs-box tabs-sm font-bold m-auto mb-3\"><a id=\"new-marker-tab\" role=\"tab\" data-url=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = mobilePreview(data.Settings.InstanceID, fmt.Sprint("/checkins/", data.Location.MarkerID), "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn").Render(ctx, templ_7745c5c3_Buffer)
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/next?location_id=", data.Location.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 438, Col: 66}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</div><!-- Hidden form for block reordering via HTMX -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\" class=\"tab transition-colors grow\" _=\"on click\n\t\t\t\t\tremove .tab-active from <#preview-nav a.tab-active />\n\t\t\t\t\tadd .tab-active to me\n\t\t\t\t\ttrigger changePreviewPage\n\t\t\t\t\">Nav</a> <a role=\"tab\" class=\"tab transition-colors grow\" data-url=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var30 string
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/s/", data.Location.MarkerID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 451, Col: 57}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\" _=\"on click\n\t\t\t\t\tremove .tab-active from <#preview-nav a.tab-active />\n\t\t\t\t\tadd .tab-active to me\n\t\t\t\t\ttrigger changePreviewPage\n\t\t\t\t\">Check-in</a> <a role=\"tab\" class=\"tab transition-colors grow tab-active\" data-url=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", data.Location.MarkerID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 463, Col: 64}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" _=\"on click\n\t\t\t\t\tremove .tab-active from <#preview-nav a.tab-active />\n\t\t\t\t\tadd .tab-active to me\n\t\t\t\t\ttrigger changePreviewPage\n\t\t\t\t\">Content</a></div><div class=\"mockup-phone bg-black h-min shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96\"><div id=\"mobile-preview-container\" class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full\" hx-get=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", data.Location.MarkerID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 478, Col: 63}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" hx-trigger=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 479, Col: 161}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" hx-vals=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 480, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" hx-swap=\"innerHTML\" _=\"on changePreviewPage from <body/> \n\t\t\t\t\tset @hx-get to event.detail.sender.dataset.url\n\t\t\t\t\tthen call htmx.process(me)\n\t\t\t\t\tthen trigger load\"></div></div></div></div></div><!-- Hidden form for block reordering via HTMX -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -631,20 +701,20 @@ func EditLocation(data EditLocationData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this location?</h3><p class=\"pt-4\">You are about to delete this location. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this location?</h3><p class=\"pt-4\">You are about to delete this location. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var29 string
-		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", data.Location.MarkerID))
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/locations/", data.Location.MarkerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 450, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/locations.templ`, Line: 506, Col: 72}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -684,12 +754,12 @@ func locationScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var30 == nil {
-			templ_7745c5c3_Var30 = templ.NopComponent
+		templ_7745c5c3_Var36 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var36 == nil {
+			templ_7745c5c3_Var36 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<script>\n(function () {\n  let map; \n  let marker;\n\n  function initializeMap() {\n    // Don't initialize if map container doesn't exist\n    const mapContainer = document.getElementById('map');\n    if (!mapContainer) {\n      return;\n    }\n\n    let coords = [174.0710596, -40.9664536];\n    let zoom = 4;\n\n    // Check if longitude and latitude fields are set\n    const lonInput = document.querySelector('input[name=\"longitude\"]');\n    const latInput = document.querySelector('input[name=\"latitude\"]');\n\n    if (lonInput && latInput && lonInput.value !== \"\" && latInput.value !== \"\") {\n      coords = [\n        parseFloat(lonInput.value),\n        parseFloat(latInput.value)\n      ];\n      zoom = 16;\n    }\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    const mapboxKeyEl = document.getElementById('mapbox_key');\n    if (!mapboxKeyEl) {\n      return;\n    }\n    mapboxgl.accessToken = mapboxKeyEl.dataset.key;\n\n    // Determine map style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map',\n      style: style,\n      center: coords,\n      zoom: zoom\n    });\n\n    // Create and place the main marker\n    marker = new mapboxgl.Marker()\n      .setLngLat(coords)\n      .addTo(map);\n\n    // Update marker position on map drag\n    map.on('move', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n      const latInput = document.querySelector('input[name=\"latitude\"]');\n      const lonInput = document.querySelector('input[name=\"longitude\"]');\n      if (latInput) latInput.value = center.lat;\n      if (lonInput) lonInput.value = center.lng;\n    });\n\n    // Update marker position on map zoom\n    map.on('zoom', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n    });\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, null);\n\n    // Handle select change event\n    const locationSelect = document.getElementById('marker-code');\n    if (locationSelect) {\n      locationSelect.addEventListener('change', function (event) {\n        const selectedOption = event.target.options[event.target.selectedIndex];\n        const lat = parseFloat(selectedOption.dataset.lat);\n        const lng = parseFloat(selectedOption.dataset.lng);\n\n        if (!isNaN(lat) && !isNaN(lng)) {\n          // Update the map center and marker position\n          map.flyTo({ center: [lng, lat], zoom: 16 });\n          marker.setLngLat([lng, lat]);\n\n          // Disable dragging on the map\n          map.dragPan.disable();\n          map.scrollZoom.disable();\n\n          // Update latitude and longitude fields\n          const latInput = document.querySelector('input[name=\"latitude\"]');\n          const lonInput = document.querySelector('input[name=\"longitude\"]');\n          if (latInput) latInput.value = lat;\n          if (lonInput) lonInput.value = lng;\n        }\n      });\n    }\n\n    // Re-enable map dragging when new marker tab is clicked\n    const newMarkerTab = document.getElementById('new-marker-tab');\n    if (newMarkerTab) {\n      newMarkerTab.addEventListener('click', function () {\n        map.dragPan.enable();\n        map.scrollZoom.enable();\n      });\n    }\n\n\t\t// Check for .neighbour-marker elements\n\t\tconst neighborMarkers = document.querySelectorAll('.neighbour-marker');\n\t\tif (neighborMarkers.length > 0) {\n\t\t\t// Fit to bounding box of all neighbor markers with a max zoom of 14\n\t\t\tlet bounds = new mapboxgl.LngLatBounds();\n\t\t\tneighborMarkers.forEach(elem => {\n\t\t\t\tconst lat = parseFloat(elem.dataset.lat);\n\t\t\t\tconst lng = parseFloat(elem.dataset.lng);\n\t\t\t\tif (!isNaN(lat) && !isNaN(lng)) {\n\t\t\t\t\tbounds.extend([lng, lat]);\n\t\t\t\t}\n\t\t\t});\n\t\t\tmap.fitBounds(bounds, { padding: 14, duration: 0 });\n\t\t}\n\n    var geocoderEl = document.getElementById('geocoder');\n    if (geocoderEl) {\n      var geocoder = new MapboxGeocoder({\n        accessToken: mapboxgl.accessToken,\n        mapboxgl: mapboxgl,\n        marker: false,\n        placeholder: 'Search for an address or use the map',\n      });\n      geocoderEl.appendChild(geocoder.onAdd(map));\n    }\n  }\n\n  initializeMap();\n})();\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<script>\n(function () {\n  let map; \n  let marker;\n\n  function initializeMap() {\n    // Don't initialize if map container doesn't exist\n    const mapContainer = document.getElementById('map');\n    if (!mapContainer) {\n      return;\n    }\n\n    let coords = [174.0710596, -40.9664536];\n    let zoom = 4;\n\n    // Check if longitude and latitude fields are set\n    const lonInput = document.querySelector('input[name=\"longitude\"]');\n    const latInput = document.querySelector('input[name=\"latitude\"]');\n\n    if (lonInput && latInput && lonInput.value !== \"\" && latInput.value !== \"\") {\n      coords = [\n        parseFloat(lonInput.value),\n        parseFloat(latInput.value)\n      ];\n      zoom = 16;\n    }\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    const mapboxKeyEl = document.getElementById('mapbox_key');\n    if (!mapboxKeyEl) {\n      return;\n    }\n    mapboxgl.accessToken = mapboxKeyEl.dataset.key;\n\n    // Determine map style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map',\n      style: style,\n      center: coords,\n      zoom: zoom\n    });\n\n    // Create and place the main marker\n    marker = new mapboxgl.Marker()\n      .setLngLat(coords)\n      .addTo(map);\n\n    // Update marker position on map drag\n    map.on('move', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n      const latInput = document.querySelector('input[name=\"latitude\"]');\n      const lonInput = document.querySelector('input[name=\"longitude\"]');\n      if (latInput) latInput.value = center.lat;\n      if (lonInput) lonInput.value = center.lng;\n    });\n\n    // Update marker position on map zoom\n    map.on('zoom', function() {\n      const center = map.getCenter();\n      marker.setLngLat(center);\n    });\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, null);\n\n    // Handle select change event\n    const locationSelect = document.getElementById('marker-code');\n    if (locationSelect) {\n      locationSelect.addEventListener('change', function (event) {\n        const selectedOption = event.target.options[event.target.selectedIndex];\n        const lat = parseFloat(selectedOption.dataset.lat);\n        const lng = parseFloat(selectedOption.dataset.lng);\n\n        if (!isNaN(lat) && !isNaN(lng)) {\n          // Update the map center and marker position\n          map.flyTo({ center: [lng, lat], zoom: 16 });\n          marker.setLngLat([lng, lat]);\n\n          // Disable dragging on the map\n          map.dragPan.disable();\n          map.scrollZoom.disable();\n\n          // Update latitude and longitude fields\n          const latInput = document.querySelector('input[name=\"latitude\"]');\n          const lonInput = document.querySelector('input[name=\"longitude\"]');\n          if (latInput) latInput.value = lat;\n          if (lonInput) lonInput.value = lng;\n        }\n      });\n    }\n\n    // Re-enable map dragging when new marker tab is clicked\n    const newMarkerTab = document.getElementById('new-marker-tab');\n    if (newMarkerTab) {\n      newMarkerTab.addEventListener('click', function () {\n        map.dragPan.enable();\n        map.scrollZoom.enable();\n      });\n    }\n\n\t\t// Check for .neighbour-marker elements\n\t\tconst neighborMarkers = document.querySelectorAll('.neighbour-marker');\n\t\tif (neighborMarkers.length > 0) {\n\t\t\t// Fit to bounding box of all neighbor markers with a max zoom of 14\n\t\t\tlet bounds = new mapboxgl.LngLatBounds();\n\t\t\tneighborMarkers.forEach(elem => {\n\t\t\t\tconst lat = parseFloat(elem.dataset.lat);\n\t\t\t\tconst lng = parseFloat(elem.dataset.lng);\n\t\t\t\tif (!isNaN(lat) && !isNaN(lng)) {\n\t\t\t\t\tbounds.extend([lng, lat]);\n\t\t\t\t}\n\t\t\t});\n\t\t\tmap.fitBounds(bounds, { padding: 14, duration: 0 });\n\t\t}\n\n    var geocoderEl = document.getElementById('geocoder');\n    if (geocoderEl) {\n      var geocoder = new MapboxGeocoder({\n        accessToken: mapboxgl.accessToken,\n        mapboxgl: mapboxgl,\n        marker: false,\n        placeholder: 'Search for an address or use the map',\n      });\n      geocoderEl.appendChild(geocoder.onAdd(map));\n    }\n  }\n\n  initializeMap();\n})();\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

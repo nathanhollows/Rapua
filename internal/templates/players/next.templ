@@ -213,7 +213,12 @@ templ showCustom(data customContentViewData) {
 						if block.GetLocationID() != locWithBlocks.Location.ID {
 							continue
 						}
-						@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
+						<div
+							class="block-view"
+							id={ fmt.Sprint("preview-block-", block.GetID()) }
+						>
+							@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
+						</div>
 					}
 				</div>
 			}

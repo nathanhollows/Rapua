@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	version    = "v6.7.0"
+	version    = "v6.8.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -477,6 +477,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		blockService,
 		checkInService,
 		instanceSettingsService,
+		locationService,
 		markerService,
 		navigationService,
 		notificationService,
