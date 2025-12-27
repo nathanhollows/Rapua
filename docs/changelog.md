@@ -7,7 +7,7 @@ tag: updated
 
 # Changelog
 
-## 6.8.0 (2024-12-26)
+## 6.8.0 (2024-12-27)
 
 ## Added
 
@@ -16,6 +16,7 @@ tag: updated
 ### Fixed
 
 - Blocks of a type in another branch no longer break rendering.
+- Security fix: previews are only valid for templates or the owner of an instance.
 
 ## 6.7.0 (2025-12-15)
 

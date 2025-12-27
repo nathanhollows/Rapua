@@ -130,6 +130,18 @@ func (s *InstanceService) GetByID(ctx context.Context, id string) (*models.Insta
 	return instance, nil
 }
 
+// GetInstanceSettings returns the settings for an instance.
+func (s *InstanceService) GetInstanceSettings(
+	ctx context.Context,
+	instanceID string,
+) (*models.InstanceSettings, error) {
+	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	if err != nil {
+		return nil, fmt.Errorf("getting instance settings: %w", err)
+	}
+	return settings, nil
+}
+
 // Update updates an instance.
 func (s *InstanceService) Update(ctx context.Context, instance *models.Instance) error {
 	if instance == nil {

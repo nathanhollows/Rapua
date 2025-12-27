@@ -20,10 +20,20 @@ type teamService interface {
 
 type instanceService interface {
 	GetInstanceSettings(context.Context, string) (*models.InstanceSettings, error)
+	GetByID(context.Context, string) (*models.Instance, error)
+}
+
+type identityService interface {
+	GetAuthenticatedUser(*http.Request) (*models.User, error)
 }
 
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
-func PreviewMiddleware(teamService teamService, instanceService instanceService, next http.Handler) http.Handler {
+func PreviewMiddleware(
+	teamService teamService,
+	instanceService instanceService,
+	identityService identityService,
+	next http.Handler,
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isPreviewRequest(r) {
 			next.ServeHTTP(w, r)
@@ -45,6 +55,27 @@ func PreviewMiddleware(teamService teamService, instanceService instanceService,
 			slog.Error("preview middleware: instance ID is empty")
 			next.ServeHTTP(w, r)
 			return
+		}
+
+		// Fetch instance to check ownership/template status
+		instance, err := instanceService.GetByID(r.Context(), team.InstanceID)
+		if err != nil {
+			slog.Error("preview middleware: failed to get instance", "err", err, "instanceID", team.InstanceID)
+			http.Error(w, "Instance not found", http.StatusNotFound)
+			return
+		}
+
+		// Templates are public - allow without auth
+		if !instance.IsTemplate {
+			// Regular instance - require auth + ownership
+			user, err := identityService.GetAuthenticatedUser(r)
+			if err != nil || user.ID != instance.UserID {
+				slog.Warn("preview middleware: unauthorized access attempt",
+					"instanceID", team.InstanceID,
+					"isAuthenticated", err == nil)
+				http.Error(w, "Access denied", http.StatusForbidden)
+				return
+			}
 		}
 
 		// Load the instance settings separately to avoid team-related queries

@@ -47,8 +47,9 @@ type CheckInService interface {
 	) (blocks.PlayerState, blocks.Block, error)
 }
 
-type InstanceSettingsService interface {
+type InstanceService interface {
 	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
+	GetByID(ctx context.Context, instanceID string) (*models.Instance, error)
 }
 
 type MarkerService interface {
@@ -101,23 +102,23 @@ type UploadService interface {
 }
 
 type PlayerHandler struct {
-	logger                  *slog.Logger
-	blockService            BlockService
-	checkInService          CheckInService
-	instanceSettingsService InstanceSettingsService
-	locationService         LocationService
-	markerService           MarkerService
-	navigationService       NavigationService
-	notificationService     NotificationService
-	teamService             TeamService
-	uploadService           UploadService
+	logger              *slog.Logger
+	blockService        BlockService
+	checkInService      CheckInService
+	instanceService     InstanceService
+	locationService     LocationService
+	markerService       MarkerService
+	navigationService   NavigationService
+	notificationService NotificationService
+	teamService         TeamService
+	uploadService       UploadService
 }
 
 func NewPlayerHandler(
 	logger *slog.Logger,
 	blockService BlockService,
 	checkInService CheckInService,
-	instanceSettingsService InstanceSettingsService,
+	instanceService InstanceService,
 	locationService LocationService,
 	markerService MarkerService,
 	navigationService NavigationService,
@@ -126,21 +127,21 @@ func NewPlayerHandler(
 	uploadService UploadService,
 ) *PlayerHandler {
 	return &PlayerHandler{
-		logger:                  logger,
-		blockService:            blockService,
-		checkInService:          checkInService,
-		instanceSettingsService: instanceSettingsService,
-		locationService:         locationService,
-		markerService:           markerService,
-		navigationService:       navigationService,
-		notificationService:     notificationService,
-		teamService:             teamService,
-		uploadService:           uploadService,
+		logger:              logger,
+		blockService:        blockService,
+		checkInService:      checkInService,
+		instanceService:     instanceService,
+		locationService:     locationService,
+		markerService:       markerService,
+		navigationService:   navigationService,
+		notificationService: notificationService,
+		teamService:         teamService,
+		uploadService:       uploadService,
 	}
 }
 
-func (h PlayerHandler) GetInstanceSettingsService() InstanceSettingsService {
-	return h.instanceSettingsService
+func (h PlayerHandler) GetInstanceService() InstanceService {
+	return h.instanceService
 }
 
 func (h PlayerHandler) GetTeamService() TeamService {

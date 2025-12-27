@@ -63,7 +63,7 @@ func setupRouter(
 	router.Group(func(r chi.Router) {
 		r.Use(CSRF)
 		setupPublicRoutes(r, publicHandler)
-		setupPlayerRoutes(r, playerHandler)
+		setupPlayerRoutes(r, playerHandler, adminHandler)
 		setupAdminRoutes(r, adminHandler)
 		setupFacilitatorRoutes(r, adminHandler)
 	})
@@ -81,7 +81,7 @@ func setupRouter(
 }
 
 // Setup the player routes.
-func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) {
+func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, adminHandler *admin.Handler) {
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
@@ -99,7 +99,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
 					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
@@ -123,7 +124,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
 					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
@@ -148,7 +150,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
 					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
@@ -164,7 +167,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
 			)
 		})
@@ -176,7 +180,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
 					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)
@@ -200,7 +205,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler) 
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceSettingsService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
 					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
 			)

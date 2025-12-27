@@ -476,7 +476,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		logger,
 		blockService,
 		checkInService,
-		instanceSettingsService,
+		instanceService,
 		locationService,
 		markerService,
 		navigationService,

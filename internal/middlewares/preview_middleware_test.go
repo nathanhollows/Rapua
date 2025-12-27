@@ -26,7 +26,10 @@ func (d *dummyTeamService) GetTeamByCode(ctx context.Context, code string) (*mod
 }
 
 // dummyInstanceService is a stub implementation of instanceService.
-type dummyInstanceService struct{}
+type dummyInstanceService struct {
+	isTemplate bool
+	userID     string
+}
 
 func (d *dummyInstanceService) GetInstanceSettings(
 	ctx context.Context,
@@ -36,6 +39,27 @@ func (d *dummyInstanceService) GetInstanceSettings(
 		InstanceID:   instanceID,
 		EnablePoints: true,
 	}, nil
+}
+
+func (d *dummyInstanceService) GetByID(
+	ctx context.Context,
+	instanceID string,
+) (*models.Instance, error) {
+	return &models.Instance{
+		ID:         instanceID,
+		IsTemplate: d.isTemplate,
+		UserID:     d.userID,
+	}, nil
+}
+
+// dummyIdentityService is a stub implementation of identityService.
+type dummyIdentityService struct {
+	user *models.User
+	err  error
+}
+
+func (d *dummyIdentityService) GetAuthenticatedUser(r *http.Request) (*models.User, error) {
+	return d.user, d.err
 }
 
 // TestPreviewMiddleware_NonPreview ensures that when the request is not a preview, the middleware simply passes the request along.
@@ -51,7 +75,8 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 
 	dummyTeamService := &dummyTeamService{}
 	dummyInstanceService := &dummyInstanceService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
+	dummyIdentityService := &dummyIdentityService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
 
 	// Create a request without preview headers.
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/", nil)
@@ -84,7 +109,8 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 
 	dummyTeamService := &dummyTeamService{}
 	dummyInstanceService := &dummyInstanceService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
+	dummyIdentityService := &dummyIdentityService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
 
 	// Create a preview request (HX-Request header is "true" and referer starts with "/templates")
 	// but without an "instanceID" form value.
@@ -120,8 +146,10 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 	})
 
 	dummyTeamService := &dummyTeamService{}
-	dummyInstanceService := &dummyInstanceService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, nextHandler)
+	// Use a template so auth is not required
+	dummyInstanceService := &dummyInstanceService{isTemplate: true}
+	dummyIdentityService := &dummyIdentityService{}
+	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
 
 	// Create a preview request with a valid instanceID.
 	form := url.Values{}
