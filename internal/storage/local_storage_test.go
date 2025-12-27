@@ -24,11 +24,11 @@ func mockMultipartFile(content string) multipart.File {
 	return &mockFile{reader: strings.NewReader(content)}
 }
 
-func (m *mockFile) Read(p []byte) (n int, err error) {
+func (m *mockFile) Read(p []byte) (int, error) {
 	return m.reader.Read(p)
 }
 
-func (m *mockFile) ReadAt(p []byte, off int64) (n int, err error) {
+func (m *mockFile) ReadAt(p []byte, off int64) (int, error) {
 	return m.reader.ReadAt(p, off)
 }
 
@@ -122,13 +122,13 @@ func TestLocalStorage_Concurrency(t *testing.T) {
 	storage := storage.NewLocalStorage(basePath)
 
 	var wg sync.WaitGroup
-	for i := range 10 {
+	for range 10 {
 		wg.Add(1)
-		go func(i int) {
+		go func() {
 			defer wg.Done()
 			_, _, err := storage.Upload(context.Background(), mockMultipartFile("content"), "concurrent.txt")
 			assert.NoError(t, err)
-		}(i)
+		}()
 	}
 	wg.Wait()
 	_ = os.RemoveAll(basePath)

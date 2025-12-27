@@ -12,22 +12,19 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// Image size dimensions
+// Image size dimensions.
 var imageSizes = map[string]int{
 	"small":  640,  // Mobile devices
 	"medium": 1024, // Tablets
 	"large":  1920, // Desktop/HD displays
 }
 
-// ServeResizedImage handles image requests with optional ?size= parameter
+// ServeResizedImage handles image requests with optional ?size= parameter.
 func ServeResizedImage(baseDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the file path from the URL
 		rctx := chi.RouteContext(r.Context())
-		filePath := strings.TrimPrefix(rctx.RoutePattern(), "/static/uploads/")
-		if filePath == "/*" {
-			filePath = ""
-		}
+		_ = strings.TrimPrefix(rctx.RoutePattern(), "/static/uploads/")
 
 		// Get the actual file path from the URL
 		urlPath := strings.TrimPrefix(r.URL.Path, "/static/uploads/")
@@ -82,12 +79,12 @@ func ServeResizedImage(baseDir string) http.HandlerFunc {
 	}
 }
 
-// getCachedPath returns the path where the cached resized image should be stored
+// getCachedPath returns the path where the cached resized image should be stored.
 func getCachedPath(baseDir, relativePath, size string) string {
 	return filepath.Join(baseDir, "static", "uploads", ".cache", size, relativePath)
 }
 
-// resizeImage creates a resized version of the image
+// resizeImage creates a resized version of the image.
 func resizeImage(srcPath, dstPath string, maxWidth int) error {
 	// Open the source image
 	src, err := imaging.Open(srcPath)
@@ -112,7 +109,7 @@ func resizeImage(srcPath, dstPath string, maxWidth int) error {
 	return nil
 }
 
-// isImageFile checks if the file is an image based on its extension
+// isImageFile checks if the file is an image based on its extension.
 func isImageFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext {
@@ -122,7 +119,7 @@ func isImageFile(filename string) bool {
 	return false
 }
 
-// isCachePath checks if the path is trying to access the cache directory directly
+// isCachePath checks if the path is trying to access the cache directory directly.
 func isCachePath(path string) bool {
 	return strings.Contains(path, "/.cache/")
 }

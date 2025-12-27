@@ -25,6 +25,7 @@ type m20250921065956_InstanceSettings struct {
 	ShowLeaderboard   bool `bun:"show_leaderboard,type:bool"`
 }
 
+//nolint:unused // Historical migration type
 type m20250921065956_Location struct {
 	bun.BaseModel `bun:"table:locations"`
 

@@ -10,7 +10,7 @@ import (
 // discardWriter implements io.Writer but discards all writes.
 type discardWriter struct{}
 
-func (dw *discardWriter) Write(p []byte) (n int, err error) {
+func (dw *discardWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 

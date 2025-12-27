@@ -211,13 +211,13 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 		nonExistentCode := gofakeit.LetterN(6)
 
 		team, err := teamService.GetTeamByCode(context.Background(), nonExistentCode)
-		assert.Error(t, err, "should return error for non-existent code")
+		require.Error(t, err, "should return error for non-existent code")
 		assert.Nil(t, team, "team should be nil when not found")
 	})
 
 	t.Run("return error for empty code", func(t *testing.T) {
 		team, err := teamService.GetTeamByCode(context.Background(), "")
-		assert.Error(t, err, "should return error for empty code")
+		require.Error(t, err, "should return error for empty code")
 		assert.Nil(t, team, "team should be nil for empty code")
 	})
 

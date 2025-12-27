@@ -132,7 +132,7 @@ func TestPhotoBlock_ValidatePlayerInput_MissingURL(t *testing.T) {
 	input := map[string][]string{}
 
 	_, err := block.ValidatePlayerInput(state, input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "required field")
 }
 
@@ -152,7 +152,7 @@ func TestPhotoBlock_ValidatePlayerInput_EmptyURL(t *testing.T) {
 	}
 
 	_, err := block.ValidatePlayerInput(state, input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "required field")
 }
 
@@ -172,7 +172,7 @@ func TestPhotoBlock_ValidatePlayerInput_InvalidURL(t *testing.T) {
 	}
 
 	_, err := block.ValidatePlayerInput(state, input)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid URL")
 }
 
@@ -324,7 +324,7 @@ func TestPhotoBlock_ValidatePlayerInput_MaxImagesLimit(t *testing.T) {
 	imageURL3 := gofakeit.URL()
 	input3 := map[string][]string{"url": {imageURL3}}
 	_, err = block.ValidatePlayerInput(finalState, input3)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "maximum")
 }
 

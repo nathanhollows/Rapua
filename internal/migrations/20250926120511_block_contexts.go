@@ -23,6 +23,7 @@ type m20250926120511_Block struct {
 	ValidationRequired bool                `bun:"validation_required,type:bool"`
 }
 
+//nolint:unused // Historical migration type
 type m20250926120511_Location struct {
 	bun.BaseModel `bun:"table:locations"`
 

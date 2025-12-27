@@ -233,6 +233,7 @@ func (s *StripeService) ProcessWebhook(ctx context.Context, payload []byte, sign
 	}
 
 	// Handle different event types
+	//nolint:exhaustive // Only handling relevant checkout events, others logged in default case
 	switch event.Type {
 	case "checkout.session.completed":
 		return s.handleCheckoutSessionCompleted(ctx, &event)

@@ -23,7 +23,7 @@ func init() {
 		Storage     string    `bun:"storage,notnull"`
 		DeleteData  string    `bun:"delete_data"`
 		Type        MediaType `bun:"type"`
-		sizes       string    `bun:"sizes"` // Stores JSON string of different filesizes
+		sizes       string    `bun:"sizes"` //nolint:unused // Historical migration field
 	}
 
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {

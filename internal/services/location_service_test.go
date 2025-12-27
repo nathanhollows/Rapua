@@ -228,8 +228,8 @@ func TestLocationService_UpdateCoords(t *testing.T) {
 	err = service.LoadRelations(ctx, updatedLocation)
 	require.NoError(t, err)
 
-	assert.Equal(t, newLat, updatedLocation.Marker.Lat)
-	assert.Equal(t, newLng, updatedLocation.Marker.Lng)
+	assert.InDelta(t, newLat, updatedLocation.Marker.Lat, 0.0001)
+	assert.InDelta(t, newLng, updatedLocation.Marker.Lng, 0.0001)
 }
 
 func TestLocationService_UpdateName(t *testing.T) {
@@ -290,8 +290,8 @@ func TestLocationService_UpdateLocation(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, updateData.Name, updatedLocation.Name)
-		assert.Equal(t, updateData.Latitude, updatedLocation.Marker.Lat)
-		assert.Equal(t, updateData.Longitude, updatedLocation.Marker.Lng)
+		assert.InDelta(t, updateData.Latitude, updatedLocation.Marker.Lat, 0.0001)
+		assert.InDelta(t, updateData.Longitude, updatedLocation.Marker.Lng, 0.0001)
 		assert.Equal(t, updateData.Points, updatedLocation.Points)
 	})
 

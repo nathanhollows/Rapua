@@ -82,6 +82,7 @@ func (h *Handler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//nolint:musttag // Upload struct has proper json tags defined
 	err = json.NewEncoder(w).Encode(uploads)
 	if err != nil {
 		h.handleError(w, r, "Couldn't search images", "Failed to encode response", "error", err)

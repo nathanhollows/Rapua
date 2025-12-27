@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/db"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 	"github.com/stretchr/testify/assert"
@@ -15,19 +14,17 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupShareLinkRepo(t *testing.T) (repositories.ShareLinkRepository, db.Transactor, func()) {
+func setupShareLinkRepo(t *testing.T) (repositories.ShareLinkRepository, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	transactor := db.NewTransactor(dbc)
-
 	shareLinkRepository := repositories.NewShareLinkRepository(dbc)
 
-	return shareLinkRepository, transactor, cleanup
+	return shareLinkRepository, cleanup
 }
 
 func TestShareLinkRepository_Create(t *testing.T) {
-	repo, _, cleanup := setupShareLinkRepo(t)
+	repo, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -64,7 +61,7 @@ func TestShareLinkRepository_Create(t *testing.T) {
 }
 
 func TestShareLinkRepository_GetByID(t *testing.T) {
-	repo, _, cleanup := setupShareLinkRepo(t)
+	repo, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -134,7 +131,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 }
 
 func TestShareLinkRepository_Use(t *testing.T) {
-	repo, _, cleanup := setupShareLinkRepo(t)
+	repo, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
 
 	tests := []struct {

@@ -21,15 +21,15 @@ type Myfs struct {
 
 // Open returns the file if available.
 // It will not return directory listings.
-func (m Myfs) Open(name string) (result http.File, err error) {
+func (m Myfs) Open(name string) (http.File, error) {
 	f, err := m.Dir.Open(name)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	fi, err := f.Stat()
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	if fi.IsDir() {
