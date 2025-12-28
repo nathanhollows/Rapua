@@ -163,7 +163,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	})
 
 	// Ending the game
-	router.Route("/finish", func(r chi.Router) {
+	router.Route("/complete", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				playerHandler.GetTeamService(),
@@ -172,7 +172,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
 			)
 		})
-		r.Get("/", playerHandler.Finish)
+		r.Get("/", playerHandler.Complete)
 	})
 
 	// Check in to a location
@@ -310,7 +310,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/new", adminHandler.LocationNew)
 			r.Post("/new", adminHandler.LocationNewPost)
 			r.Get("/start", adminHandler.StartPageEdit)
-			r.Get("/finish", adminHandler.FinishPageEdit)
+			r.Get("/complete", adminHandler.CompletePageEdit)
 			r.Get("/{id}", adminHandler.LocationEdit)
 			r.Post("/{id}", adminHandler.LocationEditPost)
 			r.Delete("/{id}", adminHandler.LocationDelete)

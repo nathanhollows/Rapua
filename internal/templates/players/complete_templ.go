@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
-func Finish(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) templ.Component {
+func Complete(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -48,7 +48,7 @@ func Finish(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]b
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("preview-block-", block.GetID()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/finish.templ`, Line: 15, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/complete.templ`, Line: 15, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {

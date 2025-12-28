@@ -624,11 +624,11 @@ func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// FinishPageEdit shows the finish page editor.
-func (h *Handler) FinishPageEdit(w http.ResponseWriter, r *http.Request) {
+// CompletePageEdit shows the complete page editor.
+func (h *Handler) CompletePageEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	// Get blocks for the finish page
+	// Get blocks for the complete page
 	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
 		r.Context(),
 		user.CurrentInstanceID,
@@ -636,7 +636,7 @@ func (h *Handler) FinishPageEdit(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		h.logger.Error(
-			"FinishPageEdit: getting blocks",
+			"completePageEdit: getting blocks",
 			"error",
 			err,
 			"instance_id",
@@ -649,13 +649,13 @@ func (h *Handler) FinishPageEdit(w http.ResponseWriter, r *http.Request) {
 	data := templates.EditPageData{
 		Settings:   user.CurrentInstance.Settings,
 		PageBlocks: pageBlocks,
-		PageTitle:  "Finish",
-		PageType:   "finish",
+		PageTitle:  "Complete",
+		PageType:   "complete",
 	}
 
 	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Finish Page").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Locations", "Edit Complete Page").Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "FinishPageEdit: rendering template", "Error rendering template", "error", err)
+		h.handleError(w, r, "CompletePageEdit: rendering template", "Error rendering template", "error", err)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
 )
 
-func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
+func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
@@ -39,7 +39,7 @@ func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get blocks for the finish page
+	// Get blocks for the complete page
 	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 		r.Context(),
 		team.InstanceID,
@@ -47,19 +47,19 @@ func (h *PlayerHandler) Finish(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextFinish,
 	)
 	if err != nil {
-		h.logger.Error("getting finish blocks", "error", err.Error())
+		h.logger.Error("getting 'complete' page blocks", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
 
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Finish(*team, pageBlocks, blockStates)
+	template := templates.Complete(*team, pageBlocks, blockStates)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		template = templates.Layout(template, "Finish", team.Messages)
+		template = templates.Layout(template, "Complete", team.Messages)
 	}
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering finish", "error", err.Error())
+		h.logger.Error("rendering 'complete' page", "error", err.Error())
 	}
 }

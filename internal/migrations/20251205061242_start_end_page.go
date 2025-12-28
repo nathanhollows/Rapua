@@ -109,7 +109,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 			}
 		}
 
-		// PART 2: Add start and finish blocks to all existing instances
+		// PART 2: Add start and complete blocks to all existing instances
 		var instances []models.Instance
 		err = db.NewSelect().
 			Model(&instances).
@@ -128,12 +128,12 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 				}
 			}
 
-			// Create finish blocks
+			// Create complete blocks
 			finishBlocks := m20251205061242_createFinishBlocks(instance.ID)
 			if len(finishBlocks) > 0 {
 				_, err = db.NewInsert().Model(&finishBlocks).Exec(ctx)
 				if err != nil {
-					return fmt.Errorf("failed to insert finish blocks for instance %s: %w", instance.ID, err)
+					return fmt.Errorf("failed to insert complete blocks for instance %s: %w", instance.ID, err)
 				}
 			}
 		}
@@ -161,13 +161,13 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 			return fmt.Errorf("failed to restore block ordering: %w", err)
 		}
 
-		// ROLLBACK PART 2: Delete all start and finish blocks
+		// ROLLBACK PART 2: Delete all start and complete blocks
 		_, err = db.NewDelete().
 			Model((*models.Block)(nil)).
 			Where("context IN (?, ?)", blocks.ContextStart, blocks.ContextFinish).
 			Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to delete start/finish blocks: %w", err)
+			return fmt.Errorf("failed to delete start/complete blocks: %w", err)
 		}
 
 		return nil
@@ -289,11 +289,11 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 	return result
 }
 
-// m20251205061242_createFinishBlocks creates the default blocks for an instance's finish page.
+// m20251205061242_createFinishBlocks creates the default blocks for an instance's complete page.
 //
 //nolint:revive // Migration-specific naming convention
 func m20251205061242_createFinishBlocks(instanceID string) []models.Block {
-	result := make([]models.Block, 2) //nolint:mnd // 2 blocks for finish page
+	result := make([]models.Block, 2) //nolint:mnd // 2 blocks for complete page
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{

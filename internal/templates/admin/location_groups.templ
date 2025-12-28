@@ -186,7 +186,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 				@locationGroup(subGroup, settings)
 			}
 		</div>
-		@finishLink()
+		@completeLink()
 		<!-- Hidden/unassigned locations area -->
 		<div class="divider my-12 gap-2">
 			Unassigned locations
@@ -303,7 +303,7 @@ templ startLink() {
 	</div>
 }
 
-templ finishLink() {
+templ completeLink() {
 	<div class="pt-6">
 		<div class="bg-base-200 p-4 border border-primary/20 rounded-2xl">
 			<div class="loc flex items-center gap-3">
@@ -315,10 +315,10 @@ templ finishLink() {
 					data-tip="Automatically included in game"
 				>System Page</span>
 				<a
-					href="/admin/locations/finish"
+					href="/admin/locations/complete"
 					class="link link-hover font-medium text-sm"
 					hx-boost="true"
-				>Finish</a>
+				>Complete</a>
 				<div class="flex-grow"></div>
 				<div class="tooltip tooltip-left" data-tip="System page - cannot be deleted">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock w-4 h-4 text-base-content/40"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>

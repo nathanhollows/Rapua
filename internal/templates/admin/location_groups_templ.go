@@ -133,7 +133,7 @@ func locationGroup(group models.GameStructure, settings models.InstanceSettings)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = finishLink().Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = completeLink().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -481,7 +481,7 @@ func startLink() templ.Component {
 	})
 }
 
-func finishLink() templ.Component {
+func completeLink() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -502,7 +502,7 @@ func finishLink() templ.Component {
 			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"pt-6\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"System page - cannot be moved\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-5 h-5 text-primary\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div><span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in game\">System Page</span> <a href=\"/admin/locations/finish\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">Finish</a><div class=\"flex-grow\"></div><div class=\"tooltip tooltip-left\" data-tip=\"System page - cannot be deleted\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-4 h-4 text-base-content/40\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"pt-6\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"loc flex items-center gap-3\"><div class=\"tooltip tooltip-right\" data-tip=\"System page - cannot be moved\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-5 h-5 text-primary\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div><span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in game\">System Page</span> <a href=\"/admin/locations/complete\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">Complete</a><div class=\"flex-grow\"></div><div class=\"tooltip tooltip-left\" data-tip=\"System page - cannot be deleted\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock w-4 h-4 text-base-content/40\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -135,7 +135,7 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 // UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
 func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	// Query to check block ownership through instances
-	// For start/finish blocks: owner_id IS the instance_id
+	// For start/complete blocks: owner_id IS the instance_id
 	// For location blocks: owner_id IS the location_id, which belongs to an instance
 	count, err := r.db.NewSelect().
 		Model((*models.Block)(nil)).
@@ -143,7 +143,7 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 		Where("id = ?", blockID).
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				// Instance-owned blocks (start/finish contexts)
+				// Instance-owned blocks (start/complete contexts)
 				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
 					return q.
 						Where(

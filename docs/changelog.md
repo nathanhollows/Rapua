@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.8.1 (2025-12-27)
+
+### Changed
+
+- Moved `/finish` route to `/complete`.
+
 ## 6.8.0 (2025-12-27)
 
 ### Added

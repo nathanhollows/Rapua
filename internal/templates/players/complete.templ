@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
-templ Finish(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
+templ Complete(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
 	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
 		for _, block := range pageBlocks {
 			<div

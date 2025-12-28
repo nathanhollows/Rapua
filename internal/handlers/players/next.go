@@ -26,7 +26,7 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
 		if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
-			h.redirect(w, r, "/finish")
+			h.redirect(w, r, "/complete")
 			return
 		}
 		h.handleError(w, r, "Next: getting navigation view", "Error loading navigation", "Could not load data", err)
@@ -83,7 +83,7 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 			view, err = h.navigationService.GetPlayerNavigationView(r.Context(), team)
 			if err != nil {
 				if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
-					h.redirect(w, r, "/finish")
+					h.redirect(w, r, "/complete")
 					return
 				}
 				h.handleError(w, r, "NextPreview: getting navigation view", "Error loading navigation", "error", err)

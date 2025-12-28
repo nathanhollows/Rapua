@@ -50,7 +50,7 @@ templ EditPage(data EditPageData) {
 					</svg>
 					<span>Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span>
 				</div>
-				<div id="missing-game-status-finish-template" class="alert alert-info" style="display: none;">
+				<div id="missing-game-status-complete-template" class="alert alert-info" style="display: none;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
 						<circle cx="12" cy="12" r="10"></circle>
 						<path d="M12 16v-4"></path>
@@ -111,7 +111,7 @@ templ EditPage(data EditPageData) {
 						}
 					} else if (pageType === 'end') {
 						if (!hasGameStatus) {
-							const alert = document.getElementById('missing-game-status-finish-template').cloneNode(true);
+							const alert = document.getElementById('missing-game-status-complete-template').cloneNode(true);
 							alert.id = 'missing-game-status';
 							alert.style.display = '';
 							if (firstBlock) {
@@ -170,5 +170,5 @@ func getPreviewURLForPageType(pageType string) string {
 	if pageType == "start" {
 		return "/start"
 	}
-	return "/finish"
+	return "/complete"
 }
