@@ -182,8 +182,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 				playerHandler.GetTeamService(),
 				playerHandler.GetInstanceService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
 			)
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
@@ -193,8 +192,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	// Check out of a location
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
+			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
 		})
 		r.Get("/", playerHandler.CheckOut)
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)

@@ -11,7 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/models"
 )
 
-var store sessions.Store
+var store *sessions.CookieStore
 
 const (
 	adminSession  = "admin"
@@ -20,6 +20,10 @@ const (
 
 func Start() {
 	store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+	store.Options.Path = "/"
+	store.Options.HttpOnly = true
+	store.Options.SameSite = http.SameSiteLaxMode
+	store.Options.Secure = os.Getenv("IS_PROD") == "1"
 
 	authStore := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
 	authStore.Options.SameSite = http.SameSiteLaxMode
@@ -61,6 +65,7 @@ func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
 	}
 
 	session.Values["team"] = team.Code
+	session.Options.HttpOnly = true
 	session.Options.Secure = true
 	session.Options.SameSite = http.SameSiteLaxMode
 

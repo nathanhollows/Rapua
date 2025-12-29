@@ -13,6 +13,10 @@ tag: updated
 
 - Moved `/finish` route to `/complete`.
 
+### Fixed
+
+- Check-in and check-out routes now auto complete if the player is logged in.
+
 ## 6.8.0 (2025-12-27)
 
 ### Added
