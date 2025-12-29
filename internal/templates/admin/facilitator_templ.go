@@ -35,7 +35,7 @@ func FacilitatorLinkModal() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Share activity overview with Facilitators</h3><div class=\"prose py-4\"><p>Create a link to share the activity overview with facilitators. They will see a list of all locations and how many teams are yet to visit.</p><p>These links are only valid for a limited time and can be shared with anyone. Be cautious when sharing.</p></div><div class=\"form-control\"><label class=\"label\"><span class=\"label-text font-bold\">Validity</span></label> <select id=\"link-duration\" name=\"duration\" class=\"select w-full\" name=\"duration\"><option value=\"hour\">1 hour</option> <option value=\"day\" selected>1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select></div><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Nevermind</button> <button hx-post=\"/admin/facilitator/create-link\" hx-swap=\"innerHTML\" hx-target=\"#facilitator_link_modal\" hx-include=\"#link-duration\" class=\"btn btn-primary ml-1\">Create link</button></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Share activity overview with Facilitators</h3><div class=\"prose py-4\"><p>Create a link to share the activity overview with facilitators. They will see a list of all locations and how many teams are yet to visit.</p><p>These links are only valid for a limited time and can be shared with anyone. Be cautious when sharing.</p></div><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Validity</legend> <select id=\"link-duration\" name=\"duration\" class=\"select w-full\" name=\"duration\"><option value=\"hour\">1 hour</option> <option value=\"day\" selected>1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select></fieldset><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Nevermind</button> <button hx-post=\"/admin/facilitator/create-link\" hx-swap=\"innerHTML\" hx-target=\"#facilitator_link_modal\" hx-include=\"#link-duration\" class=\"btn btn-primary ml-1\">Create link</button></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,7 +71,7 @@ func FacilitatorLinkCopyModal(url string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(url)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 57, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 55, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -113,7 +113,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(activity)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 100, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 98, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -126,7 +126,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(locations)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 109, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 107, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 145, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 143, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -185,7 +185,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 							var templ_7745c5c3_Var8 string
 							templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", location.CurrentCount))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 160, Col: 57}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 158, Col: 57}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 							if templ_7745c5c3_Err != nil {
@@ -204,7 +204,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d / %d", location.TotalVisits, len(activity)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 165, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/facilitator.templ`, Line: 163, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {

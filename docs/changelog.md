@@ -7,7 +7,7 @@ tag: updated
 
 # Changelog
 
-## 6.8.1 (2025-12-27)
+## 6.9.0 (2025-12-27)
 
 ### Changed
 
@@ -16,6 +16,7 @@ tag: updated
 ### Fixed
 
 - Check-in and check-out routes now auto complete if the player is logged in.
+- Minor UI fixes.
 
 ### Removed
 

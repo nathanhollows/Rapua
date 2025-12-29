@@ -220,7 +220,7 @@ type EditLocationData struct {
 templ EditLocation(data EditLocationData) {
 	<!-- Header -->
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">Editing <em>{ data.Location.Name }</em></h1>
+		<h1 id="location-name" class="text-2xl font-bold">{ data.Location.Name }</h1>
 		<div class="flex gap-3">
 			<div class="dropdown dropdown-center">
 				<div tabindex="0" role="button" class="btn">
@@ -313,6 +313,9 @@ templ EditLocation(data EditLocationData) {
 						class="input w-full"
 						value={ data.Location.Marker.Name }
 						placeholder="Location name"
+						_="
+						on input
+						set #location-name's textContent to my value"
 					/>
 				</fieldset>
 				if data.Settings.EnablePoints {

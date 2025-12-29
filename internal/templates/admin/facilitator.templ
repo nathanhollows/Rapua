@@ -16,17 +16,15 @@ templ FacilitatorLinkModal() {
 			<p>Create a link to share the activity overview with facilitators. They will see a list of all locations and how many teams are yet to visit.</p>
 			<p>These links are only valid for a limited time and can be shared with anyone. Be cautious when sharing.</p>
 		</div>
-		<div class="form-control">
-			<label class="label">
-				<span class="label-text font-bold">Validity</span>
-			</label>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Validity</legend>
 			<select id="link-duration" name="duration" class="select w-full" name="duration">
 				<option value="hour">1 hour</option>
 				<option value="day" selected>1 day</option>
 				<option value="week">1 week</option>
 				<option value="month">1 month</option>
 			</select>
-		</div>
+		</fieldset>
 		<div class="modal-action">
 			<form method="dialog">
 				<!-- if there is a button in form, it will close the modal -->
