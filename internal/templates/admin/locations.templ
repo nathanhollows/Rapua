@@ -447,18 +447,6 @@ templ EditLocation(data EditLocationData) {
 				</a>
 				<a
 					role="tab"
-					class="tab transition-colors grow"
-					data-url={ fmt.Sprint("/s/", data.Location.MarkerID) }
-					_="on click
-					remove .tab-active from <#preview-nav a.tab-active />
-					add .tab-active to me
-					trigger changePreviewPage
-				"
-				>
-					Check-in
-				</a>
-				<a
-					role="tab"
 					class="tab transition-colors grow tab-active"
 					data-url={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
 					_="on click

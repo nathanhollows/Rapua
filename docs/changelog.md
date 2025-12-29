@@ -17,6 +17,10 @@ tag: updated
 
 - Check-in and check-out routes now auto complete if the player is logged in.
 
+### Removed
+
+- Check-in preview mode removed, as I'm no longer planning to add blocks to the check-in page.
+
 ## 6.8.0 (2025-12-27)
 
 ### Added

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v6/internal/flash"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
@@ -24,9 +25,13 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	team, err := h.getTeamFromContext(r.Context())
-	// If the team is not found, render the check-in form with an empty team
 	if err != nil || team == nil {
 		h.renderCheckInForm(w, r, marker, &models.Team{})
+		return
+	}
+
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		h.renderCheckInForm(w, r, marker, team)
 		return
 	}
 
@@ -182,6 +187,11 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil || team == nil {
 		h.renderCheckOutForm(w, r, marker, &models.Team{})
+		return
+	}
+
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		h.renderCheckOutForm(w, r, marker, team)
 		return
 	}
 
