@@ -445,3 +445,7 @@ linters:
       - path: 'blocks/.*\.go'
         linters:
           - dupl
+      - path: 'internal/migrations/.*\.go'
+        text: 'var-naming'
+        linters:
+          - revive

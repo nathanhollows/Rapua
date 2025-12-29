@@ -9,7 +9,7 @@ import (
 )
 
 // StartMiddleware redirects to the start if the game is scheduled to start.
-func StartMiddleware(teamService teamService, next http.Handler) http.Handler {
+func StartMiddleware(_ teamService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Preview requests should pass through
 		if r.Context().Value(contextkeys.PreviewKey) != nil {

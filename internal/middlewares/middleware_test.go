@@ -40,7 +40,7 @@ func TestHtmxOnlyMiddleware(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(&discardWriter{}, nil))
 
 	// Set up a next handler that just returns 200 OK
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 

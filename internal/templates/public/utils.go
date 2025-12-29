@@ -67,7 +67,11 @@ func markdownToHTML(s string) (template.HTML, error) {
 
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(s), &buf); err != nil {
-		slog.Error("converting markdown to HTML", "err", err)
+		slog.Error(
+			"converting markdown to HTML",
+			"err",
+			err,
+		) //nolint:sloglint // Template function without context access
 		return template.HTML("Error rendering markdown to HTML"), err
 	}
 

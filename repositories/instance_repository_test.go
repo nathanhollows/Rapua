@@ -88,7 +88,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 		},
 		{
 			name: "Non-existent instance",
-			setupFn: func(_ context.Context, _ testing.TB, _ models.Instance, t *testing.T) {
+			setupFn: func(_ context.Context, _ testing.TB, _ models.Instance, _ *testing.T) {
 				// Intentionally do not save
 			},
 			wantErr: true,
@@ -272,7 +272,7 @@ func TestInstanceRepository_Update(t *testing.T) {
 		},
 		{
 			name: "Update non-existent instance",
-			setupFn: func(_ context.Context, tb testing.TB) (models.Instance, error) {
+			setupFn: func(_ context.Context, _ testing.TB) (models.Instance, error) {
 				// Return an instance that hasn't been created
 				inst := models.Instance{
 					ID:     gofakeit.UUID(),
@@ -340,7 +340,7 @@ func TestInstanceRepository_Delete(t *testing.T) {
 		},
 		{
 			name: "Delete non-existent instance",
-			setupFn: func(ctx context.Context, t *testing.T) (models.Instance, *bun.Tx, error) {
+			setupFn: func(ctx context.Context, _ *testing.T) (models.Instance, *bun.Tx, error) {
 				// For a non-existent instance, just return an instance that wasn't saved
 				tx, err := transactor.BeginTx(ctx, nil)
 				if err != nil {

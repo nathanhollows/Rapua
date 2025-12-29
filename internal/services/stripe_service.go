@@ -156,7 +156,7 @@ func (s *StripeService) CreateCheckoutSession(
 		return nil, fmt.Errorf("creating purchase record: %w", err)
 	}
 
-	s.logger.Info("Created checkout session",
+	s.logger.InfoContext(ctx, "Created checkout session",
 		"user_id", userID,
 		"purchase_id", purchaseID,
 		"credits", credits,
@@ -204,7 +204,7 @@ func (s *StripeService) getOrCreateCustomer(ctx context.Context, userID string) 
 		return "", fmt.Errorf("updating user with customer ID: %w", err)
 	}
 
-	s.logger.Info("Created Stripe customer",
+	s.logger.InfoContext(ctx, "Created Stripe customer",
 		"user_id", user.ID,
 		"customer_id", cust.ID,
 	)
@@ -242,7 +242,7 @@ func (s *StripeService) ProcessWebhook(ctx context.Context, payload []byte, sign
 	case "checkout.session.async_payment_failed":
 		return s.handleCheckoutSessionFailed(ctx, &event)
 	default:
-		s.logger.Info("Unhandled webhook event type", "type", event.Type)
+		s.logger.InfoContext(ctx, "Unhandled webhook event type", "type", event.Type)
 		return nil
 	}
 }
@@ -266,13 +266,13 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 
 	// Check if already processed (idempotency)
 	if purchase.Status == models.CreditPurchaseStatusCompleted {
-		s.logger.Warn("Purchase already processed", "purchase_id", purchase.ID)
+		s.logger.WarnContext(ctx, "Purchase already processed", "purchase_id", purchase.ID)
 		return ErrPurchaseAlreadyProcessed
 	}
 
 	// Validate webhook data matches our purchase record
 	if sess.AmountTotal != int64(purchase.AmountPaid) {
-		s.logger.Error("Amount mismatch in webhook",
+		s.logger.ErrorContext(ctx, "Amount mismatch in webhook",
 			"expected", purchase.AmountPaid,
 			"received", sess.AmountTotal,
 			"purchase_id", purchase.ID,
@@ -286,7 +286,7 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 	if creditsStr, ok := sess.Metadata["credits"]; ok {
 		expectedCredits := strconv.Itoa(purchase.Credits)
 		if creditsStr != expectedCredits {
-			s.logger.Error("Credits mismatch in webhook",
+			s.logger.ErrorContext(ctx, "Credits mismatch in webhook",
 				"expected", purchase.Credits,
 				"received", creditsStr,
 				"purchase_id", purchase.ID,
@@ -355,7 +355,7 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 				err = s.purchaseRepo.UpdateReceiptURLWithTx(ctx, tx, purchase.ID, ch.ReceiptURL)
 				if err != nil {
 					// Log error but don't fail the transaction - receipt URL is nice to have
-					s.logger.Error("updating receipt URL",
+					s.logger.ErrorContext(ctx, "updating receipt URL",
 						"purchase_id", purchase.ID,
 						"error", err,
 					)
@@ -370,7 +370,7 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	s.logger.Info("Purchase completed successfully",
+	s.logger.InfoContext(ctx, "Purchase completed successfully",
 		"purchase_id", purchase.ID,
 		"user_id", purchase.UserID,
 		"credits", purchase.Credits,
@@ -403,7 +403,7 @@ func (s *StripeService) handleCheckoutSessionFailed(ctx context.Context, event *
 		return fmt.Errorf("updating purchase status: %w", err)
 	}
 
-	s.logger.Warn("Purchase failed",
+	s.logger.WarnContext(ctx, "Purchase failed",
 		"purchase_id", purchase.ID,
 		"user_id", purchase.UserID,
 		"session_id", sess.ID,

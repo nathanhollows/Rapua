@@ -16,13 +16,13 @@ type MockAuthService struct {
 	err  error
 }
 
-func (m *MockAuthService) GetAuthenticatedUser(r *http.Request) (*models.User, error) {
+func (m *MockAuthService) GetAuthenticatedUser(_ *http.Request) (*models.User, error) {
 	return m.user, m.err
 }
 
 // Dummy handler to simulate the next handler in the middleware chain.
 func dummyHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 }

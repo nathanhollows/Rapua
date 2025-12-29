@@ -47,7 +47,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
 				return repo.Create(ctx, settings)
 			},
-			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
+			verify: func(_ context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
 				require.NoError(t, err)
 				assert.NotEmpty(t, settings.InstanceID)
 			},
@@ -68,7 +68,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 				_ = repo.Create(ctx, settings)
 				return repo.Update(ctx, settings)
 			},
-			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
+			verify: func(_ context.Context, t *testing.T, _ *models.InstanceSettings, err error) {
 				require.NoError(t, err)
 			},
 		},
@@ -96,7 +96,7 @@ func TestInstanceSettingsRepository(t *testing.T) {
 
 				return repo.Delete(ctx, tx, settings.InstanceID)
 			},
-			verify: func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
+			verify: func(_ context.Context, t *testing.T, _ *models.InstanceSettings, err error) {
 				require.NoError(t, err)
 				// Optionally, query the database to confirm the instance was deleted
 			},

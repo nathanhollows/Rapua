@@ -159,7 +159,7 @@ func (r *markerRepository) IsShared(ctx context.Context, code string) (bool, err
 }
 
 // UserOwnsMarker checks if a user owns a marker.
-func (r *markerRepository) UserOwnsMarker(ctx context.Context, userID, markerCode string) (bool, error) {
+func (r *markerRepository) UserOwnsMarker(ctx context.Context, userID, _ string) (bool, error) {
 	var count int
 	count, err := r.db.
 		NewSelect().

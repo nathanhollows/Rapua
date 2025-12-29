@@ -3,6 +3,7 @@ package scheduler_test
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"sync"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var jobLogger = slog.New(&slog.TextHandler{})
+var jobLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func TestJob_Creation(t *testing.T) {
 	tests := []struct {
@@ -423,7 +424,7 @@ func TestPredefinedNextFunctions(t *testing.T) {
 	})
 }
 
-func TestScheduler_EmptyJobsStart(t *testing.T) {
+func TestScheduler_EmptyJobsStart(_ *testing.T) {
 	s := scheduler.NewScheduler(jobLogger)
 	defer s.Stop()
 

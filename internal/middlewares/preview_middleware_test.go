@@ -17,11 +17,11 @@ import (
 // dummyTeamService is a stub implementation of teamService.
 type dummyTeamService struct{}
 
-func (d *dummyTeamService) LoadRelation(ctx context.Context, t *models.Team, rel string) error {
+func (d *dummyTeamService) LoadRelation(_ context.Context, _ *models.Team, _ string) error {
 	return nil
 }
 
-func (d *dummyTeamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+func (d *dummyTeamService) GetTeamByCode(_ context.Context, _ string) (*models.Team, error) {
 	return nil, errors.New("team not found")
 }
 
@@ -32,7 +32,7 @@ type dummyInstanceService struct {
 }
 
 func (d *dummyInstanceService) GetInstanceSettings(
-	ctx context.Context,
+	_ context.Context,
 	instanceID string,
 ) (*models.InstanceSettings, error) {
 	return &models.InstanceSettings{
@@ -42,7 +42,7 @@ func (d *dummyInstanceService) GetInstanceSettings(
 }
 
 func (d *dummyInstanceService) GetByID(
-	ctx context.Context,
+	_ context.Context,
 	instanceID string,
 ) (*models.Instance, error) {
 	return &models.Instance{
@@ -58,7 +58,7 @@ type dummyIdentityService struct {
 	err  error
 }
 
-func (d *dummyIdentityService) GetAuthenticatedUser(r *http.Request) (*models.User, error) {
+func (d *dummyIdentityService) GetAuthenticatedUser(_ *http.Request) (*models.User, error) {
 	return d.user, d.err
 }
 

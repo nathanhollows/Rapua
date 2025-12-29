@@ -192,7 +192,7 @@ func TestMarkerRepository_Update(t *testing.T) {
 			assertion: func(err error) {
 				require.Error(t, err)
 			},
-			cleanupFunc: func(marker models.Marker) {
+			cleanupFunc: func(_ models.Marker) {
 				// No cleanup needed as marker was not created
 			},
 		},
@@ -246,7 +246,7 @@ func TestMarkerRepository_UpdateCoords(t *testing.T) {
 				}
 				return err
 			},
-			assertion: func(marker models.Marker, err error) {
+			assertion: func(_ models.Marker, err error) {
 				require.NoError(t, err)
 			},
 			cleanupFunc: func(marker models.Marker) {
@@ -262,10 +262,10 @@ func TestMarkerRepository_UpdateCoords(t *testing.T) {
 			action: func(marker models.Marker) error {
 				return repo.UpdateCoords(context.Background(), &marker, gofakeit.Latitude(), gofakeit.Longitude())
 			},
-			assertion: func(marker models.Marker, err error) {
+			assertion: func(_ models.Marker, err error) {
 				require.Error(t, err)
 			},
-			cleanupFunc: func(marker models.Marker) {
+			cleanupFunc: func(_ models.Marker) {
 				// No cleanup needed as marker was not created
 			},
 		},
@@ -315,7 +315,7 @@ func TestMarkerRepository_Delete(t *testing.T) {
 			assertion: func(err error) {
 				require.NoError(t, err)
 			},
-			cleanupFunc: func(marker models.Marker) {
+			cleanupFunc: func(_ models.Marker) {
 				// No cleanup needed as marker is deleted
 			},
 		},

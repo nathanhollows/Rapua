@@ -26,10 +26,10 @@ func init() {
 		sizes       string    `bun:"sizes"` //nolint:unused // Historical migration field
 	}
 
-	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
+	Migrations.MustRegister(func(_ context.Context, db *bun.DB) error {
 		_, err := db.NewCreateTable().Model(&Upload{}).IfNotExists().Exec(context.Background())
 		return err
-	}, func(ctx context.Context, db *bun.DB) error {
+	}, func(_ context.Context, db *bun.DB) error {
 		_, err := db.NewDropTable().Model(&Upload{}).IfExists().Exec(context.Background())
 		return err
 	})

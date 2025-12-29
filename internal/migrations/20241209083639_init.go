@@ -217,7 +217,7 @@ func init() {
 	}
 
 	Migrations.MustRegister(
-		func(ctx context.Context, db *bun.DB) error {
+		func(_ context.Context, db *bun.DB) error {
 			for _, model := range models {
 				_, err := db.NewCreateTable().Model(model).IfNotExists().Exec(context.Background())
 				if err != nil {
@@ -225,7 +225,7 @@ func init() {
 				}
 			}
 			return nil
-		}, func(ctx context.Context, db *bun.DB) error {
+		}, func(_ context.Context, db *bun.DB) error {
 			for _, model := range models {
 				_, err := db.NewDropTable().Model(model).IfExists().Exec(context.Background())
 				if err != nil {

@@ -117,7 +117,7 @@ func TestDocs_YAMLStructureValid(t *testing.T) {
 }
 
 // Markdown to AST.
-func testDocs_MarkdownToAST(t *testing.T, markdown string) ast.Node {
+func testDocsMarkdownToAST(t *testing.T, markdown string) ast.Node {
 	t.Helper()
 
 	// Goldmark
@@ -154,7 +154,7 @@ func TestDocs_LinksResolve(t *testing.T) {
 			if len(page.Children) > 0 {
 				walkPages(page.Children)
 			}
-			nodes := testDocs_MarkdownToAST(t, page.Content)
+			nodes := testDocsMarkdownToAST(t, page.Content)
 			walkErr := ast.Walk(nodes, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 				if !entering || n.Kind() != ast.KindLink {
 					return ast.WalkContinue, nil

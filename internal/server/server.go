@@ -55,7 +55,6 @@ func Start(
 			log.Println("Server closed")
 		} else {
 			log.Fatalf("Server failed to start: %v", err)
-			os.Exit(1)
 		}
 	}()
 

@@ -29,7 +29,7 @@ type identityService interface {
 
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
 func PreviewMiddleware(
-	teamService teamService,
+	_ teamService,
 	instanceService instanceService,
 	identityService identityService,
 	next http.Handler,

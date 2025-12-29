@@ -16,7 +16,7 @@ import (
 func TestStartMiddleware_PreviewRequest(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -45,7 +45,7 @@ func TestStartMiddleware_PreviewRequest(t *testing.T) {
 func TestStartMiddleware_NoTeamInContext(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -76,7 +76,7 @@ func TestStartMiddleware_NoTeamInContext(t *testing.T) {
 func TestStartMiddleware_InvalidTeamType(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -109,7 +109,7 @@ func TestStartMiddleware_InvalidTeamType(t *testing.T) {
 func TestStartMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -143,7 +143,7 @@ func TestStartMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 func TestStartMiddleware_ScheduledGameRedirectsToStart(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -184,7 +184,7 @@ func TestStartMiddleware_ScheduledGameRedirectsToStart(t *testing.T) {
 func TestStartMiddleware_AlreadyInStart(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
@@ -221,7 +221,7 @@ func TestStartMiddleware_AlreadyInStart(t *testing.T) {
 func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	nextCalled := false
 
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		nextCalled = true
 		w.WriteHeader(http.StatusOK)
 	})
