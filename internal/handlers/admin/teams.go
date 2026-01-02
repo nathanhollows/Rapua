@@ -77,131 +77,6 @@ func (h *Handler) TeamsAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) TeamsDelete(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
-		return
-	}
-
-	teamID := r.Form["team-checkbox"]
-	if len(teamID) == 0 {
-		h.handleError(
-			w,
-			r,
-			"TeamsDelete no team_id",
-			"Error deleting team",
-			"error",
-			nil,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	for _, id := range teamID {
-		if deleteErr := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{id}); deleteErr != nil {
-			h.handleError(
-				w,
-				r,
-				"TeamsDelete deleting team",
-				"Error deleting team",
-				"error",
-				deleteErr,
-				"instance_id",
-				user.CurrentInstanceID,
-				"team_id",
-				teamID,
-			)
-			return
-		}
-	}
-
-	teams, err := h.teamService.FindAll(r.Context(), user.CurrentInstanceID)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"TeamsReset finding teams",
-			"Error finding teams",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	err = admin.TeamsTable(teams).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
-	}
-	h.handleSuccess(w, r, "Deleted team(s)")
-}
-
-func (h *Handler) TeamsReset(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
-		return
-	}
-
-	teamIDs := r.Form["team-checkbox"]
-	if len(teamIDs) == 0 {
-		h.handleError(
-			w,
-			r,
-			"TeamsReset no team_id",
-			"No teams selected",
-			"error",
-			nil,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	err = h.deleteService.ResetTeams(r.Context(), user.CurrentInstanceID, teamIDs)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"TeamsReset deleting team",
-			"Error resetting teams",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-			"team_id",
-			teamIDs,
-		)
-		return
-	}
-
-	teams, err := h.teamService.FindAll(r.Context(), user.CurrentInstanceID)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"TeamsReset finding teams",
-			"Error finding teams",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	err = admin.TeamsTable(teams).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("TeamsReset rendering teams list", "error", err.Error(), "instance_id", user.CurrentInstanceID)
-	}
-	h.handleSuccess(w, r, "Reset team(s)")
-}
-
 func (h *Handler) TeamOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -300,4 +175,89 @@ func (h *Handler) TeamOverview(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+}
+
+func (h *Handler) TeamDelete(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+	teamCode := chi.URLParam(r, "teamCode")
+
+	// Verify team exists and belongs to current instance
+	team, err := h.teamService.GetTeamByCode(r.Context(), teamCode)
+	if err != nil || team == nil || team.InstanceID != user.CurrentInstanceID {
+		h.handleError(
+			w,
+			r,
+			"TeamDelete: team not found or access denied",
+			"Error deleting team",
+			"error",
+			err,
+			"team_code",
+			teamCode,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	// Delete the team
+	if err := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{teamCode}); err != nil {
+		h.handleError(
+			w,
+			r,
+			"TeamDelete: deleting team",
+			"Error deleting team",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+			"team_code",
+			teamCode,
+		)
+		return
+	}
+
+	h.redirect(w, r, "/admin/")
+}
+
+func (h *Handler) TeamReset(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+	teamCode := chi.URLParam(r, "teamCode")
+
+	// Verify team exists and belongs to current instance
+	team, err := h.teamService.GetTeamByCode(r.Context(), teamCode)
+	if err != nil || team == nil || team.InstanceID != user.CurrentInstanceID {
+		h.handleError(
+			w,
+			r,
+			"TeamReset: team not found or access denied",
+			"Error resetting team",
+			"error",
+			err,
+			"team_code",
+			teamCode,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	// Reset the team
+	err = h.deleteService.ResetTeams(r.Context(), user.CurrentInstanceID, []string{teamCode})
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"TeamReset: resetting team",
+			"Error resetting team",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+			"team_code",
+			teamCode,
+		)
+		return
+	}
+
+	h.redirect(w, r, "/admin/teams/"+teamCode)
 }

@@ -145,28 +145,6 @@ templ TeamsTable(teams []models.Team) {
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
 						Copy Codes
 					</button>
-					<button
-						id="reset-teams"
-						class="btn btn-sm btn-warning"
-						_="on click
-							confirm_reset_modal.showModal()
-						end
-					"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
-						Reset
-					</button>
-					<button
-						id="delete-teams"
-						class="btn btn-sm btn-error"
-						_="on click
-							confirm_delete_modal.showModal()
-						end
-						"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-						Delete
-					</button>
 				</div>
 			</div>
 			<div id="team-filters" class="flex flex-grow flex-row justify-between">
@@ -308,70 +286,6 @@ templ TeamsTable(teams []models.Team) {
 			</div>
 		</div>
 	</div>
-	<dialog id="confirm_reset_modal" class="modal">
-		<div class="modal-box prose outline outline-2 outline-offset-1 outline-warning">
-			<h3 class="text-lg font-bold">Reset teams</h3>
-			<p class="pt-4">
-				You are about to reset 
-				<span
-					class="font-bold"
-					_="on change from <input[type='checkbox']/> or load
-							set my textContent to <input[name='team-checkbox']:checked/>'s length"
-				></span> team(s). Doing this will wipe all related data including:
-			</p>
-			<ul>
-				<li>the team name</li>
-				<li>all related check-ins, points, activity progress, and media</li>
-			</ul>
-			<p>Credits are not restored if a team is reset.</p>
-			<p>Only the team code will be kept. This action cannot be undone.</p>
-			<form
-				hx-post="/admin/teams/reset"
-				hx-include=".team-item"
-				hx-target="#teams-table"
-				hx-swap="innerHTML"
-			>
-				<input type="hidden" name="id" value=""/>
-				<div class="modal-action">
-					<button type="button" class="btn" onclick="confirm_reset_modal.close()">Nevermind</button>
-					<button type="submit" class="btn btn-warning" onclick="confirm_reset_modal.close()">Reset</button>
-				</div>
-			</form>
-		</div>
-	</dialog>
-	<dialog id="confirm_delete_modal" class="modal">
-		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
-			<h3 class="text-lg font-bold">Delete teams</h3>
-			<p class="pt-4">
-				You are about to delete
-				<span
-					class="font-bold"
-					_="on change from <input[type='checkbox']/> or load
-							set my textContent to <input[name='team-checkbox']:checked/>'s length"
-				></span> team(s). Doing this will wipe all data including:
-			</p>
-			<ul>
-				<li>the team</li>
-				<li>check-ins</li>
-				<li>activity progress</li>
-				<li>any uploaded media</li>
-			</ul>
-			<p>Credits are not restored if a team is deleted.</p>
-			<p>This action cannot be undone.</p>
-			<form
-				hx-delete="/admin/teams/delete"
-				hx-include=".team-item"
-				hx-target="#teams-table"
-				hx-swap="innerHTML"
-			>
-				<input type="hidden" name="id" value=""/>
-				<div class="modal-action">
-					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
-					<button id="delete-confirm" type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
-				</div>
-			</form>
-		</div>
-	</dialog>
 }
 
 templ TeamsList(teams []models.Team) {
@@ -606,6 +520,28 @@ templ TeamOverview(data TeamOverviewData) {
 					}
 				</p>
 			</div>
+			<div class="flex gap-3">
+				<button
+					class="btn btn-warning"
+					_="on click
+							confirm_reset_modal.showModal()
+						end
+					"
+				>
+					@icon("history", templ.Attributes{"class": "w-5 h-5"})
+					Reset
+				</button>
+				<button
+					class="btn btn-error"
+					_="on click
+							confirm_delete_modal.showModal()
+						end
+					"
+				>
+					@icon("trash-2", templ.Attributes{"class": "w-5 h-5"})
+					Delete
+				</button>
+			</div>
 		</div>
 		<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
 			<!-- Main Content Panel -->
@@ -631,6 +567,58 @@ templ TeamOverview(data TeamOverviewData) {
 			</div>
 		</div>
 	</main>
+	@TeamPageModals(data.Team.Code)
+}
+
+templ TeamPageModals(teamCode string) {
+	<dialog id="confirm_reset_modal" class="modal">
+		<div class="modal-box prose outline outline-2 outline-offset-1 outline-warning">
+			<h3 class="text-lg font-bold">Reset teams</h3>
+			<p class="pt-4">
+				You are about to reset this team. Doing this will wipe all related data including:
+			</p>
+			<ul>
+				<li>the team name</li>
+				<li>all related check-ins, points, activity progress, and media</li>
+			</ul>
+			<p>Credits are not restored if a team is reset.</p>
+			<p>Only the team code will be kept. This action cannot be undone.</p>
+			<form
+				hx-post={ fmt.Sprintf("/admin/teams/%s/reset", teamCode) }
+			>
+				<input type="hidden" name="id" value=""/>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_reset_modal.close()">Nevermind</button>
+					<button type="submit" class="btn btn-warning" onclick="confirm_reset_modal.close()">Reset</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
+	<dialog id="confirm_delete_modal" class="modal">
+		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete teams</h3>
+			<p class="pt-4">
+				You are about to delete this team. Doing this will wipe all data including:
+			</p>
+			<ul>
+				<li>the team</li>
+				<li>check-ins</li>
+				<li>activity progress</li>
+				<li>any uploaded media</li>
+			</ul>
+			<p>Credits are not restored if a team is deleted.</p>
+			<p>This action cannot be undone.</p>
+			<form
+				hx-delete={ fmt.Sprintf("/admin/teams/%s", teamCode) }
+			>
+				<input type="hidden" name="id" value=""/>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
+					<button id="delete-confirm" type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
 }
 
 templ TeamStatsCard(settings models.InstanceSettings, team models.Team, completedLocations int, totalLocations int) {
