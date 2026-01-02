@@ -7,7 +7,7 @@ tag: updated
 
 # Changelog
 
-## 6.10.0
+## 6.9.1 (2025-01-18)
 
 ### Changed
 
@@ -16,6 +16,7 @@ tag: updated
 ### Fixed
 
 - The Delete Service also now removes uploaded media when deleting or resetting a team or instance.
+- Added missing message to leaderboard when no teams have started yet.
 
 ## 6.9.0 (2025-12-27)
 

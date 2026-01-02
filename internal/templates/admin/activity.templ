@@ -2,12 +2,12 @@ package templates
 
 import (
 	"fmt"
-	"time"
 	"github.com/SerhiiCho/timeago/v3"
 	"github.com/nathanhollows/Rapua/v6/internal/flash"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/uptrace/bun/schema"
+	"time"
 )
 
 // getTeamStatus calculates the status of a team based on its current state
@@ -59,7 +59,7 @@ templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string)
 templ ActivityTracker(instance models.Instance) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
-			Activity tracker
+			Activity
 		</h1>
 		@ActivityStatusBadge(instance)
 		<div class="flex gap-3">
@@ -367,6 +367,13 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 						</td>
 					</tr>
 				}
+				if len(leaderboardData) == 0 {
+					<tr>
+						<td colspan="7" class="text-center py-5">
+							No teams or players have joined the game yet.
+						</td>
+					</tr>
+				}
 			</tbody>
 		</table>
 	</div>
@@ -461,7 +468,7 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
 			if int(t.Time.Sub(time.Now()).Seconds()) / 86400 > 0 {
 				<div id="days-container" class="leading-none flex align-middle">
-					<span class="countdown font-bold leading-none" id="days" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds()) / 86400) }>
+					<span class="countdown font-bold leading-none" id="days" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())/86400) }>
 						<span></span>
 					</span>
 					d
@@ -476,7 +483,7 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 			}
 			if (int(t.Time.Sub(time.Now()).Seconds()) % 86400) / 3600 > 0 {
 				<div id="hours-container" class="leading-none flex align-middle">
-					<span class="countdown font-bold leading-none" id="hours" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds()) % 86400) / 3600) }>
+					<span class="countdown font-bold leading-none" id="hours" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%86400)/3600) }>
 						<span></span>
 					</span>
 					h
@@ -490,13 +497,13 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 				</div>
 			}
 			<div class="leading-none flex align-middle">
-				<span class="countdown font-bold" id="minutes" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds()) % 3600) / 60) }>
+				<span class="countdown font-bold" id="minutes" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%3600)/60) }>
 					<span></span>
 				</span>
 				m
 			</div>
 			<div class="leading-none flex align-middle">
-				<span class="countdown font-bold" id="seconds" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds()) % 60) }>
+				<span class="countdown font-bold" id="seconds" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())%60) }>
 					<span></span>
 				</span>
 				s
