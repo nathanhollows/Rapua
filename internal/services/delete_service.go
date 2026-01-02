@@ -189,6 +189,14 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 		return ErrUserNotAuthenticated
 	}
 
+	// Collect all uploads for this instance before starting transaction
+	uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
+		"instance_id": instanceID,
+	})
+	if err != nil {
+		return fmt.Errorf("fetching uploads for instance %s: %w", instanceID, err)
+	}
+
 	// Start transaction
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -215,6 +223,12 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
+	}
+
+	// Only cleanup files after transaction commits successfully
+	// Use background context so cleanup isn't cancelled when request ends
+	if len(uploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), uploads)
 	}
 
 	return nil
@@ -282,6 +296,18 @@ func (s *DeleteService) deleteLocation(ctx context.Context, tx *bun.Tx, location
 
 // ResetTeams clears team progress while preserving the teams themselves.
 func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+	// Collect all uploads for these teams before starting transaction
+	var allUploads []*models.Upload
+	for _, teamCode := range teamCodes {
+		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
+			"team_code": teamCode,
+		})
+		if err != nil {
+			return fmt.Errorf("fetching uploads for team %s: %w", teamCode, err)
+		}
+		allUploads = append(allUploads, uploads...)
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		rollbackErr := tx.Rollback()
@@ -328,6 +354,21 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 		return fmt.Errorf("deleting block states: %w", err)
 	}
 
+	// Delete upload records for these teams
+	for _, teamCode := range teamCodes {
+		_, err = tx.NewDelete().
+			Model((*models.Upload)(nil)).
+			Where("team_code = ?", teamCode).
+			Exec(ctx)
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
+			}
+			return fmt.Errorf("deleting upload records: %w", err)
+		}
+	}
+
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
 		rollbackErr := tx.Rollback()
@@ -337,11 +378,34 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 		return fmt.Errorf("updating location statistics: %w", err)
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+
+	// Only cleanup files after transaction commits successfully
+	// Use background context so cleanup isn't cancelled when request ends
+	if len(allUploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), allUploads)
+	}
+
+	return nil
 }
 
 // DeleteTeams deletes teams and their associated progress data.
 func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+	// Collect all uploads for these teams before starting transaction
+	var allUploads []*models.Upload
+	for _, teamCode := range teamCodes {
+		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
+			"team_code": teamCode,
+		})
+		if err != nil {
+			return fmt.Errorf("fetching uploads for team %s: %w", teamCode, err)
+		}
+		allUploads = append(allUploads, uploads...)
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("starting transaction: %w", err)
@@ -366,7 +430,33 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 		return fmt.Errorf("deleting teams: %w", err)
 	}
 
-	return tx.Commit()
+	// Delete upload records for these teams
+	for _, teamCode := range teamCodes {
+		_, err = tx.NewDelete().
+			Model((*models.Upload)(nil)).
+			Where("team_code = ?", teamCode).
+			Exec(ctx)
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
+			}
+			return fmt.Errorf("deleting upload records: %w", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+
+	// Only cleanup files after transaction commits successfully
+	// Use background context so cleanup isn't cancelled when request ends
+	if len(allUploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), allUploads)
+	}
+
+	return nil
 }
 
 // deleteTeamsByInstanceID removes all teams and related data for a specific instance.
@@ -527,6 +617,15 @@ func (s *DeleteService) deleteInstance(ctx context.Context, tx *bun.Tx, instance
 		if err != nil {
 			return fmt.Errorf("deleting location %s: %w", location.ID, err)
 		}
+	}
+
+	// Delete all upload records for this instance
+	_, err = tx.NewDelete().
+		Model((*models.Upload)(nil)).
+		Where("instance_id = ?", instanceID).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("deleting uploads: %w", err)
 	}
 
 	// Delete instance settings

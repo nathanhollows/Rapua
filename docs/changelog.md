@@ -7,6 +7,16 @@ tag: updated
 
 # Changelog
 
+## 6.10.0
+
+### Changed
+
+- Moved `reset` and `delete` team actions to each team's overview page for better context.
+
+### Fixed
+
+- The Delete Service also now removes uploaded media when deleting or resetting a team or instance.
+
 ## 6.9.0 (2025-12-27)
 
 ### Changed
