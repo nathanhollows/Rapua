@@ -563,3 +563,91 @@ func TestDuplicationService_DuplicateLocation(t *testing.T) {
 		assert.Equal(t, sourceLocation.Points, duplicated.Points)
 	})
 }
+
+func TestDuplicationService_QuickStartDismissed(t *testing.T) {
+	svc, _, instanceRepo, settingsRepo, _, _, cleanup := setupDuplicationService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	t.Run("DuplicateInstance dismisses quickstart", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+
+		sourceInstance := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: false,
+		}
+		err := instanceRepo.Create(ctx, sourceInstance)
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
+		require.NoError(t, err)
+		assert.True(t, duplicated.IsQuickStartDismissed, "duplicated instance should have quickstart dismissed")
+	})
+
+	t.Run("CreateTemplateFromInstance dismisses quickstart", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+
+		sourceInstance := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: false,
+		}
+		err := instanceRepo.Create(ctx, sourceInstance)
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		template, err := svc.CreateTemplateFromInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
+		require.NoError(t, err)
+		assert.True(t, template.IsQuickStartDismissed, "template should have quickstart dismissed")
+	})
+
+	t.Run("CreateInstanceFromTemplate dismisses quickstart", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+
+		template := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: true,
+		}
+		err := instanceRepo.Create(ctx, template)
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{InstanceID: template.ID}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, gofakeit.Word())
+		require.NoError(t, err)
+		assert.True(t, instance.IsQuickStartDismissed, "instance from template should have quickstart dismissed")
+	})
+
+	t.Run("CreateInstanceFromSharedTemplate dismisses quickstart", func(t *testing.T) {
+		owner := &models.User{ID: gofakeit.UUID()}
+		recipient := &models.User{ID: gofakeit.UUID()}
+
+		template := &models.Instance{
+			Name:       gofakeit.Word(),
+			UserID:     owner.ID,
+			IsTemplate: true,
+		}
+		err := instanceRepo.Create(ctx, template)
+		require.NoError(t, err)
+
+		settings := &models.InstanceSettings{InstanceID: template.ID}
+		err = settingsRepo.Create(ctx, settings)
+		require.NoError(t, err)
+
+		instance, err := svc.CreateInstanceFromSharedTemplate(ctx, recipient, template.ID, gofakeit.Word())
+		require.NoError(t, err)
+		assert.True(t, instance.IsQuickStartDismissed, "instance from shared template should have quickstart dismissed")
+	})
+}

@@ -282,10 +282,11 @@ func (s *DuplicationService) duplicateInstance(
 ) (*models.Instance, error) {
 	// Create new instance with copied game structure
 	newInstance := &models.Instance{
-		Name:          name,
-		UserID:        userID,
-		IsTemplate:    asTemplate,
-		GameStructure: sourceInstance.GameStructure,
+		Name:                  name,
+		UserID:                userID,
+		IsTemplate:            asTemplate,
+		IsQuickStartDismissed: true,
+		GameStructure:         sourceInstance.GameStructure,
 	}
 
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
