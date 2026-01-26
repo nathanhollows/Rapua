@@ -12,6 +12,7 @@ tag: updated
 ### Fixed
 
 - Removed delay in team name block.
+- Message to players when "Location List" navigation mode is selected.
 
 ## 6.10.0 (2025-01-26)
 
