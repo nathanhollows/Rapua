@@ -127,7 +127,7 @@ func PlayerViewCard(settings models.InstanceSettings) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Player View</h2><p class=\"text-sm text-base-content/60 mt-1\">How players know what to do and where to go.</p></div><!-- Check Out Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"mustCheckOut\" name=\"mustCheckOut\" class=\"toggle checked:toggle-primary\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Player View</h2><p class=\"text-sm text-base-content/60 mt-1\">How players know what to do and where to go.</p></div><!-- Check Out Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"mustCheckOut\" name=\"mustCheckOut\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -137,7 +137,17 @@ func PlayerViewCard(settings models.InstanceSettings) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Check out of every location?</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Useful for tracking time spent at each location</p></div></label></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Check out of every location?</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Useful for tracking time spent at each location</p></div></label></div></div><!-- Show Team Count Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"showTeamCount\" name=\"showTeamCount\" class=\"toggle\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if settings.ShowTeamCount {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " onchange=\"updatePreview()\"><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Show total visiting teams</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Display the number of teams that have visited each location where the location name is shown</p></div></label></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -167,40 +177,40 @@ func CompetitionCard(settings models.InstanceSettings) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Competition</h2><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Configure points and competitive features.</p></div><!-- Enable Points --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle toggle-lg\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Competition</h2><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Configure points and competitive features.</p></div><!-- Enable Points --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle toggle-lg\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " onchange=\"updatePreview()\" _=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " onchange=\"updatePreview()\" _=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(enablePointsScript())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 114, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/experience.templ`, Line: 137, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"flex-1\"><span class=\"font-semibold text-base-content flex items-center gap-2\">Enable Points</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Teams earn points for checking into locations and completing activities</p></div></label></div></div><!-- Bonus Points --><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enableBonusPoints\" name=\"enableBonusPoints\" class=\"toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"><div class=\"flex-1\"><span class=\"font-semibold text-base-content flex items-center gap-2\">Enable Points</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Teams earn points for checking into locations and completing activities</p></div></label></div></div><!-- Bonus Points --><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enableBonusPoints\" name=\"enableBonusPoints\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnableBonusPoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " onchange=\"updatePreview()\"><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Bonus points for early check-ins</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Encourage teams to disperse and race for the first, second, and third check-in</p></div></label><div id=\"bonusPointsDisabledMessage\" class=\"alert alert-warning alert-soft alert-outline mt-2 text-sm invisible\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-5 h-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\"></path></svg> <span>Enable points before using bonus points</span></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " onchange=\"updatePreview()\"><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Bonus points for early check-ins</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Encourage teams to disperse and race for the first, second, and third check-in</p></div></label><div id=\"bonusPointsDisabledMessage\" class=\"alert alert-warning alert-soft alert-outline mt-2 text-sm invisible\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-5 h-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\"></path></svg> <span>Enable points before using bonus points</span></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -230,17 +240,17 @@ func MobilePreview(locationCount int) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"h-min-content\"><div class=\"mockup-phone bg-black h-min sticky top-8 shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-200\"><!-- Demo --><div")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"h-min-content\"><div class=\"mockup-phone bg-black h-min sticky top-8 shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-200\"><!-- Demo --><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if locationCount > 2 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " hx-post=\"/admin/experience/preview\" hx-trigger=\"load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)\" hx-swap=\"innerHTML\" hx-include=\"#movement-settings\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " hx-post=\"/admin/experience/preview\" hx-trigger=\"load, change delay:500ms from:(#movement-settings input), keyup delay:500ms from:(#movement-settings input), change delay:500ms from:(#movement-settings input)\" hx-swap=\"innerHTML\" hx-include=\"#movement-settings\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -248,7 +258,7 @@ func MobilePreview(locationCount int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div><!-- /Demo --></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div><!-- /Demo --></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -278,7 +288,7 @@ func previewContent() templ.Component {
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"p-6\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"mx-auto text-base-content/40\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path> <circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-4 text-center text-xl font-bold\">Next location</h2><p class=\"text-center text-sm text-base-content/70 mt-2\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"mt-4\"></div><div id=\"navigationView\" class=\"mt-4\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"p-6\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"mx-auto text-base-content/40\"><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"></path> <circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg><h2 class=\"mt-4 text-center text-xl font-bold\">Next location</h2><p class=\"text-center text-sm text-base-content/70 mt-2\">You may choose any of the following locations. Use the map below to help find where you want to go.</p><div id=\"locationList\" class=\"mt-4\"></div><div id=\"navigationView\" class=\"mt-4\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

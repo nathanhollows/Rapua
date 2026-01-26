@@ -25,9 +25,9 @@ templ checklistPlayer(settings models.InstanceSettings, block blocks.ChecklistBl
 				<input type="hidden" name="block" value={ block.ID }/>
 				<div
 					if data.IsComplete() {
-						class="checklist w-full flex flex-col gap-1 text-success"
+						class="checklist w-full flex flex-col gap-3 text-success"
 					} else {
-						class="checklist w-full flex flex-col gap-1"
+						class="checklist w-full flex flex-col gap-3"
 					}
 				>
 					for _, item := range block.List {

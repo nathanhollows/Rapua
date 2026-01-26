@@ -69,7 +69,7 @@ templ PlayerViewCard(settings models.InstanceSettings) {
 							type="checkbox"
 							id="mustCheckOut"
 							name="mustCheckOut"
-							class="toggle checked:toggle-primary"
+							class="toggle"
 							if settings.MustCheckOut {
 								checked
 							}
@@ -79,6 +79,29 @@ templ PlayerViewCard(settings models.InstanceSettings) {
 								Check out of every location?
 							</span>
 							<p class="text-sm text-base-content/60 mt-1 text-wrap">Useful for tracking time spent at each location</p>
+						</div>
+					</label>
+				</div>
+			</div>
+			<!-- Show Team Count Toggle -->
+			<div>
+				<div class="form-control">
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							id="showTeamCount"
+							name="showTeamCount"
+							class="toggle"
+							if settings.ShowTeamCount {
+								checked
+							}
+							onchange="updatePreview()"
+						/>
+						<div class="flex-1">
+							<span class="font-medium text-base-content flex items-center gap-2 text-wrap">
+								Show total visiting teams
+							</span>
+							<p class="text-sm text-base-content/60 mt-1 text-wrap">Display the number of teams that have visited each location where the location name is shown</p>
 						</div>
 					</label>
 				</div>

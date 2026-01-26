@@ -7,6 +7,22 @@ tag: updated
 
 # Changelog
 
+## 6.10.1 (2025-01-26)
+
+### Changed
+
+- The map no longer display in Activity view if there are no mapped locations.
+
+### Fixed
+
+- Message to players when "Location List" navigation mode is selected.
+- Removed delay in team name block.
+- Increased spacing between checklist items for better readability.
+- Redirect players to complete page after finishing the game.
+- Corrected "check-out instead" messages.
+- Added the "Show total visiting teams" setting back into the experience settings.
+- The point total in the team overview now honours the Enable Points setting.
+
 ## 6.10.0 (2025-01-26)
 
 ### Added

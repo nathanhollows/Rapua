@@ -25,7 +25,8 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 	// Get complete navigation view from service
 	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
-		if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
+		if errors.Is(err, services.ErrAllLocationsVisited) {
+			// ErrAllLocationsVisited only returned when not blocked (MustCheckOut handled earlier in service)
 			h.redirect(w, r, "/complete")
 			return
 		}
@@ -82,7 +83,7 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 			// Fallback to normal navigation view if no groups/locations configured
 			view, err = h.navigationService.GetPlayerNavigationView(r.Context(), team)
 			if err != nil {
-				if errors.Is(err, services.ErrAllLocationsVisited) && !view.MustCheckOut {
+				if errors.Is(err, services.ErrAllLocationsVisited) {
 					h.redirect(w, r, "/complete")
 					return
 				}

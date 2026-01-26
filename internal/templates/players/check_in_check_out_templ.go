@@ -65,14 +65,14 @@ func CheckIn(marker models.Marker, teamCode string, blocking models.Location) te
 			return templ_7745c5c3_Err
 		}
 		if blocking.ID != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div role=\"alert\" class=\"alert alert- mb-5 border-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-current shrink-0 w-6 h-6\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>You have already checked in. Would you like to  <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div role=\"alert\" class=\"alert alert- mb-5 border-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-current shrink-0 w-6 h-6\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>You have already checked in. Would you like to <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/o/", marker.Code)))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/checkins/", blocking.MarkerID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 33, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 33, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -208,9 +208,9 @@ func CheckOut(marker models.Marker, teamCode string, blocking models.Location) t
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(marker.Name)
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(blocking.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 119, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 119, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
