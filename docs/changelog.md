@@ -21,6 +21,7 @@ tag: updated
 - Redirect players to complete page after finishing the game.
 - Corrected "check-out instead" messages.
 - Added the "Show total visiting teams" setting back into the experience settings.
+- The point total in the team overview now honours the Enable Points setting.
 
 ## 6.10.0 (2025-01-26)
 
