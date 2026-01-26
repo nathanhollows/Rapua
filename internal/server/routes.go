@@ -271,6 +271,9 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 		r.Post("/resend", publicHandler.ResendEmailVerification)
 	})
 
+	// Magic login link (CLI-generated)
+	router.Get("/login/magic/{token}", publicHandler.MagicLogin)
+
 	router.Route("/docs", func(r chi.Router) {
 		r.Get("/*", publicHandler.Docs)
 	})

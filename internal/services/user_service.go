@@ -119,6 +119,11 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	return s.userRepo.GetByEmail(ctx, email)
 }
 
+// GetUserByID retrieves a user by their ID.
+func (s *UserService) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
+	return s.userRepo.GetByID(ctx, userID)
+}
+
 // ChangePassword changes a user's password.
 func (s *UserService) ChangePassword(
 	ctx context.Context,
