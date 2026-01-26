@@ -45,16 +45,22 @@ type EmailService interface {
 
 type UserService interface {
 	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
+	GetUserByID(ctx context.Context, userID string) (*models.User, error)
+}
+
+type MagicTokenService interface {
+	ValidateToken(token string) (userID string, err error)
 }
 
 // Handler handles public-facing HTTP requests.
 type Handler struct {
-	logger          *slog.Logger
-	identityService IdentityService
-	deleteService   DeleteService
-	emailService    EmailService
-	templateService TemplateService
-	userService     UserService
+	logger            *slog.Logger
+	identityService   IdentityService
+	deleteService     DeleteService
+	emailService      EmailService
+	templateService   TemplateService
+	userService       UserService
+	magicTokenService MagicTokenService
 }
 
 // NewHandler creates a new public handler.
@@ -65,14 +71,16 @@ func NewHandler(
 	emailService EmailService,
 	templateService TemplateService,
 	userService UserService,
+	magicTokenService MagicTokenService,
 ) *Handler {
 	return &Handler{
-		logger:          logger,
-		identityService: identityService,
-		deleteService:   deleteService,
-		emailService:    emailService,
-		templateService: templateService,
-		userService:     userService,
+		logger:            logger,
+		identityService:   identityService,
+		deleteService:     deleteService,
+		emailService:      emailService,
+		templateService:   templateService,
+		userService:       userService,
+		magicTokenService: magicTokenService,
 	}
 }
 

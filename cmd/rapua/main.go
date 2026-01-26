@@ -65,6 +65,7 @@ func main() {
 		Commands: []*cli.Command{
 			newDBCommand(migrator, logger),
 			newCreditsCommand(dbc, logger),
+			newGenerateLoginCommand(dbc, logger),
 		},
 		Action: func(_ *cli.Context) error {
 			// Default action: run the app
@@ -316,6 +317,68 @@ func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 	}
 }
 
+func newGenerateLoginCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
+	return &cli.Command{
+		Name:      "generate-login",
+		Usage:     "generate a temporary admin login link",
+		ArgsUsage: "<email>",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:  "duration",
+				Usage: "link validity in seconds",
+				Value: 60,
+			},
+		},
+		Action: func(c *cli.Context) error {
+			if c.NArg() < 1 {
+				return errors.New("usage: rapua generate-login <email>")
+			}
+
+			email := c.Args().Get(0)
+			duration := time.Duration(c.Int("duration")) * time.Second
+
+			// Get SESSION_KEY for token signing
+			sessionKey := os.Getenv("SESSION_KEY")
+			if sessionKey == "" {
+				return errors.New("SESSION_KEY environment variable is not set")
+			}
+
+			// Get SITE_URL for the login link
+			siteURL := os.Getenv("SITE_URL")
+			if siteURL == "" {
+				siteURL = "http://localhost:8080"
+				logger.Warn("SITE_URL not set, using default", "url", siteURL)
+			}
+
+			// Initialize services
+			ctx := c.Context
+			userRepo := repositories.NewUserRepository(dbc)
+			magicTokenService := services.NewMagicTokenService([]byte(sessionKey))
+
+			// Find user by email
+			user, err := userRepo.GetByEmail(ctx, email)
+			if err != nil {
+				return fmt.Errorf("user not found with email %q: %w", email, err)
+			}
+
+			// Generate token
+			token, err := magicTokenService.GenerateToken(user.ID, duration)
+			if err != nil {
+				return fmt.Errorf("failed to generate token: %w", err)
+			}
+
+			// Build login URL and print to stdout (not logged)
+			loginURL := fmt.Sprintf("%s/login/magic/%s", siteURL, token)
+
+			// Use fmt to print URL - intentionally NOT logged for security
+			//nolint:forbidigo // Intentional stdout for sensitive credential
+			fmt.Fprintf(os.Stdout, "\nLogin link (valid for %d seconds):\n%s\n\n", c.Int("duration"), loginURL)
+
+			return nil
+		},
+	}
+}
+
 func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup function
 	initialiseFolders(logger)
 
@@ -462,6 +525,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	)
 	jobs.Start()
 
+	// Initialize magic token service for CLI-generated login links
+	sessionKey := os.Getenv("SESSION_KEY")
+	if sessionKey == "" {
+		logger.Warn("SESSION_KEY not set - magic login links will not work")
+		sessionKey = "default-key-for-development-only"
+	}
+	magicTokenService := services.NewMagicTokenService([]byte(sessionKey))
+
 	// Construct handlers (dependency injection root)
 	publicHandler := public.NewHandler(
 		logger,
@@ -470,6 +541,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		emailService,
 		&templateService,
 		userService,
+		magicTokenService,
 	)
 
 	playerHandler := players.NewPlayerHandler(

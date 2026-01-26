@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.10.0 (2025-01-26)
+
+### Added
+
+- CLI account recovery tool for admin.
+
 ## 6.9.2 (2025-01-25)
 
 ### Fixed

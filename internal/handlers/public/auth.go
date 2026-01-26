@@ -415,3 +415,48 @@ func (h *Handler) ResendEmailVerification(w http.ResponseWriter, r *http.Request
 		)
 	}
 }
+
+// MagicLogin handles magic login link authentication.
+// It validates the token, creates a session, and redirects to /admin.
+func (h *Handler) MagicLogin(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	if token == "" {
+		h.logger.Warn("magic login: empty token")
+		http.Error(w, "Invalid or expired token", http.StatusBadRequest)
+		return
+	}
+
+	// Validate the token
+	userID, err := h.magicTokenService.ValidateToken(token)
+	if err != nil {
+		h.logger.Info("magic login: invalid token", "err", err)
+		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+		return
+	}
+
+	// Lookup user by ID
+	user, err := h.userService.GetUserByID(r.Context(), userID)
+	if err != nil {
+		h.logger.Error("magic login: fetching user", "err", err, "userID", userID)
+		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+		return
+	}
+
+	// Create session
+	session, err := sessions.NewFromUser(r, *user)
+	if err != nil {
+		h.logger.Error("magic login: creating session", "err", err)
+		http.Error(w, "An error occurred while logging in", http.StatusInternalServerError)
+		return
+	}
+
+	err = session.Save(r, w)
+	if err != nil {
+		h.logger.Error("magic login: saving session", "err", err)
+		http.Error(w, "An error occurred while logging in", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Info("magic login: successful", "userID", userID, "email", user.Email)
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
