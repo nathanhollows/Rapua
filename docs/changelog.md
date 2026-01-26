@@ -11,8 +11,9 @@ tag: updated
 
 ### Fixed
 
-- Removed delay in team name block.
 - Message to players when "Location List" navigation mode is selected.
+- Removed delay in team name block.
+- Increased spacing between checklist items for better readability.
 
 ## 6.10.0 (2025-01-26)
 
