@@ -15,6 +15,7 @@ tag: updated
 - Removed delay in team name block.
 - Increased spacing between checklist items for better readability.
 - Redirect players to complete page after finishing the game.
+- Corrected "check-out instead" messages.
 
 ## 6.10.0 (2025-01-26)
 
