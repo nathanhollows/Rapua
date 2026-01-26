@@ -300,6 +300,11 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 	)
 
 	if len(locationIDs) == 0 {
+		// Check if game is complete (no next group to advance to)
+		_, shouldAdvance, _ := navigation.GetNextGroup(&team.Instance.GameStructure, currentGroupID, completedIDs)
+		if !shouldAdvance {
+			return []models.Location{}, ErrAllLocationsVisited
+		}
 		return []models.Location{}, nil
 	}
 
