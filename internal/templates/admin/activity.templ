@@ -24,6 +24,16 @@ func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
 	return services.StatusStarted // Default to "Not Started" behavior
 }
 
+// hasMappedLocations checks if any locations have valid coordinates
+func hasMappedLocations(locations []models.Location) bool {
+	for _, location := range locations {
+		if location.Marker.IsMapped() {
+			return true
+		}
+	}
+	return false
+}
+
 // TeamStatusBadge renders a status badge for a team with optional tooltip and size
 templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) {
 	switch status {
@@ -88,33 +98,12 @@ templ ActivityTracker(instance models.Instance) {
 		</div>
 	</div>
 	<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
-		<div class="w-full md:w-5/12">
-			<div id="map-container" class="group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
-				<div id="map-activity" class="map w-full h-full rounded-lg"></div>
-			</div>
-			<div class="join join-vertical w-full">
-				if len(instance.Locations) == 0 {
-					<div role="alert" class="alert">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							class="stroke-info h-6 w-6 shrink-0"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							></path>
-						</svg>
-						<span>No locations available</span>
-						<div>
-							<a href="/admin/locations/new" class="btn btn-sm btn-secondary">Add a location</a>
-						</div>
-					</div>
-				}
-				if len(instance.Locations) > 0 {
+		if hasMappedLocations(instance.Locations) {
+			<div class="w-full md:w-5/12">
+				<div id="map-container" class="group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
+					<div id="map-activity" class="map w-full h-full rounded-lg"></div>
+				</div>
+				<div class="join join-vertical w-full">
 					for _,location := range instance.Locations {
 						<input
 							type="hidden"
@@ -126,10 +115,10 @@ templ ActivityTracker(instance models.Instance) {
 							value={ location.Marker.Name }
 						/>
 					}
-				}
+				</div>
 			</div>
-		</div>
-		<div class="overflow-y-auto w-full">
+		}
+		<div class={ "overflow-y-auto w-full", templ.KV("mx-auto max-w-6xl", !hasMappedLocations(instance.Locations)) }>
 			<div class="overflow-x-auto">
 				<table
 					id="team-activity"
@@ -145,7 +134,8 @@ templ ActivityTracker(instance models.Instance) {
 	@scheduleModal(instance)
 	@announcementModal()
 	@teamModal()
-	<script>
+	if hasMappedLocations(instance.Locations) {
+		<script>
 (function () {
   let map; // Store the map instance globally within the IIFE
   let markerArray = []; // Store the markers array globally within the IIFE
@@ -260,6 +250,7 @@ templ ActivityTracker(instance models.Instance) {
 
 })();
 </script>
+	}
 }
 
 templ teamModal() {

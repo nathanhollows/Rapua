@@ -32,6 +32,16 @@ func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
 	return services.StatusStarted // Default to "Not Started" behavior
 }
 
+// hasMappedLocations checks if any locations have valid coordinates
+func hasMappedLocations(locations []models.Location) bool {
+	for _, location := range locations {
+		if location.Marker.IsMapped() {
+			return true
+		}
+	}
+	return false
+}
+
 // TeamStatusBadge renders a status badge for a team with optional tooltip and size
 func TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -320,17 +330,15 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</dialog></div></div><div class=\"relative flex flex-col md:flex-row px-5 md:space-x-5\"><div class=\"w-full md:w-5/12\"><div id=\"map-container\" class=\"group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden\"><div id=\"map-activity\" class=\"map w-full h-full rounded-lg\"></div></div><div class=\"join join-vertical w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</dialog></div></div><div class=\"relative flex flex-col md:flex-row px-5 md:space-x-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if len(instance.Locations) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div role=\"alert\" class=\"alert\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"stroke-info h-6 w-6 shrink-0\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span>No locations available</span><div><a href=\"/admin/locations/new\" class=\"btn btn-sm btn-secondary\">Add a location</a></div></div>")
+		if hasMappedLocations(instance.Locations) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"w-full md:w-5/12\"><div id=\"map-container\" class=\"group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden\"><div id=\"map-activity\" class=\"map w-full h-full rounded-lg\"></div></div><div class=\"join join-vertical w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		}
-		if len(instance.Locations) > 0 {
 			for _, location := range instance.Locations {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<input type=\"hidden\" class=\"location-name\"")
 				if templ_7745c5c3_Err != nil {
@@ -344,7 +352,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lat))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 123, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 112, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -357,7 +365,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lng))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 124, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 113, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -375,7 +383,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(location.Marker.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 126, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 115, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -386,8 +394,30 @@ func ActivityTracker(instance models.Instance) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></div><div class=\"overflow-y-auto w-full\"><div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"/admin/activity/teams\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div>")
+		var templ_7745c5c3_Var24 = []any{"overflow-y-auto w-full", templ.KV("mx-auto max-w-6xl", !hasMappedLocations(instance.Locations))}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var24...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var24).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"/admin/activity/teams\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -403,9 +433,11 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<script>\n(function () {\n  let map; // Store the map instance globally within the IIFE\n  let markerArray = []; // Store the markers array globally within the IIFE\n\n  function initializeMap() {\n    const locations = document.querySelectorAll('.location-name');\n    // Calculate the center and zoom level based on the locations\n    let coords = [170.5111643, -45.8650509];\n    let zoom = 17;\n    for (let i = 0; i < locations.length; i++) {\n      const lat = parseFloat(locations[i].dataset.lat);\n      const lng = parseFloat(locations[i].dataset.lng);\n      if (lat !== 0 && lng !== 0) {\n        coords = [lng, lat];\n        break;\n      }\n    }\n\n    // Clear any existing markers\n    markerArray.forEach(marker => marker.remove());\n    markerArray = [];\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine the style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map-activity',\n      style: style,\n      center: coords,\n      zoom: zoom,\n      cooperativeGestures: true,\n    });\n\n    map.on('load', function () {\n      map.resize();\n    });\n\n    // Find and loop through .location-name elements to create markers with original numbers\n    locations.forEach(function (location, index) {\n\t  if (!location.dataset.lat || !location.dataset.lng) {\n\t\treturn;\n\t\t}\n      // Create a HTML element for each marker\n      const el = document.createElement('div');\n      el.className = 'marker';\n      el.innerHTML = '<span><b>' + (index + 1) + '</b></span>';\n\n      // Create the marker\n      const marker = new mapboxgl.Marker(el)\n        .setLngLat([location.dataset.lng, location.dataset.lat])\n        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups\n          .setHTML('<h3>' + location.value + '</h3>'));\n\n\t\t\t\tmarker.getElement().addEventListener('mouseenter', function () {\n\t\t\t\t  popup = marker.getPopup();\n\t\t\t\t\tif (!popup.isOpen()) {\n\t\t\t\t\t\tmarker.togglePopup();\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tmarker.getElement().addEventListener('mouseleave', function () {\n\t\t\t\t\tmarker.togglePopup();\t\n\t\t\t\t});\n\n      markerArray.push(marker);\n\n\t\t\tlet locationContainer = location.parentElement.parentElement;\n\n    });\n\n    // Sort markers by latitude\n    markerArray.sort(function (a, b) {\n      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);\n    });\n\n    // Add markers to the map in the sorted order without changing their displayed numbers\n    markerArray.forEach(marker => {\n      marker.addTo(map);\n    });\n\n    // Fit the map to the bounds of the markers\n    if (markerArray.length > 1) {\n      const bounds = new mapboxgl.LngLatBounds();\n      markerArray.forEach(marker => {\n        bounds.extend(marker.getLngLat());\n      });\n\n      map.fitBounds(bounds, { padding: 50 });\n    }\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, markerArray);\n  }\n\n  // Initialize the map on page load\n  initializeMap();\n\n})();\n</script>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if hasMappedLocations(instance.Locations) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<script>\n(function () {\n  let map; // Store the map instance globally within the IIFE\n  let markerArray = []; // Store the markers array globally within the IIFE\n\n  function initializeMap() {\n    const locations = document.querySelectorAll('.location-name');\n    // Calculate the center and zoom level based on the locations\n    let coords = [170.5111643, -45.8650509];\n    let zoom = 17;\n    for (let i = 0; i < locations.length; i++) {\n      const lat = parseFloat(locations[i].dataset.lat);\n      const lng = parseFloat(locations[i].dataset.lng);\n      if (lat !== 0 && lng !== 0) {\n        coords = [lng, lat];\n        break;\n      }\n    }\n\n    // Clear any existing markers\n    markerArray.forEach(marker => marker.remove());\n    markerArray = [];\n\n    // Destroy existing map instance if it exists\n    if (map) {\n      map.remove();\n      map = null; // Explicitly set to null to clear reference\n    }\n\n    // Set the Mapbox access token\n    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;\n\n    // Determine the style based on color scheme\n    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches\n      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n    // Create the map\n    map = new mapboxgl.Map({\n      container: 'map-activity',\n      style: style,\n      center: coords,\n      zoom: zoom,\n      cooperativeGestures: true,\n    });\n\n    map.on('load', function () {\n      map.resize();\n    });\n\n    // Find and loop through .location-name elements to create markers with original numbers\n    locations.forEach(function (location, index) {\n\t  if (!location.dataset.lat || !location.dataset.lng) {\n\t\treturn;\n\t\t}\n      // Create a HTML element for each marker\n      const el = document.createElement('div');\n      el.className = 'marker';\n      el.innerHTML = '<span><b>' + (index + 1) + '</b></span>';\n\n      // Create the marker\n      const marker = new mapboxgl.Marker(el)\n        .setLngLat([location.dataset.lng, location.dataset.lat])\n        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups\n          .setHTML('<h3>' + location.value + '</h3>'));\n\n\t\t\t\tmarker.getElement().addEventListener('mouseenter', function () {\n\t\t\t\t  popup = marker.getPopup();\n\t\t\t\t\tif (!popup.isOpen()) {\n\t\t\t\t\t\tmarker.togglePopup();\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tmarker.getElement().addEventListener('mouseleave', function () {\n\t\t\t\t\tmarker.togglePopup();\t\n\t\t\t\t});\n\n      markerArray.push(marker);\n\n\t\t\tlet locationContainer = location.parentElement.parentElement;\n\n    });\n\n    // Sort markers by latitude\n    markerArray.sort(function (a, b) {\n      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);\n    });\n\n    // Add markers to the map in the sorted order without changing their displayed numbers\n    markerArray.forEach(marker => {\n      marker.addTo(map);\n    });\n\n    // Fit the map to the bounds of the markers\n    if (markerArray.length > 1) {\n      const bounds = new mapboxgl.LngLatBounds();\n      markerArray.forEach(marker => {\n        bounds.extend(marker.getLngLat());\n      });\n\n      map.fitBounds(bounds, { padding: 50 });\n    }\n\n    MapboxStyleSwitcher.extend(map, {\n      // Optional: Override default options\n      controlPosition: 'top-left', // Position on the map\n      // satelliteStyle: 'custom-satellite-style-if-needed'\n    }, markerArray);\n  }\n\n  // Initialize the map on page load\n  initializeMap();\n\n})();\n</script>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		return nil
 	})
@@ -427,12 +459,12 @@ func teamModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<dialog id=\"team_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><!-- Contents will be replaced by the fetched content --></div></dialog><script>\n\tdocument.getElementById(\"team_modal\").addEventListener('htmx:afterSwap', (evt) => {\n\t  // Open the modal once the content is loaded and swapped\n\t  document.getElementById(\"team_modal\").showModal();\n\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<dialog id=\"team_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><!-- Contents will be replaced by the fetched content --></div></dialog><script>\n\tdocument.getElementById(\"team_modal\").addEventListener('htmx:afterSwap', (evt) => {\n\t  // Open the modal once the content is loaded and swapped\n\t  document.getElementById(\"team_modal\").showModal();\n\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -456,25 +488,25 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder))
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 284, Col: 101}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 275, Col: 101}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\"><!-- head --><thead class=\"uppercase text-xs font-normal tracking-wider\"><tr><th class=\"text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\"><!-- head --><thead class=\"uppercase text-xs font-normal tracking-wider\"><tr><th class=\"text-center\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -482,7 +514,7 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</th><th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</th><th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -490,7 +522,7 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</th><th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</th><th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -498,12 +530,12 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<th>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<th>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -511,12 +543,12 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</th>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</th>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -524,7 +556,7 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</th><th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</th><th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -532,7 +564,7 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</th><th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</th><th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -540,170 +572,170 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</th></tr></thead> <tbody id=\"contents\" class=\"overflow-x-hidden\" hx-disinherit=\"*\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</th></tr></thead> <tbody id=\"contents\" class=\"overflow-x-hidden\" hx-disinherit=\"*\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, teamData := range leaderboardData {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<tr class=\"hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer\" hx-get=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 325, Col: 71}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" hx-target=\"body\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><td class=\"text-center\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			switch teamData.Rank {
-			case 1:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<span class=\"text-2xl\">🥇</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case 2:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<span class=\"text-2xl\">🥈</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			case 3:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span class=\"text-2xl\">🥉</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			default:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<span class=\"text-xl\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var28 string
-				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(teamData.Rank))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 339, Col: 58}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</td><td class=\"font-mono tracking-wider\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<tr class=\"hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
-			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.Code)
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 343, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 316, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" hx-target=\"body\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><td class=\"text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if teamData.Name != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<td>")
+			switch teamData.Rank {
+			case 1:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span class=\"text-2xl\">🥇</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case 2:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<span class=\"text-2xl\">🥈</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			case 3:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"text-2xl\">🥉</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			default:
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<span class=\"text-xl\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var30 string
-				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.Name)
+				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(teamData.Rank))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 346, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 330, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</td><td class=\"font-mono tracking-wider\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var31 string
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.Code)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 334, Col: 22}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if teamData.Name != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<td>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var32 string
+				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 337, Col: 26}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<td><em class=\"opacity-50\">No name set</em></td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<td><em class=\"opacity-50\">No name set</em></td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			if settings.EnablePoints {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var31 string
-				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(teamData.Points))
+				var templ_7745c5c3_Var33 string
+				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(teamData.Points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 351, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 342, Col: 40}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</td>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</td>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<td><span class=\"tooltip\" data-tip=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<td><span class=\"tooltip\" data-tip=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var32 string
-			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.LastSeen.Local().Format("02 Jan 03:04 PM"))
+			var templ_7745c5c3_Var34 string
+			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.LastSeen.Local().Format("02 Jan 03:04 PM"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 354, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 345, Col: 91}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var33 string
-			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(timeago.Parse(teamData.LastSeen))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 355, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span></td><td>")
+			var templ_7745c5c3_Var35 string
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(timeago.Parse(teamData.LastSeen))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 346, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</span></td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if locationCount > 0 {
-				var templ_7745c5c3_Var34 string
-				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d ∕ %d", teamData.Progress, locationCount))
+				var templ_7745c5c3_Var36 string
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d ∕ %d", teamData.Progress, locationCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 360, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 351, Col: 68}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<em class=\"opacity-50\">No locations</em>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<em class=\"opacity-50\">No locations</em>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -711,18 +743,18 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if len(leaderboardData) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<tr><td colspan=\"7\" class=\"text-center py-5\">No teams or players have joined the game yet.</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<tr><td colspan=\"7\" class=\"text-center py-5\">No teams or players have joined the game yet.</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</tbody></table></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</tbody></table></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -746,46 +778,46 @@ func ActivityStatusBadge(instance models.Instance) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var37 == nil {
+			templ_7745c5c3_Var37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div id=\"activity-status-badge\" class=\"md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5\"><div class=\"inline-grid *:[grid-area:1/1]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<div id=\"activity-status-badge\" class=\"md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5\"><div class=\"inline-grid *:[grid-area:1/1]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<div class=\"status status-lg status-info\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"status status-lg status-info\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"status status-lg\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<div class=\"status status-lg\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
+		var templ_7745c5c3_Var38 string
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 395, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 386, Col: 33}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -809,46 +841,46 @@ func ActivityStatusBadgeOOB(instance models.Instance) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var37 == nil {
-			templ_7745c5c3_Var37 = templ.NopComponent
+		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var39 == nil {
+			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<div id=\"activity-status-badge\" hx-swap-oob=\"true\" class=\"md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5\"><div class=\"inline-grid *:[grid-area:1/1]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<div id=\"activity-status-badge\" hx-swap-oob=\"true\" class=\"md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5\"><div class=\"inline-grid *:[grid-area:1/1]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<div class=\"status status-lg status-info\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<div class=\"status status-lg status-info\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<div class=\"status status-lg\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<div class=\"status status-lg\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
+		var templ_7745c5c3_Var40 string
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 412, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 403, Col: 33}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -872,9 +904,9 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var39 == nil {
-			templ_7745c5c3_Var39 = templ.NopComponent
+		templ_7745c5c3_Var41 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var41 == nil {
+			templ_7745c5c3_Var41 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, msg := range messages {
@@ -883,13 +915,13 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<div id=\"schedule-status\" class=\"flex flex-row gap-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<div id=\"schedule-status\" class=\"flex flex-row gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<a hx-get=\"/admin/schedule/stop\" hx-target=\"#schedule-status\" class=\"btn btn-error flex join-item tooltip\" data-tip=\"Stop the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-octagon-x w-5 h-5\"><path d=\"m15 9-6 6\"></path><path d=\"M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z\"></path><path d=\"m9 9 6 6\"></path></svg> Stop</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<a hx-get=\"/admin/schedule/stop\" hx-target=\"#schedule-status\" class=\"btn btn-error flex join-item tooltip\" data-tip=\"Stop the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-octagon-x w-5 h-5\"><path d=\"m15 9-6 6\"></path><path d=\"M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z\"></path><path d=\"m9 9 6 6\"></path></svg> Stop</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -898,7 +930,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		case models.Scheduled:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-primary flex join-item tooltip\" data-tip=\"Start the game early\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start now</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-primary flex join-item tooltip\" data-tip=\"Start the game early\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start now</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -907,7 +939,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		case models.Closed:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-primary flex join-item tooltip\" data-tip=\"Start the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<a hx-get=\"/admin/schedule/start\" hx-target=\"#schedule-status\" class=\"btn btn-primary flex join-item tooltip\" data-tip=\"Start the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-play w-5 h-5\"><polygon points=\"6 3 20 12 6 21 6 3\"></polygon></svg> Start</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -916,7 +948,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -940,109 +972,109 @@ func scheduleButton(scheduled bool, t schema.NullTime) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var40 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var40 == nil {
-			templ_7745c5c3_Var40 = templ.NopComponent
+		templ_7745c5c3_Var42 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var42 == nil {
+			templ_7745c5c3_Var42 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if !scheduled {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<button class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Set the start and end time\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg> Schedule</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<button class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Set the start and end time\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg> Schedule</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<button id=\"start-time\" data-start=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<button id=\"start-time\" data-start=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var41 string
-			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(t.Format("02-Jan-2006 15:04:05"))
+			var templ_7745c5c3_Var43 string
+			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(t.Format("02-Jan-2006 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 463, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 454, Col: 48}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\" class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Sechedule\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" class=\"btn btn-secondary flex join-item tooltip\" onclick=\"schedule_modal.showModal()\" data-tip=\"Sechedule\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-clock w-5 h-5\"><path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"></path><path d=\"M16 2v4\"></path><path d=\"M8 2v4\"></path><path d=\"M3 10h5\"></path><path d=\"M17.5 17.5 16 16.3V14\"></path><circle cx=\"16\" cy=\"16\" r=\"6\"></circle></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if int(t.Time.Sub(time.Now()).Seconds())/86400 > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<div id=\"days-container\" class=\"leading-none flex align-middle\"><span class=\"countdown font-bold leading-none\" id=\"days\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<div id=\"days-container\" class=\"leading-none flex align-middle\"><span class=\"countdown font-bold leading-none\" id=\"days\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var42 string
-				templ_7745c5c3_Var42, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())/86400))
+				var templ_7745c5c3_Var44 string
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())/86400))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 471, Col: 141}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 462, Col: 141}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\"><span></span></span> d</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "\"><span></span></span> d</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<div id=\"days-container\" class=\"leading-none flex align-middle\" style=\"display: none\"><span class=\"countdown font-bold leading-none\" id=\"days\" style=\"--value: 0\"><span></span></span> d</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div id=\"days-container\" class=\"leading-none flex align-middle\" style=\"display: none\"><span class=\"countdown font-bold leading-none\" id=\"days\" style=\"--value: 0\"><span></span></span> d</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			if (int(t.Time.Sub(time.Now()).Seconds())%86400)/3600 > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<div id=\"hours-container\" class=\"leading-none flex align-middle\"><span class=\"countdown font-bold leading-none\" id=\"hours\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div id=\"hours-container\" class=\"leading-none flex align-middle\"><span class=\"countdown font-bold leading-none\" id=\"hours\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var43 string
-				templ_7745c5c3_Var43, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%86400)/3600))
+				var templ_7745c5c3_Var45 string
+				templ_7745c5c3_Var45, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%86400)/3600))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 486, Col: 149}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 477, Col: 149}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "\"><span></span></span> h</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\"><span></span></span> h</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div id=\"hours-container\" class=\"leading-none flex align-middle\" style=\"display: none\"><span class=\"countdown font-bold leading-none\" id=\"hours\" style=\"--value: 0\"><span></span></span> h</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<div id=\"hours-container\" class=\"leading-none flex align-middle\" style=\"display: none\"><span class=\"countdown font-bold leading-none\" id=\"hours\" style=\"--value: 0\"><span></span></span> h</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<div class=\"leading-none flex align-middle\"><span class=\"countdown font-bold\" id=\"minutes\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<div class=\"leading-none flex align-middle\"><span class=\"countdown font-bold\" id=\"minutes\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var44 string
-			templ_7745c5c3_Var44, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%3600)/60))
+			var templ_7745c5c3_Var46 string
+			templ_7745c5c3_Var46, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%3600)/60))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 500, Col: 134}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 491, Col: 134}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"><span></span></span> m</div><div class=\"leading-none flex align-middle\"><span class=\"countdown font-bold\" id=\"seconds\" style=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var45 string
-			templ_7745c5c3_Var45, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())%60))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 506, Col: 127}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "\"><span></span></span> m</div><div class=\"leading-none flex align-middle\"><span class=\"countdown font-bold\" id=\"seconds\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "\"><span></span></span> s</div></button><style>\n\t\t\t\tfor i := range 60 {\n\t\t\t\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t\t\t\t--value: { fmt.Sprint(i) };\n\t\t\t\t    }\n\t\t\t\t}\n\t\t\t\t</style> <script>\n  // JavaScript for countdown\n  (function() {\n    // Store interval ID on window object to persist across HTMX swaps\n    if (!window.gameCountdownInterval) {\n      window.gameCountdownInterval = null;\n    }\n\n    function startCountdown(startTime) {\n      // Clear any existing interval before starting a new one\n      if (window.gameCountdownInterval) {\n        clearInterval(window.gameCountdownInterval);\n        window.gameCountdownInterval = null;\n      }\n\n      function updateCountdown() {\n        const now = new Date();\n        const remainingTime = new Date(startTime) - now;\n\n        if (remainingTime == 0) {\n          window.location.reload();\n          return;\n        }\n\n        const seconds = Math.floor((remainingTime / 1000) % 60);\n        const minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n        const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n        const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n        const secondsEl = document.getElementById(\"seconds\");\n        const minutesEl = document.getElementById(\"minutes\");\n        const hoursContainer = document.getElementById(\"hours-container\");\n        const hoursEl = document.getElementById(\"hours\");\n        const daysContainer = document.getElementById(\"days-container\");\n        const daysEl = document.getElementById(\"days\");\n\n        if (!secondsEl || !minutesEl) return; // Elements removed, stop updating\n\n        secondsEl.style.setProperty('--value', seconds);\n        minutesEl.style.setProperty('--value', minutes);\n\n        if (hours > 0) {\n          hoursContainer.style.display = \"flex\";\n          hoursEl.style.setProperty('--value', hours);\n        } else {\n          hoursContainer.style.display = \"none\";\n        }\n\n        if (days > 0) {\n          daysContainer.style.display = \"flex\";\n          daysEl.style.setProperty('--value', days);\n        } else {\n          daysContainer.style.display = \"none\";\n        }\n      }\n\n      updateCountdown();\n      window.gameCountdownInterval = setInterval(updateCountdown, 1000);\n    }\n\n    if (document.getElementById('start-time') != null) {\n      function UTCtoLocal(time) {\n        const utc = new Date(`${time}`);\n        const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n        return local\n      }\n      const startTimeElement = document.getElementById('start-time');\n      const startTime = startTimeElement.dataset.start;\n      startCountdown(UTCtoLocal(startTime));\n    }\n  })();\n</script>")
+			var templ_7745c5c3_Var47 string
+			templ_7745c5c3_Var47, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())%60))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 497, Col: 127}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\"><span></span></span> s</div></button><style>\n\t\t\t\tfor i := range 60 {\n\t\t\t\t\t{ fmt.Sprintf(\"[data-value=\\\"%d\\\"]\", i) } {\n\t\t\t\t\t\t--value: { fmt.Sprint(i) };\n\t\t\t\t    }\n\t\t\t\t}\n\t\t\t\t</style> <script>\n  // JavaScript for countdown\n  (function() {\n    // Store interval ID on window object to persist across HTMX swaps\n    if (!window.gameCountdownInterval) {\n      window.gameCountdownInterval = null;\n    }\n\n    function startCountdown(startTime) {\n      // Clear any existing interval before starting a new one\n      if (window.gameCountdownInterval) {\n        clearInterval(window.gameCountdownInterval);\n        window.gameCountdownInterval = null;\n      }\n\n      function updateCountdown() {\n        const now = new Date();\n        const remainingTime = new Date(startTime) - now;\n\n        if (remainingTime == 0) {\n          window.location.reload();\n          return;\n        }\n\n        const seconds = Math.floor((remainingTime / 1000) % 60);\n        const minutes = Math.floor((remainingTime / 1000 / 60) % 60);\n        const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);\n        const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);\n\n        const secondsEl = document.getElementById(\"seconds\");\n        const minutesEl = document.getElementById(\"minutes\");\n        const hoursContainer = document.getElementById(\"hours-container\");\n        const hoursEl = document.getElementById(\"hours\");\n        const daysContainer = document.getElementById(\"days-container\");\n        const daysEl = document.getElementById(\"days\");\n\n        if (!secondsEl || !minutesEl) return; // Elements removed, stop updating\n\n        secondsEl.style.setProperty('--value', seconds);\n        minutesEl.style.setProperty('--value', minutes);\n\n        if (hours > 0) {\n          hoursContainer.style.display = \"flex\";\n          hoursEl.style.setProperty('--value', hours);\n        } else {\n          hoursContainer.style.display = \"none\";\n        }\n\n        if (days > 0) {\n          daysContainer.style.display = \"flex\";\n          daysEl.style.setProperty('--value', days);\n        } else {\n          daysContainer.style.display = \"none\";\n        }\n      }\n\n      updateCountdown();\n      window.gameCountdownInterval = setInterval(updateCountdown, 1000);\n    }\n\n    if (document.getElementById('start-time') != null) {\n      function UTCtoLocal(time) {\n        const utc = new Date(`${time}`);\n        const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n        return local\n      }\n      const startTimeElement = document.getElementById('start-time');\n      const startTime = startTimeElement.dataset.start;\n      startCountdown(UTCtoLocal(startTime));\n    }\n  })();\n</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1067,261 +1099,261 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var46 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var46 == nil {
-			templ_7745c5c3_Var46 = templ.NopComponent
+		templ_7745c5c3_Var48 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var48 == nil {
+			templ_7745c5c3_Var48 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<h3 class=\"text-lg font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<h3 class=\"text-lg font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var47 string
-		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+		var templ_7745c5c3_Var49 string
+		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 596, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 587, Col: 13}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, " ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, " ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if team.Name != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<span class=\"opacity-50\">∕</span> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var48 string
-			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 598, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, " ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span class=\"badge badge-info badge-sm\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var49 string
-			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(team.Points))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 601, Col: 68}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " pts</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</h3><!-- Current Location -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if team.MustCheckOut != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Current Location</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span class=\"opacity-50\">∕</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var50 string
-			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(team.BlockingLocation.Name)
+			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 608, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 589, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<!-- Next Locations --><div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Next Locations</p>")
+		if settings.EnablePoints {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<span class=\"badge badge-info badge-sm\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var51 string
+			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(team.Points))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 592, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, " pts</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</h3><!-- Current Location -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if team.MustCheckOut != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Current Location</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var52 string
+			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(team.BlockingLocation.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 599, Col: 31}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<!-- Next Locations --><div class=\"w-full\"><p class=\"py-3 font-bold divider divider-start\">Next Locations</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(nextLocations) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<div class=\"prose\"><ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div class=\"prose\"><ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, location := range nextLocations {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "<li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var51 string
-				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
+				var templ_7745c5c3_Var53 string
+				templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 619, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 610, Col: 22}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</ul></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<p>All done!</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<p>All done!</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div><!-- Previous Locations -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</div><!-- Previous Locations -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(team.CheckIns) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<div class=\"py-3 font-bold divider divider-start\">Previous Locations</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "<div class=\"py-3 font-bold divider divider-start\">Previous Locations</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, scan := range team.CheckIns {
 				if !scan.MustCheckOut {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "<div class=\"prose\"><ul><li>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<div class=\"prose\"><ul><li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var52 string
-					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(scan.Location.Name)
+					var templ_7745c5c3_Var54 string
+					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(scan.Location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 638, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 629, Col: 27}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, " <span class=\"convert-time badge badge-sm badge-ghost\" data-datetime=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var53 string
-					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.CreatedAt.UTC()))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 639, Col: 109}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, " <span class=\"convert-time badge badge-sm badge-ghost\" data-datetime=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "\"></span> ")
+					var templ_7745c5c3_Var55 string
+					templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.CreatedAt.UTC()))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 630, Col: 109}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "\"></span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if settings.EnablePoints && scan.Points > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<span class=\"badge badge-sm badge-info\">+")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "<span class=\"badge badge-sm badge-info\">+")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var54 string
-						templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.Points))
+						var templ_7745c5c3_Var56 string
+						templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(scan.Points))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 641, Col: 74}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 632, Col: 74}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, " pts</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, " pts</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</li></ul></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</li></ul></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<p class=\"py-3 font-bold divider divider-start\">Alerts</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<p class=\"py-3 font-bold divider divider-start\">Alerts</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(notifications) > 0 {
 			for _, notification := range notifications {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "<div class=\"chat chat-start\"><div class=\"chat-bubble\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "<div class=\"chat chat-start\"><div class=\"chat-bubble\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var55 string
-				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(notification.Content)
+				var templ_7745c5c3_Var57 string
+				templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(notification.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 655, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 646, Col: 51}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "</div><div class=\"chat-footer text-xs opacity-50 flex items-center gap-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "</div><div class=\"chat-footer text-xs opacity-50 flex items-center gap-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if notification.Dismissed {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "Read ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "Read ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "Unread ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "Unread ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "· <time>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "· <time>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var56 string
-				templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("Sent ", notification.CreatedAt.Local().Format("02 Jan 03:04 PM")))
+				var templ_7745c5c3_Var58 string
+				templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("Sent ", notification.CreatedAt.Local().Format("02 Jan 03:04 PM")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 663, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 654, Col: 90}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</time></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</time></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "<label class=\"form-control w-full mt-3\"><form hx-post=\"/admin/notify/team/\" hx-swap=\"none\"><input type=\"hidden\" name=\"teamCode\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<label class=\"form-control w-full mt-3\"><form hx-post=\"/admin/notify/team/\" hx-swap=\"none\"><input type=\"hidden\" name=\"teamCode\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var57 string
-		templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+		var templ_7745c5c3_Var59 string
+		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 670, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 661, Col: 57}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "\"><div class=\"join w-full\"><input class=\"input join-item w-full\" name=\"content\" placeholder=\"Message\" autocomplete=\"off\" autofocus=\"off\" required> <button type=\"submit\" class=\"btn btn-primary join-item rounded-r-full\" onclick=\"announcement_modal.close()\">Send <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-5 h-5\"><path d=\"m3 3 3 9-3 9 19-9Z\"></path><path d=\"M6 12h16\"></path></svg></button></div></form><div class=\"label\"><span class=\"label-text-alt\">This is a read-only message. Teams cannot reply.</span></div></label><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "\"><div class=\"join w-full\"><input class=\"input join-item w-full\" name=\"content\" placeholder=\"Message\" autocomplete=\"off\" autofocus=\"off\" required> <button type=\"submit\" class=\"btn btn-primary join-item rounded-r-full\" onclick=\"announcement_modal.close()\">Send <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal w-5 h-5\"><path d=\"m3 3 3 9-3 9 19-9Z\"></path><path d=\"M6 12h16\"></path></svg></button></div></form><div class=\"label\"><span class=\"label-text-alt\">This is a read-only message. Teams cannot reply.</span></div></label><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1345,68 +1377,68 @@ func scheduleModal(instance models.Instance) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var58 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var58 == nil {
-			templ_7745c5c3_Var58 = templ.NopComponent
+		templ_7745c5c3_Var60 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var60 == nil {
+			templ_7745c5c3_Var60 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<dialog id=\"schedule_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\">Schedule a Game</h3><p class=\"py-3\">Schedule a game to start and/or end at a specific time. </p><form hx-post=\"/admin/schedule/\" hx-target=\"#schedule-status\" hx-swap=\"outerHTML\"><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled Start ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<dialog id=\"schedule_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\">Schedule a Game</h3><p class=\"py-3\">Schedule a game to start and/or end at a specific time. </p><form hx-post=\"/admin/schedule/\" hx-target=\"#schedule-status\" hx-swap=\"outerHTML\"><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled Start ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if instance.StartTime.Time.IsZero() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\" checked>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\" checked>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "</label></div></div><div id=\"utc-start-time\" class=\"join flex justify-center pb-5\" data-start=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</label></div></div><div id=\"utc-start-time\" class=\"join flex justify-center pb-5\" data-start=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var59 string
-		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(instance.StartTime.Format("2006-01-02 15:04"))
+		var templ_7745c5c3_Var61 string
+		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(instance.StartTime.Format("2006-01-02 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 716, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 707, Col: 125}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "\"><input id=\"start_date\" type=\"date\" name=\"start_date\" class=\"input join-item\"> <input id=\"start_time\" type=\"time\" name=\"start_time\" class=\"input join-item\"></div><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled End ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "\"><input id=\"start_date\" type=\"date\" name=\"start_date\" class=\"input join-item\"> <input id=\"start_time\" type=\"time\" name=\"start_time\" class=\"input join-item\"></div><div class=\"divider py-5\"><div class=\"form-control\"><label class=\"label cursor-pointer flex gap-3\">Scheduled End ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\" checked>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\" checked>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "</label></div></div><div id=\"utc-end-time\" class=\"join flex justify-center\" data-end=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "</label></div></div><div id=\"utc-end-time\" class=\"join flex justify-center\" data-end=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var60 string
-		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(instance.EndTime.Format("2006-01-02 15:04"))
+		var templ_7745c5c3_Var62 string
+		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(instance.EndTime.Format("2006-01-02 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 742, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 733, Col: 114}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "\"><input id=\"end_date\" type=\"date\" name=\"end_date\" class=\"input join-item\"> <input id=\"end_time\" type=\"time\" name=\"end_time\" class=\"input join-item\"></div><!-- Hidden UTC Inputs --><input type=\"hidden\" name=\"utc_start_date\"> <input type=\"hidden\" name=\"utc_start_time\"> <input type=\"hidden\" name=\"utc_end_date\"> <input type=\"hidden\" name=\"utc_end_time\"><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); schedule_modal.close()\">Nevermind</button> <button type=\"submit\" onclick=\"schedule_modal.close()\" class=\"btn btn-primary\">Save</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\n\t\tfunction localToUTC(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}`);\n\t\t\treturn {\n\t\t\t\tdate: utc.toISOString().split('T')[0],\n\t\t\t\ttime: utc.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction UTCtoLocal(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}Z`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn {\n\t\t\t\tdate: local.toISOString().split('T')[0],\n\t\t\t\ttime: local.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction populateDateTimeInputs() {\n\t\t\tconst startDateInput = document.querySelector('input[name=\"start_date\"]');\n\t\t\tconst startTimeInput = document.querySelector('input[name=\"start_time\"]');\n\t\t\tconst endDateInput = document.querySelector('input[name=\"end_date\"]');\n\t\t\tconst endTimeInput = document.querySelector('input[name=\"end_time\"]');\n\n\t\t\tconst utcStartElement = document.getElementById('utc-start-time');\n\t\t\tconst utcEndElement = document.getElementById('utc-end-time');\n\n\t\t\tconst utcStart = utcStartElement.dataset.start.split(' ');\n\t\t\tconst utcEnd = utcEndElement.dataset.end.split(' ');\n\n\t\t\t// Check the time is not empty: 0001-01-01 00:00\n\t\t\tif (utcStart[0] != '0001-01-01') {\n\t\t\t\tconst localStart = UTCtoLocal(utcStart[0], utcStart[1]);\n\t\t\t\tstartDateInput.value = localStart.date;\n\t\t\t\tstartTimeInput.value = localStart.time;\n\t\t\t}\n\n\t\t\tif (utcEnd[0] != '0001-01-01') {\n\t\t\t\tconst localEnd = UTCtoLocal(utcEnd[0], utcEnd[1]);\n\t\t\t\tendDateInput.value = localEnd.date;\n\t\t\t\tendTimeInput.value = localEnd.time;\n\t\t\t}\n\t\t}\n\n        function handleDateTimeChange() {\n            const startDateInput = document.querySelector('input[name=\"start_date\"]');\n            const startTimeInput = document.querySelector('input[name=\"start_time\"]');\n            const endDateInput = document.querySelector('input[name=\"end_date\"]');\n            const endTimeInput = document.querySelector('input[name=\"end_time\"]');\n            const setStartCheckbox = document.querySelector('input[name=\"set_start\"]');\n            const setEndCheckbox = document.querySelector('input[name=\"set_end\"]');\n\n            // Only convert if checkbox is checked AND both date and time have values\n            if (setStartCheckbox.checked && startDateInput.value && startTimeInput.value) {\n                const utcStart = localToUTC(startDateInput.value, startTimeInput.value);\n                document.querySelector('input[name=\"utc_start_date\"]').value = utcStart.date;\n                document.querySelector('input[name=\"utc_start_time\"]').value = utcStart.time;\n            } else {\n                document.querySelector('input[name=\"utc_start_date\"]').value = '';\n                document.querySelector('input[name=\"utc_start_time\"]').value = '';\n            }\n\n            if (setEndCheckbox.checked && endDateInput.value && endTimeInput.value) {\n                const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);\n                document.querySelector('input[name=\"utc_end_date\"]').value = utcEnd.date;\n                document.querySelector('input[name=\"utc_end_time\"]').value = utcEnd.time;\n            } else {\n                document.querySelector('input[name=\"utc_end_date\"]').value = '';\n                document.querySelector('input[name=\"utc_end_time\"]').value = '';\n            }\n        }\n\n\t\tfunction initScheduleModal() {\n\t\t\tpopulateDateTimeInputs();\n\t\t\thandleDateTimeChange();\n\t\t}\n\n\t\t// Set up event listeners once when the script loads\n\t\t(function() {\n            const inputs = document.querySelectorAll('#schedule_modal input[type=\"date\"], #schedule_modal input[type=\"time\"]');\n            const checkboxes = document.querySelectorAll('#schedule_modal input[type=\"checkbox\"]');\n            const form = document.querySelector('#schedule_modal form');\n\t\t\tconst modal = document.getElementById('schedule_modal');\n\n            inputs.forEach(input => {\n                input.addEventListener('change', handleDateTimeChange);\n            });\n\n            checkboxes.forEach(checkbox => {\n                checkbox.addEventListener('change', handleDateTimeChange);\n            });\n\n            // Ensure UTC conversion happens on form submission\n            form.addEventListener('submit', function(e) {\n                handleDateTimeChange();\n            });\n\n\t\t\t// Initialize whenever the modal is opened\n\t\t\tconst observer = new MutationObserver(function(mutations) {\n\t\t\t\tmutations.forEach(function(mutation) {\n\t\t\t\t\tif (mutation.type === 'attributes' && mutation.attributeName === 'open') {\n\t\t\t\t\t\tif (modal.hasAttribute('open')) {\n\t\t\t\t\t\t\tinitScheduleModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\tif (modal) {\n\t\t\t\tobserver.observe(modal, { attributes: true });\n\t\t\t}\n\t\t})();\n    </script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "\"><input id=\"end_date\" type=\"date\" name=\"end_date\" class=\"input join-item\"> <input id=\"end_time\" type=\"time\" name=\"end_time\" class=\"input join-item\"></div><!-- Hidden UTC Inputs --><input type=\"hidden\" name=\"utc_start_date\"> <input type=\"hidden\" name=\"utc_start_time\"> <input type=\"hidden\" name=\"utc_end_date\"> <input type=\"hidden\" name=\"utc_end_time\"><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); schedule_modal.close()\">Nevermind</button> <button type=\"submit\" onclick=\"schedule_modal.close()\" class=\"btn btn-primary\">Save</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\n\t\tfunction localToUTC(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}`);\n\t\t\treturn {\n\t\t\t\tdate: utc.toISOString().split('T')[0],\n\t\t\t\ttime: utc.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction UTCtoLocal(date, time) {\n\t\t\tconst utc = new Date(`${date}T${time}Z`);\n\t\t\tconst local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);\n\t\t\treturn {\n\t\t\t\tdate: local.toISOString().split('T')[0],\n\t\t\t\ttime: local.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format\n\t\t\t};\n\t\t}\n\n\t\tfunction populateDateTimeInputs() {\n\t\t\tconst startDateInput = document.querySelector('input[name=\"start_date\"]');\n\t\t\tconst startTimeInput = document.querySelector('input[name=\"start_time\"]');\n\t\t\tconst endDateInput = document.querySelector('input[name=\"end_date\"]');\n\t\t\tconst endTimeInput = document.querySelector('input[name=\"end_time\"]');\n\n\t\t\tconst utcStartElement = document.getElementById('utc-start-time');\n\t\t\tconst utcEndElement = document.getElementById('utc-end-time');\n\n\t\t\tconst utcStart = utcStartElement.dataset.start.split(' ');\n\t\t\tconst utcEnd = utcEndElement.dataset.end.split(' ');\n\n\t\t\t// Check the time is not empty: 0001-01-01 00:00\n\t\t\tif (utcStart[0] != '0001-01-01') {\n\t\t\t\tconst localStart = UTCtoLocal(utcStart[0], utcStart[1]);\n\t\t\t\tstartDateInput.value = localStart.date;\n\t\t\t\tstartTimeInput.value = localStart.time;\n\t\t\t}\n\n\t\t\tif (utcEnd[0] != '0001-01-01') {\n\t\t\t\tconst localEnd = UTCtoLocal(utcEnd[0], utcEnd[1]);\n\t\t\t\tendDateInput.value = localEnd.date;\n\t\t\t\tendTimeInput.value = localEnd.time;\n\t\t\t}\n\t\t}\n\n        function handleDateTimeChange() {\n            const startDateInput = document.querySelector('input[name=\"start_date\"]');\n            const startTimeInput = document.querySelector('input[name=\"start_time\"]');\n            const endDateInput = document.querySelector('input[name=\"end_date\"]');\n            const endTimeInput = document.querySelector('input[name=\"end_time\"]');\n            const setStartCheckbox = document.querySelector('input[name=\"set_start\"]');\n            const setEndCheckbox = document.querySelector('input[name=\"set_end\"]');\n\n            // Only convert if checkbox is checked AND both date and time have values\n            if (setStartCheckbox.checked && startDateInput.value && startTimeInput.value) {\n                const utcStart = localToUTC(startDateInput.value, startTimeInput.value);\n                document.querySelector('input[name=\"utc_start_date\"]').value = utcStart.date;\n                document.querySelector('input[name=\"utc_start_time\"]').value = utcStart.time;\n            } else {\n                document.querySelector('input[name=\"utc_start_date\"]').value = '';\n                document.querySelector('input[name=\"utc_start_time\"]').value = '';\n            }\n\n            if (setEndCheckbox.checked && endDateInput.value && endTimeInput.value) {\n                const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);\n                document.querySelector('input[name=\"utc_end_date\"]').value = utcEnd.date;\n                document.querySelector('input[name=\"utc_end_time\"]').value = utcEnd.time;\n            } else {\n                document.querySelector('input[name=\"utc_end_date\"]').value = '';\n                document.querySelector('input[name=\"utc_end_time\"]').value = '';\n            }\n        }\n\n\t\tfunction initScheduleModal() {\n\t\t\tpopulateDateTimeInputs();\n\t\t\thandleDateTimeChange();\n\t\t}\n\n\t\t// Set up event listeners once when the script loads\n\t\t(function() {\n            const inputs = document.querySelectorAll('#schedule_modal input[type=\"date\"], #schedule_modal input[type=\"time\"]');\n            const checkboxes = document.querySelectorAll('#schedule_modal input[type=\"checkbox\"]');\n            const form = document.querySelector('#schedule_modal form');\n\t\t\tconst modal = document.getElementById('schedule_modal');\n\n            inputs.forEach(input => {\n                input.addEventListener('change', handleDateTimeChange);\n            });\n\n            checkboxes.forEach(checkbox => {\n                checkbox.addEventListener('change', handleDateTimeChange);\n            });\n\n            // Ensure UTC conversion happens on form submission\n            form.addEventListener('submit', function(e) {\n                handleDateTimeChange();\n            });\n\n\t\t\t// Initialize whenever the modal is opened\n\t\t\tconst observer = new MutationObserver(function(mutations) {\n\t\t\t\tmutations.forEach(function(mutation) {\n\t\t\t\t\tif (mutation.type === 'attributes' && mutation.attributeName === 'open') {\n\t\t\t\t\t\tif (modal.hasAttribute('open')) {\n\t\t\t\t\t\t\tinitScheduleModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\n\t\t\tif (modal) {\n\t\t\t\tobserver.observe(modal, { attributes: true });\n\t\t\t}\n\t\t})();\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1430,12 +1462,12 @@ func announcementModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var61 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var61 == nil {
-			templ_7745c5c3_Var61 = templ.NopComponent
+		templ_7745c5c3_Var63 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var63 == nil {
+			templ_7745c5c3_Var63 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "<dialog id=\"announcement_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-megaphone inline-block w-5 h-5 mb-1 mr-2\"><path d=\"m3 11 18-5v12L3 14v-3z\"></path><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"></path></svg> Announcement</h3><p class=\"py-3\">Send an announcement to all teams.</p><form hx-post=\"/admin/notify/all\" hx-swap=\"none\"><textarea class=\"textarea w-full\" name=\"content\" placeholder=\"Announcement\"></textarea><p class=\"text-sm py-3\"><em>Note:</em> This will only be sent to teams that have already started playing.</p><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); announcement_modal.close()\">Nevermind</button> <button class=\"btn btn-primary\" onclick=\"announcement_modal.close()\">Send</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<dialog id=\"announcement_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><h3 class=\"text-lg font-bold\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-megaphone inline-block w-5 h-5 mb-1 mr-2\"><path d=\"m3 11 18-5v12L3 14v-3z\"></path><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"></path></svg> Announcement</h3><p class=\"py-3\">Send an announcement to all teams.</p><form hx-post=\"/admin/notify/all\" hx-swap=\"none\"><textarea class=\"textarea w-full\" name=\"content\" placeholder=\"Announcement\"></textarea><p class=\"text-sm py-3\"><em>Note:</em> This will only be sent to teams that have already started playing.</p><div class=\"modal-action\"><button class=\"btn\" onclick=\"event.preventDefault(); announcement_modal.close()\">Nevermind</button> <button class=\"btn btn-primary\" onclick=\"announcement_modal.close()\">Send</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1459,91 +1491,91 @@ func sortableHeader(field string, label string, currentSortField string, current
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var62 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var62 == nil {
-			templ_7745c5c3_Var62 = templ.NopComponent
+		templ_7745c5c3_Var64 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var64 == nil {
+			templ_7745c5c3_Var64 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var63 = []any{"cursor-pointer inline-flex gap-1 items-center hover:text-primary transition-colors", templ.KV("justify-center", center)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var63...)
+		var templ_7745c5c3_Var65 = []any{"cursor-pointer inline-flex gap-1 items-center hover:text-primary transition-colors", templ.KV("justify-center", center)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var65...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "<span class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var64 string
-		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var63).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "\" hx-get=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var65 string
-		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(getSortURL(field, currentSortField, currentSortOrder))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 912, Col: 64}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "<span class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var66 string
-		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(getSortTooltip(field, currentSortField, currentSortOrder))
+		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var65).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 915, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var67 string
-		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(getSortURL(field, currentSortField, currentSortOrder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 917, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 903, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, " ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, "\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" title=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var68 string
+		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(getSortTooltip(field, currentSortField, currentSortOrder))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 906, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var69 string
+		templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 908, Col: 9}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, " ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if currentSortField == field {
 			if currentSortOrder == "desc" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-down-icon lucide-arrow-down w-4 h-4\"><path d=\"M12 5v14\"></path><path d=\"m19 12-7 7-7-7\"></path></svg>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-down-icon lucide-arrow-down w-4 h-4\"><path d=\"M12 5v14\"></path><path d=\"m19 12-7 7-7-7\"></path></svg>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-icon lucide-arrow-up w-4 h-4\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-icon lucide-arrow-up w-4 h-4\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-down w-4 h-4 opacity-40\"><path d=\"m21 16-4 4-4-4\"></path><path d=\"M17 20V4\"></path><path d=\"m3 8 4-4 4 4\"></path><path d=\"M7 4v16\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-down w-4 h-4 opacity-40\"><path d=\"m21 16-4 4-4-4\"></path><path d=\"M17 20V4\"></path><path d=\"m3 8 4-4 4 4\"></path><path d=\"M7 4v16\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

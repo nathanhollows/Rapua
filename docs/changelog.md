@@ -9,6 +9,10 @@ tag: updated
 
 ## 6.10.1 (2025-01-26)
 
+### Changed
+
+- The map no longer display in Activity view if there are no mapped locations.
+
 ### Fixed
 
 - Message to players when "Location List" navigation mode is selected.
