@@ -20,6 +20,7 @@ tag: updated
 - Increased spacing between checklist items for better readability.
 - Redirect players to complete page after finishing the game.
 - Corrected "check-out instead" messages.
+- Added the "Show total visiting teams" setting back into the experience settings.
 
 ## 6.10.0 (2025-01-26)
 
