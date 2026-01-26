@@ -12,6 +12,7 @@ tag: updated
 ### Fixed
 
 - Minor style fix on homepage
+- Map rendering issue on activity page
 
 ## 6.10.1 (2025-01-26)
 
