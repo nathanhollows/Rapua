@@ -11,7 +11,7 @@ templ teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChan
 		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
 		hx-get={ fmt.Sprintf("/blocks/%s/team-name-block", block.GetID()) }
 		hx-trigger="load"
-		hx-swap="outerHTML swap:1.5s"
+		hx-swap="outerHTML"
 	>
 		<div class="indicator w-full">
 			<div class="card prose p-5 bg-base-200 shadow-lg w-full">

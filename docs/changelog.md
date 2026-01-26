@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.10.1 (2025-01-26)
+
+### Fixed
+
+- Removed delay in team name block.
+
 ## 6.10.0 (2025-01-26)
 
 ### Added

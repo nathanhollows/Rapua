@@ -61,7 +61,7 @@ func teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChang
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-trigger=\"load\" hx-swap=\"outerHTML swap:1.5s\"><div class=\"indicator w-full\"><div class=\"card prose p-5 bg-base-200 shadow-lg w-full\"><div class=\"flex justify-center py-4\"><span class=\"loading loading-spinner loading-md\"></span></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-trigger=\"load\" hx-swap=\"outerHTML\"><div class=\"indicator w-full\"><div class=\"card prose p-5 bg-base-200 shadow-lg w-full\"><div class=\"flex justify-center py-4\"><span class=\"loading loading-spinner loading-md\"></span></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
