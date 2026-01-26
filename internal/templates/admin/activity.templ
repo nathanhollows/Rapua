@@ -146,9 +146,12 @@ templ ActivityTracker(instance models.Instance) {
     let coords = [170.5111643, -45.8650509];
     let zoom = 17;
     for (let i = 0; i < locations.length; i++) {
+      if (!locations[i].dataset.lat || !locations[i].dataset.lng) {
+        continue;
+      }
       const lat = parseFloat(locations[i].dataset.lat);
       const lng = parseFloat(locations[i].dataset.lng);
-      if (lat !== 0 && lng !== 0) {
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
         coords = [lng, lat];
         break;
       }
