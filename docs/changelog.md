@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.10.2 (2025-01-27)
+
+### Fixed
+
+- Minor style fix on homepage
+
 ## 6.10.1 (2025-01-26)
 
 ### Changed
