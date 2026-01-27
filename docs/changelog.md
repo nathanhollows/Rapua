@@ -7,6 +7,14 @@ tag: updated
 
 # Changelog
 
+## 6.11.0 (2025-01-28)
+
+
+### Fixed
+
+- Fixed an issue with average durations for each location not calculating correctly.
+  - A migration has been added to recalculate existing data.
+
 ## 6.10.3 (2025-01-27)
 
 ### Changed

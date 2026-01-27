@@ -181,13 +181,15 @@ func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, i
 		Where("check_in.instance_id = location.instance_id").
 		Where("check_in.time_out IS NULL")
 
-	// Subquery: Compute average duration in seconds (ignoring NULL time_out values)
+	// Subquery: Compute average duration in seconds (ignoring zero time_out values)
+	// Use julianday for proper date arithmetic, multiply by 86400 to convert days to seconds
+	// TimeOut is time.Time (not nullable), so zero value is '0001-01-01', check for year > 1000
 	avgDurationSubquery := tx.NewSelect().
 		Model(&models.CheckIn{}).
-		ColumnExpr("COALESCE(AVG((strftime('%s', time_out) - strftime('%s', time_in))), 0)").
+		ColumnExpr("COALESCE(AVG((julianday(time_out) - julianday(time_in)) * 86400), 0)").
 		Where("check_in.location_id = location.id").
 		Where("check_in.instance_id = location.instance_id").
-		Where("check_in.time_out IS NOT NULL") // Ignore incomplete checkouts
+		Where("strftime('%Y', check_in.time_out) > '1000'") // Ignore zero time values
 
 	query := tx.NewUpdate().
 		Model(&models.Location{}).
