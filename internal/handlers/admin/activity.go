@@ -111,6 +111,48 @@ func filterTeamsStarted(teams []models.Team) []models.Team {
 	return filtered
 }
 
+// ActivityStats returns just the stats component for HTMX updates.
+func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	for i := range user.CurrentInstance.Teams {
+		if user.CurrentInstance.Teams[i].Code == "" {
+			continue
+		}
+		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		if err != nil {
+			h.logger.Error("ActivityStats: loading team relations", "error", err)
+			return
+		}
+	}
+
+	err := templates.ActivityStats(user.CurrentInstance).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("ActivityStats: rendering template", "error", err)
+	}
+}
+
+// ActivityLocations returns just the location overview list for HTMX updates.
+func (h *Handler) ActivityLocations(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	for i := range user.CurrentInstance.Teams {
+		if user.CurrentInstance.Teams[i].Code == "" {
+			continue
+		}
+		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		if err != nil {
+			h.logger.Error("ActivityLocations: loading team relations", "error", err)
+			return
+		}
+	}
+
+	err := templates.LocationOverviewList(user.CurrentInstance).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("ActivityLocations: rendering template", "error", err)
+	}
+}
+
 // TeamActivity displays the activity tracker page.
 // It accepts HTMX requests to update the team activity.
 func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {

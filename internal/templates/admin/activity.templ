@@ -116,70 +116,7 @@ templ ActivityTracker(instance models.Instance) {
 		</div>
 	</div>
 	<div class="px-5 mb-5">
-		<div class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden">
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">Active teams</div>
-				<div class="stat-value">{ fmt.Sprint(countActiveTeams(instance.Teams)) }</div>
-				<div class="stat-desc">of { fmt.Sprint(len(instance.Teams)) } total</div>
-			</div>
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">In transit</div>
-				<div class="stat-value">
-					{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations)); return inTransit }()) }
-				</div>
-				<div class="stat-desc">Moving between locations</div>
-			</div>
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">Checked in</div>
-				<div class="stat-value">
-					{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations)); return checkedIn }()) }
-				</div>
-				<div class="stat-desc">Currently at locations</div>
-			</div>
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">Average progress</div>
-				<div class="stat-value">
-					if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
-						{ fmt.Sprintf("%.0f%%", func() float64 {
-							total := 0
-							activeCount := 0
-							for _, team := range instance.Teams {
-								if team.HasStarted {
-									total += len(team.CheckIns)
-									activeCount++
-								}
-							}
-							if activeCount == 0 {
-								return 0
-							}
-							return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
-						}()) }
-					} else {
-						0%
-					}
-				</div>
-				<div class="stat-desc">Across active teams</div>
-			</div>
-			<div class="stat place-items-center col-span-2 md:col-span-1">
-				<div class="stat-title">Completion rate</div>
-				<div class="stat-value">
-					if len(instance.Teams) > 0 {
-						{ fmt.Sprintf("%.0f%%", func() float64 {
-							finishedCount := 0
-							for _, team := range instance.Teams {
-								if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
-									finishedCount++
-								}
-							}
-							return (float64(finishedCount) / float64(len(instance.Teams))) * 100
-						}()) }
-					} else {
-						0%
-					}
-				</div>
-				<div class="stat-desc">Teams finished</div>
-			</div>
-		</div>
+		@ActivityStats(instance)
 	</div>
 	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
 		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
@@ -987,6 +924,163 @@ func getLocationVisitStats(locations []models.Location, teams []models.Team, mus
 	return stats
 }
 
+templ ActivityStats(instance models.Instance) {
+	<div
+		id="activity-stats"
+		hx-get="/admin/activity/stats"
+		hx-target="#activity-stats"
+		hx-swap="outerHTML"
+		hx-trigger="every 30s"
+		class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden"
+	>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Active teams</div>
+			<div class="stat-value">{ fmt.Sprint(countActiveTeams(instance.Teams)) }</div>
+			<div class="stat-desc">of { fmt.Sprint(len(instance.Teams)) } total</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">In transit</div>
+			<div class="stat-value">
+				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations)); return inTransit }()) }
+			</div>
+			<div class="stat-desc">Moving between locations</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Checked in</div>
+			<div class="stat-value">
+				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations)); return checkedIn }()) }
+			</div>
+			<div class="stat-desc">Currently at locations</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Average progress</div>
+			<div class="stat-value">
+				if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
+					{ fmt.Sprintf("%.0f%%", func() float64 {
+						total := 0
+						activeCount := 0
+						for _, team := range instance.Teams {
+							if team.HasStarted {
+								total += len(team.CheckIns)
+								activeCount++
+							}
+						}
+						if activeCount == 0 {
+							return 0
+						}
+						return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
+					}()) }
+				} else {
+					0%
+				}
+			</div>
+			<div class="stat-desc">Across active teams</div>
+		</div>
+		<div class="stat place-items-center col-span-2 md:col-span-1">
+			<div class="stat-title">Completion rate</div>
+			<div class="stat-value">
+				if len(instance.Teams) > 0 {
+					{ fmt.Sprintf("%.0f%%", func() float64 {
+						finishedCount := 0
+						for _, team := range instance.Teams {
+							if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
+								finishedCount++
+							}
+						}
+						return (float64(finishedCount) / float64(len(instance.Teams))) * 100
+					}()) }
+				} else {
+					0%
+				}
+			</div>
+			<div class="stat-desc">Teams finished</div>
+		</div>
+	</div>
+}
+
+templ LocationOverviewList(instance models.Instance) {
+	if len(instance.Locations) > 0 {
+		<ul
+			id="location-overview-list"
+			class="list max-h-96 overflow-y-auto overflow-x-hidden"
+			hx-get="/admin/activity/locations"
+			hx-target="#location-overview-list"
+			hx-swap="outerHTML"
+			hx-trigger="every 30s"
+			hx-disinherit="*"
+			_="init send input to #search-locations"
+		>
+			for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
+				<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
+					<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
+						<div class="flex flex-col gap-2 min-w-0 flex-1">
+							<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.MarkerID)) } class="text-sm font-medium truncate hover:underline">
+								{ stat.Location.Name }
+							</a>
+							if func() bool {
+								for _, t := range instance.Teams {
+									if t.MustCheckOut == stat.Location.ID {
+										return true
+									}
+								}
+								return false
+							}() {
+								<div class="flex gap-2 flex-wrap">
+									for _, t := range instance.Teams {
+										if t.MustCheckOut == stat.Location.ID {
+											<a
+												href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
+												class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
+											>
+												{ t.Code }
+											</a>
+										}
+									}
+								</div>
+							}
+						</div>
+						<div class="flex items-center gap-3 flex-shrink-0">
+							<div class="tooltip tooltip-left" data-tip="Total visits">
+								<div class="flex items-center gap-1">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4 text-base-content/60"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+									<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
+								</div>
+							</div>
+							if instance.Settings.MustCheckOut {
+								<div class="tooltip tooltip-left" data-tip="Avg time spent">
+									<div class="flex items-center gap-1">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
+										<span class="font-bold text-sm text-info">
+											if stat.AvgTimeMinutes > 0 {
+												if stat.AvgTimeMinutes >= 60 {
+													{ fmt.Sprintf("%.0fh", stat.AvgTimeMinutes/60) }
+												} else {
+													{ fmt.Sprintf("%.0fm", stat.AvgTimeMinutes) }
+												}
+											} else {
+												-
+											}
+										</span>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</li>
+			}
+		</ul>
+	} else {
+		<ul id="location-overview-list" class="list">
+			<li>
+				<div class="text-center py-8 text-base-content/60">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-inbox w-12 h-12 mx-auto mb-2 opacity-50"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+					<p class="text-sm">No locations added yet</p>
+				</div>
+			</li>
+		</ul>
+	}
+}
+
 templ LocationOverviewCard(instance models.Instance) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
 		<div class="card-body p-6 pb-4">
@@ -1037,76 +1131,7 @@ templ LocationOverviewCard(instance models.Instance) {
 				</label>
 			</div>
 		</div>
-		if len(instance.Locations) > 0 {
-			<ul class="list max-h-96 overflow-y-auto overflow-x-hidden">
-				for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
-					<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
-						<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
-							<div class="flex flex-col gap-2 min-w-0 flex-1">
-								<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.MarkerID)) } class="text-sm font-medium truncate hover:underline">
-									{ stat.Location.Name }
-								</a>
-								if func() bool {
-									for _, t := range instance.Teams {
-										if t.MustCheckOut == stat.Location.ID {
-											return true
-										}
-									}
-									return false
-								}() {
-									<div class="flex gap-2 flex-wrap">
-										for _, t := range instance.Teams {
-											if t.MustCheckOut == stat.Location.ID {
-												<a
-													href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
-													class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
-												>
-													{ t.Code }
-												</a>
-											}
-										}
-									</div>
-								}
-							</div>
-							<div class="flex items-center gap-3 flex-shrink-0">
-								<div class="tooltip tooltip-left" data-tip="Total visits">
-									<div class="flex items-center gap-1">
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4 text-base-content/60"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
-										<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
-									</div>
-								</div>
-								if instance.Settings.MustCheckOut {
-									<div class="tooltip tooltip-left" data-tip="Avg time spent">
-										<div class="flex items-center gap-1">
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
-											<span class="font-bold text-sm text-info">
-												if stat.AvgTimeMinutes > 0 {
-													if stat.AvgTimeMinutes >= 60 {
-														{ fmt.Sprintf("%.0fh", stat.AvgTimeMinutes/60) }
-													} else {
-														{ fmt.Sprintf("%.0fm", stat.AvgTimeMinutes) }
-													}
-												} else {
-													-
-												}
-											</span>
-										</div>
-									</div>
-								}
-							</div>
-						</div>
-					</li>
-				}
-			</ul>
-		} else {
-			<ul class="list">
-				<li>
-					<div class="text-center py-8 text-base-content/60">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-inbox w-12 h-12 mx-auto mb-2 opacity-50"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-						<p class="text-sm">No locations added yet</p>
-					</div>
-				</li>
-			</ul>
-		}
+		@LocationOverviewList(instance)
 	</div>
 }
+
