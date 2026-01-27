@@ -277,10 +277,14 @@ func (s *CheckInService) checkOut(
 	}
 
 	// Update location statistics
+	// TotalVisits was already incremented on check-in, so we need to account for completed visits
+	// completedVisitsBefore = TotalVisits - CurrentCount (teams still checked in)
+	// newAverage = (oldAverage * completedVisitsBefore + newDuration) / (completedVisitsBefore + 1)
+	completedVisitsBefore := location.TotalVisits - location.CurrentCount
 	location.AvgDuration =
-		(location.AvgDuration*float64(location.TotalVisits) +
+		(location.AvgDuration*float64(completedVisitsBefore) +
 			scan.TimeOut.Sub(scan.TimeIn).Seconds()) /
-			float64(location.TotalVisits+1)
+			float64(completedVisitsBefore+1)
 	location.CurrentCount--
 	err = s.locationRepo.Update(ctx, location)
 	if err != nil {

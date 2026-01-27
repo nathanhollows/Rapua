@@ -337,7 +337,7 @@ func (s *TeamService) buildGroupOrderRecursive(group *models.GameStructure, resu
 // insertCheckInSorted inserts a check-in into the group's check-ins in sorted order by creation time.
 func insertCheckInSorted(group *GroupedCheckIns, checkIn models.CheckIn) {
 	insertPos := sort.Search(len(group.CheckIns), func(i int) bool {
-		return group.CheckIns[i].CreatedAt.After(checkIn.CreatedAt)
+		return group.CheckIns[i].CreatedAt.Before(checkIn.CreatedAt)
 	})
 	// Efficient insertion: append and copy instead of double append
 	group.CheckIns = append(group.CheckIns, models.CheckIn{})
@@ -415,9 +415,9 @@ func (s *TeamService) GroupCheckInsByGroup(
 		insertCheckInSorted(groupMap[groupInfo.GroupName], scan)
 	}
 
-	// Sort ungrouped check-ins by creation time
+	// Sort ungrouped check-ins by creation time (reverse chronological)
 	sort.Slice(ungrouped, func(i, j int) bool {
-		return ungrouped[i].CreatedAt.Before(ungrouped[j].CreatedAt)
+		return ungrouped[i].CreatedAt.After(ungrouped[j].CreatedAt)
 	})
 
 	// Build result slice in sorted order by group order

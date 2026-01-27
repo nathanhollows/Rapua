@@ -302,6 +302,8 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/", adminHandler.Activity)
 			r.Get("/teams", adminHandler.ActivityTeamsOverview)
 			r.Get("/team/{teamCode}", adminHandler.TeamActivity)
+			r.Get("/stats", adminHandler.ActivityStats)
+			r.Get("/locations", adminHandler.ActivityLocations)
 		})
 
 		r.Route("/locations", func(r chi.Router) {

@@ -24,14 +24,32 @@ func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
 	return services.StatusStarted // Default to "Not Started" behavior
 }
 
-// hasMappedLocations checks if any locations have valid coordinates
-func hasMappedLocations(locations []models.Location) bool {
-	for _, location := range locations {
-		if location.Marker.IsMapped() {
-			return true
+// countActiveTeams counts teams that have started
+func countActiveTeams(teams []models.Team) int {
+	count := 0
+	for _, team := range teams {
+		if team.HasStarted {
+			count++
 		}
 	}
-	return false
+	return count
+}
+
+// countTeamsByStatus counts teams in each status category
+func countTeamsByStatus(teams []models.Team, totalLocations int) (inTransit, checkedIn int) {
+	for _, team := range teams {
+		if !team.HasStarted {
+			continue
+		}
+		status := getTeamStatus(team, totalLocations)
+		switch status {
+		case services.StatusOnsite:
+			checkedIn++
+		case services.StatusTransit, services.StatusStarted:
+			inTransit++
+		}
+	}
+	return
 }
 
 // TeamStatusBadge renders a status badge for a team with optional tooltip and size
@@ -97,163 +115,84 @@ templ ActivityTracker(instance models.Instance) {
 			</dialog>
 		</div>
 	</div>
-	<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
-		if hasMappedLocations(instance.Locations) {
-			<div class="w-full md:w-5/12">
-				<div id="map-container" class="group relative w-full aspect-square lg:w-96 rounded-lg shadow-lg my-5 overflow-hidden">
-					<div id="map-activity" class="map w-full h-full rounded-lg"></div>
-				</div>
-				<div class="join join-vertical w-full">
-					for _,location := range instance.Locations {
-						<input
-							type="hidden"
-							class="location-name"
-							if location.Marker.IsMapped() {
-								data-lat={ fmt.Sprint(location.Marker.Lat) }
-								data-lng={ fmt.Sprint(location.Marker.Lng) }
+	<div class="px-5 mb-5">
+		@ActivityStats(instance)
+	</div>
+	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
+		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
+			@LocationOverviewCard(instance)
+		</div>
+		<div class="w-full flex-1 min-w-0 overflow-x-hidden">
+			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
+				<div class="card-body p-6">
+					<div class="flex items-center justify-between mb-4">
+						<h2 class="card-title text-lg flex items-center gap-2">
+							if instance.Settings.EnablePoints {
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy w-5 h-5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+								Leaderboard
+							} else {
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users w-5 h-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+								Team progress
 							}
-							value={ location.Marker.Name }
-						/>
-					}
+						</h2>
+						<label class="input input-sm flex items-center gap-2 w-60">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+							<input
+								id="search-teams-activity"
+								type="text"
+								class="grow"
+								placeholder="Search"
+								_="
+								init send input to me
+								on input or load
+									show .team-activity-row
+										when its textContent.toLowerCase().normalize('NFD')
+										contains my value.toLowerCase().normalize('NFD')
+									if my value's length > 0 then
+										remove .invisible from #clear-search-activity
+									else
+										add .invisible to #clear-search-activity
+									end
+								end
+								"
+							/>
+							<button
+								id="clear-search-activity"
+								role="button"
+								class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+								type="reset"
+								_="
+									init if #search-teams-activity's value's length > 0 then
+										remove .invisible from me
+									end
+									on click
+										set #search-teams-activity's value to ''
+										add .invisible to me
+										send input to #search-teams-activity
+									end
+								"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+							</button>
+						</label>
+					</div>
+					<div class="overflow-x-auto -mx-6">
+						<table
+							id="team-activity"
+							class="overflow-hidden table table-sm md:table-md table-zebra w-full h-auto self-start"
+							hx-get="/admin/activity/teams"
+							hx-target="#team-activity"
+							hx-swap="outerHTML"
+							hx-trigger="load"
+						></table>
+					</div>
 				</div>
-			</div>
-		}
-		<div class={ "overflow-y-auto w-full", templ.KV("mx-auto max-w-6xl", !hasMappedLocations(instance.Locations)) }>
-			<div class="overflow-x-auto">
-				<table
-					id="team-activity"
-					class="overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start"
-					hx-get="/admin/activity/teams"
-					hx-target="#team-activity"
-					hx-swap="outerHTML"
-					hx-trigger="load"
-				></table>
 			</div>
 		</div>
 	</div>
 	@scheduleModal(instance)
 	@announcementModal()
 	@teamModal()
-	if hasMappedLocations(instance.Locations) {
-		<script>
-(function () {
-  let map; // Store the map instance globally within the IIFE
-  let markerArray = []; // Store the markers array globally within the IIFE
-
-  function initializeMap() {
-    const locations = document.querySelectorAll('.location-name');
-    // Calculate the center and zoom level based on the locations
-    let coords = [170.5111643, -45.8650509];
-    let zoom = 17;
-    for (let i = 0; i < locations.length; i++) {
-      if (!locations[i].dataset.lat || !locations[i].dataset.lng) {
-        continue;
-      }
-      const lat = parseFloat(locations[i].dataset.lat);
-      const lng = parseFloat(locations[i].dataset.lng);
-      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-        coords = [lng, lat];
-        break;
-      }
-    }
-
-    // Clear any existing markers
-    markerArray.forEach(marker => marker.remove());
-    markerArray = [];
-
-    // Destroy existing map instance if it exists
-    if (map) {
-      map.remove();
-      map = null; // Explicitly set to null to clear reference
-    }
-
-    // Set the Mapbox access token
-    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;
-
-    // Determine the style based on color scheme
-    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
-      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
-
-    // Create the map
-    map = new mapboxgl.Map({
-      container: 'map-activity',
-      style: style,
-      center: coords,
-      zoom: zoom,
-      cooperativeGestures: true,
-    });
-
-    map.on('load', function () {
-      map.resize();
-    });
-
-    // Find and loop through .location-name elements to create markers with original numbers
-    locations.forEach(function (location, index) {
-	  if (!location.dataset.lat || !location.dataset.lng) {
-		return;
-		}
-      // Create a HTML element for each marker
-      const el = document.createElement('div');
-      el.className = 'marker';
-      el.innerHTML = '<span><b>' + (index + 1) + '</b></span>';
-
-      // Create the marker
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([location.dataset.lng, location.dataset.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25, focusAfterOpen: false }) // Add popups
-          .setHTML('<h3>' + location.value + '</h3>'));
-
-				marker.getElement().addEventListener('mouseenter', function () {
-				  popup = marker.getPopup();
-					if (!popup.isOpen()) {
-						marker.togglePopup();
-					}
-				});
-
-				marker.getElement().addEventListener('mouseleave', function () {
-					marker.togglePopup();	
-				});
-
-      markerArray.push(marker);
-
-			let locationContainer = location.parentElement.parentElement;
-
-    });
-
-    // Sort markers by latitude
-    markerArray.sort(function (a, b) {
-      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);
-    });
-
-    // Add markers to the map in the sorted order without changing their displayed numbers
-    markerArray.forEach(marker => {
-      marker.addTo(map);
-    });
-
-    // Fit the map to the bounds of the markers
-    if (markerArray.length > 1) {
-      const bounds = new mapboxgl.LngLatBounds();
-      markerArray.forEach(marker => {
-        bounds.extend(marker.getLngLat());
-      });
-
-      map.fitBounds(bounds, { padding: 50 });
-    }
-
-    MapboxStyleSwitcher.extend(map, {
-      // Optional: Override default options
-      controlPosition: 'top-left', // Position on the map
-      // satelliteStyle: 'custom-satellite-style-if-needed'
-    }, markerArray);
-  }
-
-  // Initialize the map on page load
-  initializeMap();
-
-})();
-</script>
-	}
 }
 
 templ teamModal() {
@@ -279,6 +218,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 			hx-target="#team-activity"
 			hx-swap="outerHTML"
 			hx-trigger="every 30s"
+			_="init send input to #search-teams-activity"
 		>
 			<!-- head -->
 			<thead class="uppercase text-xs font-normal tracking-wider">
@@ -315,7 +255,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 			>
 				for _, teamData := range leaderboardData {
 					<tr
-						class="hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
+						class="team-activity-row hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
 						hx-get={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) }
 						hx-target="body"
 						hx-swap="outerHTML"
@@ -956,3 +896,242 @@ func getSortTooltip(field string, currentSortField string, currentSortOrder stri
 		}
 	}
 }
+
+// LocationVisitStats holds visit statistics for a location
+type LocationVisitStats struct {
+	Location        models.Location
+	TotalVisits     int
+	CurrentVisitors int
+	AvgTimeMinutes  float64
+}
+
+// getLocationVisitStats returns visit statistics for all locations
+func getLocationVisitStats(locations []models.Location, teams []models.Team, mustCheckOut bool) []LocationVisitStats {
+	stats := make([]LocationVisitStats, len(locations))
+
+	for i, location := range locations {
+		stats[i].Location = location
+		stats[i].TotalVisits = location.TotalVisits
+		stats[i].CurrentVisitors = location.CurrentCount
+
+		// Use AvgDuration from the location model if MustCheckOut is enabled
+		// AvgDuration is stored in seconds, convert to minutes
+		if mustCheckOut && location.AvgDuration > 0 {
+			stats[i].AvgTimeMinutes = location.AvgDuration / 60
+		}
+	}
+
+	return stats
+}
+
+templ ActivityStats(instance models.Instance) {
+	<div
+		id="activity-stats"
+		hx-get="/admin/activity/stats"
+		hx-target="#activity-stats"
+		hx-swap="outerHTML"
+		hx-trigger="every 30s"
+		class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden"
+	>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Active teams</div>
+			<div class="stat-value">{ fmt.Sprint(countActiveTeams(instance.Teams)) }</div>
+			<div class="stat-desc">of { fmt.Sprint(len(instance.Teams)) } total</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">In transit</div>
+			<div class="stat-value">
+				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations)); return inTransit }()) }
+			</div>
+			<div class="stat-desc">Moving between locations</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Checked in</div>
+			<div class="stat-value">
+				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations)); return checkedIn }()) }
+			</div>
+			<div class="stat-desc">Currently at locations</div>
+		</div>
+		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
+			<div class="stat-title">Average progress</div>
+			<div class="stat-value">
+				if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
+					{ fmt.Sprintf("%.0f%%", func() float64 {
+						total := 0
+						activeCount := 0
+						for _, team := range instance.Teams {
+							if team.HasStarted {
+								total += len(team.CheckIns)
+								activeCount++
+							}
+						}
+						if activeCount == 0 {
+							return 0
+						}
+						return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
+					}()) }
+				} else {
+					0%
+				}
+			</div>
+			<div class="stat-desc">Across active teams</div>
+		</div>
+		<div class="stat place-items-center col-span-2 md:col-span-1">
+			<div class="stat-title">Completion rate</div>
+			<div class="stat-value">
+				if len(instance.Teams) > 0 {
+					{ fmt.Sprintf("%.0f%%", func() float64 {
+						finishedCount := 0
+						for _, team := range instance.Teams {
+							if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
+								finishedCount++
+							}
+						}
+						return (float64(finishedCount) / float64(len(instance.Teams))) * 100
+					}()) }
+				} else {
+					0%
+				}
+			</div>
+			<div class="stat-desc">Teams finished</div>
+		</div>
+	</div>
+}
+
+templ LocationOverviewList(instance models.Instance) {
+	if len(instance.Locations) > 0 {
+		<ul
+			id="location-overview-list"
+			class="list max-h-96 overflow-y-auto overflow-x-hidden"
+			hx-get="/admin/activity/locations"
+			hx-target="#location-overview-list"
+			hx-swap="outerHTML"
+			hx-trigger="every 30s"
+			hx-disinherit="*"
+			_="init send input to #search-locations"
+		>
+			for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
+				<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
+					<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
+						<div class="flex flex-col gap-2 min-w-0 flex-1">
+							<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.MarkerID)) } class="text-sm font-medium truncate hover:underline">
+								{ stat.Location.Name }
+							</a>
+							if func() bool {
+								for _, t := range instance.Teams {
+									if t.MustCheckOut == stat.Location.ID {
+										return true
+									}
+								}
+								return false
+							}() {
+								<div class="flex gap-2 flex-wrap">
+									for _, t := range instance.Teams {
+										if t.MustCheckOut == stat.Location.ID {
+											<a
+												href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
+												class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
+											>
+												{ t.Code }
+											</a>
+										}
+									}
+								</div>
+							}
+						</div>
+						<div class="flex items-center gap-3 flex-shrink-0">
+							<div class="tooltip tooltip-left" data-tip="Total visits">
+								<div class="flex items-center gap-1">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4 text-base-content/60"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+									<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
+								</div>
+							</div>
+							if instance.Settings.MustCheckOut {
+								<div class="tooltip tooltip-left" data-tip="Avg time spent">
+									<div class="flex items-center gap-1">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
+										<span class="font-bold text-sm text-info">
+											if stat.AvgTimeMinutes > 0 {
+												if stat.AvgTimeMinutes >= 60 {
+													{ fmt.Sprintf("%.0fh", stat.AvgTimeMinutes/60) }
+												} else {
+													{ fmt.Sprintf("%.0fm", stat.AvgTimeMinutes) }
+												}
+											} else {
+												-
+											}
+										</span>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</li>
+			}
+		</ul>
+	} else {
+		<ul id="location-overview-list" class="list">
+			<li>
+				<div class="text-center py-8 text-base-content/60">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-inbox w-12 h-12 mx-auto mb-2 opacity-50"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+					<p class="text-sm">No locations added yet</p>
+				</div>
+			</li>
+		</ul>
+	}
+}
+
+templ LocationOverviewCard(instance models.Instance) {
+	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
+		<div class="card-body p-6 pb-4">
+			<div class="flex flex-col gap-4 mb-2">
+				<h2 class="card-title text-lg flex items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check w-5 h-5"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728"></path><circle cx="12" cy="10" r="3"></circle><path d="m16 18 2 2 4-4"></path></svg>
+					Location overview
+				</h2>
+				<label class="input input-sm flex items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input
+						id="search-locations"
+						type="text"
+						class="grow"
+						placeholder="Search locations"
+						_="
+						init send input to me
+						on input or load
+							show .location-row
+								when its textContent.toLowerCase().normalize('NFD')
+								contains my value.toLowerCase().normalize('NFD')
+							if my value's length > 0 then
+								remove .invisible from #clear-search-locations
+							else
+								add .invisible to #clear-search-locations
+							end
+						end
+						"
+					/>
+					<button
+						id="clear-search-locations"
+						role="button"
+						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+						type="reset"
+						_="
+							init if #search-locations's value's length > 0 then
+								remove .invisible from me
+							end
+							on click
+								set #search-locations's value to ''
+								add .invisible to me
+								send input to #search-locations
+							end
+						"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					</button>
+				</label>
+			</div>
+		</div>
+		@LocationOverviewList(instance)
+	</div>
+}
+

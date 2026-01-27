@@ -216,7 +216,7 @@ templ TeamsTable(teams []models.Team) {
 							placeholder="Search"
 							_="
 							init send input to me
-							on input 
+							on input
 								show .team-item
 									when its textContent.toLowerCase().normalize('NFD')
 									contains my value.toLowerCase().normalize('NFD')

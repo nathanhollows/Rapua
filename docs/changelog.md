@@ -7,6 +7,28 @@ tag: updated
 
 # Changelog
 
+## 6.11.0 (2025-01-28)
+
+### Added
+
+- New location section in the activity view for tracking locations in real-time. It answers questions like:
+  - "Which teams are currently playing?"
+  - "What's the average time for each location?"
+  - "Which locations are the most popular right now?"
+- Average duration for each location displayed in the facilitator dashboard.
+
+### Fixed
+
+- Fixed an issue with average durations for each location not calculating correctly.
+  - A migration has been added to recalculate existing data.
+- Resetting a team now redirects to the team overview page.
+
+## 6.10.3 (2025-01-27)
+
+### Changed
+
+- Check-ins now appear in reverse chronological order on the team activity page.
+
 ## 6.10.2 (2025-01-27)
 
 ### Fixed
