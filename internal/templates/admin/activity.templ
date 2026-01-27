@@ -183,8 +183,7 @@ templ ActivityTracker(instance models.Instance) {
 	</div>
 	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
 		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-			@LocationsRightNow(instance)
-			@LocationVisitStatsCard(instance)
+			@LocationOverviewCard(instance)
 		</div>
 		<div class="w-full flex-1 min-w-0 overflow-x-hidden">
 			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
@@ -961,27 +960,6 @@ func getSortTooltip(field string, currentSortField string, currentSortOrder stri
 	}
 }
 
-// getTeamsAtLocations returns a map of location IDs to teams currently at that location
-func getTeamsAtLocations(teams []models.Team) map[string][]models.Team {
-	locationTeams := make(map[string][]models.Team)
-	for _, team := range teams {
-		if team.MustCheckOut != "" {
-			locationTeams[team.MustCheckOut] = append(locationTeams[team.MustCheckOut], team)
-		}
-	}
-	return locationTeams
-}
-
-// hasTeamsAtLocations checks if any teams are currently at locations
-func hasTeamsAtLocations(teams []models.Team) bool {
-	for _, team := range teams {
-		if team.MustCheckOut != "" {
-			return true
-		}
-	}
-	return false
-}
-
 // LocationVisitStats holds visit statistics for a location
 type LocationVisitStats struct {
 	Location        models.Location
@@ -1009,43 +987,76 @@ func getLocationVisitStats(locations []models.Location, teams []models.Team, mus
 	return stats
 }
 
-templ LocationsRightNow(instance models.Instance) {
+templ LocationOverviewCard(instance models.Instance) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-0">
-			<h2 class="card-title text-lg flex items-center gap-2 mb-4">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin w-5 h-5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-				Locations right now
-			</h2>
+		<div class="card-body p-6 pb-4">
+			<div class="flex flex-col gap-4 mb-2">
+				<h2 class="card-title text-lg flex items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check w-5 h-5"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728"></path><circle cx="12" cy="10" r="3"></circle><path d="m16 18 2 2 4-4"></path></svg>
+					Location overview
+				</h2>
+				<label class="input input-sm flex items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input
+						id="search-locations"
+						type="text"
+						class="grow"
+						placeholder="Search locations"
+						_="
+						init send input to me
+						on input or load
+							show .location-row
+								when its textContent.toLowerCase().normalize('NFD')
+								contains my value.toLowerCase().normalize('NFD')
+							if my value's length > 0 then
+								remove .invisible from #clear-search-locations
+							else
+								add .invisible to #clear-search-locations
+							end
+						end
+						"
+					/>
+					<button
+						id="clear-search-locations"
+						role="button"
+						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+						type="reset"
+						_="
+							init if #search-locations's value's length > 0 then
+								remove .invisible from me
+							end
+							on click
+								set #search-locations's value to ''
+								add .invisible to me
+								send input to #search-locations
+							end
+						"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					</button>
+				</label>
+			</div>
 		</div>
-		<ul class="list max-h-96 overflow-y-auto overflow-x-hidden">
-			if hasTeamsAtLocations(instance.Teams) {
-				for i, location := range instance.Locations {
-					if func() bool {
-						for _, team := range instance.Teams {
-							if team.MustCheckOut == location.ID {
-								return true
-							}
-						}
-						return false
-					}() {
-						<li class={ templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
-							<div class="list-row">
-								<div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 w-full">
-									<div class="text-sm font-medium truncate">{ location.Name }</div>
-									<div class="badge badge-info badge-sm flex-shrink-0 tooltip tooltip-left" data-tip="Teams currently at location">
-										{ fmt.Sprintf("%d", func() int {
-											count := 0
-											for _, t := range instance.Teams {
-												if t.MustCheckOut == location.ID {
-													count++
-												}
-											}
-											return count
-										}()) }
-									</div>
-									<div class="col-span-2 flex flex-wrap gap-2">
+		if len(instance.Locations) > 0 {
+			<ul class="list max-h-96 overflow-y-auto overflow-x-hidden">
+				for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
+					<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
+						<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
+							<div class="flex flex-col gap-2 min-w-0 flex-1">
+								<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.MarkerID)) } class="text-sm font-medium truncate hover:underline">
+									{ stat.Location.Name }
+								</a>
+								if func() bool {
+									for _, t := range instance.Teams {
+										if t.MustCheckOut == stat.Location.ID {
+											return true
+										}
+									}
+									return false
+								}() {
+									<div class="flex gap-2 flex-wrap">
 										for _, t := range instance.Teams {
-											if t.MustCheckOut == location.ID {
+											if t.MustCheckOut == stat.Location.ID {
 												<a
 													href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
 													class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
@@ -1055,41 +1066,7 @@ templ LocationsRightNow(instance models.Instance) {
 											}
 										}
 									</div>
-								</div>
-							</div>
-						</li>
-					}
-				}
-			} else {
-				<li>
-					<div class="text-center py-8 text-base-content/60">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-off w-12 h-12 mx-auto mb-2 opacity-50"><path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"></path><path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568"></path><path d="m2 2 20 20"></path><path d="M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533"></path><path d="M9.13 9.13a3 3 0 0 0 3.74 3.74"></path></svg>
-						<p class="text-sm">No teams at locations right now</p>
-					</div>
-				</li>
-			}
-		</ul>
-	</div>
-}
-
-templ LocationVisitStatsCard(instance models.Instance) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-0">
-			<h2 class="card-title text-lg flex items-center gap-2 mb-4">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3 w-5 h-5"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
-				Location visit stats
-			</h2>
-		</div>
-		if len(instance.Locations) > 0 {
-			<ul class="list max-h-96 overflow-y-auto overflow-x-hidden">
-				for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
-					<li class={ templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
-						<a
-							href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.MarkerID)) }
-							class="px-6 list-row flex flex-row justify-between items-center hover:bg-base-300 hover:scale-[1.01] transition-all cursor-pointer no-underline w-full rounded-none"
-						>
-							<div class="flex-1 min-w-0 pr-4">
-								<div class="text-sm truncate">{ stat.Location.Name }</div>
+								}
 							</div>
 							<div class="flex items-center gap-3 flex-shrink-0">
 								<div class="tooltip tooltip-left" data-tip="Total visits">
@@ -1117,7 +1094,7 @@ templ LocationVisitStatsCard(instance models.Instance) {
 									</div>
 								}
 							</div>
-						</a>
+						</div>
 					</li>
 				}
 			</ul>
