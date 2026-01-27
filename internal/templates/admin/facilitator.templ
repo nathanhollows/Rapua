@@ -151,6 +151,11 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 												<span class="badge badge-success whitespace-nowrap">
 													Complete!
 												</span>
+												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+													<span class="badge badge-info whitespace-nowrap">
+														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
+													</span>
+												}
 											} else {
 												if location.Instance.Settings.MustCheckOut {
 													if location.CurrentCount > 0 {
@@ -162,6 +167,11 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 												<span class="badge badge-secondary whitespace-nowrap">
 													{ fmt.Sprintf("%d / %d", location.TotalVisits, len(activity)) } Visited
 												</span>
+												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+													<span class="badge badge-info whitespace-nowrap">
+														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
+													</span>
+												}
 											}
 										</td>
 									</tr>

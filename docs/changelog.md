@@ -15,6 +15,7 @@ tag: updated
   - "Which teams are currently playing?"
   - "What's the average time for each location?"
   - "Which locations are the most popular right now?"
+- Average duration for each location displayed in the facilitator dashboard.
 
 ### Fixed
 
