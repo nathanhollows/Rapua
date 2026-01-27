@@ -259,5 +259,5 @@ func (h *Handler) TeamReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/admin/teams/"+teamCode)
+	h.redirect(w, r, "/admin/teams")
 }
