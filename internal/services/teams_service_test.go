@@ -541,10 +541,10 @@ func TestTeamService_GroupCheckInsByGroup(t *testing.T) {
 			wantGroupCount: 1,
 			validate: func(t *testing.T, result []services.GroupedCheckIns) {
 				assert.Len(t, result[0].CheckIns, 3)
-				// Should be sorted by creation time (earliest to latest based on minutesAfterBase)
-				assert.Equal(t, "loc2", result[0].CheckIns[0].LocationID, "earliest should be first")
+				// Should be sorted by creation time (reverse chronological - latest to earliest)
+				assert.Equal(t, "loc1", result[0].CheckIns[0].LocationID, "latest should be first")
 				assert.Equal(t, "loc3", result[0].CheckIns[1].LocationID, "middle should be second")
-				assert.Equal(t, "loc1", result[0].CheckIns[2].LocationID, "latest should be last")
+				assert.Equal(t, "loc2", result[0].CheckIns[2].LocationID, "earliest should be last")
 			},
 		},
 		{

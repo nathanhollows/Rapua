@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.10.3 (2025-01-27)
+
+### Changed
+
+- Check-ins now appear in reverse chronological order on the team activity page.
+
 ## 6.10.2 (2025-01-27)
 
 ### Fixed
