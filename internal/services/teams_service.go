@@ -423,16 +423,16 @@ func (s *TeamService) GroupCheckInsByGroup(
 	// Build result slice in sorted order by group order
 	result := sortGroupsByOrder(groupMap, groupOrder)
 
-	// // Add ungrouped locations as "Other" group at the end
-	// if len(ungrouped) > 0 {
-	// 	result = append(result, GroupedCheckIns{
-	// 		GroupInfo: LocationGroupInfo{
-	// 			GroupName:  "Other",
-	// 			GroupColor: "base-content",
-	// 		},
-	// 		CheckIns: ungrouped,
-	// 	})
-	// }
+	// Add ungrouped locations as "Other" group at the end
+	if len(ungrouped) > 0 {
+		result = append(result, GroupedCheckIns{
+			GroupInfo: LocationGroupInfo{
+				GroupName:  "Other",
+				GroupColor: "base-content",
+			},
+			CheckIns: ungrouped,
+		})
+	}
 
 	return result
 }
