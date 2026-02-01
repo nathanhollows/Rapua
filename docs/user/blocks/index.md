@@ -38,6 +38,12 @@ These blocks allow you to create interactive elements in your game that require 
 - [Quiz](/docs/user/blocks/quiz)
 - [Sorting](/docs/user/blocks/sorting)
 
+## Task blocks
+
+These blocks are designed for specific navigation modes.
+
+- [Task](/docs/user/blocks/task) - Defines tasks for [Task List](/docs/user/game-settings#:~:text=Task%20List) navigation
+
 ## System blocks
 
 These blocks are automatically created for specific page types and provide essential functionality. They cannot be deleted but can be moved and customised.

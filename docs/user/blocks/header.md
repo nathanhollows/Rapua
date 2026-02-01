@@ -2,7 +2,6 @@
 title: "Header"
 sidebar: true
 order: 7
-tag: new
 ---
 
 # Header Block

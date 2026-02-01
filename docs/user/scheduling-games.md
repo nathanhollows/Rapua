@@ -2,7 +2,6 @@
 title: "Scheduling Games"
 sidebar: true
 order: 12
-tag: new
 ---
 
 # Scheduling Games

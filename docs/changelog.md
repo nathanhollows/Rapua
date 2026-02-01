@@ -7,6 +7,11 @@ tag: updated
 
 # Changelog
 
+## 6.12.0 (2025-02-01)
+
+### Added
+
+- [Task Block](/docs/user/blocks/task): A new block for a scavenger hunt style task that players can mark as complete.
 ## 6.11.0 (2025-01-28)
 
 ### Added
