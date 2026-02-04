@@ -77,12 +77,12 @@ func MyCheckins(team models.Team) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if team.MustCheckOut == scan.Location.ID {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " class=\"flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-primary mb-1\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " class=\"flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-primary mb-1\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-base-300\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

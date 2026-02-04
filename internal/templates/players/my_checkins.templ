@@ -31,9 +31,9 @@ templ MyCheckins(team models.Team) {
 						href={ templ.SafeURL(fmt.Sprint("/checkins/", scan.Location.MarkerID)) }
 						hx-boost="true"
 						if team.MustCheckOut == scan.Location.ID {
-							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-primary mb-1"
+							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-primary mb-1"
 						} else {
-							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-base-300"
+							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
 						}
 					>
 						if team.Instance.Settings.MustCheckOut {
