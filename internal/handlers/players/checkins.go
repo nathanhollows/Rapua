@@ -68,6 +68,17 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/checkins/"+code)
 }
 
+// CheckInByLocationID resolves a location UUID to its marker code and redirects to /s/{code}.
+// This is used by task blocks that link directly to locations.
+func (h *PlayerHandler) CheckInByLocationID(w http.ResponseWriter, r *http.Request) {
+	location, err := h.locationService.GetByID(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		h.redirect(w, r, "/404")
+		return
+	}
+	h.redirect(w, r, "/s/"+location.MarkerID)
+}
+
 func (h *PlayerHandler) renderCheckInForm(
 	w http.ResponseWriter,
 	r *http.Request,
