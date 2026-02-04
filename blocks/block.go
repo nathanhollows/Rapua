@@ -68,7 +68,7 @@ type Blocks []Block
 
 type BaseBlock struct {
 	ID         string          `json:"-"`
-	LocationID string          `json:"-"`
+	LocationID string          `json:"-"` // TODO: change to OwnerID
 	Type       string          `json:"-"`
 	Data       json.RawMessage `json:"-"`
 	Order      int             `json:"-"`
