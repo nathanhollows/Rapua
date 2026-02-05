@@ -32,7 +32,7 @@ templ EditPage(data EditPageData) {
 		<div class="flex flex-col flex-grow min-w-0">
 			<!-- Blocks -->
 			<section>
-				@blockAddDropdown(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks")
+				@blockAddButton(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks")
 				<!-- Hidden alert templates -->
 				<div id="missing-game-status-template" class="alert alert-warning" style="display: none;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">

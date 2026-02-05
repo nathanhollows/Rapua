@@ -69,7 +69,7 @@ templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string)
 			}
 		case services.StatusTransit:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-secondary badge-soft badge-%s tooltip tooltip-left", size) } data-tip="This team is between locations">In transit</span>
+				<span class={ fmt.Sprintf("badge badge-secondary badge-outline text-base-content bg-success badge-%s tooltip tooltip-left", size) } data-tip="This team is between locations">In transit</span>
 			} else {
 				<span class={ fmt.Sprintf("badge badge-secondary badge-%s", size) }>In transit</span>
 			}
@@ -1134,4 +1134,3 @@ templ LocationOverviewCard(instance models.Instance) {
 		@LocationOverviewList(instance)
 	</div>
 }
-

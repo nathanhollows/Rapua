@@ -1,9 +1,8 @@
-package blocks_test
+package blocks
 
 import (
 	"testing"
 
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +29,7 @@ func TestGetColorForIcon_ReturnsValidColors(t *testing.T) {
 
 	for _, icon := range icons {
 		t.Run(icon, func(t *testing.T) {
-			color := templates.GetColorForIcon(icon)
+			color := getColorForIcon(icon)
 			assert.NotEmpty(t, color, "color for %s should not be empty", icon)
 			assert.True(t, validColors[color], "color %q for icon %s is not a valid DaisyUI color", color, icon)
 		})
@@ -38,11 +37,11 @@ func TestGetColorForIcon_ReturnsValidColors(t *testing.T) {
 }
 
 func TestGetColorForIcon_UnknownIconReturnsValidDefault(t *testing.T) {
-	color := templates.GetColorForIcon("unknown-icon")
+	color := getColorForIcon("unknown-icon")
 	assert.NotEmpty(t, color)
 }
 
 func TestGetColorForIcon_EmptyIconReturnsValidDefault(t *testing.T) {
-	color := templates.GetColorForIcon("")
+	color := getColorForIcon("")
 	assert.NotEmpty(t, color)
 }

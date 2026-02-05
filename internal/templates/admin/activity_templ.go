@@ -181,7 +181,7 @@ func TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) 
 			}
 		case services.StatusTransit:
 			if withTooltip {
-				var templ_7745c5c3_Var10 = []any{fmt.Sprintf("badge badge-secondary badge-soft badge-%s tooltip tooltip-left", size)}
+				var templ_7745c5c3_Var10 = []any{fmt.Sprintf("badge badge-secondary badge-outline text-base-content bg-success badge-%s tooltip tooltip-left", size)}
 				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var10...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

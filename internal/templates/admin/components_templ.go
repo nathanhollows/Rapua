@@ -13,8 +13,8 @@ import (
 	"github.com/nathanhollows/Rapua/v6/blocks"
 )
 
-// blockAddDropdown renders a dropdown for adding blocks to a container
-func blockAddDropdown(ownerID string, context blocks.BlockContext, targetSelector string) templ.Component {
+// blockAddButton renders a dropdown for adding blocks to a container
+func blockAddButton(ownerID string, context blocks.BlockContext, targetSelector string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -35,172 +35,192 @@ func blockAddDropdown(ownerID string, context blocks.BlockContext, targetSelecto
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"divider my-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\"><svg class=\"w-5 h-5\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add content</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		if context == blocks.ContextTask {
+			templ_7745c5c3_Err = blockAddTask(ownerID, context, targetSelector).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = blockAddDropdownForContext(ownerID, context, targetSelector).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
+// blockAddTask renders a special element to automatically trigger adding a task block if none exist
+func blockAddTask(ownerID string, context blocks.BlockContext, targetSelector string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/admin/blocks/\" hx-target=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("next %s", targetSelector))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 21, Col: 52}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" hx-swap=\"beforeend\" hx-trigger=\"load\"><input type=\"hidden\" name=\"owner\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 25, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"> <input type=\"hidden\" name=\"context\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(string(context))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 26, Col: 61}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"> <input type=\"hidden\" name=\"type\" value=\"task\"></form>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// blockAddDropdownForContext renders the dropdown options for adding blocks based on context
+func blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"divider my-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("plus", templ.Attributes{"class": "w-4 h-4"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "Add content</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, block := range blocks.GetBlocksForContext(context) {
 			if !block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var2 string
-				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("next %s", targetSelector))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 29, Col: 59}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 32, Col: 58}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"> <input type=\"hidden\" name=\"context\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(string(context))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 33, Col: 68}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"> <input type=\"hidden\" name=\"type\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetType())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 34, Col: 65}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 38, Col: 43}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templ.Raw(block.GetIconSVG()).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("next %s", targetSelector))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 41, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 52, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</button></form>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, block := range blocks.GetBlocksForContext(context) {
-			if block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("next %s", targetSelector))
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 56, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 55, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"> <input type=\"hidden\" name=\"context\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(string(context))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 59, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 56, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"> <input type=\"hidden\" name=\"context\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input type=\"hidden\" name=\"type\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(string(context))
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetType())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 60, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 57, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <input type=\"hidden\" name=\"type\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetType())
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 61, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 61, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 65, Col: 43}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -208,22 +228,116 @@ func blockAddDropdown(ownerID string, context blocks.BlockContext, targetSelecto
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var13 string
-				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				var templ_7745c5c3_Var12 string
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 68, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 64, Col: 27}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</button></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, block := range blocks.GetBlocksForContext(context) {
+			if block.RequiresValidation() {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var13 string
+				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("next %s", targetSelector))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 79, Col: 59}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var14 string
+				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 82, Col: 58}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"> <input type=\"hidden\" name=\"context\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var15 string
+				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(string(context))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 83, Col: 68}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"> <input type=\"hidden\" name=\"type\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var16 string
+				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetType())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 84, Col: 65}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var17 string
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 88, Col: 43}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templ.Raw(block.GetIconSVG()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var18 string
+				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 91, Col: 27}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button></form>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -248,12 +362,12 @@ func deleteBlockModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var14 == nil {
-			templ_7745c5c3_Var14 = templ.NopComponent
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction attachDeleteBlockHandlers() {\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    const modal = document.getElementById(\"confirm_delete_block\");\n    const url = \"/admin/blocks/\" + event.currentTarget.dataset.block;\n    const btn = modal.querySelector(\"button.btn-error\");\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  // Attach click handlers to delete buttons\n  document.querySelectorAll('.block-delete').forEach(el => {\n    // Avoid double binding\n    if (!el.dataset.listenerAttached) {\n      el.addEventListener('click', confirmDeleteBlock);\n      el.dataset.listenerAttached = \"true\";\n    }\n  });\n}\n\n// Run after page load\ndocument.addEventListener(\"DOMContentLoaded\", attachDeleteBlockHandlers);\n\n// Run after any HTMX content load or swap\ndocument.body.addEventListener('htmx:load', attachDeleteBlockHandlers);\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction attachDeleteBlockHandlers() {\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    const modal = document.getElementById(\"confirm_delete_block\");\n    const url = \"/admin/blocks/\" + event.currentTarget.dataset.block;\n    const btn = modal.querySelector(\"button.btn-error\");\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  // Attach click handlers to delete buttons\n  document.querySelectorAll('.block-delete').forEach(el => {\n    // Avoid double binding\n    if (!el.dataset.listenerAttached) {\n      el.addEventListener('click', confirmDeleteBlock);\n      el.dataset.listenerAttached = \"true\";\n    }\n  });\n}\n\n// Run after page load\ndocument.addEventListener(\"DOMContentLoaded\", attachDeleteBlockHandlers);\n\n// Run after any HTMX content load or swap\ndocument.body.addEventListener('htmx:load', attachDeleteBlockHandlers);\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -278,12 +392,12 @@ func blockReorderForm() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var15 == nil {
-			templ_7745c5c3_Var15 = templ.NopComponent
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<form id=\"block-reorder-form\" hx-post=\"/admin/blocks/reorder\" hx-swap=\"none\" style=\"display: none;\"><div id=\"block-order-inputs\"></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<form id=\"block-reorder-form\" hx-post=\"/admin/blocks/reorder\" hx-swap=\"none\" style=\"display: none;\"><div id=\"block-order-inputs\"></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -308,12 +422,12 @@ func previewSortableScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tlet sortableInstance = null;\n\n\t\tfunction initializePreviewSortable() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !sortableInstance) {\n\t\t\t\t\t// Clean up any existing instance\n\t\t\t\t\tif (sortableInstance) {\n\t\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\tsortableInstance = new Sortable(blocksContainer, {\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.querySelector('.blocks');\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Re-initialize after HTMX swaps content\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Check if the swapped content contains the preview container\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\t// Reset and reinitialize\n\t\t\t\tif (sortableInstance) {\n\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\tsortableInstance = null;\n\t\t\t\t}\n\t\t\t\tinitializePreviewSortable();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instance since it's stale after history restore\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t\tsortableInstance = null;\n\t\t\t}\n\t\t\tinitializePreviewSortable();\n\t\t});\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t}\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t\tfunction attachPreviewHoverHandlers() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\tconst previewBlocks = previewContainer.querySelectorAll('.block-view');\n\n\t\t\tpreviewBlocks.forEach(previewBlock => {\n\t\t\t\t// Extract UUID from preview-block-{uuid}\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t                  document.querySelector(`[data-block-id=\"${blockId}\"]`);\n\n\t\t\t\tif (adminBlock) {\n\t\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\t\t});\n\n\t\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Attach hover handlers on page load\n\t\tdocument.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);\n\n\t\t// Re-attach after HTMX content updates\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\tattachPreviewHoverHandlers();\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tlet sortableInstance = null;\n\n\t\tfunction initializePreviewSortable() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !sortableInstance) {\n\t\t\t\t\t// Clean up any existing instance\n\t\t\t\t\tif (sortableInstance) {\n\t\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\tsortableInstance = new Sortable(blocksContainer, {\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.querySelector('.blocks');\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Re-initialize after HTMX swaps content\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t// Check if the swapped content contains the preview container\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\t// Reset and reinitialize\n\t\t\t\tif (sortableInstance) {\n\t\t\t\t\tsortableInstance.destroy();\n\t\t\t\t\tsortableInstance = null;\n\t\t\t\t}\n\t\t\t\tinitializePreviewSortable();\n\t\t\t}\n\t\t});\n\n\t\t// Re-initialize after browser back/forward navigation\n\t\tdocument.addEventListener('htmx:historyRestore', function(evt) {\n\t\t\t// Clear existing sortable instance since it's stale after history restore\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t\tsortableInstance = null;\n\t\t\t}\n\t\t\tinitializePreviewSortable();\n\t\t});\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\tif (sortableInstance) {\n\t\t\t\tsortableInstance.destroy();\n\t\t\t}\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t\tfunction attachPreviewHoverHandlers() {\n\t\t\tconst previewContainer = document.getElementById('mobile-preview-container');\n\t\t\tif (!previewContainer) return;\n\n\t\t\tconst previewBlocks = previewContainer.querySelectorAll('.block-view');\n\n\t\t\tpreviewBlocks.forEach(previewBlock => {\n\t\t\t\t// Extract UUID from preview-block-{uuid}\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t                  document.querySelector(`[data-block-id=\"${blockId}\"]`);\n\n\t\t\t\tif (adminBlock) {\n\t\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\t\t});\n\n\t\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Attach hover handlers on page load\n\t\tdocument.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);\n\n\t\t// Re-attach after HTMX content updates\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('#mobile-preview-container') ||\n\t\t\t\tevt.detail.target.id === 'mobile-preview-container') {\n\t\t\t\tattachPreviewHoverHandlers();\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -338,12 +452,12 @@ func blockMoveScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var22 == nil {
+			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -369,9 +483,9 @@ func sortableStyles() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var23 == nil {
+			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		return nil

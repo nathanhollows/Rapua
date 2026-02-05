@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v6/blocks"
@@ -193,7 +194,35 @@ func (s *NavigationService) GetPlayerNavigationView(
 		}
 	}
 
-	// Get next locations
+	// For task mode, load all locations in the group and partition by completion
+	if currentGroup != nil && currentGroup.Navigation == models.NavigationDisplayTasks {
+		uncompleted, completed, err := s.getScavengerHuntLocations(ctx, team, currentGroup)
+		if err != nil {
+			return nil, fmt.Errorf("loading scavenger hunt locations: %w", err)
+		}
+		view.NextLocations = uncompleted
+		view.CompletedLocations = completed
+
+		// Load task blocks for all locations (both completed and uncompleted)
+		allLocations := append(uncompleted, completed...)
+		for _, location := range allLocations {
+			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+				ctx,
+				location.ID,
+				team.Code,
+				blocks.ContextTask,
+			)
+			if blockErr != nil {
+				return nil, fmt.Errorf("loading task blocks: %w", blockErr)
+			}
+			view.Blocks = append(view.Blocks, locationBlocks...)
+			maps.Copy(view.BlockStates, blockStates)
+		}
+
+		return view, nil
+	}
+
+	// Get next locations (standard flow for other display modes)
 	locations, err := s.determineNextLocations(ctx, team)
 	if err != nil {
 		return nil, err
@@ -207,28 +236,28 @@ func (s *NavigationService) GetPlayerNavigationView(
 	}
 	view.NextLocations = locations
 
-	// Load navigation blocks if using custom display mode
-	if view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	// Load navigation blocks if using custom or tasks display mode
+	var viewContext blocks.BlockContext
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		viewContext = blocks.ContextTask
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+		viewContext = blocks.ContextLocationClues
+	}
+	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
 		for _, location := range locations {
 			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 				ctx,
 				location.ID,
 				team.Code,
-				blocks.ContextLocationClues,
+				viewContext,
 			)
 			if blockErr != nil {
 				return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
 			}
 			view.Blocks = append(view.Blocks, locationBlocks...)
-			for k, v := range blockStates {
-				view.BlockStates[k] = v
-			}
+			maps.Copy(view.BlockStates, blockStates)
 		}
 	}
-
-	// TODO: Optionally load completed locations for scavenger hunt mode
-	// This could be controlled by a new display mode
-	// view.CompletedLocations = s.getCompletedLocations(ctx, team)
 
 	return view, nil
 }
@@ -360,31 +389,110 @@ func (s *NavigationService) GetPreviewNavigationView(
 		BlockStates:     make(map[string]blocks.PlayerState),
 	}
 
-	// Load navigation blocks for custom display mode
-	if group.Navigation == models.NavigationDisplayCustom {
-		locationBlocks, blockStates, err := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	// Load navigation blocks if using custom or tasks display mode
+	var viewContext blocks.BlockContext
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		viewContext = blocks.ContextTask
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+		viewContext = blocks.ContextLocationClues
+	}
+	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
+		locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 			ctx,
 			location.ID,
 			team.Code,
-			blocks.ContextLocationClues,
+			viewContext,
 		)
-		if err != nil {
-			return nil, fmt.Errorf("loading navigation blocks: %w", err)
+		if blockErr != nil {
+			return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
 		}
-		view.Blocks = locationBlocks
-		view.BlockStates = blockStates
+		view.Blocks = append(view.Blocks, locationBlocks...)
+		maps.Copy(view.BlockStates, blockStates)
 	}
 
 	return view, nil
 }
 
-// getCompletedLocationIDs extracts location IDs from check-ins.
+// getCompletedLocationIDs extracts location IDs from check-ins where blocks are completed.
+// A location is only considered complete when BlocksCompleted is true.
 func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) []string {
 	completed := make([]string, 0, len(checkIns))
 	for _, checkIn := range checkIns {
-		completed = append(completed, checkIn.LocationID)
+		if checkIn.BlocksCompleted {
+			completed = append(completed, checkIn.LocationID)
+		}
 	}
 	return completed
+}
+
+// getScavengerHuntLocations returns locations for task display mode.
+// Uncompleted locations use the same routing logic as other modes (guided, random, free roam).
+// Completed locations are all locations in the group where BlocksCompleted is true.
+// Both lists preserve the order defined by group.LocationIDs.
+func (s *NavigationService) getScavengerHuntLocations(
+	ctx context.Context,
+	team *models.Team,
+	group *models.GameStructure,
+) (uncompleted []models.Location, completed []models.Location, err error) {
+	if len(group.LocationIDs) == 0 {
+		return []models.Location{}, []models.Location{}, nil
+	}
+
+	// Get uncompleted locations using the same routing logic as other modes
+	// This respects guided/random/free roam strategies
+	uncompleted, err = s.determineNextLocations(ctx, team)
+	if err != nil {
+		// ErrAllLocationsVisited is expected when all tasks are complete
+		if errors.Is(err, ErrAllLocationsVisited) {
+			uncompleted = []models.Location{}
+		} else {
+			return nil, nil, fmt.Errorf("determining next locations: %w", err)
+		}
+	}
+
+	// Load relations for uncompleted locations
+	for i := range uncompleted {
+		if loadErr := s.locationRepo.LoadRelations(ctx, &uncompleted[i]); loadErr != nil {
+			return nil, nil, fmt.Errorf("loading location relations: %w", loadErr)
+		}
+	}
+
+	// Get completed locations: all locations in group where BlocksCompleted is true
+	// Build completion map from check-ins
+	completionMap := make(map[string]bool)
+	for _, checkIn := range team.CheckIns {
+		if checkIn.BlocksCompleted {
+			completionMap[checkIn.LocationID] = true
+		}
+	}
+
+	// Build set of group location IDs for filtering
+	groupLocationSet := make(map[string]bool)
+	for _, locID := range group.LocationIDs {
+		groupLocationSet[locID] = true
+	}
+
+	// Collect completed locations in group order
+	completed = make([]models.Location, 0)
+	for _, locID := range group.LocationIDs {
+		if !completionMap[locID] {
+			continue // Not completed
+		}
+		if !groupLocationSet[locID] {
+			continue // Not in this group
+		}
+
+		loc, loadErr := s.locationRepo.GetByID(ctx, locID)
+		if loadErr != nil {
+			return nil, nil, fmt.Errorf("loading completed location: %w", loadErr)
+		}
+		if loadErr := s.locationRepo.LoadRelations(ctx, loc); loadErr != nil {
+			return nil, nil, fmt.Errorf("loading location relations: %w", loadErr)
+		}
+		completed = append(completed, *loc)
+	}
+
+	return uncompleted, completed, nil
 }
 
 // getAccessibleSecretLocations returns secret locations that are accessible from the team's current position.
