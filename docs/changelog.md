@@ -14,6 +14,9 @@ tag: updated
 - Scavenger hunts have made it to Rapua! These new features enable task-based games mixed with location-based gameplay.
   - [Task Block](/docs/user/blocks/task): A new block for a scavenger hunt style task that players can mark as complete.
   - A new "Task List" navigation display mode that shows a checklist of tasks for players to complete.
+- Switching between content and navigation previews is now much smoother.
+  - Click a block and the preview will automatically switch to the correct preview.
+  - Hovering over the block settings now highlights the corresponding block in the preview.
 
 ### Fixed
 

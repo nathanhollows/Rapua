@@ -300,7 +300,22 @@ templ EditLocation(data EditLocationData) {
 			</form>
 		</div>
 	</div>
-	<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
+	<div
+		class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0"
+		_="on click in #nav-blocks
+			if #nav-tab does not match .tab-active
+				send click to #nav-tab
+			end
+		on click in #content-blocks
+			if #content-tab does not match .tab-active
+				send click to #content-tab
+			end
+		on htmx:afterSwap from #nav-blocks
+			call _hyperscript.processNode(event.detail.target)
+		on htmx:afterSwap from #content-blocks
+			call _hyperscript.processNode(event.detail.target)
+		"
+	>
 		<div class="flex flex-col flex-grow min-w-0">
 			<div class="flex flex-col sm:flex-row gap-5 mb-5">
 				<fieldset class="fieldset w-full md:w-1/2">
@@ -353,6 +368,7 @@ templ EditLocation(data EditLocationData) {
 			if data.NavigationMode == models.NavigationDisplayCustom {
 				@blockAddButton(data.Location.ID, blocks.ContextLocationClues, ".blocks")
 				<div
+					id="nav-blocks"
 					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.NavigationBlocks {
@@ -369,6 +385,7 @@ templ EditLocation(data EditLocationData) {
 					@blockAddButton(data.Location.ID, blocks.ContextTask, ".blocks")
 				}
 				<div
+					id="nav-blocks"
 					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.NavigationBlocks {
@@ -380,6 +397,7 @@ templ EditLocation(data EditLocationData) {
 			<section>
 				@blockAddButton(data.Location.ID, blocks.ContextLocationContent, ".blocks")
 				<div
+					id="content-blocks"
 					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.ContentBlocks {

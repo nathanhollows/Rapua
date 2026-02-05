@@ -324,7 +324,12 @@ templ showTasks(data taskViewData) {
 
 templ taskItem(settings models.InstanceSettings, task locationTask, isCompleted bool) {
 	if task.Block != nil {
-		@templates.RenderPlayerView(settings, task.Block, task.State)
+		<div
+			class="block-view"
+			id={ fmt.Sprint("preview-block-", task.Block.GetID()) }
+		>
+			@templates.RenderPlayerView(settings, task.Block, task.State)
+		</div>
 	} else {
 		<!-- Fallback if no task block exists for the location -->
 		<a

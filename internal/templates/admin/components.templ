@@ -211,7 +211,12 @@ templ previewSortableScript() {
 								.filter(id => id); // Remove any nulls
 
 							// First, visually reorder admin blocks to match preview
-							const adminBlocksContainer = document.querySelector('.blocks');
+							// Determine which admin container to update based on active tab
+							const navTabActive = document.getElementById('nav-tab').classList.contains('tab-active');
+							const adminBlocksContainer = navTabActive
+								? document.getElementById('nav-blocks')
+								: document.getElementById('content-blocks');
+
 							if (adminBlocksContainer) {
 								// Get all admin block elements
 								const adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));

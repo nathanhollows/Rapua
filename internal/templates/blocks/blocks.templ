@@ -210,6 +210,49 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"
 		data-block-id={ block.GetID() }
 		data-block-type={ block.GetType() }
+		_="on mouseenter
+			js(me)
+				const blockId = me.id.substring(6);
+				const targetId = 'preview-block-' + blockId;
+				const previewBlock = document.getElementById(targetId);
+				me.classList.add('admin-block-highlighted');
+				if (previewBlock) {
+					previewBlock.classList.add('preview-block-highlighted');
+
+					// Find the scrolling container (mockup-phone-display)
+					const container = document.querySelector('.mockup-phone-display');
+					if (container) {
+						// Get positions relative to the scrolling container
+						const containerRect = container.getBoundingClientRect();
+						const blockRect = previewBlock.getBoundingClientRect();
+
+						// Calculate if block is outside visible area
+						const isAbove = blockRect.top < containerRect.top;
+						const isBelow = blockRect.bottom > containerRect.bottom;
+
+						if (isAbove || isBelow) {
+							// Calculate scroll position to center the block
+							const relativeTop = previewBlock.offsetTop - document.getElementById('mobile-preview-container').offsetTop;
+							const centerOffset = (container.clientHeight / 2) - (blockRect.height / 2);
+
+							container.scrollTo({
+								top: relativeTop - centerOffset,
+								behavior: 'smooth'
+							});
+						}
+					}
+				}
+			end
+		on mouseleave
+			js(me)
+				const blockId = me.id.substring(6);
+				const targetId = 'preview-block-' + blockId;
+				const previewBlock = document.getElementById(targetId);
+				me.classList.remove('admin-block-highlighted');
+				if (previewBlock) {
+					previewBlock.classList.remove('preview-block-highlighted');
+				}
+			end"
 	>
 		<input
 			type="checkbox"
