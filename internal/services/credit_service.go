@@ -63,7 +63,7 @@ func NewCreditService(
 func (s *CreditService) GetCreditBalance(
 	ctx context.Context,
 	userID string,
-) (freeCredits int, paidCredits int, err error) {
+) (int, int, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return 0, 0, err

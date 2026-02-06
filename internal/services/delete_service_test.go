@@ -559,19 +559,19 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 
 	// Create test uploads for the team
 	upload1 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test1.jpg",
 	}
 	upload2 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test2.jpg",
 	}
 	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)
@@ -621,19 +621,19 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 
 	// Create test uploads for the team
 	upload1 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test3.jpg",
 	}
 	upload2 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeVideo,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeVideo,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test4.mp4",
 	}
 	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)
@@ -691,19 +691,19 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	// Create uploads for both teams
 	upload1 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team1.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team1.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team1.jpg",
 	}
 	upload2 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team2.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team2.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team2.jpg",
 	}
 	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)
@@ -765,19 +765,19 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	// Create uploads for both teams
 	upload1 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team1.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeImage,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team1.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeImage,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team1-delete.jpg",
 	}
 	upload2 := &models.Upload{
-		ID:         gofakeit.UUID(),
-		TeamCode:   team2.Code,
-		InstanceID: instance.ID,
-		Type:       models.MediaTypeVideo,
-		Storage:    "local",
+		ID:          gofakeit.UUID(),
+		TeamCode:    team2.Code,
+		InstanceID:  instance.ID,
+		Type:        models.MediaTypeVideo,
+		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team2-delete.mp4",
 	}
 	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+//nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type StrArray []string
 
 type RouteStrategy int

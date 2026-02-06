@@ -8,6 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v6/internal/services"
 	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +20,8 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	// Skip redirect logic in preview mode
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		locations, err := h.navigationService.GetNextLocations(r.Context(), team)
+		var locations []models.Location
+		locations, err = h.navigationService.GetNextLocations(r.Context(), team)
 		if err != nil {
 			if !errors.Is(err, services.ErrAllLocationsVisited) {
 				h.handleError(
@@ -40,7 +42,9 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get blocks for the complete page
-	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	var pageBlocks []blocks.Block
+	var blockStates map[string]blocks.PlayerState
+	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 		r.Context(),
 		team.InstanceID,
 		team.Code,

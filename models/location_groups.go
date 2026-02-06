@@ -48,6 +48,8 @@ const (
 //	    │   └── LocationIDs: ["loc3", "loc4"]
 //	    └── Group "Historical Sites" (visible group card)
 //	        └── LocationIDs: ["loc5", "loc6"]
+//
+//nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type GameStructure struct {
 	ID              string                `json:"id"`
 	Name            string                `json:"name"`                       // Empty for root group, required for visible groups

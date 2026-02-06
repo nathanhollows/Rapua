@@ -791,7 +791,7 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 
 	// Assert - should return ErrAllLocationsVisited
 	require.Error(t, err)
-	assert.ErrorIs(t, err, services.ErrAllLocationsVisited)
+	require.ErrorIs(t, err, services.ErrAllLocationsVisited)
 	assert.Nil(t, view)
 }
 
@@ -879,6 +879,7 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations uncompleted", func(t *testing.T) {
 		// Load fresh team
+		//nolint:govet // Shadow variable in test subtest
 		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
 		require.NoError(t, err)
 		err = teamRepo.LoadRelations(ctx, teamPtr)
@@ -892,11 +893,12 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 		assert.NotNil(t, view)
 		assert.Equal(t, models.NavigationDisplayTasks, view.CurrentGroup.Navigation)
 		assert.Len(t, view.NextLocations, 3, "all 3 locations should be uncompleted")
-		assert.Len(t, view.CompletedLocations, 0, "no locations should be completed")
+		assert.Empty(t, view.CompletedLocations, "no locations should be completed")
 	})
 
 	t.Run("one location completed via check-in", func(t *testing.T) {
 		// Check in to loc1 - since location has no blocks, it's immediately complete
+		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc1, false, false)
 		require.NoError(t, err)
 
@@ -917,6 +919,7 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("two locations completed", func(t *testing.T) {
 		// Check in to loc2 - also immediately complete (no blocks)
+		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc2, false, false)
 		require.NoError(t, err)
 
@@ -937,6 +940,7 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations completed", func(t *testing.T) {
 		// Check in to loc3 - immediately complete (no blocks)
+		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc3, false, false)
 		require.NoError(t, err)
 
@@ -951,7 +955,7 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 		// Assert - all completed, scavenger hunt mode returns the view (not ErrAllLocationsVisited)
 		require.NoError(t, err)
-		assert.Len(t, view.NextLocations, 0, "no locations should be uncompleted")
+		assert.Empty(t, view.NextLocations, "no locations should be uncompleted")
 		assert.Len(t, view.CompletedLocations, 3, "all 3 locations should be completed")
 	})
 }

@@ -385,6 +385,9 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		navigationContext = blocks.ContextLocationClues
 	case models.NavigationDisplayTasks:
 		navigationContext = blocks.ContextTask
+	case models.NavigationDisplayMap, models.NavigationDisplayMapAndNames,
+		models.NavigationDisplayNames, models.NavigationDisplayClues:
+		// These navigation modes don't use blocks
 	}
 	if navigationContext != "" {
 		navigationBlocks, err = h.blockService.FindByOwnerIDAndContext(

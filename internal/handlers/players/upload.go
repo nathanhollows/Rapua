@@ -53,7 +53,8 @@ func (h *PlayerHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
 		h.handleError(w, r, "UploadImage", "Failed to encode response", "error", err)
 	}
 }

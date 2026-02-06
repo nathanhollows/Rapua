@@ -110,7 +110,7 @@ func (s *assetGenerator) CreateQRCodeImage(
 	path string,
 	content string,
 	options ...QRCodeOption,
-) (err error) {
+) error {
 	defaultOptions := &QRCodeOptions{
 		format:     pngFormat,
 		foreground: "#000000",
@@ -135,13 +135,11 @@ func (s *assetGenerator) CreateQRCodeImage(
 
 	switch defaultOptions.format {
 	case pngFormat:
-		err = qr.PNG(config, path)
-		if err != nil {
+		if err = qr.PNG(config, path); err != nil {
 			return err
 		}
 	case svgFormat:
-		err = qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground)
-		if err != nil {
+		if err = qr.SVG(config, path, defaultOptions.background, defaultOptions.foreground); err != nil {
 			return err
 		}
 	}
@@ -149,9 +147,9 @@ func (s *assetGenerator) CreateQRCodeImage(
 	return nil
 }
 
-func (s *assetGenerator) CreateArchive(paths []string) (path string, err error) {
+func (s *assetGenerator) CreateArchive(paths []string) (string, error) {
 	// Create the file
-	path = "assets/codes/" + helpers.NewCode(
+	path := "assets/codes/" + helpers.NewCode(
 		randomCodeLength,
 	) + "-" + strconv.FormatInt(
 		time.Now().UnixNano(),
@@ -204,7 +202,7 @@ func (s *assetGenerator) CreateArchive(paths []string) (path string, err error) 
 	return path, nil
 }
 
-func (s *assetGenerator) CreatePDF(data PDFData) (path string, err error) {
+func (s *assetGenerator) CreatePDF(data PDFData) (string, error) {
 	// Set up the document
 	pdf := fpdf.New(fpdf.OrientationPortrait, fpdf.UnitMillimeter, fpdf.PageSizeA4, "")
 	pdf.AddUTF8Font("ArchivoBlack", "", "./assets/fonts/ArchivoBlack-Regular.ttf")
@@ -215,13 +213,13 @@ func (s *assetGenerator) CreatePDF(data PDFData) (path string, err error) {
 		s.addPage(pdf, page, data.InstanceName)
 	}
 
-	path = "assets/codes/" + helpers.NewCode(
+	path := "assets/codes/" + helpers.NewCode(
 		randomCodeLength,
 	) + "-" + strconv.FormatInt(
 		time.Now().UnixNano(),
 		base10,
 	) + ".pdf"
-	err = pdf.OutputFileAndClose(path)
+	err := pdf.OutputFileAndClose(path)
 	if err != nil {
 		return "", err
 	}

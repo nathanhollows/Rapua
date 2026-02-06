@@ -204,7 +204,9 @@ func (s *NavigationService) GetPlayerNavigationView(
 		view.CompletedLocations = completed
 
 		// Load task blocks for all locations (both completed and uncompleted)
-		allLocations := append(uncompleted, completed...)
+		allLocations := make([]models.Location, 0, len(uncompleted)+len(completed))
+		allLocations = append(allLocations, uncompleted...)
+		allLocations = append(allLocations, completed...)
 		for _, location := range allLocations {
 			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 				ctx,
@@ -375,7 +377,8 @@ func (s *NavigationService) GetPreviewNavigationView(
 	}
 
 	// Load location relations (including blocks)
-	if err := s.locationRepo.LoadRelations(ctx, location); err != nil {
+	err = s.locationRepo.LoadRelations(ctx, location)
+	if err != nil {
 		return nil, fmt.Errorf("loading location relations: %w", err)
 	}
 
@@ -433,14 +436,14 @@ func (s *NavigationService) getScavengerHuntLocations(
 	ctx context.Context,
 	team *models.Team,
 	group *models.GameStructure,
-) (uncompleted []models.Location, completed []models.Location, err error) {
+) ([]models.Location, []models.Location, error) {
 	if len(group.LocationIDs) == 0 {
 		return []models.Location{}, []models.Location{}, nil
 	}
 
 	// Get uncompleted locations using the same routing logic as other modes
 	// This respects guided/random/free roam strategies
-	uncompleted, err = s.determineNextLocations(ctx, team)
+	uncompleted, err := s.determineNextLocations(ctx, team)
 	if err != nil {
 		// ErrAllLocationsVisited is expected when all tasks are complete
 		if errors.Is(err, ErrAllLocationsVisited) {
@@ -473,7 +476,7 @@ func (s *NavigationService) getScavengerHuntLocations(
 	}
 
 	// Collect completed locations in group order
-	completed = make([]models.Location, 0)
+	completed := make([]models.Location, 0)
 	for _, locID := range group.LocationIDs {
 		if !completionMap[locID] {
 			continue // Not completed
@@ -486,7 +489,8 @@ func (s *NavigationService) getScavengerHuntLocations(
 		if loadErr != nil {
 			return nil, nil, fmt.Errorf("loading completed location: %w", loadErr)
 		}
-		if loadErr := s.locationRepo.LoadRelations(ctx, loc); loadErr != nil {
+		loadErr = s.locationRepo.LoadRelations(ctx, loc)
+		if loadErr != nil {
 			return nil, nil, fmt.Errorf("loading location relations: %w", loadErr)
 		}
 		completed = append(completed, *loc)

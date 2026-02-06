@@ -131,7 +131,7 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 
 	t.Run("NonOwnerCanLaunchInstance", func(t *testing.T) {
 		// Create a second user who does not own the template
-		nonOwner := &models.User{ID: "user456", Password: "password", CurrentInstanceID: "instance456"}
+		nonOwner := &models.User{ID: "user456"}
 
 		// Non-owner should be able to create an instance from the template
 		_, launchErr := svc.LaunchInstance(
