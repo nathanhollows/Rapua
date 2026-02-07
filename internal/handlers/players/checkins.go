@@ -347,7 +347,20 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.MyCheckins(*team)
+	// Get navigation view to determine current group settings
+	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
+	if err != nil {
+		// If navigation view fails, fall back to basic rendering without view
+		h.logger.Error("getting navigation view", "error", err.Error())
+		c := templates.MyCheckins(*team, nil)
+		err = templates.Layout(c, "My Check-ins", team.Messages).Render(r.Context(), w)
+		if err != nil {
+			h.logger.Error("rendering checkins", "error", err.Error())
+		}
+		return
+	}
+
+	c := templates.MyCheckins(*team, view)
 	err = templates.Layout(c, "My Check-ins", team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering checkins", "error", err.Error())

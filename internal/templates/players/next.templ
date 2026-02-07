@@ -15,7 +15,7 @@ type NextParams struct {
 
 templ Next(data NextParams) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		if data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
 			@icon("circle-check-big", templ.Attributes{"class": "w-16 h-16 m-auto"})
 		} else {
 			@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
@@ -23,7 +23,7 @@ templ Next(data NextParams) {
 		<h2
 			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
 		>
-			if data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+			if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
 				{ data.View.CurrentGroup.Name }
 			} else {
 				Next location
@@ -58,17 +58,19 @@ templ Next(data NextParams) {
 					</a>
 				</div>
 			}
-			switch data.View.CurrentGroup.Navigation {
-				case models.NavigationDisplayMap:
-					@showMap(data.View.NextLocations)
-				case models.NavigationDisplayMapAndNames:
-					@showMapAndNames(data.View.Settings, data.View.NextLocations)
-				case models.NavigationDisplayNames:
-					@showNames(data.View.Settings, data.View.NextLocations)
-				case models.NavigationDisplayCustom:
-					@showCustom(prepareCustomContentViewData(data))
-				case models.NavigationDisplayTasks:
-					@showTasks(prepareTaskViewData(data.View))
+			if data.View.CurrentGroup != nil {
+				switch data.View.CurrentGroup.Navigation {
+					case models.NavigationDisplayMap:
+						@showMap(data.View.NextLocations)
+					case models.NavigationDisplayMapAndNames:
+						@showMapAndNames(data.View.Settings, data.View.NextLocations)
+					case models.NavigationDisplayNames:
+						@showNames(data.View.Settings, data.View.NextLocations)
+					case models.NavigationDisplayCustom:
+						@showCustom(prepareCustomContentViewData(data))
+					case models.NavigationDisplayTasks:
+						@showTasks(prepareTaskViewData(data.View))
+				}
 			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center mt-10">

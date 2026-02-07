@@ -49,7 +49,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	contentBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 		r.Context(),
 		team.CheckIns[index].Location.ID,
 		team.Code,
@@ -71,11 +71,33 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get navigation view to determine current group settings
+	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
+	if err != nil {
+		// Continue without view if it fails
+		h.logger.Error("getting navigation view", "error", err.Error())
+	}
+
+	// Get the task block for this location if in task mode
+	var taskBlock blocks.Block
+	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		taskBlocks, err := h.blockService.FindByOwnerIDAndContext(
+			r.Context(),
+			team.CheckIns[index].Location.ID,
+			blocks.ContextTask,
+		)
+		if err == nil && len(taskBlocks) > 0 {
+			taskBlock = taskBlocks[0]
+		}
+	}
+
 	data := templates.CheckInViewData{
-		Settings: team.Instance.Settings,
-		Scan:     team.CheckIns[index],
-		Blocks:   blocks,
-		States:   blockStates,
+		Settings:  team.Instance.Settings,
+		Scan:      team.CheckIns[index],
+		Blocks:    contentBlocks,
+		States:    blockStates,
+		View:      view,
+		TaskBlock: taskBlock,
 	}
 
 	c := templates.CheckInView(data)
@@ -137,10 +159,12 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := templates.CheckInViewData{
-		Settings: team.Instance.Settings,
-		Scan:     scan,
-		Blocks:   contentBlocks,
-		States:   blockStates,
+		Settings:  team.Instance.Settings,
+		Scan:      scan,
+		Blocks:    contentBlocks,
+		States:    blockStates,
+		View:      nil, // Preview mode doesn't have navigation context
+		TaskBlock: nil, // Preview mode doesn't have task context
 	}
 
 	err = templates.CheckInView(data).Render(r.Context(), w)
