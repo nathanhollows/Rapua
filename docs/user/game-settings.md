@@ -11,7 +11,7 @@ order: 9
 | Setting | Options | What It Does |
 |---------|---------|--------------|
 | **Routing Strategy** | Randomised, Open Exploration, Guided Path, Secret | How players move between locations |
-| **Navigation Display** | Map, Labelled Map, Location List, Custom Clues | How locations appear to players |
+| **Navigation Display** | Map, Labelled Map, Location List, Custom Clues, Task List | How locations appear to players |
 | **Completion Type** | All, Minimum | Whether all or some locations must be completed |
 | **Auto-Advance** | On/Off | Automatically move to next group when minimum met |
 | **Show Team Count** | On/Off | Display how many teams are at each location |
@@ -101,6 +101,24 @@ Secret Group: Master Challenge (2 locations)
 
 **Why it works:** Progressive difficulty with auto-advance. Players move forward when ready. Secret group provides post-game challenge.
 
+### Classic Scavenger Hunt
+**Structure:** Task checklist with physical verification
+
+```
+Main Group: Campus Challenge (10 locations)
+  - Routing: Open Exploration
+  - Display: Task List
+  - Access Control: QR/NFC required
+  - Completion: Minimum 7
+
+Tasks include:
+  - "Take a photo with the founder's statue"
+  - "Find the hidden plaque in the library"
+  - "Record the inscription on the bell tower"
+```
+
+**Why it works:** Players see all tasks upfront as a checklist. Physical QR/NFC scanning ensures they actually visit locations. Completed tasks show progress visually with checkmarks.
+
 ---
 
 ## Setting Details
@@ -148,6 +166,14 @@ How location information appears to players.
 - Block-based custom content
 - Show hints, images, puzzles instead of names/maps
 - Most flexible - you design what players see
+
+**Task List**
+- Scavenger hunt-style checklist of tasks
+- Shows all tasks with completion status
+- Completed tasks display checkmark and move to bottom
+- Progress indicator shows X/Y completed
+- Requires [Task blocks](/docs/user/blocks/task) on each location
+- Tasks can require QR/NFC scan or be directly clickable
 
 ### Completion Type
 How many locations must be completed to advance.

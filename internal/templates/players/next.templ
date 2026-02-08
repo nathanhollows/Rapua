@@ -15,15 +15,23 @@ type NextParams struct {
 
 templ Next(data NextParams) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-16 h-16 m-auto"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+			@icon("circle-check-big", templ.Attributes{"class": "w-16 h-16 m-auto"})
+		} else {
+			@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
+		}
 		<h2
-			class="mt-5 mb-3 text-center text-2xl font-bold leading-9 tracking-tight"
+			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
 		>
-			Next location
+			if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+				{ data.View.CurrentGroup.Name }
+			} else {
+				Next location
+			}
 		</h2>
 		if data.View.MustCheckOut {
-			<div role="alert" class="alert alert-info mt-8">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
+			<div role="alert" class="alert alert-info mb-10">
+				@icon("circle-alert", templ.Attributes{"class": "w-6 h-6 shrink-0"})
 				<span>
 					You must check out of your
 					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", data.View.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
@@ -34,36 +42,40 @@ templ Next(data NextParams) {
 			</div>
 		} else {
 			if data.View.CanAdvanceEarly {
-				<div role="alert" class="alert my-8">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6 shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
-					<div class="flex flex-col gap-2">
-						<span class="text-pretty">
-							You have completed the minimum requirements for this area! You can continue exploring the remaining locations, or
-							<a
-								hx-post="/advance"
-								hx-swap="none"
-								class="link"
-							>
-								advance to the next group
-							</a>.
-						</span>
+				<div role="alert" class="alert alert-info alert-vertical sm:alert-horizontal mb-10">
+					<div>
+						<div class="text-sm">
+							You have completed the minimum number of tasks. Would you like to skip ahead? 
+						</div>
 					</div>
+					<a
+						hx-post="/advance"
+						hx-swap="none"
+						class="btn btn-sm btn-neutral"
+					>
+						Skip
+						@icon("chevron-right", templ.Attributes{"class": "w-4 h-4"})
+					</a>
 				</div>
 			}
-			switch data.View.CurrentGroup.Navigation {
-				case models.NavigationDisplayMap:
-					@showMap(data.View.NextLocations)
-				case models.NavigationDisplayMapAndNames:
-					@showMapAndNames(data.View.Settings, data.View.NextLocations)
-				case models.NavigationDisplayNames:
-					@showNames(data.View.Settings, data.View.NextLocations)
-				case models.NavigationDisplayCustom:
-					@showCustom(prepareCustomContentViewData(data))
+			if data.View.CurrentGroup != nil {
+				switch data.View.CurrentGroup.Navigation {
+					case models.NavigationDisplayMap:
+						@showMap(data.View.NextLocations)
+					case models.NavigationDisplayMapAndNames:
+						@showMapAndNames(data.View.Settings, data.View.NextLocations)
+					case models.NavigationDisplayNames:
+						@showNames(data.View.Settings, data.View.NextLocations)
+					case models.NavigationDisplayCustom:
+						@showCustom(prepareCustomContentViewData(data))
+					case models.NavigationDisplayTasks:
+						@showTasks(prepareTaskViewData(data.View))
+				}
 			}
 		}
-		<div id="player-nav" class="flex flex-row justify-center mt-12">
+		<div id="player-nav" class="flex flex-row justify-center mt-10">
 			<a href="/checkins" hx-boost="true" class="btn btn-ghost btn-outline">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
+				@icon("map-pin-check-inside", templ.Attributes{})
 				My Check-ins
 			</a>
 		</div>
@@ -222,6 +234,126 @@ templ showCustom(data customContentViewData) {
 				</div>
 			}
 		</div>
+	}
+}
+
+type taskViewData struct {
+	Settings         models.InstanceSettings
+	UncompletedTasks []locationTask
+	CompletedTasks   []locationTask
+}
+
+type locationTask struct {
+	Location models.Location
+	Block    blocks.Block
+	State    blocks.PlayerState
+}
+
+func prepareTaskViewData(view *services.PlayerNavigationView) taskViewData {
+	// Build a map of locationID -> task block for quick lookup
+	blockByLocation := make(map[string]blocks.Block)
+	for _, block := range view.Blocks {
+		blockByLocation[block.GetLocationID()] = block
+	}
+
+	// Build uncompleted tasks in location order
+	uncompletedTasks := make([]locationTask, 0, len(view.NextLocations))
+	for _, loc := range view.NextLocations {
+		task := locationTask{Location: loc}
+		if block, exists := blockByLocation[loc.ID]; exists {
+			task.Block = block
+			if state, hasState := view.BlockStates[block.GetID()]; hasState {
+				task.State = state
+			}
+		}
+		uncompletedTasks = append(uncompletedTasks, task)
+	}
+
+	// Build completed tasks in location order
+	completedTasks := make([]locationTask, 0, len(view.CompletedLocations))
+	for _, loc := range view.CompletedLocations {
+		task := locationTask{Location: loc}
+		if block, exists := blockByLocation[loc.ID]; exists {
+			task.Block = block
+			if state, hasState := view.BlockStates[block.GetID()]; hasState {
+				task.State = state
+			}
+		}
+		completedTasks = append(completedTasks, task)
+	}
+
+	return taskViewData{
+		Settings:         view.Settings,
+		UncompletedTasks: uncompletedTasks,
+		CompletedTasks:   completedTasks,
+	}
+}
+
+templ showTasks(data taskViewData) {
+	<div class="space-y-4">
+		<!-- Uncompleted tasks -->
+		if len(data.UncompletedTasks) > 0 {
+			<div class="join join-vertical w-full">
+				for _, task := range data.UncompletedTasks {
+					@taskItem(data.Settings, task, false)
+				}
+			</div>
+		}
+		<!-- Completed tasks -->
+		if len(data.CompletedTasks) > 0 {
+			<div class="divider text-sm text-base-content/70">
+				Completed
+				{ fmt.Sprint(len(data.CompletedTasks)) }/{ fmt.Sprint(len(data.UncompletedTasks) + len(data.CompletedTasks)) }
+			</div>
+			<div class="join join-vertical line-through w-full">
+				for _, task := range data.CompletedTasks {
+					@taskItem(data.Settings, task, true)
+				}
+			</div>
+		}
+		<!-- All done message -->
+		if len(data.UncompletedTasks) == 0 && len(data.CompletedTasks) > 0 {
+			<div role="alert" class="alert alert-success mt-4">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 shrink-0">
+					<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+					<polyline points="22 4 12 14.01 9 11.01"></polyline>
+				</svg>
+				<span>All tasks in this section complete!</span>
+			</div>
+		}
+	</div>
+}
+
+templ taskItem(settings models.InstanceSettings, task locationTask, isCompleted bool) {
+	if task.Block != nil {
+		<div
+			class="block-view"
+			id={ fmt.Sprint("preview-block-", task.Block.GetID()) }
+		>
+			@templates.RenderPlayerView(settings, task.Block, task.State)
+		</div>
+	} else {
+		<!-- Fallback if no task block exists for the location -->
+		<a
+			href={ templ.URL(fmt.Sprintf("/l/%s", task.Location.ID)) }
+			hx-boost="true"
+			class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300"
+		>
+			<input
+				type="checkbox"
+				disabled="disabled"
+				class="checkbox checkbox-lg checkbox-primary opacity-100"
+				if isCompleted {
+					checked="checked"
+				}
+			/>
+			<span class="">
+				{ task.Location.Name }
+			</span>
+			<div class="flex items-center ml-auto">
+				@icon("chevron-right", templ.Attributes{"class": "ml-1 w-4 h-4 text-base-content"})
+			</div>
+		</a>
 	}
 }
 

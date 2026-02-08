@@ -101,6 +101,7 @@ type UploadService interface {
 	) (*models.Upload, error)
 }
 
+//nolint:recvcheck // Read-only methods use value receiver, state-modifying methods use pointer receiver
 type PlayerHandler struct {
 	logger              *slog.Logger
 	blockService        BlockService

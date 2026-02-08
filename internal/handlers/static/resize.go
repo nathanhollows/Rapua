@@ -97,12 +97,14 @@ func resizeImage(srcPath, dstPath string, maxWidth int) error {
 
 	// Create the cache directory if it doesn't exist
 	cacheDir := filepath.Dir(dstPath)
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	err = os.MkdirAll(cacheDir, 0755)
+	if err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// Save the resized image
-	if err := imaging.Save(resized, dstPath); err != nil {
+	err = imaging.Save(resized, dstPath)
+	if err != nil {
 		return fmt.Errorf("failed to save resized image: %w", err)
 	}
 

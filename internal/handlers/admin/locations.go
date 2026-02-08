@@ -362,25 +362,6 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	navigationBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		location.ID,
-		blocks.ContextLocationClues,
-	)
-	if err != nil {
-		h.logger.Error(
-			"LocationEdit: getting blocks",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-			"location_id",
-			location.ID,
-		)
-		h.redirect(w, r, "/admin/locations")
-		return
-	}
-
 	// Find the parent group to get navigation settings
 	parentGroup := h.gameStructureService.FindGroupByLocationID(&user.CurrentInstance.GameStructure, location.ID)
 	navigationMode := models.NavigationDisplayCustom // Default to custom
@@ -394,6 +375,39 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 			"using_default",
 			navigationMode,
 		)
+	}
+
+	// Load blocks based on the navigation mode of the parent group
+	var navigationContext blocks.BlockContext
+	var navigationBlocks []blocks.Block
+	switch parentGroup.Navigation {
+	case models.NavigationDisplayCustom:
+		navigationContext = blocks.ContextLocationClues
+	case models.NavigationDisplayTasks:
+		navigationContext = blocks.ContextTask
+	case models.NavigationDisplayMap, models.NavigationDisplayMapAndNames,
+		models.NavigationDisplayNames, models.NavigationDisplayClues:
+		// These navigation modes don't use blocks
+	}
+	if navigationContext != "" {
+		navigationBlocks, err = h.blockService.FindByOwnerIDAndContext(
+			r.Context(),
+			location.ID,
+			navigationContext,
+		)
+		if err != nil {
+			h.logger.Error(
+				"LocationEdit: getting blocks",
+				"error",
+				err,
+				"instance_id",
+				user.CurrentInstanceID,
+				"location_id",
+				location.ID,
+			)
+			h.redirect(w, r, "/admin/locations")
+			return
+		}
 	}
 
 	data := templates.EditLocationData{

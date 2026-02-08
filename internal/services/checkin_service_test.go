@@ -59,7 +59,13 @@ func TestRollingAverageDuration(t *testing.T) {
 		newAvg := (avgDuration*float64(completedVisitsBefore) + visitDuration) / float64(completedVisitsBefore+1)
 
 		// Expected: (300 * 2 + 360) / 3 = 960 / 3 = 320 seconds
-		assert.InDelta(t, 320.0, newAvg, 0.01, "With concurrent visitors, average should be (300*2 + 360) / 3 = 320 seconds")
+		assert.InDelta(
+			t,
+			320.0,
+			newAvg,
+			0.01,
+			"With concurrent visitors, average should be (300*2 + 360) / 3 = 320 seconds",
+		)
 	})
 
 	t.Run("Rolling average formula matches incremental calculation", func(t *testing.T) {
@@ -105,7 +111,9 @@ func TestRollingAverageDuration(t *testing.T) {
 
 			// Check-out: update rolling average
 			completedVisitsBefore := totalVisits - currentCount
-			avgDuration = (avgDuration*float64(completedVisitsBefore) + visitDuration.Seconds()) / float64(completedVisitsBefore+1)
+			avgDuration = (avgDuration*float64(completedVisitsBefore) + visitDuration.Seconds()) / float64(
+				completedVisitsBefore+1,
+			)
 			currentCount--
 		}
 

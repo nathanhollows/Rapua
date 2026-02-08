@@ -16,6 +16,7 @@ type BlockContext string
 const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
 	ContextLocationClues   BlockContext = "location_clues"   // Clues
+	ContextTask            BlockContext = "task"             // Task a la scavenger hunts
 	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
 	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
@@ -67,7 +68,7 @@ type Blocks []Block
 
 type BaseBlock struct {
 	ID         string          `json:"-"`
-	LocationID string          `json:"-"`
+	LocationID string          `json:"-"` // TODO: change to OwnerID
 	Type       string          `json:"-"`
 	Data       json.RawMessage `json:"-"`
 	Order      int             `json:"-"`
@@ -126,6 +127,9 @@ func init() {
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+
+	// Task specific blocks
+	registerBlock(&TaskBlock{}, []BlockContext{ContextTask})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
@@ -213,6 +217,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewGameStatusAlertBlock(baseBlock), nil
 	case "start_game_button":
 		return NewStartGameButtonBlock(baseBlock), nil
+	case "task":
+		return NewTaskBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -325,5 +331,12 @@ func NewGameStatusAlertBlock(base BaseBlock) *GameStatusAlertBlock {
 func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
 	return &StartGameButtonBlock{
 		BaseBlock: base,
+	}
+}
+
+func NewTaskBlock(base BaseBlock) *TaskBlock {
+	return &TaskBlock{
+		BaseBlock:   base,
+		LinkThrough: true,
 	}
 }

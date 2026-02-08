@@ -113,7 +113,8 @@ func (s locationService) CreateLocation(
 	}
 
 	// Every location gets a default header block
-	if err := s.createDefaultHeaderBlock(ctx, &location); err != nil {
+	err = s.createDefaultHeaderBlock(ctx, &location)
+	if err != nil {
 		return models.Location{}, fmt.Errorf("creating default header block: %w", err)
 	}
 
@@ -148,7 +149,8 @@ func (s locationService) CreateLocationFromMarker(
 	}
 
 	// Every location gets a default header block
-	if err := s.createDefaultHeaderBlock(ctx, &location); err != nil {
+	err = s.createDefaultHeaderBlock(ctx, &location)
+	if err != nil {
 		return models.Location{}, fmt.Errorf("creating default header block: %w", err)
 	}
 

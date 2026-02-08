@@ -30,7 +30,7 @@ func NewMagicTokenService(secretKey []byte) *MagicTokenService {
 }
 
 // GenerateToken creates a time-limited magic login token for the given user ID.
-// Format: base64url(userID:expiryUnix:signature)
+// Format: base64url(userID:expiryUnix:signature).
 func (s *MagicTokenService) GenerateToken(userID string, duration time.Duration) (string, error) {
 	if userID == "" {
 		return "", errors.New("userID cannot be empty")

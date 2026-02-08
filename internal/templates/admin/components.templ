@@ -5,13 +5,36 @@ import (
 	"github.com/nathanhollows/Rapua/v6/blocks"
 )
 
-// blockAddDropdown renders a dropdown for adding blocks to a container
-templ blockAddDropdown(ownerID string, context blocks.BlockContext, targetSelector string) {
+// blockAddButton renders a dropdown for adding blocks to a container
+templ blockAddButton(ownerID string, context blocks.BlockContext, targetSelector string) {
+	if context == blocks.ContextTask {
+		@blockAddTask(ownerID, context, targetSelector)
+	} else {
+		@blockAddDropdownForContext(ownerID, context, targetSelector)
+	}
+}
+
+// blockAddTask renders a special element to automatically trigger adding a task block if none exist
+templ blockAddTask(ownerID string, context blocks.BlockContext, targetSelector string) {
+	<form
+		hx-post="/admin/blocks/"
+		hx-target={ fmt.Sprintf("next %s", targetSelector) }
+		hx-swap="beforeend"
+		hx-trigger="load"
+	>
+		<input type="hidden" name="owner" value={ ownerID }/>
+		<input type="hidden" name="context" value={ string(context) }/>
+		<input type="hidden" name="type" value="task"/>
+	</form>
+}
+
+// blockAddDropdownForContext renders the dropdown options for adding blocks based on context
+templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector string) {
 	<div class="divider my-10">
 		<div class="dropdown dropdown-center">
 			<div class="block">
 				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
-					<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
 					Add content
 				</div>
 			</div>
@@ -188,7 +211,12 @@ templ previewSortableScript() {
 								.filter(id => id); // Remove any nulls
 
 							// First, visually reorder admin blocks to match preview
-							const adminBlocksContainer = document.querySelector('.blocks');
+							// Determine which admin container to update based on active tab
+							const navTabActive = document.getElementById('nav-tab').classList.contains('tab-active');
+							const adminBlocksContainer = navTabActive
+								? document.getElementById('nav-blocks')
+								: document.getElementById('content-blocks');
+
 							if (adminBlocksContainer) {
 								// Get all admin block elements
 								const adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));

@@ -1,3 +1,4 @@
+//nolint:testpackage // Test requires access to internal members
 package players
 
 import (

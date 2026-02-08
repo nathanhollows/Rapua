@@ -82,7 +82,7 @@ templ AddLocation(data AddLocationData) {
 					Shared map marker
 					<div class="dropdown dropdown-end dropdown-hover">
 						<div tabindex="0" role="button" class="text-info">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+							@icon("info", templ.Attributes{"class": "w-4 h-4 ml-1 group-[.tab-active]:stroke-primary-content"})
 						</div>
 						<div
 							tabindex="0"
@@ -224,9 +224,9 @@ templ EditLocation(data EditLocationData) {
 		<div class="flex gap-3">
 			<div class="dropdown dropdown-center">
 				<div tabindex="0" role="button" class="btn">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download w-5"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg>
+					@icon("download", templ.Attributes{"class": "w-5"})
 					Download
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4"><path d="m6 9 6 6 6-6"></path></svg>
+					@icon("chevron-down", templ.Attributes{"class": "w-4"})
 				</div>
 				<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-52 p-2 shadow">
 					<h2 class="menu-title">Posters</h2>
@@ -300,7 +300,22 @@ templ EditLocation(data EditLocationData) {
 			</form>
 		</div>
 	</div>
-	<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
+	<div
+		class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0"
+		_="on click in #nav-blocks
+			if #nav-tab does not match .tab-active
+				send click to #nav-tab
+			end
+		on click in #content-blocks
+			if #content-tab does not match .tab-active
+				send click to #content-tab
+			end
+		on htmx:afterSwap from #nav-blocks
+			call _hyperscript.processNode(event.detail.target)
+		on htmx:afterSwap from #content-blocks
+			call _hyperscript.processNode(event.detail.target)
+		"
+	>
 		<div class="flex flex-col flex-grow min-w-0">
 			<div class="flex flex-col sm:flex-row gap-5 mb-5">
 				<fieldset class="fieldset w-full md:w-1/2">
@@ -351,8 +366,26 @@ templ EditLocation(data EditLocationData) {
 			@deleteBlockModal()
 			<!-- Clues (only show when navigation mode is Custom Clues) -->
 			if data.NavigationMode == models.NavigationDisplayCustom {
-				@blockAddDropdown(data.Location.ID, blocks.ContextLocationClues, ".blocks")
+				@blockAddButton(data.Location.ID, blocks.ContextLocationClues, ".blocks")
 				<div
+					id="nav-blocks"
+					class="blocks flex flex-col gap-5"
+				>
+					for _, block := range data.NavigationBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
+					}
+				</div>
+			}
+			<!-- Tasks -->
+			if data.NavigationMode == models.NavigationDisplayTasks {
+				<div class="divider my-10">
+					<span class="text-sm font-bold">Task</span>
+				</div>
+				if len(data.NavigationBlocks) == 0 {
+					@blockAddButton(data.Location.ID, blocks.ContextTask, ".blocks")
+				}
+				<div
+					id="nav-blocks"
 					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.NavigationBlocks {
@@ -362,8 +395,9 @@ templ EditLocation(data EditLocationData) {
 			}
 			<!-- Blocks -->
 			<section>
-				@blockAddDropdown(data.Location.ID, blocks.ContextLocationContent, ".blocks")
+				@blockAddButton(data.Location.ID, blocks.ContextLocationContent, ".blocks")
 				<div
+					id="content-blocks"
 					class="blocks flex flex-col gap-5"
 				>
 					for _, block := range data.ContentBlocks {
@@ -412,7 +446,7 @@ templ EditLocation(data EditLocationData) {
 									transition #map-note's opacity to 1
 									"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock-keyhole w-5 h-5"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
+								@icon("unlock", templ.Attributes{"class": "w-5 h-5"})
 								Unlock to edit
 							</button>
 						</div>
@@ -436,7 +470,7 @@ templ EditLocation(data EditLocationData) {
 		<div class="h-min sticky top-3">
 			<div id="preview-nav" role="tablist" class="tabs tabs-box tabs-sm font-bold m-auto mb-3">
 				<a
-					id="new-marker-tab"
+					id="nav-tab"
 					role="tab"
 					data-url={ fmt.Sprint("/next?location_id=", data.Location.ID) }
 					class="tab transition-colors grow"
@@ -449,6 +483,7 @@ templ EditLocation(data EditLocationData) {
 					Nav
 				</a>
 				<a
+					id="content-tab"
 					role="tab"
 					class="tab transition-colors grow tab-active"
 					data-url={ fmt.Sprint("/checkins/", data.Location.MarkerID) }

@@ -60,7 +60,7 @@ func EditPage(data EditPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = blockAddDropdown(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = blockAddButton(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

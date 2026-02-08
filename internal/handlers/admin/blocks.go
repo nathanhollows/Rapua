@@ -86,6 +86,7 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextCheckpoint,
 		blocks.ContextStart,
 		blocks.ContextFinish,
+		blocks.ContextTask,
 	}
 	blockContext := blocks.BlockContext(contextParam)
 	isValidContext := slices.Contains(validContexts, blocks.BlockContext(contextParam))
@@ -122,8 +123,6 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set success status code
-	w.WriteHeader(http.StatusCreated)
 	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("BlockCreate: rendering template", "error", err)

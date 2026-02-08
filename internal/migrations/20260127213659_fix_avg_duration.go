@@ -23,21 +23,25 @@ func init() {
 
 		// Recalculate statistics for each instance
 		for _, instanceID := range instanceIDs {
-			err := m20260127120000_updateLocationStatistics(ctx, db, instanceID)
+			err = m20260127120000_updateLocationStatistics(ctx, db, instanceID)
 			if err != nil {
-				return fmt.Errorf("20260127120000_fix_avg_duration.go: update stats for instance %s: %w", instanceID, err)
+				return fmt.Errorf(
+					"20260127120000_fix_avg_duration.go: update stats for instance %s: %w",
+					instanceID,
+					err,
+				)
 			}
 		}
 
 		return nil
-	}, func(ctx context.Context, db *bun.DB) error {
+	}, func(_ context.Context, _ *bun.DB) error {
 		// Down migration - no action needed
 		// The old (incorrect) avg_duration values cannot be restored
 		return nil
 	})
 }
 
-// Timestamped copy of Location model for this migration
+// Timestamped copy of Location model for this migration.
 type m20260127120000_Location struct {
 	bun.BaseModel `bun:"table:locations"`
 
@@ -45,16 +49,7 @@ type m20260127120000_Location struct {
 	InstanceID string `bun:"instance_id,notnull"`
 }
 
-// Timestamped copy of CheckIn model for this migration
-type m20260127120000_CheckIn struct {
-	bun.BaseModel `bun:"table:check_ins"`
-
-	ID         string `bun:"id,pk"`
-	LocationID string `bun:"location_id"`
-	InstanceID string `bun:"instance_id"`
-}
-
-// Recalculates location statistics using the correct formula
+// Recalculates location statistics using the correct formula.
 func m20260127120000_updateLocationStatistics(ctx context.Context, db *bun.DB, instanceID string) error {
 	// Subquery: Count unique teams for each location
 	totalVisitsSubquery := db.NewSelect().

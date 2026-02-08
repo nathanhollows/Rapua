@@ -12,6 +12,8 @@ func init() {
 }
 
 // Message is a struct containing each flashed message.
+//
+//nolint:recvcheck // Save uses value receiver for immutability, builder methods use pointer receiver
 type Message struct {
 	Title   string
 	Message string

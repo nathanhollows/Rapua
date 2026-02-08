@@ -3,9 +3,10 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/internal/services"
 )
 
-templ MyCheckins(team models.Team) {
+templ MyCheckins(team models.Team, view *services.PlayerNavigationView) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
 		<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
@@ -31,9 +32,9 @@ templ MyCheckins(team models.Team) {
 						href={ templ.SafeURL(fmt.Sprint("/checkins/", scan.Location.MarkerID)) }
 						hx-boost="true"
 						if team.MustCheckOut == scan.Location.ID {
-							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-primary mb-1"
+							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-primary mb-1"
 						} else {
-							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full rounded-lg join-item border border-base-300"
+							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
 						}
 					>
 						if team.Instance.Settings.MustCheckOut {
@@ -54,10 +55,17 @@ templ MyCheckins(team models.Team) {
 			</div>
 		</div>
 		<div class="flex flex-row justify-center mt-12">
-			<a href="/next" class="btn btn-ghost btn-outline" hx-boost="true">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-				Next Location
-			</a>
+			if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+				<a href="/next" class="btn btn-ghost btn-outline" hx-boost="true">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+					Tasks
+				</a>
+			} else {
+				<a href="/next" class="btn btn-ghost btn-outline" hx-boost="true">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+					Next Location
+				</a>
+			}
 		</div>
 		@footer(team)
 	</div>

@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	version    = "v6.11.0"
+	version    = "v6.12.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -371,7 +371,7 @@ func newGenerateLoginCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 			loginURL := fmt.Sprintf("%s/login/magic/%s", siteURL, token)
 
 			// Use fmt to print URL - intentionally NOT logged for security
-			//nolint:forbidigo // Intentional stdout for sensitive credential
+
 			fmt.Fprintf(os.Stdout, "\nLogin link (valid for %d seconds):\n%s\n\n", c.Int("duration"), loginURL)
 
 			return nil

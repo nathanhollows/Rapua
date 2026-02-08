@@ -155,6 +155,11 @@ p.label {
   @apply text-base-content cursor-move outline-2 outline-offset-4 outline-base-content rounded-2xl;
 }
 
+/* Hover highlighting for preview blocks when admin is hovered */
+.preview-block-highlighted {
+  @apply outline-2 outline-offset-4 outline-base-content rounded-2xl transition-all duration-100;
+}
+
 /* Remove top margin from blocks container when first block is a header */
 #mobile-preview-container .flex.flex-col.gap-8:has(.block-view:first-child header) {
   @apply mt-0;

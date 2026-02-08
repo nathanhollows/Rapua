@@ -8,6 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v6/blocks"
 	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v6/navigation"
 	"github.com/nathanhollows/Rapua/v6/repositories"
 )
 
@@ -56,9 +57,31 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		return fmt.Errorf("loading relations: %w", err)
 	}
 
+	// Determine current group to check navigation mode
+	var currentGroup *models.GameStructure
+	if team.Instance.GameStructure.ID != "" {
+		completedIDs := make([]string, 0)
+		for _, checkIn := range team.CheckIns {
+			if checkIn.BlocksCompleted {
+				completedIDs = append(completedIDs, checkIn.LocationID)
+			}
+		}
+		currentGroupID := navigation.ComputeCurrentGroup(
+			&team.Instance.GameStructure,
+			completedIDs,
+			team.SkippedGroupIDs,
+		)
+		if currentGroupID != "" {
+			currentGroup = navigation.FindGroupByID(&team.Instance.GameStructure, currentGroupID)
+		}
+	}
+
 	// A team may not check in if they must check out at a different location
+	// Exception: Task mode allows switching between tasks freely
 	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		return ErrAlreadyCheckedIn
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+			return ErrAlreadyCheckedIn
+		}
 	}
 
 	// Find the location
@@ -126,7 +149,11 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		pointsForCheckInRecord = bonusPoints
 		// Award bonus points to team immediately
 		team.Points += bonusPoints
-		team.MustCheckOut = location.ID
+
+		// Don't block team in task mode - task checklist implies freedom to switch between tasks
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+			team.MustCheckOut = location.ID
+		}
 	} else {
 		// Check-in-only mode: full points awarded immediately
 		if location.Instance.Settings.EnableBonusPoints {

@@ -200,7 +200,8 @@ func (h *Handler) TeamDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the team
-	if err := h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{teamCode}); err != nil {
+	err = h.deleteService.DeleteTeams(r.Context(), user.CurrentInstanceID, []string{teamCode})
+	if err != nil {
 		h.handleError(
 			w,
 			r,

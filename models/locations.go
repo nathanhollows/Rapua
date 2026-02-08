@@ -36,3 +36,13 @@ func (l *Location) HasCluesContext() bool {
 	}
 	return false
 }
+
+// HasTaskContext returns true if the location has any blocks with task context.
+func (l *Location) HasTaskContext() bool {
+	for i := range l.Blocks {
+		if l.Blocks[i].Context == blocks.ContextTask {
+			return true
+		}
+	}
+	return false
+}

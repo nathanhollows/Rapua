@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+//nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type StrArray []string
 
 type RouteStrategy int
@@ -31,6 +32,7 @@ const (
 	NavigationDisplayNames
 	NavigationDisplayClues  // Deprecated
 	NavigationDisplayCustom // For Block content
+	NavigationDisplayTasks  // Task checklist with completion tracking
 )
 
 const (
@@ -81,6 +83,7 @@ func GetNavigationDisplayModes() NavigationDisplayModes {
 		NavigationDisplayMapAndNames,
 		NavigationDisplayNames,
 		NavigationDisplayCustom,
+		NavigationDisplayTasks,
 	}
 }
 
@@ -96,7 +99,7 @@ func (n RouteStrategy) String() string {
 
 // String returns the string representation of the NavigationDisplayMode.
 func (n NavigationDisplayMode) String() string {
-	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues"}[n]
+	return [...]string{"Map Only", "Labelled Map", "Location List", "Clue-Based", "Custom Clues", "Tasks"}[n]
 }
 
 // String returns the string representation of the GameStatus.
@@ -122,6 +125,7 @@ func (n NavigationDisplayMode) Description() string {
 		"Players are shown a list of locations by name.",
 		"Players are shown clues but not the location or name.", // Deprecated
 		"Players are shown custom content, e.g., randomised clues or images, using the block builder.",
+		"Players see a checklist, like a scavenger hunt, with completion tracking.",
 	}[n]
 }
 
@@ -163,6 +167,8 @@ func ParseNavigationDisplayMode(s string) (NavigationDisplayMode, error) {
 		return NavigationDisplayClues, nil
 	case "Custom Content", "Custom Clues":
 		return NavigationDisplayCustom, nil
+	case "Tasks":
+		return NavigationDisplayTasks, nil
 	default:
 		return NavigationDisplayMap, errors.New("invalid NavigationDisplayMode")
 	}

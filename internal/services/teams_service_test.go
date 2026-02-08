@@ -42,6 +42,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 		creditService,
 		blockStateRepo,
 		locationRepo,
+		nil, // EventService - not needed for these tests
 	)
 
 	return *teamService, cleanup
@@ -229,6 +230,7 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 
 		// Test finding each team
 		for _, expectedTeam := range teams {
+			//nolint:govet // Shadow variable in test loop
 			foundTeam, err := teamService.GetTeamByCode(context.Background(), expectedTeam.Code)
 			require.NoError(t, err)
 			assert.Equal(t, expectedTeam.Code, foundTeam.Code)

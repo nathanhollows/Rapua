@@ -175,7 +175,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 		r.Get("/", playerHandler.Complete)
 	})
 
-	// Check in to a location
+	// Check in to a location using a marker code
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
@@ -187,6 +187,19 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
 		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)
+	})
+
+	// Check in to a location using a location UUID (for task blocks)
+	router.Route("/l", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				playerHandler.GetTeamService(),
+				playerHandler.GetInstanceService(),
+				adminHandler.GetIdentityService(),
+				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+			)
+		})
+		r.Get("/{id}", playerHandler.CheckInByLocationID)
 	})
 
 	// Check out of a location
