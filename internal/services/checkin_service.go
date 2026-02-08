@@ -39,7 +39,6 @@ func NewCheckInService(
 	locationStatsService LocationStatsService,
 	navigationService *NavigationService,
 	blockService *BlockService,
-	eventService *EventService,
 ) *CheckInService {
 	return &CheckInService{
 		checkInRepo:          checkInRepo,
