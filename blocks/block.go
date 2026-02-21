@@ -126,6 +126,7 @@ func init() {
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&RatingBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 
 	// Task specific blocks
@@ -219,6 +220,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewStartGameButtonBlock(baseBlock), nil
 	case "task":
 		return NewTaskBlock(baseBlock), nil
+	case "rating":
+		return NewRatingBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -338,5 +341,12 @@ func NewTaskBlock(base BaseBlock) *TaskBlock {
 	return &TaskBlock{
 		BaseBlock:   base,
 		LinkThrough: true,
+	}
+}
+
+func NewRatingBlock(base BaseBlock) *RatingBlock {
+	return &RatingBlock{
+		BaseBlock: base,
+		MaxRating: 5, // Default max rating
 	}
 }

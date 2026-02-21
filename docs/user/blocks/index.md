@@ -36,6 +36,7 @@ These blocks allow you to create interactive elements in your game that require 
 - [Photo](/docs/user/blocks/photo)
 - [Pincode](/docs/user/blocks/pincode)
 - [Quiz](/docs/user/blocks/quiz)
+- [Rating](/docs/user/blocks/rating)
 - [Sorting](/docs/user/blocks/sorting)
 
 ## Task blocks

@@ -1,0 +1,158 @@
+package blocks
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v6/models"
+)
+
+templ ratingPlayer(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+	>
+		if settings.EnablePoints && block.Points > 0 {
+			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
+		}
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+			<form
+				hx-post={ fmt.Sprint("/blocks/validate") }
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				if data.IsComplete() {
+					// Show the saved rating
+					if data.GetPlayerData() != nil {
+						{ showRatingResult(data.GetPlayerData(), block.MaxRating) }
+					}
+				} else {
+					<div class="form-control text-center">
+						<div class="rating rating-xl">
+							for i := 1; i <= block.MaxRating; i++ {
+								<input
+									type="radio"
+									name="rating"
+									value={ fmt.Sprint(i) }
+									class="mask mask-star-2 bg-warning"
+									aria-label={ fmt.Sprintf("%d star", i) }
+									required
+								/>
+							}
+						</div>
+					</div>
+					<div class="w-full flex justify-center mt-8">
+						<button
+							type="submit"
+							class="btn btn-primary"
+						>
+							Submit
+							@icon("send-horizontal", templ.Attributes{"class": "w-5 h-5"})
+						</button>
+					</div>
+				}
+			</form>
+		</div>
+	</div>
+}
+
+templ ratingPlayerUpdate(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+		hx-swap-oob="true"
+	>
+		if settings.EnablePoints && block.Points > 0 {
+			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
+		}
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+			<div class="text-center">
+				<div class="rating rating-xl">
+					for i := 1; i <= block.MaxRating; i++ {
+						<input
+							type="radio"
+							name="rating"
+							value={ fmt.Sprint(i) }
+							class="mask mask-star-2 bg-warning"
+							aria-label={ fmt.Sprintf("%d star", i) }
+							if block.GetPlayerRating(data) == i {
+								checked
+							}
+							disabled
+						/>
+					}
+				</div>
+			</div>
+			<p class="text-center mt-5 text-sm font-bold">
+				You rated { fmt.Sprint(block.GetPlayerRating(data)) }/{ fmt.Sprint(block.MaxRating) } stars.
+			</p>
+		</div>
+	</div>
+}
+
+func showRatingResult(playerData []byte, maxRating int) string {
+	var data struct {
+		Rating int `json:"rating"`
+	}
+	json.Unmarshal(playerData, &data)
+
+	stars := ""
+	for i := 1; i <= maxRating; i++ {
+		if i <= data.Rating {
+			stars += `<input type="radio" class="mask mask-star" checked disabled />`
+		} else {
+			stars += `<input type="radio" class="mask mask-star opacity-30" disabled />`
+		}
+	}
+
+	return fmt.Sprintf(`<div class="alert alert-success mt-4">
+		<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+		<div>
+			<h3 class="font-bold">Rating Submitted</h3>
+			<div class="text-sm opacity-70">You rated: %d out of %d stars</div>
+		</div>
+	</div>
+	<div class="rating rating-lg mt-4">
+		%s
+	</div>`, data.Rating, maxRating, stars)
+}
+
+var ratingPromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "How would you rate this experience?",
+	Markdown:    true,
+	Required:    true,
+	HelpText:    "The question or prompt for the rating.",
+}
+
+templ ratingAdmin(settings models.InstanceSettings, block blocks.RatingBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		if settings.EnablePoints {
+			@adminPointsField(block.GetPoints())
+		}
+		@TextareaField(ratingPromptTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Maximum Rating</legend>
+			<label class="input validator">
+				<input
+					type="number"
+					name="max_rating"
+					placeholder="5"
+					value={ fmt.Sprint(block.MaxRating) }
+					min="3"
+					max="10"
+				/>
+			</label>
+		</fieldset>
+	</form>
+}

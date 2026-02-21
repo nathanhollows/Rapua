@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.13.0 (2025-02-21)
+
+### Added
+
+- [Rating Block](/docs/user/blocks/rating) for star ratings and feedback from players.
+
 ## 6.12.0 (2025-02-01)
 
 ### Added

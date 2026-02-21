@@ -68,6 +68,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "task":
 		b := block.(*blocks.TaskBlock)
 		return taskAdmin(settings, *b)
+	case "rating":
+		b := block.(*blocks.RatingBlock)
+		return ratingAdmin(settings, *b)
 	}
 	return nil
 }
@@ -134,6 +137,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "task":
 		b := block.(*blocks.TaskBlock)
 		return taskPlayer(settings, *b)
+	case "rating":
+		b := block.(*blocks.RatingBlock)
+		return ratingPlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -200,6 +206,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "task":
 		b := block.(*blocks.TaskBlock)
 		return taskPlayer(settings, *b)
+	case "rating":
+		b := block.(*blocks.RatingBlock)
+		return ratingPlayerUpdate(settings, *b, state)
 	}
 	return nil
 }
