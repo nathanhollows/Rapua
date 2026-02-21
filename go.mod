@@ -10,7 +10,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.1.1
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/csrf v1.7.2
+	github.com/gorilla/csrf v1.7.3
 	github.com/joho/godotenv v1.5.1
 	github.com/kaugesaar/lucide-go v0.5.0
 	github.com/markbates/goth v1.80.0
@@ -49,7 +49,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/image v0.12.0 // indirect
+	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
