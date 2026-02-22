@@ -2,7 +2,7 @@ package static
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,7 +69,7 @@ func ServeResizedImage(baseDir string) http.HandlerFunc {
 
 		// Generate resized image
 		if err := resizeImage(originalPath, cachedPath, maxWidth); err != nil {
-			log.Printf("Error resizing image %s: %v", originalPath, err)
+			slog.Error("failed to resize image", "path", originalPath, "err", err)
 			http.Error(w, "Failed to resize image", http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +97,7 @@ func resizeImage(srcPath, dstPath string, maxWidth int) error {
 
 	// Create the cache directory if it doesn't exist
 	cacheDir := filepath.Dir(dstPath)
-	err = os.MkdirAll(cacheDir, 0755)
+	err = os.MkdirAll(cacheDir, 0750)
 	if err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}

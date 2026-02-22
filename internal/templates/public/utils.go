@@ -39,9 +39,11 @@ func currYear() string {
 func stringToMarkdown(s string) template.HTML {
 	md, err := markdownToHTML(s)
 	if err != nil {
+		//nolint:gosec // Error message from goldmark, not user input
 		return template.HTML(err.Error())
 	}
-	return template.HTML(md)
+	//nolint:gosec // HTML is sanitized in markdownToHTML
+	return md
 }
 
 // MarkdownToHTML converts a string to markdown.
@@ -78,5 +80,6 @@ func markdownToHTML(s string) (template.HTML, error) {
 
 	sanitizedMD := helpers.SanitizeHTML(buf.Bytes())
 
+	//nolint:gosec // HTML is sanitized with bluemonday policy
 	return template.HTML(sanitizedMD), nil
 }

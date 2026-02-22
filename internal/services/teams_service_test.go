@@ -42,7 +42,6 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 		creditService,
 		blockStateRepo,
 		locationRepo,
-		nil, // EventService - not needed for these tests
 	)
 
 	return *teamService, cleanup
