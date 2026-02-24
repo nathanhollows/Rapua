@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.13.1 (2025-02-24)
+
+### Fixed
+
+- Confirmation dialog when deleting games now correctly checks.
+
 ## 6.13.0 (2025-02-21)
 
 ### Added
