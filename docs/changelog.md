@@ -17,6 +17,7 @@ tag: updated
 
 - Confirmation dialog when deleting games now correctly checks.
 - *Unassigned locations* section styling.
+- Disable Gorilla HTTPS requirement in development for easier local testing.
 
 ## 6.13.0 (2026-02-21)
 
