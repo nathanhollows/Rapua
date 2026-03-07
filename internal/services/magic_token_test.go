@@ -61,7 +61,7 @@ func TestMagicTokenService_InvalidToken(t *testing.T) {
 	}{
 		{"empty token", ""},
 		{"invalid base64", "not-valid-base64!!!"},
-		{"wrong format", "dXNlci1pZA"},                        // just "user-id" in base64
+		{"wrong format", "dXNlci1pZA"},                         // just "user-id" in base64
 		{"tampered signature", "dXNlci1pZDoxNzA2MTIzNDU2OmFi"}, // wrong signature
 	}
 

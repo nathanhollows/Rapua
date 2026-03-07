@@ -221,7 +221,32 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Check if the confirmName matches the instance name
+	instance, err := h.instanceService.GetByID(r.Context(), id)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"InstanceDelete: getting instance",
+			"Could not find the instance",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
+
+	if confirmName != instance.Name {
+		h.handleError(
+			w,
+			r,
+			"InstanceDelete: name mismatch",
+			"The game name you entered does not match",
+			"instance_id",
+			user.CurrentInstanceID,
+		)
+		return
+	}
 
 	if user.CurrentInstanceID == id {
 		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
@@ -232,7 +257,7 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.deleteService.DeleteInstance(r.Context(), user.ID, id)
+	err = h.deleteService.DeleteInstance(r.Context(), user.ID, id)
 	if err != nil {
 		h.handleError(
 			w,

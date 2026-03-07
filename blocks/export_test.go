@@ -28,6 +28,7 @@ type ChecklistPlayerData = checklistPlayerData
 type BrokerBlockData = brokerBlockData
 type ClueBlockData = clueBlockData
 type PhotoBlockData = photoBlockData
+type RatingBlockData = ratingBlockData
 
 // Export unexported functions for testing.
 var DeterministicShuffle = deterministicShuffle

@@ -23,15 +23,11 @@ type instanceService interface {
 	GetByID(context.Context, string) (*models.Instance, error)
 }
 
-type identityService interface {
-	GetAuthenticatedUser(*http.Request) (*models.User, error)
-}
-
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
 func PreviewMiddleware(
 	_ teamService,
 	instanceService instanceService,
-	identityService identityService,
+	identityService AuthenticatedUserGetter,
 	next http.Handler,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +64,8 @@ func PreviewMiddleware(
 		// Templates are public - allow without auth
 		if !instance.IsTemplate {
 			// Regular instance - require auth + ownership
-			user, err := identityService.GetAuthenticatedUser(r)
+			var user *models.User
+			user, err = identityService.GetAuthenticatedUser(r)
 			if err != nil || user.ID != instance.UserID {
 				slog.Warn("preview middleware: unauthorized access attempt",
 					"instanceID", team.InstanceID,

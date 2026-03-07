@@ -526,3 +526,42 @@ p.label {
   --color-primary-content: var(--color-base-100);
 }
 
+/* Location insert zones */
+.loc-insert-zone {
+  @apply pointer-events-none;
+}
+.loc-insert-btn {
+  @apply opacity-0 pointer-events-none transition-opacity duration-150;
+}
+.loc-insert-zone.zone-visible .loc-insert-btn {
+  @apply opacity-100 pointer-events-auto;
+}
+
+/* Ensure empty groups have a visible drop target */
+.locations-area:not([data-unassigned]) {
+  @apply min-h-12;
+}
+
+/* Border-radius and border-collapse for location items.
+   Uses general sibling combinator (~) to skip insert zone elements. */
+.locations-area > .location-item {
+  @apply rounded-none;
+}
+.locations-area > .location-item:not(.location-item ~ .location-item) {
+  @apply rounded-t-2xl;
+}
+.locations-area > .location-item:not(:has(~ .location-item)) {
+  @apply rounded-b-2xl;
+}
+.locations-area > .location-item ~ .location-item {
+  @apply -mt-px;
+}
+
+/* Unassigned items: subdued appearance */
+.locations-area[data-unassigned] > .location-item {
+  @apply text-sm opacity-70;
+}
+.locations-area[data-unassigned] > .location-item:hover {
+  @apply opacity-90;
+}
+

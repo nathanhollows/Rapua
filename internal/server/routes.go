@@ -56,6 +56,17 @@ func setupRouter(
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
 
+	// When not in production (plain HTTP), tell gorilla/csrf the scheme is http.
+	// By default it assumes https for origin validation, causing 403 "origin invalid"
+	// errors when accessing over http://localhost.
+	if os.Getenv("IS_PROD") != "1" {
+		router.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				next.ServeHTTP(w, csrf.PlaintextHTTPRequest(r))
+			})
+		})
+	}
+
 	// Webhook routes that bypass CSRF protection
 	setupWebhookRoutes(router, adminHandler)
 

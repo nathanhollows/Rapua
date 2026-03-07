@@ -187,7 +187,7 @@ func (ds *DocsService) trackPages() error {
 			return err
 		}
 
-		if err = os.WriteFile(missingPath, missingData, 0644); err != nil {
+		if err = os.WriteFile(missingPath, missingData, 0600); err != nil {
 			return err
 		}
 	} else {
@@ -213,7 +213,7 @@ func (ds *DocsService) trackPages() error {
 	}
 
 	knownPath := filepath.Join(ds.DocsDir, ".known_pages.yaml")
-	if err = os.WriteFile(knownPath, knownData, 0644); err != nil {
+	if err = os.WriteFile(knownPath, knownData, 0600); err != nil {
 		return err
 	}
 
