@@ -405,6 +405,63 @@ func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []
 	return ids
 }
 
+// InsertLocationIntoGroup inserts a location into a specific group at a specific position.
+// If groupID is empty or not found, falls back to root.
+// beforeLocationID inserts before that location; afterLocationID inserts after it.
+// If both are empty, appends to end of group. beforeLocationID takes precedence.
+func (s *GameStructureService) InsertLocationIntoGroup(
+	ctx context.Context,
+	instanceID, locationID, groupID, afterLocationID, beforeLocationID string,
+) error {
+	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	if err != nil {
+		return fmt.Errorf("loading instance: %w", err)
+	}
+
+	target := s.FindGroupByID(&instance.GameStructure, groupID)
+	if target == nil {
+		target = &instance.GameStructure // fallback to root
+	}
+
+	switch {
+	case beforeLocationID != "":
+		inserted := false
+		for i, id := range target.LocationIDs {
+			if id == beforeLocationID {
+				newIDs := make([]string, 0, len(target.LocationIDs)+1)
+				newIDs = append(newIDs, target.LocationIDs[:i]...)
+				newIDs = append(newIDs, locationID)
+				newIDs = append(newIDs, target.LocationIDs[i:]...)
+				target.LocationIDs = newIDs
+				inserted = true
+				break
+			}
+		}
+		if !inserted {
+			target.LocationIDs = append([]string{locationID}, target.LocationIDs...)
+		}
+	case afterLocationID != "":
+		inserted := false
+		for i, id := range target.LocationIDs {
+			if id == afterLocationID {
+				target.LocationIDs = append(
+					target.LocationIDs[:i+1],
+					append([]string{locationID}, target.LocationIDs[i+1:]...)...,
+				)
+				inserted = true
+				break
+			}
+		}
+		if !inserted {
+			target.LocationIDs = append(target.LocationIDs, locationID)
+		}
+	default:
+		target.LocationIDs = append(target.LocationIDs, locationID)
+	}
+
+	return s.Save(ctx, instanceID, &instance.GameStructure)
+}
+
 // GetNextItemType returns what type of item should be next (placeholder implementation).
 func (s *GameStructureService) GetNextItemType(
 	_ *models.GameStructure,

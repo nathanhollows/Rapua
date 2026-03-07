@@ -107,54 +107,14 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 					</li>
 				</ul>
 			</div>
-			<div class="join">
-				<button
-					class="btn btn-secondary join-item"
-					_="on click
-						set groupsArea to first .groups-area
-						put #empty-group-template's innerHTML at start of groupsArea
-						-- Set a UUID and random color for the new group
-						set newGroup to groupsArea.querySelector('.group-item')
-						js(newGroup)
-							const uuid = generateUUID();
-							const colors = ['primary', 'secondary', 'accent', 'success', 'info', 'warning', 'error', 'base-content'];
-							const randomColor = colors[Math.floor(Math.random() * colors.length)];
-							newGroup.dataset.groupId = uuid;
-							newGroup.dataset.groupColor = randomColor;
-						end
-						-- Initialize SortableJS on the new group's locations-area
-						set newLocationsArea to newGroup.querySelector('.locations-area')
-						js(newLocationsArea)
-							new Sortable(newLocationsArea, {
-								group: 'locations',
-								animation: 150,
-								draggable: '.location-item',
-								handle: '.location-drag-handle',
-								ghostClass: 'sortable-ghost',
-								chosenClass: 'sortable-chosen',
-								dragClass: 'sortable-drag',
-								invertSwap: true,
-								onEnd: function(evt) {
-									saveGameStructure();
-								}
-							});
-						end
-						-- Trigger save for the new group
-						js saveGameStructure() end
-						"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-group-icon lucide-group w-5 h-5"><path d="M3 7V5c0-1.1.9-2 2-2h2"></path><path d="M17 3h2c1.1 0 2 .9 2 2v2"></path><path d="M21 17v2c0 1.1-.9 2-2 2h-2"></path><path d="M7 21H5c-1.1 0-2-.9-2-2v-2"></path><rect width="7" height="5" x="7" y="7" rx="1"></rect><rect width="7" height="5" x="10" y="12" rx="1"></rect></svg>
-					Add Group
-				</button>
-				<a
-					href="/admin/locations/new"
-					hx-boost="true"
-					class="btn btn-secondary join-item"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-5 h-5"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
-					Add Location
-				</a>
-			</div>
+			<a
+				href="/admin/locations/new"
+				hx-boost="true"
+				class="btn btn-secondary"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-5 h-5"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
+				Add Location
+			</a>
 		</span>
 	</div>
 	<template id="empty-group-template">
@@ -182,8 +142,10 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 	if group.IsRoot {
 		<!-- Root groups area -->
 		<div class="groups-area space-y-6" data-group-id={ group.ID }>
+			@groupInsertZone()
 			for _, subGroup := range group.SubGroups {
 				@locationGroup(subGroup, settings)
+				@groupInsertZone()
 			}
 		</div>
 		@completeLink()
@@ -202,14 +164,14 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 				</div>
 			</div>
 		</div>
-		<div class="locations-area join join-vertical mb-6 w-full bg-base-300 rounded-2xl saturate-0" data-unassigned="true" data-nav-mode={ fmt.Sprint(int(group.Navigation)) } data-route-mode={ fmt.Sprint(int(group.Routing)) }>
+		<div class="locations-area flex flex-col mb-6 w-full bg-base-300 rounded-2xl overflow-hidden saturate-0" data-unassigned="true" data-nav-mode={ fmt.Sprint(int(group.Navigation)) } data-route-mode={ fmt.Sprint(int(group.Routing)) }>
 			for _, location := range group.Locations {
-				@locationItem(*location, settings)
+				@locationItem(*location, settings, "")
 			}
 		</div>
 	} else {
 		<!-- Nested group card -->
-		<div class="group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors" data-group-id={ group.ID } data-group-color={ group.Color }>
+		<div class="group/card group-item card shadow bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors" data-group-id={ group.ID } data-group-color={ group.Color }>
 			<div class="card-body p-5 pt-3">
 				<div class="flex justify-between items-center">
 					<div class="flex items-center gap-3">
@@ -223,9 +185,25 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 					@groupMenu(group)
 				</div>
 				<!-- Locations area within group -->
-				<div class="locations-area join join-vertical" data-group-id={ group.ID } data-nav-mode={ fmt.Sprint(int(group.Navigation)) } data-route-mode={ fmt.Sprint(int(group.Routing)) }>
-					for _, location := range group.Locations {
-						@locationItem(*location, settings)
+				<div
+					class="locations-area flex flex-col"
+					data-group-id={ group.ID }
+					data-nav-mode={ fmt.Sprint(int(group.Navigation)) }
+					data-route-mode={ fmt.Sprint(int(group.Routing)) }
+					_="on mouseleave
+						js(me)
+							me.querySelectorAll('.loc-insert-zone').forEach(z => z.classList.remove('zone-visible'));
+						end
+					"
+				>
+					if len(group.Locations) > 0 {
+						@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s&beforeLocationId=%s", group.ID, group.Locations[0].ID))
+						for _, location := range group.Locations {
+							@locationItem(*location, settings, group.ID)
+							@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s&afterLocationId=%s", group.ID, location.ID))
+						}
+					} else {
+						@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s", group.ID))
 					}
 				</div>
 				<!-- Subgroups area within group - always show -->
@@ -237,8 +215,44 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 	}
 }
 
-templ locationItem(location models.Location, settings models.InstanceSettings) {
-	<div class="location-item join-item bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30" data-location-id={ location.ID } data-search-text={ location.Name }>
+templ groupInsertZone() {
+	<div class="group/ins group-insert-zone flex items-center gap-2">
+		<div class="flex-1 h-px bg-primary/20"></div>
+		<button
+			type="button"
+			class="btn btn-xs btn-ghost border border-primary/20 whitespace-nowrap"
+			onclick="insertGroupHere(this)"
+		>
+			@icon("plus", templ.Attributes{"class": "w-3 h-3"})
+			Insert group
+		</button>
+		<div class="flex-1 h-px bg-primary/20"></div>
+	</div>
+}
+
+templ locationItem(location models.Location, settings models.InstanceSettings, groupID string) {
+	<div
+		class="location-item relative bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30"
+		data-location-id={ location.ID }
+		data-search-text={ location.Name }
+		if groupID != "" {
+			_="on mousemove(clientY)
+				js(me, clientY)
+					const rect = me.getBoundingClientRect();
+					const isTop = clientY < rect.top + rect.height / 2;
+					const prev = me.previousElementSibling;
+					const next = me.nextElementSibling;
+					// Clear all zones in container first
+					me.closest('.locations-area').querySelectorAll('.loc-insert-zone').forEach(z => z.classList.remove('zone-visible'));
+					if (isTop && prev && prev.classList.contains('loc-insert-zone')) {
+						prev.classList.add('zone-visible');
+					} else if (!isTop && next && next.classList.contains('loc-insert-zone')) {
+						next.classList.add('zone-visible');
+					}
+				end
+			"
+		}
+	>
 		<div class="loc flex items-center gap-3">
 			<div class="tooltip tooltip-right" data-tip="Drag to reorder location">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
@@ -512,7 +526,8 @@ templ groupMenu(group models.GameStructure) {
 					end
 					-- Remove the group card
 					remove groupCard
-					-- Trigger save after deletion
+					-- Rebuild group insert zones and save
+					js reinitGroupInsertZones() end
 					js saveGameStructure() end
 				else
 					-- First click: show confirmation
@@ -878,6 +893,19 @@ templ picker(colour string) {
 	</div>
 }
 
+templ locationInsertZone(href string) {
+	<div class="loc-insert-zone h-0 overflow-visible relative flex justify-center z-10">
+		<a
+			href={ templ.SafeURL(href) }
+			hx-boost="true"
+			class="loc-insert-btn absolute -translate-y-1/2 btn btn-xs btn-primary shadow whitespace-nowrap"
+		>
+			@icon("map-pin-plus", templ.Attributes{"class": "w-3 h-3"})
+			Insert location
+		</a>
+	</div>
+}
+
 templ sortableScript() {
 	<script>
 		// UUID generation function (v4)
@@ -1182,33 +1210,141 @@ templ sortableScript() {
 			htmx.trigger(form, 'submit');
 		}
 
+		// Rebuild insert zones in a locations-area after drag reorder
+		function reinitInsertZones(container) {
+			if (!container || container.dataset.unassigned) return;
+			const groupId = container.dataset.groupId;
+			if (!groupId) return;
+
+			// Remove all existing insert zones
+			container.querySelectorAll(':scope > .loc-insert-zone').forEach(z => z.remove());
+
+			// Get location items
+			const items = container.querySelectorAll(':scope > .location-item');
+			if (items.length === 0) {
+				// Empty group: single zone
+				const zone = createInsertZone('/admin/locations/new?groupId=' + groupId);
+				container.appendChild(zone);
+				return;
+			}
+
+			// Zone before first item
+			const firstZone = createInsertZone('/admin/locations/new?groupId=' + groupId + '&beforeLocationId=' + items[0].dataset.locationId);
+			container.insertBefore(firstZone, items[0]);
+
+			// Zone after each item
+			items.forEach(function(item, i) {
+				const zone = createInsertZone('/admin/locations/new?groupId=' + groupId + '&afterLocationId=' + item.dataset.locationId);
+				if (item.nextSibling) {
+					container.insertBefore(zone, item.nextSibling);
+				} else {
+					container.appendChild(zone);
+				}
+
+			});
+		}
+
+		function createInsertZone(href) {
+			const zone = document.createElement('div');
+			zone.className = 'loc-insert-zone h-0 overflow-visible relative flex justify-center z-10';
+			zone.innerHTML = '<a href="' + href + '" data-hx-boost="true" class="loc-insert-btn absolute -translate-y-1/2 btn btn-xs btn-primary shadow whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg> Insert location</a>';
+			htmx.process(zone);
+			return zone;
+		}
+
+		// Rebuild group insert zones in the groups-area after any group mutation
+		function reinitGroupInsertZones() {
+			const groupsArea = document.querySelector('.groups-area');
+			if (!groupsArea) return;
+
+			// Remove all existing group insert zones
+			groupsArea.querySelectorAll(':scope > .group-insert-zone').forEach(z => z.remove());
+
+			// Add a zone before the first group
+			const groups = groupsArea.querySelectorAll(':scope > .group-item');
+			const firstZone = createGroupInsertZone();
+			if (groups.length > 0) {
+				groups[0].before(firstZone);
+			} else {
+				groupsArea.appendChild(firstZone);
+			}
+
+			// Add a zone after each group item
+			groups.forEach(function(groupEl) {
+				const zone = createGroupInsertZone();
+				groupEl.after(zone);
+			});
+		}
+
+		function createGroupInsertZone() {
+			const zone = document.createElement('div');
+			zone.className = 'group/ins group-insert-zone flex items-center gap-2';
+			zone.innerHTML = `
+				<div class="flex-1 h-px bg-primary/20"></div>
+				<button type="button"
+					class="btn btn-xs btn-ghost border border-primary/20 whitespace-nowrap"
+					onclick="insertGroupHere(this)"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+					Insert group
+				</button>
+				<div class="flex-1 h-px bg-primary/20"></div>
+			`;
+			return zone;
+		}
+
+		function insertGroupHere(btn) {
+			const template = document.querySelector('#empty-group-template');
+			const tempDiv = document.createElement('div');
+			tempDiv.innerHTML = template.innerHTML.trim();
+			const newGroup = tempDiv.firstElementChild;
+			const colors = ['primary','secondary','accent','success','info','warning','error','base-content'];
+			newGroup.dataset.groupId = generateUUID();
+			newGroup.dataset.groupColor = colors[Math.floor(Math.random()*colors.length)];
+			const la = newGroup.querySelector('.locations-area');
+			initLocationsSortable(la);
+			reinitInsertZones(la);
+			btn.closest('.group-insert-zone').after(newGroup);
+			// Initialize hyperscript on the new group so _= attributes work
+			if (window._hyperscript) _hyperscript.processNode(newGroup);
+			reinitGroupInsertZones();
+			saveGameStructure();
+		}
+
+		// Initialize sortable on a single locations-area element
+		function initLocationsSortable(el) {
+			if (el.sortableInstance) return;
+			el.sortableInstance = new Sortable(el, {
+				group: 'locations',
+				animation: 150,
+				draggable: '.location-item',
+				ghostClass: 'sortable-ghost',
+				chosenClass: 'sortable-chosen',
+				dragClass: 'sortable-drag',
+				invertSwap: true,
+				filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .loc-insert-zone',
+				preventOnFilter: false,
+				onEnd: function(evt) {
+					// Update completion sliders for both source and destination groups
+					const fromGroup = evt.from.closest('.group-item');
+					const toGroup = evt.to.closest('.group-item');
+					if (fromGroup) updateCompletionSlider(fromGroup);
+					if (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);
+
+					// Rebuild insert zones in affected containers
+					reinitInsertZones(evt.from);
+					if (evt.to !== evt.from) reinitInsertZones(evt.to);
+
+					saveGameStructure();
+				}
+			});
+		}
+
 		// Initialize all sortable areas and UI controls
 		function initializeLocationGroups() {
 			// Initialize sortable for all locations-area elements
 			document.querySelectorAll('.locations-area').forEach(function(el) {
-				// Skip if already initialized
-				if (el.sortableInstance) return;
-
-				el.sortableInstance = new Sortable(el, {
-					group: 'locations',
-					animation: 150,
-					draggable: '.location-item',
-					ghostClass: 'sortable-ghost',
-					chosenClass: 'sortable-chosen',
-					dragClass: 'sortable-drag',
-					invertSwap: true,
-					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown',
-					preventOnFilter: false,
-					onEnd: function(evt) {
-						// Update completion sliders for both source and destination groups
-						const fromGroup = evt.from.closest('.group-item');
-						const toGroup = evt.to.closest('.group-item');
-						if (fromGroup) updateCompletionSlider(fromGroup);
-						if (toGroup && toGroup !== fromGroup) updateCompletionSlider(toGroup);
-
-						saveGameStructure();
-					}
-				});
+				initLocationsSortable(el);
 			});
 
 			// Initialize sortable for all groups-area elements
@@ -1224,9 +1360,10 @@ templ sortableScript() {
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
 					invertSwap: true,
-					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area',
+					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area, .group-insert-zone',
 					preventOnFilter: false,
 					onEnd: function(evt) {
+						reinitGroupInsertZones();
 						saveGameStructure();
 					}
 				});

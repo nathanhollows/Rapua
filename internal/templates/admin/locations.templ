@@ -8,9 +8,13 @@ import (
 )
 
 type AddLocationData struct {
-	Settings     models.InstanceSettings
-	Neighbouring []models.Location
-	Duplicatable []models.Marker
+	Settings        models.InstanceSettings
+	Neighbouring    []models.Location
+	Duplicatable    []models.Marker
+	TargetGroupID    string // from ?groupId= param
+	AfterLocationID  string // from ?after= param
+	BeforeLocationID string // from ?beforeLocationId= param
+	TargetGroupName  string // display name for context banner
 }
 
 templ AddLocation(data AddLocationData) {
@@ -19,6 +23,16 @@ templ AddLocation(data AddLocationData) {
 		method="post"
 		hx-post="/admin/locations/new"
 	>
+		<!-- Breadcrumbs -->
+		<div class="breadcrumbs text-sm">
+			<ul>
+				<li><a href="/admin/locations" hx-boost="true">Locations</a></li>
+				if data.TargetGroupName != "" {
+					<li>{ data.TargetGroupName }</li>
+				}
+				<li>Add Location</li>
+			</ul>
+		</div>
 		<!-- Header -->
 		<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full">
 			<h1 class="text-2xl font-bold">
@@ -29,6 +43,15 @@ templ AddLocation(data AddLocationData) {
 				Save
 			</button>
 		</div>
+		if data.TargetGroupID != "" {
+			<input type="hidden" name="groupId" value={ data.TargetGroupID }/>
+		}
+		if data.AfterLocationID != "" {
+			<input type="hidden" name="afterLocationId" value={ data.AfterLocationID }/>
+		}
+		if data.BeforeLocationID != "" {
+			<input type="hidden" name="beforeLocationId" value={ data.BeforeLocationID }/>
+		}
 		<div class="flex flex-col md:flex-row gap-3">
 			<fieldset class="fieldset w-full">
 				<legend class="fieldset-legend">Location Name</legend>

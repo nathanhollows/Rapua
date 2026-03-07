@@ -7,19 +7,24 @@ tag: updated
 
 # Changelog
 
-## 6.13.1 (2025-02-24)
+## 6.14.0 (2026-03-07)
+
+### Added
+
+- Quickly add locations and groups exactly where you need them with the new "Insert Location" and "Insert Group" buttons in the game editor.
 
 ### Fixed
 
 - Confirmation dialog when deleting games now correctly checks.
+- *Unassigned locations* section styling.
 
-## 6.13.0 (2025-02-21)
+## 6.13.0 (2026-02-21)
 
 ### Added
 
 - [Rating Block](/docs/user/blocks/rating) for star ratings and feedback from players.
 
-## 6.12.0 (2025-02-01)
+## 6.12.0 (2026-02-01)
 
 ### Added
 
@@ -34,7 +39,7 @@ tag: updated
 
 - Minor style fixes on player pages.
 
-## 6.11.0 (2025-01-28)
+## 6.11.0 (2026-01-28)
 
 ### Added
 
@@ -50,20 +55,20 @@ tag: updated
   - A migration has been added to recalculate existing data.
 - Resetting a team now redirects to the team overview page.
 
-## 6.10.3 (2025-01-27)
+## 6.10.3 (2026-01-27)
 
 ### Changed
 
 - Check-ins now appear in reverse chronological order on the team activity page.
 
-## 6.10.2 (2025-01-27)
+## 6.10.2 (2026-01-27)
 
 ### Fixed
 
 - Minor style fix on homepage
 - Map rendering issue on activity page
 
-## 6.10.1 (2025-01-26)
+## 6.10.1 (2026-01-26)
 
 ### Changed
 
@@ -79,19 +84,19 @@ tag: updated
 - Added the "Show total visiting teams" setting back into the experience settings.
 - The point total in the team overview now honours the Enable Points setting.
 
-## 6.10.0 (2025-01-26)
+## 6.10.0 (2026-01-26)
 
 ### Added
 
 - CLI account recovery tool for admin.
 
-## 6.9.2 (2025-01-25)
+## 6.9.2 (2026-01-25)
 
 ### Fixed
 
 - Duplicated or launched instances no longer trigger the quickstart guide.
 
-## 6.9.1 (2025-01-18)
+## 6.9.1 (2026-01-18)
 
 ### Changed
 

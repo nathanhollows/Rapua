@@ -91,10 +91,26 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	targetGroupID := r.URL.Query().Get("groupId")
+	afterLocationID := r.URL.Query().Get("afterLocationId")
+	beforeLocationID := r.URL.Query().Get("beforeLocationId")
+
+	var targetGroupName string
+	if targetGroupID != "" {
+		group := h.gameStructureService.FindGroupByID(&user.CurrentInstance.GameStructure, targetGroupID)
+		if group != nil {
+			targetGroupName = group.Name
+		}
+	}
+
 	data := templates.AddLocationData{
-		Settings:     user.CurrentInstance.Settings,
-		Neighbouring: user.CurrentInstance.Locations,
-		Duplicatable: duplicatable,
+		Settings:         user.CurrentInstance.Settings,
+		Neighbouring:     user.CurrentInstance.Locations,
+		Duplicatable:     duplicatable,
+		TargetGroupID:    targetGroupID,
+		AfterLocationID:  afterLocationID,
+		BeforeLocationID: beforeLocationID,
+		TargetGroupName:  targetGroupName,
 	}
 
 	c := templates.AddLocation(data)
@@ -184,14 +200,31 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add the new location to the root group (unassigned area)
-	if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
-		h.logger.Error("LocationNewPost: adding location to root group", "error", err, "location_id", location.ID)
-		// Don't fail the request - the location was created successfully
-		// The orphan detection in Save will catch this later
+	groupID := r.FormValue("groupId")
+	afterLocationID := r.FormValue("afterLocationId")
+	beforeLocationID := r.FormValue("beforeLocationId")
+
+	if groupID != "" {
+		if err = h.gameStructureService.InsertLocationIntoGroup(
+			r.Context(), user.CurrentInstanceID, location.ID, groupID, afterLocationID, beforeLocationID,
+		); err != nil {
+			h.logger.Error("LocationNewPost: inserting location into group", "error", err, "location_id", location.ID)
+			// Non-fatal: orphan detection in Save will catch this
+		}
+	} else {
+		if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
+			h.logger.Error("LocationNewPost: adding location to root group", "error", err, "location_id", location.ID)
+			// Don't fail the request - the location was created successfully
+		}
 	}
 
-	h.redirect(w, r, "/admin/locations/"+location.MarkerID)
+	editPath := "/admin/locations/" + location.MarkerID
+	if r.Header.Get("Hx-Request") == "true" {
+		w.Header().Set("HX-Location", editPath)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	http.Redirect(w, r, editPath, http.StatusFound)
 }
 
 // createLocationWithOrWithoutMarker creates a location either from coordinates or from an existing marker.
