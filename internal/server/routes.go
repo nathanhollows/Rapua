@@ -47,7 +47,15 @@ func setupRouter(
 		csrf.CookieName("csrf"),
 		csrf.FieldName("csrf"),
 		csrf.Path("/"),
-	)
+	}
+
+	// In production behind a reverse proxy, the server sees plain HTTP but the
+	// browser sends Origin: https://rapua.nz. Trust that origin explicitly.
+	if origin := os.Getenv("TRUSTED_ORIGIN"); origin != "" {
+		csrfOpts = append(csrfOpts, csrf.TrustedOrigins([]string{origin}))
+	}
+
+	CSRF := csrf.Protect([]byte(csrfKey), csrfOpts...) //nolint:gocritic // CSRF
 
 	router := chi.NewRouter()
 
