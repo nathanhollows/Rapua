@@ -41,8 +41,8 @@ func setupRouter(
 	}
 
 	// CSRF protection middleware
-	// CSRF protection options
-	csrfOpts := []csrf.Option{
+	CSRF := csrf.Protect( //nolint:gocritic // CSRF
+		[]byte(csrfKey),
 		csrf.Secure(os.Getenv("IS_PROD") == "1"),
 		csrf.CookieName("csrf"),
 		csrf.FieldName("csrf"),
@@ -64,16 +64,15 @@ func setupRouter(
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
 
-	// When not in production (plain HTTP), tell gorilla/csrf the scheme is http.
-	// By default it assumes https for origin validation, causing 403 "origin invalid"
-	// errors when accessing over http://localhost.
-	if os.Getenv("IS_PROD") != "1" {
-		router.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				next.ServeHTTP(w, csrf.PlaintextHTTPRequest(r))
-			})
+	// Strip X-Forwarded-Proto before CSRF middleware. The reverse proxy sets it
+	// to "https", which makes gorilla/csrf perform origin validation against the
+	// wrong scheme (the server receives plain HTTP) and reject requests with 403.
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Header.Del("X-Forwarded-Proto")
+			next.ServeHTTP(w, r)
 		})
-	}
+	})
 
 	// Webhook routes that bypass CSRF protection
 	setupWebhookRoutes(router, adminHandler)
