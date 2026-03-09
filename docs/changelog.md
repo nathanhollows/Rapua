@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 6.14.1 (2026-03-09)
+
+### Fixed
+
+- CSRF bug behind reverse proxy
+
 ## 6.14.0 (2026-03-07)
 
 ### Added
