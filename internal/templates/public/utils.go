@@ -42,7 +42,7 @@ func stringToMarkdown(s string) template.HTML {
 		//nolint:gosec // Error message from goldmark, not user input
 		return template.HTML(err.Error())
 	}
-	//nolint:gosec // HTML is sanitized in markdownToHTML
+
 	return md
 }
 

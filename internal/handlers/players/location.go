@@ -18,7 +18,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locationCode := chi.URLParam(r, "id")
+	slug := chi.URLParam(r, "slug")
 
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
@@ -38,7 +38,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	// Get the index of the location in the team's scans
 	index = -1
 	for i, scan := range team.CheckIns {
-		if scan.Location.MarkerID == locationCode {
+		if scan.Location.Slug == slug {
 			index = i
 			break
 		}
@@ -66,7 +66,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 			"team",
 			team.Code,
 			"location",
-			locationCode,
+			slug,
 		)
 		return
 	}
@@ -110,7 +110,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 
 // checkInPreview shows a player preview of the given location.
 func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
-	locationCode := chi.URLParam(r, "id")
+	slug := chi.URLParam(r, "slug")
 
 	team, err := h.getTeamFromContext(r.Context())
 	if err != nil {
@@ -125,13 +125,15 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var location models.Location
+	found := false
 	for _, loc := range team.Instance.Locations {
-		if loc.MarkerID == locationCode {
+		if loc.Slug == slug {
 			location = loc
+			found = true
 			break
 		}
 	}
-	if location.MarkerID == "" {
+	if !found {
 		h.handleError(w, r, "LocationPreview: finding location", "Location not found", "error", "Location not found")
 		return
 	}

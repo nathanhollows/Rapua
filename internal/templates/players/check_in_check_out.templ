@@ -30,7 +30,7 @@ templ CheckIn(marker models.Marker, teamCode string, blocking models.Location) {
 							</svg>
 							<span>
 								You have already checked in. Would you like to
-								<a href={ templ.SafeURL(fmt.Sprint("/checkins/", blocking.MarkerID)) } class="link">check out instead?</a>
+								<a href={ templ.URL(fmt.Sprint("/checkins/", blocking.Slug)) } class="link">check out instead?</a>
 							</span>
 						</div>
 					}

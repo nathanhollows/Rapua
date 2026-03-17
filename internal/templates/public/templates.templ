@@ -544,7 +544,7 @@ templ renderGroupedLocations(group *models.GameStructure, allLocations []models.
 			if location.ID == locationID {
 				<option
 					hx-trigger="chosen"
-					hx-get={ fmt.Sprint("/checkins/", location.MarkerID) }
+					hx-get={ fmt.Sprint("/checkins/", location.Slug) }
 					value={ location.MarkerID }
 					class="location-option"
 					_="

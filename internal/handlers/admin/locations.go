@@ -218,7 +218,7 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	editPath := "/admin/locations/" + location.MarkerID
+	editPath := "/admin/locations/" + location.Slug
 	if r.Header.Get("Hx-Request") == "true" {
 		w.Header().Set("HX-Location", editPath)
 		w.WriteHeader(http.StatusNoContent)
@@ -358,10 +358,10 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the location from the chi context
-	code := chi.URLParam(r, "id")
+	slug := chi.URLParam(r, "slug")
 	user := h.UserFromContext(r.Context())
 
-	location, err := h.locationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, code)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, slug)
 	if err != nil {
 		h.logger.Error(
 			"LocationEdit: finding location",
@@ -369,8 +369,8 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 			err,
 			"instance_id",
 			user.CurrentInstanceID,
-			"location_code",
-			code,
+			"location_slug",
+			slug,
 		)
 		h.redirect(w, r, "/admin/locations")
 		return
@@ -466,7 +466,7 @@ func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := h.UserFromContext(r.Context())
-	locationCode := chi.URLParam(r, "id")
+	locationSlug := chi.URLParam(r, "slug")
 
 	var points int
 	var err error
@@ -504,21 +504,20 @@ func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 		Points:    points,
 	}
 
-	location, err := h.locationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, locationCode)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
 	if err != nil {
 		h.handleError(w, r, "LocationEditPost: finding location", "Error finding location", "error", err)
 		return
 	}
 
-	markerID := location.MarkerID
 	err = h.locationService.UpdateLocation(r.Context(), location, data)
 	if err != nil {
 		h.handleError(w, r, "LocationEditPost: updating location", "Error updating location", "error", err)
 		return
 	}
 
-	if markerID != location.MarkerID {
-		h.redirect(w, r, "/admin/locations/"+location.MarkerID)
+	if location.Slug != locationSlug {
+		h.redirect(w, r, "/admin/locations/"+location.Slug)
 		return
 	}
 
@@ -527,11 +526,11 @@ func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 
 // LocationDelete handles deleting a location.
 func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
-	locationCode := chi.URLParam(r, "id")
+	locationSlug := chi.URLParam(r, "slug")
 
 	user := h.UserFromContext(r.Context())
 
-	location, err := h.locationService.GetByInstanceAndCode(r.Context(), user.CurrentInstanceID, locationCode)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
 	if err != nil {
 		h.handleError(w, r, "LocationDelete: finding location", "Error finding location", "error", err)
 		return

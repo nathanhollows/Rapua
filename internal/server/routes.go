@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -41,13 +42,21 @@ func setupRouter(
 	}
 
 	// CSRF protection middleware
-	CSRF := csrf.Protect( //nolint:gocritic // CSRF
-		[]byte(csrfKey),
+	// gorilla/csrf v1.7.3 defaults to HTTPS. In production behind a reverse
+	// proxy the Host header may differ from the browser's Origin, so we add
+	// the public domain from SITE_URL as a trusted origin.
+	csrfOpts := []csrf.Option{
 		csrf.Secure(os.Getenv("IS_PROD") == "1"),
 		csrf.CookieName("csrf"),
 		csrf.FieldName("csrf"),
 		csrf.Path("/"),
-	)
+	}
+	if siteURL := os.Getenv("SITE_URL"); siteURL != "" {
+		if u, err := url.Parse(siteURL); err == nil && u.Host != "" {
+			csrfOpts = append(csrfOpts, csrf.TrustedOrigins([]string{u.Host}))
+		}
+	}
+	CSRF := csrf.Protect([]byte(csrfKey), csrfOpts...) //nolint:gocritic // CSRF
 
 	router := chi.NewRouter()
 
@@ -56,15 +65,16 @@ func setupRouter(
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.RedirectSlashes)
 
-	// Strip X-Forwarded-Proto before CSRF middleware. The reverse proxy sets it
-	// to "https", which makes gorilla/csrf perform origin validation against the
-	// wrong scheme (the server receives plain HTTP) and reject requests with 403.
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.Header.Del("X-Forwarded-Proto")
-			next.ServeHTTP(w, r)
+	// gorilla/csrf v1.7.3 assumes HTTPS by default. Mark requests as
+	// plaintext HTTP in dev so the origin/referer check is skipped.
+	if os.Getenv("IS_PROD") != "1" {
+		router.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r = csrf.PlaintextHTTPRequest(r)
+				next.ServeHTTP(w, r)
+			})
 		})
-	})
+	}
 
 	// Webhook routes that bypass CSRF protection
 	setupWebhookRoutes(router, adminHandler)
@@ -233,7 +243,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 			)
 		})
 		r.Get("/", playerHandler.MyCheckins)
-		r.Get("/{id}", playerHandler.CheckInView)
+		r.Get("/{slug:[a-z0-9-]+}", playerHandler.CheckInView)
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
@@ -337,9 +347,9 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/new", adminHandler.LocationNewPost)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
-			r.Get("/{id}", adminHandler.LocationEdit)
-			r.Post("/{id}", adminHandler.LocationEditPost)
-			r.Delete("/{id}", adminHandler.LocationDelete)
+			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)
+			r.Post("/{slug:[a-z0-9-]+}", adminHandler.LocationEditPost)
+			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
 			// Assets
 			r.Get("/qr/{action}/{id}.{extension}", adminHandler.QRCode)
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)

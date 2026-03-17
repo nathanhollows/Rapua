@@ -421,6 +421,179 @@ func TestLocationService_LoadRelations(t *testing.T) {
 	assert.Equal(t, location.MarkerID, location.Marker.Code)
 }
 
+func TestLocationService_GetByInstanceAndSlug(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	instanceID := gofakeit.UUID()
+	location, err := service.CreateLocation(
+		ctx,
+		instanceID,
+		gofakeit.Name(),
+		gofakeit.Latitude(),
+		gofakeit.Longitude(),
+		0,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, location.Slug)
+
+	t.Run("found by slug", func(t *testing.T) {
+		found, findErr := service.GetByInstanceAndSlug(ctx, instanceID, location.Slug)
+		require.NoError(t, findErr)
+		assert.Equal(t, location.ID, found.ID)
+	})
+
+	t.Run("not found with wrong slug", func(t *testing.T) {
+		_, findErr := service.GetByInstanceAndSlug(ctx, instanceID, gofakeit.Word())
+		require.Error(t, findErr)
+	})
+
+	t.Run("not found in wrong instance", func(t *testing.T) {
+		_, findErr := service.GetByInstanceAndSlug(ctx, gofakeit.UUID(), location.Slug)
+		require.Error(t, findErr)
+	})
+}
+
+func TestLocationService_CreateLocation_Slug(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("slug generated from name", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx, gofakeit.UUID(), "Citrus Collection",
+			gofakeit.Latitude(), gofakeit.Longitude(), 0,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "citrus-collection", location.Slug)
+	})
+
+	t.Run("duplicate name in same instance gets unique slug", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		loc1, err := service.CreateLocation(
+			ctx,
+			instanceID,
+			"Garden Walk",
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			0,
+		)
+		require.NoError(t, err)
+		loc2, err := service.CreateLocation(
+			ctx,
+			instanceID,
+			"Garden Walk",
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			0,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, loc1.Slug, loc2.Slug)
+	})
+
+	t.Run("same name in different instances can share slug", func(t *testing.T) {
+		loc1, err := service.CreateLocation(
+			ctx,
+			gofakeit.UUID(),
+			"Garden Walk",
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			0,
+		)
+		require.NoError(t, err)
+		loc2, err := service.CreateLocation(
+			ctx,
+			gofakeit.UUID(),
+			"Garden Walk",
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			0,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, loc1.Slug, loc2.Slug)
+	})
+}
+
+func TestLocationService_CreateLocationFromMarker_Slug(t *testing.T) {
+	service, markerService, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("slug generated from name", func(t *testing.T) {
+		marker, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
+		require.NoError(t, err)
+		location, err := service.CreateLocationFromMarker(ctx, gofakeit.UUID(), "Rose Garden", 0, marker.Code)
+		require.NoError(t, err)
+		assert.Equal(t, "rose-garden", location.Slug)
+	})
+
+	t.Run("duplicate name in same instance gets unique slug", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		marker1, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
+		require.NoError(t, err)
+		marker2, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
+		require.NoError(t, err)
+		loc1, err := service.CreateLocationFromMarker(ctx, instanceID, "Rose Garden", 0, marker1.Code)
+		require.NoError(t, err)
+		loc2, err := service.CreateLocationFromMarker(ctx, instanceID, "Rose Garden", 0, marker2.Code)
+		require.NoError(t, err)
+		assert.NotEqual(t, loc1.Slug, loc2.Slug)
+	})
+}
+
+func TestLocationService_UpdateLocation_Slug(t *testing.T) {
+	service, _, cleanup := setupLocationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("slug updates when name changes", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx, gofakeit.UUID(), "Original Name",
+			gofakeit.Latitude(), gofakeit.Longitude(), 0,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "original-name", location.Slug)
+
+		err = service.UpdateLocation(ctx, &location, services.LocationUpdateData{Name: "New Name"})
+		require.NoError(t, err)
+		assert.Equal(t, "new-name", location.Slug)
+	})
+
+	t.Run("slug unchanged when name not provided", func(t *testing.T) {
+		location, err := service.CreateLocation(
+			ctx, gofakeit.UUID(), "Original Name",
+			gofakeit.Latitude(), gofakeit.Longitude(), 0,
+		)
+		require.NoError(t, err)
+		originalSlug := location.Slug
+
+		err = service.UpdateLocation(ctx, &location, services.LocationUpdateData{Points: 10})
+		require.NoError(t, err)
+		assert.Equal(t, originalSlug, location.Slug)
+	})
+
+	t.Run("duplicate name in same instance gets unique slug on rename", func(t *testing.T) {
+		instanceID := gofakeit.UUID()
+		_, err := service.CreateLocation(ctx, instanceID, "Garden Walk", gofakeit.Latitude(), gofakeit.Longitude(), 0)
+		require.NoError(t, err)
+		loc2, err := service.CreateLocation(
+			ctx,
+			instanceID,
+			gofakeit.Name(),
+			gofakeit.Latitude(),
+			gofakeit.Longitude(),
+			0,
+		)
+		require.NoError(t, err)
+
+		err = service.UpdateLocation(ctx, &loc2, services.LocationUpdateData{Name: "Garden Walk"})
+		require.NoError(t, err)
+		assert.NotEqual(t, "garden-walk", loc2.Slug) // collision resolved with suffix
+		assert.Contains(t, loc2.Slug, "garden-walk")
+	})
+}
+
 func TestLocationService_LoadBlocks(t *testing.T) {
 	service, _, cleanup := setupLocationService(t)
 	defer cleanup()

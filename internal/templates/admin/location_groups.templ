@@ -289,7 +289,7 @@ templ locationItem(location models.Location, settings models.InstanceSettings, g
 			}
 			<div class="badge badge-sm badge-outline border-primary font-medium tooltip" data-tip="Location ID"><code>{ location.MarkerID }</code></div>
 			<a
-				href={ templ.SafeURL(fmt.Sprintf("/admin/locations/%s", location.MarkerID)) }
+				href={ templ.URL(fmt.Sprintf("/admin/locations/%s", location.Slug)) }
 				class="link link-hover font-medium"
 				hx-boost="true"
 			>{ location.Name }</a>

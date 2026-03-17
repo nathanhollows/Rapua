@@ -57,7 +57,13 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	err = h.checkInService.CheckIn(r.Context(), team, code)
 	if err != nil {
 		if errors.Is(err, services.ErrAlreadyCheckedIn) {
-			h.redirect(w, r, "/checkins/"+code)
+			url, urlErr := h.checkinURL(r.Context(), team.InstanceID, code)
+			if urlErr != nil {
+				h.logger.Error("CheckIn: resolving slug", "error", urlErr, "code", code)
+				h.renderCheckInForm(w, r, marker, team)
+				return
+			}
+			h.redirect(w, r, url)
 			return
 		}
 		h.logger.Error("CheckIn: auto check-in failed", "error", err.Error(), "team", team.Code, "location", code)
@@ -65,7 +71,13 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/checkins/"+code)
+	url, urlErr := h.checkinURL(r.Context(), team.InstanceID, code)
+	if urlErr != nil {
+		h.logger.Error("CheckIn: resolving slug", "error", urlErr, "code", code)
+		h.renderCheckInForm(w, r, marker, team)
+		return
+	}
+	h.redirect(w, r, url)
 }
 
 // CheckInByLocationID resolves a location UUID to its marker code and redirects to /s/{code}.
@@ -182,7 +194,13 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/checkins/"+locationCode)
+	url, urlErr := h.checkinURL(r.Context(), team.InstanceID, locationCode)
+	if urlErr != nil {
+		h.handleError(w, r, "CheckInPost: resolving slug", "Error checking in",
+			"error", urlErr, "location", locationCode)
+		return
+	}
+	h.redirect(w, r, url)
 }
 
 func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {

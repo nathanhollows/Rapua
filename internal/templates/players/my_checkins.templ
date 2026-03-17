@@ -29,7 +29,7 @@ templ MyCheckins(team models.Team, view *services.PlayerNavigationView) {
 			<div class="w-full join join-vertical">
 				for _, scan := range team.CheckIns {
 					<a
-						href={ templ.SafeURL(fmt.Sprint("/checkins/", scan.Location.MarkerID)) }
+						href={ templ.URL(fmt.Sprint("/checkins/", scan.Location.Slug)) }
 						hx-boost="true"
 						if team.MustCheckOut == scan.Location.ID {
 							class="flex flex-row justify-between items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-primary mb-1"
