@@ -9,8 +9,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/uptrace/bun"
+)
+
+const (
+	m20250927115843_NavigationDisplayClues  = 3 // Deprecated clue-based navigation
+	m20250927115843_NavigationDisplayCustom = 4 // Block content navigation
 )
 
 // Migration models for this specific migration.
@@ -118,8 +122,8 @@ func init() {
 		// Update instance_settings using clue-based navigation (3) to custom content navigation (4)
 		_, err = db.NewUpdate().
 			Model((*m20250921065956_InstanceSettings)(nil)).
-			Set("navigation_method = ?", models.NavigationDisplayCustom).
-			Where("navigation_method = ?", models.NavigationDisplayClues).
+			Set("navigation_method = ?", m20250927115843_NavigationDisplayCustom).
+			Where("navigation_method = ?", m20250927115843_NavigationDisplayClues).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update navigation display mode: %w", err)
@@ -207,8 +211,8 @@ func init() {
 		// Revert instance_settings using custom content navigation (4) back to clue-based navigation (3)
 		_, err = db.NewUpdate().
 			Model((*m20250921065956_InstanceSettings)(nil)).
-			Set("navigation_method = ?", models.NavigationDisplayClues).
-			Where("navigation_method = ?", models.NavigationDisplayCustom).
+			Set("navigation_method = ?", m20250927115843_NavigationDisplayClues).
+			Where("navigation_method = ?", m20250927115843_NavigationDisplayCustom).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to revert navigation display mode: %w", err)

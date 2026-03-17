@@ -34,7 +34,7 @@ templ Next(data NextParams) {
 				@icon("circle-alert", templ.Attributes{"class": "w-6 h-6 shrink-0"})
 				<span>
 					You must check out of your
-					<a href={ templ.SafeURL(fmt.Sprint("/checkins/", data.View.BlockingLocation.MarkerID)) } hx-boost="true" class="link">
+					<a href={ templ.URL(fmt.Sprint("/checkins/", data.View.BlockingLocation.Slug)) } hx-boost="true" class="link">
 						current location
 					</a>
 					before you can check in to the next one.

@@ -70,9 +70,9 @@ func CheckIn(marker models.Marker, teamCode string, blocking models.Location) te
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/checkins/", blocking.MarkerID)))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprint("/checkins/", blocking.Slug)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 33, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_check_out.templ`, Line: 33, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {

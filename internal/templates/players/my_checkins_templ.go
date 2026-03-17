@@ -65,9 +65,9 @@ func MyCheckins(team models.Team, view *services.PlayerNavigationView) templ.Com
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 templ.SafeURL
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/checkins/", scan.Location.MarkerID)))
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprint("/checkins/", scan.Location.Slug)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/my_checkins.templ`, Line: 32, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/my_checkins.templ`, Line: 32, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {

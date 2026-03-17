@@ -233,7 +233,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 			)
 		})
 		r.Get("/", playerHandler.MyCheckins)
-		r.Get("/{id}", playerHandler.CheckInView)
+		r.Get("/{slug:[a-z0-9-]+}", playerHandler.CheckInView)
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
@@ -337,9 +337,9 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/new", adminHandler.LocationNewPost)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
-			r.Get("/{id}", adminHandler.LocationEdit)
-			r.Post("/{id}", adminHandler.LocationEditPost)
-			r.Delete("/{id}", adminHandler.LocationDelete)
+			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)
+			r.Post("/{slug:[a-z0-9-]+}", adminHandler.LocationEditPost)
+			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
 			// Assets
 			r.Get("/qr/{action}/{id}.{extension}", adminHandler.QRCode)
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)

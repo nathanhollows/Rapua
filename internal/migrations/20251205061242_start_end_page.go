@@ -7,12 +7,34 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
 	"github.com/uptrace/bun"
 )
 
+type m20251205061242_Location struct {
+	bun.BaseModel `bun:"table:locations"`
+	ID            string `bun:"id,pk,notnull"`
+	Name          string `bun:"name"`
+}
+
+type m20251205061242_Instance struct {
+	bun.BaseModel `bun:"table:instances"`
+	ID            string `bun:"id,pk,notnull"`
+	Name          string `bun:"name"`
+}
+
+type m20251205061242_Block struct {
+	bun.BaseModel      `bun:"table:blocks"`
+	ID                 string              `bun:"id,pk,notnull"`
+	OwnerID            string              `bun:"owner_id,notnull"`
+	Type               string              `bun:"type"`
+	Context            blocks.BlockContext `bun:"context"`
+	Data               json.RawMessage     `bun:"data"`
+	Ordering           int                 `bun:"ordering"`
+	Points             int                 `bun:"points"`
+	ValidationRequired bool                `bun:"validation_required"`
+}
+
 // Block data structures for migration (self-contained).
-//
 
 type m20251205061242_HeaderBlockData struct {
 	Icon      string `json:"icon"`
@@ -58,7 +80,7 @@ const m20251205061242_FinishCongratulations = `` +
 func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// PART 1: Add header blocks to all existing locations
-		var locations []models.Location
+		var locations []m20251205061242_Location
 		err := db.NewSelect().
 			Model(&locations).
 			Scan(ctx)
@@ -69,7 +91,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 		for _, location := range locations {
 			// Bump all location_content blocks ordering by 1 (if any exist)
 			_, err = db.NewUpdate().
-				Model((*models.Block)(nil)).
+				Model((*m20251205061242_Block)(nil)).
 				Set("ordering = ordering + 1").
 				Where("owner_id = ?", location.ID).
 				Where("context = ?", blocks.ContextLocationContent).
@@ -85,7 +107,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 				TitleSize: "large",
 			})
 
-			newBlock := models.Block{
+			newBlock := m20251205061242_Block{
 				ID:                 uuid.New().String(),
 				OwnerID:            location.ID,
 				Type:               "header",
@@ -103,7 +125,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 		}
 
 		// PART 2: Add start and complete blocks to all existing instances
-		var instances []models.Instance
+		var instances []m20251205061242_Instance
 		err = db.NewSelect().
 			Model(&instances).
 			Scan(ctx)
@@ -135,7 +157,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 	}, func(ctx context.Context, db *bun.DB) error {
 		// ROLLBACK PART 1: Delete location header blocks
 		_, err := db.NewDelete().
-			Model((*models.Block)(nil)).
+			Model((*m20251205061242_Block)(nil)).
 			Where("type = ?", "header").
 			Where("context = ?", blocks.ContextLocationContent).
 			Exec(ctx)
@@ -145,7 +167,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 
 		// Decrement ordering for all remaining location_content blocks
 		_, err = db.NewUpdate().
-			Model((*models.Block)(nil)).
+			Model((*m20251205061242_Block)(nil)).
 			Set("ordering = ordering - 1").
 			Where("context = ?", blocks.ContextLocationContent).
 			Where("ordering > 0").
@@ -156,7 +178,7 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 
 		// ROLLBACK PART 2: Delete all start and complete blocks
 		_, err = db.NewDelete().
-			Model((*models.Block)(nil)).
+			Model((*m20251205061242_Block)(nil)).
 			Where("context IN (?, ?)", blocks.ContextStart, blocks.ContextFinish).
 			Exec(ctx)
 		if err != nil {
@@ -167,11 +189,10 @@ func init() { //nolint:gocognit,gochecknoinits // Migration init is required
 	})
 }
 
-// m20251205061242_createStartlocks creates the default blocks for an instance's start page.
-//
+// m20251205061242_createStartBlocks creates the default blocks for an instance's start page.
 
-func m20251205061242_createStartBlocks(instanceID, instanceName string) []models.Block {
-	result := make([]models.Block, 7) //nolint:mnd // 7 blocks for start page
+func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251205061242_Block {
+	result := make([]m20251205061242_Block, 7) //nolint:mnd // 7 blocks for start page
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
@@ -179,7 +200,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 		TitleText: instanceName,
 		TitleSize: "large",
 	})
-	result[0] = models.Block{
+	result[0] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "header",
@@ -196,7 +217,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 		ScheduledMessage: "This game will start soon.",
 		ShowCountdown:    true,
 	})
-	result[1] = models.Block{
+	result[1] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "game_status_alert",
@@ -209,7 +230,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 
 	// 3. Divider - Instructions
 	divider1Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "How to play"})
-	result[2] = models.Block{
+	result[2] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "divider",
@@ -222,7 +243,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 
 	// 4. Markdown - Instructions
 	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_StartInstructions})
-	result[3] = models.Block{
+	result[3] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "markdown",
@@ -235,7 +256,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 
 	// 5. Divider - Team Info
 	divider2Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "Team Info"})
-	result[4] = models.Block{
+	result[4] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "divider",
@@ -251,7 +272,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 		BlockText:     "Set your team name",
 		AllowChanging: true,
 	})
-	result[5] = models.Block{
+	result[5] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "team_name",
@@ -268,7 +289,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 		ActiveButtonText:    "Start Game",
 		ButtonStyle:         "primary",
 	})
-	result[6] = models.Block{
+	result[6] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "start_game_button",
@@ -283,10 +304,9 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []models
 }
 
 // m20251205061242_createFinishBlocks creates the default blocks for an instance's complete page.
-//
 
-func m20251205061242_createFinishBlocks(instanceID string) []models.Block {
-	result := make([]models.Block, 2) //nolint:mnd // 2 blocks for complete page
+func m20251205061242_createFinishBlocks(instanceID string) []m20251205061242_Block {
+	result := make([]m20251205061242_Block, 2) //nolint:mnd // 2 blocks for complete page
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
@@ -294,7 +314,7 @@ func m20251205061242_createFinishBlocks(instanceID string) []models.Block {
 		TitleText: "Congratulations!",
 		TitleSize: "large",
 	})
-	result[0] = models.Block{
+	result[0] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "header",
@@ -307,7 +327,7 @@ func m20251205061242_createFinishBlocks(instanceID string) []models.Block {
 
 	// 2. Markdown - Congratulations
 	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_FinishCongratulations})
-	result[1] = models.Block{
+	result[1] = m20251205061242_Block{
 		ID:                 uuid.New().String(),
 		OwnerID:            instanceID,
 		Type:               "markdown",

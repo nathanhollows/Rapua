@@ -23,6 +23,57 @@ func setupLocationRepo(t *testing.T) (repositories.LocationRepository, db.Transa
 	return locationRepo, transactor, cleanup
 }
 
+func TestLocationRepository_GetByInstanceAndSlug(t *testing.T) {
+	repo, _, cleanup := setupLocationRepo(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	instanceID := gofakeit.UUID()
+	slug := gofakeit.Word()
+
+	location := &models.Location{
+		Name:       gofakeit.Name(),
+		Slug:       slug,
+		InstanceID: instanceID,
+		MarkerID:   gofakeit.UUID(),
+	}
+	err := repo.Create(ctx, location)
+	require.NoError(t, err)
+
+	t.Run("found by slug", func(t *testing.T) {
+		found, findErr := repo.GetByInstanceAndSlug(ctx, instanceID, slug)
+		require.NoError(t, findErr)
+		assert.Equal(t, location.ID, found.ID)
+		assert.Equal(t, slug, found.Slug)
+	})
+
+	t.Run("not found with wrong slug", func(t *testing.T) {
+		_, findErr := repo.GetByInstanceAndSlug(ctx, instanceID, gofakeit.Word())
+		require.Error(t, findErr)
+	})
+
+	t.Run("not found with wrong instance", func(t *testing.T) {
+		_, findErr := repo.GetByInstanceAndSlug(ctx, gofakeit.UUID(), slug)
+		require.Error(t, findErr)
+	})
+
+	t.Run("same slug in different instances is allowed", func(t *testing.T) {
+		otherInstanceID := gofakeit.UUID()
+		other := &models.Location{
+			Name:       gofakeit.Name(),
+			Slug:       slug,
+			InstanceID: otherInstanceID,
+			MarkerID:   gofakeit.UUID(),
+		}
+		createErr := repo.Create(ctx, other)
+		require.NoError(t, createErr)
+
+		found, findErr := repo.GetByInstanceAndSlug(ctx, otherInstanceID, slug)
+		require.NoError(t, findErr)
+		assert.Equal(t, other.ID, found.ID)
+	})
+}
+
 func TestLocationRepository_CreateTx(t *testing.T) {
 	repo, transactor, cleanup := setupLocationRepo(t)
 	defer cleanup()

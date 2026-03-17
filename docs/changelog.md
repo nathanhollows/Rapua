@@ -7,6 +7,13 @@ tag: updated
 
 # Changelog
 
+## 6.15.0 (2026-03-17)
+
+### Changed
+
+- Locations now use slugs in URLS instead of IDs.
+    - This doesn't change much for players, but does allow for markers to be added to multiple locations in the future.
+
 ## 6.14.1 (2026-03-09)
 
 ### Fixed

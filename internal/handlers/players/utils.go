@@ -70,6 +70,7 @@ type NavigationService interface {
 
 type LocationService interface {
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
+	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
 	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
@@ -190,6 +191,15 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	}
 
 	return nil
+}
+
+// checkinURL returns the player-facing URL for a check-in, using the location slug.
+func (h PlayerHandler) checkinURL(ctx context.Context, instanceID, markerCode string) (string, error) {
+	loc, err := h.locationService.GetByInstanceAndCode(ctx, instanceID, markerCode)
+	if err != nil {
+		return "", fmt.Errorf("resolving slug for marker %s: %w", markerCode, err)
+	}
+	return "/checkins/" + loc.Slug, nil
 }
 
 func (h *PlayerHandler) handleError(

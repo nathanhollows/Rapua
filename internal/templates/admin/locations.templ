@@ -308,7 +308,7 @@ templ EditLocation(data EditLocationData) {
 			</button>
 			<form
 				id="edit-location"
-				hx-post={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
+				hx-post={ fmt.Sprint("/admin/locations/", data.Location.Slug) }
 				hx-trigger="click, savelocation delay:500ms, keyup from:[form=edit-location] delay:500ms"
 				hx-swap="none"
 			>
@@ -356,7 +356,7 @@ templ EditLocation(data EditLocationData) {
 						set #location-name's textContent to my value"
 					/>
 				</fieldset>
-				if data.Settings.EnablePoints {
+					if data.Settings.EnablePoints {
 					<fieldset class="fieldset w-full md:w-1/2">
 						<legend class="fieldset-legend">Points</legend>
 						<input
@@ -509,7 +509,7 @@ templ EditLocation(data EditLocationData) {
 					id="content-tab"
 					role="tab"
 					class="tab transition-colors grow tab-active"
-					data-url={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
+					data-url={ fmt.Sprint("/checkins/", data.Location.Slug) }
 					_="on click
 					remove .tab-active from <#preview-nav a.tab-active />
 					add .tab-active to me
@@ -524,7 +524,7 @@ templ EditLocation(data EditLocationData) {
 					<div
 						id="mobile-preview-container"
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
-						hx-get={ fmt.Sprint("/checkins/", data.Location.MarkerID) }
+						hx-get={ fmt.Sprint("/checkins/", data.Location.Slug) }
 						hx-trigger={ fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn") }
 						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
 						hx-swap="innerHTML"
@@ -552,7 +552,7 @@ templ EditLocation(data EditLocationData) {
 				<button
 					type="button"
 					class="btn btn-error"
-					hx-delete={ fmt.Sprint("/admin/locations/", data.Location.MarkerID) }
+					hx-delete={ fmt.Sprint("/admin/locations/", data.Location.Slug) }
 					hx-trigger="click"
 					onclick="confirm_delete_modal.close()"
 				>Delete</button>

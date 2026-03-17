@@ -23,6 +23,8 @@ type LocationRepository interface {
 	FindByIDs(ctx context.Context, instanceID string, locationIDs []string) ([]*models.Location, error)
 	// FindByInstance finds a location by instance and code
 	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
+	// GetByInstanceAndSlug finds a location by instance ID and slug
+	GetByInstanceAndSlug(ctx context.Context, instanceID string, slug string) (*models.Location, error)
 	// Find all locations for an instance
 	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
 	// FindLocationsByMarkerID finds all locations by marker ID
@@ -152,6 +154,22 @@ func (r *locationRepository) FindByInstance(ctx context.Context, instanceID stri
 		return nil, fmt.Errorf("finding all locations: %w", err)
 	}
 	return locations, nil
+}
+
+// GetByInstanceAndSlug finds a location by instance ID and slug.
+func (r *locationRepository) GetByInstanceAndSlug(
+	ctx context.Context, instanceID string, slug string,
+) (*models.Location, error) {
+	var location models.Location
+	err := r.db.NewSelect().
+		Model(&location).
+		Where("instance_id = ? AND slug = ?", instanceID, slug).
+		Relation("Marker").
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("finding location by slug: %w", err)
+	}
+	return &location, nil
 }
 
 // FindLocationsByMarkerID finds all locations for a given marker.

@@ -1,12 +1,18 @@
 package models
 
-import "github.com/nathanhollows/Rapua/v6/blocks"
+import (
+	"regexp"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v6/blocks"
+)
 
 type Location struct {
 	baseModel
 
 	ID           string  `bun:"id,pk,notnull"`
 	Name         string  `bun:"name,type:varchar(255)"`
+	Slug         string  `bun:"slug,type:varchar(255)"`
 	InstanceID   string  `bun:"instance_id,notnull"`
 	MarkerID     string  `bun:"marker_id,notnull"`
 	ContentID    string  `bun:"content_id,notnull"` // TODO: Remove contentID as content is fully deprecated
@@ -20,6 +26,16 @@ type Location struct {
 	Instance Instance `bun:"rel:has-one,join:instance_id=id"`
 	Marker   Marker   `bun:"rel:has-one,join:marker_id=code"`
 	Blocks   []Block  `bun:"rel:has-many,join:id=owner_id"`
+}
+
+var slugNonAlphanumeric = regexp.MustCompile(`[^a-z0-9]+`)
+
+// Slugify converts a string to a URL-safe slug.
+func Slugify(s string) string {
+	s = strings.ToLower(s)
+	s = slugNonAlphanumeric.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	return s
 }
 
 // HasCoordinates returns true if the location's marker has coordinates.

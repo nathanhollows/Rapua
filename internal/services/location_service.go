@@ -27,6 +27,8 @@ type LocationService interface {
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
 	// GetByInstanceAndCode finds a location by its instance and code
 	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
+	// GetByInstanceAndSlug finds a location by its instance and slug
+	GetByInstanceAndSlug(ctx context.Context, instanceID string, slug string) (*models.Location, error)
 	// FindByInstance finds all locations for an instance
 	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
 
@@ -67,6 +69,27 @@ func NewLocationService(
 	}
 }
 
+// generateUniqueSlug returns a slug unique within instanceID, excluding excludeID from conflict checks.
+func (s locationService) generateUniqueSlug(ctx context.Context, instanceID, name, excludeID string) (string, error) {
+	base := models.Slugify(name)
+	if base == "" {
+		base = "location"
+	}
+	candidate := base
+	const maxAttempts = 100
+	for range maxAttempts {
+		existing, err := s.locationRepo.GetByInstanceAndSlug(ctx, instanceID, candidate)
+		if err != nil {
+			return candidate, nil //nolint:nilerr // err means "not found" — slug is available
+		}
+		if existing.ID == excludeID {
+			return candidate, nil
+		}
+		candidate = fmt.Sprintf("%s-%s", base, uuid.New().String()[:6])
+	}
+	return "", fmt.Errorf("could not generate unique slug for %q after %d attempts", name, maxAttempts)
+}
+
 // checkLocationData checks if the provided location data is valid.
 func checkLocationData(instanceID, name string, lat, lng float64) error {
 	if name == "" {
@@ -101,8 +124,14 @@ func (s locationService) CreateLocation(
 		return models.Location{}, fmt.Errorf("creating marker: %w", err)
 	}
 
+	slug, err := s.generateUniqueSlug(ctx, instanceID, name, "")
+	if err != nil {
+		return models.Location{}, fmt.Errorf("generating slug: %w", err)
+	}
+
 	location := models.Location{
 		Name:       name,
+		Slug:       slug,
 		InstanceID: instanceID,
 		MarkerID:   marker.Code,
 		Points:     points,
@@ -137,8 +166,14 @@ func (s locationService) CreateLocationFromMarker(
 		return models.Location{}, fmt.Errorf("finding marker: %w", err)
 	}
 
+	slug, err := s.generateUniqueSlug(ctx, instanceID, name, "")
+	if err != nil {
+		return models.Location{}, fmt.Errorf("generating slug: %w", err)
+	}
+
 	location := models.Location{
 		Name:       name,
+		Slug:       slug,
 		InstanceID: instanceID,
 		MarkerID:   marker.Code,
 		Points:     points,
@@ -196,6 +231,17 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 	}
 
 	return nil
+}
+
+// GetByInstanceAndSlug finds a location by instance and slug.
+func (s locationService) GetByInstanceAndSlug(
+	ctx context.Context, instanceID string, slug string,
+) (*models.Location, error) {
+	location, err := s.locationRepo.GetByInstanceAndSlug(ctx, instanceID, slug)
+	if err != nil {
+		return nil, fmt.Errorf("finding location by slug: %w", err)
+	}
+	return location, nil
 }
 
 // GetByID finds a location by ID.
@@ -305,6 +351,11 @@ func (s locationService) UpdateLocation(ctx context.Context, location *models.Lo
 
 	if data.Name != "" && data.Name != location.Name {
 		location.Name = data.Name
+		newSlug, slugErr := s.generateUniqueSlug(ctx, location.InstanceID, data.Name, location.ID)
+		if slugErr != nil {
+			return fmt.Errorf("generating slug: %w", slugErr)
+		}
+		location.Slug = newSlug
 		update = true
 	}
 
