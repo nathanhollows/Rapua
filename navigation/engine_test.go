@@ -19,7 +19,7 @@ func makeTestStructure() *models.GameStructure {
 				Name:           "First Group",
 				Color:          "blue",
 				Routing:        models.RouteStrategyOrdered,
-				Navigation:     models.NavigationDisplayNames,
+				Navigation:     models.NavigationList,
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				LocationIDs:    []string{"loc1", "loc2"},
@@ -29,7 +29,7 @@ func makeTestStructure() *models.GameStructure {
 				Name:            "Second Group",
 				Color:           "red",
 				Routing:         models.RouteStrategyFreeRoam,
-				Navigation:      models.NavigationDisplayNames,
+				Navigation:      models.NavigationList,
 				CompletionType:  models.CompletionMinimum,
 				MinimumRequired: 2,
 				AutoAdvance:     true,
@@ -39,8 +39,8 @@ func makeTestStructure() *models.GameStructure {
 				ID:             "group3",
 				Name:           "Third Group",
 				Color:          "green",
-				Routing:        models.RouteStrategyRandom,
-				Navigation:     models.NavigationDisplayNames,
+				Routing:        models.RouteStrategyRandomised,
+				Navigation:     models.NavigationList,
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    false, // No auto-advance
 				MaxNext:        1,     // Random routing requires MaxNext > 0
@@ -247,7 +247,7 @@ func TestGetAvailableLocationIDs_RandomWithMaxNext(t *testing.T) {
 	assert.Len(t, locationIDs, 1)
 
 	// Test with group2 if we give it Random routing with MaxNext limit
-	structure.SubGroups[1].Routing = models.RouteStrategyRandom
+	structure.SubGroups[1].Routing = models.RouteStrategyRandomised
 	structure.SubGroups[1].MaxNext = 2
 	locationIDs = navigation.GetAvailableLocationIDs(structure, "group2", completed, "TEAM1")
 	assert.Len(t, locationIDs, 2)
@@ -265,8 +265,8 @@ func TestGetAvailableLocationIDs_RandomWithReplacement(t *testing.T) {
 				ID:          "random-group",
 				Name:        "Random Group",
 				Color:       "blue",
-				Routing:     models.RouteStrategyRandom,
-				Navigation:  models.NavigationDisplayNames,
+				Routing:     models.RouteStrategyRandomised,
+				Navigation:  models.NavigationList,
 				MaxNext:     3, // Show 3 random locations at a time
 				LocationIDs: []string{"loc1", "loc2", "loc3", "loc4", "loc5"},
 			},
@@ -318,8 +318,8 @@ func TestGetAvailableLocationIDs_RandomDifferentTeams(t *testing.T) {
 				ID:          "random-group",
 				Name:        "Random Group",
 				Color:       "blue",
-				Routing:     models.RouteStrategyRandom,
-				Navigation:  models.NavigationDisplayNames,
+				Routing:     models.RouteStrategyRandomised,
+				Navigation:  models.NavigationList,
 				MaxNext:     5, // Show all 5 locations
 				LocationIDs: []string{"loc1", "loc2", "loc3", "loc4", "loc5"},
 			},
@@ -568,7 +568,7 @@ func TestValidateStructure_RandomWithMaxNextZero(t *testing.T) {
 				ID:          "group1",
 				Name:        "Group 1",
 				Color:       "blue",
-				Routing:     models.RouteStrategyRandom,
+				Routing:     models.RouteStrategyRandomised,
 				MaxNext:     0, // ERROR: random routing must have MaxNext > 0
 				LocationIDs: []string{"loc1", "loc2"},
 			},
@@ -589,7 +589,7 @@ func TestValidateStructure_RandomWithValidMaxNext(t *testing.T) {
 				ID:          "group1",
 				Name:        "Group 1",
 				Color:       "blue",
-				Routing:     models.RouteStrategyRandom,
+				Routing:     models.RouteStrategyRandomised,
 				MaxNext:     3, // Valid: MaxNext > 0
 				LocationIDs: []string{"loc1", "loc2", "loc3"},
 			},

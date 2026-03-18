@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 7.0.0
+
+### Changed
+
+- **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
+
 ## 6.15.0 (2026-03-17)
 
 ### Changed

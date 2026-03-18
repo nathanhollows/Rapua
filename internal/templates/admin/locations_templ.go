@@ -326,7 +326,7 @@ type EditLocationData struct {
 	Location         models.Location
 	ContentBlocks    blocks.Blocks
 	NavigationBlocks blocks.Blocks
-	NavigationMode   models.NavigationDisplayMode
+	NavigationMode   models.NavigationMode
 }
 
 func EditLocation(data EditLocationData) templ.Component {
@@ -593,8 +593,8 @@ func EditLocation(data EditLocationData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if (data.NavigationMode == models.NavigationDisplayMap ||
-			data.NavigationMode == models.NavigationDisplayMapAndNames) &&
+		if (data.NavigationMode == models.NavigationMap ||
+			data.NavigationMode == models.NavigationLabelledMap) &&
 			!data.Location.Marker.IsMapped() {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div id=\"missing-marker\" role=\"alert\" class=\"alert alert-warning\">")
 			if templ_7745c5c3_Err != nil {
@@ -617,7 +617,7 @@ func EditLocation(data EditLocationData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.NavigationMode == models.NavigationDisplayCustom {
+		if data.NavigationMode == models.NavigationCustom {
 			templ_7745c5c3_Err = blockAddButton(data.Location.ID, blocks.ContextLocationClues, ".blocks").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -641,7 +641,7 @@ func EditLocation(data EditLocationData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.NavigationMode == models.NavigationDisplayTasks {
+		if data.NavigationMode == models.NavigationTasks {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div class=\"divider my-10\"><span class=\"text-sm font-bold\">Task</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -689,7 +689,7 @@ func EditLocation(data EditLocationData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.NavigationMode == models.NavigationDisplayMap || data.NavigationMode == models.NavigationDisplayMapAndNames {
+		if data.NavigationMode == models.NavigationMap || data.NavigationMode == models.NavigationLabelledMap {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<section><div class=\"divider mt-5 mb-10\"></div><legend class=\"fieldset-legend text-sm\">Marker</legend><div id=\"map-container\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

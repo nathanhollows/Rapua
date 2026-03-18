@@ -248,7 +248,7 @@ func GetAvailableLocationIDs(
 		}
 		return []string{firstID}
 
-	case models.RouteStrategyRandom:
+	case models.RouteStrategyRandomised:
 		// Return up to maxNext randomly selected location IDs (deterministic per team)
 		return deterministicShuffleIDs(group.LocationIDs, completedLocationIDs, teamCode, group.MaxNext)
 

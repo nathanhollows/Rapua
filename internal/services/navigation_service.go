@@ -195,7 +195,7 @@ func (s *NavigationService) GetPlayerNavigationView(
 	}
 
 	// For task mode, load all locations in the group and partition by completion
-	if currentGroup != nil && currentGroup.Navigation == models.NavigationDisplayTasks {
+	if currentGroup != nil && currentGroup.Navigation == models.NavigationTasks {
 		uncompleted, completed, err := s.getScavengerHuntLocations(ctx, team, currentGroup)
 		if err != nil {
 			return nil, fmt.Errorf("loading scavenger hunt locations: %w", err)
@@ -240,9 +240,9 @@ func (s *NavigationService) GetPlayerNavigationView(
 
 	// Load navigation blocks if using custom or tasks display mode
 	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
 		viewContext = blocks.ContextLocationClues
 	}
 	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
@@ -394,9 +394,9 @@ func (s *NavigationService) GetPreviewNavigationView(
 
 	// Load navigation blocks if using custom or tasks display mode
 	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
 		viewContext = blocks.ContextLocationClues
 	}
 	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {

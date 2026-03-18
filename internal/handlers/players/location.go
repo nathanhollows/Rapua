@@ -80,7 +80,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 
 	// Get the task block for this location if in task mode
 	var taskBlock blocks.Block
-	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		var taskBlocks blocks.Blocks
 		taskBlocks, err = h.blockService.FindByOwnerIDAndContext(
 			r.Context(),

@@ -397,7 +397,7 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 
 	// Find the parent group to get navigation settings
 	parentGroup := h.gameStructureService.FindGroupByLocationID(&user.CurrentInstance.GameStructure, location.ID)
-	navigationMode := models.NavigationDisplayCustom // Default to custom
+	navigationMode := models.NavigationCustom // Default to custom
 	if parentGroup != nil {
 		navigationMode = parentGroup.Navigation
 	} else {
@@ -414,12 +414,12 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 	var navigationContext blocks.BlockContext
 	var navigationBlocks []blocks.Block
 	switch parentGroup.Navigation {
-	case models.NavigationDisplayCustom:
+	case models.NavigationCustom:
 		navigationContext = blocks.ContextLocationClues
-	case models.NavigationDisplayTasks:
+	case models.NavigationTasks:
 		navigationContext = blocks.ContextTask
-	case models.NavigationDisplayMap, models.NavigationDisplayMapAndNames,
-		models.NavigationDisplayNames, models.NavigationDisplayClues:
+	case models.NavigationMap, models.NavigationLabelledMap,
+		models.NavigationList:
 		// These navigation modes don't use blocks
 	}
 	if navigationContext != "" {

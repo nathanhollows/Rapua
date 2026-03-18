@@ -46,7 +46,7 @@ func Next(data NextParams) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
 			templ_7745c5c3_Err = icon("circle-check-big", templ.Attributes{"class": "w-16 h-16 m-auto"}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -61,7 +61,7 @@ func Next(data NextParams) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.View.CurrentGroup.Name)
 			if templ_7745c5c3_Err != nil {
@@ -128,27 +128,27 @@ func Next(data NextParams) templ.Component {
 			}
 			if data.View.CurrentGroup != nil {
 				switch data.View.CurrentGroup.Navigation {
-				case models.NavigationDisplayMap:
+				case models.NavigationMap:
 					templ_7745c5c3_Err = showMap(data.View.NextLocations).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				case models.NavigationDisplayMapAndNames:
+				case models.NavigationLabelledMap:
 					templ_7745c5c3_Err = showMapAndNames(data.View.Settings, data.View.NextLocations).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				case models.NavigationDisplayNames:
+				case models.NavigationList:
 					templ_7745c5c3_Err = showNames(data.View.Settings, data.View.NextLocations).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				case models.NavigationDisplayCustom:
+				case models.NavigationCustom:
 					templ_7745c5c3_Err = showCustom(prepareCustomContentViewData(data)).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				case models.NavigationDisplayTasks:
+				case models.NavigationTasks:
 					templ_7745c5c3_Err = showTasks(prepareTaskViewData(data.View)).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

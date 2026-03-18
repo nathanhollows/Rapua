@@ -79,7 +79,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	// A team may not check in if they must check out at a different location
 	// Exception: Task mode allows switching between tasks freely
 	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
 			return ErrAlreadyCheckedIn
 		}
 	}
@@ -151,7 +151,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		team.Points += bonusPoints
 
 		// Don't block team in task mode - task checklist implies freedom to switch between tasks
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
 			team.MustCheckOut = location.ID
 		}
 	} else {
