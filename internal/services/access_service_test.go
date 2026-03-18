@@ -575,7 +575,6 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
 			MarkerID:   gofakeit.UUID(),
-			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -625,7 +624,6 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
 			MarkerID:   gofakeit.UUID(),
-			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -654,7 +652,6 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
 			MarkerID:   gofakeit.UUID(),
-			ContentID:  gofakeit.UUID(), // Dead field but has NOT NULL constraint
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)

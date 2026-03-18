@@ -18,6 +18,9 @@ tag: updated
 - **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
 - **Breaking:** `OwnerID` replaces `LocationID` in blocks.
 
+### Removed
+
+- **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
 ## 6.15.0 (2026-03-17)
 
 ### Changed
