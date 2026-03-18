@@ -13,7 +13,7 @@ func TestQuizBlock_Getters(t *testing.T) {
 	block := blocks.QuizBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-quiz-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      3,
 			Points:     50,
 		},
@@ -25,7 +25,7 @@ func TestQuizBlock_Getters(t *testing.T) {
 
 	assert.Equal(t, "quiz_block", block.GetType())
 	assert.Equal(t, "test-quiz-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 3, block.GetOrder())
 	assert.Equal(t, 50, block.GetPoints())
 	assert.Contains(t, block.GetIconSVG(), "svg")
@@ -391,7 +391,7 @@ func TestQuizBlock_GetShuffledOptions(t *testing.T) {
 func TestNewQuizBlock(t *testing.T) {
 	base := blocks.BaseBlock{
 		ID:         "test-id",
-		LocationID: "location-123",
+		OwnerID: "location-123",
 		Type:       "quiz_block",
 		Order:      1,
 		Points:     50,

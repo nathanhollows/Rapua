@@ -15,7 +15,7 @@ func TestCreateFromBaseBlock(t *testing.T) {
 		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
 			baseBlock := blocks.BaseBlock{
 				ID:         "1",
-				LocationID: "loc1",
+				OwnerID: "loc1",
 				Type:       block.GetType(),
 				Data:       json.RawMessage(`{}`),
 				Order:      1,
@@ -36,7 +36,7 @@ func TestCreateFromBaseBlock(t *testing.T) {
 func TestCreateFromBaseBlockUnknownType(t *testing.T) {
 	baseBlock := blocks.BaseBlock{
 		ID:         "1",
-		LocationID: "loc1",
+		OwnerID: "loc1",
 		Type:       "unknown",
 		Data:       json.RawMessage(`{}`),
 		Order:      1,

@@ -66,7 +66,7 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
 		Type:       blockType,
-		LocationID: ownerID, // Use ownerID as LocationID for backward compatibility
+		OwnerID: ownerID,
 	}
 
 	// Let the blocks package handle the creation logic.
@@ -261,7 +261,7 @@ func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
 func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
+		OwnerID:            block.GetOwnerID(),
 		Type:               block.GetType(),
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),

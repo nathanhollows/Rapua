@@ -16,7 +16,7 @@ type HeaderBlock struct {
 
 func (b *HeaderBlock) GetID() string         { return b.ID }
 func (b *HeaderBlock) GetType() string       { return "header" }
-func (b *HeaderBlock) GetLocationID() string { return b.LocationID }
+func (b *HeaderBlock) GetOwnerID() string { return b.OwnerID }
 func (b *HeaderBlock) GetName() string       { return "Header" }
 func (b *HeaderBlock) GetDescription() string {
 	return "Display a customizable header with logo and title at the top of the page."

@@ -208,7 +208,7 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 
 	baseBlock := blocks.BaseBlock{
 		ID:         blockID,
-		LocationID: location.ID,
+		OwnerID: location.ID,
 		Type:       "header",
 		Data:       jsonData,
 		Order:      0,

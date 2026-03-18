@@ -56,7 +56,7 @@ func (b *SortingBlock) GetType() string { return "sorting" }
 
 func (b *SortingBlock) GetID() string { return b.ID }
 
-func (b *SortingBlock) GetLocationID() string { return b.LocationID }
+func (b *SortingBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *SortingBlock) GetOrder() int { return b.Order }
 

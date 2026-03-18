@@ -18,7 +18,7 @@ func TestRatingBlock_Getters(t *testing.T) {
 	block := blocks.RatingBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      2,
 			Points:     10,
 		},
@@ -30,7 +30,7 @@ func TestRatingBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Players provide a star rating for feedback or assessment.", block.GetDescription())
 	assert.Equal(t, "rating", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 2, block.GetOrder())
 	assert.Equal(t, 10, block.GetPoints())
 	assert.NotEmpty(t, block.GetIconSVG())

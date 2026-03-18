@@ -58,7 +58,7 @@ func (b *ChecklistBlock) GetType() string { return "checklist" }
 
 func (b *ChecklistBlock) GetID() string { return b.ID }
 
-func (b *ChecklistBlock) GetLocationID() string { return b.LocationID }
+func (b *ChecklistBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *ChecklistBlock) GetOrder() int { return b.Order }
 

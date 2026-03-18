@@ -13,7 +13,7 @@ func TestClueBlock_Getters(t *testing.T) {
 	block := blocks.ClueBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-clue-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      3,
 			Points:     -15, // Negative points for cost
 		},
@@ -25,7 +25,7 @@ func TestClueBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Clue", block.GetName())
 	assert.Equal(t, "clue", block.GetType())
 	assert.Equal(t, "test-clue-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 3, block.GetOrder())
 	assert.Equal(t, -15, block.GetPoints())
 }

@@ -22,7 +22,7 @@ type photoBlockData struct {
 
 func (b *PhotoBlock) GetID() string         { return b.ID }
 func (b *PhotoBlock) GetType() string       { return "photo" }
-func (b *PhotoBlock) GetLocationID() string { return b.LocationID }
+func (b *PhotoBlock) GetOwnerID() string { return b.OwnerID }
 func (b *PhotoBlock) GetName() string       { return "Photo" }
 func (b *PhotoBlock) GetDescription() string {
 	return "Players must submit a photo"

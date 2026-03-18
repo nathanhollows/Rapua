@@ -231,7 +231,7 @@ func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (block
 func convertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
+		OwnerID:            block.GetOwnerID(),
 		Type:               block.GetType(),
 		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Ordering:           block.GetOrder(),
@@ -261,7 +261,7 @@ func convertModelToBlock(model *models.Block) (blocks.Block, error) {
 	// Convert model to block
 	newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
 		ID:         model.ID,
-		LocationID: model.OwnerID, // Map OwnerID to LocationID for backward compatibility
+		OwnerID: model.OwnerID,
 		Type:       model.Type,
 		Data:       model.Data,
 		Order:      model.Ordering,

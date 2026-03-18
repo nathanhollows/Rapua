@@ -12,7 +12,7 @@ func TestYoutubeBlock_Getters(t *testing.T) {
 	block := blocks.YoutubeBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      1,
 			Points:     5,
 		},
@@ -22,7 +22,7 @@ func TestYoutubeBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Youtube", block.GetName())
 	assert.Equal(t, "youtube", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }

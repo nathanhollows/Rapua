@@ -13,7 +13,7 @@ func TestImageBlock_Getters(t *testing.T) {
 	block := blocks.ImageBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      0,
 			Points:     0,
 		},
@@ -23,7 +23,7 @@ func TestImageBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Image", block.GetName())
 	assert.Equal(t, "image", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 0, block.GetOrder())
 	assert.Equal(t, 0, block.GetPoints())
 }

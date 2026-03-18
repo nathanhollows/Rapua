@@ -65,7 +65,7 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, blk.GetID(), "Expected a non-empty block ID")
-				assert.Equal(t, tc.locationID, blk.GetLocationID(), "Location ID should match")
+				assert.Equal(t, tc.locationID, blk.GetOwnerID(), "Owner ID should match")
 				assert.Equal(t, tc.blockType, blk.GetType(), "Block type should match")
 			}
 		})

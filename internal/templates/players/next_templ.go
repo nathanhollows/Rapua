@@ -509,7 +509,7 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 			Blocks:   make([]blocks.Block, 0),
 		}
 		for _, block := range data.View.Blocks {
-			if block.GetLocationID() == location.ID {
+			if block.GetOwnerID() == location.ID {
 				lwb.Blocks = append(lwb.Blocks, block)
 			}
 		}
@@ -618,7 +618,7 @@ func showCustom(data customContentViewData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				for _, block := range locWithBlocks.Blocks {
-					if block.GetLocationID() != locWithBlocks.Location.ID {
+					if block.GetOwnerID() != locWithBlocks.Location.ID {
 						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "continue")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
@@ -680,7 +680,7 @@ func prepareTaskViewData(view *services.PlayerNavigationView) taskViewData {
 	// Build a map of locationID -> task block for quick lookup
 	blockByLocation := make(map[string]blocks.Block)
 	for _, block := range view.Blocks {
-		blockByLocation[block.GetLocationID()] = block
+		blockByLocation[block.GetOwnerID()] = block
 	}
 
 	// Build uncompleted tasks in location order

@@ -14,7 +14,7 @@ func TestSortingBlock_GetterMethods(t *testing.T) {
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
 			Type:       "sorting",
-			LocationID: "location-1",
+			OwnerID: "location-1",
 			Order:      5,
 			Points:     100,
 		},
@@ -27,7 +27,7 @@ func TestSortingBlock_GetterMethods(t *testing.T) {
 	assert.Contains(t, block.GetIconSVG(), `<svg xmlns="http://www.w3.org/2000/svg"`)
 	assert.Equal(t, "sorting", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-1", block.GetLocationID())
+	assert.Equal(t, "location-1", block.GetOwnerID())
 	assert.Equal(t, 5, block.GetOrder())
 	assert.Equal(t, 100, block.GetPoints())
 

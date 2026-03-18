@@ -14,7 +14,7 @@ func TestAlertBlock_Getters(t *testing.T) {
 	block := blocks.AlertBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-id",
-			LocationID: "location-123",
+			OwnerID: "location-123",
 			Order:      1,
 			Points:     5,
 		},
@@ -23,7 +23,7 @@ func TestAlertBlock_Getters(t *testing.T) {
 
 	assert.Equal(t, "alert", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }

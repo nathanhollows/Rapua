@@ -13,7 +13,7 @@ type MarkdownBlock struct {
 
 func (b *MarkdownBlock) GetID() string         { return b.ID }
 func (b *MarkdownBlock) GetType() string       { return "markdown" }
-func (b *MarkdownBlock) GetLocationID() string { return b.LocationID }
+func (b *MarkdownBlock) GetOwnerID() string { return b.OwnerID }
 func (b *MarkdownBlock) GetName() string       { return "Text" }
 func (b *MarkdownBlock) GetDescription() string {
 	return "Text (Supports Markdown)"

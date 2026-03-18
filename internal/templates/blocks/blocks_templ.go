@@ -356,9 +356,9 @@ func RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetLocationID())
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetOwnerID())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 297, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 297, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -395,9 +395,9 @@ func RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 309, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 309, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -434,9 +434,9 @@ func RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()))
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 322, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 322, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

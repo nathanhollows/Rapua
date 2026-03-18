@@ -25,7 +25,7 @@ type passwordBlockData struct {
 
 func (b *PasswordBlock) GetID() string         { return b.ID }
 func (b *PasswordBlock) GetType() string       { return "answer" }
-func (b *PasswordBlock) GetLocationID() string { return b.LocationID }
+func (b *PasswordBlock) GetOwnerID() string { return b.OwnerID }
 func (b *PasswordBlock) GetName() string       { return "Password" }
 func (b *PasswordBlock) GetDescription() string {
 	return "Players must enter the correct answer to a prompt."

@@ -47,7 +47,7 @@ type Block interface {
 	// Basic Attributes Getters
 	GetID() string
 	GetType() string
-	GetLocationID() string
+	GetOwnerID() string
 	GetName() string
 	GetDescription() string
 	GetOrder() int
@@ -68,7 +68,7 @@ type Blocks []Block
 
 type BaseBlock struct {
 	ID         string          `json:"-"`
-	LocationID string          `json:"-"` // TODO: change to OwnerID
+	OwnerID string `json:"-"`
 	Type       string          `json:"-"`
 	Data       json.RawMessage `json:"-"`
 	Order      int             `json:"-"`

@@ -13,7 +13,7 @@ func TestBrokerBlock_Getters(t *testing.T) {
 	block := blocks.BrokerBlock{
 		BaseBlock: blocks.BaseBlock{
 			ID:         "test-broker-id",
-			LocationID: "location-456",
+			OwnerID: "location-456",
 			Order:      4,
 			Points:     0, // Broker blocks don't use completion bonus
 		},
@@ -28,7 +28,7 @@ func TestBrokerBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Broker", block.GetName())
 	assert.Equal(t, "broker", block.GetType())
 	assert.Equal(t, "test-broker-id", block.GetID())
-	assert.Equal(t, "location-456", block.GetLocationID())
+	assert.Equal(t, "location-456", block.GetOwnerID())
 	assert.Equal(t, 4, block.GetOrder())
 	assert.Equal(t, 0, block.GetPoints())
 	assert.Contains(t, block.GetDescription(), "pay points")

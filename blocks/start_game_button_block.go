@@ -16,7 +16,7 @@ type StartGameButtonBlock struct {
 
 func (b *StartGameButtonBlock) GetID() string         { return b.ID }
 func (b *StartGameButtonBlock) GetType() string       { return "start_game_button" }
-func (b *StartGameButtonBlock) GetLocationID() string { return b.LocationID }
+func (b *StartGameButtonBlock) GetOwnerID() string { return b.OwnerID }
 func (b *StartGameButtonBlock) GetName() string       { return "Start Button" }
 func (b *StartGameButtonBlock) GetDescription() string {
 	return "Display a button to start the game when active."

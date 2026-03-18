@@ -13,7 +13,7 @@ type DividerBlock struct {
 
 func (b *DividerBlock) GetID() string         { return b.ID }
 func (b *DividerBlock) GetType() string       { return "divider" }
-func (b *DividerBlock) GetLocationID() string { return b.LocationID }
+func (b *DividerBlock) GetOwnerID() string { return b.OwnerID }
 func (b *DividerBlock) GetName() string       { return "Divider" }
 func (b *DividerBlock) GetDescription() string {
 	return "Simple divider to separate content."

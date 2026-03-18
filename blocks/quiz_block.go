@@ -52,7 +52,7 @@ func (b *QuizBlock) GetType() string { return "quiz_block" }
 
 func (b *QuizBlock) GetID() string { return b.ID }
 
-func (b *QuizBlock) GetLocationID() string { return b.LocationID }
+func (b *QuizBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *QuizBlock) GetOrder() int { return b.Order }
 

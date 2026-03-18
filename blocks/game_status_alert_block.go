@@ -16,7 +16,7 @@ type GameStatusAlertBlock struct {
 
 func (b *GameStatusAlertBlock) GetID() string         { return b.ID }
 func (b *GameStatusAlertBlock) GetType() string       { return "game_status_alert" }
-func (b *GameStatusAlertBlock) GetLocationID() string { return b.LocationID }
+func (b *GameStatusAlertBlock) GetOwnerID() string { return b.OwnerID }
 func (b *GameStatusAlertBlock) GetName() string       { return "Game Status" }
 func (b *GameStatusAlertBlock) GetDescription() string {
 	return "Display game status as an alert with optional countdown timer."
