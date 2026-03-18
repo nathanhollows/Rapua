@@ -12,18 +12,18 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v6/db"
-	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v6/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v6/internal/migrations"
-	"github.com/nathanhollows/Rapua/v6/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v6/internal/server"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/internal/sessions"
-	"github.com/nathanhollows/Rapua/v6/internal/storage"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/db"
+	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v7/internal/migrations"
+	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v7/internal/server"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/internal/sessions"
+	"github.com/nathanhollows/Rapua/v7/internal/storage"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
@@ -596,7 +596,7 @@ func initialiseFolders(logger *slog.Logger) {
 
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {
-			if err = os.MkdirAll(folder, 0750); err != nil {
+			if err = os.MkdirAll(folder, 0o750); err != nil {
 				logger.Error("could not create directory", "folder", folder, "error", err)
 				os.Exit(1)
 			}

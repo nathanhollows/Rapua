@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
 	"github.com/stretchr/testify/assert"
 )
 

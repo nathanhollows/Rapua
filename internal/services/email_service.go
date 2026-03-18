@@ -16,8 +16,8 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/emails"
-	"github.com/nathanhollows/Rapua/v6/models"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/emails"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 type EmailService struct{}

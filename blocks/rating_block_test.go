@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -200,15 +200,15 @@ func TestRatingBlock_RequiresValidation(t *testing.T) {
 
 func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 	tests := []struct {
-		name          string
-		maxRating     int
-		points        int
-		input         map[string][]string
-		wantRating    int
-		wantComplete  bool
-		wantPoints    int
-		wantErr       bool
-		errContains   string
+		name         string
+		maxRating    int
+		points       int
+		input        map[string][]string
+		wantRating   int
+		wantComplete bool
+		wantPoints   int
+		wantErr      bool
+		errContains  string
 	}{
 		{
 			name:         "valid rating at minimum",

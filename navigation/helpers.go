@@ -1,7 +1,7 @@
 package navigation
 
 import (
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"golang.org/x/exp/rand"
 )
 

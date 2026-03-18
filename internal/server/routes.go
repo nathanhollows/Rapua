@@ -11,13 +11,13 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v6/filesystem"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v6/internal/handlers/static"
-	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v7/filesystem"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v7/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v7/internal/handlers/static"
+	"github.com/nathanhollows/Rapua/v7/internal/middlewares"
 )
 
 const (

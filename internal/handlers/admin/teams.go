@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	admin "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	admin "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func (h *Handler) Teams(w http.ResponseWriter, r *http.Request) {

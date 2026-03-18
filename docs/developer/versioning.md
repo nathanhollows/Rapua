@@ -38,23 +38,20 @@ A major version bump requires updating every internal import path. This is mecha
 
 2. **Update the code version** — set the `version` constant in `cmd/rapua/main.go`.
 
-3. **Update `go.mod`** — change the module path:
-   ```
-   module github.com/nathanhollows/Rapua/vN
+3. **Update the module path and all imports** — two commands from the project root:
+   ```bash
+   # Update go.mod module path
+   sed -i 's|Rapua/vOLD|Rapua/vNEW|g' go.mod
+
+   # Update every Go import
+   find . -name '*.go' -exec sed -i 's|Rapua/vOLD|Rapua/vNEW|g' {} +
    ```
 
-4. **Update all imports** — replace the old version suffix in every `.go` file:
+4. **Verify** — build and run the full test suite:
    ```bash
-   # From the project root — adjust old/new version numbers as needed
-   find . -name '*.go' -exec sed -i 's|Rapua/v6|Rapua/v7|g' {} +
+   go build ./... && go test ./...
    ```
-
-5. **Verify** — run the full test suite:
-   ```bash
-   go build ./...
-   go test ./...
-   ```
-   The version tests will catch any mismatch between the three sources.
+   `TestVersionMatchesChangelog` and `TestModuleVersionMatchesChangelog` will catch any mismatch between the three version sources.
 
 ### Minor / patch bumps
 

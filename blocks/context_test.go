@@ -3,7 +3,7 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 )
 
 func TestBlockContextFiltering(t *testing.T) {

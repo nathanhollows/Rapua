@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
 type FacilitatorService struct {
