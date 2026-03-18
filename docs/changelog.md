@@ -21,6 +21,8 @@ tag: updated
 ### Removed
 
 - **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
+- Removed legacy block handlers.
+
 ## 6.15.0 (2026-03-17)
 
 ### Changed

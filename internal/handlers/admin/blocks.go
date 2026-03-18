@@ -2,7 +2,6 @@ package admin
 
 import (
 	"encoding/json"
-	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -11,38 +10,6 @@ import (
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
 )
-
-// BlockEdit shows the form to edit a block (legacy method).
-func (h *Handler) BlockEdit(w http.ResponseWriter, r *http.Request) {
-	// Extract blockID from legacy URL structure
-	blockID := chi.URLParam(r, "blockID")
-
-	// Add deprecation header
-	w.Header().Set("X-Deprecated", "Use GET /admin/blocks/{id} instead")
-
-	// Update chi URL parameters to match new structure
-	rctx := chi.RouteContext(r.Context())
-	rctx.URLParams.Add("id", blockID)
-
-	// Call the new handler directly
-	h.BlockGet(w, r)
-}
-
-// BlockEditPost updates the block (legacy method).
-func (h *Handler) BlockEditPost(w http.ResponseWriter, r *http.Request) {
-	// Extract blockID from legacy URL structure
-	blockID := chi.URLParam(r, "blockID")
-
-	// Add deprecation header
-	w.Header().Set("X-Deprecated", "Use PUT /admin/blocks/{id} instead")
-
-	// Update chi URL parameters to match new structure
-	rctx := chi.RouteContext(r.Context())
-	rctx.URLParams.Add("id", blockID)
-
-	// Call the new handler directly
-	h.BlockUpdate(w, r)
-}
 
 // BlockCreate creates a new block using query parameters.
 func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
@@ -127,73 +94,6 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("BlockCreate: rendering template", "error", err)
 	}
-}
-
-// BlockNewWithOwnerAndContextPost creates a new block with owner and context (legacy path-based parameters).
-func (h *Handler) BlockNewWithOwnerAndContextPost(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	ownerID := chi.URLParam(r, "owner")
-	blockType := chi.URLParam(r, "type")
-	contextParam := chi.URLParam(r, "context")
-
-	// Parse context parameter to BlockContext
-	blockContext := blocks.BlockContext(contextParam)
-
-	// For now, assume if owner is a location, we can check location access
-	// In the future, this could be expanded to handle different owner types
-	access, err := h.accessService.CanAdminAccessLocation(r.Context(), user.ID, ownerID)
-	if err != nil {
-		h.handleError(w, r, "BlockNewWithOwnerAndContextPost: checking access", "Could not create block", "error", err)
-		return
-	}
-	if !access {
-		h.handleError(
-			w,
-			r,
-			"BlockNewWithOwnerAndContextPost: access denied",
-			"Could not create block. Access denied",
-			"owner",
-			ownerID,
-		)
-		return
-	}
-
-	block, err := h.blockService.NewBlockWithOwnerAndContext(r.Context(), ownerID, blockContext, blockType)
-	if err != nil {
-		h.handleError(w, r, "BlockNewWithOwnerAndContextPost: creating block", "Could not create block", "error", err)
-		return
-	}
-
-	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("BlockNewWithOwnerAndContextPost: rendering template", "error", err)
-	}
-}
-
-// BlockNewPost creates a new block for a location (legacy method).
-func (h *Handler) BlockNewPost(w http.ResponseWriter, r *http.Request) {
-	// Extract parameters from legacy URL structure
-	blockType := chi.URLParam(r, "type")
-	locationID := chi.URLParam(r, "location")
-
-	// Add deprecation header
-	w.Header().Set("X-Deprecated", "Use POST /admin/blocks with query parameters instead")
-
-	// Create new request with query parameters
-	r.URL.RawQuery = fmt.Sprintf("owner=%s&context=location_content&type=%s", locationID, blockType)
-
-	// Call the new handler directly instead of redirecting to preserve POST data
-	h.BlockCreate(w, r)
-}
-
-// ReorderBlocks reorders the blocks (legacy method).
-func (h *Handler) ReorderBlocks(w http.ResponseWriter, r *http.Request) {
-	// Add deprecation header
-	w.Header().Set("X-Deprecated", "Use POST /admin/blocks/reorder instead")
-
-	// Call the new handler directly
-	h.BlockReorder(w, r)
 }
 
 // BlockGet retrieves a single block by ID.
