@@ -9,6 +9,10 @@ tag: updated
 
 ## 7.0.0
 
+### Added
+
+- [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
+
 ### Changed
 
 - **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.

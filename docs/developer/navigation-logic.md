@@ -1,7 +1,7 @@
 ---
 title: "Navigation Logic Reference"
 sidebar: true
-order: 4
+order: 6
 ---
 
 # Navigation Logic Reference

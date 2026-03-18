@@ -1,7 +1,7 @@
 ---
 title: "Contributing"
 sidebar: true
-order: 10 
+order: 11
 ---
 
 # Contributing
@@ -32,15 +32,9 @@ If you're a writer or editor, you can help improve the documentation for Rapua. 
 - Improve the clarity and organization of the content.
 - Add new sections or examples to the documentation.
 
-## A note on versioning
+## Versioning
 
-Rapua uses [Semantic Versioning](https://semver.org/) to manage releases. This means that:
-
-- **MAJOR** version when you make incompatible API changes (i.e., changes that break backward compatibility in models or public packages),
-- **MINOR** version when you add functionality in a backwards-compatible manner, and
-- **PATCH** version when you make backwards-compatible bug fixes.
-
-As you can see in the [changelog](/docs/changelog), I've been bumping versions quite quickly whenever it helps push Rapua towards becoming the quest system I'm working towards. So long as nothing breaks for players, this is fine!
+Rapua follows semver strictly — see the [versioning guide](/docs/developer/versioning) for details on version sources, bump procedures, and the tests that enforce consistency.
 
 ## Contact
 
