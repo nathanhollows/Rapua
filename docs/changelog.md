@@ -22,6 +22,7 @@ tag: updated
 
 - **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
 - Removed legacy block handlers.
+- Removed stub code in leaderboard service.
 
 ## 6.15.0 (2026-03-17)
 

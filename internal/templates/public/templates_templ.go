@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v6/models"
 )
 
 func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
@@ -326,7 +326,7 @@ func TemplatePeview(link models.ShareLink, authed bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></fieldset><!-- TODO --><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></fieldset><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -398,7 +398,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(group.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 534, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 533, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -430,7 +430,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/checkins/", location.Slug))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 547, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 546, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -443,7 +443,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(location.MarkerID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 548, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 547, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -461,7 +461,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 						var templ_7745c5c3_Var22 string
 						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lat))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 565, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 564, Col: 48}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 						if templ_7745c5c3_Err != nil {
@@ -474,7 +474,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 						var templ_7745c5c3_Var23 string
 						templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(location.Marker.Lng))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 566, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 565, Col: 48}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 						if templ_7745c5c3_Err != nil {
@@ -492,7 +492,7 @@ func renderGroupedLocations(group *models.GameStructure, allLocations []models.L
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(location.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 568, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/templates.templ`, Line: 567, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
