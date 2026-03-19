@@ -462,35 +462,6 @@ func (s *GameStructureService) InsertLocationIntoGroup(
 	return s.Save(ctx, instanceID, &instance.GameStructure)
 }
 
-// GetNextItemType returns what type of item should be next (placeholder implementation).
-func (s *GameStructureService) GetNextItemType(
-	_ *models.GameStructure,
-	_ map[string]bool,
-	_ map[string]bool,
-) interface{} {
-	// TODO: Implement based on routing strategy
-	return nil
-}
-
-// GetNextLocation returns the next location based on routing strategy (placeholder implementation).
-func (s *GameStructureService) GetNextLocation(
-	_ *models.GameStructure,
-	_ map[string]bool,
-	_ string,
-) string {
-	// TODO: Implement based on routing strategy
-	return ""
-}
-
-// GetNextGroup returns the next group based on routing strategy (placeholder implementation).
-func (s *GameStructureService) GetNextGroup(
-	_ *models.GameStructure,
-	_ map[string]bool,
-) *models.GameStructure {
-	// TODO: Implement based on routing strategy
-	return nil
-}
-
 // IsCompleted checks if a group is completed based on completion type and count.
 func (s *GameStructureService) IsCompleted(group *models.GameStructure, completedCount int) bool {
 	switch group.CompletionType {
