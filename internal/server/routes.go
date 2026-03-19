@@ -291,6 +291,9 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 	})
 	router.Get("/forgot", publicHandler.ForgotPassword)
 	router.Post("/forgot", publicHandler.ForgotPasswordPost)
+	router.Get("/reset/success", publicHandler.ResetPasswordSuccess)
+	router.Get("/reset/{token}", publicHandler.ResetPassword)
+	router.Post("/reset/{token}", publicHandler.ResetPasswordPost)
 
 	router.Route("/auth", func(r chi.Router) {
 		r.Get("/{provider}", publicHandler.Auth)

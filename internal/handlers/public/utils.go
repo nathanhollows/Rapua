@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/markbates/goth"
 	"github.com/nathanhollows/Rapua/v7/internal/flash"
@@ -41,14 +42,18 @@ type IdentityService interface {
 
 type EmailService interface {
 	SendContactEmail(ctx context.Context, name, contactEmail, content string) error
+	SendPasswordResetEmail(ctx context.Context, user models.User, resetURL string) error
 }
 
 type UserService interface {
 	CreateUser(ctx context.Context, user *models.User, passwordConfirm string) error
 	GetUserByID(ctx context.Context, userID string) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	ResetPassword(ctx context.Context, user *models.User, newPassword, confirmPassword string) error
 }
 
 type MagicTokenService interface {
+	GenerateToken(userID string, duration time.Duration) (string, error)
 	ValidateToken(token string) (userID string, err error)
 }
 

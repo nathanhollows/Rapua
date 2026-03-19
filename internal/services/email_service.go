@@ -222,6 +222,46 @@ func (s EmailService) SendContactEmail(_ context.Context, name, contactEmail, co
 	)
 }
 
+func (s EmailService) SendPasswordResetEmail(ctx context.Context, user models.User, resetURL string) error {
+	fromEmail := os.Getenv("SMTP_FROM_EMAIL")
+	fromName := os.Getenv("SMTP_FROM_NAME")
+	subject := "Reset your password"
+
+	url := templ.URL(resetURL)
+
+	plainTextContent := fmt.Sprintf(
+		`You requested a password reset for your Rapua account. `+
+			`Tap the link below to choose a new password. `+
+			`If you didn't request this, you can safely ignore this email.
+
+Reset your password: %s
+
+This link will expire in 1 hour.
+
+Cheers,
+Nathan`,
+		url,
+	)
+
+	w := new(bytes.Buffer)
+	c := templates.PasswordReset(url)
+	err := c.Render(ctx, w)
+	if err != nil {
+		return fmt.Errorf("rendering email template: %w", err)
+	}
+
+	return s.sendEmail(
+		fromEmail,
+		fromName,
+		user.Email,
+		user.Name,
+		subject,
+		plainTextContent,
+		w.String(),
+		"",
+	)
+}
+
 func (s EmailService) SendVerificationEmail(ctx context.Context, user models.User) error {
 	fromEmail := os.Getenv("SMTP_FROM_EMAIL")
 	fromName := os.Getenv("SMTP_FROM_NAME")

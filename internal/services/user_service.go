@@ -19,6 +19,7 @@ var (
 	ErrIncorrectOldPassword = errors.New("current password is incorrect")
 	ErrEmptyPassword        = errors.New("password cannot be empty")
 	ErrPasswordUpdateFailed = errors.New("failed to update password")
+	ErrPasswordTooShort     = errors.New("password must be at least 8 characters")
 )
 
 type UserService struct {
@@ -160,6 +161,42 @@ func (s *UserService) ChangePassword(
 	user.Password = hashedPassword
 	err = s.userRepo.Update(ctx, user)
 	if err != nil {
+		return ErrPasswordUpdateFailed
+	}
+
+	return nil
+}
+
+// ResetPassword sets a new password without requiring the old one.
+// Used for forgot-password flows where identity is verified via token.
+func (s *UserService) ResetPassword(
+	ctx context.Context,
+	user *models.User,
+	newPassword, confirmPassword string,
+) error {
+	if user.Provider != models.ProviderEmail {
+		return errors.New("cannot reset password for SSO accounts")
+	}
+
+	if newPassword == "" {
+		return ErrEmptyPassword
+	}
+
+	if len(newPassword) < 8 {
+		return ErrPasswordTooShort
+	}
+
+	if newPassword != confirmPassword {
+		return ErrPasswordsDoNotMatch
+	}
+
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("hashing password: %w", err)
+	}
+
+	user.Password = hashedPassword
+	if err := s.userRepo.Update(ctx, user); err != nil {
 		return ErrPasswordUpdateFailed
 	}
 

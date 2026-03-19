@@ -12,6 +12,7 @@ tag: updated
 ### Added
 
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
+- Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 
 ### Changed
 

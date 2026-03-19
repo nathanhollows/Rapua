@@ -491,7 +491,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		blockStateRepo,
 		locationRepo,
 	)
-	leaderBoardService := services.NewLeaderBoardService(teamRepo)
+	leaderBoardService := services.NewLeaderBoardService()
 	instanceService := services.NewInstanceService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
