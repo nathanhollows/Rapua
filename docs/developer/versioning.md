@@ -43,8 +43,8 @@ A major version bump requires updating every internal import path. This is mecha
    # Update go.mod module path
    sed -i 's|Rapua/vOLD|Rapua/vNEW|g' go.mod
 
-   # Update every Go import
-   find . -name '*.go' -exec sed -i 's|Rapua/vOLD|Rapua/vNEW|g' {} +
+   # Update every Go and templ import
+   find . \( -name '*.go' -o -name '*.templ' \) -exec sed -i 's|Rapua/vOLD|Rapua/vNEW|g' {} +
    ```
 
 4. **Verify** — build and run the full test suite:
