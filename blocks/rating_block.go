@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type RatingBlock struct {
@@ -103,7 +104,8 @@ func (b *RatingBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 
 	// Save player data
 	newPlayerData := ratingBlockData{
-		Rating: rating,
+		Rating:      rating,
+		SubmittedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	playerData, err := json.Marshal(newPlayerData)

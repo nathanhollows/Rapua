@@ -423,6 +423,52 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 	})
 }
 
+func TestSortingBlock_HistoryTracking(t *testing.T) {
+	block := createTestSortingBlock(blocks.RetryUntilCorrect)
+
+	// First attempt: wrong order
+	state := &blocks.MockPlayerState{BlockID: "block-id", PlayerID: "player-id"}
+	input := map[string][]string{
+		"sorting-item-order": {"id4", "id3", "id2", "id1"},
+	}
+	newState, err := block.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.False(t, newState.IsComplete())
+
+	var playerData blocks.SortingPlayerData
+	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 1, playerData.Attempts)
+	require.Len(t, playerData.History, 1)
+	assert.Equal(t, []string{"id4", "id3", "id2", "id1"}, playerData.History[0].PlayerOrder)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt: correct order
+	input = map[string][]string{
+		"sorting-item-order": {"id1", "id2", "id3", "id4"},
+	}
+	newState2, err := block.ValidatePlayerInput(newState, input)
+	require.NoError(t, err)
+	assert.True(t, newState2.IsComplete())
+
+	err = json.Unmarshal(newState2.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 2, playerData.Attempts)
+	require.Len(t, playerData.History, 2)
+
+	// First attempt in history
+	assert.Equal(t, []string{"id4", "id3", "id2", "id1"}, playerData.History[0].PlayerOrder)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt in history
+	assert.Equal(t, []string{"id1", "id2", "id3", "id4"}, playerData.History[1].PlayerOrder)
+	assert.True(t, playerData.History[1].IsCorrect)
+
+	// Top-level fields reflect latest attempt
+	assert.Equal(t, []string{"id1", "id2", "id3", "id4"}, playerData.PlayerOrder)
+	assert.True(t, playerData.IsCorrect)
+}
+
 func TestSortingBlock_OrderIsCorrect(t *testing.T) {
 	block := createTestSortingBlock(blocks.AllOrNothing)
 

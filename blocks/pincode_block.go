@@ -104,7 +104,7 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 	// Increment the number of attempts and save guesses
 	newPlayerData.Attempts++
-	newPlayerData.Guesses = append(newPlayerData.Guesses, input["pincode"][0])
+	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeChars)
 
 	if pincodeChars != b.Pincode {
 		// Incorrect pincode, save player data and return an error

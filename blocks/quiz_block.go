@@ -30,11 +30,18 @@ type QuizOption struct {
 	Order     int    `json:"order"`      // Display order
 }
 
+// QuizAttempt records a single submission attempt.
+type QuizAttempt struct {
+	SelectedOptions []string `json:"selected_options"` // Options selected in this attempt
+	IsCorrect       bool     `json:"is_correct"`       // Whether this attempt was correct
+}
+
 // QuizPlayerData stores player progress.
 type QuizPlayerData struct {
-	SelectedOptions []string `json:"selected_options"` // List of selected option IDs
-	Attempts        int      `json:"attempts"`         // Number of submission attempts
-	IsCorrect       bool     `json:"is_correct"`       // Whether answer is correct
+	SelectedOptions []string      `json:"selected_options"` // List of selected option IDs (latest attempt)
+	Attempts        int           `json:"attempts"`         // Number of submission attempts
+	IsCorrect       bool          `json:"is_correct"`       // Whether answer is correct (latest attempt)
+	History         []QuizAttempt `json:"history"`          // All attempts for reporting
 }
 
 // GetName returns the block type name.
@@ -201,6 +208,10 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 		noSelectionPlayerData.Attempts++
 		noSelectionPlayerData.SelectedOptions = []string{}
 		noSelectionPlayerData.IsCorrect = false
+		noSelectionPlayerData.History = append(noSelectionPlayerData.History, QuizAttempt{
+			SelectedOptions: []string{},
+			IsCorrect:       false,
+		})
 
 		newPlayerData, err := json.Marshal(noSelectionPlayerData)
 		if err != nil {
@@ -219,6 +230,10 @@ func (b *QuizBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	// Calculate points and correctness
 	points, isCorrect := b.calculatePoints(playerData.SelectedOptions)
 	playerData.IsCorrect = isCorrect
+	playerData.History = append(playerData.History, QuizAttempt{
+		SelectedOptions: selectedOptions,
+		IsCorrect:       isCorrect,
+	})
 
 	// Marshal the updated player data
 	newPlayerData, err := json.Marshal(playerData)

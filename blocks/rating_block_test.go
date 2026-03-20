@@ -3,6 +3,7 @@ package blocks_test
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
@@ -298,6 +299,11 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 			var playerData blocks.RatingBlockData
 			require.NoError(t, json.Unmarshal(newState.GetPlayerData(), &playerData))
 			assert.Equal(t, tt.wantRating, playerData.Rating)
+
+			// Verify SubmittedAt is populated and parses as RFC3339
+			assert.NotEmpty(t, playerData.SubmittedAt)
+			_, parseErr := time.Parse(time.RFC3339, playerData.SubmittedAt)
+			assert.NoError(t, parseErr, "SubmittedAt should be valid RFC3339")
 		})
 	}
 }

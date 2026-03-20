@@ -33,12 +33,19 @@ const (
 	RetryUntilCorrect       = "retry_until_correct"
 )
 
+// SortingAttempt records a single submission attempt.
+type SortingAttempt struct {
+	PlayerOrder []string `json:"player_order"` // Order submitted in this attempt
+	IsCorrect   bool     `json:"is_correct"`   // Whether this attempt was correct
+}
+
 // SortingPlayerData stores player progress.
 type SortingPlayerData struct {
-	PlayerOrder  []string `json:"player_order"`  // List of item IDs in player's submitted order
-	ShuffleOrder []string `json:"shuffle_order"` // Shuffled order shown to player initially
-	Attempts     int      `json:"attempts"`      // Number of attempts made so far
-	IsCorrect    bool     `json:"is_correct"`    // Whether the current order is correct
+	PlayerOrder  []string         `json:"player_order"`  // List of item IDs in player's submitted order (latest attempt)
+	ShuffleOrder []string         `json:"shuffle_order"` // Shuffled order shown to player initially
+	Attempts     int              `json:"attempts"`      // Number of attempts made so far
+	IsCorrect    bool             `json:"is_correct"`    // Whether the current order is correct (latest attempt)
+	History      []SortingAttempt `json:"history"`       // All attempts for reporting
 }
 
 // GetName returns the block type name.
@@ -196,6 +203,10 @@ func (b *SortingBlock) updatePlayerData(
 	playerData.PlayerOrder = itemOrder
 	playerData.Attempts++
 	playerData.IsCorrect = b.orderIsCorrect(itemOrder)
+	playerData.History = append(playerData.History, SortingAttempt{
+		PlayerOrder: itemOrder,
+		IsCorrect:   playerData.IsCorrect,
+	})
 
 	return playerData
 }

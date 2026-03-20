@@ -328,6 +328,60 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 }
 
+func TestQuizBlock_ValidatePlayerInput_HistoryTracking(t *testing.T) {
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
+			Points: 100,
+		},
+		Question:       "What is 2+2?",
+		MultipleChoice: false,
+		RetryEnabled:   true,
+		Options: []blocks.QuizOption{
+			{ID: "option_0", Text: "3", IsCorrect: false},
+			{ID: "option_1", Text: "4", IsCorrect: true},
+			{ID: "option_2", Text: "5", IsCorrect: false},
+		},
+	}
+
+	// First attempt: wrong answer
+	state := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
+	input := map[string][]string{"quiz_option": {"option_0"}}
+	newState, err := block.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.False(t, newState.IsComplete())
+
+	var playerData blocks.QuizPlayerData
+	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 1, playerData.Attempts)
+	require.Len(t, playerData.History, 1)
+	assert.Equal(t, []string{"option_0"}, playerData.History[0].SelectedOptions)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt: correct answer
+	input = map[string][]string{"quiz_option": {"option_1"}}
+	newState2, err := block.ValidatePlayerInput(newState, input)
+	require.NoError(t, err)
+	assert.True(t, newState2.IsComplete())
+
+	err = json.Unmarshal(newState2.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 2, playerData.Attempts)
+	require.Len(t, playerData.History, 2)
+
+	// First attempt in history
+	assert.Equal(t, []string{"option_0"}, playerData.History[0].SelectedOptions)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt in history
+	assert.Equal(t, []string{"option_1"}, playerData.History[1].SelectedOptions)
+	assert.True(t, playerData.History[1].IsCorrect)
+
+	// Top-level fields reflect latest attempt
+	assert.Equal(t, []string{"option_1"}, playerData.SelectedOptions)
+	assert.True(t, playerData.IsCorrect)
+}
+
 func TestQuizBlock_CalculatePoints_EdgeCases(t *testing.T) {
 	// Test with no correct options
 	block := blocks.QuizBlock{

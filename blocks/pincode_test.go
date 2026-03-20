@@ -140,5 +140,5 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, newPlayerData.Attempts)
 	assert.Len(t, newPlayerData.Guesses, 1)
-	assert.Equal(t, "1", newPlayerData.Guesses[0]) // First digit saved as guess
+	assert.Equal(t, "12345", newPlayerData.Guesses[0]) // Full pincode saved as guess
 }
