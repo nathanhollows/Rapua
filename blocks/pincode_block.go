@@ -68,6 +68,18 @@ func (b *PincodeBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *PincodeBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt":  b.Prompt,
+		"pincode": b.Pincode,
+	}
+	if b.UnlockedContent != "" {
+		m["unlocked_content"] = b.UnlockedContent
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *PincodeBlock) RequiresValidation() bool { return true }

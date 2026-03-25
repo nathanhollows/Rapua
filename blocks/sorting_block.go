@@ -16,7 +16,7 @@ type SortingBlock struct {
 	BaseBlock
 	Content       string        `json:"content"`
 	Items         []SortingItem `json:"items"`
-	ScoringScheme string        `json:"scoring_scheme"`
+	ScoringScheme string        `json:"scoring"`
 }
 
 // SortingItem represents an individual item to be sorted.
@@ -98,7 +98,7 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	}
 
 	// Parse scoring scheme
-	if scheme, exists := input["scoring_scheme"]; exists && len(scheme) > 0 {
+	if scheme, exists := input["scoring"]; exists && len(scheme) > 0 {
 		b.ScoringScheme = scheme[0]
 	} else {
 		b.ScoringScheme = AllOrNothing
@@ -135,6 +135,24 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.Items = updatedItems
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *SortingBlock) ToYAML() map[string]any {
+	items := make([]string, 0, len(b.Items))
+	for _, item := range b.Items {
+		items = append(items, item.Description)
+	}
+	m := map[string]any{
+		"items": items,
+	}
+	if b.Content != "" {
+		m["content"] = b.Content
+	}
+	if b.ScoringScheme != "" {
+		m["scoring"] = b.ScoringScheme
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

@@ -65,6 +65,13 @@ func (b *RandomClueBlock) GetClue(teamCode string) string {
 	return b.Clues[index]
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *RandomClueBlock) ToYAML() map[string]any {
+	return map[string]any{
+		"clues": b.Clues,
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *RandomClueBlock) RequiresValidation() bool { return false }

@@ -67,12 +67,12 @@ type Block interface {
 type Blocks []Block
 
 type BaseBlock struct {
-	ID         string          `json:"-"`
-	OwnerID string `json:"-"`
-	Type       string          `json:"-"`
-	Data       json.RawMessage `json:"-"`
-	Order      int             `json:"-"`
-	Points     int             `json:"-"`
+	ID      string          `json:"-"`
+	OwnerID string          `json:"-"`
+	Type    string          `json:"-"`
+	Data    json.RawMessage `json:"-"`
+	Order   int             `json:"-"`
+	Points  int             `json:"-"`
 }
 
 //nolint:gochecknoglobals // Central block registry pattern requires package-level state
@@ -110,12 +110,16 @@ func init() {
 	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(
 		&ImageBlock{},
 		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
 	)
+	registerBlock(
+		&ToggleTextBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextStart, ContextFinish},
+	)
 	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
 
 	// Interactive blocks
@@ -222,6 +226,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewTaskBlock(baseBlock), nil
 	case "rating":
 		return NewRatingBlock(baseBlock), nil
+	case "toggle_text":
+		return NewToggleTextBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -348,5 +354,11 @@ func NewRatingBlock(base BaseBlock) *RatingBlock {
 	return &RatingBlock{
 		BaseBlock: base,
 		MaxRating: 5, // Default max rating
+	}
+}
+
+func NewToggleTextBlock(base BaseBlock) *ToggleTextBlock {
+	return &ToggleTextBlock{
+		BaseBlock: base,
 	}
 }

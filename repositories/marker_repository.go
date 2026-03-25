@@ -17,6 +17,8 @@ const (
 type MarkerRepository interface {
 	// Create a new marker in the database
 	Create(ctx context.Context, marker *models.Marker) error
+	// CreateTx creates a new marker within a transaction
+	CreateTx(ctx context.Context, tx *bun.Tx, marker *models.Marker) error
 
 	// GetByCode finds a marker by its code
 	GetByCode(ctx context.Context, code string) (*models.Marker, error)
@@ -27,6 +29,8 @@ type MarkerRepository interface {
 	Update(ctx context.Context, marker *models.Marker) error
 	// UpdateCoords updates the latitude and longitude of a marker
 	UpdateCoords(ctx context.Context, marker *models.Marker, lat, lng float64) error
+	// UpdateCoordsTx updates the latitude and longitude of a marker within a transaction
+	UpdateCoordsTx(ctx context.Context, tx *bun.Tx, marker *models.Marker, lat, lng float64) error
 
 	// Delete deletes a marker from the database
 	// NOTE: Scheduled for removal
@@ -62,6 +66,18 @@ func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) er
 		return err
 	}
 	_, err := r.db.NewUpdate().Model(marker).WherePK("code").Exec(ctx)
+	return err
+}
+
+// CreateTx creates a new marker within a transaction.
+func (r *markerRepository) CreateTx(ctx context.Context, tx *bun.Tx, marker *models.Marker) error {
+	if marker.Name == "" {
+		return errors.New("marker name is required")
+	}
+	if marker.Code == "" {
+		marker.Code = helpers.NewCode(markerCodeLength)
+	}
+	_, err := tx.NewInsert().Model(marker).Exec(ctx)
 	return err
 }
 
@@ -145,6 +161,20 @@ func (r *markerRepository) UpdateCoords(ctx context.Context, marker *models.Mark
 	marker.Lat = lat
 	marker.Lng = lng
 	_, err := r.db.NewUpdate().Model(marker).WherePK().Column("lat", "lng").Exec(ctx)
+	return err
+}
+
+// UpdateCoordsTx updates the latitude and longitude of a marker within a transaction.
+func (r *markerRepository) UpdateCoordsTx(ctx context.Context, tx *bun.Tx, marker *models.Marker, lat, lng float64) error {
+	if marker == nil {
+		return errors.New("marker is required")
+	}
+	if marker.Code == "" {
+		return errors.New("marker code is required")
+	}
+	marker.Lat = lat
+	marker.Lng = lng
+	_, err := tx.NewUpdate().Model(marker).WherePK().Column("lat", "lng").Exec(ctx)
 	return err
 }
 

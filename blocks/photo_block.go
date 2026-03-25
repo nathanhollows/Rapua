@@ -83,6 +83,17 @@ func (b *PhotoBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *PhotoBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt": b.Prompt,
+	}
+	if b.MaxImages > 0 {
+		m["max_images"] = b.MaxImages
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *PhotoBlock) RequiresValidation() bool { return true }

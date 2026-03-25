@@ -83,6 +83,17 @@ func (b *RatingBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *RatingBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt": b.Prompt,
+	}
+	if b.MaxRating > 0 {
+		m["max_rating"] = b.MaxRating
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *RatingBlock) RequiresValidation() bool { return true }

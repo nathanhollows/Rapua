@@ -12,7 +12,7 @@ import (
 type ChecklistBlock struct {
 	BaseBlock
 	Content string          `json:"content"`
-	List    []ChecklistItem `json:"list"`
+	List    []ChecklistItem `json:"items"`
 }
 
 type ChecklistItem struct {
@@ -118,6 +118,21 @@ func (b *ChecklistBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.List = updatedList
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *ChecklistBlock) ToYAML() map[string]any {
+	items := make([]string, 0, len(b.List))
+	for _, item := range b.List {
+		items = append(items, item.Description)
+	}
+	m := map[string]any{
+		"items": items,
+	}
+	if b.Content != "" {
+		m["content"] = b.Content
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

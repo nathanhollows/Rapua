@@ -11,7 +11,7 @@ type BrokerBlock struct {
 	BaseBlock
 	Prompt           string            `json:"prompt"`
 	DefaultInfo      string            `json:"default_info"`
-	InformationTiers []InformationTier `json:"information_tiers"`
+	InformationTiers []InformationTier `json:"tiers"`
 }
 
 type InformationTier struct {
@@ -110,6 +110,27 @@ func (b *BrokerBlock) UpdateBlockData(input map[string][]string) error {
 	})
 
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *BrokerBlock) ToYAML() map[string]any {
+	tiers := make([]map[string]any, 0, len(b.InformationTiers))
+	for _, tier := range b.InformationTiers {
+		tiers = append(tiers, map[string]any{
+			"points_required": tier.PointsRequired,
+			"content":         tier.Content,
+		})
+	}
+	m := map[string]any{
+		"prompt": b.Prompt,
+	}
+	if b.DefaultInfo != "" {
+		m["default_info"] = b.DefaultInfo
+	}
+	if len(tiers) > 0 {
+		m["tiers"] = tiers
+	}
+	return m
 }
 
 // Validation and Points Calculation

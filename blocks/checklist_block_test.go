@@ -34,7 +34,7 @@ func TestChecklistBlock_Getters(t *testing.T) {
 }
 
 func TestChecklistBlock_ParseData(t *testing.T) {
-	data := `{"content":"Test Content","list":[{"id":"item-1","description":"Item 1","checked":false},{"id":"item-2","description":"Item 2","checked":false}]}`
+	data := `{"content":"Test Content","items":[{"id":"item-1","description":"Item 1","checked":false},{"id":"item-2","description":"Item 2","checked":false}]}`
 	block := blocks.ChecklistBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),

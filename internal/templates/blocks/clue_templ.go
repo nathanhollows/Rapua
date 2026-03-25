@@ -223,7 +223,7 @@ func cluePlayerUpdate(settings models.InstanceSettings, block blocks.ClueBlock, 
 }
 
 var clueTextarea = TextareaParams{
-	Name:        "description_text",
+	Name:        "description",
 	Title:       "Description Text",
 	Placeholder: "Text shown before the clue is revealed",
 	Markdown:    true,
@@ -231,7 +231,7 @@ var clueTextarea = TextareaParams{
 }
 
 var clueRevealTextarea = TextareaParams{
-	Name:        "clue_text",
+	Name:        "clue",
 	Title:       "Revealed Clue Text",
 	Placeholder: "The actual clue content that will be revealed",
 	Markdown:    true,

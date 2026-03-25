@@ -31,7 +31,7 @@ func TestClueBlock_Getters(t *testing.T) {
 }
 
 func TestClueBlock_ParseData(t *testing.T) {
-	data := `{"clue_text":"Secret hint here", "description_text":"Want a clue?", "button_label":"Reveal"}`
+	data := `{"clue":"Secret hint here", "description":"Want a clue?", "button_label":"Reveal"}`
 	block := blocks.ClueBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
@@ -55,8 +55,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 			name: "update all fields",
 			input: map[string][]string{
 				"points":           {"-20"},
-				"clue_text":        {"The answer is 42"},
-				"description_text": {"Having trouble? Get a hint below."},
+				"clue":        {"The answer is 42"},
+				"description": {"Having trouble? Get a hint below."},
 				"button_label":     {"Show Hint"},
 			},
 			expected: blocks.ClueBlock{
@@ -72,8 +72,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 			name: "default button label when empty",
 			input: map[string][]string{
 				"points":           {"-10"},
-				"clue_text":        {"Hint text"},
-				"description_text": {"Description"},
+				"clue":        {"Hint text"},
+				"description": {"Description"},
 				"button_label":     {""},
 			},
 			expected: blocks.ClueBlock{
@@ -89,8 +89,8 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 			name: "zero points when empty",
 			input: map[string][]string{
 				"points":           {""},
-				"clue_text":        {"Some clue"},
-				"description_text": {"Some description"},
+				"clue":        {"Some clue"},
+				"description": {"Some description"},
 			},
 			expected: blocks.ClueBlock{
 				BaseBlock: blocks.BaseBlock{

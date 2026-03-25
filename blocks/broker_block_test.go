@@ -39,7 +39,7 @@ func TestBrokerBlock_ParseData(t *testing.T) {
 	data := `{
 		"prompt":"Test prompt",
 		"default_info":"Default response",
-		"information_tiers":[
+		"tiers":[
 			{"points_required":10,"content":"Tier 1 info"},
 			{"points_required":20,"content":"Tier 2 info"}
 		]

@@ -61,6 +61,20 @@ func (b *TaskBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *TaskBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"task": b.Task,
+	}
+	if b.Icon != "" {
+		m["icon"] = b.Icon
+	}
+	if b.LinkThrough {
+		m["link_through"] = true
+	}
+	return m
+}
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *TaskBlock) RequiresValidation() bool {
 	return false

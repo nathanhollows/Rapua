@@ -8,8 +8,8 @@ import (
 type HeaderBlock struct {
 	BaseBlock
 	Icon      string `json:"icon"`
-	TitleText string `json:"title_text"`
-	TitleSize string `json:"title_size"` // small, medium, large
+	TitleText string `json:"title"`
+	TitleSize string `json:"size"` // small, medium, large
 }
 
 // Basic Attributes Getters
@@ -39,7 +39,7 @@ func (b *HeaderBlock) ParseData() error {
 
 func (b *HeaderBlock) UpdateBlockData(input map[string][]string) error {
 	icon, iconExists := input["icon"]
-	titleText, titleExists := input["title_text"]
+	titleText, titleExists := input["title"]
 	if len(icon[0]) == 0 && len(titleText[0]) == 0 {
 		return errors.New("title text or icon must be provided")
 	}
@@ -51,11 +51,26 @@ func (b *HeaderBlock) UpdateBlockData(input map[string][]string) error {
 	if titleExists && len(titleText) > 0 {
 		b.TitleText = titleText[0]
 	}
-	titleSize, exists := input["title_size"]
+	titleSize, exists := input["size"]
 	if exists && len(titleSize) > 0 {
 		b.TitleSize = titleSize[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *HeaderBlock) ToYAML() map[string]any {
+	m := map[string]any{}
+	if b.Icon != "" {
+		m["icon"] = b.Icon
+	}
+	if b.TitleText != "" {
+		m["title"] = b.TitleText
+	}
+	if b.TitleSize != "" {
+		m["size"] = b.TitleSize
+	}
+	return m
 }
 
 // Validation and Points Calculation

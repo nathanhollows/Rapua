@@ -8,7 +8,7 @@ import (
 
 func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownAdmin(settings, *b)
 	case "divider":
@@ -17,7 +17,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imageAdmin(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordAdmin(settings, *b)
 	case "pincode":
@@ -35,7 +35,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingAdmin(settings, *b)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizAdmin(settings, *b)
 	case "clue":
@@ -59,10 +59,10 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerAdmin(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertAdmin(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonAdmin(settings, *b)
 	case "task":
@@ -71,13 +71,16 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingAdmin(settings, *b)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextAdmin(settings, *b)
 	}
 	return nil
 }
 
 func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownPlayer(settings, *b)
 	case "divider":
@@ -86,7 +89,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayer(settings, *b, state)
 	case "pincode":
@@ -104,7 +107,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayer(settings, *b, state)
 	case "clue":
@@ -128,10 +131,10 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertPlayer(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
 	case "task":
@@ -140,13 +143,16 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayer(settings, *b, state)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextPlayer(settings, *b)
 	}
 	return nil
 }
 
 func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownPlayer(settings, *b)
 	case "divider":
@@ -155,7 +161,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayerUpdate(settings, *b, state)
 	case "pincode":
@@ -173,7 +179,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayerUpdate(settings, *b, state)
 	case "clue":
@@ -197,10 +203,10 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertPlayer(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
 	case "task":
@@ -209,6 +215,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayerUpdate(settings, *b, state)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextPlayer(settings, *b)
 	}
 	return nil
 }

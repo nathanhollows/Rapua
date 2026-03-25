@@ -12,7 +12,7 @@ import (
 
 type YoutubeBlock struct {
 	BaseBlock
-	URL string `json:"content"`
+	URL string `json:"url"`
 }
 
 // Basic Attributes Getters
@@ -78,6 +78,13 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 		b.URL = u[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *YoutubeBlock) ToYAML() map[string]any {
+	return map[string]any{
+		"url": b.URL,
+	}
 }
 
 // Validation and Points Calculation

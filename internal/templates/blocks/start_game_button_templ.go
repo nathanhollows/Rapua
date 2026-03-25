@@ -361,7 +361,7 @@ func startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButto
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-swap=\"none\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scheduled button text</legend> <input type=\"text\" name=\"scheduled_button_text\" class=\"input input-bordered w-full\" placeholder=\"Waiting for game to start\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-swap=\"none\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scheduled button text</legend> <input type=\"text\" name=\"scheduled_text\" class=\"input input-bordered w-full\" placeholder=\"Waiting for game to start\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -374,7 +374,7 @@ func startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButto
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"label text-wrap\"><span>Shown when game is scheduled</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Active button text</legend> <input type=\"text\" name=\"active_button_text\" class=\"input input-bordered w-full\" placeholder=\"Start Playing\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"label text-wrap\"><span>Shown when game is scheduled</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Active button text</legend> <input type=\"text\" name=\"active_text\" class=\"input input-bordered w-full\" placeholder=\"Start Playing\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -387,7 +387,7 @@ func startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButto
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"><div class=\"label text-wrap\"><span>Shown when game is active</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Button style</legend> <select name=\"button_style\" class=\"select select-bordered w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"><div class=\"label text-wrap\"><span>Shown when game is active</span></div></fieldset><fieldset class=\"fieldset mt-4\"><legend class=\"fieldset-legend\">Button style</legend> <select name=\"style\" class=\"select select-bordered w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

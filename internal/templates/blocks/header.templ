@@ -40,7 +40,7 @@ templ headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) {
 }
 
 var headerTitleText = TextInputParams{
-	Name:         "title_text",
+	Name:         "title",
 	Title:        "Header Title",
 	Placeholder:  "Welcome!",
 	ExtraClasses: "w-full",
@@ -78,7 +78,7 @@ templ headerAdmin(_ models.InstanceSettings, block blocks.HeaderBlock) {
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Styling</legend>
 				<select
-					name="title_size"
+					name="size"
 					class="select select-bordered w-full"
 				>
 					for size, label := range block.GetTitleSizes() {

@@ -41,6 +41,15 @@ func (b *DividerBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *DividerBlock) ToYAML() map[string]any {
+	m := map[string]any{}
+	if b.Title != "" {
+		m["title"] = b.Title
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *DividerBlock) RequiresValidation() bool {
