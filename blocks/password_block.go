@@ -12,7 +12,6 @@ type PasswordBlock struct {
 	BaseBlock
 	Prompt          string `json:"prompt"`
 	Answer          string `json:"answer"`
-	Fuzzy           bool   `json:"fuzzy"`
 	UnlockedContent string `json:"unlocked_content"`
 }
 
@@ -24,7 +23,7 @@ type passwordBlockData struct {
 // Basic Attributes Getters
 
 func (b *PasswordBlock) GetID() string         { return b.ID }
-func (b *PasswordBlock) GetType() string       { return "answer" }
+func (b *PasswordBlock) GetType() string       { return "password" }
 func (b *PasswordBlock) GetOwnerID() string { return b.OwnerID }
 func (b *PasswordBlock) GetName() string       { return "Password" }
 func (b *PasswordBlock) GetDescription() string {
@@ -64,13 +63,22 @@ func (b *PasswordBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.Prompt = input["prompt"][0]
 	b.Answer = input["answer"][0]
-	if input["fuzzy"] != nil {
-		b.Fuzzy = input["fuzzy"][0] == "on"
-	}
 	if input["unlocked_content"] != nil {
 		b.UnlockedContent = input["unlocked_content"][0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *PasswordBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt": b.Prompt,
+		"answer": b.Answer,
+	}
+	if b.UnlockedContent != "" {
+		m["unlocked_content"] = b.UnlockedContent
+	}
+	return m
 }
 
 // Validation and Points Calculation

@@ -8,7 +8,7 @@ import (
 
 type TeamNameChangerBlock struct {
 	BaseBlock
-	BlockText     string `json:"block_text"`
+	BlockText     string `json:"prompt"`
 	AllowChanging bool   `json:"allow_changing"`
 }
 
@@ -47,8 +47,8 @@ func (b *TeamNameChangerBlock) UpdateBlockData(input map[string][]string) error 
 		b.Points = points
 	}
 
-	if buttonText, exists := input["block_text"]; exists && len(buttonText) > 0 {
-		b.BlockText = buttonText[0]
+	if promptText, exists := input["prompt"]; exists && len(promptText) > 0 {
+		b.BlockText = promptText[0]
 	}
 	// Checkbox: if present in form data, it's checked; if absent, it's unchecked
 	if allowChanging, exists := input["allow_changing"]; exists && len(allowChanging) > 0 {
@@ -57,6 +57,18 @@ func (b *TeamNameChangerBlock) UpdateBlockData(input map[string][]string) error 
 		b.AllowChanging = false
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *TeamNameChangerBlock) ToYAML() map[string]any {
+	m := map[string]any{}
+	if b.BlockText != "" {
+		m["prompt"] = b.BlockText
+	}
+	if b.AllowChanging {
+		m["allow_changing"] = true
+	}
+	return m
 }
 
 // Validation and Points Calculation

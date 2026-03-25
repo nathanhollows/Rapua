@@ -11,9 +11,9 @@ import (
 func TestStartGameButtonBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.StartGameButtonBlock{}
 	data := map[string][]string{
-		"scheduled_button_text": {"Please wait"},
-		"active_button_text":    {"Let's go!"},
-		"button_style":          {"primary"},
+		"scheduled_text": {"Please wait"},
+		"active_text":    {"Let's go!"},
+		"style":          {"primary"},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -29,8 +29,8 @@ func TestStartGameButtonBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 		ActiveButtonText:    "Original",
 	}
 	data := map[string][]string{
-		"scheduled_button_text": {""},
-		"active_button_text":    {""},
+		"scheduled_text": {""},
+		"active_text":    {""},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -42,7 +42,7 @@ func TestStartGameButtonBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 func TestStartGameButtonBlock_UpdateBlockData_ButtonStyle(t *testing.T) {
 	block := blocks.StartGameButtonBlock{}
 	data := map[string][]string{
-		"button_style": {"accent"},
+		"style": {"accent"},
 	}
 
 	err := block.UpdateBlockData(data)

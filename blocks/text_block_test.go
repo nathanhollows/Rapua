@@ -20,7 +20,7 @@ func TestMarkdownBlock_Getters(t *testing.T) {
 		Content: "Test Content",
 	}
 
-	assert.Equal(t, "markdown", block.GetType())
+	assert.Equal(t, "text", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
 	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())

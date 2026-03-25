@@ -23,7 +23,7 @@ func TestQuizBlock_Getters(t *testing.T) {
 		RetryEnabled:   false,
 	}
 
-	assert.Equal(t, "quiz_block", block.GetType())
+	assert.Equal(t, "quiz", block.GetType())
 	assert.Equal(t, "test-quiz-id", block.GetID())
 	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 3, block.GetOrder())
@@ -35,12 +35,12 @@ func TestQuizBlock_ParseData(t *testing.T) {
 	data := `{
 		"question": "What is 2+2?",
 		"options": [
-			{"id": "option_0", "text": "3", "is_correct": false, "order": 0},
-			{"id": "option_1", "text": "4", "is_correct": true, "order": 1}
+			{"id": "option_0", "text": "3", "correct": false, "order": 0},
+			{"id": "option_1", "text": "4", "correct": true, "order": 1}
 		],
 		"multiple_choice": false,
-		"randomize_order": true,
-		"retry_enabled": false
+		"randomise_order": true,
+		"allow_retry": false
 	}`
 
 	block := blocks.QuizBlock{
@@ -69,8 +69,8 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"question":        {"What is the capital of France?"},
 		"points":          {"100"},
 		"multiple_choice": {},
-		"randomize_order": {"on"},
-		"retry_enabled":   {},
+		"randomise_order": {"on"},
+		"allow_retry":     {},
 		"option_text":     {"Paris", "London", "Berlin", "Madrid"},
 		"option_correct":  {"option_0", "option_3"}, // Mark Paris and Madrid as correct
 	}
@@ -96,8 +96,8 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"question":        {"Select all programming languages:"},
 		"points":          {"50"},
 		"multiple_choice": {"on"},
-		"randomize_order": {},
-		"retry_enabled":   {"on"},
+		"randomise_order": {},
+		"allow_retry":     {"on"},
 		"option_text":     {"Python", "HTML", "JavaScript", "CSS"},
 		"option_correct":  {"option_0", "option_2"}, // Python and JavaScript
 	}
@@ -446,7 +446,7 @@ func TestNewQuizBlock(t *testing.T) {
 	base := blocks.BaseBlock{
 		ID:         "test-id",
 		OwnerID: "location-123",
-		Type:       "quiz_block",
+		Type:       "quiz",
 		Order:      1,
 		Points:     50,
 	}

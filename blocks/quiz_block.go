@@ -17,17 +17,17 @@ type QuizBlock struct {
 	Question        string       `json:"question"`         // Markdown question text
 	Options         []QuizOption `json:"options"`          // Answer choices
 	MultipleChoice  bool         `json:"multiple_choice"`  // Whether multiple answers are allowed
-	RandomizeOrder  bool         `json:"randomize_order"`  // Shuffle options
-	RetryEnabled    bool         `json:"retry_enabled"`    // Allow players to retry
+	RandomizeOrder  bool         `json:"randomise_order"`  // Shuffle options
+	RetryEnabled    bool         `json:"allow_retry"`      // Allow players to retry
 	UnlockedContent string       `json:"unlocked_content"` // Content shown after correct answer
 }
 
 // QuizOption represents an individual answer choice.
 type QuizOption struct {
-	ID        string `json:"id"`         // Unique identifier
-	Text      string `json:"text"`       // Markdown answer text
-	IsCorrect bool   `json:"is_correct"` // Whether this option is correct
-	Order     int    `json:"order"`      // Display order
+	ID        string `json:"id"`      // Unique identifier
+	Text      string `json:"text"`    // Markdown answer text
+	IsCorrect bool   `json:"correct"` // Whether this option is correct
+	Order     int    `json:"order"`   // Display order
 }
 
 // QuizAttempt records a single submission attempt.
@@ -55,7 +55,7 @@ func (b *QuizBlock) GetIconSVG() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-question-mark-icon lucide-message-circle-question-mark"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`
 }
 
-func (b *QuizBlock) GetType() string { return "quiz_block" }
+func (b *QuizBlock) GetType() string { return "quiz" }
 
 func (b *QuizBlock) GetID() string { return b.ID }
 
@@ -118,12 +118,12 @@ func (b *QuizBlock) updateSettings(input map[string][]string) {
 	}
 
 	b.RandomizeOrder = false
-	if randomizeOrder, exists := input["randomize_order"]; exists && len(randomizeOrder) > 0 {
+	if randomizeOrder, exists := input["randomise_order"]; exists && len(randomizeOrder) > 0 {
 		b.RandomizeOrder = randomizeOrder[0] == "on"
 	}
 
 	b.RetryEnabled = false
-	if retryEnabled, exists := input["retry_enabled"]; exists && len(retryEnabled) > 0 {
+	if retryEnabled, exists := input["allow_retry"]; exists && len(retryEnabled) > 0 {
 		b.RetryEnabled = retryEnabled[0] == "on"
 	}
 
@@ -177,6 +177,35 @@ func (b *QuizBlock) validateOptions() error {
 	}
 
 	return errors.New("at least one option must be marked as correct")
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *QuizBlock) ToYAML() map[string]any {
+	options := make([]map[string]any, 0, len(b.Options))
+	for _, opt := range b.Options {
+		o := map[string]any{
+			"text":    opt.Text,
+			"correct": opt.IsCorrect,
+		}
+		options = append(options, o)
+	}
+	m := map[string]any{
+		"question": b.Question,
+		"options":  options,
+	}
+	if b.MultipleChoice {
+		m["multiple_choice"] = true
+	}
+	if b.RandomizeOrder {
+		m["randomise_order"] = true
+	}
+	if b.RetryEnabled {
+		m["allow_retry"] = true
+	}
+	if b.UnlockedContent != "" {
+		m["unlocked_content"] = b.UnlockedContent
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

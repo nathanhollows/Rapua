@@ -8,7 +8,7 @@ type ButtonBlock struct {
 	BaseBlock
 	Link    string `json:"link"`
 	Text    string `json:"text"`
-	Variant string `json:"variant"`
+	Style string `json:"style"`
 }
 
 // Basic Attributes Getters
@@ -37,8 +37,8 @@ func (b *ButtonBlock) ParseData() error {
 }
 
 func (b *ButtonBlock) UpdateBlockData(input map[string][]string) error {
-	if variant, exists := input["variant"]; exists && len(variant) > 0 {
-		b.Variant = variant[0]
+	if style, exists := input["style"]; exists && len(style) > 0 {
+		b.Style = style[0]
 	}
 	if link, exists := input["link"]; exists && len(link) > 0 {
 		b.Link = link[0]
@@ -47,6 +47,18 @@ func (b *ButtonBlock) UpdateBlockData(input map[string][]string) error {
 		b.Text = text[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *ButtonBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"link": b.Link,
+		"text": b.Text,
+	}
+	if b.Style != "" {
+		m["style"] = b.Style
+	}
+	return m
 }
 
 // Validation and Points Calculation
@@ -61,7 +73,7 @@ func (b *ButtonBlock) ValidatePlayerInput(state PlayerState, _ map[string][]stri
 	return state, nil
 }
 
-func (b *ButtonBlock) GetVariants() map[string]string {
+func (b *ButtonBlock) GetStyles() map[string]string {
 	return map[string]string{
 		"":          "Default",
 		"primary":   "Primary",

@@ -514,7 +514,7 @@ func TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string,
 }
 
 var teamNamePromptText = TextInputParams{
-	Name:         "block_text",
+	Name:         "prompt",
 	Title:        "Prompt Text",
 	Placeholder:  "Set your team name!",
 	ExtraClasses: "w-full",

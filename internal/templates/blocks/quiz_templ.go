@@ -861,7 +861,7 @@ func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.C
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, " _=\"on change\n\t\t\t\t\tset :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')\n\t\t\t\t\tif I match <:checked /> then\n\t\t\t\t\t\tadd .checkbox to :inputs\n\t\t\t\t\t\tadd .checkbox-sm to :inputs\n\t\t\t\t\t\tadd .checkbox-success to :inputs\n\t\t\t\t\t\tremove .radio from :inputs\n\t\t\t\t\t\tremove .radio-sm from :inputs\n\t\t\t\t\t\tremove .radio-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'checkbox'\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .radio to :inputs\n\t\t\t\t\t\tadd .radio-sm to :inputs\n\t\t\t\t\t\tadd .radio-success to :inputs\n\t\t\t\t\t\tremove .checkbox from :inputs\n\t\t\t\t\t\tremove .checkbox-sm from :inputs\n\t\t\t\t\t\tremove .checkbox-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'radio'\n\t\t\t\t\tend\n\t\t\t\t\"></label> <label class=\"label w-full flex justify-between\">Randomise Order <input type=\"checkbox\" name=\"randomize_order\" class=\"toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, " _=\"on change\n\t\t\t\t\tset :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')\n\t\t\t\t\tif I match <:checked /> then\n\t\t\t\t\t\tadd .checkbox to :inputs\n\t\t\t\t\t\tadd .checkbox-sm to :inputs\n\t\t\t\t\t\tadd .checkbox-success to :inputs\n\t\t\t\t\t\tremove .radio from :inputs\n\t\t\t\t\t\tremove .radio-sm from :inputs\n\t\t\t\t\t\tremove .radio-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'checkbox'\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .radio to :inputs\n\t\t\t\t\t\tadd .radio-sm to :inputs\n\t\t\t\t\t\tadd .radio-success to :inputs\n\t\t\t\t\t\tremove .checkbox from :inputs\n\t\t\t\t\t\tremove .checkbox-sm from :inputs\n\t\t\t\t\t\tremove .checkbox-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'radio'\n\t\t\t\t\tend\n\t\t\t\t\"></label> <label class=\"label w-full flex justify-between\">Randomise Order <input type=\"checkbox\" name=\"randomise_order\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -871,7 +871,7 @@ func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.C
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "></label> <label class=\"label w-full flex justify-between\">Multiple Attempts <input type=\"checkbox\" name=\"retry_enabled\" class=\"toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "></label> <label class=\"label w-full flex justify-between\">Multiple Attempts <input type=\"checkbox\" name=\"allow_retry\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -180,13 +180,13 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 
 	// Use the existing constructor functions
 	switch baseBlock.Type {
-	case "markdown":
+	case "text":
 		return NewMarkdownBlock(baseBlock), nil
 	case "divider":
 		return NewDividerBlock(baseBlock), nil
 	case "alert":
 		return NewAlertBlock(baseBlock), nil
-	case "answer":
+	case "password":
 		return NewAnswerBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
@@ -198,7 +198,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewImageBlock(baseBlock), nil
 	case "sorting":
 		return NewSortingBlock(baseBlock), nil
-	case "quiz_block":
+	case "quiz":
 		return NewQuizBlock(baseBlock), nil
 	case "clue":
 		return NewClueBlock(baseBlock), nil
@@ -214,9 +214,9 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewHeaderBlock(baseBlock), nil
 	case "team_name":
 		return NewTeamNameChangerBlock(baseBlock), nil
-	case "game_status_alert":
+	case "game_status":
 		return NewGameStatusAlertBlock(baseBlock), nil
-	case "start_game_button":
+	case "start_button":
 		return NewStartGameButtonBlock(baseBlock), nil
 	case "task":
 		return NewTaskBlock(baseBlock), nil

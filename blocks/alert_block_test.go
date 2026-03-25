@@ -31,7 +31,7 @@ func TestAlertBlock_Getters(t *testing.T) {
 func TestAlertBlock_ParseData(t *testing.T) {
 	content := gofakeit.Sentence(5)
 	variant := gofakeit.Word()
-	data := `{"content":"` + content + `","variant":"` + variant + `"}`
+	data := `{"content":"` + content + `","style":"` + variant + `"}`
 	block := blocks.AlertBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
@@ -41,7 +41,7 @@ func TestAlertBlock_ParseData(t *testing.T) {
 	err := block.ParseData()
 	require.NoError(t, err)
 	assert.Equal(t, content, block.Content)
-	assert.Equal(t, variant, block.Variant)
+	assert.Equal(t, variant, block.Style)
 }
 
 func TestAlertBlock_UpdateBlockData(t *testing.T) {
@@ -60,7 +60,7 @@ func TestAlertBlock_ValidatePlayerInput(t *testing.T) {
 			Points: 5,
 		},
 		Content: "Test Content",
-		Variant: "info",
+		Style: "info",
 	}
 
 	state := &blocks.MockPlayerState{}

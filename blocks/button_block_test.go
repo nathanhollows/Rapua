@@ -20,7 +20,7 @@ func TestButtonBlock_Getters(t *testing.T) {
 		},
 		Link:    "https://example.com",
 		Text:    "Click me",
-		Variant: "primary",
+		Style: "primary",
 	}
 
 	assert.Equal(t, "button", block.GetType())
@@ -34,7 +34,7 @@ func TestButtonBlock_ParseData(t *testing.T) {
 	link := gofakeit.URL()
 	text := gofakeit.Sentence(2)
 	variant := "success"
-	data := `{"link":"` + link + `","text":"` + text + `","variant":"` + variant + `"}`
+	data := `{"link":"` + link + `","text":"` + text + `","style":"` + variant + `"}`
 
 	block := blocks.ButtonBlock{
 		BaseBlock: blocks.BaseBlock{
@@ -46,7 +46,7 @@ func TestButtonBlock_ParseData(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, link, block.Link)
 	assert.Equal(t, text, block.Text)
-	assert.Equal(t, variant, block.Variant)
+	assert.Equal(t, variant, block.Style)
 }
 
 func TestButtonBlock_UpdateBlockData(t *testing.T) {
@@ -54,13 +54,13 @@ func TestButtonBlock_UpdateBlockData(t *testing.T) {
 	data := map[string][]string{
 		"link":    {"https://example.com"},
 		"text":    {"Updated Button Text"},
-		"variant": {"warning"},
+		"style": {"warning"},
 	}
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com", block.Link)
 	assert.Equal(t, "Updated Button Text", block.Text)
-	assert.Equal(t, "warning", block.Variant)
+	assert.Equal(t, "warning", block.Style)
 }
 
 func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
@@ -70,7 +70,7 @@ func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
 		},
 		Link:    "https://example.com",
 		Text:    "Test Button",
-		Variant: "info",
+		Style: "info",
 	}
 
 	state := &blocks.MockPlayerState{}
