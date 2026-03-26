@@ -360,6 +360,15 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
 		})
 
+		// YAML import/export
+		r.Route("/yaml", func(r chi.Router) {
+			r.Get("/export/template", adminHandler.ExportTemplateYAML)
+			r.Get("/export/instance", adminHandler.ExportInstanceYAML)
+			r.Post("/validate", adminHandler.ValidateImportYAML)
+			r.Post("/import", adminHandler.ImportYAML)
+			r.Post("/update", adminHandler.UpdateYAML)
+		})
+
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
 			// Primary RESTful endpoints
