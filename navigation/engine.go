@@ -1,7 +1,7 @@
 package navigation
 
 import (
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // AdvanceReason explains why GetNextGroup made a particular decision.
@@ -74,7 +74,7 @@ func IsGroupCompleted(
 //   - All groups are completed
 //
 // This function is deterministic: same inputs always produce same result.
-func ComputeCurrentGroup(
+func ComputeCurrentGroup( //nolint:gocognit
 	structure *models.GameStructure,
 	completedLocationIDs []string,
 	skippedGroupIDs []string,
@@ -248,7 +248,7 @@ func GetAvailableLocationIDs(
 		}
 		return []string{firstID}
 
-	case models.RouteStrategyRandom:
+	case models.RouteStrategyRandomised:
 		// Return up to maxNext randomly selected location IDs (deterministic per team)
 		return deterministicShuffleIDs(group.LocationIDs, completedLocationIDs, teamCode, group.MaxNext)
 

@@ -1,7 +1,7 @@
 ---
 title: "Database Migrations"
 sidebar: true
-order: 2
+order: 3
 ---
 
 # Database Migrations

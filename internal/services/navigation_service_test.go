@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -63,7 +63,7 @@ func createTestGameStructure() models.GameStructure {
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationDisplayNames,
+				Navigation:     models.NavigationList,
 				LocationIDs:    []string{}, // Will be filled with actual location IDs
 			},
 			{
@@ -74,7 +74,7 @@ func createTestGameStructure() models.GameStructure {
 				MinimumRequired: 2,
 				AutoAdvance:     false, // Key: can advance early
 				Routing:         models.RouteStrategyFreeRoam,
-				Navigation:      models.NavigationDisplayNames,
+				Navigation:      models.NavigationList,
 				LocationIDs:     []string{}, // Will be filled
 			},
 			{
@@ -84,7 +84,7 @@ func createTestGameStructure() models.GameStructure {
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationDisplayNames,
+				Navigation:     models.NavigationList,
 				LocationIDs:    []string{}, // Will be filled
 			},
 		},
@@ -552,7 +552,7 @@ func TestNavigationService_GetPreviewNavigationView_CustomNavigationMode(t *test
 
 	// Create game structure with custom navigation mode
 	gameStructure := createTestGameStructure()
-	gameStructure.SubGroups[0].Navigation = models.NavigationDisplayCustom
+	gameStructure.SubGroups[0].Navigation = models.NavigationCustom
 
 	// Create instance
 	instance := &models.Instance{
@@ -609,7 +609,7 @@ func TestNavigationService_GetPreviewNavigationView_CustomNavigationMode(t *test
 	require.NoError(t, err)
 	assert.NotNil(t, view)
 	assert.NotNil(t, view.CurrentGroup)
-	assert.Equal(t, models.NavigationDisplayCustom, view.CurrentGroup.Navigation)
+	assert.Equal(t, models.NavigationCustom, view.CurrentGroup.Navigation)
 	// Blocks and BlockStates should be initialized (may be empty if no blocks exist)
 	assert.NotNil(t, view.Blocks)
 	assert.NotNil(t, view.BlockStates)
@@ -719,7 +719,7 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationDisplayNames,
+				Navigation:     models.NavigationList,
 				LocationIDs:    []string{},
 			},
 		},
@@ -812,7 +812,7 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationDisplayTasks, // Key: scavenger hunt mode
+				Navigation:     models.NavigationTasks, // Key: scavenger hunt mode
 				LocationIDs:    []string{},
 			},
 		},
@@ -879,7 +879,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations uncompleted", func(t *testing.T) {
 		// Load fresh team
-		//nolint:govet // Shadow variable in test subtest
 		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
 		require.NoError(t, err)
 		err = teamRepo.LoadRelations(ctx, teamPtr)
@@ -891,14 +890,13 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 		// Assert
 		require.NoError(t, err)
 		assert.NotNil(t, view)
-		assert.Equal(t, models.NavigationDisplayTasks, view.CurrentGroup.Navigation)
+		assert.Equal(t, models.NavigationTasks, view.CurrentGroup.Navigation)
 		assert.Len(t, view.NextLocations, 3, "all 3 locations should be uncompleted")
 		assert.Empty(t, view.CompletedLocations, "no locations should be completed")
 	})
 
 	t.Run("one location completed via check-in", func(t *testing.T) {
 		// Check in to loc1 - since location has no blocks, it's immediately complete
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc1, false, false)
 		require.NoError(t, err)
 
@@ -919,7 +917,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("two locations completed", func(t *testing.T) {
 		// Check in to loc2 - also immediately complete (no blocks)
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc2, false, false)
 		require.NoError(t, err)
 
@@ -940,7 +937,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations completed", func(t *testing.T) {
 		// Check in to loc3 - immediately complete (no blocks)
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc3, false, false)
 		require.NoError(t, err)
 

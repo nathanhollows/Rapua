@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/internal/flash"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/flash"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // htmxHeaderTrue is the string value "true" used in HTMX header comparisons.
@@ -298,6 +298,8 @@ type Handler struct {
 	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
 	stripeService           StripeService
+	yamlExportService       YAMLExportService
+	yamlImportService       YAMLImportService
 }
 
 func NewAdminHandler(
@@ -326,6 +328,8 @@ func NewAdminHandler(
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
 	stripeService StripeService,
+	yamlExportService YAMLExportService,
+	yamlImportService YAMLImportService,
 ) *Handler {
 	return &Handler{
 		logger:                  logger,
@@ -353,6 +357,8 @@ func NewAdminHandler(
 		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
 		stripeService:           stripeService,
+		yamlExportService:       yamlExportService,
+		yamlImportService:       yamlImportService,
 	}
 }
 

@@ -2,8 +2,8 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 templ teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChangerBlock) {
@@ -152,7 +152,7 @@ templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string
 }
 
 var teamNamePromptText = TextInputParams{
-	Name:         "block_text",
+	Name:         "prompt",
 	Title:        "Prompt Text",
 	Placeholder:  "Set your team name!",
 	ExtraClasses: "w-full",

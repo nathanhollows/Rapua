@@ -3,7 +3,7 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +11,7 @@ import (
 func TestTeamNameChangerBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"block_text":     {"Choose your team name!"},
+		"prompt":         {"Choose your team name!"},
 		"allow_changing": {"on"},
 	}
 
@@ -24,7 +24,7 @@ func TestTeamNameChangerBlock_UpdateBlockData(t *testing.T) {
 func TestTeamNameChangerBlock_UpdateBlockData_CheckboxChecked(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"block_text":     {"Set your name"},
+		"prompt":         {"Set your name"},
 		"allow_changing": {"true"},
 	}
 
@@ -38,7 +38,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_CheckboxUnchecked(t *testing.T) {
 		AllowChanging: true, // Start with it checked
 	}
 	data := map[string][]string{
-		"block_text": {"Set your name"},
+		"prompt": {"Set your name"},
 		// allow_changing not present = unchecked
 	}
 
@@ -52,7 +52,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 		BlockText: "Original text",
 	}
 	data := map[string][]string{
-		"block_text":     {""},
+		"prompt":         {""},
 		"allow_changing": {"on"},
 	}
 
@@ -68,7 +68,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_OnlyButtonText(t *testing.T) {
 		AllowChanging: true,
 	}
 	data := map[string][]string{
-		"block_text": {"New prompt text"},
+		"prompt": {"New prompt text"},
 	}
 
 	err := block.UpdateBlockData(data)

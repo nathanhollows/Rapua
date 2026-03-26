@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v6/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Instances shows admin the instances.
@@ -249,10 +249,10 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user.CurrentInstanceID == id {
-		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
+		renderErr := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
 			Render(r.Context(), w)
-		if err != nil {
-			h.logger.Error("InstanceDelete: rendering template", "error", err)
+		if renderErr != nil {
+			h.logger.Error("InstanceDelete: rendering template", "error", renderErr)
 		}
 		return
 	}

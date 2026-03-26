@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,17 +16,17 @@ func TestPincodeBlock_Getters(t *testing.T) {
 	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
 	block := blocks.PincodeBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Prompt:  prompt,
 		Pincode: pincode,
 	}
 
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }
@@ -140,5 +140,5 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, newPlayerData.Attempts)
 	assert.Len(t, newPlayerData.Guesses, 1)
-	assert.Equal(t, "1", newPlayerData.Guesses[0]) // First digit saved as guess
+	assert.Equal(t, "12345", newPlayerData.Guesses[0]) // Full pincode saved as guess
 }

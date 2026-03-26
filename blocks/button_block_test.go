@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,19 +13,19 @@ import (
 func TestButtonBlock_Getters(t *testing.T) {
 	block := blocks.ButtonBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
-		Link:    "https://example.com",
-		Text:    "Click me",
-		Variant: "primary",
+		Link:  "https://example.com",
+		Text:  "Click me",
+		Style: "primary",
 	}
 
 	assert.Equal(t, "button", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }
@@ -34,7 +34,7 @@ func TestButtonBlock_ParseData(t *testing.T) {
 	link := gofakeit.URL()
 	text := gofakeit.Sentence(2)
 	variant := "success"
-	data := `{"link":"` + link + `","text":"` + text + `","variant":"` + variant + `"}`
+	data := `{"link":"` + link + `","text":"` + text + `","style":"` + variant + `"}`
 
 	block := blocks.ButtonBlock{
 		BaseBlock: blocks.BaseBlock{
@@ -46,21 +46,21 @@ func TestButtonBlock_ParseData(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, link, block.Link)
 	assert.Equal(t, text, block.Text)
-	assert.Equal(t, variant, block.Variant)
+	assert.Equal(t, variant, block.Style)
 }
 
 func TestButtonBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.ButtonBlock{}
 	data := map[string][]string{
-		"link":    {"https://example.com"},
-		"text":    {"Updated Button Text"},
-		"variant": {"warning"},
+		"link":  {"https://example.com"},
+		"text":  {"Updated Button Text"},
+		"style": {"warning"},
 	}
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com", block.Link)
 	assert.Equal(t, "Updated Button Text", block.Text)
-	assert.Equal(t, "warning", block.Variant)
+	assert.Equal(t, "warning", block.Style)
 }
 
 func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
@@ -68,9 +68,9 @@ func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
 		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
-		Link:    "https://example.com",
-		Text:    "Test Button",
-		Variant: "info",
+		Link:  "https://example.com",
+		Text:  "Test Button",
+		Style: "info",
 	}
 
 	state := &blocks.MockPlayerState{}

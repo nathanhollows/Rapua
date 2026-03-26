@@ -2,13 +2,13 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownAdmin(settings, *b)
 	case "divider":
@@ -17,7 +17,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imageAdmin(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordAdmin(settings, *b)
 	case "pincode":
@@ -35,7 +35,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingAdmin(settings, *b)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizAdmin(settings, *b)
 	case "clue":
@@ -59,10 +59,10 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerAdmin(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertAdmin(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonAdmin(settings, *b)
 	case "task":
@@ -71,13 +71,16 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingAdmin(settings, *b)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextAdmin(settings, *b)
 	}
 	return nil
 }
 
 func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownPlayer(settings, *b)
 	case "divider":
@@ -86,7 +89,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayer(settings, *b, state)
 	case "pincode":
@@ -104,7 +107,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayer(settings, *b, state)
 	case "clue":
@@ -128,10 +131,10 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertPlayer(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
 	case "task":
@@ -140,13 +143,16 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayer(settings, *b, state)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextPlayer(settings, *b)
 	}
 	return nil
 }
 
 func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
-	case "markdown":
+	case "text":
 		b := block.(*blocks.MarkdownBlock)
 		return markdownPlayer(settings, *b)
 	case "divider":
@@ -155,7 +161,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "image":
 		b := block.(*blocks.ImageBlock)
 		return imagePlayer(settings, *b)
-	case "answer":
+	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayerUpdate(settings, *b, state)
 	case "pincode":
@@ -173,7 +179,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
 		return sortingPlayer(settings, *b, state)
-	case "quiz_block":
+	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayerUpdate(settings, *b, state)
 	case "clue":
@@ -197,10 +203,10 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "team_name":
 		b := block.(*blocks.TeamNameChangerBlock)
 		return teamNameChangerPlayer(settings, *b)
-	case "game_status_alert":
+	case "game_status":
 		b := block.(*blocks.GameStatusAlertBlock)
 		return gameStatusAlertPlayer(settings, *b)
-	case "start_game_button":
+	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
 	case "task":
@@ -209,6 +215,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayerUpdate(settings, *b, state)
+	case "toggle_text":
+		b := block.(*blocks.ToggleTextBlock)
+		return toggleTextPlayer(settings, *b)
 	}
 	return nil
 }
@@ -294,7 +303,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 						type="button"
 						class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
 						data-tip="Delete"
-						data-location={ block.GetLocationID() }
+						data-location={ block.GetOwnerID() }
 						data-block={ block.GetID() }
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
@@ -306,7 +315,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 							data-tip="Move up"
 							onclick="moveblock(event, 'up')"
 							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
+							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()) }
 							hx-trigger="click delay:400ms"
 							hx-swap="none"
 							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
@@ -319,7 +328,7 @@ templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, ope
 							data-tip="Move down"
 							onclick="moveblock(event, 'down')"
 							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetLocationID()) }
+							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()) }
 							hx-trigger="click delay:400ms"
 							hx-swap="none"
 							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }

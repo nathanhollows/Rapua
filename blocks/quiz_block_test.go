@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,10 +12,10 @@ import (
 func TestQuizBlock_Getters(t *testing.T) {
 	block := blocks.QuizBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-quiz-id",
-			LocationID: "location-123",
-			Order:      3,
-			Points:     50,
+			ID:      "test-quiz-id",
+			OwnerID: "location-123",
+			Order:   3,
+			Points:  50,
 		},
 		Question:       "What is the capital of France?",
 		MultipleChoice: false,
@@ -23,9 +23,9 @@ func TestQuizBlock_Getters(t *testing.T) {
 		RetryEnabled:   false,
 	}
 
-	assert.Equal(t, "quiz_block", block.GetType())
+	assert.Equal(t, "quiz", block.GetType())
 	assert.Equal(t, "test-quiz-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 3, block.GetOrder())
 	assert.Equal(t, 50, block.GetPoints())
 	assert.Contains(t, block.GetIconSVG(), "svg")
@@ -35,12 +35,12 @@ func TestQuizBlock_ParseData(t *testing.T) {
 	data := `{
 		"question": "What is 2+2?",
 		"options": [
-			{"id": "option_0", "text": "3", "is_correct": false, "order": 0},
-			{"id": "option_1", "text": "4", "is_correct": true, "order": 1}
+			{"id": "option_0", "text": "3", "correct": false, "order": 0},
+			{"id": "option_1", "text": "4", "correct": true, "order": 1}
 		],
 		"multiple_choice": false,
-		"randomize_order": true,
-		"retry_enabled": false
+		"randomise_order": true,
+		"allow_retry": false
 	}`
 
 	block := blocks.QuizBlock{
@@ -69,8 +69,8 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"question":        {"What is the capital of France?"},
 		"points":          {"100"},
 		"multiple_choice": {},
-		"randomize_order": {"on"},
-		"retry_enabled":   {},
+		"randomise_order": {"on"},
+		"allow_retry":     {},
 		"option_text":     {"Paris", "London", "Berlin", "Madrid"},
 		"option_correct":  {"option_0", "option_3"}, // Mark Paris and Madrid as correct
 	}
@@ -96,8 +96,8 @@ func TestQuizBlock_UpdateBlockData(t *testing.T) {
 		"question":        {"Select all programming languages:"},
 		"points":          {"50"},
 		"multiple_choice": {"on"},
-		"randomize_order": {},
-		"retry_enabled":   {"on"},
+		"randomise_order": {},
+		"allow_retry":     {"on"},
 		"option_text":     {"Python", "HTML", "JavaScript", "CSS"},
 		"option_correct":  {"option_0", "option_2"}, // Python and JavaScript
 	}
@@ -328,6 +328,60 @@ func TestQuizBlock_ValidatePlayerInput_RetryEnabled(t *testing.T) {
 	assert.Equal(t, 100, newState.GetPointsAwarded())
 }
 
+func TestQuizBlock_ValidatePlayerInput_HistoryTracking(t *testing.T) {
+	block := blocks.QuizBlock{
+		BaseBlock: blocks.BaseBlock{
+			Points: 100,
+		},
+		Question:       "What is 2+2?",
+		MultipleChoice: false,
+		RetryEnabled:   true,
+		Options: []blocks.QuizOption{
+			{ID: "option_0", Text: "3", IsCorrect: false},
+			{ID: "option_1", Text: "4", IsCorrect: true},
+			{ID: "option_2", Text: "5", IsCorrect: false},
+		},
+	}
+
+	// First attempt: wrong answer
+	state := &blocks.MockPlayerState{BlockID: "test-block", PlayerID: "test-player"}
+	input := map[string][]string{"quiz_option": {"option_0"}}
+	newState, err := block.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.False(t, newState.IsComplete())
+
+	var playerData blocks.QuizPlayerData
+	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 1, playerData.Attempts)
+	require.Len(t, playerData.History, 1)
+	assert.Equal(t, []string{"option_0"}, playerData.History[0].SelectedOptions)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt: correct answer
+	input = map[string][]string{"quiz_option": {"option_1"}}
+	newState2, err := block.ValidatePlayerInput(newState, input)
+	require.NoError(t, err)
+	assert.True(t, newState2.IsComplete())
+
+	err = json.Unmarshal(newState2.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 2, playerData.Attempts)
+	require.Len(t, playerData.History, 2)
+
+	// First attempt in history
+	assert.Equal(t, []string{"option_0"}, playerData.History[0].SelectedOptions)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt in history
+	assert.Equal(t, []string{"option_1"}, playerData.History[1].SelectedOptions)
+	assert.True(t, playerData.History[1].IsCorrect)
+
+	// Top-level fields reflect latest attempt
+	assert.Equal(t, []string{"option_1"}, playerData.SelectedOptions)
+	assert.True(t, playerData.IsCorrect)
+}
+
 func TestQuizBlock_CalculatePoints_EdgeCases(t *testing.T) {
 	// Test with no correct options
 	block := blocks.QuizBlock{
@@ -390,11 +444,11 @@ func TestQuizBlock_GetShuffledOptions(t *testing.T) {
 
 func TestNewQuizBlock(t *testing.T) {
 	base := blocks.BaseBlock{
-		ID:         "test-id",
-		LocationID: "location-123",
-		Type:       "quiz_block",
-		Order:      1,
-		Points:     50,
+		ID:      "test-id",
+		OwnerID: "location-123",
+		Type:    "quiz",
+		Order:   1,
+		Points:  50,
 	}
 
 	block := blocks.NewQuizBlock(base)

@@ -3,8 +3,8 @@ package blocks
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Helper function to get quiz player data
@@ -326,7 +326,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				Randomise Order
 				<input
 					type="checkbox"
-					name="randomize_order"
+					name="randomise_order"
 					class="toggle"
 					checked?={ block.RandomizeOrder }
 				/>
@@ -335,7 +335,7 @@ templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
 				Multiple Attempts
 				<input
 					type="checkbox"
-					name="retry_enabled"
+					name="allow_retry"
 					class="toggle"
 					checked?={ block.RetryEnabled }
 				/>

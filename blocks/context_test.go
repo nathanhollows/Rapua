@@ -3,7 +3,7 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 )
 
 func TestBlockContextFiltering(t *testing.T) {
@@ -16,7 +16,7 @@ func TestBlockContextFiltering(t *testing.T) {
 		{
 			name:             "Content context should include most blocks",
 			context:          blocks.ContextLocationContent,
-			expectedBlocks:   []string{"markdown", "alert", "button", "image", "broker", "checklist"},
+			expectedBlocks:   []string{"text", "alert", "button", "image", "broker", "checklist"},
 			unexpectedBlocks: []string{}, // All current blocks support content
 		},
 		// {
@@ -91,9 +91,9 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 		context   blocks.BlockContext
 		expected  bool
 	}{
-		{"markdown", blocks.ContextLocationContent, true},
-		// {"markdown", blocks.ContextNavigation, true},
-		// {"markdown", blocks.ContextStart, true},
+		{"text", blocks.ContextLocationContent, true},
+		// {"text", blocks.ContextNavigation, true},
+		// {"text", blocks.ContextStart, true},
 		{"broker", blocks.ContextLocationContent, true},
 		// {"broker", blocks.ContextNavigation, false},
 		// {"broker", blocks.ContextStart, false},
@@ -123,7 +123,7 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	// Test that all registered block types can be created
 	expectedTypes := []string{
-		"markdown",
+		"text",
 		"alert",
 		"button",
 		"divider",
@@ -132,9 +132,9 @@ func TestBackwardCompatibility(t *testing.T) {
 		"broker",
 		"checklist",
 		"clue",
-		"answer",
+		"password",
 		"pincode",
-		"quiz_block",
+		"quiz",
 		"sorting",
 	}
 

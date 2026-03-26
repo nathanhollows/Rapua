@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
 type BlockService struct {
@@ -65,8 +65,8 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
-		Type:       blockType,
-		LocationID: ownerID, // Use ownerID as LocationID for backward compatibility
+		Type:    blockType,
+		OwnerID: ownerID,
 	}
 
 	// Let the blocks package handle the creation logic.
@@ -261,7 +261,7 @@ func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
 func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
+		OwnerID:            block.GetOwnerID(),
 		Type:               block.GetType(),
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),

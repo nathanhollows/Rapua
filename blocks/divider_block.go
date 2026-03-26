@@ -11,10 +11,10 @@ type DividerBlock struct {
 
 // Basic Attributes Getters
 
-func (b *DividerBlock) GetID() string         { return b.ID }
-func (b *DividerBlock) GetType() string       { return "divider" }
-func (b *DividerBlock) GetLocationID() string { return b.LocationID }
-func (b *DividerBlock) GetName() string       { return "Divider" }
+func (b *DividerBlock) GetID() string      { return b.ID }
+func (b *DividerBlock) GetType() string    { return "divider" }
+func (b *DividerBlock) GetOwnerID() string { return b.OwnerID }
+func (b *DividerBlock) GetName() string    { return "Divider" }
 func (b *DividerBlock) GetDescription() string {
 	return "Simple divider to separate content."
 }
@@ -39,6 +39,15 @@ func (b *DividerBlock) UpdateBlockData(input map[string][]string) error {
 		b.Title = title[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *DividerBlock) ToYAML() map[string]any {
+	m := map[string]any{}
+	if b.Title != "" {
+		m["title"] = b.Title
+	}
+	return m
 }
 
 // Validation and Points Calculation

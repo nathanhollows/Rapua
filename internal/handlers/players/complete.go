@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {

@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/config"
-	"github.com/nathanhollows/Rapua/v6/helpers"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
-	"github.com/nathanhollows/Rapua/v6/security"
+	"github.com/nathanhollows/Rapua/v7/config"
+	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/security"
 )
 
 // Password-related errors.
@@ -19,7 +19,10 @@ var (
 	ErrIncorrectOldPassword = errors.New("current password is incorrect")
 	ErrEmptyPassword        = errors.New("password cannot be empty")
 	ErrPasswordUpdateFailed = errors.New("failed to update password")
+	ErrPasswordTooShort     = errors.New("password must be at least 8 characters")
 )
+
+const minPasswordLength = 8
 
 type UserService struct {
 	instanceRepo repositories.InstanceRepository
@@ -160,6 +163,42 @@ func (s *UserService) ChangePassword(
 	user.Password = hashedPassword
 	err = s.userRepo.Update(ctx, user)
 	if err != nil {
+		return ErrPasswordUpdateFailed
+	}
+
+	return nil
+}
+
+// ResetPassword sets a new password without requiring the old one.
+// Used for forgot-password flows where identity is verified via token.
+func (s *UserService) ResetPassword(
+	ctx context.Context,
+	user *models.User,
+	newPassword, confirmPassword string,
+) error {
+	if user.Provider != models.ProviderEmail {
+		return errors.New("cannot reset password for SSO accounts")
+	}
+
+	if newPassword == "" {
+		return ErrEmptyPassword
+	}
+
+	if len(newPassword) < minPasswordLength {
+		return ErrPasswordTooShort
+	}
+
+	if newPassword != confirmPassword {
+		return ErrPasswordsDoNotMatch
+	}
+
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("hashing password: %w", err)
+	}
+
+	user.Password = hashedPassword
+	if err := s.userRepo.Update(ctx, user); err != nil {
 		return ErrPasswordUpdateFailed
 	}
 

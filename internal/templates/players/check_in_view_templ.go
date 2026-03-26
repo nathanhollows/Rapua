@@ -10,10 +10,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 type CheckInViewData struct {
@@ -116,7 +116,7 @@ func CheckInView(data CheckInViewData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if !(data.View != nil && data.View.MustCheckOut && data.View.BlockingLocation.ID == data.Scan.Location.ID && !data.Scan.BlocksCompleted) {
-			if data.View != nil && data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+			if data.View != nil && data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<a href=\"/next\" hx-boost=\"true\" class=\"btn btn-ghost btn-outline join-item\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

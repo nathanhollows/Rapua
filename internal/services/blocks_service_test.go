@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,13 +33,13 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 		{
 			name:       "Valid block creation",
 			locationID: gofakeit.UUID(),
-			blockType:  "markdown",
+			blockType:  "text",
 			wantErr:    false,
 		},
 		{
 			name:       "Missing location ID",
 			locationID: "",
-			blockType:  "markdown",
+			blockType:  "text",
 			wantErr:    true,
 		},
 		{
@@ -65,7 +65,7 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, blk.GetID(), "Expected a non-empty block ID")
-				assert.Equal(t, tc.locationID, blk.GetLocationID(), "Location ID should match")
+				assert.Equal(t, tc.locationID, blk.GetOwnerID(), "Owner ID should match")
 				assert.Equal(t, tc.blockType, blk.GetType(), "Block type should match")
 			}
 		})
@@ -175,7 +175,7 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 					context.Background(),
 					gofakeit.UUID(),
 					blocks.ContextLocationContent,
-					"markdown",
+					"text",
 				)
 				if err != nil {
 					return "", err
@@ -534,7 +534,7 @@ func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
 					context.Background(),
 					locID,
 					blocks.ContextLocationContent,
-					"markdown",
+					"text",
 				)
 				return err
 			},
@@ -622,7 +622,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 					context.Background(),
 					locID,
 					blocks.ContextLocationContent,
-					"markdown",
+					"text",
 				)
 				return err
 			},
@@ -693,7 +693,7 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 						context.Background(),
 						tc.locationID,
 						tc.context,
-						"markdown",
+						"text",
 					)
 					require.NoError(t, err)
 				}
@@ -704,7 +704,7 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 						context.Background(),
 						tc.locationID,
 						tc.otherContext,
-						"markdown",
+						"text",
 					)
 					require.NoError(t, err)
 				}
@@ -776,7 +776,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 					context.Background(),
 					tc.locationID,
 					blocks.ContextLocationClues,
-					"markdown",
+					"text",
 				)
 				require.NoError(t, err)
 			}
@@ -835,7 +835,7 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 					context.Background(),
 					gofakeit.UUID(),
 					blocks.ContextLocationContent,
-					"markdown",
+					"text",
 				)
 				if err != nil {
 					return nil, nil, err

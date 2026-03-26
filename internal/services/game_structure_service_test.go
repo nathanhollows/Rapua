@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,7 +63,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add block to location 1
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "markdown")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
 		require.NoError(t, err)
 
 		// Create game structure
@@ -90,7 +90,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		assert.Equal(t, "header", structure.Locations[0].Blocks[0].Type)
 		// Second block should be the manually created markdown with location_clues context
 		assert.Equal(t, blocks.ContextLocationClues, structure.Locations[0].Blocks[1].Context)
-		assert.Equal(t, "markdown", structure.Locations[0].Blocks[1].Type)
+		assert.Equal(t, "text", structure.Locations[0].Blocks[1].Type)
 	})
 
 	t.Run("Load blocks recursively for nested structure", func(t *testing.T) {
@@ -110,9 +110,9 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add blocks
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "markdown")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
 		require.NoError(t, err)
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "markdown")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "text")
 		require.NoError(t, err)
 
 		// Create nested structure
@@ -160,9 +160,9 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add blocks
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "markdown")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
 		require.NoError(t, err)
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "markdown")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "text")
 		require.NoError(t, err)
 
 		// Create nested structure

@@ -150,7 +150,7 @@ func (ds *DocsService) loadRedirects() error {
 }
 
 // trackPages compares current pages with known pages and updates tracking files.
-func (ds *DocsService) trackPages() error {
+func (ds *DocsService) trackPages() error { //nolint:gocognit
 	// Build list of current pages
 	currentPages := make(map[string]bool)
 	collectPageURLs(ds.Pages, currentPages)
@@ -259,7 +259,8 @@ func (ds *DocsService) loadDocs() error {
 
 		// Split front matter and content
 		parts := strings.SplitN(string(data), "---", 3)
-		if len(parts) < 3 {
+		const yamlFrontMatterParts = 3
+		if len(parts) < yamlFrontMatterParts {
 			return nil // Skip files without proper front matter
 		}
 
@@ -345,7 +346,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 		return
 	}
 	key := parts[depth]
-	if existing, ok := node[key]; ok {
+	if existing, ok := node[key]; ok { //nolint:nestif // tree traversal requires checking existence and depth simultaneously
 		// Existing node, proceed to next depth
 		if depth == len(parts)-1 {
 			// Leaf node

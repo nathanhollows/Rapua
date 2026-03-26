@@ -16,7 +16,7 @@ type SortingBlock struct {
 	BaseBlock
 	Content       string        `json:"content"`
 	Items         []SortingItem `json:"items"`
-	ScoringScheme string        `json:"scoring_scheme"`
+	ScoringScheme string        `json:"scoring"`
 }
 
 // SortingItem represents an individual item to be sorted.
@@ -33,12 +33,19 @@ const (
 	RetryUntilCorrect       = "retry_until_correct"
 )
 
+// SortingAttempt records a single submission attempt.
+type SortingAttempt struct {
+	PlayerOrder []string `json:"player_order"` // Order submitted in this attempt
+	IsCorrect   bool     `json:"is_correct"`   // Whether this attempt was correct
+}
+
 // SortingPlayerData stores player progress.
 type SortingPlayerData struct {
-	PlayerOrder  []string `json:"player_order"`  // List of item IDs in player's submitted order
-	ShuffleOrder []string `json:"shuffle_order"` // Shuffled order shown to player initially
-	Attempts     int      `json:"attempts"`      // Number of attempts made so far
-	IsCorrect    bool     `json:"is_correct"`    // Whether the current order is correct
+	PlayerOrder  []string         `json:"player_order"`  // List of item IDs in player's submitted order (latest attempt)
+	ShuffleOrder []string         `json:"shuffle_order"` // Shuffled order shown to player initially
+	Attempts     int              `json:"attempts"`      // Number of attempts made so far
+	IsCorrect    bool             `json:"is_correct"`    // Whether the current order is correct (latest attempt)
+	History      []SortingAttempt `json:"history"`       // All attempts for reporting
 }
 
 // GetName returns the block type name.
@@ -52,11 +59,13 @@ func (b *SortingBlock) GetIconSVG() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-wide-narrow"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/></svg>`
 }
 
-func (b *SortingBlock) GetType() string { return "sorting" }
+const sortingBlockType = "sorting"
+
+func (b *SortingBlock) GetType() string { return sortingBlockType }
 
 func (b *SortingBlock) GetID() string { return b.ID }
 
-func (b *SortingBlock) GetLocationID() string { return b.LocationID }
+func (b *SortingBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *SortingBlock) GetOrder() int { return b.Order }
 
@@ -91,7 +100,7 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	}
 
 	// Parse scoring scheme
-	if scheme, exists := input["scoring_scheme"]; exists && len(scheme) > 0 {
+	if scheme, exists := input["scoring"]; exists && len(scheme) > 0 {
 		b.ScoringScheme = scheme[0]
 	} else {
 		b.ScoringScheme = AllOrNothing
@@ -128,6 +137,24 @@ func (b *SortingBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.Items = updatedItems
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *SortingBlock) ToYAML() map[string]any {
+	items := make([]string, 0, len(b.Items))
+	for _, item := range b.Items {
+		items = append(items, item.Description)
+	}
+	m := map[string]any{
+		"items": items,
+	}
+	if b.Content != "" {
+		m["content"] = b.Content
+	}
+	if b.ScoringScheme != "" {
+		m["scoring"] = b.ScoringScheme
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.
@@ -196,6 +223,10 @@ func (b *SortingBlock) updatePlayerData(
 	playerData.PlayerOrder = itemOrder
 	playerData.Attempts++
 	playerData.IsCorrect = b.orderIsCorrect(itemOrder)
+	playerData.History = append(playerData.History, SortingAttempt{
+		PlayerOrder: itemOrder,
+		IsCorrect:   playerData.IsCorrect,
+	})
 
 	return playerData
 }

@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v6/db"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/uptrace/bun"
 )
 
@@ -295,7 +295,7 @@ func (s *DeleteService) deleteLocation(ctx context.Context, tx *bun.Tx, location
 }
 
 // ResetTeams clears team progress while preserving the teams themselves.
-func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error { //nolint:gocognit,funlen
 	// Collect all uploads for these teams before starting transaction
 	var allUploads []*models.Upload
 	for _, teamCode := range teamCodes {

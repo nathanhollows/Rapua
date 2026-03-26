@@ -12,18 +12,18 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v6/db"
-	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v6/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v6/internal/migrations"
-	"github.com/nathanhollows/Rapua/v6/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v6/internal/server"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/internal/sessions"
-	"github.com/nathanhollows/Rapua/v6/internal/storage"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/db"
+	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v7/internal/migrations"
+	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v7/internal/server"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/internal/sessions"
+	"github.com/nathanhollows/Rapua/v7/internal/storage"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	version    = "v6.15.0"
+	version    = "v7.0.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -326,7 +326,7 @@ func newGenerateLoginCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 			&cli.IntFlag{
 				Name:  "duration",
 				Usage: "link validity in seconds",
-				Value: 60,
+				Value: 60, //nolint:mnd // default link validity in seconds
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -491,7 +491,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		blockStateRepo,
 		locationRepo,
 	)
-	leaderBoardService := services.NewLeaderBoardService(teamRepo)
+	leaderBoardService := services.NewLeaderBoardService()
+	yamlExportService := services.NewYAMLExportService(
+		instanceRepo, instanceSettingsRepo, gameStructureService, blockRepo,
+	)
+	yamlImportService := services.NewYAMLImportService(
+		transactor, instanceRepo, instanceSettingsRepo, locationRepo, markerRepo, blockRepo, teamRepo,
+	)
 	instanceService := services.NewInstanceService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
@@ -583,6 +589,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		quickstartService,
 		leaderBoardService,
 		stripeService,
+		yamlExportService,
+		yamlImportService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)
@@ -596,7 +604,7 @@ func initialiseFolders(logger *slog.Logger) {
 
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {
-			if err = os.MkdirAll(folder, 0750); err != nil {
+			if err = os.MkdirAll(folder, 0o750); err != nil {
 				logger.Error("could not create directory", "folder", folder, "error", err)
 				os.Exit(1)
 			}

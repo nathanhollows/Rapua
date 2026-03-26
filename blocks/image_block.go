@@ -10,17 +10,17 @@ import (
 
 type ImageBlock struct {
 	BaseBlock
-	URL     string `json:"content"`
+	URL     string `json:"url"`
 	Caption string `json:"caption"`
 	Link    string `json:"link"`
 }
 
 // Basic Attributes Getters
 
-func (b *ImageBlock) GetID() string         { return b.ID }
-func (b *ImageBlock) GetType() string       { return "image" }
-func (b *ImageBlock) GetLocationID() string { return b.LocationID }
-func (b *ImageBlock) GetName() string       { return "Image" }
+func (b *ImageBlock) GetID() string      { return b.ID }
+func (b *ImageBlock) GetType() string    { return "image" }
+func (b *ImageBlock) GetOwnerID() string { return b.OwnerID }
+func (b *ImageBlock) GetName() string    { return "Image" }
 func (b *ImageBlock) GetDescription() string {
 	return "Embed an image."
 }
@@ -77,6 +77,20 @@ func (b *ImageBlock) parseURL(input map[string][]string) (string, error) {
 	}
 
 	return parsedURL.String(), nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *ImageBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"url": b.URL,
+	}
+	if b.Caption != "" {
+		m["caption"] = b.Caption
+	}
+	if b.Link != "" {
+		m["link"] = b.Link
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

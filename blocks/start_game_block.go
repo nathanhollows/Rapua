@@ -7,17 +7,17 @@ import (
 
 type StartGameButtonBlock struct {
 	BaseBlock
-	ScheduledButtonText string `json:"scheduled_button_text"`
-	ActiveButtonText    string `json:"active_button_text"`
-	ButtonStyle         string `json:"button_style"`
+	ScheduledButtonText string `json:"scheduled_text"`
+	ActiveButtonText    string `json:"active_text"`
+	ButtonStyle         string `json:"style"`
 }
 
 // Basic Attributes Getters
 
-func (b *StartGameButtonBlock) GetID() string         { return b.ID }
-func (b *StartGameButtonBlock) GetType() string       { return "start_game_button" }
-func (b *StartGameButtonBlock) GetLocationID() string { return b.LocationID }
-func (b *StartGameButtonBlock) GetName() string       { return "Start Button" }
+func (b *StartGameButtonBlock) GetID() string      { return b.ID }
+func (b *StartGameButtonBlock) GetType() string    { return "start_button" }
+func (b *StartGameButtonBlock) GetOwnerID() string { return b.OwnerID }
+func (b *StartGameButtonBlock) GetName() string    { return "Start Button" }
 func (b *StartGameButtonBlock) GetDescription() string {
 	return "Display a button to start the game when active."
 }
@@ -47,17 +47,32 @@ func (b *StartGameButtonBlock) UpdateBlockData(input map[string][]string) error 
 		b.Points = points
 	}
 
-	if scheduledText, exists := input["scheduled_button_text"]; exists && len(scheduledText) > 0 {
+	if scheduledText, exists := input["scheduled_text"]; exists && len(scheduledText) > 0 {
 		b.ScheduledButtonText = scheduledText[0]
 	}
-	if activeText, exists := input["active_button_text"]; exists && len(activeText) > 0 {
+	if activeText, exists := input["active_text"]; exists && len(activeText) > 0 {
 		b.ActiveButtonText = activeText[0]
 	}
-	if buttonStyle, exists := input["button_style"]; exists && len(buttonStyle) > 0 {
+	if buttonStyle, exists := input["style"]; exists && len(buttonStyle) > 0 {
 		b.ButtonStyle = buttonStyle[0]
 	}
 
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *StartGameButtonBlock) ToYAML() map[string]any {
+	m := map[string]any{}
+	if b.ScheduledButtonText != "" {
+		m["scheduled_text"] = b.ScheduledButtonText
+	}
+	if b.ActiveButtonText != "" {
+		m["active_text"] = b.ActiveButtonText
+	}
+	if b.ButtonStyle != "" {
+		m["style"] = b.ButtonStyle
+	}
+	return m
 }
 
 // Validation and Points Calculation

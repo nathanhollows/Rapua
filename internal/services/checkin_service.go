@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/navigation"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/navigation"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
 const (
@@ -50,7 +50,7 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error {
+func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error { //nolint:gocognit,gocyclo
 	// Load team relations
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	// A team may not check in if they must check out at a different location
 	// Exception: Task mode allows switching between tasks freely
 	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
 			return ErrAlreadyCheckedIn
 		}
 	}
@@ -124,7 +124,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	var pointsForCheckInRecord int
 	var bonusPoints int
 
-	if team.Instance.Settings.MustCheckOut {
+	if team.Instance.Settings.MustCheckOut { //nolint:nestif // bonus-point logic branches on three independent settings flags
 		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
 		if location.Instance.Settings.EnableBonusPoints {
 			// Calculate bonus points based on visit count
@@ -151,7 +151,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		team.Points += bonusPoints
 
 		// Don't block team in task mode - task checklist implies freedom to switch between tasks
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationDisplayTasks {
+		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
 			team.MustCheckOut = location.ID
 		}
 	} else {
@@ -328,7 +328,7 @@ func (s *CheckInService) checkOut(
 	return scan, nil
 }
 
-func (s *CheckInService) ValidateAndUpdateBlockState(
+func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	ctx context.Context,
 	team models.Team,
 	data map[string][]string,
@@ -393,7 +393,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 	}
 
 	// Only award points and update check-ins in regular mode, not preview mode
-	if !isPreview && state.IsComplete() {
+	if !isPreview && state.IsComplete() { //nolint:nestif // nesting required for guard before point-awarding
 		team.Points += block.GetPoints()
 		err = s.teamRepo.Update(ctx, &team)
 		if err != nil {
@@ -403,7 +403,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 		// Update the check in all blocks have been completed
 		unfinishedCheckIn, checkErr := s.blockService.CheckValidationRequiredForCheckIn(
 			ctx,
-			block.GetLocationID(),
+			block.GetOwnerID(),
 			team.Code,
 		)
 		if checkErr != nil {
@@ -411,7 +411,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 		}
 
 		if !unfinishedCheckIn {
-			err = s.CompleteBlocks(ctx, team.Code, block.GetLocationID())
+			err = s.CompleteBlocks(ctx, team.Code, block.GetOwnerID())
 			if err != nil {
 				return nil, nil, fmt.Errorf("completing blocks: %w", err)
 			}

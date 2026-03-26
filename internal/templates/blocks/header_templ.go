@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) templ.Component {
@@ -150,7 +150,7 @@ func headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) templ.Com
 }
 
 var headerTitleText = TextInputParams{
-	Name:         "title_text",
+	Name:         "title",
 	Title:        "Header Title",
 	Placeholder:  "Welcome!",
 	ExtraClasses: "w-full",
@@ -250,7 +250,7 @@ func headerAdmin(_ models.InstanceSettings, block blocks.HeaderBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " options.</span></div></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Styling</legend> <select name=\"title_size\" class=\"select select-bordered w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " options.</span></div></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Styling</legend> <select name=\"size\" class=\"select select-bordered w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

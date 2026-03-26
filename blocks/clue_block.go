@@ -8,8 +8,8 @@ import (
 
 type ClueBlock struct {
 	BaseBlock
-	ClueText        string `json:"clue_text"`
-	DescriptionText string `json:"description_text"`
+	ClueText        string `json:"clue"`
+	DescriptionText string `json:"description"`
 	ButtonLabel     string `json:"button_label"`
 }
 
@@ -19,10 +19,10 @@ type clueBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *ClueBlock) GetID() string         { return b.ID }
-func (b *ClueBlock) GetType() string       { return "clue" }
-func (b *ClueBlock) GetLocationID() string { return b.LocationID }
-func (b *ClueBlock) GetName() string       { return "Clue" }
+func (b *ClueBlock) GetID() string      { return b.ID }
+func (b *ClueBlock) GetType() string    { return "clue" }
+func (b *ClueBlock) GetOwnerID() string { return b.OwnerID }
+func (b *ClueBlock) GetName() string    { return "Clue" }
 func (b *ClueBlock) GetDescription() string {
 	return "Players can reveal a clue by spending points."
 }
@@ -58,12 +58,12 @@ func (b *ClueBlock) UpdateBlockData(input map[string][]string) error {
 	}
 
 	// Clue text (markdown content)
-	if clueText, exists := input["clue_text"]; exists && len(clueText) > 0 {
+	if clueText, exists := input["clue"]; exists && len(clueText) > 0 {
 		b.ClueText = clueText[0]
 	}
 
 	// Description text (markdown content)
-	if descriptionText, exists := input["description_text"]; exists && len(descriptionText) > 0 {
+	if descriptionText, exists := input["description"]; exists && len(descriptionText) > 0 {
 		b.DescriptionText = descriptionText[0]
 	}
 
@@ -75,6 +75,18 @@ func (b *ClueBlock) UpdateBlockData(input map[string][]string) error {
 	}
 
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *ClueBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"clue":        b.ClueText,
+		"description": b.DescriptionText,
+	}
+	if b.ButtonLabel != "" && b.ButtonLabel != "Reveal Clue" {
+		m["button_label"] = b.ButtonLabel
+	}
+	return m
 }
 
 // Validation and Points Calculation

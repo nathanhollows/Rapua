@@ -12,7 +12,7 @@ import (
 type ChecklistBlock struct {
 	BaseBlock
 	Content string          `json:"content"`
-	List    []ChecklistItem `json:"list"`
+	List    []ChecklistItem `json:"items"`
 }
 
 type ChecklistItem struct {
@@ -54,11 +54,13 @@ func (b *ChecklistBlock) GetIconSVG() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-checks"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>`
 }
 
-func (b *ChecklistBlock) GetType() string { return "checklist" }
+const checklistBlockType = "checklist"
+
+func (b *ChecklistBlock) GetType() string { return checklistBlockType }
 
 func (b *ChecklistBlock) GetID() string { return b.ID }
 
-func (b *ChecklistBlock) GetLocationID() string { return b.LocationID }
+func (b *ChecklistBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *ChecklistBlock) GetOrder() int { return b.Order }
 
@@ -118,6 +120,21 @@ func (b *ChecklistBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.List = updatedList
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *ChecklistBlock) ToYAML() map[string]any {
+	items := make([]string, 0, len(b.List))
+	for _, item := range b.List {
+		items = append(items, item.Description)
+	}
+	m := map[string]any{
+		"items": items,
+	}
+	if b.Content != "" {
+		m["content"] = b.Content
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

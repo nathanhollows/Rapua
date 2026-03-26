@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
 
@@ -17,6 +17,8 @@ type InstanceSettingsRepository interface {
 
 	// Update updates an instance in the database
 	Update(ctx context.Context, settings *models.InstanceSettings) error
+	// UpdateTx updates instance settings within a transaction
+	UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error
 
 	// Delete removes and instance from the database given the instanceID
 	Delete(ctx context.Context, tx *bun.Tx, instanceID string) error
@@ -71,6 +73,22 @@ func (r *instanceSettingsRepository) Update(ctx context.Context, settings *model
 	}
 	settings.UpdatedAt = time.Now().UTC()
 	_, err := r.db.NewUpdate().Model(settings).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *instanceSettingsRepository) UpdateTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	settings *models.InstanceSettings,
+) error {
+	if settings.InstanceID == "" {
+		return errors.New("instance ID is required")
+	}
+	settings.UpdatedAt = time.Now().UTC()
+	_, err := tx.NewUpdate().Model(settings).WherePK().Exec(ctx)
 	if err != nil {
 		return err
 	}

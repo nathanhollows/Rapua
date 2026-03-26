@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,17 +12,17 @@ import (
 func TestMarkdownBlock_Getters(t *testing.T) {
 	block := blocks.MarkdownBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Content: "Test Content",
 	}
 
-	assert.Equal(t, "markdown", block.GetType())
+	assert.Equal(t, "text", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }

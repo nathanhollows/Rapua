@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // dummyTeamService is a stub implementation of teamService.

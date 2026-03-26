@@ -2,8 +2,8 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Initial loading template - renders placeholder and triggers HTMX load
@@ -84,7 +84,7 @@ templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButt
 			<legend class="fieldset-legend">Scheduled button text</legend>
 			<input
 				type="text"
-				name="scheduled_button_text"
+				name="scheduled_text"
 				class="input input-bordered w-full"
 				placeholder="Waiting for game to start"
 				value={ block.ScheduledButtonText }
@@ -97,7 +97,7 @@ templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButt
 			<legend class="fieldset-legend">Active button text</legend>
 			<input
 				type="text"
-				name="active_button_text"
+				name="active_text"
 				class="input input-bordered w-full"
 				placeholder="Start Playing"
 				value={ block.ActiveButtonText }
@@ -109,7 +109,7 @@ templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButt
 		<fieldset class="fieldset mt-4">
 			<legend class="fieldset-legend">Button style</legend>
 			<select
-				name="button_style"
+				name="style"
 				class="select select-bordered w-full"
 			>
 				for style, label := range block.GetButtonStyles() {

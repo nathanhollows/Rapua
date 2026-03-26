@@ -3,8 +3,9 @@ package blocks_test
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,10 +18,10 @@ func TestRatingBlock_GetName(t *testing.T) {
 func TestRatingBlock_Getters(t *testing.T) {
 	block := blocks.RatingBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      2,
-			Points:     10,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   2,
+			Points:  10,
 		},
 		Prompt:    "Rate your experience",
 		MaxRating: 5,
@@ -30,7 +31,7 @@ func TestRatingBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Players provide a star rating for feedback or assessment.", block.GetDescription())
 	assert.Equal(t, "rating", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 2, block.GetOrder())
 	assert.Equal(t, 10, block.GetPoints())
 	assert.NotEmpty(t, block.GetIconSVG())
@@ -200,15 +201,15 @@ func TestRatingBlock_RequiresValidation(t *testing.T) {
 
 func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 	tests := []struct {
-		name          string
-		maxRating     int
-		points        int
-		input         map[string][]string
-		wantRating    int
-		wantComplete  bool
-		wantPoints    int
-		wantErr       bool
-		errContains   string
+		name         string
+		maxRating    int
+		points       int
+		input        map[string][]string
+		wantRating   int
+		wantComplete bool
+		wantPoints   int
+		wantErr      bool
+		errContains  string
 	}{
 		{
 			name:         "valid rating at minimum",
@@ -298,6 +299,11 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 			var playerData blocks.RatingBlockData
 			require.NoError(t, json.Unmarshal(newState.GetPlayerData(), &playerData))
 			assert.Equal(t, tt.wantRating, playerData.Rating)
+
+			// Verify SubmittedAt is populated and parses as RFC3339
+			assert.NotEmpty(t, playerData.SubmittedAt)
+			_, parseErr := time.Parse(time.RFC3339, playerData.SubmittedAt)
+			assert.NoError(t, parseErr, "SubmittedAt should be valid RFC3339")
 		})
 	}
 }

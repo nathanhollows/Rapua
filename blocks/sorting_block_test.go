@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,11 +12,11 @@ import (
 func TestSortingBlock_GetterMethods(t *testing.T) {
 	block := &blocks.SortingBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			Type:       "sorting",
-			LocationID: "location-1",
-			Order:      5,
-			Points:     100,
+			ID:      "test-id",
+			Type:    "sorting",
+			OwnerID: "location-1",
+			Order:   5,
+			Points:  100,
 		},
 		Content:       "Test content",
 		ScoringScheme: blocks.AllOrNothing,
@@ -27,7 +27,7 @@ func TestSortingBlock_GetterMethods(t *testing.T) {
 	assert.Contains(t, block.GetIconSVG(), `<svg xmlns="http://www.w3.org/2000/svg"`)
 	assert.Equal(t, "sorting", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-1", block.GetLocationID())
+	assert.Equal(t, "location-1", block.GetOwnerID())
 	assert.Equal(t, 5, block.GetOrder())
 	assert.Equal(t, 100, block.GetPoints())
 
@@ -94,7 +94,7 @@ func TestSortingBlock_UpdateBlockData(t *testing.T) {
 	input := map[string][]string{
 		"content":          {"Sort these items in chronological order"},
 		"points":           {"100"},
-		"scoring_scheme":   {blocks.AllOrNothing},
+		"scoring":          {blocks.AllOrNothing},
 		"sorting-items":    {"First item", "Second item", "Third item", "Fourth item"},
 		"sorting-item-ids": {"id1", "id2", "id3", "id4"},
 	}
@@ -421,6 +421,52 @@ func TestSortingBlock_ValidatePlayerInput(t *testing.T) {
 		assert.NotEqual(t, playerData1.ShuffleOrder, playerData3.ShuffleOrder,
 			"Different players should get different shuffle orders")
 	})
+}
+
+func TestSortingBlock_HistoryTracking(t *testing.T) {
+	block := createTestSortingBlock(blocks.RetryUntilCorrect)
+
+	// First attempt: wrong order
+	state := &blocks.MockPlayerState{BlockID: "block-id", PlayerID: "player-id"}
+	input := map[string][]string{
+		"sorting-item-order": {"id4", "id3", "id2", "id1"},
+	}
+	newState, err := block.ValidatePlayerInput(state, input)
+	require.NoError(t, err)
+	assert.False(t, newState.IsComplete())
+
+	var playerData blocks.SortingPlayerData
+	err = json.Unmarshal(newState.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 1, playerData.Attempts)
+	require.Len(t, playerData.History, 1)
+	assert.Equal(t, []string{"id4", "id3", "id2", "id1"}, playerData.History[0].PlayerOrder)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt: correct order
+	input = map[string][]string{
+		"sorting-item-order": {"id1", "id2", "id3", "id4"},
+	}
+	newState2, err := block.ValidatePlayerInput(newState, input)
+	require.NoError(t, err)
+	assert.True(t, newState2.IsComplete())
+
+	err = json.Unmarshal(newState2.GetPlayerData(), &playerData)
+	require.NoError(t, err)
+	assert.Equal(t, 2, playerData.Attempts)
+	require.Len(t, playerData.History, 2)
+
+	// First attempt in history
+	assert.Equal(t, []string{"id4", "id3", "id2", "id1"}, playerData.History[0].PlayerOrder)
+	assert.False(t, playerData.History[0].IsCorrect)
+
+	// Second attempt in history
+	assert.Equal(t, []string{"id1", "id2", "id3", "id4"}, playerData.History[1].PlayerOrder)
+	assert.True(t, playerData.History[1].IsCorrect)
+
+	// Top-level fields reflect latest attempt
+	assert.Equal(t, []string{"id1", "id2", "id3", "id4"}, playerData.PlayerOrder)
+	assert.True(t, playerData.IsCorrect)
 }
 
 func TestSortingBlock_OrderIsCorrect(t *testing.T) {

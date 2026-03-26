@@ -47,7 +47,7 @@ type Block interface {
 	// Basic Attributes Getters
 	GetID() string
 	GetType() string
-	GetLocationID() string
+	GetOwnerID() string
 	GetName() string
 	GetDescription() string
 	GetOrder() int
@@ -67,12 +67,12 @@ type Block interface {
 type Blocks []Block
 
 type BaseBlock struct {
-	ID         string          `json:"-"`
-	LocationID string          `json:"-"` // TODO: change to OwnerID
-	Type       string          `json:"-"`
-	Data       json.RawMessage `json:"-"`
-	Order      int             `json:"-"`
-	Points     int             `json:"-"`
+	ID      string          `json:"-"`
+	OwnerID string          `json:"-"`
+	Type    string          `json:"-"`
+	Data    json.RawMessage `json:"-"`
+	Order   int             `json:"-"`
+	Points  int             `json:"-"`
 }
 
 //nolint:gochecknoglobals // Central block registry pattern requires package-level state
@@ -110,12 +110,16 @@ func init() {
 	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
+	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(
 		&ImageBlock{},
 		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
 	)
+	registerBlock(
+		&ToggleTextBlock{},
+		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextStart, ContextFinish},
+	)
 	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
 
 	// Interactive blocks
@@ -180,25 +184,25 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 
 	// Use the existing constructor functions
 	switch baseBlock.Type {
-	case "markdown":
+	case "text":
 		return NewMarkdownBlock(baseBlock), nil
 	case "divider":
 		return NewDividerBlock(baseBlock), nil
 	case "alert":
 		return NewAlertBlock(baseBlock), nil
-	case "answer":
+	case "password":
 		return NewAnswerBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
-	case "checklist":
+	case checklistBlockType:
 		return NewChecklistBlock(baseBlock), nil
 	case "youtube":
 		return NewYoutubeBlock(baseBlock), nil
 	case "image":
 		return NewImageBlock(baseBlock), nil
-	case "sorting":
+	case sortingBlockType:
 		return NewSortingBlock(baseBlock), nil
-	case "quiz_block":
+	case quizBlockType:
 		return NewQuizBlock(baseBlock), nil
 	case "clue":
 		return NewClueBlock(baseBlock), nil
@@ -214,14 +218,16 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewHeaderBlock(baseBlock), nil
 	case "team_name":
 		return NewTeamNameChangerBlock(baseBlock), nil
-	case "game_status_alert":
+	case "game_status":
 		return NewGameStatusAlertBlock(baseBlock), nil
-	case "start_game_button":
+	case "start_button":
 		return NewStartGameButtonBlock(baseBlock), nil
 	case "task":
 		return NewTaskBlock(baseBlock), nil
 	case "rating":
 		return NewRatingBlock(baseBlock), nil
+	case "toggle_text":
+		return NewToggleTextBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -344,9 +350,17 @@ func NewTaskBlock(base BaseBlock) *TaskBlock {
 	}
 }
 
+const defaultMaxRating = 5
+
 func NewRatingBlock(base BaseBlock) *RatingBlock {
 	return &RatingBlock{
 		BaseBlock: base,
-		MaxRating: 5, // Default max rating
+		MaxRating: defaultMaxRating,
+	}
+}
+
+func NewToggleTextBlock(base BaseBlock) *ToggleTextBlock {
+	return &ToggleTextBlock{
+		BaseBlock: base,
 	}
 }

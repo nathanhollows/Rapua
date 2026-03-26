@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,10 +13,10 @@ import (
 func TestHeaderBlock_Getters(t *testing.T) {
 	block := blocks.HeaderBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Icon:      "https://example.com/logo.png",
 		TitleText: "Welcome to the Game",
@@ -24,7 +24,7 @@ func TestHeaderBlock_Getters(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }
@@ -32,10 +32,10 @@ func TestHeaderBlock_Getters(t *testing.T) {
 func TestHeaderBlock_GetData(t *testing.T) {
 	block := blocks.HeaderBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Icon:      "https://example.com/logo.png",
 		TitleText: "Welcome",
@@ -50,15 +50,15 @@ func TestHeaderBlock_GetData(t *testing.T) {
 	err := json.Unmarshal(data, &parsed)
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com/logo.png", parsed["icon"])
-	assert.Equal(t, "Welcome", parsed["title_text"])
-	assert.Equal(t, "medium", parsed["title_size"])
+	assert.Equal(t, "Welcome", parsed["title"])
+	assert.Equal(t, "medium", parsed["size"])
 }
 
 func TestHeaderBlock_ParseData(t *testing.T) {
 	icon := gofakeit.URL()
 	titleText := gofakeit.Sentence(3)
 	titleSize := "large"
-	data := `{"icon":"` + icon + `","title_text":"` + titleText + `","title_size":"` + titleSize + `"}`
+	data := `{"icon":"` + icon + `","title":"` + titleText + `","size":"` + titleSize + `"}`
 
 	block := blocks.HeaderBlock{
 		BaseBlock: blocks.BaseBlock{
@@ -101,9 +101,9 @@ func TestHeaderBlock_ParseData_InvalidJSON(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {"https://example.com/new-logo.png"},
-		"title_text": {"Updated Title"},
-		"title_size": {"small"},
+		"icon":  {"https://example.com/new-logo.png"},
+		"title": {"Updated Title"},
+		"size":  {"small"},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -116,8 +116,8 @@ func TestHeaderBlock_UpdateBlockData(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_OnlyIcon(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {"https://example.com/logo.png"},
-		"title_text": {""},
+		"icon":  {"https://example.com/logo.png"},
+		"title": {""},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -129,8 +129,8 @@ func TestHeaderBlock_UpdateBlockData_OnlyIcon(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {""},
-		"title_text": {"My Title"},
+		"icon":  {""},
+		"title": {"My Title"},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -142,8 +142,8 @@ func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_BothEmpty(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {""},
-		"title_text": {""},
+		"icon":  {""},
+		"title": {""},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -157,8 +157,8 @@ func TestHeaderBlock_UpdateBlockData_WithoutTitleSize(t *testing.T) {
 	}
 
 	data := map[string][]string{
-		"icon":       {"https://example.com/logo.png"},
-		"title_text": {"Updated Title"},
+		"icon":  {"https://example.com/logo.png"},
+		"title": {"Updated Title"},
 	}
 
 	err := block.UpdateBlockData(data)

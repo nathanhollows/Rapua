@@ -5,20 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func setupLeaderboardService(t *testing.T) (*services.LeaderBoardService, func()) {
+func setupLeaderboardService(t *testing.T) *services.LeaderBoardService {
 	t.Helper()
-	dbc, cleanup := setupDB(t)
-
-	teamRepo := repositories.NewTeamRepository(dbc)
-
-	leaderboardService := services.NewLeaderBoardService(teamRepo)
-
-	return leaderboardService, cleanup
+	return services.NewLeaderBoardService()
 }
 
 // Helper function to create test teams with various states.
@@ -89,8 +82,7 @@ func createTestTeams() []models.Team {
 }
 
 func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	ctx := context.Background()
 	teams := createTestTeams()
@@ -194,8 +186,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 }
 
 func TestLeaderBoardService_TeamStatus(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	teams := createTestTeams()
 	locationCount := 3
@@ -301,12 +292,11 @@ func TestLeaderBoardService_ParseFunctions(t *testing.T) {
 }
 
 func TestLeaderBoardService_GetSupportedValues(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	t.Run("GetSupportedRankingSchemes", func(t *testing.T) {
 		schemes := service.GetSupportedRankingSchemes()
-		expected := []string{"progress", "points", "completion", "time_to_first", "time_to_last"}
+		expected := []string{"progress", "points", "completion"}
 
 		if len(schemes) != len(expected) {
 			t.Errorf("Expected %d schemes, got %d", len(expected), len(schemes))
@@ -351,8 +341,7 @@ func TestLeaderBoardService_GetSupportedValues(t *testing.T) {
 }
 
 func TestLeaderBoardService_GetDefaultSortForRankingScheme(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	testCases := []struct {
 		scheme   string
@@ -375,8 +364,7 @@ func TestLeaderBoardService_GetDefaultSortForRankingScheme(t *testing.T) {
 }
 
 func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	ctx := context.Background()
 
@@ -415,8 +403,7 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 }
 
 func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	ctx := context.Background()
 	teams := []models.Team{}
@@ -432,8 +419,7 @@ func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 }
 
 func TestLeaderBoardService_TieBreaker(t *testing.T) {
-	service, cleanup := setupLeaderboardService(t)
-	defer cleanup()
+	service := setupLeaderboardService(t)
 
 	ctx := context.Background()
 	baseTime := time.Now().Add(-time.Hour)

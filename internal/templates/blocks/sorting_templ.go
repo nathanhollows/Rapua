@@ -12,8 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"io"
 )
 
@@ -689,7 +689,7 @@ func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scoring Scheme</legend> <select class=\"select w-full\" name=\"scoring_scheme\"><option value=\"all_or_nothing\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scoring Scheme</legend> <select class=\"select w-full\" name=\"scoring\"><option value=\"all_or_nothing\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

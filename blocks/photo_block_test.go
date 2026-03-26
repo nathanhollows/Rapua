@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,10 +13,10 @@ import (
 func TestPhotoBlock_Getters(t *testing.T) {
 	block := blocks.PhotoBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      5,
-			Points:     10,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   5,
+			Points:  10,
 		},
 		Prompt: "Take a photo of the landmark",
 	}
@@ -24,7 +24,7 @@ func TestPhotoBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Photo", block.GetName())
 	assert.Equal(t, "photo", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 5, block.GetOrder())
 	assert.Equal(t, 10, block.GetPoints())
 	assert.Contains(t, block.GetDescription(), "submit a photo")

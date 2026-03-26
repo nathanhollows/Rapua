@@ -4,10 +4,10 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v6/internal/sessions"
+	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits // gob.Register must run before any flash message encoding
 	gob.Register(Message{})
 }
 

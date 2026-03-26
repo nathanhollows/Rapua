@@ -57,8 +57,9 @@ func (s *MagicTokenService) ValidateToken(token string) (string, error) {
 		return "", ErrMagicTokenInvalid
 	}
 
+	const tokenParts = 3
 	parts := strings.Split(string(decoded), ":")
-	if len(parts) != 3 {
+	if len(parts) != tokenParts {
 		return "", ErrMagicTokenInvalid
 	}
 

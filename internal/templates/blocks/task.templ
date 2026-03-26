@@ -2,8 +2,8 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 type taskIconOption struct {
@@ -55,7 +55,7 @@ func getColorForIcon(iconName string) string {
 templ taskPlayer(_ models.InstanceSettings, block blocks.TaskBlock) {
 	<a
 		if block.LinkThrough {
-			href={ templ.URL(fmt.Sprintf("/l/%s", block.LocationID)) }
+			href={ templ.URL(fmt.Sprintf("/l/%s", block.OwnerID)) }
 		}
 		hx-boost="true"
 		class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300"

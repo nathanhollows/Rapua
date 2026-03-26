@@ -306,7 +306,7 @@ linters:
         shadow:
           # Whether to be strict about shadowing; can be noisy.
           # Default: false
-          strict: true
+          strict: false
 
     inamedparam:
       # Skips check for interface methods with only a single parameter.
@@ -322,6 +322,7 @@ linters:
       ignored-functions:
         - args.Error
         - flag.Arg
+        - strings\.SplitN
         - flag.Duration.*
         - flag.Float.*
         - flag.Int.*
@@ -438,6 +439,8 @@ linters:
           - dupl
           - errcheck
           - funlen
+          - gochecknoglobals
+          - gocognit
           - goconst
           - gosec
           - noctx
@@ -446,6 +449,34 @@ linters:
         linters:
           - dupl
       - path: 'internal/migrations/.*\.go'
+        linters:
+          - cyclop
+          - funlen
+          - gochecknoglobals
+          - gochecknoinits
+          - gocognit
+          - gocyclo
+          - goconst
+      - path: 'internal/migrations/.*\.go'
         text: 'var-naming'
         linters:
           - revive
+      - path: 'internal/server/server\.go'
+        linters:
+          - gochecknoglobals
+      - path: 'internal/sessions/sessions\.go'
+        linters:
+          - gochecknoglobals
+      - path: 'internal/scheduler/job\.go'
+        linters:
+          - gochecknoglobals
+      - path: 'internal/handlers/static/resize\.go'
+        linters:
+          - gochecknoglobals
+      - path: 'internal/templates/.*\.go'
+        linters:
+          - cyclop
+          - gochecknoglobals
+      - path: 'internal/server/routes\.go'
+        linters:
+          - funlen

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-pdf/fpdf"
-	"github.com/nathanhollows/Rapua/v6/helpers"
+	"github.com/nathanhollows/Rapua/v7/helpers"
 	go_qr "github.com/piglig/go-qr"
 )
 
@@ -230,7 +230,8 @@ func (s *assetGenerator) CreatePDF(data PDFData) (string, error) {
 func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName string) {
 	pdf.AddPage()
 	// Set the background color
-	if len(page.Background) == 3 {
+	const rgbComponents = 3
+	if len(page.Background) == rgbComponents {
 		pdf.SetFillColor(page.Background[0], page.Background[1], page.Background[2])
 		pdf.Rect(0, 0, pageWidth, pageHeight, "F")
 	}
@@ -238,20 +239,21 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	// Add the instance name
 	pdf.SetFont("ArchivoBlack", "", gameNameFontSize)
 	title := strings.ToUpper(instanceName)
+	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
 	pdf.SetY(32)
-	//nolint:mnd // centered
 	pdf.SetX((pageWidth - pdf.GetStringWidth(title)) / 2)
 	pdf.Cell(130, 32, title)
 
 	// Add the location name
 	pdf.SetFont("OpenSans", "", locationNameFontSize)
+	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
 	pdf.SetY(40)
-	//nolint:mnd // centered
 	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2)
 	pdf.Cell(40, 70, page.LocationName)
 
 	// Add the QR code
 	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {
+		//nolint:mnd // PDF layout: QR code position and size on A4 page
 		pdf.Image(page.ImagePath, 50, 90, 110, 110, false, "", 0, "")
 	}
 
@@ -260,8 +262,8 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	scanText = strings.ReplaceAll(scanText, "https://", "")
 	scanText = strings.ReplaceAll(scanText, "http://", "")
 	scanText = strings.ReplaceAll(scanText, "www.", "")
+	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
 	pdf.SetY(180)
-	//nolint:mnd // centered
 	pdf.SetX((pageWidth - pdf.GetStringWidth(scanText)) / 2)
 	pdf.Cell(40, 70, scanText)
 }

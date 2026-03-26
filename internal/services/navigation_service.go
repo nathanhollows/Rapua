@@ -7,10 +7,10 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/navigation"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/navigation"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
 var (
@@ -121,7 +121,7 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 }
 
 // GetPlayerNavigationView returns a complete view of navigation data for the player UI.
-func (s *NavigationService) GetPlayerNavigationView(
+func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit,gocyclo
 	ctx context.Context,
 	team *models.Team,
 ) (*PlayerNavigationView, error) {
@@ -195,7 +195,7 @@ func (s *NavigationService) GetPlayerNavigationView(
 	}
 
 	// For task mode, load all locations in the group and partition by completion
-	if currentGroup != nil && currentGroup.Navigation == models.NavigationDisplayTasks {
+	if currentGroup != nil && currentGroup.Navigation == models.NavigationTasks {
 		uncompleted, completed, err := s.getScavengerHuntLocations(ctx, team, currentGroup)
 		if err != nil {
 			return nil, fmt.Errorf("loading scavenger hunt locations: %w", err)
@@ -240,9 +240,9 @@ func (s *NavigationService) GetPlayerNavigationView(
 
 	// Load navigation blocks if using custom or tasks display mode
 	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
 		viewContext = blocks.ContextLocationClues
 	}
 	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
@@ -394,9 +394,9 @@ func (s *NavigationService) GetPreviewNavigationView(
 
 	// Load navigation blocks if using custom or tasks display mode
 	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayCustom {
+	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
 		viewContext = blocks.ContextLocationClues
 	}
 	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
@@ -432,7 +432,7 @@ func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) [
 // Uncompleted locations use the same routing logic as other modes (guided, random, free roam).
 // Completed locations are all locations in the group where BlocksCompleted is true.
 // Both lists preserve the order defined by group.LocationIDs.
-func (s *NavigationService) getScavengerHuntLocations(
+func (s *NavigationService) getScavengerHuntLocations( //nolint:gocognit
 	ctx context.Context,
 	team *models.Team,
 	group *models.GameStructure,

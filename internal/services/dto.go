@@ -70,9 +70,7 @@ const (
 type RankingScheme string
 
 const (
-	RankByProgress    RankingScheme = "progress"
-	RankByPoints      RankingScheme = "points"
-	RankByTimeToFirst RankingScheme = "time_to_first"
-	RankByTimeToLast  RankingScheme = "time_to_last"
-	RankByCompletion  RankingScheme = "completion"
+	RankByProgress   RankingScheme = "progress"
+	RankByPoints     RankingScheme = "points"
+	RankByCompletion RankingScheme = "completion"
 )

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type RatingBlock struct {
@@ -20,10 +21,10 @@ type ratingBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *RatingBlock) GetID() string         { return b.ID }
-func (b *RatingBlock) GetType() string       { return "rating" }
-func (b *RatingBlock) GetLocationID() string { return b.LocationID }
-func (b *RatingBlock) GetName() string       { return "Rating" }
+func (b *RatingBlock) GetID() string      { return b.ID }
+func (b *RatingBlock) GetType() string    { return "rating" }
+func (b *RatingBlock) GetOwnerID() string { return b.OwnerID }
+func (b *RatingBlock) GetName() string    { return "Rating" }
 func (b *RatingBlock) GetDescription() string {
 	return "Players provide a star rating for feedback or assessment."
 }
@@ -82,6 +83,17 @@ func (b *RatingBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *RatingBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt": b.Prompt,
+	}
+	if b.MaxRating > 0 {
+		m["max_rating"] = b.MaxRating
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *RatingBlock) RequiresValidation() bool { return true }
@@ -103,7 +115,8 @@ func (b *RatingBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 
 	// Save player data
 	newPlayerData := ratingBlockData{
-		Rating: rating,
+		Rating:      rating,
+		SubmittedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	playerData, err := json.Marshal(newPlayerData)

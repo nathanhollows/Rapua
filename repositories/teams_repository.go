@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
 
@@ -19,6 +19,8 @@ type TeamRepository interface {
 	GetByCode(ctx context.Context, code string) (*models.Team, error)
 	// GetUserIDByCode returns the user ID associated with a team code
 	GetUserIDByCode(ctx context.Context, code string) (string, error)
+	// CountByInstance returns the number of teams for an instance
+	CountByInstance(ctx context.Context, instanceID string) (int, error)
 	// FindAll returns all teams for an instance
 	FindAll(ctx context.Context, instanceID string) ([]models.Team, error)
 	// FindAllWithScans returns all teams for an instance with scans
@@ -102,6 +104,14 @@ func (r *teamRepository) Delete(ctx context.Context, tx *bun.Tx, instanceID stri
 func (r *teamRepository) DeleteByInstanceID(ctx context.Context, tx *bun.Tx, instanceID string) error {
 	_, err := tx.NewDelete().Model(&models.Team{}).Where("instance_id = ?", instanceID).Exec(ctx)
 	return err
+}
+
+func (r *teamRepository) CountByInstance(ctx context.Context, instanceID string) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.Team)(nil)).
+		Where("instance_id = ?", instanceID).
+		Count(ctx)
+	return count, err
 }
 
 func (r *teamRepository) FindAll(ctx context.Context, instanceID string) ([]models.Team, error) {

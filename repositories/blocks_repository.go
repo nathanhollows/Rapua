@@ -3,10 +3,11 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
 
@@ -60,6 +61,9 @@ type BlockRepository interface {
 	// DeleteByOwnerID deletes all blocks associated with an owner ID
 	// Requires a transaction as related data will also need to be deleted
 	DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error
+	// DeleteByOwnerIDPreservingStates deletes all blocks for an owner,
+	// but preserves player states for blocks whose IDs appear in preserveIDs.
+	DeleteByOwnerIDPreservingStates(ctx context.Context, tx *bun.Tx, ownerID string, preserveIDs []string) error
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
@@ -69,6 +73,15 @@ type BlockRepository interface {
 	DuplicateBlocksByOwner(ctx context.Context, oldOwnerID, newOwnerID string) error
 	// DuplicateBlocksByOwnerTx duplicates all blocks within a transaction
 	DuplicateBlocksByOwnerTx(ctx context.Context, tx *bun.Tx, oldOwnerID, newOwnerID string) error
+
+	// CreateTx creates a new block within a transaction
+	CreateTx(
+		ctx context.Context,
+		tx *bun.Tx,
+		block blocks.Block,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) (blocks.Block, error)
 
 	// BulkCreate inserts multiple blocks for an owner with specific context
 	// Blocks should have Order set explicitly; IDs will be generated
@@ -208,6 +221,40 @@ func (r *blockRepository) Create(
 	return createdBlock, nil
 }
 
+// CreateTx creates a new block within a transaction.
+func (r *blockRepository) CreateTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	block blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) (blocks.Block, error) {
+	blockID := block.GetID()
+	if blockID == "" {
+		blockID = uuid.New().String()
+	}
+	modelBlock := models.Block{
+		ID:                 blockID,
+		OwnerID:            ownerID,
+		Type:               block.GetType(),
+		Context:            blockContext,
+		Data:               block.GetData(),
+		Ordering:           block.GetOrder(),
+		Points:             block.GetPoints(),
+		ValidationRequired: block.RequiresValidation(),
+	}
+
+	_, err := tx.NewInsert().Model(&modelBlock).Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	createdBlock, err := convertModelToBlock(&modelBlock)
+	if err != nil {
+		return nil, err
+	}
+	return createdBlock, nil
+}
+
 // Update saves an existing block to the database.
 func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (blocks.Block, error) {
 	modelBlock := convertBlockToModel(block)
@@ -231,7 +278,7 @@ func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (block
 func convertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
-		OwnerID:            block.GetLocationID(), // Use GetLocationID as OwnerID for backward compatibility
+		OwnerID:            block.GetOwnerID(),
 		Type:               block.GetType(),
 		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Ordering:           block.GetOrder(),
@@ -260,12 +307,12 @@ func (r *blockRepository) convertModelsToBlocks(modelBlocks []models.Block) (blo
 func convertModelToBlock(model *models.Block) (blocks.Block, error) {
 	// Convert model to block
 	newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
-		ID:         model.ID,
-		LocationID: model.OwnerID, // Map OwnerID to LocationID for backward compatibility
-		Type:       model.Type,
-		Data:       model.Data,
-		Order:      model.Ordering,
-		Points:     model.Points,
+		ID:      model.ID,
+		OwnerID: model.OwnerID,
+		Type:    model.Type,
+		Data:    model.Data,
+		Order:   model.Ordering,
+		Points:  model.Points,
 	})
 	if err != nil {
 		return nil, err
@@ -283,10 +330,51 @@ func (r *blockRepository) Delete(ctx context.Context, tx *bun.Tx, blockID string
 	return err
 }
 
-// DeleteByOwnerID deletes all blocks for an owner.
+// DeleteByOwnerID deletes all blocks for an owner, including their player states.
 func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error {
-	_, err := tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
-	return err
+	return r.DeleteByOwnerIDPreservingStates(ctx, tx, ownerID, nil)
+}
+
+// DeleteByOwnerIDPreservingStates deletes all blocks for an owner.
+// Player states for blocks whose IDs appear in preserveIDs are kept;
+// states for all other blocks are deleted.
+func (r *blockRepository) DeleteByOwnerIDPreservingStates(
+	ctx context.Context,
+	tx *bun.Tx,
+	ownerID string,
+	preserveIDs []string,
+) error {
+	// Find block IDs to determine which states to delete
+	var blockIDs []string
+	err := tx.NewSelect().
+		Model((*models.Block)(nil)).
+		Column("id").
+		Where("owner_id = ?", ownerID).
+		Scan(ctx, &blockIDs)
+	if err != nil {
+		return fmt.Errorf("finding blocks for owner: %w", err)
+	}
+
+	preserveSet := make(map[string]bool, len(preserveIDs))
+	for _, id := range preserveIDs {
+		preserveSet[id] = true
+	}
+
+	// Delete states only for blocks not being preserved
+	for _, blockID := range blockIDs {
+		if !preserveSet[blockID] {
+			if err := r.stateRepo.DeleteByBlockID(ctx, tx, blockID); err != nil {
+				return fmt.Errorf("deleting states for block %s: %w", blockID, err)
+			}
+		}
+	}
+
+	// Delete the blocks themselves (all of them — they'll be recreated)
+	_, err = tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("deleting blocks for owner %s: %w", ownerID, err)
+	}
+	return nil
 }
 
 // Reorder reorders the blocks.

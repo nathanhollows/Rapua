@@ -14,10 +14,10 @@ type TaskBlock struct {
 
 // Basic Attributes Getters
 
-func (b *TaskBlock) GetID() string         { return b.ID }
-func (b *TaskBlock) GetType() string       { return "task" }
-func (b *TaskBlock) GetLocationID() string { return b.LocationID }
-func (b *TaskBlock) GetName() string       { return "Task" }
+func (b *TaskBlock) GetID() string      { return b.ID }
+func (b *TaskBlock) GetType() string    { return "task" }
+func (b *TaskBlock) GetOwnerID() string { return b.OwnerID }
+func (b *TaskBlock) GetName() string    { return "Task" }
 func (b *TaskBlock) GetDescription() string {
 	return "Give players a task to complete."
 }
@@ -59,6 +59,20 @@ func (b *TaskBlock) UpdateBlockData(input map[string][]string) error {
 	}
 
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *TaskBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"task": b.Task,
+	}
+	if b.Icon != "" {
+		m["icon"] = b.Icon
+	}
+	if b.LinkThrough {
+		m["link_through"] = true
+	}
+	return m
 }
 
 // RequiresValidation returns whether this block requires player input validation.

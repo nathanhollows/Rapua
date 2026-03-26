@@ -1,7 +1,7 @@
 package navigation
 
 import (
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"golang.org/x/exp/rand"
 )
 
@@ -240,7 +240,7 @@ func validateRoutingStrategies(group *models.GameStructure) error {
 	// Skip validation for root group (it doesn't use routing)
 	if !group.IsRoot {
 		// Random routing must have MaxNext > 0 (0 means unlimited, but should be explicit)
-		if group.Routing == models.RouteStrategyRandom && group.MaxNext == 0 {
+		if group.Routing == models.RouteStrategyRandomised && group.MaxNext == 0 {
 			return ErrInvalidMaxNext
 		}
 	}

@@ -4,17 +4,20 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/markbates/goth/gothic"
-	"github.com/nathanhollows/Rapua/v6/helpers"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/internal/flash"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/internal/sessions"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/flash"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/internal/sessions"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Login is the handler for the admin login page.
@@ -150,7 +153,7 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 
 	// Send the email verification
 	err = h.identityService.SendEmailVerification(r.Context(), &user)
-	if err != nil {
+	if err != nil { //nolint:nestif // branching on distinct error types requires nesting
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
 			err = h.deleteService.DeleteUser(r.Context(), user.ID)
 			if err != nil {
@@ -195,12 +198,54 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 // ForgotPasswordPost handles the form submission for the forgot password page.
 func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement
+	err := r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "ForgotPasswordPost: parsing form", "Something went wrong", "error", err)
+		return
+	}
 
-	c := templates.ForgotMessage(
-		*flash.NewInfo("If an account with that email exists, an email will be sent with instructions on how to reset your password."),
-	)
-	err := c.Render(r.Context(), w)
+	email := r.Form.Get("email")
+
+	// Always show the same message to prevent email enumeration
+	successMsg := "If an account with that email exists, an email will be sent with instructions on how to reset your password."
+
+	// Add a random delay to prevent timing-based email enumeration.
+
+	start := time.Now()
+	const minDelay, jitterRange = 200, 600
+	minDuration := time.Duration(minDelay+rand.IntN(jitterRange)) * time.Millisecond //nolint:gosec // not cryptographic
+
+	user, err := h.userService.GetUserByEmail(r.Context(), email)
+	if err != nil {
+		time.Sleep(minDuration - time.Since(start))
+		c := templates.ForgotMessage(*flash.NewInfo(successMsg))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+	if user.Provider != models.ProviderEmail {
+		time.Sleep(minDuration - time.Since(start))
+		c := templates.ForgotMessage(*flash.NewInfo(successMsg))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+
+	token, err := h.magicTokenService.GenerateToken(user.ID, 1*time.Hour)
+	if err != nil {
+		h.logger.Error("ForgotPasswordPost: generating token", "error", err)
+		time.Sleep(minDuration - time.Since(start))
+		c := templates.ForgotMessage(*flash.NewInfo(successMsg))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+
+	resetURL := fmt.Sprintf("%s/reset/%s", os.Getenv("SITE_URL"), token)
+	if err := h.emailService.SendPasswordResetEmail(r.Context(), *user, resetURL); err != nil {
+		h.logger.Warn("ForgotPasswordPost: sending email failed", "error", err)
+	}
+
+	time.Sleep(minDuration - time.Since(start))
+	c := templates.ForgotMessage(*flash.NewInfo(successMsg))
+	err = c.Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
 			w,
@@ -210,6 +255,92 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 			"error",
 			err,
 		)
+	}
+}
+
+// ResetPassword shows the password reset form.
+func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	if token == "" {
+		http.Redirect(w, r, "/forgot", http.StatusSeeOther)
+		return
+	}
+
+	// Validate token before showing the form
+	_, err := h.magicTokenService.ValidateToken(token)
+	if err != nil {
+		c := templates.ResetPasswordExpired()
+		err = templates.AuthLayout(c, "Reset Password", false).Render(r.Context(), w)
+		if err != nil {
+			h.logger.Error("ResetPassword: rendering expired template", "error", err)
+		}
+		return
+	}
+
+	c := templates.ResetPassword(token)
+	err = templates.AuthLayout(c, "Reset Password", false).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("ResetPassword: rendering template", "error", err)
+	}
+}
+
+// ResetPasswordPost handles the password reset form submission.
+func (h *Handler) ResetPasswordPost(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	if token == "" {
+		http.Error(w, "Invalid token", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := h.magicTokenService.ValidateToken(token)
+	if err != nil {
+		c := templates.ResetPasswordError(*flash.NewError("This reset link has expired. Please request a new one."))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		h.handleError(w, r, "ResetPasswordPost: parsing form", "Something went wrong", "error", err)
+		return
+	}
+
+	password := r.Form.Get("password")
+	passwordConfirm := r.Form.Get("password_confirm")
+
+	user, err := h.userService.GetUserByID(r.Context(), userID)
+	if err != nil {
+		h.logger.Error("ResetPasswordPost: fetching user", "error", err, "userID", userID)
+		c := templates.ResetPasswordError(*flash.NewError("Something went wrong. Please try again."))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+
+	err = h.userService.ResetPassword(r.Context(), user, password, passwordConfirm)
+	if err != nil {
+		msg := "Something went wrong. Please try again."
+		switch {
+		case errors.Is(err, services.ErrPasswordsDoNotMatch):
+			msg = "Passwords do not match."
+		case errors.Is(err, services.ErrEmptyPassword):
+			msg = "Password cannot be empty."
+		case errors.Is(err, services.ErrPasswordTooShort):
+			msg = "Password must be at least 8 characters."
+		}
+		c := templates.ResetPasswordError(*flash.NewError(msg))
+		_ = c.Render(r.Context(), w)
+		return
+	}
+
+	h.redirect(w, r, "/reset/success")
+}
+
+// ResetPasswordSuccess shows the password reset success page.
+func (h *Handler) ResetPasswordSuccess(w http.ResponseWriter, r *http.Request) {
+	c := templates.ResetPasswordSuccess()
+	err := templates.AuthLayout(c, "Password Reset", false).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error("ResetPasswordSuccess: rendering template", "error", err)
 	}
 }
 

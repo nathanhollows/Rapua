@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,26 +12,25 @@ import (
 func TestAnswerBlock_Getters(t *testing.T) {
 	block := blocks.PasswordBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-456",
-			Order:      2,
-			Points:     10,
+			ID:      "test-id",
+			OwnerID: "location-456",
+			Order:   2,
+			Points:  10,
 		},
 		Prompt: "Answer Content",
 		Answer: "secret",
-		Fuzzy:  true,
 	}
 
 	assert.Equal(t, "Password", block.GetName())
-	assert.Equal(t, "answer", block.GetType())
+	assert.Equal(t, "password", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-456", block.GetLocationID())
+	assert.Equal(t, "location-456", block.GetOwnerID())
 	assert.Equal(t, 2, block.GetOrder())
 	assert.Equal(t, 10, block.GetPoints())
 }
 
 func TestAnswerBlock_ParseData(t *testing.T) {
-	data := `{"prompt":"Answer Content", "answer":"secret", "fuzzy":true}`
+	data := `{"prompt":"Answer Content", "answer":"secret"}`
 	block := blocks.PasswordBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
@@ -42,34 +41,18 @@ func TestAnswerBlock_ParseData(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Answer Content", block.Prompt)
 	assert.Equal(t, "secret", block.Answer)
-	assert.True(t, block.Fuzzy)
 }
 
 func TestAnswerBlock_UpdateBlockData(t *testing.T) {
-	// Update all fields
 	block := blocks.PasswordBlock{}
 	data := map[string][]string{
 		"prompt": {"Updated Answer Content"},
 		"answer": {"newsecret"},
-		"fuzzy":  {"on"},
 	}
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Answer Content", block.Prompt)
 	assert.Equal(t, "newsecret", block.Answer)
-	assert.True(t, block.Fuzzy)
-
-	// Update without fuzzy
-	block = blocks.PasswordBlock{}
-	data = map[string][]string{
-		"prompt": {"Updated Answer Content"},
-		"answer": {"newsecret"},
-	}
-	err = block.UpdateBlockData(data)
-	require.NoError(t, err)
-	assert.Equal(t, "Updated Answer Content", block.Prompt)
-	assert.Equal(t, "newsecret", block.Answer)
-	assert.False(t, block.Fuzzy)
 }
 
 func TestAnswerBlock_ValidatePlayerInput(t *testing.T) {

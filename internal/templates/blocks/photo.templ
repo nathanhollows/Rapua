@@ -2,9 +2,9 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/helpers"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
@@ -54,7 +54,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 						hx-swap="outerHTML"
 						hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
 						data-block-id={ block.ID }
-						data-location-id={ block.LocationID }
+						data-location-id={ block.OwnerID }
 						data-max-images={ fmt.Sprint(block.MaxImages) }
 					>
 						<input type="hidden" name="block" value={ block.ID }/>

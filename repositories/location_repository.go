@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
 
@@ -16,6 +16,8 @@ type LocationRepository interface {
 	CreateTx(ctx context.Context, tx *bun.Tx, location *models.Location) error
 	// Update updates a location in the database
 	Update(ctx context.Context, location *models.Location) error
+	// UpdateTx updates a location within a transaction
+	UpdateTx(ctx context.Context, tx *bun.Tx, location *models.Location) error
 
 	// GetByID finds a location by ID
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
@@ -84,6 +86,12 @@ func (r *locationRepository) CreateTx(ctx context.Context, tx *bun.Tx, location 
 // Update updates a location in the database.
 func (r *locationRepository) Update(ctx context.Context, location *models.Location) error {
 	_, err := r.db.NewUpdate().Model(location).WherePK().Exec(ctx)
+	return err
+}
+
+// UpdateTx updates a location within a transaction.
+func (r *locationRepository) UpdateTx(ctx context.Context, tx *bun.Tx, location *models.Location) error {
+	_, err := tx.NewUpdate().Model(location).WherePK().Exec(ctx)
 	return err
 }
 

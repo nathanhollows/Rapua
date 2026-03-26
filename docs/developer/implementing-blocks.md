@@ -1,7 +1,7 @@
 ---
 title: "Implementing Blocks"
 sidebar: true
-order: 8
+order: 9
 ---
 
 # Implementing a New Block Type

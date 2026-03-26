@@ -2,8 +2,8 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 templ buttonPlayer(_ models.InstanceSettings, block blocks.ButtonBlock) {
@@ -11,7 +11,7 @@ templ buttonPlayer(_ models.InstanceSettings, block blocks.ButtonBlock) {
 		<div class="text-center">
 			<a
 				href={ templ.SafeURL(block.Link) }
-				class={ fmt.Sprintf("btn btn-%s", block.Variant) }
+				class={ fmt.Sprintf("btn btn-%s", block.Style) }
 				target="_blank"
 			>
 				<span>
@@ -42,14 +42,14 @@ templ buttonAdmin(_ models.InstanceSettings, block blocks.ButtonBlock) {
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Style</legend>
 				<select
-					id={ fmt.Sprintf("variant-%s", block.ID) }
-					name="variant"
+					id={ fmt.Sprintf("style-%s", block.ID) }
+					name="style"
 					class="select w-full"
 				>
-					for variant, label := range block.GetVariants() {
+					for variant, label := range block.GetStyles() {
 						<option
 							value={ variant }
-							if block.Variant == variant {
+							if block.Style == variant {
 								selected
 							}
 						>{ label }</option>

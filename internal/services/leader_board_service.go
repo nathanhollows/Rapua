@@ -4,20 +4,15 @@ import (
 	"context"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // LeaderBoardService handles team ranking and leaderboard logic.
-type LeaderBoardService struct {
-	teamRepo repositories.TeamRepository
-}
+type LeaderBoardService struct{}
 
 // NewLeaderBoardService creates a new LeaderBoardService.
-func NewLeaderBoardService(teamRepo repositories.TeamRepository) *LeaderBoardService {
-	return &LeaderBoardService{
-		teamRepo: teamRepo,
-	}
+func NewLeaderBoardService() *LeaderBoardService {
+	return &LeaderBoardService{}
 }
 
 // GetLeaderBoardData returns sorted and ranked leaderboard data.
@@ -114,12 +109,6 @@ func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme Ran
 		s.rankByPoints(data)
 	case RankByCompletion:
 		s.rankByCompletion(data)
-	case RankByTimeToFirst:
-		// TODO: Implement when we have check-in times
-		s.rankByProgress(data) // Fallback for now
-	case RankByTimeToLast:
-		// TODO: Implement when we have check-in times
-		s.rankByProgress(data) // Fallback for now
 	default:
 		s.rankByProgress(data)
 	}
@@ -222,7 +211,7 @@ func (s *LeaderBoardService) GetDefaultSortForRankingScheme(scheme string) strin
 		return string(SortByPoints)
 	case RankByProgress:
 		return string(SortByProgress)
-	case RankByCompletion, RankByTimeToFirst, RankByTimeToLast:
+	case RankByCompletion:
 		return string(SortByRank)
 	default:
 		return string(SortByRank)
@@ -235,8 +224,6 @@ func (s *LeaderBoardService) GetSupportedRankingSchemes() []string {
 		string(RankByProgress),
 		string(RankByPoints),
 		string(RankByCompletion),
-		string(RankByTimeToFirst),
-		string(RankByTimeToLast),
 	}
 }
 
@@ -302,10 +289,6 @@ func ParseRankingScheme(scheme string) RankingScheme {
 		return RankByPoints
 	case string(RankByProgress):
 		return RankByProgress
-	case string(RankByTimeToFirst):
-		return RankByTimeToFirst
-	case string(RankByTimeToLast):
-		return RankByTimeToLast
 	case string(RankByCompletion):
 		return RankByCompletion
 	default:

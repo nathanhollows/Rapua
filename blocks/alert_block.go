@@ -7,15 +7,15 @@ import (
 type AlertBlock struct {
 	BaseBlock
 	Content string `json:"content"`
-	Variant string `json:"variant"`
+	Style   string `json:"style"`
 }
 
 // Basic Attributes Getters
 
-func (b *AlertBlock) GetID() string         { return b.ID }
-func (b *AlertBlock) GetType() string       { return "alert" }
-func (b *AlertBlock) GetLocationID() string { return b.LocationID }
-func (b *AlertBlock) GetName() string       { return "Alert" }
+func (b *AlertBlock) GetID() string      { return b.ID }
+func (b *AlertBlock) GetType() string    { return "alert" }
+func (b *AlertBlock) GetOwnerID() string { return b.OwnerID }
+func (b *AlertBlock) GetName() string    { return "Alert" }
 func (b *AlertBlock) GetDescription() string {
 	return "Display a message to the player."
 }
@@ -36,13 +36,24 @@ func (b *AlertBlock) ParseData() error {
 }
 
 func (b *AlertBlock) UpdateBlockData(input map[string][]string) error {
-	if variant, exists := input["variant"]; exists && len(variant) > 0 {
-		b.Variant = variant[0]
+	if style, exists := input["style"]; exists && len(style) > 0 {
+		b.Style = style[0]
 	}
 	if content, exists := input["content"]; exists && len(content) > 0 {
 		b.Content = content[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *AlertBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"content": b.Content,
+	}
+	if b.Style != "" {
+		m["style"] = b.Style
+	}
+	return m
 }
 
 // Validation and Points Calculation
@@ -57,7 +68,7 @@ func (b *AlertBlock) ValidatePlayerInput(state PlayerState, _ map[string][]strin
 	return state, nil
 }
 
-func (b *AlertBlock) GetVariants() map[string]string {
+func (b *AlertBlock) GetStyles() map[string]string {
 	return map[string]string{
 		"":        "Default",
 		"info":    "Info",

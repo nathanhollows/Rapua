@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
 type LocationService interface {
@@ -196,9 +196,9 @@ func (s locationService) CreateLocationFromMarker(
 func (s locationService) createDefaultHeaderBlock(ctx context.Context, location *models.Location) error {
 	blockID := uuid.New().String()
 	headerData := map[string]string{
-		"icon":       "map-pin-check-inside",
-		"title_text": location.Name,
-		"title_size": "large",
+		"icon":  "map-pin-check-inside",
+		"title": location.Name,
+		"size":  "large",
 	}
 
 	jsonData, err := json.Marshal(headerData)
@@ -207,12 +207,12 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 	}
 
 	baseBlock := blocks.BaseBlock{
-		ID:         blockID,
-		LocationID: location.ID,
-		Type:       "header",
-		Data:       jsonData,
-		Order:      0,
-		Points:     0,
+		ID:      blockID,
+		OwnerID: location.ID,
+		Type:    "header",
+		Data:    jsonData,
+		Order:   0,
+		Points:  0,
 	}
 
 	block, err := blocks.CreateFromBaseBlock(baseBlock)
@@ -288,7 +288,11 @@ func (s locationService) UpdateName(ctx context.Context, location *models.Locati
 	return s.locationRepo.Update(ctx, location)
 }
 
-func (s locationService) UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error {
+func (s locationService) UpdateLocation( //nolint:gocognit
+	ctx context.Context,
+	location *models.Location,
+	data LocationUpdateData,
+) error {
 	if location.Marker.Code == "" {
 		err := s.locationRepo.LoadMarker(ctx, location)
 		if err != nil {

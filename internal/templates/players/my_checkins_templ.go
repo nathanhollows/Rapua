@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func MyCheckins(team models.Team, view *services.PlayerNavigationView) templ.Component {
@@ -150,7 +150,7 @@ func MyCheckins(team models.Team, view *services.PlayerNavigationView) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<a href=\"/next\" class=\"btn btn-ghost btn-outline\" hx-boost=\"true\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg> Tasks</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

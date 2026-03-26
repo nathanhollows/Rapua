@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
 )
 
 func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 
 	// Check for location_id query param to preview a specific location
 	targetLocationID := r.URL.Query().Get("location_id")
-	if targetLocationID != "" {
+	if targetLocationID != "" { //nolint:nestif // preview vs. normal navigation requires nested error handling per path
 		view, err = h.navigationService.GetPreviewNavigationView(r.Context(), team, targetLocationID)
 		if err != nil {
 			h.handleError(w, r, "NextPreview: building location view", "Error loading location", "error", err)

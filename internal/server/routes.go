@@ -11,13 +11,13 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v6/filesystem"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	admin "github.com/nathanhollows/Rapua/v6/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v6/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v6/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v6/internal/handlers/static"
-	"github.com/nathanhollows/Rapua/v6/internal/middlewares"
+	"github.com/nathanhollows/Rapua/v7/filesystem"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v7/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v7/internal/handlers/static"
+	"github.com/nathanhollows/Rapua/v7/internal/middlewares"
 )
 
 const (
@@ -291,6 +291,9 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 	})
 	router.Get("/forgot", publicHandler.ForgotPassword)
 	router.Post("/forgot", publicHandler.ForgotPasswordPost)
+	router.Get("/reset/success", publicHandler.ResetPasswordSuccess)
+	router.Get("/reset/{token}", publicHandler.ResetPassword)
+	router.Post("/reset/{token}", publicHandler.ResetPasswordPost)
 
 	router.Route("/auth", func(r chi.Router) {
 		r.Get("/{provider}", publicHandler.Auth)
@@ -355,6 +358,15 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
 			r.Get("/poster/{id}.pdf", adminHandler.GeneratePoster)
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
+		})
+
+		// YAML import/export
+		r.Route("/yaml", func(r chi.Router) {
+			r.Get("/export/template", adminHandler.ExportTemplateYAML)
+			r.Get("/export/instance", adminHandler.ExportInstanceYAML)
+			r.Post("/validate", adminHandler.ValidateImportYAML)
+			r.Post("/import", adminHandler.ImportYAML)
+			r.Post("/update", adminHandler.UpdateYAML)
 		})
 
 		// RESTful blocks API

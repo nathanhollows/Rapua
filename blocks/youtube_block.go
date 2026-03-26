@@ -12,15 +12,15 @@ import (
 
 type YoutubeBlock struct {
 	BaseBlock
-	URL string `json:"content"`
+	URL string `json:"url"`
 }
 
 // Basic Attributes Getters
 
-func (b *YoutubeBlock) GetID() string         { return b.ID }
-func (b *YoutubeBlock) GetType() string       { return "youtube" }
-func (b *YoutubeBlock) GetLocationID() string { return b.LocationID }
-func (b *YoutubeBlock) GetName() string       { return "Youtube" }
+func (b *YoutubeBlock) GetID() string      { return b.ID }
+func (b *YoutubeBlock) GetType() string    { return "youtube" }
+func (b *YoutubeBlock) GetOwnerID() string { return b.OwnerID }
+func (b *YoutubeBlock) GetName() string    { return "Youtube" }
 func (b *YoutubeBlock) GetDescription() string {
 	return "Embed a Youtube video."
 }
@@ -78,6 +78,13 @@ func (b *YoutubeBlock) UpdateBlockData(input map[string][]string) error {
 		b.URL = u[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *YoutubeBlock) ToYAML() map[string]any {
+	return map[string]any{
+		"url": b.URL,
+	}
 }
 
 // Validation and Points Calculation

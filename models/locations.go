@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 )
 
 type Location struct {
@@ -15,7 +15,6 @@ type Location struct {
 	Slug         string  `bun:"slug,type:varchar(255)"`
 	InstanceID   string  `bun:"instance_id,notnull"`
 	MarkerID     string  `bun:"marker_id,notnull"`
-	ContentID    string  `bun:"content_id,notnull"` // TODO: Remove contentID as content is fully deprecated
 	Criteria     string  `bun:"criteria,type:varchar(255)"`
 	Order        int     `bun:"order,type:int"`
 	TotalVisits  int     `bun:"total_visits,type:int"`

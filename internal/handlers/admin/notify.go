@@ -3,7 +3,7 @@ package admin
 import (
 	"net/http"
 
-	admin "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
+	admin "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 )
 
 // NotifyAllPost sends a notification to all teams.

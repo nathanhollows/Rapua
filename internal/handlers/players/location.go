@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // CheckInView shows the page for a specific location.
@@ -80,7 +80,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 
 	// Get the task block for this location if in task mode
 	var taskBlock blocks.Block
-	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
 		var taskBlocks blocks.Blocks
 		taskBlocks, err = h.blockService.FindByOwnerIDAndContext(
 			r.Context(),

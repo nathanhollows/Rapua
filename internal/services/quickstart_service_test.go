@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -96,7 +96,7 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 
 			err := svc.DismissQuickstart(context.Background(), instanceID)
 
-			if tc.wantErr {
+			if tc.wantErr { //nolint:nestif // table-driven test pattern requires checking both error and success paths
 				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)

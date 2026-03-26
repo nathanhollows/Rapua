@@ -21,10 +21,10 @@ type pincodeBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *PincodeBlock) GetID() string         { return b.ID }
-func (b *PincodeBlock) GetType() string       { return "pincode" }
-func (b *PincodeBlock) GetLocationID() string { return b.LocationID }
-func (b *PincodeBlock) GetName() string       { return "Pincode" }
+func (b *PincodeBlock) GetID() string      { return b.ID }
+func (b *PincodeBlock) GetType() string    { return "pincode" }
+func (b *PincodeBlock) GetOwnerID() string { return b.OwnerID }
+func (b *PincodeBlock) GetName() string    { return "Pincode" }
 func (b *PincodeBlock) GetDescription() string {
 	return "Players must enter the correct pincode to a prompt."
 }
@@ -68,6 +68,18 @@ func (b *PincodeBlock) UpdateBlockData(input map[string][]string) error {
 	return nil
 }
 
+// ToYAML returns the block's data for YAML export.
+func (b *PincodeBlock) ToYAML() map[string]any {
+	m := map[string]any{
+		"prompt":  b.Prompt,
+		"pincode": b.Pincode,
+	}
+	if b.UnlockedContent != "" {
+		m["unlocked_content"] = b.UnlockedContent
+	}
+	return m
+}
+
 // Validation and Points Calculation
 
 func (b *PincodeBlock) RequiresValidation() bool { return true }
@@ -104,7 +116,7 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 	// Increment the number of attempts and save guesses
 	newPlayerData.Attempts++
-	newPlayerData.Guesses = append(newPlayerData.Guesses, input["pincode"][0])
+	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeChars)
 
 	if pincodeChars != b.Pincode {
 		// Incorrect pincode, save player data and return an error

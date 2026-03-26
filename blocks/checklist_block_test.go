@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,10 +12,10 @@ import (
 func TestChecklistBlock_Getters(t *testing.T) {
 	block := blocks.ChecklistBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Content: "Test Content",
 		List: []blocks.ChecklistItem{
@@ -28,13 +28,13 @@ func TestChecklistBlock_Getters(t *testing.T) {
 	assert.Equal(t, "Players must check off all items.", block.GetDescription())
 	assert.Equal(t, "checklist", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }
 
 func TestChecklistBlock_ParseData(t *testing.T) {
-	data := `{"content":"Test Content","list":[{"id":"item-1","description":"Item 1","checked":false},{"id":"item-2","description":"Item 2","checked":false}]}`
+	data := `{"content":"Test Content","items":[{"id":"item-1","description":"Item 1","checked":false},{"id":"item-2","description":"Item 2","checked":false}]}`
 	block := blocks.ChecklistBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),

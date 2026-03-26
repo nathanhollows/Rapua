@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Locations shows admin the locations.
@@ -121,7 +121,7 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNewPost handles creating a new location.
-func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -220,7 +220,7 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 
 	editPath := "/admin/locations/" + location.Slug
 	if r.Header.Get("Hx-Request") == "true" {
-		w.Header().Set("HX-Location", editPath)
+		w.Header().Set("Hx-Location", editPath)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -397,7 +397,7 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 
 	// Find the parent group to get navigation settings
 	parentGroup := h.gameStructureService.FindGroupByLocationID(&user.CurrentInstance.GameStructure, location.ID)
-	navigationMode := models.NavigationDisplayCustom // Default to custom
+	navigationMode := models.NavigationCustom // Default to custom
 	if parentGroup != nil {
 		navigationMode = parentGroup.Navigation
 	} else {
@@ -414,12 +414,12 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 	var navigationContext blocks.BlockContext
 	var navigationBlocks []blocks.Block
 	switch parentGroup.Navigation {
-	case models.NavigationDisplayCustom:
+	case models.NavigationCustom:
 		navigationContext = blocks.ContextLocationClues
-	case models.NavigationDisplayTasks:
+	case models.NavigationTasks:
 		navigationContext = blocks.ContextTask
-	case models.NavigationDisplayMap, models.NavigationDisplayMapAndNames,
-		models.NavigationDisplayNames, models.NavigationDisplayClues:
+	case models.NavigationMap, models.NavigationLabelledMap,
+		models.NavigationList:
 		// These navigation modes don't use blocks
 	}
 	if navigationContext != "" {

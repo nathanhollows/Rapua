@@ -7,6 +7,25 @@ tag: updated
 
 # Changelog
 
+## 7.0.0
+
+### Added
+
+- [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
+- Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
+
+### Changed
+
+- **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
+- **Breaking:** `OwnerID` replaces `LocationID` in blocks.
+- New fields for blocks to support reports in the future.
+
+### Removed
+
+- **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
+- Removed legacy block handlers.
+- Removed stub code in leaderboard service.
+
 ## 6.15.0 (2026-03-17)
 
 ### Changed

@@ -2,10 +2,10 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/blocks"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	templates "github.com/nathanhollows/Rapua/v6/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v6/models"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 type NextParams struct {
@@ -15,7 +15,7 @@ type NextParams struct {
 
 templ Next(data NextParams) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
 			@icon("circle-check-big", templ.Attributes{"class": "w-16 h-16 m-auto"})
 		} else {
 			@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
@@ -23,7 +23,7 @@ templ Next(data NextParams) {
 		<h2
 			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
 		>
-			if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationDisplayTasks {
+			if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
 				{ data.View.CurrentGroup.Name }
 			} else {
 				Next location
@@ -60,15 +60,15 @@ templ Next(data NextParams) {
 			}
 			if data.View.CurrentGroup != nil {
 				switch data.View.CurrentGroup.Navigation {
-					case models.NavigationDisplayMap:
+					case models.NavigationMap:
 						@showMap(data.View.NextLocations)
-					case models.NavigationDisplayMapAndNames:
+					case models.NavigationLabelledMap:
 						@showMapAndNames(data.View.Settings, data.View.NextLocations)
-					case models.NavigationDisplayNames:
+					case models.NavigationList:
 						@showNames(data.View.Settings, data.View.NextLocations)
-					case models.NavigationDisplayCustom:
+					case models.NavigationCustom:
 						@showCustom(prepareCustomContentViewData(data))
-					case models.NavigationDisplayTasks:
+					case models.NavigationTasks:
 						@showTasks(prepareTaskViewData(data.View))
 				}
 			}
@@ -173,7 +173,7 @@ func prepareCustomContentViewData(data NextParams) customContentViewData {
 			Blocks:   make([]blocks.Block, 0),
 		}
 		for _, block := range data.View.Blocks {
-			if block.GetLocationID() == location.ID {
+			if block.GetOwnerID() == location.ID {
 				lwb.Blocks = append(lwb.Blocks, block)
 			}
 		}
@@ -221,7 +221,7 @@ templ showCustom(data customContentViewData) {
 			} else {
 				<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
 					for _, block := range locWithBlocks.Blocks {
-						if block.GetLocationID() != locWithBlocks.Location.ID {
+						if block.GetOwnerID() != locWithBlocks.Location.ID {
 							continue
 						}
 						<div
@@ -253,7 +253,7 @@ func prepareTaskViewData(view *services.PlayerNavigationView) taskViewData {
 	// Build a map of locationID -> task block for quick lookup
 	blockByLocation := make(map[string]blocks.Block)
 	for _, block := range view.Blocks {
-		blockByLocation[block.GetLocationID()] = block
+		blockByLocation[block.GetOwnerID()] = block
 	}
 
 	// Build uncompleted tasks in location order

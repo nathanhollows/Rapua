@@ -11,10 +11,10 @@ type MarkdownBlock struct {
 
 // Basic Attributes Getters
 
-func (b *MarkdownBlock) GetID() string         { return b.ID }
-func (b *MarkdownBlock) GetType() string       { return "markdown" }
-func (b *MarkdownBlock) GetLocationID() string { return b.LocationID }
-func (b *MarkdownBlock) GetName() string       { return "Text" }
+func (b *MarkdownBlock) GetID() string      { return b.ID }
+func (b *MarkdownBlock) GetType() string    { return "text" }
+func (b *MarkdownBlock) GetOwnerID() string { return b.OwnerID }
+func (b *MarkdownBlock) GetName() string    { return "Text" }
 func (b *MarkdownBlock) GetDescription() string {
 	return "Text (Supports Markdown)"
 }
@@ -39,6 +39,13 @@ func (b *MarkdownBlock) UpdateBlockData(input map[string][]string) error {
 		b.Content = content[0]
 	}
 	return nil
+}
+
+// ToYAML returns the block's data for YAML export.
+func (b *MarkdownBlock) ToYAML() map[string]any {
+	return map[string]any{
+		"content": b.Content,
+	}
 }
 
 // Validation and Points Calculation

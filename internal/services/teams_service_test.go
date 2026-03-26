@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/db"
-	"github.com/nathanhollows/Rapua/v6/internal/services"
-	"github.com/nathanhollows/Rapua/v6/models"
-	"github.com/nathanhollows/Rapua/v6/repositories"
+	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -229,7 +229,6 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 
 		// Test finding each team
 		for _, expectedTeam := range teams {
-			//nolint:govet // Shadow variable in test loop
 			foundTeam, err := teamService.GetTeamByCode(context.Background(), expectedTeam.Code)
 			require.NoError(t, err)
 			assert.Equal(t, expectedTeam.Code, foundTeam.Code)

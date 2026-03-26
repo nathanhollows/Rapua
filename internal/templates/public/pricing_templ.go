@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v6/config"
+	"github.com/nathanhollows/Rapua/v7/config"
 )
 
 func Pricing() templ.Component {

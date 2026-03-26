@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v6/blocks"
+	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,17 +13,17 @@ import (
 func TestAlertBlock_Getters(t *testing.T) {
 	block := blocks.AlertBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			LocationID: "location-123",
-			Order:      1,
-			Points:     5,
+			ID:      "test-id",
+			OwnerID: "location-123",
+			Order:   1,
+			Points:  5,
 		},
 		Content: "Test Content",
 	}
 
 	assert.Equal(t, "alert", block.GetType())
 	assert.Equal(t, "test-id", block.GetID())
-	assert.Equal(t, "location-123", block.GetLocationID())
+	assert.Equal(t, "location-123", block.GetOwnerID())
 	assert.Equal(t, 1, block.GetOrder())
 	assert.Equal(t, 5, block.GetPoints())
 }
@@ -31,7 +31,7 @@ func TestAlertBlock_Getters(t *testing.T) {
 func TestAlertBlock_ParseData(t *testing.T) {
 	content := gofakeit.Sentence(5)
 	variant := gofakeit.Word()
-	data := `{"content":"` + content + `","variant":"` + variant + `"}`
+	data := `{"content":"` + content + `","style":"` + variant + `"}`
 	block := blocks.AlertBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
@@ -41,7 +41,7 @@ func TestAlertBlock_ParseData(t *testing.T) {
 	err := block.ParseData()
 	require.NoError(t, err)
 	assert.Equal(t, content, block.Content)
-	assert.Equal(t, variant, block.Variant)
+	assert.Equal(t, variant, block.Style)
 }
 
 func TestAlertBlock_UpdateBlockData(t *testing.T) {
@@ -60,7 +60,7 @@ func TestAlertBlock_ValidatePlayerInput(t *testing.T) {
 			Points: 5,
 		},
 		Content: "Test Content",
-		Variant: "info",
+		Style:   "info",
 	}
 
 	state := &blocks.MockPlayerState{}
