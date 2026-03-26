@@ -14,10 +14,10 @@ type TeamNameChangerBlock struct {
 
 // Basic Attributes Getters
 
-func (b *TeamNameChangerBlock) GetID() string         { return b.ID }
-func (b *TeamNameChangerBlock) GetType() string       { return "team_name" }
+func (b *TeamNameChangerBlock) GetID() string      { return b.ID }
+func (b *TeamNameChangerBlock) GetType() string    { return "team_name" }
 func (b *TeamNameChangerBlock) GetOwnerID() string { return b.OwnerID }
-func (b *TeamNameChangerBlock) GetName() string       { return "Team Name" }
+func (b *TeamNameChangerBlock) GetName() string    { return "Team Name" }
 func (b *TeamNameChangerBlock) GetDescription() string {
 	return "Allow players to set or change their team name."
 }

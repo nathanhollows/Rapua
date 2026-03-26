@@ -20,10 +20,10 @@ type photoBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *PhotoBlock) GetID() string         { return b.ID }
-func (b *PhotoBlock) GetType() string       { return "photo" }
+func (b *PhotoBlock) GetID() string      { return b.ID }
+func (b *PhotoBlock) GetType() string    { return "photo" }
 func (b *PhotoBlock) GetOwnerID() string { return b.OwnerID }
-func (b *PhotoBlock) GetName() string       { return "Photo" }
+func (b *PhotoBlock) GetName() string    { return "Photo" }
 func (b *PhotoBlock) GetDescription() string {
 	return "Players must submit a photo"
 }
@@ -98,7 +98,10 @@ func (b *PhotoBlock) ToYAML() map[string]any {
 
 func (b *PhotoBlock) RequiresValidation() bool { return true }
 
-func (b *PhotoBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
+func (b *PhotoBlock) ValidatePlayerInput( //nolint:gocognit
+	state PlayerState,
+	input map[string][]string,
+) (PlayerState, error) {
 	newPlayerData := photoBlockData{}
 	if state.GetPlayerData() != nil {
 		err := json.Unmarshal(state.GetPlayerData(), &newPlayerData)
@@ -108,7 +111,7 @@ func (b *PhotoBlock) ValidatePlayerInput(state PlayerState, input map[string][]s
 	}
 
 	// Handle delete operation
-	if len(input["delete"]) > 0 {
+	if len(input["delete"]) > 0 { //nolint:nestif // photo deletion requires nested checks for state and file existence
 		urlToDelete := input["delete"][0]
 		filtered := make([]string, 0, len(newPlayerData.URLs)-1)
 		for _, url := range newPlayerData.URLs {

@@ -11,10 +11,10 @@ type MarkdownBlock struct {
 
 // Basic Attributes Getters
 
-func (b *MarkdownBlock) GetID() string         { return b.ID }
-func (b *MarkdownBlock) GetType() string       { return "text" }
+func (b *MarkdownBlock) GetID() string      { return b.ID }
+func (b *MarkdownBlock) GetType() string    { return "text" }
 func (b *MarkdownBlock) GetOwnerID() string { return b.OwnerID }
-func (b *MarkdownBlock) GetName() string       { return "Text" }
+func (b *MarkdownBlock) GetName() string    { return "Text" }
 func (b *MarkdownBlock) GetDescription() string {
 	return "Text (Supports Markdown)"
 }

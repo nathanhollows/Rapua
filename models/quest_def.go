@@ -14,11 +14,11 @@ type QuestDef struct {
 
 // SettingsDef maps to InstanceSettings fields.
 type SettingsDef struct {
-	MustCheckOut     bool `yaml:"must_check_out,omitempty"`
-	ShowTeamCount    bool `yaml:"show_team_count,omitempty"`
-	EnablePoints     bool `yaml:"enable_points,omitempty"`
+	MustCheckOut      bool `yaml:"must_check_out,omitempty"`
+	ShowTeamCount     bool `yaml:"show_team_count,omitempty"`
+	EnablePoints      bool `yaml:"enable_points,omitempty"`
 	EnableBonusPoints bool `yaml:"enable_bonus_points,omitempty"`
-	ShowLeaderboard  bool `yaml:"show_leaderboard,omitempty"`
+	ShowLeaderboard   bool `yaml:"show_leaderboard,omitempty"`
 }
 
 // StructureDef represents the game structure with stages.

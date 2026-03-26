@@ -18,10 +18,10 @@ func TestRatingBlock_GetName(t *testing.T) {
 func TestRatingBlock_Getters(t *testing.T) {
 	block := blocks.RatingBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      2,
-			Points:     10,
+			Order:   2,
+			Points:  10,
 		},
 		Prompt:    "Rate your experience",
 		MaxRating: 5,

@@ -22,10 +22,10 @@ type passwordBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *PasswordBlock) GetID() string         { return b.ID }
-func (b *PasswordBlock) GetType() string       { return "password" }
+func (b *PasswordBlock) GetID() string      { return b.ID }
+func (b *PasswordBlock) GetType() string    { return "password" }
 func (b *PasswordBlock) GetOwnerID() string { return b.OwnerID }
-func (b *PasswordBlock) GetName() string       { return "Password" }
+func (b *PasswordBlock) GetName() string    { return "Password" }
 func (b *PasswordBlock) GetDescription() string {
 	return "Players must enter the correct answer to a prompt."
 }

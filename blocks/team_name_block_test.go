@@ -11,7 +11,7 @@ import (
 func TestTeamNameChangerBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"prompt":     {"Choose your team name!"},
+		"prompt":         {"Choose your team name!"},
 		"allow_changing": {"on"},
 	}
 
@@ -24,7 +24,7 @@ func TestTeamNameChangerBlock_UpdateBlockData(t *testing.T) {
 func TestTeamNameChangerBlock_UpdateBlockData_CheckboxChecked(t *testing.T) {
 	block := blocks.TeamNameChangerBlock{}
 	data := map[string][]string{
-		"prompt":     {"Set your name"},
+		"prompt":         {"Set your name"},
 		"allow_changing": {"true"},
 	}
 
@@ -52,7 +52,7 @@ func TestTeamNameChangerBlock_UpdateBlockData_EmptyButtonText(t *testing.T) {
 		BlockText: "Original text",
 	}
 	data := map[string][]string{
-		"prompt":     {""},
+		"prompt":         {""},
 		"allow_changing": {"on"},
 	}
 

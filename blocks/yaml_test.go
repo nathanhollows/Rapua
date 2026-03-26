@@ -2,7 +2,6 @@ package blocks_test
 
 import (
 	"encoding/json"
-	"errors"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
@@ -15,7 +14,7 @@ import (
 func TestFromYAML_UnknownType(t *testing.T) {
 	_, err := blocks.FromYAML("nonexistent_block", map[string]any{})
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, blocks.ErrBlockTypeNotFound))
+	assert.ErrorIs(t, err, blocks.ErrBlockTypeNotFound)
 }
 
 func TestFromYAML_SimpleBlock_PassesThroughFields(t *testing.T) {
@@ -82,10 +81,10 @@ func TestFromYAML_Quiz_NoOptions(t *testing.T) {
 
 func TestFromYAML_Quiz_PreservesOptionalFields(t *testing.T) {
 	fields := map[string]any{
-		"question":        "Pick all that apply",
-		"multiple_choice": true,
-		"randomise_order": true,
-		"allow_retry":     true,
+		"question":         "Pick all that apply",
+		"multiple_choice":  true,
+		"randomise_order":  true,
+		"allow_retry":      true,
 		"unlocked_content": "Well done!",
 		"options": []any{
 			map[string]any{"text": "A", "correct": true},
@@ -130,7 +129,7 @@ func TestFromYAML_Checklist_StringItemsGetIDs(t *testing.T) {
 	}
 
 	ids := []string{block.List[0].ID, block.List[1].ID, block.List[2].ID}
-	assert.Equal(t, 3, len(uniqueStrings(ids)), "all IDs must be unique")
+	assert.Len(t, uniqueStrings(ids), 3, "all IDs must be unique")
 }
 
 func TestFromYAML_Checklist_ObjectItemReturnsError(t *testing.T) {
@@ -173,7 +172,7 @@ func TestFromYAML_Sorting_StringItemsGetIDsAndPositions(t *testing.T) {
 	}
 
 	ids := []string{block.Items[0].ID, block.Items[1].ID, block.Items[2].ID}
-	assert.Equal(t, 3, len(uniqueStrings(ids)), "all IDs must be unique")
+	assert.Len(t, uniqueStrings(ids), 3, "all IDs must be unique")
 }
 
 func TestFromYAML_Sorting_ObjectItemReturnsError(t *testing.T) {
@@ -192,10 +191,10 @@ func TestFromYAML_Sorting_ObjectItemReturnsError(t *testing.T) {
 
 func TestRoundTrip_Quiz(t *testing.T) {
 	original := blocks.QuizBlock{
-		Question:       "What colour is the sky?",
-		MultipleChoice: false,
-		RandomizeOrder: true,
-		RetryEnabled:   false,
+		Question:        "What colour is the sky?",
+		MultipleChoice:  false,
+		RandomizeOrder:  true,
+		RetryEnabled:    false,
 		UnlockedContent: "Correct!",
 		Options: []blocks.QuizOption{
 			{ID: "opt-1", Text: "Blue", IsCorrect: true, Order: 0},

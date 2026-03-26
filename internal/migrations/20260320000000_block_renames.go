@@ -67,11 +67,6 @@ var blockFieldRenames = map[string]map[string]string{
 	},
 }
 
-// Also need to rename is_correct -> correct inside quiz option objects
-var quizOptionFieldRenames = map[string]string{
-	"is_correct": "correct",
-}
-
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// Step 1: Rename block types

@@ -12,10 +12,10 @@ type AlertBlock struct {
 
 // Basic Attributes Getters
 
-func (b *AlertBlock) GetID() string         { return b.ID }
-func (b *AlertBlock) GetType() string       { return "alert" }
+func (b *AlertBlock) GetID() string      { return b.ID }
+func (b *AlertBlock) GetType() string    { return "alert" }
 func (b *AlertBlock) GetOwnerID() string { return b.OwnerID }
-func (b *AlertBlock) GetName() string       { return "Alert" }
+func (b *AlertBlock) GetName() string    { return "Alert" }
 func (b *AlertBlock) GetDescription() string {
 	return "Display a message to the player."
 }

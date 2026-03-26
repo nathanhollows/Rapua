@@ -6,17 +6,17 @@ import (
 
 type ButtonBlock struct {
 	BaseBlock
-	Link    string `json:"link"`
-	Text    string `json:"text"`
+	Link  string `json:"link"`
+	Text  string `json:"text"`
 	Style string `json:"style"`
 }
 
 // Basic Attributes Getters
 
-func (b *ButtonBlock) GetID() string         { return b.ID }
-func (b *ButtonBlock) GetType() string       { return "button" }
+func (b *ButtonBlock) GetID() string      { return b.ID }
+func (b *ButtonBlock) GetType() string    { return "button" }
 func (b *ButtonBlock) GetOwnerID() string { return b.OwnerID }
-func (b *ButtonBlock) GetName() string       { return "Button" }
+func (b *ButtonBlock) GetName() string    { return "Button" }
 func (b *ButtonBlock) GetDescription() string {
 	return "Show a clickable button"
 }

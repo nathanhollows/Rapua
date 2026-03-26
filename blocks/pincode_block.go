@@ -21,10 +21,10 @@ type pincodeBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *PincodeBlock) GetID() string         { return b.ID }
-func (b *PincodeBlock) GetType() string       { return "pincode" }
+func (b *PincodeBlock) GetID() string      { return b.ID }
+func (b *PincodeBlock) GetType() string    { return "pincode" }
 func (b *PincodeBlock) GetOwnerID() string { return b.OwnerID }
-func (b *PincodeBlock) GetName() string       { return "Pincode" }
+func (b *PincodeBlock) GetName() string    { return "Pincode" }
 func (b *PincodeBlock) GetDescription() string {
 	return "Players must enter the correct pincode to a prompt."
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-//nolint:gochecknoinits // Migration init pattern required by bun migrate framework
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		return m20260317_rewriteEnums(ctx, db, m20260317_migrateGroup)
@@ -69,7 +68,7 @@ type m20260317_Row struct {
 
 // Mapping tables for forward migration (int → string).
 //
-//nolint:gochecknoglobals,mnd // Migration-scoped lookup tables with historical iota indices
+//nolint:mnd // Migration-scoped lookup tables with historical iota indices
 var (
 	m20260317_routingForward = map[float64]string{
 		0: "randomised",

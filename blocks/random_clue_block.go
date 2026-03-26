@@ -13,10 +13,10 @@ type RandomClueBlock struct {
 
 // Basic Attributes Getters
 
-func (b *RandomClueBlock) GetID() string         { return b.ID }
-func (b *RandomClueBlock) GetType() string       { return "random_clue" }
+func (b *RandomClueBlock) GetID() string      { return b.ID }
+func (b *RandomClueBlock) GetType() string    { return "random_clue" }
 func (b *RandomClueBlock) GetOwnerID() string { return b.OwnerID }
-func (b *RandomClueBlock) GetName() string       { return "Random Clue" }
+func (b *RandomClueBlock) GetName() string    { return "Random Clue" }
 func (b *RandomClueBlock) GetDescription() string {
 	return "Display a random clue deterministically selected for each team."
 }

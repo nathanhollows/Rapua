@@ -12,10 +12,10 @@ import (
 func TestQuizBlock_Getters(t *testing.T) {
 	block := blocks.QuizBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-quiz-id",
+			ID:      "test-quiz-id",
 			OwnerID: "location-123",
-			Order:      3,
-			Points:     50,
+			Order:   3,
+			Points:  50,
 		},
 		Question:       "What is the capital of France?",
 		MultipleChoice: false,
@@ -444,11 +444,11 @@ func TestQuizBlock_GetShuffledOptions(t *testing.T) {
 
 func TestNewQuizBlock(t *testing.T) {
 	base := blocks.BaseBlock{
-		ID:         "test-id",
+		ID:      "test-id",
 		OwnerID: "location-123",
-		Type:       "quiz",
-		Order:      1,
-		Points:     50,
+		Type:    "quiz",
+		Order:   1,
+		Points:  50,
 	}
 
 	block := blocks.NewQuizBlock(base)

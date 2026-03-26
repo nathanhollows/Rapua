@@ -19,8 +19,17 @@ type YAMLExportService interface {
 
 // YAMLImportService defines the interface for importing YAML into instances.
 type YAMLImportService interface {
-	ImportCreate(ctx context.Context, userID string, def *models.QuestDef, isTemplate bool) (*models.Instance, []services.ImportWarning, error)
-	ImportUpdate(ctx context.Context, instanceID string, def *models.QuestDef) (*models.Instance, []services.ImportWarning, error)
+	ImportCreate(
+		ctx context.Context,
+		userID string,
+		def *models.QuestDef,
+		isTemplate bool,
+	) (*models.Instance, []services.ImportWarning, error)
+	ImportUpdate(
+		ctx context.Context,
+		instanceID string,
+		def *models.QuestDef,
+	) (*models.Instance, []services.ImportWarning, error)
 }
 
 // ExportTemplateYAML exports the current instance as template YAML (no entity IDs).

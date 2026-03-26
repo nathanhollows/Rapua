@@ -14,12 +14,12 @@ func TestCreateFromBaseBlock(t *testing.T) {
 	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
 		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
 			baseBlock := blocks.BaseBlock{
-				ID:         "1",
+				ID:      "1",
 				OwnerID: "loc1",
-				Type:       block.GetType(),
-				Data:       json.RawMessage(`{}`),
-				Order:      1,
-				Points:     10,
+				Type:    block.GetType(),
+				Data:    json.RawMessage(`{}`),
+				Order:   1,
+				Points:  10,
 			}
 
 			newBlock, err := blocks.CreateFromBaseBlock(baseBlock)
@@ -35,12 +35,12 @@ func TestCreateFromBaseBlock(t *testing.T) {
 // Test that an error is returned when trying to create a block with an unknown type.
 func TestCreateFromBaseBlockUnknownType(t *testing.T) {
 	baseBlock := blocks.BaseBlock{
-		ID:         "1",
+		ID:      "1",
 		OwnerID: "loc1",
-		Type:       "unknown",
-		Data:       json.RawMessage(`{}`),
-		Order:      1,
-		Points:     10,
+		Type:    "unknown",
+		Data:    json.RawMessage(`{}`),
+		Order:   1,
+		Points:  10,
 	}
 
 	newBlock, err := blocks.CreateFromBaseBlock(baseBlock)

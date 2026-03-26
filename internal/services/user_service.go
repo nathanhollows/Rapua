@@ -22,6 +22,8 @@ var (
 	ErrPasswordTooShort     = errors.New("password must be at least 8 characters")
 )
 
+const minPasswordLength = 8
+
 type UserService struct {
 	instanceRepo repositories.InstanceRepository
 	userRepo     repositories.UserRepository
@@ -182,7 +184,7 @@ func (s *UserService) ResetPassword(
 		return ErrEmptyPassword
 	}
 
-	if len(newPassword) < 8 {
+	if len(newPassword) < minPasswordLength {
 		return ErrPasswordTooShort
 	}
 

@@ -16,10 +16,10 @@ func TestPincodeBlock_Getters(t *testing.T) {
 	pincode := strconv.Itoa(gofakeit.Number(1, 999999))
 	block := blocks.PincodeBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
 		Prompt:  prompt,
 		Pincode: pincode,

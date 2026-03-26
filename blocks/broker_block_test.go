@@ -12,10 +12,10 @@ import (
 func TestBrokerBlock_Getters(t *testing.T) {
 	block := blocks.BrokerBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-broker-id",
+			ID:      "test-broker-id",
 			OwnerID: "location-456",
-			Order:      4,
-			Points:     0, // Broker blocks don't use completion bonus
+			Order:   4,
+			Points:  0, // Broker blocks don't use completion bonus
 		},
 		Prompt:      "The merchant eyes you suspiciously...",
 		DefaultInfo: "I don't know anything.",

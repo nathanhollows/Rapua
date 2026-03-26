@@ -27,7 +27,7 @@ type ValidationWarning struct {
 // ValidationResult holds the result of validating a QuestDef.
 type ValidationResult struct {
 	Valid    bool                `json:"valid"`
-	Errors   []ValidationError  `json:"errors,omitempty"`
+	Errors   []ValidationError   `json:"errors,omitempty"`
 	Warnings []ValidationWarning `json:"warnings,omitempty"`
 }
 
@@ -67,10 +67,28 @@ func ValidateQuestDef(def *models.QuestDef) ValidationResult {
 	blockIDs := make(map[string]bool)
 
 	for _, stop := range def.Stops {
-		validateBlocks(&result, stop.Content, blocks.ContextLocationContent, fmt.Sprintf("stops[%s].content", stop.Slug), blockIDs)
-		validateBlocks(&result, stop.Clues, blocks.ContextLocationClues, fmt.Sprintf("stops[%s].clues", stop.Slug), blockIDs)
+		validateBlocks(
+			&result,
+			stop.Content,
+			blocks.ContextLocationContent,
+			fmt.Sprintf("stops[%s].content", stop.Slug),
+			blockIDs,
+		)
+		validateBlocks(
+			&result,
+			stop.Clues,
+			blocks.ContextLocationClues,
+			fmt.Sprintf("stops[%s].clues", stop.Slug),
+			blockIDs,
+		)
 		validateBlocks(&result, stop.Tasks, blocks.ContextTask, fmt.Sprintf("stops[%s].tasks", stop.Slug), blockIDs)
-		validateBlocks(&result, stop.Checkpoint, blocks.ContextCheckpoint, fmt.Sprintf("stops[%s].checkpoint", stop.Slug), blockIDs)
+		validateBlocks(
+			&result,
+			stop.Checkpoint,
+			blocks.ContextCheckpoint,
+			fmt.Sprintf("stops[%s].checkpoint", stop.Slug),
+			blockIDs,
+		)
 	}
 	validateBlocks(&result, def.Start, blocks.ContextStart, "start", blockIDs)
 	validateBlocks(&result, def.Finish, blocks.ContextFinish, "finish", blockIDs)
@@ -100,14 +118,23 @@ func validateStageStops(result *ValidationResult, stages []models.StageDef, slug
 	for _, stage := range stages {
 		for _, slug := range stage.Stops {
 			if !slugs[slug] {
-				result.addError("structure.stages", fmt.Sprintf("stage %q references unknown stop slug %q", stage.Name, slug))
+				result.addError(
+					"structure.stages",
+					fmt.Sprintf("stage %q references unknown stop slug %q", stage.Name, slug),
+				)
 			}
 		}
 		validateStageStops(result, stage.Stages, slugs)
 	}
 }
 
-func validateBlocks(result *ValidationResult, blockDefs []models.BlockDef, ctx blocks.BlockContext, path string, blockIDs map[string]bool) {
+func validateBlocks(
+	result *ValidationResult,
+	blockDefs []models.BlockDef,
+	ctx blocks.BlockContext,
+	path string,
+	blockIDs map[string]bool,
+) {
 	for i, bd := range blockDefs {
 		// Rule 5: block type registered
 		if !blocks.CanBlockBeUsedInContext(bd.Type, ctx) {
@@ -148,20 +175,29 @@ func blockTypeExists(blockType string) bool {
 	return false
 }
 
-var validRouting = []string{"ordered", "randomised", "free_roam", "secret"}
-var validNavigation = []string{"map", "labelled_map", "location_list", "custom", "tasks"}
-var validCompletion = []string{"all", "minimum"}
-
 func validateStageEnums(result *ValidationResult, stages []models.StageDef) {
+	validRouting := []string{"ordered", "randomised", "free_roam", "secret"}
+	validNavigation := []string{"map", "labelled_map", "location_list", "custom", "tasks"}
+	validCompletion := []string{"all", "minimum"}
+
 	for _, stage := range stages {
 		if stage.Routing != "" && !slices.Contains(validRouting, stage.Routing) {
-			result.addError("structure.stages", fmt.Sprintf("stage %q has invalid routing %q", stage.Name, stage.Routing))
+			result.addError(
+				"structure.stages",
+				fmt.Sprintf("stage %q has invalid routing %q", stage.Name, stage.Routing),
+			)
 		}
 		if stage.Navigation != "" && !slices.Contains(validNavigation, stage.Navigation) {
-			result.addError("structure.stages", fmt.Sprintf("stage %q has invalid navigation %q", stage.Name, stage.Navigation))
+			result.addError(
+				"structure.stages",
+				fmt.Sprintf("stage %q has invalid navigation %q", stage.Name, stage.Navigation),
+			)
 		}
 		if stage.Completion != "" && !slices.Contains(validCompletion, stage.Completion) {
-			result.addError("structure.stages", fmt.Sprintf("stage %q has invalid completion %q", stage.Name, stage.Completion))
+			result.addError(
+				"structure.stages",
+				fmt.Sprintf("stage %q has invalid completion %q", stage.Name, stage.Completion),
+			)
 		}
 		validateStageEnums(result, stage.Stages)
 	}
@@ -173,7 +209,10 @@ func validateStageRules(result *ValidationResult, stages []models.StageDef) {
 			result.addError("structure.stages", "stage must have a name")
 		}
 		if stage.MinimumRequired > 0 && stage.Completion != "minimum" {
-			result.addWarning("structure.stages", fmt.Sprintf("stage %q has minimum_required but completion is not 'minimum'", stage.Name))
+			result.addWarning(
+				"structure.stages",
+				fmt.Sprintf("stage %q has minimum_required but completion is not 'minimum'", stage.Name),
+			)
 		}
 		validateStageRules(result, stage.Stages)
 	}
@@ -182,7 +221,10 @@ func validateStageRules(result *ValidationResult, stages []models.StageDef) {
 func validateStageNames(result *ValidationResult, stages []models.StageDef) {
 	for _, stage := range stages {
 		if stage.Name == "Unassigned" {
-			result.addWarning("structure.stages", "'Unassigned' stops will be placed at root level (not in a named stage)")
+			result.addWarning(
+				"structure.stages",
+				"'Unassigned' stops will be placed at root level (not in a named stage)",
+			)
 		}
 		validateStageNames(result, stage.Stages)
 	}

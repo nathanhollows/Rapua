@@ -328,16 +328,16 @@ func TestYAMLRoundTrip_TemplateExportCreateImport(t *testing.T) {
 		},
 		Stops: []models.StopDef{
 			{
-				Slug:  "first-stop",
-				Name:  "First Stop",
+				Slug:   "first-stop",
+				Name:   "First Stop",
 				Points: 10,
 				Content: []models.BlockDef{
 					{Type: "text", Fields: map[string]any{"content": "Welcome to the first stop!"}},
 				},
 			},
 			{
-				Slug:  "second-stop",
-				Name:  "Second Stop",
+				Slug: "second-stop",
+				Name: "Second Stop",
 				Tasks: []models.BlockDef{
 					{Type: "task", Fields: map[string]any{"task": "Find the hidden object"}},
 				},
@@ -357,6 +357,7 @@ func TestYAMLRoundTrip_TemplateExportCreateImport(t *testing.T) {
 
 	// Import exported def as a new instance
 	instance2, _, err := suite.importSvc.ImportCreate(suite.ctx, suite.userID, exported, false)
+	require.NoError(t, err)
 
 	assert.NotEqual(t, instance1.ID, instance2.ID, "should create a new instance")
 	assert.Equal(t, instance1.Name, instance2.Name)
@@ -366,14 +367,14 @@ func TestYAMLRoundTrip_TemplateExportCreateImport(t *testing.T) {
 	require.NoError(t, err)
 	locs2, err := suite.locationRepo.FindByInstance(suite.ctx, instance2.ID)
 	require.NoError(t, err)
-	assert.Equal(t, len(locs1), len(locs2))
+	assert.Len(t, locs2, len(locs1))
 
 	// Verify blocks on instance-level contexts
 	start1, err := suite.blockRepo.FindByOwnerIDAndContext(suite.ctx, instance1.ID, blocks.ContextStart)
 	require.NoError(t, err)
 	start2, err := suite.blockRepo.FindByOwnerIDAndContext(suite.ctx, instance2.ID, blocks.ContextStart)
 	require.NoError(t, err)
-	assert.Equal(t, len(start1), len(start2))
+	assert.Len(t, start2, len(start1))
 }
 
 func TestYAMLRoundTrip_InstanceExportUpdate(t *testing.T) {

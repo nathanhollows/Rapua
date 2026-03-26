@@ -77,7 +77,7 @@ const m20251205061242_StartInstructions = `` +
 const m20251205061242_FinishCongratulations = `` +
 	`You've wrapped up the entire route. Thanks for being part of the adventure.`
 
-func init() { //nolint:gocognit,gochecknoinits // Migration init is required
+func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
 		// PART 1: Add header blocks to all existing locations
 		var locations []m20251205061242_Location

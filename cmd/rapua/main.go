@@ -326,7 +326,7 @@ func newGenerateLoginCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 			&cli.IntFlag{
 				Name:  "duration",
 				Usage: "link validity in seconds",
-				Value: 60,
+				Value: 60, //nolint:mnd // default link validity in seconds
 			},
 		},
 		Action: func(c *cli.Context) error {

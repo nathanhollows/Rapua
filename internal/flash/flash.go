@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits // gob.Register must run before any flash message encoding
 	gob.Register(Message{})
 }
 

@@ -12,10 +12,10 @@ import (
 func TestChecklistBlock_Getters(t *testing.T) {
 	block := blocks.ChecklistBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
 		Content: "Test Content",
 		List: []blocks.ChecklistItem{

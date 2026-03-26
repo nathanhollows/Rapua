@@ -13,6 +13,8 @@ import (
 )
 
 // Image size dimensions.
+//
+//nolint:mnd // pixel breakpoints are self-documenting in context
 var imageSizes = map[string]int{
 	"small":  640,  // Mobile devices
 	"medium": 1024, // Tablets
@@ -69,7 +71,7 @@ func ServeResizedImage(baseDir string) http.HandlerFunc {
 
 		// Generate resized image
 		if err := resizeImage(originalPath, cachedPath, maxWidth); err != nil {
-			slog.Error("failed to resize image", "path", originalPath, "err", err)
+			slog.Error("failed to resize image", "path", originalPath, "err", err) //nolint:sloglint // no injected logger
 			http.Error(w, "Failed to resize image", http.StatusInternalServerError)
 			return
 		}

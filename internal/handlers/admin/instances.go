@@ -249,10 +249,10 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user.CurrentInstanceID == id {
-		err := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
+		renderErr := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
 			Render(r.Context(), w)
-		if err != nil {
-			h.logger.Error("InstanceDelete: rendering template", "error", err)
+		if renderErr != nil {
+			h.logger.Error("InstanceDelete: rendering template", "error", renderErr)
 		}
 		return
 	}

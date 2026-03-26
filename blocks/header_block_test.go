@@ -13,10 +13,10 @@ import (
 func TestHeaderBlock_Getters(t *testing.T) {
 	block := blocks.HeaderBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
 		Icon:      "https://example.com/logo.png",
 		TitleText: "Welcome to the Game",
@@ -32,10 +32,10 @@ func TestHeaderBlock_Getters(t *testing.T) {
 func TestHeaderBlock_GetData(t *testing.T) {
 	block := blocks.HeaderBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
 		Icon:      "https://example.com/logo.png",
 		TitleText: "Welcome",
@@ -101,9 +101,9 @@ func TestHeaderBlock_ParseData_InvalidJSON(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {"https://example.com/new-logo.png"},
+		"icon":  {"https://example.com/new-logo.png"},
 		"title": {"Updated Title"},
-		"size": {"small"},
+		"size":  {"small"},
 	}
 
 	err := block.UpdateBlockData(data)
@@ -116,7 +116,7 @@ func TestHeaderBlock_UpdateBlockData(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_OnlyIcon(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {"https://example.com/logo.png"},
+		"icon":  {"https://example.com/logo.png"},
 		"title": {""},
 	}
 
@@ -129,7 +129,7 @@ func TestHeaderBlock_UpdateBlockData_OnlyIcon(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {""},
+		"icon":  {""},
 		"title": {"My Title"},
 	}
 
@@ -142,7 +142,7 @@ func TestHeaderBlock_UpdateBlockData_OnlyTitle(t *testing.T) {
 func TestHeaderBlock_UpdateBlockData_BothEmpty(t *testing.T) {
 	block := blocks.HeaderBlock{}
 	data := map[string][]string{
-		"icon":       {""},
+		"icon":  {""},
 		"title": {""},
 	}
 
@@ -157,7 +157,7 @@ func TestHeaderBlock_UpdateBlockData_WithoutTitleSize(t *testing.T) {
 	}
 
 	data := map[string][]string{
-		"icon":       {"https://example.com/logo.png"},
+		"icon":  {"https://example.com/logo.png"},
 		"title": {"Updated Title"},
 	}
 

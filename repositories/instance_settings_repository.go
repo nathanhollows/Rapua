@@ -79,7 +79,11 @@ func (r *instanceSettingsRepository) Update(ctx context.Context, settings *model
 	return nil
 }
 
-func (r *instanceSettingsRepository) UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error {
+func (r *instanceSettingsRepository) UpdateTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	settings *models.InstanceSettings,
+) error {
 	if settings.InstanceID == "" {
 		return errors.New("instance ID is required")
 	}

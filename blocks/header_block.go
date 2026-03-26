@@ -14,10 +14,10 @@ type HeaderBlock struct {
 
 // Basic Attributes Getters
 
-func (b *HeaderBlock) GetID() string         { return b.ID }
-func (b *HeaderBlock) GetType() string       { return "header" }
+func (b *HeaderBlock) GetID() string      { return b.ID }
+func (b *HeaderBlock) GetType() string    { return "header" }
 func (b *HeaderBlock) GetOwnerID() string { return b.OwnerID }
-func (b *HeaderBlock) GetName() string       { return "Header" }
+func (b *HeaderBlock) GetName() string    { return "Header" }
 func (b *HeaderBlock) GetDescription() string {
 	return "Display a customizable header with logo and title at the top of the page."
 }

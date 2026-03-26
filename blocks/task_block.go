@@ -14,10 +14,10 @@ type TaskBlock struct {
 
 // Basic Attributes Getters
 
-func (b *TaskBlock) GetID() string         { return b.ID }
-func (b *TaskBlock) GetType() string       { return "task" }
+func (b *TaskBlock) GetID() string      { return b.ID }
+func (b *TaskBlock) GetType() string    { return "task" }
 func (b *TaskBlock) GetOwnerID() string { return b.OwnerID }
-func (b *TaskBlock) GetName() string       { return "Task" }
+func (b *TaskBlock) GetName() string    { return "Task" }
 func (b *TaskBlock) GetDescription() string {
 	return "Give players a task to complete."
 }

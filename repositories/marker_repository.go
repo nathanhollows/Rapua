@@ -165,7 +165,12 @@ func (r *markerRepository) UpdateCoords(ctx context.Context, marker *models.Mark
 }
 
 // UpdateCoordsTx updates the latitude and longitude of a marker within a transaction.
-func (r *markerRepository) UpdateCoordsTx(ctx context.Context, tx *bun.Tx, marker *models.Marker, lat, lng float64) error {
+func (r *markerRepository) UpdateCoordsTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	marker *models.Marker,
+	lat, lng float64,
+) error {
 	if marker == nil {
 		return errors.New("marker is required")
 	}

@@ -248,7 +248,7 @@ func (s *StripeService) ProcessWebhook(ctx context.Context, payload []byte, sign
 }
 
 // handleCheckoutSessionCompleted processes successful checkout sessions.
-func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, event *stripe.Event) error {
+func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, event *stripe.Event) error { //nolint:gocognit,funlen
 	var sess stripe.CheckoutSession
 	err := json.Unmarshal(event.Data.Raw, &sess)
 	if err != nil {
@@ -335,7 +335,7 @@ func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, even
 	}
 
 	// Update payment ID and fetch receipt URL if available
-	if sess.PaymentIntent != nil {
+	if sess.PaymentIntent != nil { //nolint:nestif // payment intent and receipt URL retrieval requires nested nil checks
 		paymentID := sess.PaymentIntent.ID
 		err = s.purchaseRepo.UpdateStripePaymentIDWithTx(ctx, tx, purchase.ID, paymentID)
 		if err != nil {

@@ -193,7 +193,11 @@ func gameStructureToStageDef(gs *models.GameStructure, slugMap map[string]string
 
 // buildStopDefs builds StopDef entries from all locations in the game structure.
 // Locations are collected in structure order (depth-first).
-func buildStopDefs(gs *models.GameStructure, locationMap map[string]*models.Location, includeIDs bool) ([]models.StopDef, error) {
+func buildStopDefs(
+	gs *models.GameStructure,
+	locationMap map[string]*models.Location,
+	includeIDs bool,
+) ([]models.StopDef, error) {
 	var locationIDs []string
 	collectLocationIDsOrdered(gs, &locationIDs)
 
@@ -251,6 +255,8 @@ func locationToStopDef(loc *models.Location, includeIDs bool) (models.StopDef, e
 			tasks = append(tasks, loc.Blocks[i])
 		case blocks.ContextCheckpoint:
 			checkpoint = append(checkpoint, loc.Blocks[i])
+		case blocks.ContextStart, blocks.ContextFinish:
+			// Start/Finish blocks belong to the instance, not locations; skip here.
 		}
 	}
 

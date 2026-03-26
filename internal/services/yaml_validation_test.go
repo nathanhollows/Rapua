@@ -41,7 +41,7 @@ func TestValidateQuestDef_UnsupportedVersion(t *testing.T) {
 	def.Version = 99
 	result := services.ValidateQuestDef(def)
 	assert.False(t, result.Valid)
-	assert.True(t, strings.Contains(result.Errors[0].Message, "unsupported"))
+	assert.Contains(t, result.Errors[0].Message, "unsupported")
 }
 
 func TestValidateQuestDef_MissingName(t *testing.T) {

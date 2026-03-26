@@ -12,10 +12,10 @@ import (
 func TestImageBlock_Getters(t *testing.T) {
 	block := blocks.ImageBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      0,
-			Points:     0,
+			Order:   0,
+			Points:  0,
 		},
 		URL: "https://placecage.lucidinternets.com/500/400",
 	}

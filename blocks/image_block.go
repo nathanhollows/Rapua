@@ -17,10 +17,10 @@ type ImageBlock struct {
 
 // Basic Attributes Getters
 
-func (b *ImageBlock) GetID() string         { return b.ID }
-func (b *ImageBlock) GetType() string       { return "image" }
+func (b *ImageBlock) GetID() string      { return b.ID }
+func (b *ImageBlock) GetType() string    { return "image" }
 func (b *ImageBlock) GetOwnerID() string { return b.OwnerID }
-func (b *ImageBlock) GetName() string       { return "Image" }
+func (b *ImageBlock) GetName() string    { return "Image" }
 func (b *ImageBlock) GetDescription() string {
 	return "Embed an image."
 }

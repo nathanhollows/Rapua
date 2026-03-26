@@ -121,7 +121,7 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 }
 
 // GetPlayerNavigationView returns a complete view of navigation data for the player UI.
-func (s *NavigationService) GetPlayerNavigationView(
+func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit,gocyclo
 	ctx context.Context,
 	team *models.Team,
 ) (*PlayerNavigationView, error) {
@@ -432,7 +432,7 @@ func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) [
 // Uncompleted locations use the same routing logic as other modes (guided, random, free roam).
 // Completed locations are all locations in the group where BlocksCompleted is true.
 // Both lists preserve the order defined by group.LocationIDs.
-func (s *NavigationService) getScavengerHuntLocations(
+func (s *NavigationService) getScavengerHuntLocations( //nolint:gocognit
 	ctx context.Context,
 	team *models.Team,
 	group *models.GameStructure,

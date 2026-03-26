@@ -27,10 +27,10 @@ type brokerBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *BrokerBlock) GetID() string         { return b.ID }
-func (b *BrokerBlock) GetType() string       { return "broker" }
+func (b *BrokerBlock) GetID() string      { return b.ID }
+func (b *BrokerBlock) GetType() string    { return "broker" }
 func (b *BrokerBlock) GetOwnerID() string { return b.OwnerID }
-func (b *BrokerBlock) GetName() string       { return "Broker" }
+func (b *BrokerBlock) GetName() string    { return "Broker" }
 func (b *BrokerBlock) GetDescription() string {
 	return "Players can pay points to unlock information. The more they pay, the better information they might receive."
 }

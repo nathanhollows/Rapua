@@ -17,10 +17,10 @@ type YoutubeBlock struct {
 
 // Basic Attributes Getters
 
-func (b *YoutubeBlock) GetID() string         { return b.ID }
-func (b *YoutubeBlock) GetType() string       { return "youtube" }
+func (b *YoutubeBlock) GetID() string      { return b.ID }
+func (b *YoutubeBlock) GetType() string    { return "youtube" }
 func (b *YoutubeBlock) GetOwnerID() string { return b.OwnerID }
-func (b *YoutubeBlock) GetName() string       { return "Youtube" }
+func (b *YoutubeBlock) GetName() string    { return "Youtube" }
 func (b *YoutubeBlock) GetDescription() string {
 	return "Embed a Youtube video."
 }

@@ -153,7 +153,7 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 
 	// Send the email verification
 	err = h.identityService.SendEmailVerification(r.Context(), &user)
-	if err != nil {
+	if err != nil { //nolint:nestif // branching on distinct error types requires nesting
 		if !errors.Is(err, services.ErrUserAlreadyVerified) {
 			err = h.deleteService.DeleteUser(r.Context(), user.ID)
 			if err != nil {
@@ -210,9 +210,10 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	successMsg := "If an account with that email exists, an email will be sent with instructions on how to reset your password."
 
 	// Add a random delay to prevent timing-based email enumeration.
-	//nolint:gosec // cryptographic randomness not needed for jitter
+
 	start := time.Now()
-	minDuration := time.Duration(200+rand.IntN(600)) * time.Millisecond
+	const minDelay, jitterRange = 200, 600
+	minDuration := time.Duration(minDelay+rand.IntN(jitterRange)) * time.Millisecond //nolint:gosec // not cryptographic
 
 	user, err := h.userService.GetUserByEmail(r.Context(), email)
 	if err != nil {
@@ -246,7 +247,14 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	c := templates.ForgotMessage(*flash.NewInfo(successMsg))
 	err = c.Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "ForgotPasswordPost: rendering template", "Error sending forgot password email", "error", err)
+		h.handleError(
+			w,
+			r,
+			"ForgotPasswordPost: rendering template",
+			"Error sending forgot password email",
+			"error",
+			err,
+		)
 	}
 }
 
@@ -311,11 +319,12 @@ func (h *Handler) ResetPasswordPost(w http.ResponseWriter, r *http.Request) {
 	err = h.userService.ResetPassword(r.Context(), user, password, passwordConfirm)
 	if err != nil {
 		msg := "Something went wrong. Please try again."
-		if errors.Is(err, services.ErrPasswordsDoNotMatch) {
+		switch {
+		case errors.Is(err, services.ErrPasswordsDoNotMatch):
 			msg = "Passwords do not match."
-		} else if errors.Is(err, services.ErrEmptyPassword) {
+		case errors.Is(err, services.ErrEmptyPassword):
 			msg = "Password cannot be empty."
-		} else if errors.Is(err, services.ErrPasswordTooShort) {
+		case errors.Is(err, services.ErrPasswordTooShort):
 			msg = "Password must be at least 8 characters."
 		}
 		c := templates.ResetPasswordError(*flash.NewError(msg))

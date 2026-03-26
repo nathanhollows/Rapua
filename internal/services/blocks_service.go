@@ -65,7 +65,7 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
-		Type:       blockType,
+		Type:    blockType,
 		OwnerID: ownerID,
 	}
 

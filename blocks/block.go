@@ -194,15 +194,15 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewAnswerBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
-	case "checklist":
+	case checklistBlockType:
 		return NewChecklistBlock(baseBlock), nil
 	case "youtube":
 		return NewYoutubeBlock(baseBlock), nil
 	case "image":
 		return NewImageBlock(baseBlock), nil
-	case "sorting":
+	case sortingBlockType:
 		return NewSortingBlock(baseBlock), nil
-	case "quiz":
+	case quizBlockType:
 		return NewQuizBlock(baseBlock), nil
 	case "clue":
 		return NewClueBlock(baseBlock), nil
@@ -350,10 +350,12 @@ func NewTaskBlock(base BaseBlock) *TaskBlock {
 	}
 }
 
+const defaultMaxRating = 5
+
 func NewRatingBlock(base BaseBlock) *RatingBlock {
 	return &RatingBlock{
 		BaseBlock: base,
-		MaxRating: 5, // Default max rating
+		MaxRating: defaultMaxRating,
 	}
 }
 

@@ -2,12 +2,13 @@ package blocks
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 )
 
-var ErrInvalidItemFormat = fmt.Errorf("items must be plain strings")
+var ErrInvalidItemFormat = errors.New("items must be plain strings")
 
 // YAMLExporter is implemented by blocks that can export to YAML.
 type YAMLExporter interface {
@@ -24,11 +25,11 @@ func FromYAML(blockType string, fields map[string]any) ([]byte, error) {
 
 	// Special handling for blocks that simplify their YAML representation.
 	switch blockType {
-	case "quiz":
+	case quizBlockType:
 		return quizFromYAML(fields)
-	case "checklist":
+	case checklistBlockType:
 		return checklistFromYAML(fields)
-	case "sorting":
+	case sortingBlockType:
 		return sortingFromYAML(fields)
 	default:
 		return json.Marshal(fields)
@@ -84,7 +85,11 @@ func checklistFromYAML(fields map[string]any) ([]byte, error) {
 			for i, item := range itemsList {
 				v, ok := item.(string)
 				if !ok {
-					return nil, fmt.Errorf("%w: checklist item at index %d is an object; use a plain string", ErrInvalidItemFormat, i)
+					return nil, fmt.Errorf(
+						"%w: checklist item at index %d is an object; use a plain string",
+						ErrInvalidItemFormat,
+						i,
+					)
 				}
 				fullItems = append(fullItems, map[string]any{
 					"id":          uuid.New().String(),
@@ -107,7 +112,11 @@ func sortingFromYAML(fields map[string]any) ([]byte, error) {
 			for i, item := range itemsList {
 				v, ok := item.(string)
 				if !ok {
-					return nil, fmt.Errorf("%w: sorting item at index %d is an object; use a plain string", ErrInvalidItemFormat, i)
+					return nil, fmt.Errorf(
+						"%w: sorting item at index %d is an object; use a plain string",
+						ErrInvalidItemFormat,
+						i,
+					)
 				}
 				fullItems = append(fullItems, map[string]any{
 					"id":          uuid.New().String(),

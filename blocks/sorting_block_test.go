@@ -12,11 +12,11 @@ import (
 func TestSortingBlock_GetterMethods(t *testing.T) {
 	block := &blocks.SortingBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
-			Type:       "sorting",
+			ID:      "test-id",
+			Type:    "sorting",
 			OwnerID: "location-1",
-			Order:      5,
-			Points:     100,
+			Order:   5,
+			Points:  100,
 		},
 		Content:       "Test content",
 		ScoringScheme: blocks.AllOrNothing,
@@ -94,7 +94,7 @@ func TestSortingBlock_UpdateBlockData(t *testing.T) {
 	input := map[string][]string{
 		"content":          {"Sort these items in chronological order"},
 		"points":           {"100"},
-		"scoring":   {blocks.AllOrNothing},
+		"scoring":          {blocks.AllOrNothing},
 		"sorting-items":    {"First item", "Second item", "Third item", "Fourth item"},
 		"sorting-item-ids": {"id1", "id2", "id3", "id4"},
 	}

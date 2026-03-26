@@ -50,7 +50,7 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error {
+func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error { //nolint:gocognit,gocyclo
 	// Load team relations
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	var pointsForCheckInRecord int
 	var bonusPoints int
 
-	if team.Instance.Settings.MustCheckOut {
+	if team.Instance.Settings.MustCheckOut { //nolint:nestif // bonus-point logic branches on three independent settings flags
 		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
 		if location.Instance.Settings.EnableBonusPoints {
 			// Calculate bonus points based on visit count
@@ -328,7 +328,7 @@ func (s *CheckInService) checkOut(
 	return scan, nil
 }
 
-func (s *CheckInService) ValidateAndUpdateBlockState(
+func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	ctx context.Context,
 	team models.Team,
 	data map[string][]string,
@@ -393,7 +393,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 	}
 
 	// Only award points and update check-ins in regular mode, not preview mode
-	if !isPreview && state.IsComplete() {
+	if !isPreview && state.IsComplete() { //nolint:nestif // nesting required for guard before point-awarding
 		team.Points += block.GetPoints()
 		err = s.teamRepo.Update(ctx, &team)
 		if err != nil {

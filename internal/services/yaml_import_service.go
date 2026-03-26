@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -78,7 +79,7 @@ func (s *YAMLImportService) ImportCreate(
 
 	var warnings []ImportWarning
 	for _, w := range result.Warnings {
-		warnings = append(warnings, ImportWarning{Field: w.Field, Message: w.Message})
+		warnings = append(warnings, ImportWarning(w))
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -148,14 +149,14 @@ func (s *YAMLImportService) ImportCreate(
 }
 
 // ImportUpdate updates an existing instance from a QuestDef.
-func (s *YAMLImportService) ImportUpdate(
+func (s *YAMLImportService) ImportUpdate( //nolint:gocognit,gocyclo
 	ctx context.Context,
 	instanceID string,
 	def *models.QuestDef,
 ) (*models.Instance, []ImportWarning, error) {
 	// Instance ID must match for round-trip update
 	if def.ID == "" {
-		return nil, nil, fmt.Errorf("YAML has no instance ID: use instance export for round-trip updates")
+		return nil, nil, errors.New("YAML has no instance ID: use instance export for round-trip updates")
 	}
 	if def.ID != instanceID {
 		return nil, nil, fmt.Errorf("YAML instance ID %q does not match current instance %q", def.ID, instanceID)
@@ -169,7 +170,7 @@ func (s *YAMLImportService) ImportUpdate(
 
 	var warnings []ImportWarning
 	for _, w := range result.Warnings {
-		warnings = append(warnings, ImportWarning{Field: w.Field, Message: w.Message})
+		warnings = append(warnings, ImportWarning(w))
 	}
 
 	// Load existing instance
@@ -239,7 +240,7 @@ func (s *YAMLImportService) ImportUpdate(
 			}
 		}
 
-		if matched != nil {
+		if matched != nil { //nolint:nestif // update-or-create logic requires checking match then block-level operations
 			// Update existing location
 			matchedLocationIDs[matched.ID] = true
 			matched.Name = stop.Name
@@ -314,8 +315,11 @@ func (s *YAMLImportService) ImportUpdate(
 	teamCount, err := s.teamRepo.CountByInstance(ctx, instanceID)
 	if err == nil && teamCount > 0 {
 		warnings = append(warnings, ImportWarning{
-			Field:   "instance",
-			Message: fmt.Sprintf("instance has %d active teams; player state may be affected by structural changes", teamCount),
+			Field: "instance",
+			Message: fmt.Sprintf(
+				"instance has %d active teams; player state may be affected by structural changes",
+				teamCount,
+			),
 		})
 	}
 
@@ -327,7 +331,12 @@ func (s *YAMLImportService) ImportUpdate(
 }
 
 // createBlocksForStop creates all blocks for a stop's four contexts.
-func (s *YAMLImportService) createBlocksForStop(ctx context.Context, tx *bun.Tx, ownerID string, stop models.StopDef) error {
+func (s *YAMLImportService) createBlocksForStop(
+	ctx context.Context,
+	tx *bun.Tx,
+	ownerID string,
+	stop models.StopDef,
+) error {
 	if err := s.createBlocksForOwner(ctx, tx, ownerID, blocks.ContextLocationContent, stop.Content); err != nil {
 		return fmt.Errorf("content blocks: %w", err)
 	}

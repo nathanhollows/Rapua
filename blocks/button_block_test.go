@@ -13,13 +13,13 @@ import (
 func TestButtonBlock_Getters(t *testing.T) {
 	block := blocks.ButtonBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
-		Link:    "https://example.com",
-		Text:    "Click me",
+		Link:  "https://example.com",
+		Text:  "Click me",
 		Style: "primary",
 	}
 
@@ -52,8 +52,8 @@ func TestButtonBlock_ParseData(t *testing.T) {
 func TestButtonBlock_UpdateBlockData(t *testing.T) {
 	block := blocks.ButtonBlock{}
 	data := map[string][]string{
-		"link":    {"https://example.com"},
-		"text":    {"Updated Button Text"},
+		"link":  {"https://example.com"},
+		"text":  {"Updated Button Text"},
 		"style": {"warning"},
 	}
 	err := block.UpdateBlockData(data)
@@ -68,8 +68,8 @@ func TestButtonBlock_ValidatePlayerInput(t *testing.T) {
 		BaseBlock: blocks.BaseBlock{
 			Points: 5,
 		},
-		Link:    "https://example.com",
-		Text:    "Test Button",
+		Link:  "https://example.com",
+		Text:  "Test Button",
 		Style: "info",
 	}
 

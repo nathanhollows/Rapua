@@ -307,12 +307,12 @@ func (r *blockRepository) convertModelsToBlocks(modelBlocks []models.Block) (blo
 func convertModelToBlock(model *models.Block) (blocks.Block, error) {
 	// Convert model to block
 	newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
-		ID:         model.ID,
+		ID:      model.ID,
 		OwnerID: model.OwnerID,
-		Type:       model.Type,
-		Data:       model.Data,
-		Order:      model.Ordering,
-		Points:     model.Points,
+		Type:    model.Type,
+		Data:    model.Data,
+		Order:   model.Ordering,
+		Points:  model.Points,
 	})
 	if err != nil {
 		return nil, err
@@ -338,7 +338,12 @@ func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, owner
 // DeleteByOwnerIDPreservingStates deletes all blocks for an owner.
 // Player states for blocks whose IDs appear in preserveIDs are kept;
 // states for all other blocks are deleted.
-func (r *blockRepository) DeleteByOwnerIDPreservingStates(ctx context.Context, tx *bun.Tx, ownerID string, preserveIDs []string) error {
+func (r *blockRepository) DeleteByOwnerIDPreservingStates(
+	ctx context.Context,
+	tx *bun.Tx,
+	ownerID string,
+	preserveIDs []string,
+) error {
 	// Find block IDs to determine which states to delete
 	var blockIDs []string
 	err := tx.NewSelect().

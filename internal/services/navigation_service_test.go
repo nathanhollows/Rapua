@@ -879,7 +879,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations uncompleted", func(t *testing.T) {
 		// Load fresh team
-		//nolint:govet // Shadow variable in test subtest
 		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
 		require.NoError(t, err)
 		err = teamRepo.LoadRelations(ctx, teamPtr)
@@ -898,7 +897,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("one location completed via check-in", func(t *testing.T) {
 		// Check in to loc1 - since location has no blocks, it's immediately complete
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc1, false, false)
 		require.NoError(t, err)
 
@@ -919,7 +917,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("two locations completed", func(t *testing.T) {
 		// Check in to loc2 - also immediately complete (no blocks)
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc2, false, false)
 		require.NoError(t, err)
 
@@ -940,7 +937,6 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 
 	t.Run("all locations completed", func(t *testing.T) {
 		// Check in to loc3 - immediately complete (no blocks)
-		//nolint:govet // Shadow variable in test subtest
 		_, err := checkInRepo.LogCheckIn(ctx, team, *loc3, false, false)
 		require.NoError(t, err)
 

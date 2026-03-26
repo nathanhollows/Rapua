@@ -12,10 +12,10 @@ import (
 func TestClueBlock_Getters(t *testing.T) {
 	block := blocks.ClueBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-clue-id",
+			ID:      "test-clue-id",
 			OwnerID: "location-123",
-			Order:      3,
-			Points:     -15, // Negative points for cost
+			Order:   3,
+			Points:  -15, // Negative points for cost
 		},
 		ClueText:        "This is the secret clue content",
 		DescriptionText: "Need a hint? Click below to reveal.",
@@ -54,10 +54,10 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 		{
 			name: "update all fields",
 			input: map[string][]string{
-				"points":           {"-20"},
-				"clue":        {"The answer is 42"},
-				"description": {"Having trouble? Get a hint below."},
-				"button_label":     {"Show Hint"},
+				"points":       {"-20"},
+				"clue":         {"The answer is 42"},
+				"description":  {"Having trouble? Get a hint below."},
+				"button_label": {"Show Hint"},
 			},
 			expected: blocks.ClueBlock{
 				BaseBlock: blocks.BaseBlock{
@@ -71,10 +71,10 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 		{
 			name: "default button label when empty",
 			input: map[string][]string{
-				"points":           {"-10"},
-				"clue":        {"Hint text"},
-				"description": {"Description"},
-				"button_label":     {""},
+				"points":       {"-10"},
+				"clue":         {"Hint text"},
+				"description":  {"Description"},
+				"button_label": {""},
 			},
 			expected: blocks.ClueBlock{
 				BaseBlock: blocks.BaseBlock{
@@ -88,7 +88,7 @@ func TestClueBlock_UpdateBlockData(t *testing.T) {
 		{
 			name: "zero points when empty",
 			input: map[string][]string{
-				"points":           {""},
+				"points":      {""},
 				"clue":        {"Some clue"},
 				"description": {"Some description"},
 			},

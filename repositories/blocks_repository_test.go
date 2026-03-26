@@ -30,7 +30,7 @@ func setupBlockRepo(t *testing.T) (
 	return blockRepo, blockStateRepo, transactor, cleanup
 }
 
-func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
+func TestBlockRepository(t *testing.T) {
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -49,8 +49,8 @@ func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is
 					blocks.NewImageBlock(
 						blocks.BaseBlock{
 							OwnerID: gofakeit.UUID(),
-							Type:       "image",
-							Points:     10,
+							Type:    "image",
+							Points:  10,
 						},
 					),
 					gofakeit.UUID(),
@@ -90,8 +90,8 @@ func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is
 					blocks.NewImageBlock(
 						blocks.BaseBlock{
 							OwnerID: gofakeit.UUID(),
-							Type:       "image",
-							Points:     10,
+							Type:    "image",
+							Points:  10,
 						},
 					),
 					gofakeit.UUID(),
@@ -141,8 +141,8 @@ func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is
 					blocks.NewImageBlock(
 						blocks.BaseBlock{
 							OwnerID: gofakeit.UUID(),
-							Type:       "image",
-							Points:     10,
+							Type:    "image",
+							Points:  10,
 						},
 					),
 					gofakeit.UUID(),
@@ -201,8 +201,8 @@ func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is
 					blocks.NewImageBlock(
 						blocks.BaseBlock{
 							OwnerID: gofakeit.UUID(),
-							Type:       "image",
-							Points:     10,
+							Type:    "image",
+							Points:  10,
 						},
 					),
 					gofakeit.UUID(),
@@ -257,7 +257,7 @@ func TestBlockRepository(t *testing.T) { //nolint:gocognit // Test complexity is
 	}
 }
 
-func TestBlockRepository_Bulk(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
+func TestBlockRepository_Bulk(t *testing.T) {
 	repo, _, transactor, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -280,8 +280,8 @@ func TestBlockRepository_Bulk(t *testing.T) { //nolint:gocognit // Test complexi
 						blocks.NewImageBlock(
 							blocks.BaseBlock{
 								OwnerID: locationID,
-								Type:       "image",
-								Points:     10,
+								Type:    "image",
+								Points:  10,
 							},
 						),
 						locationID,
@@ -351,8 +351,8 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 		blocks.NewImageBlock(
 			blocks.BaseBlock{
 				OwnerID: gofakeit.UUID(),
-				Type:       "image",
-				Points:     10,
+				Type:    "image",
+				Points:  10,
 			},
 		),
 		gofakeit.UUID(),
@@ -394,8 +394,8 @@ func TestBlockRepository_FindByOwnerID(t *testing.T) {
 						context.Background(),
 						blocks.NewMarkdownBlock(blocks.BaseBlock{
 							OwnerID: ownerID,
-							Type:       "text",
-							Points:     5,
+							Type:    "text",
+							Points:  5,
 						}),
 						ownerID,
 						blocks.ContextLocationContent,
@@ -463,8 +463,8 @@ func TestBlockRepository_FindByOwnerIDAndContext(t *testing.T) {
 						context.Background(),
 						blocks.NewMarkdownBlock(blocks.BaseBlock{
 							OwnerID: ownerID,
-							Type:       "text",
-							Points:     5,
+							Type:    "text",
+							Points:  5,
 						}),
 						ownerID,
 						blocks.ContextLocationContent,
@@ -478,8 +478,8 @@ func TestBlockRepository_FindByOwnerIDAndContext(t *testing.T) {
 					context.Background(),
 					blocks.NewMarkdownBlock(blocks.BaseBlock{
 						OwnerID: ownerID,
-						Type:       "text",
-						Points:     5,
+						Type:    "text",
+						Points:  5,
 					}),
 					ownerID,
 					blocks.ContextLocationClues,
@@ -504,8 +504,8 @@ func TestBlockRepository_FindByOwnerIDAndContext(t *testing.T) {
 					context.Background(),
 					blocks.NewMarkdownBlock(blocks.BaseBlock{
 						OwnerID: ownerID,
-						Type:       "text",
-						Points:     5,
+						Type:    "text",
+						Points:  5,
 					}),
 					ownerID,
 					blocks.ContextLocationContent,
@@ -548,9 +548,9 @@ func TestBlockRepository_Reorder(t *testing.T) {
 			context.Background(),
 			blocks.NewMarkdownBlock(blocks.BaseBlock{
 				OwnerID: ownerID,
-				Type:       "text",
-				Points:     i * 10,
-				Order:      i,
+				Type:    "text",
+				Points:  i * 10,
+				Order:   i,
 			}),
 			ownerID,
 			blocks.ContextLocationContent,
@@ -607,8 +607,8 @@ func TestBlockRepository_FindBlocksAndStatesByOwnerIDAndTeamCode(t *testing.T) {
 					context.Background(),
 					blocks.NewChecklistBlock(blocks.BaseBlock{
 						OwnerID: ownerID,
-						Type:       "checklist",
-						Points:     10,
+						Type:    "checklist",
+						Points:  10,
 					}),
 					ownerID,
 					blocks.ContextLocationContent,
@@ -687,8 +687,8 @@ func TestBlockRepository_FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(t *t
 		context.Background(),
 		blocks.NewChecklistBlock(blocks.BaseBlock{
 			OwnerID: ownerID,
-			Type:       "checklist",
-			Points:     10,
+			Type:    "checklist",
+			Points:  10,
 		}),
 		ownerID,
 		blocks.ContextLocationContent,
@@ -699,8 +699,8 @@ func TestBlockRepository_FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(t *t
 		context.Background(),
 		blocks.NewMarkdownBlock(blocks.BaseBlock{
 			OwnerID: ownerID,
-			Type:       "text",
-			Points:     5,
+			Type:    "text",
+			Points:  5,
 		}),
 		ownerID,
 		blocks.ContextLocationClues,
@@ -766,8 +766,8 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 					context.Background(),
 					blocks.NewChecklistBlock(blocks.BaseBlock{
 						OwnerID: ownerID,
-						Type:       "checklist",
-						Points:     10,
+						Type:    "checklist",
+						Points:  10,
 					}),
 					ownerID,
 					blocks.ContextLocationContent,
@@ -806,8 +806,8 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 					context.Background(),
 					blocks.NewChecklistBlock(blocks.BaseBlock{
 						OwnerID: ownerID,
-						Type:       "checklist",
-						Points:     10,
+						Type:    "checklist",
+						Points:  10,
 					}),
 					ownerID,
 					blocks.ContextLocationContent,
@@ -865,10 +865,10 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 
 	t.Run("Update non-existent block", func(t *testing.T) {
 		fakeBlock := blocks.NewMarkdownBlock(blocks.BaseBlock{
-			ID:         "fake-id",
+			ID:      "fake-id",
 			OwnerID: gofakeit.UUID(),
-			Type:       "text",
-			Points:     5,
+			Type:    "text",
+			Points:  5,
 		})
 
 		_, err := repo.Update(context.Background(), fakeBlock)
@@ -902,8 +902,8 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 			context.Background(),
 			blocks.NewMarkdownBlock(blocks.BaseBlock{
 				OwnerID: locationID,
-				Type:       "text",
-				Points:     5,
+				Type:    "text",
+				Points:  5,
 			}),
 			ownerID,
 			blocks.ContextLocationContent,
@@ -932,8 +932,8 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 				context.Background(),
 				blocks.NewMarkdownBlock(blocks.BaseBlock{
 					OwnerID: ownerID,
-					Type:       "text",
-					Points:     5,
+					Type:    "text",
+					Points:  5,
 				}),
 				ownerID,
 				ctx,
@@ -985,8 +985,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 				context.Background(),
 				blocks.NewMarkdownBlock(blocks.BaseBlock{
 					OwnerID: ownerID,
-					Type:       "text",
-					Points:     i * 10,
+					Type:    "text",
+					Points:  i * 10,
 				}),
 				ownerID,
 				ctx,
@@ -1024,8 +1024,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 				context.Background(),
 				blocks.NewMarkdownBlock(blocks.BaseBlock{
 					OwnerID: ownerID,
-					Type:       "text",
-					Points:     10,
+					Type:    "text",
+					Points:  10,
 				}),
 				ownerID,
 				blocks.ContextLocationContent,
@@ -1042,8 +1042,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 				context.Background(),
 				blocks.NewClueBlock(blocks.BaseBlock{
 					OwnerID: ownerID,
-					Type:       "clue",
-					Points:     5,
+					Type:    "clue",
+					Points:  5,
 				}),
 				ownerID,
 				blocks.ContextLocationClues,
@@ -1084,8 +1084,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 			context.Background(),
 			blocks.NewMarkdownBlock(blocks.BaseBlock{
 				OwnerID: ownerID,
-				Type:       "text",
-				Points:     10,
+				Type:    "text",
+				Points:  10,
 			}),
 			ownerID,
 			ctx,
@@ -1096,8 +1096,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 			context.Background(),
 			blocks.NewMarkdownBlock(blocks.BaseBlock{
 				OwnerID: ownerID,
-				Type:       "text",
-				Points:     20,
+				Type:    "text",
+				Points:  20,
 			}),
 			ownerID,
 			ctx,
@@ -1109,8 +1109,8 @@ func TestBlockRepository_CreateOrderingSequence(t *testing.T) {
 			context.Background(),
 			blocks.NewMarkdownBlock(blocks.BaseBlock{
 				OwnerID: ownerID,
-				Type:       "text",
-				Points:     30,
+				Type:    "text",
+				Points:  30,
 			}),
 			ownerID,
 			ctx,
@@ -1146,8 +1146,8 @@ func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 					context.Background(),
 					blocks.NewMarkdownBlock(blocks.BaseBlock{
 						OwnerID: oldOwnerID,
-						Type:       "text",
-						Points:     10,
+						Type:    "text",
+						Points:  10,
 					}),
 					oldOwnerID,
 					blocks.ContextLocationContent,
@@ -1160,8 +1160,8 @@ func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 					context.Background(),
 					blocks.NewClueBlock(blocks.BaseBlock{
 						OwnerID: oldOwnerID,
-						Type:       "clue",
-						Points:     5,
+						Type:    "clue",
+						Points:  5,
 					}),
 					oldOwnerID,
 					blocks.ContextLocationClues,
@@ -1242,9 +1242,9 @@ func TestBlockRepository_DuplicateBlocksByOwner(t *testing.T) {
 					context.Background(),
 					blocks.NewMarkdownBlock(blocks.BaseBlock{
 						OwnerID: oldOwnerID,
-						Type:       "text",
-						Points:     25,
-						Order:      3,
+						Type:    "text",
+						Points:  25,
+						Order:   3,
 					}),
 					oldOwnerID,
 					blocks.ContextLocationContent,
@@ -1309,8 +1309,8 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 		block1, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: oldOwnerID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), oldOwnerID, blocks.ContextLocationContent)
 		require.NoError(t, err)
@@ -1318,8 +1318,8 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 		block2, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: oldOwnerID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), oldOwnerID, blocks.ContextLocationContent)
 		require.NoError(t, err)
@@ -1357,8 +1357,8 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 		_, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: oldOwnerID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), oldOwnerID, blocks.ContextLocationContent)
 		require.NoError(t, err)
@@ -1410,8 +1410,8 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		block, err := repo.Create(ctx, blocks.NewHeaderBlock(
 			blocks.BaseBlock{
 				OwnerID: instanceID,
-				Type:       "header",
-				Points:     0,
+				Type:    "header",
+				Points:  0,
 			},
 		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)
@@ -1454,8 +1454,8 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: locationID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), locationID, blocks.ContextLocationContent)
 		require.NoError(t, err)
@@ -1486,8 +1486,8 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: instanceID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)
@@ -1525,8 +1525,8 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
 				OwnerID: instanceID,
-				Type:       "text",
-				Points:     0,
+				Type:    "text",
+				Points:  0,
 			},
 		), instanceID, blocks.ContextStart)
 		require.NoError(t, err)

@@ -132,7 +132,7 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	})
 }
 
-func TestInstanceService(t *testing.T) { //nolint:gocognit // Test complexity is acceptable
+func TestInstanceService(t *testing.T) {
 	svc, userService, cleanup := setupInstanceService(t)
 	defer cleanup()
 

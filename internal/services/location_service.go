@@ -196,7 +196,7 @@ func (s locationService) CreateLocationFromMarker(
 func (s locationService) createDefaultHeaderBlock(ctx context.Context, location *models.Location) error {
 	blockID := uuid.New().String()
 	headerData := map[string]string{
-		"icon":       "map-pin-check-inside",
+		"icon":  "map-pin-check-inside",
 		"title": location.Name,
 		"size":  "large",
 	}
@@ -207,12 +207,12 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 	}
 
 	baseBlock := blocks.BaseBlock{
-		ID:         blockID,
+		ID:      blockID,
 		OwnerID: location.ID,
-		Type:       "header",
-		Data:       jsonData,
-		Order:      0,
-		Points:     0,
+		Type:    "header",
+		Data:    jsonData,
+		Order:   0,
+		Points:  0,
 	}
 
 	block, err := blocks.CreateFromBaseBlock(baseBlock)
@@ -288,7 +288,11 @@ func (s locationService) UpdateName(ctx context.Context, location *models.Locati
 	return s.locationRepo.Update(ctx, location)
 }
 
-func (s locationService) UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error {
+func (s locationService) UpdateLocation( //nolint:gocognit
+	ctx context.Context,
+	location *models.Location,
+	data LocationUpdateData,
+) error {
 	if location.Marker.Code == "" {
 		err := s.locationRepo.LoadMarker(ctx, location)
 		if err != nil {

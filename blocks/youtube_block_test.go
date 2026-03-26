@@ -11,10 +11,10 @@ import (
 func TestYoutubeBlock_Getters(t *testing.T) {
 	block := blocks.YoutubeBlock{
 		BaseBlock: blocks.BaseBlock{
-			ID:         "test-id",
+			ID:      "test-id",
 			OwnerID: "location-123",
-			Order:      1,
-			Points:     5,
+			Order:   1,
+			Points:  5,
 		},
 		URL: "https://www.youtube.com/watch?v=12345",
 	}

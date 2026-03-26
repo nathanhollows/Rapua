@@ -121,7 +121,7 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNewPost handles creating a new location.
-func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -220,7 +220,7 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) {
 
 	editPath := "/admin/locations/" + location.Slug
 	if r.Header.Get("Hx-Request") == "true" {
-		w.Header().Set("HX-Location", editPath)
+		w.Header().Set("Hx-Location", editPath)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

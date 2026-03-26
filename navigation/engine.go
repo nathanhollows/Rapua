@@ -74,7 +74,7 @@ func IsGroupCompleted(
 //   - All groups are completed
 //
 // This function is deterministic: same inputs always produce same result.
-func ComputeCurrentGroup(
+func ComputeCurrentGroup( //nolint:gocognit
 	structure *models.GameStructure,
 	completedLocationIDs []string,
 	skippedGroupIDs []string,

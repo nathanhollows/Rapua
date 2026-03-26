@@ -19,10 +19,10 @@ type clueBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *ClueBlock) GetID() string         { return b.ID }
-func (b *ClueBlock) GetType() string       { return "clue" }
+func (b *ClueBlock) GetID() string      { return b.ID }
+func (b *ClueBlock) GetType() string    { return "clue" }
 func (b *ClueBlock) GetOwnerID() string { return b.OwnerID }
-func (b *ClueBlock) GetName() string       { return "Clue" }
+func (b *ClueBlock) GetName() string    { return "Clue" }
 func (b *ClueBlock) GetDescription() string {
 	return "Players can reveal a clue by spending points."
 }

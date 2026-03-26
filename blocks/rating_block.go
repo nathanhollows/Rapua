@@ -21,10 +21,10 @@ type ratingBlockData struct {
 
 // Basic Attributes Getters
 
-func (b *RatingBlock) GetID() string         { return b.ID }
-func (b *RatingBlock) GetType() string       { return "rating" }
+func (b *RatingBlock) GetID() string      { return b.ID }
+func (b *RatingBlock) GetType() string    { return "rating" }
 func (b *RatingBlock) GetOwnerID() string { return b.OwnerID }
-func (b *RatingBlock) GetName() string       { return "Rating" }
+func (b *RatingBlock) GetName() string    { return "Rating" }
 func (b *RatingBlock) GetDescription() string {
 	return "Players provide a star rating for feedback or assessment."
 }

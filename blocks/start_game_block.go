@@ -14,10 +14,10 @@ type StartGameButtonBlock struct {
 
 // Basic Attributes Getters
 
-func (b *StartGameButtonBlock) GetID() string         { return b.ID }
-func (b *StartGameButtonBlock) GetType() string       { return "start_button" }
+func (b *StartGameButtonBlock) GetID() string      { return b.ID }
+func (b *StartGameButtonBlock) GetType() string    { return "start_button" }
 func (b *StartGameButtonBlock) GetOwnerID() string { return b.OwnerID }
-func (b *StartGameButtonBlock) GetName() string       { return "Start Button" }
+func (b *StartGameButtonBlock) GetName() string    { return "Start Button" }
 func (b *StartGameButtonBlock) GetDescription() string {
 	return "Display a button to start the game when active."
 }

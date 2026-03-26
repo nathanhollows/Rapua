@@ -96,7 +96,7 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 
 			err := svc.DismissQuickstart(context.Background(), instanceID)
 
-			if tc.wantErr {
+			if tc.wantErr { //nolint:nestif // table-driven test pattern requires checking both error and success paths
 				require.Error(t, err)
 				if tc.expectedName != "" {
 					assert.Contains(t, err.Error(), tc.expectedName)
