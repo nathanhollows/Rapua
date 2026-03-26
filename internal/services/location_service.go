@@ -197,8 +197,8 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 	blockID := uuid.New().String()
 	headerData := map[string]string{
 		"icon":       "map-pin-check-inside",
-		"title_text": location.Name,
-		"title_size": "large",
+		"title": location.Name,
+		"size":  "large",
 	}
 
 	jsonData, err := json.Marshal(headerData)

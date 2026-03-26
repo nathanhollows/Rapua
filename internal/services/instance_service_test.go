@@ -83,12 +83,12 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 		// Verify block types in order
 		expectedTypes := []string{
 			"header",
-			"game_status_alert",
+			"game_status",
 			"divider",
-			"markdown",
+			"text",
 			"divider",
 			"team_name",
-			"start_game_button",
+			"start_button",
 		}
 		for i, block := range startBlocks {
 			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
@@ -118,7 +118,7 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 		assert.Len(t, finishBlocks, 2, "should create 2 finish blocks")
 
 		// Verify block types in order
-		expectedTypes := []string{"header", "markdown"}
+		expectedTypes := []string{"header", "text"}
 		for i, block := range finishBlocks {
 			assert.Equal(t, expectedTypes[i], block.GetType(), "block %d should be %s", i, expectedTypes[i])
 			assert.Equal(t, i, block.GetOrder(), "block %d should have order %d", i, i)
