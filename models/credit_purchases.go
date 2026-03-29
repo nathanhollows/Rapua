@@ -3,8 +3,6 @@ package models
 import (
 	"database/sql"
 	"time"
-
-	"github.com/nathanhollows/Rapua/v7/config"
 )
 
 // CreditPurchase represents a record of credit purchases via Stripe.
@@ -32,8 +30,3 @@ const (
 	CreditPurchaseStatusFailed    = "failed"
 	CreditPurchaseStatusCancelled = "cancelled"
 )
-
-// CalculatePurchaseAmount calculates the total amount in cents for a credit purchase.
-func CalculatePurchaseAmount(credits int) int {
-	return credits * config.CreditPriceCents()
-}

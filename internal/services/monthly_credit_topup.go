@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/config"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"

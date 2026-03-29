@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -41,7 +42,7 @@ func createTestCreditPurchase(
 		UpdatedAt:       time.Now(),
 		UserID:          userID,
 		Credits:         credits,
-		AmountPaid:      models.CalculatePurchaseAmount(credits),
+		AmountPaid:      credits * config.CreditPriceCents(),
 		StripeSessionID: gofakeit.UUID(),
 		StripeCustomerID: sql.NullString{
 			String: gofakeit.UUID(),
