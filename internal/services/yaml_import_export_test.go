@@ -9,7 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

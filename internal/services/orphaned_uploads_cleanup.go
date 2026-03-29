@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 )
 
 type OrphanedUploadsCleanupService struct {

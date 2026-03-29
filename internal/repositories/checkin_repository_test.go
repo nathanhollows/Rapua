@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 )
 
 func setupCheckinRepo(t *testing.T) (repositories.CheckInRepository, db.Transactor, func()) {

@@ -11,7 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/helpers"
 	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/uptrace/bun"
 )
 
