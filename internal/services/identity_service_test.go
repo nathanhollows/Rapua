@@ -12,11 +12,11 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/markbates/goth"
+	"github.com/nathanhollows/Rapua/v7/internal/security"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
-	"github.com/nathanhollows/Rapua/v7/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -638,7 +638,6 @@ func TestIdentityService_ContextCancellation(t *testing.T) {
 		cancel() // Cancel immediately
 
 		user, err := service.AuthenticateUser(ctx, gofakeit.Email(), "password")
-
 		// Should handle cancelled context gracefully
 		if err != nil {
 			// May get validation error first, or context cancelled error
@@ -653,7 +652,6 @@ func TestIdentityService_ContextCancellation(t *testing.T) {
 		cancel() // Cancel immediately
 
 		err := service.VerifyEmail(ctx, "some-token")
-
 		// Should handle cancelled context gracefully
 		if err != nil {
 			assert.True(t, errors.Is(err, context.Canceled) ||

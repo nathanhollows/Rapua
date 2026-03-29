@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/config"
 	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/security"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
-	"github.com/nathanhollows/Rapua/v7/security"
 )
 
 // Password-related errors.
