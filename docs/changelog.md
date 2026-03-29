@@ -20,6 +20,7 @@ tag: updated
 - **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
 - **Breaking:** `OwnerID` replaces `LocationID` in blocks.
 - New fields for blocks to support reports in the future.
+- `db` package is now in `internal/db`.
 - Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
 
 ### Removed

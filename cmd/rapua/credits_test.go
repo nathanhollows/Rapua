@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/internal/migrations"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"

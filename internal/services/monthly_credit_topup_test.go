@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/nathanhollows/Rapua/v7/config"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
@@ -338,7 +338,6 @@ func TestMonthlyCreditTopupService_ContextCancellation(t *testing.T) {
 
 	// The service should handle context cancellation gracefully
 	err := service.TopUpCredits(ctx)
-
 	// Should either succeed (if it completed before cancellation) or handle cancellation gracefully
 	if err != nil {
 		// If there's an error, it should be related to context cancellation or a reasonable timeout

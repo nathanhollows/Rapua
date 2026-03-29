@@ -8,7 +8,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -293,10 +293,6 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 	assert.NotEqual(t, block.GetOwnerID(), newBlock.GetOwnerID())
 }
 
-
-
-
-
 func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 	repo, blockStateRepo, transactor, dbc, cleanup := setupBlockRepo(t)
 	defer cleanup()
@@ -471,10 +467,7 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 		_ = repo.Delete(context.Background(), tx, block.GetID())
 		_ = tx.Commit()
 	})
-
 }
-
-
 
 func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 	repo, _, transactor, _, cleanup := setupBlockRepo(t)
@@ -669,4 +662,3 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 	tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
 	_ = tx.Commit()
 }
-

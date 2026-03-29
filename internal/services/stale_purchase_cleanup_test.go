@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
@@ -362,7 +362,6 @@ func TestStalePurchaseCleanupService_CleanupStalePurchases_ContextCancellation(t
 
 	// The service should handle context cancellation gracefully
 	err := service.CleanupStalePurchases(ctx)
-
 	// Should either succeed (if it completed before cancellation) or handle cancellation gracefully
 	if err != nil {
 		// If there's an error, it should be related to context cancellation

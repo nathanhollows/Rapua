@@ -3,7 +3,7 @@ package repositories_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/repositories"
 )
 
@@ -16,4 +16,3 @@ func setupCheckinRepo(t *testing.T) (repositories.CheckInRepository, db.Transact
 	checkinRepository := repositories.NewCheckInRepository(dbc)
 	return checkinRepository, transactor, cleanup
 }
-

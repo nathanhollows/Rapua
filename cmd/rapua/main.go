@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
 	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"

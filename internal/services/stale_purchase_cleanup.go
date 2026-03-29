@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
@@ -44,7 +44,6 @@ func (s *StalePurchaseCleanupService) CleanupStalePurchases(ctx context.Context)
 			models.CreditPurchaseStatusFailed).
 		Where("created_at < ?", cutoffTime).
 		Exec(ctx)
-
 	if err != nil {
 		return fmt.Errorf("failed to delete stale purchases: %w", err)
 	}
