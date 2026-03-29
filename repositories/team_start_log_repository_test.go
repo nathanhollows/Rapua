@@ -33,6 +33,9 @@ func createTestTeamStartLog(
 ) models.TeamStartLog {
 	t.Helper()
 
+	// Ensure the referenced user exists (team_start_logs.user_id FK).
+	insertUserWithID(t, db, userID)
+
 	log := models.TeamStartLog{
 		ID:         gofakeit.UUID(),
 		UserID:     userID,
@@ -68,6 +71,7 @@ func TestTeamStartLogRepo_CreateWithTx(t *testing.T) {
 		InstanceID: gofakeit.UUID(),
 		CreatedAt:  time.Now(),
 	}
+	insertUserWithID(t, db, log.UserID)
 
 	// Create log within transaction
 	err = repo.CreateWithTx(ctx, &tx, log)
@@ -107,6 +111,7 @@ func TestTeamStartLogRepo_CreateWithTx_Rollback(t *testing.T) {
 		InstanceID: gofakeit.UUID(),
 		CreatedAt:  time.Now(),
 	}
+	insertUserWithID(t, db, log.UserID)
 
 	// Create log within transaction
 	err = repo.CreateWithTx(ctx, &tx, log)
@@ -350,103 +355,3 @@ func TestTeamStartLogRepo_OrderingConsistency(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_DeleteByUserID(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID1 := gofakeit.UUID()
-	userID2 := gofakeit.UUID()
-
-	// Create logs for both users
-	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID1, "team-1", "instance-1", now.Add(-2*time.Hour))
-	log2 := createTestTeamStartLog(t, db, userID1, "team-2", "instance-1", now.Add(-1*time.Hour))
-	log3 := createTestTeamStartLog(t, db, userID2, "team-3", "instance-1", now)
-
-	// Delete logs for user1
-	tx, err := db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer tx.Rollback()
-
-	err = repo.DeleteByUserID(ctx, &tx, userID1)
-	require.NoError(t, err)
-
-	err = tx.Commit()
-	require.NoError(t, err)
-
-	// Verify user1's logs were deleted
-	user1Logs, err := repo.GetByUserID(ctx, userID1)
-	require.NoError(t, err)
-	assert.Empty(t, user1Logs, "User1's logs should be deleted")
-
-	// Ensure specific logs are gone
-	count, err := db.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", log1.ID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count)
-
-	count, err = db.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", log2.ID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count)
-
-	// Verify user2's logs still exist
-	user2Logs, err := repo.GetByUserID(ctx, userID2)
-	require.NoError(t, err)
-	assert.Len(t, user2Logs, 1, "User2's logs should still exist")
-	assert.Equal(t, log3.ID, user2Logs[0].ID)
-}
-
-func TestTeamStartLogRepo_DeleteByUserID_EmptyResult(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Delete for non-existent user should not error
-	tx, err := db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer tx.Rollback()
-
-	err = repo.DeleteByUserID(ctx, &tx, "nonexistent-user")
-	require.NoError(t, err)
-
-	err = tx.Commit()
-	require.NoError(t, err)
-}
-
-func TestTeamStartLogRepo_DeleteByUserID_MultipleInstances(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-
-	// Create logs across multiple instances
-	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1", "instance-1", now.Add(-3*time.Hour))
-	log2 := createTestTeamStartLog(t, db, userID, "team-2", "instance-2", now.Add(-2*time.Hour))
-	log3 := createTestTeamStartLog(t, db, userID, "team-3", "instance-3", now.Add(-1*time.Hour))
-
-	// Delete all logs for user
-	tx, err := db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer tx.Rollback()
-
-	err = repo.DeleteByUserID(ctx, &tx, userID)
-	require.NoError(t, err)
-
-	err = tx.Commit()
-	require.NoError(t, err)
-
-	// Verify all logs were deleted regardless of instance
-	count, err := db.NewSelect().Model(&models.TeamStartLog{}).Where("user_id = ?", userID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count, "All logs for user should be deleted")
-
-	// Verify specific logs
-	for _, logID := range []string{log1.ID, log2.ID, log3.ID} {
-		logCount, countErr := db.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", logID).Count(ctx)
-		require.NoError(t, countErr)
-		assert.Equal(t, 0, logCount, "Log %s should be deleted", logID)
-	}
-}

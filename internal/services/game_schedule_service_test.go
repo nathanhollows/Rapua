@@ -25,9 +25,15 @@ func setupGameScheduleService(t *testing.T) (*services.GameScheduleService, func
 }
 
 func createTestInstance(t *testing.T, dbc *bun.DB) *models.Instance {
+	t.Helper()
+
+	// Insert a valid user to satisfy FK constraint: instances.user_id → users.id
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
 	instance := &models.Instance{
 		ID:        gofakeit.UUID(),
-		UserID:    gofakeit.UUID(),
+		UserID:    userID,
 		Name:      gofakeit.Name(),
 		StartTime: bun.NullTime{},
 		EndTime:   bun.NullTime{},

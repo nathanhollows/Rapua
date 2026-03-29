@@ -323,8 +323,8 @@ func TestUploadRepository_GetOrphanedUploads(t *testing.T) {
 	repo := repositories.NewUploadRepository(dbc)
 	ctx := context.Background()
 
-	// Create a real block for testing (using direct DB insert)
-	block := &models.Block{
+	// Create two blocks: block1 stays, block2 will be deleted
+	block1 := &models.Block{
 		ID:       "block-" + uuid.New().String(),
 		OwnerID:  "location-" + uuid.New().String(),
 		Type:     "text",
@@ -333,25 +333,36 @@ func TestUploadRepository_GetOrphanedUploads(t *testing.T) {
 		Ordering: 0,
 		Points:   0,
 	}
-	_, err := dbc.NewInsert().Model(block).Exec(ctx)
+	block2 := &models.Block{
+		ID:       "block-" + uuid.New().String(),
+		OwnerID:  "location-" + uuid.New().String(),
+		Type:     "text",
+		Context:  "content",
+		Data:     []byte(`{"content": "test2"}`),
+		Ordering: 0,
+		Points:   0,
+	}
+	_, err := dbc.NewInsert().Model(block1).Exec(ctx)
+	require.NoError(t, err)
+	_, err = dbc.NewInsert().Model(block2).Exec(ctx)
 	require.NoError(t, err)
 
 	// Create uploads:
 	// 1. Upload with existing block (not orphaned)
 	upload1 := &models.Upload{
 		OriginalURL: "https://example.com/image1.jpg",
-		BlockID:     block.ID,
+		BlockID:     block1.ID,
 		Storage:     "local",
 		Type:        models.MediaTypeImage,
 	}
-	// 2. Upload with non-existent block (orphaned)
+	// 2. Upload whose block will be deleted — FK ON DELETE SET NULL nulls block_id
 	upload2 := &models.Upload{
 		OriginalURL: "https://example.com/image2.jpg",
-		BlockID:     "nonexistent-block-" + uuid.New().String(),
+		BlockID:     block2.ID,
 		Storage:     "local",
 		Type:        models.MediaTypeImage,
 	}
-	// 3. Upload with null block_id (not orphaned, just unassigned)
+	// 3. Upload with null block_id (unassigned)
 	upload3 := &models.Upload{
 		OriginalURL: "https://example.com/image3.jpg",
 		BlockID:     "",
@@ -363,26 +374,28 @@ func TestUploadRepository_GetOrphanedUploads(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, upload2))
 	require.NoError(t, repo.Create(ctx, upload3))
 
-	// Get orphaned uploads
-	orphaned, err := repo.GetOrphanedUploads(ctx)
+	// Delete block2 — ON DELETE SET NULL sets upload2.block_id = NULL
+	_, err = dbc.NewDelete().Model(block2).WherePK().Exec(ctx)
 	require.NoError(t, err)
 
-	// Check that our orphaned upload is in the results
-	foundOrphan := false
-	for _, upload := range orphaned {
-		if upload.ID == upload2.ID {
-			foundOrphan = true
-			break
-		}
-	}
-	assert.True(t, foundOrphan, "Should find upload2 as orphaned")
+	// GetOrphanedUploads queries block_id IS NOT NULL AND block not in blocks.
+	// With FK ON DELETE SET NULL, this state cannot exist: deleting block2 nulled
+	// upload2's block_id, so no uploads are orphaned.
+	orphaned, err := repo.GetOrphanedUploads(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, orphaned, "FK ON DELETE SET NULL prevents dangling block references")
 
 	// Verify upload1 (with valid block) is NOT in orphaned list
 	for _, upload := range orphaned {
 		assert.NotEqual(t, upload1.ID, upload.ID, "Upload with valid block should not be orphaned")
 	}
 
-	// Verify upload3 (with null block_id) is NOT in orphaned list
+	// Verify upload2 (block_id nulled by cascade) is NOT in orphaned list
+	for _, upload := range orphaned {
+		assert.NotEqual(t, upload2.ID, upload.ID, "Upload with nulled block_id should not be orphaned")
+	}
+
+	// Verify upload3 (null block_id) is NOT in orphaned list
 	for _, upload := range orphaned {
 		assert.NotEqual(t, upload3.ID, upload.ID, "Upload with null block_id should not be orphaned")
 	}

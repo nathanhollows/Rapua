@@ -12,6 +12,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
 const (
@@ -23,7 +24,7 @@ const (
 	baseTime = "2024-01-15T10:00:00Z"
 )
 
-func setupTeamsService(t *testing.T) (services.TeamService, func()) {
+func setupTeamsService(t *testing.T) (services.TeamService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
@@ -44,7 +45,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, func()) {
 		locationRepo,
 	)
 
-	return *teamService, cleanup
+	return *teamService, dbc, cleanup
 }
 
 // getBaseTime returns a fixed time for deterministic testing.
@@ -54,8 +55,14 @@ func getBaseTime() time.Time {
 }
 
 func TestTeamService_AddTeams(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, dbc, cleanup := setupTeamsService(t)
 	defer cleanup()
+
+	// Create FK-valid instances for each test case
+	mkInstance := func() string {
+		p := createTestParents(t, dbc)
+		return p.InstanceID
+	}
 
 	tests := []struct {
 		name       string
@@ -66,45 +73,45 @@ func TestTeamService_AddTeams(t *testing.T) {
 	}{
 		{
 			name:       "add teams successfully",
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			count:      3,
 			wantCount:  3,
 			wantErr:    false,
 		},
 		{
 			name:       "add single team",
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			count:      1,
 			wantCount:  1,
 			wantErr:    false,
 		},
 		{
 			name:       "add many teams",
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			count:      10,
 			wantCount:  10,
 			wantErr:    false,
 		},
 		{
 			name:       "zero count should create no teams",
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			count:      0,
 			wantCount:  0,
 			wantErr:    false,
 		},
 		{
 			name:       "negative count should create no teams",
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			count:      -1,
 			wantCount:  0,
 			wantErr:    false,
 		},
 		{
-			name:       "empty instance ID still creates teams",
+			name:       "empty instance ID fails with FK constraint",
 			instanceID: "",
 			count:      3,
-			wantCount:  3,
-			wantErr:    false,
+			wantCount:  0,
+			wantErr:    true,
 		},
 	}
 
@@ -130,8 +137,14 @@ func TestTeamService_AddTeams(t *testing.T) {
 }
 
 func TestTeamService_FindAll(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, dbc, cleanup := setupTeamsService(t)
 	defer cleanup()
+
+	// Create FK-valid instances for each test case
+	mkInstance := func() string {
+		p := createTestParents(t, dbc)
+		return p.InstanceID
+	}
 
 	tests := []struct {
 		name       string
@@ -143,21 +156,21 @@ func TestTeamService_FindAll(t *testing.T) {
 		{
 			name:       "find all teams for instance",
 			setupTeams: 5,
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			wantCount:  5,
 			wantErr:    false,
 		},
 		{
 			name:       "find no teams for empty instance",
 			setupTeams: 0,
-			instanceID: gofakeit.UUID(),
+			instanceID: mkInstance(),
 			wantCount:  0,
 			wantErr:    false,
 		},
 		{
 			name:       "find teams with special characters in instance ID",
 			setupTeams: 3,
-			instanceID: "test-instance-" + gofakeit.LetterN(10),
+			instanceID: mkInstance(),
 			wantCount:  3,
 			wantErr:    false,
 		},
@@ -192,11 +205,12 @@ func TestTeamService_FindAll(t *testing.T) {
 }
 
 func TestTeamService_FindTeamByCode(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, dbc, cleanup := setupTeamsService(t)
 	defer cleanup()
 
 	t.Run("find existing team by code", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		p := createTestParents(t, dbc)
+		instanceID := p.InstanceID
 		teams, err := teamService.AddTeams(context.Background(), instanceID, 1)
 		require.NoError(t, err)
 		require.Len(t, teams, 1)
@@ -222,7 +236,8 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 	})
 
 	t.Run("find correct team among multiple teams", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		p := createTestParents(t, dbc)
+		instanceID := p.InstanceID
 		teams, err := teamService.AddTeams(context.Background(), instanceID, 5)
 		require.NoError(t, err)
 		require.Len(t, teams, 5)
@@ -238,7 +253,7 @@ func TestTeamService_FindTeamByCode(t *testing.T) {
 }
 
 func TestTeamService_BuildLocationGroupMap(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, _, cleanup := setupTeamsService(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -358,7 +373,7 @@ func TestTeamService_BuildLocationGroupMap(t *testing.T) {
 }
 
 func TestTeamService_BuildGroupOrder(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, _, cleanup := setupTeamsService(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -455,7 +470,7 @@ func TestTeamService_BuildGroupOrder(t *testing.T) {
 }
 
 func TestTeamService_GroupCheckInsByGroup(t *testing.T) {
-	teamService, cleanup := setupTeamsService(t)
+	teamService, _, cleanup := setupTeamsService(t)
 	defer cleanup()
 
 	// Helper to create check-ins with deterministic times relative to base time

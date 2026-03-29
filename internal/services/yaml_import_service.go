@@ -261,11 +261,17 @@ func (s *YAMLImportService) ImportUpdate( //nolint:gocognit,gocyclo
 			// Delete existing blocks and recreate from YAML,
 			// preserving player states for blocks with matching IDs
 			preserveIDs := collectBlockIDs(stop)
-			if err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, matched.ID, preserveIDs); err != nil {
+			savedStates, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, matched.ID, preserveIDs)
+			if err != nil {
 				return nil, nil, fmt.Errorf("deleting blocks for stop %q: %w", stop.Slug, err)
 			}
 			if err := s.createBlocksForStop(ctx, tx, matched.ID, stop); err != nil {
 				return nil, nil, fmt.Errorf("creating blocks for stop %q: %w", stop.Slug, err)
+			}
+			if len(savedStates) > 0 {
+				if _, err := tx.NewInsert().Model(&savedStates).Exec(ctx); err != nil {
+					return nil, nil, fmt.Errorf("restoring player states for stop %q: %w", stop.Slug, err)
+				}
 			}
 
 			slugToLocationID[stop.Slug] = matched.ID
@@ -293,7 +299,8 @@ func (s *YAMLImportService) ImportUpdate( //nolint:gocognit,gocyclo
 	// Delete and recreate start/finish blocks, preserving player states for matching IDs
 	instanceBlockIDs := collectBlockDefIDs(def.Start)
 	instanceBlockIDs = append(instanceBlockIDs, collectBlockDefIDs(def.Finish)...)
-	if err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, instanceID, instanceBlockIDs); err != nil {
+	savedInstanceStates, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, instanceID, instanceBlockIDs)
+	if err != nil {
 		return nil, nil, fmt.Errorf("deleting instance blocks: %w", err)
 	}
 	if err := s.createBlocksForOwner(ctx, tx, instanceID, blocks.ContextStart, def.Start); err != nil {
@@ -301,6 +308,11 @@ func (s *YAMLImportService) ImportUpdate( //nolint:gocognit,gocyclo
 	}
 	if err := s.createBlocksForOwner(ctx, tx, instanceID, blocks.ContextFinish, def.Finish); err != nil {
 		return nil, nil, fmt.Errorf("creating finish blocks: %w", err)
+	}
+	if len(savedInstanceStates) > 0 {
+		if _, err := tx.NewInsert().Model(&savedInstanceStates).Exec(ctx); err != nil {
+			return nil, nil, fmt.Errorf("restoring player states for instance blocks: %w", err)
+		}
 	}
 
 	// Rebuild game structure

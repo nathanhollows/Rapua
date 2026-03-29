@@ -523,6 +523,9 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
 
+		// Create parent user for FK constraint
+		insertTestUser(t, dbc, userID)
+
 		// Create instance owned by user using repository
 		inst := &models.Instance{
 			ID:     instanceID,
@@ -542,6 +545,9 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
 
+		// Create parent user for FK constraint
+		insertTestUser(t, dbc, userID)
+
 		// Create instance owned by user using repository
 		inst := &models.Instance{
 			ID:     instanceID,
@@ -560,6 +566,11 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 	t.Run("Owner can access location block through location", func(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
+		markerCode := gofakeit.LetterN(5)
+
+		// Create parent rows for FK constraints
+		insertTestUser(t, dbc, userID)
+		insertTestMarker(t, dbc, markerCode)
 
 		// Create instance owned by user using repository
 		inst := &models.Instance{
@@ -574,7 +585,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		loc := &models.Location{
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerCode,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -589,6 +600,10 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		userID := gofakeit.UUID()
 		otherUserID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
+
+		// Create parent users for FK constraints
+		insertTestUser(t, dbc, userID)
+		insertTestUser(t, dbc, otherUserID)
 
 		// Create instance owned by another user using repository
 		inst := &models.Instance{
@@ -609,6 +624,12 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		userID := gofakeit.UUID()
 		otherUserID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
+		markerCode := gofakeit.LetterN(5)
+
+		// Create parent rows for FK constraints
+		insertTestUser(t, dbc, userID)
+		insertTestUser(t, dbc, otherUserID)
+		insertTestMarker(t, dbc, markerCode)
 
 		// Create instance owned by another user using repository
 		inst := &models.Instance{
@@ -623,7 +644,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		loc := &models.Location{
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerCode,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -637,6 +658,11 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 	t.Run("Context routing: start and finish -> instance, location contexts -> location", func(t *testing.T) {
 		userID := gofakeit.UUID()
 		instanceID := gofakeit.UUID()
+		markerCode := gofakeit.LetterN(5)
+
+		// Create parent rows for FK constraints
+		insertTestUser(t, dbc, userID)
+		insertTestMarker(t, dbc, markerCode)
 
 		// Create instance using repository
 		inst := &models.Instance{
@@ -651,7 +677,7 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		loc := &models.Location{
 			InstanceID: instanceID,
 			Name:       gofakeit.Word(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerCode,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)

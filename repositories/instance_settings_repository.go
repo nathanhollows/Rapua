@@ -20,9 +20,6 @@ type InstanceSettingsRepository interface {
 	// UpdateTx updates instance settings within a transaction
 	UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error
 
-	// Delete removes and instance from the database given the instanceID
-	Delete(ctx context.Context, tx *bun.Tx, instanceID string) error
-
 	// GetByInstanceID retrieves instance settings by instance ID
 	GetByInstanceID(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
 }
@@ -89,17 +86,6 @@ func (r *instanceSettingsRepository) UpdateTx(
 	}
 	settings.UpdatedAt = time.Now().UTC()
 	_, err := tx.NewUpdate().Model(settings).WherePK().Exec(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *instanceSettingsRepository) Delete(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	_, err := tx.NewDelete().
-		Model(&models.InstanceSettings{}).
-		Where("instance_id = ?", instanceID).
-		Exec(ctx)
 	if err != nil {
 		return err
 	}

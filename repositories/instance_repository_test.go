@@ -14,14 +14,14 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupInstanceRepo(t *testing.T) (repositories.InstanceRepository, db.Transactor, func()) {
+func setupInstanceRepo(t *testing.T) (repositories.InstanceRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
 	instanceRepo := repositories.NewInstanceRepository(dbc)
-	return instanceRepo, transactor, cleanup
+	return instanceRepo, transactor, dbc, cleanup
 }
 
 func TestInstanceRepository_Create(t *testing.T) {
@@ -54,10 +54,13 @@ func TestInstanceRepository_Create(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, dbc, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			inst := tc.instanceFn()
+			if inst.UserID != "" {
+				insertUserWithID(t, dbc, inst.UserID)
+			}
 			err := repo.Create(context.Background(), inst)
 			if tc.wantErr {
 				require.Error(t, err)
@@ -79,9 +82,10 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 		{
 			name: "Existing instance",
 			setupFn: func(ctx context.Context, _ testing.TB, inst models.Instance, t *testing.T) {
-				repo, _, cleanup := setupInstanceRepo(t)
+				innerRepo, _, innerDbc, cleanup := setupInstanceRepo(t)
 				defer cleanup()
-				err := repo.Create(ctx, &inst)
+				insertUserWithID(t, innerDbc, inst.UserID)
+				err := innerRepo.Create(ctx, &inst)
 				require.NoError(t, err)
 			},
 			wantErr: false,
@@ -97,7 +101,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, _, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -143,10 +147,11 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, dbc, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
+			insertUserWithID(t, dbc, tc.userID)
 			// Create instances for the given user
 			for range tc.count {
 				inst := &models.Instance{
@@ -210,10 +215,11 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, dbc, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
+			insertUserWithID(t, dbc, tc.userID)
 			// Create instances for the given user
 			for range tc.templateCount {
 				inst := &models.Instance{
@@ -257,14 +263,14 @@ func TestInstanceRepository_Update(t *testing.T) {
 		{
 			name: "Update existing instance",
 			setupFn: func(ctx context.Context, tb testing.TB) (models.Instance, error) {
-				repo, _, _ := setupInstanceRepo(tb.(*testing.T))
-				defer func() {}()
+				innerRepo, _, innerDbc, _ := setupInstanceRepo(tb.(*testing.T))
 				inst := models.Instance{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
 				}
-				err := repo.Create(ctx, &inst)
+				insertUserWithID(tb.(*testing.T), innerDbc, inst.UserID)
+				err := innerRepo.Create(ctx, &inst)
 				return inst, err
 			},
 			updateName: gofakeit.BeerName(),
@@ -288,7 +294,7 @@ func TestInstanceRepository_Update(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, _, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -312,7 +318,7 @@ func TestInstanceRepository_Update(t *testing.T) {
 }
 
 func TestInstanceRepository_Delete(t *testing.T) {
-	repo, transactor, cleanup := setupInstanceRepo(t)
+	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 	defer cleanup()
 
 	testCases := []struct {
@@ -333,6 +339,7 @@ func TestInstanceRepository_Delete(t *testing.T) {
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
 				}
+				insertUserWithID(t, dbc, inst.UserID)
 				err = repo.Create(ctx, &inst)
 				return inst, tx, err
 			},
@@ -410,13 +417,14 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, transactor, cleanup := setupInstanceRepo(t)
+			repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			tx, err := transactor.BeginTx(context.Background(), nil)
 			require.NoError(t, err)
 
 			ctx := context.Background()
+			insertUserWithID(t, dbc, tc.userID)
 			// Create some instances for this user
 			for range tc.count {
 				inst := models.Instance{
@@ -459,16 +467,15 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 			name:       "Dismiss quickstart for existing user",
 			instanceID: gofakeit.UUID(),
 			setupFn: func(ctx context.Context, tb testing.TB, instanceID string) error {
-				// Optionally create some instances for this user
-				repo, _, _ := setupInstanceRepo(tb.(*testing.T))
-				defer func() {}()
+				innerRepo, _, innerDbc, _ := setupInstanceRepo(tb.(*testing.T))
 				inst := models.Instance{
 					ID:                    instanceID,
 					Name:                  gofakeit.Word(),
 					UserID:                gofakeit.UUID(),
 					IsQuickStartDismissed: false,
 				}
-				return repo.Create(ctx, &inst)
+				insertUserWithID(tb.(*testing.T), innerDbc, inst.UserID)
+				return innerRepo.Create(ctx, &inst)
 			},
 			wantErr: false,
 		},
@@ -484,7 +491,7 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, cleanup := setupInstanceRepo(t)
+			repo, _, _, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -507,7 +514,7 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 }
 
 func TestInstanceRepository_CreateTx(t *testing.T) {
-	repo, transactor, cleanup := setupInstanceRepo(t)
+	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -521,6 +528,7 @@ func TestInstanceRepository_CreateTx(t *testing.T) {
 			Name:   gofakeit.Word(),
 			UserID: gofakeit.UUID(),
 		}
+		insertUserWithID(t, dbc, instance.UserID)
 
 		err = repo.CreateTx(ctx, tx, instance)
 		require.NoError(t, err)
@@ -544,6 +552,7 @@ func TestInstanceRepository_CreateTx(t *testing.T) {
 			Name:   gofakeit.Word(),
 			UserID: gofakeit.UUID(),
 		}
+		insertUserWithID(t, dbc, instance.UserID)
 
 		err = repo.CreateTx(ctx, tx, instance)
 		require.NoError(t, err)

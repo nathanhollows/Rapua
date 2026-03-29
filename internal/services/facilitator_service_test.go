@@ -10,22 +10,26 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupFacilitatorService(t *testing.T) (services.FacilitatorService, func()) {
+func setupFacilitatorService(t *testing.T) (services.FacilitatorService, *bun.DB, func()) {
 	dbc, cleanup := setupDB(t)
 
 	repo := repositories.NewFacilitatorTokenRepo(dbc)
 	service := services.NewFacilitatorService(repo)
-	return *service, cleanup
+	return *service, dbc, cleanup
 }
 func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
-	service, cleanup := setupFacilitatorService(t)
+	service, dbc, cleanup := setupFacilitatorService(t)
 	defer cleanup()
 	ctx := context.Background()
 
+	// Create a valid instance to satisfy FK constraint: facilitator_tokens.instance_id → instances.id
+	parents := createTestParents(t, dbc)
+
 	// Create a new facilitator token
-	token, err := service.CreateFacilitatorToken(ctx, "game123", []string{"Park", "Tower"}, 24*time.Hour)
+	token, err := service.CreateFacilitatorToken(ctx, parents.InstanceID, []string{"Park", "Tower"}, 24*time.Hour)
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
@@ -33,17 +37,19 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	facToken, err := service.ValidateToken(ctx, token)
 	require.NoError(t, err)
 	assert.NotNil(t, facToken)
-	assert.Equal(t, "game123", facToken.InstanceID)
+	assert.Equal(t, parents.InstanceID, facToken.InstanceID)
 	assert.ElementsMatch(t, []string{"Park", "Tower"}, facToken.Locations)
 }
 
 func TestFacilitatorService_ExpiredToken(t *testing.T) {
-	service, cleanup := setupFacilitatorService(t)
+	service, dbc, cleanup := setupFacilitatorService(t)
 	defer cleanup()
 	ctx := context.Background()
 
+	parents := createTestParents(t, dbc)
+
 	// Create a token that expires immediately
-	token, err := service.CreateFacilitatorToken(ctx, "gameExpired", []string{"Lab"}, -1*time.Second)
+	token, err := service.CreateFacilitatorToken(ctx, parents.InstanceID, []string{"Lab"}, -1*time.Second)
 	require.NoError(t, err)
 
 	// Validate expired token
@@ -53,24 +59,27 @@ func TestFacilitatorService_ExpiredToken(t *testing.T) {
 }
 
 func TestFacilitatorService_CleanupExpiredTokens(t *testing.T) {
-	service, cleanup := setupFacilitatorService(t)
+	service, dbc, cleanup := setupFacilitatorService(t)
 	defer cleanup()
 	ctx := context.Background()
 
+	parentsX := createTestParents(t, dbc)
+	parentsY := createTestParents(t, dbc)
+
 	// Create expired token
-	token, err := service.CreateFacilitatorToken(ctx, "gameX", []string{"Castle"}, -24*time.Hour)
+	token, err := service.CreateFacilitatorToken(ctx, parentsX.InstanceID, []string{"Castle"}, -24*time.Hour)
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
 	// Create valid token
-	validToken, _ := service.CreateFacilitatorToken(ctx, "gameY", []string{"Castle"}, 24*time.Hour)
+	validToken, _ := service.CreateFacilitatorToken(ctx, parentsY.InstanceID, []string{"Castle"}, 24*time.Hour)
 
 	// Cleanup expired tokens
 	err = service.CleanupExpiredTokens(ctx)
 	require.NoError(t, err)
 
 	// Check expired token is gone
-	expiredToken, err := service.ValidateToken(ctx, "gameX")
+	expiredToken, err := service.ValidateToken(ctx, token)
 	require.Error(t, err)
 	assert.Nil(t, expiredToken)
 

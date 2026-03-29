@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
@@ -36,6 +37,20 @@ func (t *transactor) BeginTx(ctx context.Context, opts *sql.TxOptions) (*bun.Tx,
 	return &tx, nil
 }
 
+// sqliteDSN converts a plain SQLite path or URI into a URI with
+// _pragma=foreign_keys(1) appended so every new connection enforces FK
+// constraints without needing SetMaxOpenConns(1).
+func sqliteDSN(dsn string) string {
+	if !strings.HasPrefix(dsn, "file:") {
+		dsn = "file:" + dsn
+	}
+	sep := "&"
+	if !strings.Contains(dsn, "?") {
+		sep = "?"
+	}
+	return dsn + sep + "_pragma=foreign_keys(1)"
+}
+
 func MustOpen(logger *slog.Logger) *bun.DB {
 	var sqldb *sql.DB
 	var err error
@@ -53,7 +68,10 @@ func MustOpen(logger *slog.Logger) *bun.DB {
 		sqldb, err = sql.Open(driverName, dataSourceName)
 		db = bun.NewDB(sqldb, mysqldialect.New())
 	case "sqlite3":
-		sqldb, err = sql.Open(sqliteshim.ShimName, dataSourceName)
+		// _pragma=foreign_keys(1) is applied by modernc.org/sqlite on every new
+		// connection, so FK enforcement holds regardless of connection pool size.
+		// WAL is set once via exec; it persists in the DB file across connections.
+		sqldb, err = sql.Open(sqliteshim.ShimName, sqliteDSN(dataSourceName))
 		db = bun.NewDB(sqldb, sqlitedialect.New())
 		_, pragmaErr := sqldb.ExecContext(context.Background(), "PRAGMA journal_mode=WAL;")
 		if pragmaErr != nil {

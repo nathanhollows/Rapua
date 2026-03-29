@@ -97,11 +97,3 @@ func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, l
 	return err
 }
 
-// DeleteByUserID deletes all team start logs for a user within a transaction.
-func (r *TeamStartLogRepository) DeleteByUserID(ctx context.Context, tx *bun.Tx, userID string) error {
-	_, err := tx.NewDelete().
-		Model(&models.TeamStartLog{}).
-		Where("user_id = ?", userID).
-		Exec(ctx)
-	return err
-}

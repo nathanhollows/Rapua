@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
@@ -14,18 +13,20 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupShareLinkRepo(t *testing.T) (repositories.ShareLinkRepository, func()) {
+func setupShareLinkRepo(t *testing.T) (repositories.ShareLinkRepository, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	shareLinkRepository := repositories.NewShareLinkRepository(dbc)
 
-	return shareLinkRepository, cleanup
+	return shareLinkRepository, dbc, cleanup
 }
 
 func TestShareLinkRepository_Create(t *testing.T) {
-	repo, cleanup := setupShareLinkRepo(t)
+	repo, dbc, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
+
+	parents := createTestParents(t, dbc)
 
 	tests := []struct {
 		name      string
@@ -35,7 +36,7 @@ func TestShareLinkRepository_Create(t *testing.T) {
 		{
 			name: "Valid ShareLink",
 			link: &models.ShareLink{
-				TemplateID: uuid.New().String(),
+				TemplateID: parents.InstanceID,
 				ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 			},
 			expectErr: false,
@@ -61,8 +62,10 @@ func TestShareLinkRepository_Create(t *testing.T) {
 }
 
 func TestShareLinkRepository_GetByID(t *testing.T) {
-	repo, cleanup := setupShareLinkRepo(t)
+	repo, dbc, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
+
+	parents := createTestParents(t, dbc)
 
 	tests := []struct {
 		name      string
@@ -74,7 +77,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 			name: "Valid ShareLink",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: uuid.New().String(),
+					TemplateID: parents.InstanceID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -90,7 +93,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 		{
 			name: "Invalid ShareLink",
 			setup: func() *models.ShareLink {
-				return &models.ShareLink{ID: uuid.New().String()}
+				return &models.ShareLink{ID: "nonexistent-id"}
 			},
 			action: func(link *models.ShareLink) error {
 				_, err := repo.GetByID(context.Background(), link.ID)
@@ -102,7 +105,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 			name: "Expired ShareLink",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: uuid.New().String(),
+					TemplateID: parents.InstanceID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -131,8 +134,10 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 }
 
 func TestShareLinkRepository_Use(t *testing.T) {
-	repo, cleanup := setupShareLinkRepo(t)
+	repo, dbc, cleanup := setupShareLinkRepo(t)
 	defer cleanup()
+
+	parents := createTestParents(t, dbc)
 
 	tests := []struct {
 		name      string
@@ -144,7 +149,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 			name: "Use once",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: uuid.New().String(),
+					TemplateID: parents.InstanceID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -169,7 +174,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 			name: "Expired link",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: uuid.New().String(),
+					TemplateID: parents.InstanceID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)

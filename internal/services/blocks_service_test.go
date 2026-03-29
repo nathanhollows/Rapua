@@ -10,9 +10,10 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupBlocksService(t *testing.T) (services.BlockService, func()) {
+func setupBlocksService(t *testing.T) (services.BlockService, *bun.DB, func()) {
 	dbc, cleanup := setupDB(t)
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
@@ -20,7 +21,7 @@ func setupBlocksService(t *testing.T) (services.BlockService, func()) {
 
 	blocksService := services.NewBlockService(blocksRepo, blockStateRepo)
 
-	return *blocksService, cleanup
+	return *blocksService, dbc, cleanup
 }
 
 func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
@@ -50,7 +51,7 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 		},
 	}
 
-	svc, cleanup := setupBlocksService(t)
+	svc, _, cleanup := setupBlocksService(t)
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -73,6 +74,31 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 }
 
 func TestBlockService_NewBlockState(t *testing.T) {
+	svc, dbc, cleanup := setupBlocksService(t)
+	defer cleanup()
+
+	// Create parent chain for valid team codes (user -> instance -> team)
+	parents := createTestParents(t, dbc)
+	insertTestTeam(t, dbc, "TEAM1", parents.InstanceID)
+	insertTestTeam(t, dbc, "TEAM2", parents.InstanceID)
+
+	// Create real blocks so block IDs satisfy FK constraints
+	validBlock, err := svc.NewBlockWithOwnerAndContext(
+		context.Background(),
+		parents.LocationID,
+		blocks.ContextLocationContent,
+		"text",
+	)
+	require.NoError(t, err)
+
+	validBlock2, err := svc.NewBlockWithOwnerAndContext(
+		context.Background(),
+		parents.LocationID,
+		blocks.ContextLocationContent,
+		"text",
+	)
+	require.NoError(t, err)
+
 	testCases := []struct {
 		name     string
 		blockID  string
@@ -81,7 +107,7 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	}{
 		{
 			name:     "Valid block state",
-			blockID:  gofakeit.UUID(),
+			blockID:  validBlock.GetID(),
 			teamCode: "TEAM1",
 			wantErr:  false,
 		},
@@ -93,14 +119,12 @@ func TestBlockService_NewBlockState(t *testing.T) {
 		},
 		{
 			name:     "Missing teamCode",
-			blockID:  gofakeit.UUID(),
+			blockID:  validBlock2.GetID(),
 			teamCode: "",
 			wantErr:  true,
 		},
 	}
 
-	svc, cleanup := setupBlocksService(t)
-	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			state, err := svc.NewBlockState(context.Background(), tc.blockID, tc.teamCode)
@@ -143,7 +167,7 @@ func TestBlockService_NewMockBlockState(t *testing.T) {
 		},
 	}
 
-	svc, cleanup := setupBlocksService(t)
+	svc, _, cleanup := setupBlocksService(t)
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -195,7 +219,7 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			blockID, err := tc.setupFn(svc)
@@ -262,8 +286,13 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, dbc, cleanup := setupBlocksService(t)
 			defer cleanup()
+
+			// Create parent chain for team codes used in block states
+			parents := createTestParents(t, dbc)
+			insertTestTeam(t, dbc, "TEAM123", parents.InstanceID)
+			insertTestTeam(t, dbc, "NOSUCHTEAM", parents.InstanceID)
 
 			blockID, teamCode, err := tc.setupFn(svc)
 			require.NoError(t, err, "setup should succeed")
@@ -309,7 +338,7 @@ func TestBlockService_FindByOwnerID(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			// Setup: create tc.blockCount blocks (if locationID is not empty)
@@ -362,8 +391,14 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, dbc, cleanup := setupBlocksService(t)
 			defer cleanup()
+
+			// Create parent chain for team codes used in block states
+			if tc.teamCode != "" && tc.stateCreated {
+				parents := createTestParents(t, dbc)
+				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+			}
 
 			if tc.locationID != "" {
 				// Create blocks
@@ -440,8 +475,12 @@ func TestBlockService_UpdateState(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, dbc, cleanup := setupBlocksService(t)
 			defer cleanup()
+
+			// Create parent chain for team code "TEAMUP"
+			parents := createTestParents(t, dbc)
+			insertTestTeam(t, dbc, "TEAMUP", parents.InstanceID)
 
 			initialState, err := tc.setupFn(svc)
 			require.NoError(t, err, "setup should not fail")
@@ -483,7 +522,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			// Create blocks
@@ -565,7 +604,7 @@ func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			err := tc.setupFn(svc, tc.locationID)
@@ -639,8 +678,14 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, dbc, cleanup := setupBlocksService(t)
 			defer cleanup()
+
+			// Create parent chain and team for tests that use NewBlockState
+			if tc.teamCode != "" {
+				parents := createTestParents(t, dbc)
+				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+			}
 
 			err := tc.setupFn(svc, tc.locationID, tc.teamCode)
 			require.NoError(t, err, "setup should not fail")
@@ -683,7 +728,7 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			if tc.locationID != "" {
@@ -752,8 +797,14 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, dbc, cleanup := setupBlocksService(t)
 			defer cleanup()
+
+			// Create parent chain and team for tests that use NewBlockState
+			if tc.teamCode != "" && tc.stateCreated {
+				parents := createTestParents(t, dbc)
+				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+			}
 
 			if tc.locationID != "" {
 				// Create blocks with specific context
@@ -850,7 +901,7 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc, cleanup := setupBlocksService(t)
+			svc, _, cleanup := setupBlocksService(t)
 			defer cleanup()
 
 			blk, data, err := tc.setupFn(svc)

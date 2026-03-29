@@ -229,11 +229,3 @@ func (r *CreditRepository) DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx
 	return nil
 }
 
-// DeleteCreditAdjustmentsByUserID deletes all credit adjustments for a user within a transaction.
-func (r *CreditRepository) DeleteCreditAdjustmentsByUserID(ctx context.Context, tx *bun.Tx, userID string) error {
-	_, err := tx.NewDelete().
-		Model(&models.CreditAdjustments{}).
-		Where("user_id = ?", userID).
-		Exec(ctx)
-	return err
-}

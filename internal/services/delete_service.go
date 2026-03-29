@@ -1,4 +1,8 @@
 // Package services provides entity deletion with transaction safety.
+// Relies on ON DELETE CASCADE constraints at the database level to handle
+// most child record cleanup. Application code explicitly deletes blocks
+// (whose owner_id is polymorphic and cannot carry a FK constraint) and
+// handles upload file cleanup, unused marker cleanup, and location statistics.
 package services
 
 import (
@@ -17,150 +21,165 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// DeleteService coordinates cascading deletions across related entities.
+// DeleteService coordinates deletions. Database-level ON DELETE CASCADE
+// handles child record cleanup; this service handles auth, file cleanup,
+// and denormalized data updates.
 type DeleteService struct {
-	transactor           db.Transactor
-	blockRepo            repositories.BlockRepository
-	blockStateRepo       repositories.BlockStateRepository
-	checkInRepo          repositories.CheckInRepository
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
-	locationRepo         repositories.LocationRepository
-	markerRepo           repositories.MarkerRepository
-	teamRepo             repositories.TeamRepository
-	userRepo             repositories.UserRepository
-	creditRepo           *repositories.CreditRepository
-	creditPurchaseRepo   *repositories.CreditPurchaseRepository
-	teamStartLogRepo     *repositories.TeamStartLogRepository
-	uploadsRepo          repositories.UploadsRepository
-	db                   *bun.DB
-	uploadsDir           string
-	logger               *slog.Logger
+	transactor   db.Transactor
+	instanceRepo repositories.InstanceRepository
+	locationRepo repositories.LocationRepository
+	markerRepo   repositories.MarkerRepository
+	teamRepo     repositories.TeamRepository
+	uploadsRepo  repositories.UploadsRepository
+	db           *bun.DB
+	uploadsDir   string
+	logger       *slog.Logger
 }
 
 // NewDeleteService creates a new DeleteService with the provided dependencies.
 func NewDeleteService(
 	transactor db.Transactor,
-	blockRepo repositories.BlockRepository,
-	blockStateRepo repositories.BlockStateRepository,
-	checkInRepo repositories.CheckInRepository,
 	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
 	locationRepo repositories.LocationRepository,
 	markerRepo repositories.MarkerRepository,
 	teamRepo repositories.TeamRepository,
-	userRepo repositories.UserRepository,
-	creditRepo *repositories.CreditRepository,
-	creditPurchaseRepo *repositories.CreditPurchaseRepository,
-	teamStartLogRepo *repositories.TeamStartLogRepository,
 	uploadsRepo repositories.UploadsRepository,
 	db *bun.DB,
 	uploadsDir string,
 	logger *slog.Logger,
 ) *DeleteService {
 	return &DeleteService{
-		transactor:           transactor,
-		blockRepo:            blockRepo,
-		blockStateRepo:       blockStateRepo,
-		checkInRepo:          checkInRepo,
-		instanceRepo:         instanceRepo,
-		instanceSettingsRepo: instanceSettingsRepo,
-		locationRepo:         locationRepo,
-		markerRepo:           markerRepo,
-		teamRepo:             teamRepo,
-		userRepo:             userRepo,
-		creditRepo:           creditRepo,
-		creditPurchaseRepo:   creditPurchaseRepo,
-		teamStartLogRepo:     teamStartLogRepo,
-		uploadsRepo:          uploadsRepo,
-		db:                   db,
-		uploadsDir:           uploadsDir,
-		logger:               logger,
+		transactor:   transactor,
+		instanceRepo: instanceRepo,
+		locationRepo: locationRepo,
+		markerRepo:   markerRepo,
+		teamRepo:     teamRepo,
+		uploadsRepo:  uploadsRepo,
+		db:           db,
+		uploadsDir:   uploadsDir,
+		logger:       logger,
 	}
 }
 
-// DeleteUser deletes a user and all associated instances, teams, and progress.
+// DeleteUser deletes a user and all associated data.
+// Cascade handles: instances, locations, teams, check-ins, states,
+// settings, credits, purchases, start logs, notifications, facilitator tokens.
+// Blocks are deleted explicitly because owner_id is polymorphic.
 func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
+	// Collect upload file paths before the transaction deletes the rows.
+	instances, err := s.instanceRepo.FindByUserID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("finding user instances: %w", err)
+	}
+	var uploads []*models.Upload
+	for _, inst := range instances {
+		iu, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
+			"instance_id": inst.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("fetching uploads for instance %s: %w", inst.ID, err)
+		}
+		uploads = append(uploads, iu...)
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
-
-	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction", "error", rollbackErr)
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
-	err = s.deleteUser(ctx, tx, userID)
+	// blocks.owner_id has no FK; delete blocks for all locations owned by
+	// this user's instances, then delete the instance-level (start/finish) blocks.
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id IN (SELECT l.id FROM locations l JOIN instances i ON l.instance_id = i.id WHERE i.user_id = ?)", userID).
+		Exec(ctx)
 	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("deleting user: %w; rollback failed: %w", err, rollbackErr)
-		}
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting location blocks for user: %w", err)
+	}
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting instance blocks for user: %w", err)
+	}
+
+	// Single DELETE — cascade handles all other children
+	_, err = tx.NewDelete().
+		Model((*models.User)(nil)).
+		Where("id = ?", userID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting user: %w", err)
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+
+	if len(uploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), uploads)
+	}
+
+	return nil
 }
 
-// DeleteBlock deletes a block and its associated player progress and uploads.
+// DeleteBlock deletes a block. Cascade handles states.
 func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
+	// Collect upload file paths before delete
+	uploads, err := s.uploadsRepo.GetByBlockID(ctx, blockID)
+	if err != nil {
+		return fmt.Errorf("fetching uploads: %w", err)
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
-
-	// Ensure rollback on failure
 	defer func() {
 		if p := recover(); p != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction", "error", rollbackErr)
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
-	// Get uploads associated with this block before deletion
-	uploads, err := s.uploadsRepo.GetByBlockID(ctx, blockID)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("fetching uploads: %w; rollback failed: %w", err, rollbackErr)
+	// Delete upload records within the transaction (avoids orphaned rows)
+	if len(uploads) > 0 {
+		ids := make([]string, len(uploads))
+		for i, u := range uploads {
+			ids[i] = u.ID
 		}
-		return fmt.Errorf("fetching uploads: %w", err)
+		_, err = tx.NewDelete().
+			Model((*models.Upload)(nil)).
+			Where("id IN (?)", bun.In(ids)).
+			Exec(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("deleting upload records: %w", err)
+		}
 	}
 
-	// Delete the block and its states
-	err = s.deleteBlock(ctx, tx, blockID)
+	// Delete block — cascade handles block states
+	_, err = tx.NewDelete().
+		Model((*models.Block)(nil)).
+		Where("id = ?", blockID).
+		Exec(ctx)
 	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("deleting block: %w; rollback failed: %w", err, rollbackErr)
-		}
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting block: %w", err)
 	}
 
-	// Delete upload records from database using the transaction
-	_, err = tx.NewDelete().
-		Model((*models.Upload)(nil)).
-		Where("block_id = ?", blockID).
-		Exec(ctx)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
-		}
-		return fmt.Errorf("deleting upload records: %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	// Only cleanup files after transaction commits successfully
-	// Use background context so cleanup isn't cancelled when request ends
 	if len(uploads) > 0 {
 		go s.cleanupUploadFiles(context.Background(), uploads)
 	}
@@ -170,26 +189,25 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 
 // DeleteInstance deletes an instance and all its content.
 // Returns ErrUserNotAuthenticated if userID doesn't own the instance.
+// Blocks are deleted explicitly because owner_id is polymorphic.
 func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID string) error {
 	if userID == "" {
 		return ErrUserNotAuthenticated
 	}
-
 	if instanceID == "" {
 		return errors.New("instanceID cannot be empty")
 	}
 
-	// Check if the user has permission to delete the instance
+	// Auth check
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
 		return fmt.Errorf("finding instance: %w", err)
 	}
-
 	if userID != instance.UserID {
 		return ErrUserNotAuthenticated
 	}
 
-	// Collect all uploads for this instance before starting transaction
+	// Collect upload file paths before the transaction deletes the rows.
 	uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
 		"instance_id": instanceID,
 	})
@@ -197,36 +215,48 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 		return fmt.Errorf("fetching uploads for instance %s: %w", instanceID, err)
 	}
 
-	// Start transaction
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
-
 	defer func() {
 		if p := recover(); p != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				panic(fmt.Errorf("rolling back transaction: %w", rollbackErr))
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
-	err = s.deleteInstance(ctx, tx, instanceID)
+	// Delete location-owned blocks then instance-owned (start/finish) blocks.
+	// blocks.owner_id has no FK so they won't be cascade-deleted automatically.
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id IN (SELECT id FROM locations WHERE instance_id = ?)", instanceID).
+		Exec(ctx)
 	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("deleting instance: %w; rollback failed: %w", err, rollbackErr)
-		}
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting location blocks: %w", err)
+	}
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id = ?", instanceID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting instance blocks: %w", err)
+	}
+
+	// Delete instance — cascade handles everything else
+	_, err = tx.NewDelete().
+		Model((*models.Instance)(nil)).
+		Where("id = ?", instanceID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting instance: %w", err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	// Only cleanup files after transaction commits successfully
-	// Use background context so cleanup isn't cancelled when request ends
 	if len(uploads) > 0 {
 		go s.cleanupUploadFiles(context.Background(), uploads)
 	}
@@ -234,69 +264,57 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 	return nil
 }
 
-// DeleteLocation deletes a location and all associated blocks and progress.
+// DeleteLocation deletes a location and its blocks, then cleans up unused markers.
+// blocks.owner_id has no FK so blocks must be deleted explicitly.
 func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
-
 	defer func() {
 		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				panic(fmt.Errorf("rolling back transaction: %v; %w", p, rollbackErr))
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
-	err = s.deleteLocation(ctx, tx, locationID)
+	// Delete blocks first — cascade handles team_block_states
+	_, err = tx.NewDelete().
+		Model((*models.Block)(nil)).
+		Where("owner_id = ?", locationID).
+		Exec(ctx)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w; %w", err, rollbackErr)
-		}
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting blocks for location: %w", err)
+	}
+
+	// Delete location — cascade handles check_ins and any remaining children
+	_, err = tx.NewDelete().
+		Model((*models.Location)(nil)).
+		Where("id = ?", locationID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting location: %w", err)
 	}
 
+	// Clean up markers that are no longer referenced by any location
 	err = s.markerRepo.DeleteUnused(ctx, tx)
 	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting unused markers: %w", err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w; %w", err, rollbackErr)
-		}
-		return fmt.Errorf("committing transaction: %w", err)
-	}
-
-	return nil
-}
-
-// deleteLocation deletes a location and its related data.
-func (s *DeleteService) deleteLocation(ctx context.Context, tx *bun.Tx, locationID string) error {
-	// Delete all blocks and their states for this location
-	err := s.deleteBlocksByLocationID(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting blocks: %w", err)
-	}
-
-	// Delete the location
-	err = s.locationRepo.Delete(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting location: %w", err)
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 // ResetTeams clears team progress while preserving the teams themselves.
-func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error { //nolint:gocognit,funlen
-	// Collect all uploads for these teams before starting transaction
+// Cannot use cascade — teams are preserved, only children are deleted.
+func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+	if len(teamCodes) == 0 {
+		return nil
+	}
+	// Collect upload file paths before deleting records
 	var allUploads []*models.Upload
 	for _, teamCode := range teamCodes {
 		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
@@ -310,81 +328,61 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", rollbackErr)
-		}
 		return fmt.Errorf("starting transaction: %w", err)
 	}
-
 	defer func() {
 		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				slog.Error("transaction", "error", rollbackErr)
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
+	// Reset team fields (preserve the team row)
 	err = s.teamRepo.Reset(ctx, tx, instanceID, teamCodes)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("resetting team: rollback failed: %w", rollbackErr)
-		}
-		return fmt.Errorf("resetting team: %w", err)
+		_ = tx.Rollback()
+		return fmt.Errorf("resetting teams: %w", err)
 	}
 
-	err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
+	// Delete child records explicitly (can't cascade since teams are preserved)
+	_, err = tx.NewDelete().
+		Model((*models.CheckIn)(nil)).
+		Where("instance_id = ?", instanceID).
+		Where("team_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
-		return fmt.Errorf("deleting check ins: %w", err)
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting check-ins: %w", err)
 	}
 
-	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, teamCodes)
+	_, err = tx.NewDelete().
+		Model((*models.TeamBlockState)(nil)).
+		Where("team_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting block states: %w", err)
 	}
 
-	// Delete upload records for these teams
-	for _, teamCode := range teamCodes {
-		_, err = tx.NewDelete().
-			Model((*models.Upload)(nil)).
-			Where("team_code = ?", teamCode).
-			Exec(ctx)
-		if err != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
-			}
-			return fmt.Errorf("deleting upload records: %w", err)
-		}
+	_, err = tx.NewDelete().
+		Model((*models.Upload)(nil)).
+		Where("team_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting uploads: %w", err)
 	}
 
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rolling back transaction: %w", rollbackErr)
-		}
+		_ = tx.Rollback()
 		return fmt.Errorf("updating location statistics: %w", err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	// Only cleanup files after transaction commits successfully
-	// Use background context so cleanup isn't cancelled when request ends
 	if len(allUploads) > 0 {
 		go s.cleanupUploadFiles(context.Background(), allUploads)
 	}
@@ -393,8 +391,12 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 }
 
 // DeleteTeams deletes teams and their associated progress data.
+// Cascade handles check-ins, block states, uploads, and notifications.
 func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, teamCodes []string) error {
-	// Collect all uploads for these teams before starting transaction
+	if len(teamCodes) == 0 {
+		return nil
+	}
+	// Collect upload file paths before cascade deletes the rows
 	var allUploads []*models.Upload
 	for _, teamCode := range teamCodes {
 		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
@@ -410,234 +412,37 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 	if err != nil {
 		return fmt.Errorf("starting transaction: %w", err)
 	}
-
 	defer func() {
 		if p := recover(); p != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				slog.Error("transaction", "error", rollbackErr)
-			}
+			_ = tx.Rollback()
 			panic(p)
 		}
 	}()
 
-	err = s.deleteTeams(ctx, tx, instanceID, teamCodes)
+	// Delete teams — cascade handles check-ins, block states, notifications, uploads
+	_, err = tx.NewDelete().
+		Model((*models.Team)(nil)).
+		Where("instance_id = ?", instanceID).
+		Where("code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("deleting teams: %w; rollback failed: %w", err, rollbackErr)
-		}
+		_ = tx.Rollback()
 		return fmt.Errorf("deleting teams: %w", err)
 	}
 
-	// Delete upload records for these teams
-	for _, teamCode := range teamCodes {
-		_, err = tx.NewDelete().
-			Model((*models.Upload)(nil)).
-			Where("team_code = ?", teamCode).
-			Exec(ctx)
-		if err != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				return fmt.Errorf("deleting upload records: %w; rollback failed: %w", err, rollbackErr)
-			}
-			return fmt.Errorf("deleting upload records: %w", err)
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("committing transaction: %w", err)
-	}
-
-	// Only cleanup files after transaction commits successfully
-	// Use background context so cleanup isn't cancelled when request ends
-	if len(allUploads) > 0 {
-		go s.cleanupUploadFiles(context.Background(), allUploads)
-	}
-
-	return nil
-}
-
-// deleteTeamsByInstanceID removes all teams and related data for a specific instance.
-func (s *DeleteService) deleteTeamsByInstanceID(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	// Get all teams for this instance to delete their related data
-	teams, err := s.teamRepo.FindAll(ctx, instanceID)
-	if err != nil {
-		return fmt.Errorf("finding teams for instance: %w", err)
-	}
-
-	// Extract team codes
-	teamCodes := make([]string, len(teams))
-	for i, team := range teams {
-		teamCodes[i] = team.Code
-	}
-
-	// Delete check-ins for all teams in this instance
-	if len(teamCodes) > 0 {
-		err = s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
-		if err != nil {
-			return fmt.Errorf("deleting check ins: %w", err)
-		}
-
-		// Delete block states for all teams in this instance
-		err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, teamCodes)
-		if err != nil {
-			return fmt.Errorf("deleting block states: %w", err)
-		}
-	}
-
-	// Delete all teams for this instance
-	err = s.teamRepo.DeleteByInstanceID(ctx, tx, instanceID)
-	if err != nil {
-		return fmt.Errorf("deleting teams by instance ID: %w", err)
-	}
-
-	return nil
-}
-
-// deleteTeams deletes specific teams by their codes.
-func (s *DeleteService) deleteTeams(ctx context.Context, tx *bun.Tx, instanceID string, teamCodes []string) error {
-	// Delete teams one by one (no bulk delete method available)
-	for _, teamCode := range teamCodes {
-		err := s.teamRepo.Delete(ctx, tx, instanceID, teamCode)
-		if err != nil {
-			return fmt.Errorf("deleting team %s: %w", teamCode, err)
-		}
-	}
-
-	// Delete check-ins for these teams
-	err := s.checkInRepo.DeleteByTeamCodes(ctx, tx, instanceID, teamCodes)
-	if err != nil {
-		return fmt.Errorf("deleting check ins: %w", err)
-	}
-
-	// Delete block states for these teams
-	err = s.blockStateRepo.DeleteByTeamCodes(ctx, tx, teamCodes)
-	if err != nil {
-		return fmt.Errorf("deleting block states: %w", err)
-	}
-
-	// Update location statistics
+	// Update denormalized location statistics
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("updating location statistics: %w", err)
 	}
 
-	return nil
-}
-
-// deleteBlocksByLocationID deletes all blocks for a location.
-func (s *DeleteService) deleteBlocksByLocationID(ctx context.Context, tx *bun.Tx, locationID string) error {
-	// Delete all blocks (block states should cascade delete via database constraints)
-	err := s.blockRepo.DeleteByOwnerID(ctx, tx, locationID)
-	if err != nil {
-		return fmt.Errorf("deleting blocks: %w", err)
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	return nil
-}
-
-// deleteUser deletes a user and all their instances.
-func (s *DeleteService) deleteUser(ctx context.Context, tx *bun.Tx, userID string) error {
-	// Get all instances for this user to properly cascade delete
-	instances, err := s.instanceRepo.FindByUserID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("finding user instances: %w", err)
-	}
-
-	// Delete each instance properly (this will cascade to locations, teams, etc.)
-	for _, instance := range instances {
-		err = s.deleteInstance(ctx, tx, instance.ID)
-		if err != nil {
-			return fmt.Errorf("deleting instance %s: %w", instance.ID, err)
-		}
-	}
-
-	// Delete credit-related data
-	err = s.teamStartLogRepo.DeleteByUserID(ctx, tx, userID)
-	if err != nil {
-		return fmt.Errorf("deleting team start logs: %w", err)
-	}
-
-	err = s.creditPurchaseRepo.DeleteByUserID(ctx, tx, userID)
-	if err != nil {
-		return fmt.Errorf("deleting credit purchases: %w", err)
-	}
-
-	err = s.creditRepo.DeleteCreditAdjustmentsByUserID(ctx, tx, userID)
-	if err != nil {
-		return fmt.Errorf("deleting credit adjustments: %w", err)
-	}
-
-	// Delete the user
-	err = s.userRepo.Delete(ctx, tx, userID)
-	if err != nil {
-		return fmt.Errorf("deleting user: %w", err)
-	}
-
-	return nil
-}
-
-// deleteBlock deletes a block and its states.
-// Note: Image URL extraction and cleanup should be handled by the caller (DeleteBlock).
-func (s *DeleteService) deleteBlock(ctx context.Context, tx *bun.Tx, blockID string) error {
-	// Delete block states first
-	err := s.blockStateRepo.DeleteByBlockID(ctx, tx, blockID)
-	if err != nil {
-		return fmt.Errorf("deleting block states: %w", err)
-	}
-
-	// Delete the block
-	err = s.blockRepo.Delete(ctx, tx, blockID)
-	if err != nil {
-		return fmt.Errorf("deleting block: %w", err)
-	}
-
-	return nil
-}
-
-// deleteInstance deletes an instance and all related data.
-func (s *DeleteService) deleteInstance(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	// Get instance to access its locations
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
-	if err != nil {
-		return fmt.Errorf("finding instance: %w", err)
-	}
-
-	// Delete all teams for this instance
-	err = s.deleteTeamsByInstanceID(ctx, tx, instanceID)
-	if err != nil {
-		return fmt.Errorf("deleting teams: %w", err)
-	}
-
-	// Delete all locations for this instance
-	for _, location := range instance.Locations {
-		err = s.deleteLocation(ctx, tx, location.ID)
-		if err != nil {
-			return fmt.Errorf("deleting location %s: %w", location.ID, err)
-		}
-	}
-
-	// Delete all upload records for this instance
-	_, err = tx.NewDelete().
-		Model((*models.Upload)(nil)).
-		Where("instance_id = ?", instanceID).
-		Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("deleting uploads: %w", err)
-	}
-
-	// Delete instance settings
-	err = s.instanceSettingsRepo.Delete(ctx, tx, instanceID)
-	if err != nil {
-		return fmt.Errorf("deleting instance settings: %w", err)
-	}
-
-	// Delete the instance
-	err = s.instanceRepo.Delete(ctx, tx, instanceID)
-	if err != nil {
-		return fmt.Errorf("deleting instance: %w", err)
+	if len(allUploads) > 0 {
+		go s.cleanupUploadFiles(context.Background(), allUploads)
 	}
 
 	return nil
@@ -647,16 +452,13 @@ func (s *DeleteService) deleteInstance(ctx context.Context, tx *bun.Tx, instance
 // This runs in a goroutine with background context, so errors are only logged.
 func (s *DeleteService) cleanupUploadFiles(ctx context.Context, uploads []*models.Upload) {
 	for _, upload := range uploads {
-		// Delete the main file using OriginalURL (which contains the actual path)
 		s.deleteUploadFile(ctx, upload.OriginalURL)
 
-		// Delete any additional size variants
 		sizes, err := upload.GetSizes()
 		if err != nil {
 			s.logger.WarnContext(ctx, "failed to get upload sizes", "uploadID", upload.ID, "error", err)
 			continue
 		}
-
 		for _, size := range sizes {
 			s.deleteUploadFile(ctx, size.URL)
 		}
@@ -665,15 +467,8 @@ func (s *DeleteService) cleanupUploadFiles(ctx context.Context, uploads []*model
 
 // deleteUploadFile deletes a single file from the filesystem using its URL/path.
 func (s *DeleteService) deleteUploadFile(ctx context.Context, urlOrPath string) {
-	// Parse the URL to get the filesystem path
-	// Expected formats:
-	//   - /static/uploads/YYYY/MM/DD/filename.ext (relative)
-	//   - http://domain/static/uploads/YYYY/MM/DD/filename.ext (absolute)
-
-	// Strip domain if present (convert absolute URL to path)
 	path := urlOrPath
 	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
-		// Extract path from URL (everything after domain)
 		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
 		parts := strings.SplitN(urlOrPath, "/", 4)
 		//nolint:mnd // Need 4 parts to extract path after domain
@@ -692,12 +487,10 @@ func (s *DeleteService) deleteUploadFile(ctx context.Context, urlOrPath string) 
 		return
 	}
 
-	// Extract date path: YYYY/MM/DD
 	datePath := filepath.Join(parts[2], parts[3], parts[4])
 	filename := filepath.Base(path)
 	filePath := filepath.Join(s.uploadsDir, datePath, filename)
 
-	// Delete the file
 	if err := os.Remove(filePath); err != nil {
 		if !os.IsNotExist(err) {
 			s.logger.WarnContext(ctx, "failed to delete upload file",

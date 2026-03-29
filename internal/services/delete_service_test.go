@@ -21,19 +21,11 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
 
-	// Initialize all required repositories
-	blockStateRepo := repositories.NewBlockStateRepository(dbc)
-	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
+	// Initialize required repositories
 	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	teamRepo := repositories.NewTeamRepository(dbc)
-	userRepo := repositories.NewUserRepository(dbc)
-	creditRepo := repositories.NewCreditRepository(dbc)
-	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
 	// Create temp uploads directory for testing
@@ -42,18 +34,10 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 
 	deleteService := services.NewDeleteService(
 		transactor,
-		blockRepo,
-		blockStateRepo,
-		checkInRepo,
 		instanceRepo,
-		instanceSettingsRepo,
 		locationRepo,
 		markerRepo,
 		teamRepo,
-		userRepo,
-		creditRepo,
-		creditPurchaseRepo,
-		teamStartLogRepo,
 		uploadRepo,
 		dbc,
 		uploadsDir,
@@ -491,8 +475,22 @@ func TestDeleteService_DeleteBlock_ImageBlock(t *testing.T) {
 
 	ctx := context.Background()
 
+	// Create parent chain: user → instance → location → block
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+	inst := &models.Instance{ID: gofakeit.UUID(), UserID: user.ID, Name: "test"}
+	_, err = dbc.NewInsert().Model(inst).Exec(ctx)
+	require.NoError(t, err)
+	marker := &models.Marker{Code: "TESTMK"}
+	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
+	require.NoError(t, err)
+	loc := &models.Location{ID: gofakeit.UUID(), InstanceID: inst.ID, MarkerID: marker.Code, Name: "test-loc"}
+	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
+	require.NoError(t, err)
+
 	// Create a simple image block
-	imageBlock := createTestImageBlock(t, dbc, "test-location-id", "/static/uploads/2025/11/18/test-image.png")
+	imageBlock := createTestImageBlock(t, dbc, loc.ID, "/static/uploads/2025/11/18/test-image.png")
 
 	// Verify block exists
 	count, err := dbc.NewSelect().Model(&models.Block{}).Where("id = ?", imageBlock.ID).Count(ctx)
@@ -538,13 +536,16 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test instance
+	// Create test user and instance
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
 	instance := &models.Instance{
 		ID:     gofakeit.UUID(),
-		UserID: gofakeit.UUID(),
+		UserID: user.ID,
 		Name:   "Test Instance",
 	}
-	_, err := dbc.NewInsert().Model(instance).Exec(ctx)
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err)
 
 	// Create test team
@@ -600,13 +601,16 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test instance
+	// Create test user and instance
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
 	instance := &models.Instance{
 		ID:     gofakeit.UUID(),
-		UserID: gofakeit.UUID(),
+		UserID: user.ID,
 		Name:   "Test Instance",
 	}
-	_, err := dbc.NewInsert().Model(instance).Exec(ctx)
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err)
 
 	// Create test team
@@ -662,13 +666,16 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test instance
+	// Create test user and instance
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
 	instance := &models.Instance{
 		ID:     gofakeit.UUID(),
-		UserID: gofakeit.UUID(),
+		UserID: user.ID,
 		Name:   "Test Instance",
 	}
-	_, err := dbc.NewInsert().Model(instance).Exec(ctx)
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err)
 
 	// Create multiple test teams
@@ -736,13 +743,16 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test instance
+	// Create test user and instance
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
 	instance := &models.Instance{
 		ID:     gofakeit.UUID(),
-		UserID: gofakeit.UUID(),
+		UserID: user.ID,
 		Name:   "Test Instance",
 	}
-	_, err := dbc.NewInsert().Model(instance).Exec(ctx)
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err)
 
 	// Create multiple test teams

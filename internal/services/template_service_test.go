@@ -15,7 +15,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupTemplateService(t *testing.T) (services.TemplateService, services.InstanceService, func()) {
+func setupTemplateService(t *testing.T) (services.TemplateService, services.InstanceService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
@@ -46,13 +46,14 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 		instanceSettingsRepo,
 		shareLinkRepo,
 	)
-	return templateService, *instanceService, cleanup
+	return templateService, *instanceService, dbc, cleanup
 }
 
 func TestTemplateService_CreateFromInstance(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -86,9 +87,10 @@ func TestTemplateService_CreateFromInstance(t *testing.T) {
 }
 
 func TestTemplateService_LaunchInstance(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -131,6 +133,7 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 
 	t.Run("NonOwnerCanLaunchInstance", func(t *testing.T) {
 		// Create a second user who does not own the template
+		insertTestUser(t, dbc, "user456")
 		nonOwner := &models.User{ID: "user456"}
 
 		// Non-owner should be able to create an instance from the template
@@ -146,9 +149,10 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 }
 
 func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -205,9 +209,10 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 }
 
 func TestTemplateService_GetByID(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -243,9 +248,10 @@ func TestTemplateService_GetByID(t *testing.T) {
 }
 
 func TestTemplateService_GetShareLink(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -298,9 +304,10 @@ func TestTemplateService_GetShareLink(t *testing.T) {
 // The Find functionality is tested in other template service tests
 
 func TestTemplateService_Update(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)
@@ -362,9 +369,10 @@ func TestTemplateService_Update(t *testing.T) {
 }
 
 func TestTemplateService_CreateShareLink(t *testing.T) {
-	svc, instanceService, cleanup := setupTemplateService(t)
+	svc, instanceService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
+	insertTestUser(t, dbc, "user123")
 	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
 	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
 	require.NoError(t, err)

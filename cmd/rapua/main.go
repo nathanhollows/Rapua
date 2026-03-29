@@ -421,18 +421,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor,
-		blockRepo,
-		blockStateRepo,
-		checkInRepo,
 		instanceRepo,
-		instanceSettingsRepo,
 		locationRepo,
 		markerRepo,
 		teamRepo,
-		userRepo,
-		creditRepo,
-		creditPurchaseRepo,
-		teamStartLogRepo,
 		uploadRepo,
 		dbc,
 		uploadsDir,

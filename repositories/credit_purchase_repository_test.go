@@ -32,6 +32,9 @@ func createTestCreditPurchase(
 ) *models.CreditPurchase {
 	t.Helper()
 
+	// Ensure the referenced user exists (credit_purchases.user_id FK).
+	insertUserWithID(t, db, userID)
+
 	purchase := &models.CreditPurchase{
 		ID:              gofakeit.UUID(),
 		CreatedAt:       time.Now(),
@@ -56,7 +59,7 @@ func createTestCreditPurchase(
 }
 
 func TestCreditPurchaseRepo_Create(t *testing.T) {
-	repo, _, cleanup := setupCreditPurchaseRepo(t)
+	repo, db, cleanup := setupCreditPurchaseRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -72,6 +75,7 @@ func TestCreditPurchaseRepo_Create(t *testing.T) {
 			Valid:  true,
 		},
 	}
+	insertUserWithID(t, db, purchase.UserID)
 
 	err := repo.Create(ctx, purchase)
 	require.NoError(t, err)
@@ -166,6 +170,7 @@ func TestCreditPurchaseRepo_CreateWithTx(t *testing.T) {
 		AmountPaid:      875,
 		StripeSessionID: gofakeit.UUID(),
 	}
+	insertUserWithID(t, db, purchase.UserID)
 
 	err = repo.CreateWithTx(ctx, &tx, purchase)
 	require.NoError(t, err)
@@ -195,6 +200,7 @@ func TestCreditPurchaseRepo_GetByStripeSessionID(t *testing.T) {
 		StripeSessionID: sessionID,
 		Status:          models.CreditPurchaseStatusPending,
 	}
+	insertUserWithID(t, db, purchase.UserID)
 
 	_, err := db.NewInsert().Model(purchase).Exec(ctx)
 	require.NoError(t, err)
@@ -409,57 +415,3 @@ func TestCreditPurchaseRepo_UpdateReceiptURLWithTx(t *testing.T) {
 	assert.Equal(t, receiptURL, retrieved.ReceiptURL.String)
 }
 
-func TestCreditPurchaseRepo_DeleteByUserID(t *testing.T) {
-	repo, db, cleanup := setupCreditPurchaseRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	otherUserID := gofakeit.UUID()
-
-	// Create purchases for both users
-	purchase1 := createTestCreditPurchase(t, db, userID, 10, models.CreditPurchaseStatusCompleted)
-	purchase2 := createTestCreditPurchase(t, db, userID, 20, models.CreditPurchaseStatusPending)
-	otherPurchase := createTestCreditPurchase(t, db, otherUserID, 30, models.CreditPurchaseStatusCompleted)
-
-	// Delete purchases for first user
-	tx, err := db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer tx.Rollback()
-
-	err = repo.DeleteByUserID(ctx, &tx, userID)
-	require.NoError(t, err)
-
-	err = tx.Commit()
-	require.NoError(t, err)
-
-	// Verify user's purchases were deleted
-	_, err = repo.GetByID(ctx, purchase1.ID)
-	require.Error(t, err)
-	require.ErrorIs(t, err, sql.ErrNoRows)
-
-	_, err = repo.GetByID(ctx, purchase2.ID)
-	require.Error(t, err)
-	require.ErrorIs(t, err, sql.ErrNoRows)
-
-	// Verify other user's purchase still exists
-	otherRetrieved, err := repo.GetByID(ctx, otherPurchase.ID)
-	require.NoError(t, err)
-	assert.NotNil(t, otherRetrieved)
-	assert.Equal(t, otherPurchase.ID, otherRetrieved.ID)
-}
-
-func TestCreditPurchaseRepo_DeleteByUserID_EmptyResult(t *testing.T) {
-	repo, db, cleanup := setupCreditPurchaseRepo(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Delete for non-existent user should not error
-	tx, err := db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer tx.Rollback()
-
-	err = repo.DeleteByUserID(ctx, &tx, "nonexistent-user")
-	require.NoError(t, err)
-}

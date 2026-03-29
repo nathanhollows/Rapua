@@ -55,15 +55,13 @@ type BlockRepository interface {
 	// Update updates an existing block
 	Update(ctx context.Context, block blocks.Block) (blocks.Block, error)
 
-	// Delete deletes a block by its ID
-	// Requires a transaction as related data will also need to be deleted
+	// Delete deletes a block by its ID. Cascade handles block states.
+	// Callers must delete any upload records for this block before calling.
 	Delete(ctx context.Context, tx *bun.Tx, blockID string) error
-	// DeleteByOwnerID deletes all blocks associated with an owner ID
-	// Requires a transaction as related data will also need to be deleted
-	DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error
-	// DeleteByOwnerIDPreservingStates deletes all blocks for an owner,
-	// but preserves player states for blocks whose IDs appear in preserveIDs.
-	DeleteByOwnerIDPreservingStates(ctx context.Context, tx *bun.Tx, ownerID string, preserveIDs []string) error
+	// DeleteByOwnerIDPreservingStates deletes all blocks for an owner and returns
+	// the player states for blocks whose IDs appear in preserveIDs. The caller
+	// must re-insert the returned states after recreating those blocks.
+	DeleteByOwnerIDPreservingStates(ctx context.Context, tx *bun.Tx, ownerID string, preserveIDs []string) ([]*models.TeamBlockState, error)
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
@@ -330,51 +328,35 @@ func (r *blockRepository) Delete(ctx context.Context, tx *bun.Tx, blockID string
 	return err
 }
 
-// DeleteByOwnerID deletes all blocks for an owner, including their player states.
-func (r *blockRepository) DeleteByOwnerID(ctx context.Context, tx *bun.Tx, ownerID string) error {
-	return r.DeleteByOwnerIDPreservingStates(ctx, tx, ownerID, nil)
-}
-
 // DeleteByOwnerIDPreservingStates deletes all blocks for an owner.
-// Player states for blocks whose IDs appear in preserveIDs are kept;
-// states for all other blocks are deleted.
+// Player states for blocks in preserveIDs are saved and returned so the caller
+// can re-insert them after recreating those blocks with the same IDs.
+// Cascade handles states for all other blocks.
 func (r *blockRepository) DeleteByOwnerIDPreservingStates(
 	ctx context.Context,
 	tx *bun.Tx,
 	ownerID string,
 	preserveIDs []string,
-) error {
-	// Find block IDs to determine which states to delete
-	var blockIDs []string
-	err := tx.NewSelect().
-		Model((*models.Block)(nil)).
-		Column("id").
-		Where("owner_id = ?", ownerID).
-		Scan(ctx, &blockIDs)
-	if err != nil {
-		return fmt.Errorf("finding blocks for owner: %w", err)
-	}
-
-	preserveSet := make(map[string]bool, len(preserveIDs))
-	for _, id := range preserveIDs {
-		preserveSet[id] = true
-	}
-
-	// Delete states only for blocks not being preserved
-	for _, blockID := range blockIDs {
-		if !preserveSet[blockID] {
-			if err := r.stateRepo.DeleteByBlockID(ctx, tx, blockID); err != nil {
-				return fmt.Errorf("deleting states for block %s: %w", blockID, err)
-			}
+) ([]*models.TeamBlockState, error) {
+	// Save states for blocks that will be recreated with the same IDs.
+	// Cascade will wipe them when the blocks are deleted; the caller re-inserts them.
+	var savedStates []*models.TeamBlockState
+	if len(preserveIDs) > 0 {
+		err := tx.NewSelect().
+			Model(&savedStates).
+			Where("block_id IN (?)", bun.In(preserveIDs)).
+			Scan(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("saving preserved states: %w", err)
 		}
 	}
 
-	// Delete the blocks themselves (all of them — they'll be recreated)
-	_, err = tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
+	// Delete all blocks — cascade handles states for all of them
+	_, err := tx.NewDelete().Model(&models.Block{}).Where("owner_id = ?", ownerID).Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("deleting blocks for owner %s: %w", ownerID, err)
+		return nil, fmt.Errorf("deleting blocks for owner %s: %w", ownerID, err)
 	}
-	return nil
+	return savedStates, nil
 }
 
 // Reorder reorders the blocks.

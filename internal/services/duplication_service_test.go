@@ -13,6 +13,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
 func setupDuplicationService(t *testing.T) (
@@ -22,6 +23,7 @@ func setupDuplicationService(t *testing.T) (
 	repositories.InstanceSettingsRepository,
 	repositories.LocationRepository,
 	repositories.BlockRepository,
+	*bun.DB,
 	func(),
 ) {
 	t.Helper()
@@ -42,17 +44,18 @@ func setupDuplicationService(t *testing.T) (
 		blockRepo,
 	)
 
-	return duplicationService, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, cleanup
+	return duplicationService, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
 }
 
 func TestDuplicationService_DuplicateInstance(t *testing.T) {
-	svc, transactor, instanceRepo, settingsRepo, locationRepo, blockRepo, cleanup := setupDuplicationService(t)
+	svc, transactor, instanceRepo, settingsRepo, locationRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("successfully duplicates instance with locations and blocks", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
 		sourceInstance := &models.Instance{
@@ -73,10 +76,12 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create location with blocks
+		markerCode := gofakeit.LetterN(5)
+		insertTestMarker(t, dbc, markerCode)
 		location := &models.Location{
 			Name:       gofakeit.Word(),
 			InstanceID: sourceInstance.ID,
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerCode,
 			Points:     100,
 		}
 		err = locationRepo.Create(ctx, location)
@@ -118,6 +123,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 	t.Run("duplicates game structure with remapped location IDs", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance with game structure
 		sourceInstance := &models.Instance{
@@ -129,26 +135,32 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create locations
+		marker1 := gofakeit.LetterN(5)
+		insertTestMarker(t, dbc, marker1)
 		location1 := &models.Location{
 			Name:       "Location 1",
 			InstanceID: sourceInstance.ID,
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   marker1,
 		}
 		err = locationRepo.Create(ctx, location1)
 		require.NoError(t, err)
 
+		marker2 := gofakeit.LetterN(5)
+		insertTestMarker(t, dbc, marker2)
 		location2 := &models.Location{
 			Name:       "Location 2",
 			InstanceID: sourceInstance.ID,
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   marker2,
 		}
 		err = locationRepo.Create(ctx, location2)
 		require.NoError(t, err)
 
+		marker3 := gofakeit.LetterN(5)
+		insertTestMarker(t, dbc, marker3)
 		location3 := &models.Location{
 			Name:       "Location 3",
 			InstanceID: sourceInstance.ID,
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   marker3,
 		}
 		err = locationRepo.Create(ctx, location3)
 		require.NoError(t, err)
@@ -236,6 +248,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 	t.Run("rejects template duplication", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create template instance
 		template := &models.Instance{
@@ -255,6 +268,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 	t.Run("validates ownership", func(t *testing.T) {
 		user1 := &models.User{ID: gofakeit.UUID()}
 		user2 := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user1.ID)
 
 		// Create instance owned by user1
 		instance := &models.Instance{
@@ -279,13 +293,14 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 }
 
 func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("successfully creates template from instance", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
 		sourceInstance := &models.Instance{
@@ -319,6 +334,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 	t.Run("validates ownership", func(t *testing.T) {
 		user1 := &models.User{ID: gofakeit.UUID()}
 		user2 := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user1.ID)
 
 		instance := &models.Instance{
 			Name:       gofakeit.Word(),
@@ -335,13 +351,14 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 }
 
 func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, blockRepo, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("successfully creates instance from template", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create template
 		template := &models.Instance{
@@ -373,6 +390,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 	t.Run("rejects non-template source", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		instance := &models.Instance{
 			Name:       gofakeit.Word(),
@@ -389,6 +407,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 	t.Run("copies instance-owned blocks (ContextStart and ContextFinish)", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		// Create template
 		template := &models.Instance{
@@ -472,7 +491,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 }
 
 func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -480,6 +499,8 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 	t.Run("successfully creates instance from shared template without ownership check", func(t *testing.T) {
 		owner := &models.User{ID: gofakeit.UUID()}
 		recipient := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, owner.ID)
+		insertTestUser(t, dbc, recipient.ID)
 
 		// Create template owned by owner
 		template := &models.Instance{
@@ -509,10 +530,14 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 
 	t.Run("rejects non-template source", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
+
+		ownerID := gofakeit.UUID()
+		insertTestUser(t, dbc, ownerID)
 
 		instance := &models.Instance{
 			Name:       gofakeit.Word(),
-			UserID:     gofakeit.UUID(),
+			UserID:     ownerID,
 			IsTemplate: false,
 		}
 		err := instanceRepo.Create(ctx, instance)
@@ -525,20 +550,25 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 }
 
 func TestDuplicationService_DuplicateLocation(t *testing.T) {
-	svc, transactor, _, _, locationRepo, blockRepo, cleanup := setupDuplicationService(t)
+	svc, transactor, _, _, locationRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("successfully duplicates location with blocks", func(t *testing.T) {
-		sourceInstanceID := gofakeit.UUID()
-		targetInstanceID := gofakeit.UUID()
+		// Create FK-valid parent chain for source and target instances
+		userID := gofakeit.UUID()
+		insertTestUser(t, dbc, userID)
+		sourceInstanceID := insertTestInstance(t, dbc, userID)
+		targetInstanceID := insertTestInstance(t, dbc, userID)
 
-		// Create source location
+		// Create source location with valid marker
+		markerCode := gofakeit.LetterN(5)
+		insertTestMarker(t, dbc, markerCode)
 		sourceLocation := models.Location{
 			Name:       gofakeit.Word(),
 			InstanceID: sourceInstanceID,
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerCode,
 			Points:     50,
 		}
 		err := locationRepo.Create(ctx, &sourceLocation)
@@ -565,13 +595,14 @@ func TestDuplicationService_DuplicateLocation(t *testing.T) {
 }
 
 func TestDuplicationService_QuickStartDismissed(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("DuplicateInstance dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		sourceInstance := &models.Instance{
 			Name:       gofakeit.Word(),
@@ -592,6 +623,7 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 
 	t.Run("CreateTemplateFromInstance dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		sourceInstance := &models.Instance{
 			Name:       gofakeit.Word(),
@@ -612,6 +644,7 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 
 	t.Run("CreateInstanceFromTemplate dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
 		template := &models.Instance{
 			Name:       gofakeit.Word(),
@@ -633,6 +666,8 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 	t.Run("CreateInstanceFromSharedTemplate dismisses quickstart", func(t *testing.T) {
 		owner := &models.User{ID: gofakeit.UUID()}
 		recipient := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, owner.ID)
+		insertTestUser(t, dbc, recipient.ID)
 
 		template := &models.Instance{
 			Name:       gofakeit.Word(),

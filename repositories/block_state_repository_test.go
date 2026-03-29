@@ -3,30 +3,32 @@ package repositories_test
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/nathanhollows/Rapua/v7/db"
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupBlockStateRepo(t *testing.T) (repositories.BlockStateRepository, db.Transactor, func()) {
+func setupBlockStateRepo(t *testing.T) (repositories.BlockStateRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
 	blockStateRepository := repositories.NewBlockStateRepository(dbc)
-	return blockStateRepository, transactor, cleanup
+	return blockStateRepository, transactor, dbc, cleanup
 }
 
 func TestBlockStateRepository(t *testing.T) {
-	repo, _, cleanup := setupBlockStateRepo(t)
+	repo, _, dbc, cleanup := setupBlockStateRepo(t)
 	defer cleanup()
+
+	// Create one parent chain; each test case uses its own block+team drawn from these parents.
+	parents := createTestParents(t, dbc)
 
 	tests := []struct {
 		name        string
@@ -38,7 +40,9 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Create new player state",
 			setup: func() (blocks.PlayerState, error) {
-				return repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
+				blockID := createTestBlock(t, dbc, parents.LocationID)
+				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				return repo.NewBlockState(context.Background(), blockID, teamCode)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
 				return repo.Create(context.Background(), state)
@@ -55,7 +59,9 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Get player state by block and team",
 			setup: func() (blocks.PlayerState, error) {
-				state, _ := repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
+				blockID := createTestBlock(t, dbc, parents.LocationID)
+				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
 				return repo.Create(context.Background(), state)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
@@ -73,7 +79,9 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Update player state",
 			setup: func() (blocks.PlayerState, error) {
-				state, _ := repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
+				blockID := createTestBlock(t, dbc, parents.LocationID)
+				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
 				createdState, _ := repo.Create(context.Background(), state)
 				return createdState, nil
 			},
@@ -97,7 +105,9 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Delete player state",
 			setup: func() (blocks.PlayerState, error) {
-				state, _ := repo.NewBlockState(context.Background(), gofakeit.UUID(), gofakeit.UUID())
+				blockID := createTestBlock(t, dbc, parents.LocationID)
+				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
 				return repo.Create(context.Background(), state)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
@@ -134,8 +144,10 @@ func verifyStatesDeleted(repo repositories.BlockStateRepository, states []blocks
 }
 
 func TestBlockStateRepository_Bulk(t *testing.T) {
-	repo, transactor, cleanup := setupBlockStateRepo(t)
+	repo, transactor, dbc, cleanup := setupBlockStateRepo(t)
 	defer cleanup()
+
+	parents := createTestParents(t, dbc)
 
 	tests := []struct {
 		name        string
@@ -147,10 +159,11 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 		{
 			name: "Delete player states by block ID",
 			setup: func() ([]blocks.PlayerState, error) {
-				blockID := gofakeit.UUID()
+				blockID := createTestBlock(t, dbc, parents.LocationID)
 				playerStates := make([]blocks.PlayerState, 3)
 				for i := range 3 {
-					state, _ := repo.NewBlockState(context.Background(), blockID, gofakeit.UUID())
+					teamCode := createTestTeam(t, dbc, parents.InstanceID)
+					state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
 					ps, err := repo.Create(context.Background(), state)
 					playerStates[i] = ps
 					if err != nil {
@@ -196,87 +209,6 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 			state, err := tt.setup()
 			require.NoError(t, err)
 			result, err := tt.action(state)
-			tt.assertion(result, err)
-			if tt.cleanupFunc != nil {
-				tt.cleanupFunc(state)
-			}
-		})
-	}
-}
-
-func verifyStatesDeletedWithCheck(repo repositories.BlockStateRepository, states []blocks.PlayerState) error {
-	for _, s := range states {
-		_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
-		if getErr == nil || !errors.Is(getErr, sql.ErrNoRows) {
-			return errors.New("player state was not deleted")
-		}
-	}
-	return nil
-}
-
-func TestBlockStateRepository_DeleteByTeamCodes(t *testing.T) {
-	repo, transactor, cleanup := setupBlockStateRepo(t)
-	defer cleanup()
-
-	tests := []struct {
-		name        string
-		setup       func() ([]blocks.PlayerState, []string, error)
-		action      func(state []blocks.PlayerState, teamCodes []string) (any, error)
-		assertion   func(result any, err error)
-		cleanupFunc func(state []blocks.PlayerState)
-	}{
-		{
-			name: "Delete player states by team codes",
-			setup: func() ([]blocks.PlayerState, []string, error) {
-				teamCodes := []string{gofakeit.UUID(), gofakeit.UUID()}
-				playerStates := make([]blocks.PlayerState, 4)
-				for i := range 4 {
-					blockID := gofakeit.UUID()
-					state, _ := repo.NewBlockState(context.Background(), blockID, teamCodes[i%2])
-					ps, err := repo.Create(context.Background(), state)
-					playerStates[i] = ps
-					if err != nil {
-						return nil, nil, err
-					}
-				}
-				return playerStates, teamCodes, nil
-			},
-			action: func(state []blocks.PlayerState, teamCodes []string) (any, error) {
-				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
-				if err != nil {
-					return nil, err
-				}
-
-				err = repo.DeleteByTeamCodes(context.Background(), tx, teamCodes)
-				if err != nil {
-					if err2 := tx.Rollback(); err2 != nil {
-						return nil, err2
-					}
-					return nil, err
-				}
-
-				if commitErr := tx.Commit(); commitErr != nil {
-					return nil, commitErr
-				}
-
-				if verifyErr := verifyStatesDeletedWithCheck(repo, state); verifyErr != nil {
-					return nil, verifyErr
-				}
-
-				return "deletion verified", nil
-			},
-			assertion: func(_ any, err error) {
-				require.NoError(t, err)
-			},
-			cleanupFunc: func(_ []blocks.PlayerState) {},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			state, teamCodes, err := tt.setup()
-			require.NoError(t, err)
-			result, err := tt.action(state, teamCodes)
 			tt.assertion(result, err)
 			if tt.cleanupFunc != nil {
 				tt.cleanupFunc(state)

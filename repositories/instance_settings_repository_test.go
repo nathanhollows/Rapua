@@ -11,20 +11,21 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupInstanceSettingsRepo(t *testing.T) (repositories.InstanceSettingsRepository, db.Transactor, func()) {
+func setupInstanceSettingsRepo(t *testing.T) (repositories.InstanceSettingsRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
 	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	return instanceSettingsRepo, transactor, cleanup
+	return instanceSettingsRepo, transactor, dbc, cleanup
 }
 
 func TestInstanceSettingsRepository(t *testing.T) {
-	repo, transactor, cleanup := setupInstanceSettingsRepo(t)
+	repo, _, dbc, cleanup := setupInstanceSettingsRepo(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -36,8 +37,9 @@ func TestInstanceSettingsRepository(t *testing.T) {
 		{
 			name: "Create instance settings successfully",
 			setup: func() *models.InstanceSettings {
+				parents := createTestParents(t, dbc)
 				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
+					InstanceID:        parents.InstanceID,
 					MustCheckOut:      gofakeit.Bool(),
 					EnablePoints:      gofakeit.Bool(),
 					EnableBonusPoints: gofakeit.Bool(),
@@ -55,8 +57,9 @@ func TestInstanceSettingsRepository(t *testing.T) {
 		{
 			name: "Update instance settings successfully",
 			setup: func() *models.InstanceSettings {
+				parents := createTestParents(t, dbc)
 				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
+					InstanceID:        parents.InstanceID,
 					MustCheckOut:      gofakeit.Bool(),
 					EnablePoints:      gofakeit.Bool(),
 					EnableBonusPoints: gofakeit.Bool(),
@@ -70,35 +73,6 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			},
 			verify: func(_ context.Context, t *testing.T, _ *models.InstanceSettings, err error) {
 				require.NoError(t, err)
-			},
-		},
-		{
-			name: "Delete instance settings successfully",
-			setup: func() *models.InstanceSettings {
-				return &models.InstanceSettings{
-					InstanceID:        gofakeit.UUID(),
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
-				}
-			},
-			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
-				// Simulate creation
-				_ = repo.Create(ctx, settings)
-
-				tx, _ := transactor.BeginTx(ctx, &sql.TxOptions{})
-				defer (func() {
-					if err := tx.Commit(); err != nil {
-						t.Error(err)
-					}
-				})()
-
-				return repo.Delete(ctx, tx, settings.InstanceID)
-			},
-			verify: func(_ context.Context, t *testing.T, _ *models.InstanceSettings, err error) {
-				require.NoError(t, err)
-				// Optionally, query the database to confirm the instance was deleted
 			},
 		},
 	}
@@ -120,14 +94,17 @@ func TestInstanceSettingsRepository(t *testing.T) {
 
 func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 	// Setup test database
-	repo, _, cleanup := setupInstanceSettingsRepo(t)
+	repo, _, dbc, cleanup := setupInstanceSettingsRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
+	// Create valid parent records
+	parents := createTestParents(t, dbc)
+
 	// Create test settings
 	settings := &models.InstanceSettings{
-		InstanceID:        gofakeit.UUID(),
+		InstanceID:        parents.InstanceID,
 		MustCheckOut:      gofakeit.Bool(),
 		ShowTeamCount:     gofakeit.Bool(),
 		EnablePoints:      true,
@@ -187,20 +164,20 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 }
 
 func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
-	repo, transactor, cleanup := setupInstanceSettingsRepo(t)
+	repo, transactor, dbc, cleanup := setupInstanceSettingsRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("creates instance settings within transaction", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		parents := createTestParents(t, dbc)
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 		defer tx.Rollback()
 
 		settings := &models.InstanceSettings{
-			InstanceID:      instanceID,
+			InstanceID:      parents.InstanceID,
 			EnablePoints:    true,
 			ShowLeaderboard: true,
 		}
@@ -212,7 +189,7 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify settings were created
-		found, err := repo.GetByInstanceID(ctx, instanceID)
+		found, err := repo.GetByInstanceID(ctx, parents.InstanceID)
 		require.NoError(t, err)
 		assert.Equal(t, settings.InstanceID, found.InstanceID)
 		assert.Equal(t, settings.EnablePoints, found.EnablePoints)
@@ -220,13 +197,13 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 	})
 
 	t.Run("rolls back on transaction failure", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		parents := createTestParents(t, dbc)
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 
 		settings := &models.InstanceSettings{
-			InstanceID:   instanceID,
+			InstanceID:   parents.InstanceID,
 			EnablePoints: false,
 		}
 
@@ -238,7 +215,7 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify settings were NOT created
-		_, err = repo.GetByInstanceID(ctx, instanceID)
+		_, err = repo.GetByInstanceID(ctx, parents.InstanceID)
 		require.Error(t, err)
 	})
 

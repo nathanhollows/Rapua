@@ -11,44 +11,45 @@ import (
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupLocationRepo(t *testing.T) (repositories.LocationRepository, db.Transactor, func()) {
+func setupLocationRepo(t *testing.T) (repositories.LocationRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
 	locationRepo := repositories.NewLocationRepository(dbc)
-	return locationRepo, transactor, cleanup
+	return locationRepo, transactor, dbc, cleanup
 }
 
 func TestLocationRepository_GetByInstanceAndSlug(t *testing.T) {
-	repo, _, cleanup := setupLocationRepo(t)
+	repo, _, dbc, cleanup := setupLocationRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
-	instanceID := gofakeit.UUID()
+	parents := createTestParents(t, dbc)
 	slug := gofakeit.Word()
 
 	location := &models.Location{
 		Name:       gofakeit.Name(),
 		Slug:       slug,
-		InstanceID: instanceID,
-		MarkerID:   gofakeit.UUID(),
+		InstanceID: parents.InstanceID,
+		MarkerID:   parents.MarkerCode,
 	}
 	err := repo.Create(ctx, location)
 	require.NoError(t, err)
 
 	t.Run("found by slug", func(t *testing.T) {
-		found, findErr := repo.GetByInstanceAndSlug(ctx, instanceID, slug)
+		found, findErr := repo.GetByInstanceAndSlug(ctx, parents.InstanceID, slug)
 		require.NoError(t, findErr)
 		assert.Equal(t, location.ID, found.ID)
 		assert.Equal(t, slug, found.Slug)
 	})
 
 	t.Run("not found with wrong slug", func(t *testing.T) {
-		_, findErr := repo.GetByInstanceAndSlug(ctx, instanceID, gofakeit.Word())
+		_, findErr := repo.GetByInstanceAndSlug(ctx, parents.InstanceID, gofakeit.Word())
 		require.Error(t, findErr)
 	})
 
@@ -58,32 +59,30 @@ func TestLocationRepository_GetByInstanceAndSlug(t *testing.T) {
 	})
 
 	t.Run("same slug in different instances is allowed", func(t *testing.T) {
-		otherInstanceID := gofakeit.UUID()
+		otherParents := createTestParents(t, dbc)
 		other := &models.Location{
 			Name:       gofakeit.Name(),
 			Slug:       slug,
-			InstanceID: otherInstanceID,
-			MarkerID:   gofakeit.UUID(),
+			InstanceID: otherParents.InstanceID,
+			MarkerID:   otherParents.MarkerCode,
 		}
 		createErr := repo.Create(ctx, other)
 		require.NoError(t, createErr)
 
-		found, findErr := repo.GetByInstanceAndSlug(ctx, otherInstanceID, slug)
+		found, findErr := repo.GetByInstanceAndSlug(ctx, otherParents.InstanceID, slug)
 		require.NoError(t, findErr)
 		assert.Equal(t, other.ID, found.ID)
 	})
 }
 
 func TestLocationRepository_CreateTx(t *testing.T) {
-	repo, transactor, cleanup := setupLocationRepo(t)
+	repo, transactor, dbc, cleanup := setupLocationRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	t.Run("creates location within transaction", func(t *testing.T) {
-		// Create instance first
-		instanceID := gofakeit.UUID()
-		markerID := gofakeit.UUID()
+		parents := createTestParents(t, dbc)
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
@@ -91,8 +90,8 @@ func TestLocationRepository_CreateTx(t *testing.T) {
 
 		location := &models.Location{
 			Name:       gofakeit.Word(),
-			InstanceID: instanceID,
-			MarkerID:   markerID,
+			InstanceID: parents.InstanceID,
+			MarkerID:   parents.MarkerCode,
 			Points:     100,
 		}
 
@@ -112,16 +111,15 @@ func TestLocationRepository_CreateTx(t *testing.T) {
 	})
 
 	t.Run("rolls back on transaction failure", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
-		markerID := gofakeit.UUID()
+		parents := createTestParents(t, dbc)
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 
 		location := &models.Location{
 			Name:       gofakeit.Word(),
-			InstanceID: instanceID,
-			MarkerID:   markerID,
+			InstanceID: parents.InstanceID,
+			MarkerID:   parents.MarkerCode,
 			Points:     50,
 		}
 

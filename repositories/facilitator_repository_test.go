@@ -5,32 +5,34 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupFacilitatorTokenRepo(t *testing.T) (repositories.FacilitatorTokenRepo, func()) {
+func setupFacilitatorTokenRepo(t *testing.T) (repositories.FacilitatorTokenRepo, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	facilitatorTokenRepo := repositories.NewFacilitatorTokenRepo(dbc)
 
-	return facilitatorTokenRepo, cleanup
+	return facilitatorTokenRepo, dbc, cleanup
 }
 
 func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
-	repo, cleanup := setupFacilitatorTokenRepo(t)
+	repo, dbc, cleanup := setupFacilitatorTokenRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
+	parents := createTestParents(t, dbc)
+
 	token := models.FacilitatorToken{
 		Token:      "jsonTest123",
-		InstanceID: "instanceX",
-		Locations:  []string{gofakeit.UUID(), gofakeit.UUID()},
+		InstanceID: parents.InstanceID,
+		Locations:  []string{parents.LocationID},
 		ExpiresAt:  time.Now().Add(24 * time.Hour),
 	}
 

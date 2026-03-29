@@ -210,11 +210,3 @@ func (r *CreditPurchaseRepository) UpdateReceiptURLWithTx(
 	return err
 }
 
-// DeleteByUserID deletes all credit purchases for a user within a transaction.
-func (r *CreditPurchaseRepository) DeleteByUserID(ctx context.Context, tx *bun.Tx, userID string) error {
-	_, err := tx.NewDelete().
-		Model(&models.CreditPurchase{}).
-		Where("user_id = ?", userID).
-		Exec(ctx)
-	return err
-}
