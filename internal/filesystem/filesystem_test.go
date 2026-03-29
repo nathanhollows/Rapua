@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/filesystem"
+	"github.com/nathanhollows/Rapua/v7/internal/filesystem"
 )
 
 func TestOpenFile(t *testing.T) {
 	dir := "./" // Tests only have access to the folder they are in
 	filename := "test.txt"
-	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0600)
+	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0o600)
 	if err != nil {
 		t.Fatalf("could not create test file: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestFileServer(t *testing.T) {
 	dir := "./" // Tests only have access to the folder they are in
 	filename := "test.txt"
 
-	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0600)
+	err := os.WriteFile(filepath.Join(dir, filename), []byte("hello world"), 0o600)
 	if err != nil {
 		t.Fatalf("could not create test file: %v", err)
 	}
