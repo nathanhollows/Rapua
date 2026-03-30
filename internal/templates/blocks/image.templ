@@ -3,7 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
@@ -16,7 +16,7 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 				rel="noopener"
 			>
 				<img
-					if helpers.IsLocalURL(block.URL) {
+					if config.IsLocalURL(block.URL) {
 						src={ block.URL + "?size=small" }
 					} else {
 						src={ block.URL }
@@ -28,7 +28,7 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 			</a>
 		} else {
 			<img
-				if helpers.IsLocalURL(block.URL) {
+				if config.IsLocalURL(block.URL) {
 					src={ block.URL + "?size=small" }
 				} else {
 					src={ block.URL }

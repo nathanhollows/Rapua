@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/render"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 )
 
@@ -18,7 +18,7 @@ func (h *Handler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	md, err := helpers.MarkdownToHTML(m["markdown"], h.logger)
+	md, err := render.MarkdownToHTML(m["markdown"], h.logger)
 	if err != nil {
 		h.handleError(
 			w,

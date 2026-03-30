@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
@@ -71,7 +71,7 @@ func imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if helpers.IsLocalURL(block.URL) {
+			if config.IsLocalURL(block.URL) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -143,7 +143,7 @@ func imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if helpers.IsLocalURL(block.URL) {
+			if config.IsLocalURL(block.URL) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

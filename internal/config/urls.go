@@ -1,12 +1,14 @@
-package helpers
+package config
 
 import (
 	"net/url"
 	"os"
 )
 
-// URL constructs a URL specific to the application.
-func URL(patterns ...string) string {
+// SiteURL constructs an absolute URL for the application.
+// Reads the base from SITE_URL env var; falls back to "/" if unset.
+// patterns: [path[, rawQuery[, fragment]]]
+func SiteURL(patterns ...string) string {
 	const (
 		pathIdx     = 0
 		queryIdx    = 1
@@ -34,12 +36,10 @@ func URL(patterns ...string) string {
 // IsLocalURL checks if a given URL belongs to the current server.
 // Returns true for relative URLs and URLs matching the SITE_URL host.
 func IsLocalURL(urlStr string) bool {
-	// Empty URLs are not local
 	if urlStr == "" {
 		return false
 	}
 
-	// Parse the input URL
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return false
@@ -50,19 +50,15 @@ func IsLocalURL(urlStr string) bool {
 		return true
 	}
 
-	// Get the server's URL from environment
 	siteURL := os.Getenv("SITE_URL")
 	if siteURL == "" {
-		// If no SITE_URL is set, only relative URLs are considered local
 		return u.Host == ""
 	}
 
-	// Parse the server URL
 	serverURL, err := url.Parse(siteURL)
 	if err != nil {
 		return u.Host == ""
 	}
 
-	// Compare hosts (case-insensitive)
 	return u.Host == serverURL.Host
 }

@@ -3,9 +3,9 @@ package repositories
 import (
 	"context"
 	"errors"
+	"math/rand/v2"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/helpers"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
@@ -61,7 +61,7 @@ func (r *markerRepository) Create(ctx context.Context, marker *models.Marker) er
 		return errors.New("marker name is required")
 	}
 	if marker.Code == "" {
-		marker.Code = helpers.NewCode(markerCodeLength)
+		marker.Code = newCode(markerCodeLength)
 		_, err := r.db.NewInsert().Model(marker).Exec(ctx)
 		return err
 	}
@@ -75,7 +75,7 @@ func (r *markerRepository) CreateTx(ctx context.Context, tx *bun.Tx, marker *mod
 		return errors.New("marker name is required")
 	}
 	if marker.Code == "" {
-		marker.Code = helpers.NewCode(markerCodeLength)
+		marker.Code = newCode(markerCodeLength)
 	}
 	_, err := tx.NewInsert().Model(marker).Exec(ctx)
 	return err
@@ -206,4 +206,15 @@ func (r *markerRepository) UserOwnsMarker(ctx context.Context, userID, _ string)
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// newCode generates an alpha string of easily recognisable characters.
+// Confusing letters such as I and L, O and Q have one pair removed.
+func newCode(length int) string {
+	symbols := []rune("ABCDEFGHJKLMNPRSTUVWXYZ")
+	b := make([]rune, length)
+	for i := range length {
+		b[i] = symbols[rand.IntN(len(symbols))] //nolint:gosec // Marker codes do not need cryptographic randomness
+	}
+	return string(b)
 }

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"net/mail"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/helpers"
 	"github.com/nathanhollows/Rapua/v7/internal/security"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
@@ -57,7 +59,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User, passwor
 	user.ID = uuid.New().String()
 
 	// Set monthly credit limit based on email
-	user.MonthlyCreditLimit = config.GetFreeCreditsForEmail(user.Email, helpers.IsEducationalEmailHeuristic)
+	user.MonthlyCreditLimit = config.GetFreeCreditsForEmail(user.Email, isEducationalEmailHeuristic)
 
 	// Set initial free credits to the monthly limit
 	user.FreeCredits = user.MonthlyCreditLimit
@@ -232,4 +234,47 @@ func (s *UserService) SwitchInstance(ctx context.Context, user *models.User, ins
 	}
 
 	return nil
+}
+
+// isEducationalEmailHeuristic checks if an email is educational using heuristics.
+func isEducationalEmailHeuristic(email string) bool {
+	parsedEmail, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
+	atIndex := strings.LastIndex(parsedEmail.Address, "@")
+	if atIndex == -1 || atIndex == len(parsedEmail.Address)-1 {
+		return false
+	}
+
+	domain := strings.ToLower(parsedEmail.Address[atIndex+1:])
+
+	if strings.HasPrefix(domain, ".") || strings.Contains(domain, "..") {
+		return false
+	}
+
+	eduTLDs := []string{
+		".edu", ".ac", ".academy", ".school", ".college", ".university",
+		".study", ".training", ".institute", ".museum", ".science",
+	}
+	for _, tld := range eduTLDs {
+		if strings.HasSuffix(domain, tld) || strings.Contains(domain, tld+".") {
+			return true
+		}
+	}
+
+	keywords := []string{
+		"university", "college", "school", "academy", "institute", "education",
+		"faculty", "campus", "students", "museum", "zoo", "botanical",
+		"garden", "arboretum", "aquarium", "sciencecenter", "heritage",
+		"conservatory", "gallery", "galleries",
+	}
+	for _, keyword := range keywords {
+		if strings.Contains(domain, keyword) {
+			return true
+		}
+	}
+
+	return false
 }

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-pdf/fpdf"
-	"github.com/nathanhollows/Rapua/v7/helpers"
 	go_qr "github.com/piglig/go-qr"
 )
 
@@ -149,7 +148,7 @@ func (s *assetGenerator) CreateQRCodeImage(
 
 func (s *assetGenerator) CreateArchive(paths []string) (string, error) {
 	// Create the file
-	path := "assets/codes/" + helpers.NewCode(
+	path := "assets/codes/" + newCode(
 		randomCodeLength,
 	) + "-" + strconv.FormatInt(
 		time.Now().UnixNano(),
@@ -213,7 +212,7 @@ func (s *assetGenerator) CreatePDF(data PDFData) (string, error) {
 		s.addPage(pdf, page, data.InstanceName)
 	}
 
-	path := "assets/codes/" + helpers.NewCode(
+	path := "assets/codes/" + newCode(
 		randomCodeLength,
 	) + "-" + strconv.FormatInt(
 		time.Now().UnixNano(),

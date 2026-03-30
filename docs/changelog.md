@@ -12,6 +12,7 @@ tag: updated
 ### Added
 
 - YAML importer and exporter.
+- Markdown tables are now supported in block content and documentation pages.
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 
@@ -20,7 +21,7 @@ tag: updated
 - **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
 - **Breaking:** `OwnerID` replaces `LocationID` in blocks.
 - New fields for blocks to support reports in the future.
-- `config`, `db`, `filesystem`, `repositories`, and `security` packages moved to `internal/`.
+- `config`, `db`, `filesystem`, `helpers`, `repositories`, and `security` packages moved to `internal/`.
 - Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
 
 ### Removed

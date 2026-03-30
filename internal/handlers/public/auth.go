@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/markbates/goth/gothic"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/flash"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
@@ -87,7 +87,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("getting session for logout", "err", err)
 		// Redirect to the login page
-		http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
+		http.Redirect(w, r, config.SiteURL("/login"), http.StatusSeeOther)
 		return
 	}
 	session.Options.MaxAge = -1
@@ -96,7 +96,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		h.handleError(w, r, "Logout: saving session", "Error logging out", "error", err)
 		return
 	}
-	http.Redirect(w, r, helpers.URL("/login"), http.StatusSeeOther)
+	http.Redirect(w, r, config.SiteURL("/login"), http.StatusSeeOther)
 }
 
 // Register is the handler for the admin register page.

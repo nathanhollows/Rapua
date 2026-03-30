@@ -3,7 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
@@ -34,7 +34,7 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 									</button>
 								}
 								<img
-									if helpers.IsLocalURL(imageURL) {
+									if config.IsLocalURL(imageURL) {
 										src={ imageURL + "?size=small" }
 									} else {
 										src={ imageURL }

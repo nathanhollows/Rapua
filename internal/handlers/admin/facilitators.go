@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 	public "github.com/nathanhollows/Rapua/v7/internal/templates/public"
@@ -61,7 +61,7 @@ func (h *Handler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	url := helpers.URL("/facilitator/login/" + token)
+	url := config.SiteURL("/facilitator/login/" + token)
 
 	err = templates.FacilitatorLinkCopyModal(url).Render(r.Context(), w)
 	if err != nil {
