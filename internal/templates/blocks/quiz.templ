@@ -198,10 +198,10 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 					hx-swap="outerHTML"
 				>
 					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="form-control">
+					<div class="form-control flex flex-col gap-3">
 						// Get options (maintain same order as before)
 						for _, option := range block.Options {
-							<label class="label cursor-pointer justify-start gap-3 w-full">
+							<label class="label cursor-pointer justify-start w-full">
 								if block.MultipleChoice {
 									<input
 										type="checkbox"
@@ -217,7 +217,7 @@ templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock,
 										class="radio radio-primary"
 									/>
 								}
-								<div class="label-text prose">
+								<div class="label-text">
 									@templ.Raw(stringToMarkdown(option.Text))
 								</div>
 							</label>

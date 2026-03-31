@@ -27,6 +27,7 @@ tag: updated
 ### Fixed
 
 - Navigation button issue. Fixes [#122](https://github.com/nathanhollows/Rapua/issues/122)
+- Spacing issue in quiz block. Fixes [#123](https://github.com/nathanhollows/Rapua/issues/123)
 
 ### Removed
 
