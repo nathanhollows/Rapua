@@ -24,6 +24,10 @@ tag: updated
 - `config`, `db`, `filesystem`, `helpers`, `repositories`, and `security` packages moved to `internal/`.
 - Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
 
+### Fixed
+
+- Navigation button issue. Fixes [#122](https://github.com/nathanhollows/Rapua/issues/122)
+
 ### Removed
 
 - **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
