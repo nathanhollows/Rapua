@@ -56,6 +56,14 @@ func (b *AlertBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *AlertBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "content", Type: FieldMarkdown, Required: true, Desc: "Alert message text"},
+		{Name: "style", Type: FieldEnum, Desc: "Visual style", Enum: []string{"info", "success", "warning", "error"}},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *AlertBlock) RequiresValidation() bool {

@@ -89,6 +89,15 @@ func (b *ClueBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *ClueBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "clue", Type: FieldMarkdown, Required: true, Desc: "Clue text revealed when the player pays the cost"},
+		{Name: "description", Type: FieldMarkdown, Desc: "Teaser text shown before the clue is revealed"},
+		{Name: "button_label", Type: FieldString, Desc: `Label on the reveal button (default: "Reveal Clue")`},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *ClueBlock) RequiresValidation() bool { return true }

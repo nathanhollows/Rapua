@@ -137,6 +137,18 @@ func (b *ChecklistBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *ChecklistBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{
+			Name: "items", Type: FieldList, Required: true,
+			Desc:     "Checklist items as plain strings (each must be checked off by the player)",
+			Children: []FieldDef{{Name: "", Type: FieldString, Desc: "Item description"}},
+		},
+		{Name: "content", Type: FieldMarkdown, Desc: "Optional introductory text shown above the list"},
+	}
+}
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *ChecklistBlock) RequiresValidation() bool { return true }
 

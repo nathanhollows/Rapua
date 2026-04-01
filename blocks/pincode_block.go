@@ -80,6 +80,15 @@ func (b *PincodeBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *PincodeBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "prompt", Type: FieldMarkdown, Required: true, Desc: "Question or instruction shown to the player"},
+		{Name: "pincode", Type: FieldString, Required: true, Desc: "Correct numeric pin code"},
+		{Name: "unlocked_content", Type: FieldMarkdown, Desc: "Markdown content revealed after a correct pin"},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *PincodeBlock) RequiresValidation() bool { return true }

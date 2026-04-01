@@ -94,6 +94,14 @@ func (b *PhotoBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *PhotoBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "prompt", Type: FieldString, Required: true, Desc: "Instruction shown to the player"},
+		{Name: "max_images", Type: FieldInt, Desc: "Maximum number of photos to collect (1–5, default 1)"},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *PhotoBlock) RequiresValidation() bool { return true }

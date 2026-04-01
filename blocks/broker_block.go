@@ -133,6 +133,22 @@ func (b *BrokerBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *BrokerBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "prompt", Type: FieldMarkdown, Required: true, Desc: "Introductory prompt shown to the player"},
+		{Name: "default_info", Type: FieldMarkdown, Desc: "Information provided for free (0 points)"},
+		{
+			Name: "tiers", Type: FieldList,
+			Desc: "Information tiers unlocked by spending points",
+			Children: []FieldDef{
+				{Name: "points_required", Type: FieldInt, Required: true, Desc: "Minimum points bid to unlock this tier"},
+				{Name: "content", Type: FieldMarkdown, Required: true, Desc: "Information revealed at this tier"},
+			},
+		},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *BrokerBlock) RequiresValidation() bool { return true }

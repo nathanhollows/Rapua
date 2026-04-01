@@ -50,6 +50,13 @@ func (b *DividerBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *DividerBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "title", Type: FieldString, Desc: "Optional label displayed alongside the divider"},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *DividerBlock) RequiresValidation() bool {

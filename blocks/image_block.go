@@ -93,6 +93,15 @@ func (b *ImageBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *ImageBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "url", Type: FieldString, Required: true, Desc: "URL of the image to display"},
+		{Name: "caption", Type: FieldString, Desc: "Optional caption shown below the image"},
+		{Name: "link", Type: FieldString, Desc: "Optional URL to open when the image is clicked"},
+	}
+}
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *ImageBlock) RequiresValidation() bool {
 	return false

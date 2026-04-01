@@ -94,6 +94,14 @@ func (b *RatingBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *RatingBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "prompt", Type: FieldString, Required: true, Desc: "Question or instruction shown to the player"},
+		{Name: "max_rating", Type: FieldInt, Desc: "Maximum rating value (3–10, default 5)"},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *RatingBlock) RequiresValidation() bool { return true }

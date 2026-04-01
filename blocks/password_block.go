@@ -81,6 +81,15 @@ func (b *PasswordBlock) ToYAML() map[string]any {
 	return m
 }
 
+// FieldSpec returns the YAML field definitions for this block type.
+func (b *PasswordBlock) FieldSpec() []FieldDef {
+	return []FieldDef{
+		{Name: "prompt", Type: FieldMarkdown, Required: true, Desc: "Question or instruction shown to the player"},
+		{Name: "answer", Type: FieldString, Required: true, Desc: "Correct answer (case-insensitive comparison)"},
+		{Name: "unlocked_content", Type: FieldMarkdown, Desc: "Markdown content revealed after a correct answer"},
+	}
+}
+
 // Validation and Points Calculation
 
 func (b *PasswordBlock) RequiresValidation() bool { return true }
