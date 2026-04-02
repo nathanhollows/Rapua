@@ -484,12 +484,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		locationRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	yamlExportService := services.NewYAMLExportService(
-		instanceRepo, instanceSettingsRepo, gameStructureService, blockRepo,
-	)
-	yamlImportService := services.NewYAMLImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, markerRepo, blockRepo, teamRepo,
-	)
 	instanceService := services.NewInstanceService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
@@ -581,8 +575,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		quickstartService,
 		leaderBoardService,
 		stripeService,
-		yamlExportService,
-		yamlImportService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)

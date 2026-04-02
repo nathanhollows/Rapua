@@ -459,46 +459,33 @@ func templateItem(template models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></li><span class=\"flex sm:hidden divider my-0\"></span><!-- Export YAML --><li><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></li><span class=\"flex sm:hidden divider my-0\"></span> <span class=\"divider my-0\"></span><!-- Delete --><li><a class=\"text-error\" data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 templ.SafeURL
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/yaml/export/template?id=%s", template.ID)))
+		var templ_7745c5c3_Var26 string
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(template.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 241, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 243, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-code w-4 h-4\"><path d=\"M10 12.5 8 15l2 2.5\"></path><path d=\"m14 12.5 2 2.5-2 2.5\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z\"></path></svg> Export Template YAML</a></li><span class=\"divider my-0\"></span><!-- Delete --><li><a class=\"text-error\" data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(template.ID))
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(template.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 252, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 244, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-name=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var28 string
-		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(template.Name)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 253, Col: 32}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" onclick=\"confirmDeleteTemplate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li></ul></div></span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" onclick=\"confirmDeleteTemplate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li></ul></div></span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -522,12 +509,12 @@ func templateModals() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var29 == nil {
-			templ_7745c5c3_Var29 = templ.NopComponent
+		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var28 == nil {
+			templ_7745c5c3_Var28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<!-- Create template modal --><dialog id=\"create_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Save as template</h3><p class=\"pt-4\">You are saving <code id=\"template-modal-instance-name\"></code> as a template. The template will include all settings, locations, and content of the game. It will not include any teams or history.</p><form hx-post=\"/admin/templates/create\" hx-target=\"#templates\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New template name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"create_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" onclick=\"create_template_modal.close()\">Save as template</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Delete template modal --><dialog id=\"confirm_delete_template_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a template</h3><p class=\"pt-4\">You are about to delete your <code id=\"delete-template-name\"></code> template and any share links you may have generated. Games that were created from this template will not be impacted.</p><p>This action cannot be undone. Are you sure?</p><form hx-delete=\"/admin/templates\" hx-swap=\"outerHTML\" hx-target=\"#templates\"><div class=\"modal-action\"><input type=\"hidden\" name=\"id\" value=\"\"> <button type=\"button\" class=\"btn\" onclick=\"confirm_delete_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_template_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Launch template modal --><dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p>You are about to launch a new game from the <code id=\"launch-template-name\"></code> template.</p><form hx-post=\"/admin/templates/launch\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">What is the name of the new game?</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><label class=\"form-control w-full\"></label><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Share template modal --><dialog id=\"share_template_modal\" class=\"modal modal-bottom sm:modal-middle\"></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<!-- Create template modal --><dialog id=\"create_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Save as template</h3><p class=\"pt-4\">You are saving <code id=\"template-modal-instance-name\"></code> as a template. The template will include all settings, locations, and content of the game. It will not include any teams or history.</p><form hx-post=\"/admin/templates/create\" hx-target=\"#templates\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New template name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"create_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" onclick=\"create_template_modal.close()\">Save as template</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Delete template modal --><dialog id=\"confirm_delete_template_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a template</h3><p class=\"pt-4\">You are about to delete your <code id=\"delete-template-name\"></code> template and any share links you may have generated. Games that were created from this template will not be impacted.</p><p>This action cannot be undone. Are you sure?</p><form hx-delete=\"/admin/templates\" hx-swap=\"outerHTML\" hx-target=\"#templates\"><div class=\"modal-action\"><input type=\"hidden\" name=\"id\" value=\"\"> <button type=\"button\" class=\"btn\" onclick=\"confirm_delete_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_template_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Launch template modal --><dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p>You are about to launch a new game from the <code id=\"launch-template-name\"></code> template.</p><form hx-post=\"/admin/templates/launch\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">What is the name of the new game?</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><label class=\"form-control w-full\"></label><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Share template modal --><dialog id=\"share_template_modal\" class=\"modal modal-bottom sm:modal-middle\"></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -551,38 +538,38 @@ func TemplateShareModal(template models.Instance) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var30 == nil {
-			templ_7745c5c3_Var30 = templ.NopComponent
+		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var29 == nil {
+			templ_7745c5c3_Var29 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"modal-box\" _=\"on load share_template_modal.showModal()\"><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"modal-box\" _=\"on load share_template_modal.showModal()\"><form hx-post=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var30 string
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/templates/", template.ID, "/share"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 401, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\"><h3 class=\"text-lg font-bold\">Share a template</h3><div class=\"prose py-4\"><p>Share a template with others by creating a shareable link. Anyone with the link will be able to create a new game from this template.</p></div><div class=\"flex md:flex-row flex-col gap-4\"><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Validity</legend> <select id=\"link-validity\" name=\"validity\" class=\"select w-full\"><option value=\"always\" selected>Never expires</option> <option value=\"day\">1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select><p class=\"label text-wrap\">How long should the link last?</p></fieldset><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Maximum uses</legend> <input id=\"link-limit\" type=\"number\" class=\"input w-full\" name=\"limit\" placeholder=\"Unlimited\" step=\"1\" min=\"1\"><p class=\"label text-wrap\">How many games can be created from this link?</p></fieldset><input type=\"hidden\" name=\"id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
-		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/admin/templates/", template.ID, "/share"))
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(template.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 410, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 433, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\"><h3 class=\"text-lg font-bold\">Share a template</h3><div class=\"prose py-4\"><p>Share a template with others by creating a shareable link. Anyone with the link will be able to create a new game from this template.</p></div><div class=\"flex md:flex-row flex-col gap-4\"><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Validity</legend> <select id=\"link-validity\" name=\"validity\" class=\"select w-full\"><option value=\"always\" selected>Never expires</option> <option value=\"day\">1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select><p class=\"label text-wrap\">How long should the link last?</p></fieldset><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Maximum uses</legend> <input id=\"link-limit\" type=\"number\" class=\"input w-full\" name=\"limit\" placeholder=\"Unlimited\" step=\"1\" min=\"1\"><p class=\"label text-wrap\">How many games can be created from this link?</p></fieldset><input type=\"hidden\" name=\"id\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(template.ID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 442, Col: 54}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\"></div><label class=\"label cursor-pointer hidden\"><span class=\"label-text flex items-center pt-4\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Check this box to generate new location codes for every game launched using this template. Useful for adapting games to new sites.</p><p>Leave it unchecked to let game creators choose whether to reuse existing location codes or create new ones. Useful when running multiple games in the same space.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"share_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Create a link</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"></div><label class=\"label cursor-pointer hidden\"><span class=\"label-text flex items-center pt-4\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Check this box to generate new location codes for every game launched using this template. Useful for adapting games to new sites.</p><p>Leave it unchecked to let game creators choose whether to reuse existing location codes or create new ones. Useful when running multiple games in the same space.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"share_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Create a link</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -606,25 +593,25 @@ func ShareLinkCopyModal(url string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var33 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var33 == nil {
-			templ_7745c5c3_Var33 = templ.NopComponent
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Link created!</h3><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Template link</legend><div class=\"join w-full\"><input id=\"facilitator_link\" class=\"input join-item w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Link created!</h3><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Template link</legend><div class=\"join w-full\"><input id=\"facilitator_link\" class=\"input join-item w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var34 string
-		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(url)
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(url)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 516, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 507, Col: 16}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"> <button class=\"btn join-item\" _=\"init send click to me \n\t\t\t\t\ton click\n\t\t\t\t    set link to #facilitator_link's value\n\t\t\t\t\t\twriteText(link) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Link</button></div><p class=\"label text-wrap\">This link lets anyone preview the template and create a new game from it.</p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\"> <button class=\"btn join-item\" _=\"init send click to me \n\t\t\t\t\ton click\n\t\t\t\t    set link to #facilitator_link's value\n\t\t\t\t\t\twriteText(link) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Link</button></div><p class=\"label text-wrap\">This link lets anyone preview the template and create a new game from it.</p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -648,12 +635,12 @@ func templateScripts() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var34 == nil {
+			templ_7745c5c3_Var34 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n\tconst { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Template ID is required');\n\t\treturn;\n\t}\n\tconst modal = document.getElementById(modalId);\n\tconst form = modal.querySelector('form');\n\tconst input = form.querySelector('input[name=\"name\"]');\n\tconst hidden = form.querySelector('input[name=\"id\"]');\n\n\tif (showInstanceName) {\n\t\tdocument.getElementById(nameFieldId).textContent = name;\n\t}\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n\thidden.value = id;\n\n\tmodal.showModal();\n}\n\nfunction confirmDeleteTemplate() {\n\thandleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n\tconst { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Template ID is required');\n\t\treturn;\n\t}\n\tconst modal = document.getElementById(modalId);\n\tconst form = modal.querySelector('form');\n\tconst input = form.querySelector('input[name=\"name\"]');\n\tconst hidden = form.querySelector('input[name=\"id\"]');\n\n\tif (showInstanceName) {\n\t\tdocument.getElementById(nameFieldId).textContent = name;\n\t}\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n\thidden.value = id;\n\n\tmodal.showModal();\n}\n\nfunction confirmDeleteTemplate() {\n\thandleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -298,8 +298,6 @@ type Handler struct {
 	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
 	stripeService           StripeService
-	yamlExportService       YAMLExportService
-	yamlImportService       YAMLImportService
 }
 
 func NewAdminHandler(
@@ -328,8 +326,6 @@ func NewAdminHandler(
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
 	stripeService StripeService,
-	yamlExportService YAMLExportService,
-	yamlImportService YAMLImportService,
 ) *Handler {
 	return &Handler{
 		logger:                  logger,
@@ -357,8 +353,6 @@ func NewAdminHandler(
 		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
 		stripeService:           stripeService,
-		yamlExportService:       yamlExportService,
-		yamlImportService:       yamlImportService,
 	}
 }
 

@@ -235,15 +235,6 @@ templ templateItem(template models.Instance) {
 						</a>
 					</li>
 					<span class="flex sm:hidden divider my-0"></span>
-					<!-- Export YAML -->
-					<li>
-						<a
-							href={ templ.SafeURL(fmt.Sprintf("/admin/yaml/export/template?id=%s", template.ID)) }
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-code w-4 h-4"><path d="M10 12.5 8 15l2 2.5"></path><path d="m14 12.5 2 2.5-2 2.5"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path></svg>
-							Export Template YAML
-						</a>
-					</li>
 					<span class="divider my-0"></span>
 					<!-- Delete -->
 					<li>
