@@ -61,17 +61,6 @@ func (b *ButtonBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *ButtonBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "link", Type: FieldString, Required: true, Desc: "URL the button links to"},
-		{Name: "text", Type: FieldString, Required: true, Desc: "Button label text"},
-		{
-			Name: "style", Type: FieldEnum, Desc: "Visual style",
-			Enum: []string{"primary", "secondary", "accent", "info", "success", "warning", "error"},
-		},
-	}
-}
 
 // Validation and Points Calculation
 

@@ -75,14 +75,6 @@ func (b *TaskBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *TaskBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "task", Type: FieldMarkdown, Required: true, Desc: "Task description shown to the player"},
-		{Name: "icon", Type: FieldString, Desc: "Optional emoji or symbol displayed with the task"},
-		{Name: "link_through", Type: FieldBool, Desc: "Navigate to the stop when the task is tapped"},
-	}
-}
 
 // RequiresValidation returns whether this block requires player input validation.
 func (b *TaskBlock) RequiresValidation() bool {

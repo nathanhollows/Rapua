@@ -87,12 +87,6 @@ func (b *YoutubeBlock) ToYAML() map[string]any {
 	}
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *YoutubeBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "url", Type: FieldString, Required: true, Desc: "YouTube video URL"},
-	}
-}
 
 // Validation and Points Calculation
 

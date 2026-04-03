@@ -79,14 +79,6 @@ func (b *GameStatusAlertBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *GameStatusAlertBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "closed_message", Type: FieldString, Desc: "Message shown when the game is closed"},
-		{Name: "scheduled_message", Type: FieldString, Desc: "Message shown when the game is scheduled but not yet open"},
-		{Name: "show_countdown", Type: FieldBool, Desc: "Display a countdown timer until the game opens"},
-	}
-}
 
 // Validation and Points Calculation
 

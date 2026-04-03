@@ -48,12 +48,6 @@ func (b *MarkdownBlock) ToYAML() map[string]any {
 	}
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *MarkdownBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "content", Type: FieldMarkdown, Required: true, Desc: "Markdown content to display"},
-	}
-}
 
 // Validation and Points Calculation
 

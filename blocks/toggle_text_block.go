@@ -59,14 +59,6 @@ func (b *ToggleTextBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *ToggleTextBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "title", Type: FieldString, Required: true, Desc: "Heading shown on the collapsed toggle"},
-		{Name: "content", Type: FieldMarkdown, Required: true, Desc: "Markdown content revealed when expanded"},
-		{Name: "small", Type: FieldBool, Desc: "Render in compact style"},
-	}
-}
 
 // Validation and Points Calculation
 

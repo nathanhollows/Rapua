@@ -157,22 +157,6 @@ func (b *SortingBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *SortingBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{
-			Name: "items", Type: FieldList, Required: true,
-			Desc:     "Items in correct sort order (plain strings)",
-			Children: []FieldDef{{Name: "", Type: FieldString, Desc: "Item text"}},
-		},
-		{Name: "content", Type: FieldMarkdown, Desc: "Optional instructions shown above the sorting list"},
-		{
-			Name: "scoring", Type: FieldEnum,
-			Desc: "Scoring scheme",
-			Enum: []string{AllOrNothing, CorrectItemCorrectPlace, RetryUntilCorrect},
-		},
-	}
-}
 
 // RequiresValidation returns whether this block requires player input validation.
 func (b *SortingBlock) RequiresValidation() bool { return true }

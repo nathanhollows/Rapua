@@ -72,16 +72,6 @@ func (b *RandomClueBlock) ToYAML() map[string]any {
 	}
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *RandomClueBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{
-			Name: "clues", Type: FieldList, Required: true,
-			Desc:     "List of markdown clue strings; one is shown per team deterministically",
-			Children: []FieldDef{{Name: "", Type: FieldMarkdown, Desc: "Clue text"}},
-		},
-	}
-}
 
 // Validation and Points Calculation
 

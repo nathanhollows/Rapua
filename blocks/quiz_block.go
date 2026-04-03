@@ -210,24 +210,6 @@ func (b *QuizBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *QuizBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "question", Type: FieldMarkdown, Required: true, Desc: "Question text shown to the player"},
-		{
-			Name: "options", Type: FieldList, Required: true,
-			Desc: "Answer choices",
-			Children: []FieldDef{
-				{Name: "text", Type: FieldMarkdown, Required: true, Desc: "Answer text"},
-				{Name: "correct", Type: FieldBool, Desc: "Whether this option is correct"},
-			},
-		},
-		{Name: "multiple_choice", Type: FieldBool, Desc: "Allow selecting more than one answer"},
-		{Name: "randomise_order", Type: FieldBool, Desc: "Shuffle option order for each player"},
-		{Name: "allow_retry", Type: FieldBool, Desc: "Allow the player to retry after a wrong answer"},
-		{Name: "unlocked_content", Type: FieldMarkdown, Desc: "Markdown content revealed after a correct answer"},
-	}
-}
 
 // RequiresValidation returns whether this block requires player input validation.
 func (b *QuizBlock) RequiresValidation() bool {

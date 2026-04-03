@@ -73,14 +73,6 @@ func (b *HeaderBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *HeaderBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "icon", Type: FieldString, Desc: "Emoji or short symbol shown as a logo"},
-		{Name: "title", Type: FieldString, Desc: "Heading text"},
-		{Name: "size", Type: FieldEnum, Desc: "Title size", Enum: []string{"small", "medium", "large"}},
-	}
-}
 
 // Validation and Points Calculation
 

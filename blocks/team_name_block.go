@@ -71,13 +71,6 @@ func (b *TeamNameChangerBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *TeamNameChangerBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "prompt", Type: FieldString, Desc: "Instruction shown above the team name input"},
-		{Name: "allow_changing", Type: FieldBool, Desc: "Allow the team to update their name after the first submission"},
-	}
-}
 
 // Validation and Points Calculation
 

@@ -75,17 +75,6 @@ func (b *StartGameButtonBlock) ToYAML() map[string]any {
 	return m
 }
 
-// FieldSpec returns the YAML field definitions for this block type.
-func (b *StartGameButtonBlock) FieldSpec() []FieldDef {
-	return []FieldDef{
-		{Name: "scheduled_text", Type: FieldString, Desc: "Button label when the game is not yet open"},
-		{Name: "active_text", Type: FieldString, Desc: "Button label when the game is open"},
-		{
-			Name: "style", Type: FieldEnum, Desc: "Button colour style",
-			Enum: []string{"primary", "secondary", "accent", "neutral"},
-		},
-	}
-}
 
 // Validation and Points Calculation
 
