@@ -40,7 +40,17 @@ templ EditPage(data EditPageData) {
 						<path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z"></path>
 						<path d="M12 16h.01"></path>
 					</svg>
-					<span>Recommended: Add a <strong>Game Status</strong> block to show game state to players</span>
+					<span class="flex-1">Recommended: Add a <strong>Game Status</strong> block to show game state to players</span>
+					<form
+						hx-post="/admin/blocks/"
+						hx-target="closest .blocks"
+						hx-swap="beforeend"
+					>
+						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
+						<input type="hidden" name="type" value="game_status"/>
+						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
+					</form>
 				</div>
 				<div id="missing-start-button-template" class="alert alert-warning" style="display: none;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
@@ -48,7 +58,17 @@ templ EditPage(data EditPageData) {
 						<path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z"></path>
 						<path d="M12 16h.01"></path>
 					</svg>
-					<span>Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span>
+					<span class="flex-1">Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span>
+					<form
+						hx-post="/admin/blocks/"
+						hx-target="closest .blocks"
+						hx-swap="beforeend"
+					>
+						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="context" value="start"/>
+						<input type="hidden" name="type" value="start_button"/>
+						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
+					</form>
 				</div>
 				<div id="missing-game-status-complete-template" class="alert alert-info" style="display: none;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
@@ -56,7 +76,17 @@ templ EditPage(data EditPageData) {
 						<path d="M12 16v-4"></path>
 						<path d="M12 8h.01"></path>
 					</svg>
-					<span>Optional: Add a <strong>Game Status</strong> block to show game completion</span>
+					<span class="flex-1">Optional: Add a <strong>Game Status</strong> block to show game completion</span>
+					<form
+						hx-post="/admin/blocks/"
+						hx-target="closest .blocks"
+						hx-swap="beforeend"
+					>
+						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
+						<input type="hidden" name="type" value="game_status"/>
+						<button type="submit" class="btn btn-sm btn-info">Add block</button>
+					</form>
 				</div>
 				<div
 					id="blocks-container"
@@ -81,45 +111,29 @@ templ EditPage(data EditPageData) {
 
 					blocks.forEach(block => {
 						const blockType = block.dataset.blockType;
-						if (blockType === 'game_status_alert') hasGameStatus = true;
-						if (blockType === 'start_game_button') hasStartButton = true;
+						if (blockType === 'game_status') hasGameStatus = true;
+						if (blockType === 'start_button') hasStartButton = true;
 					});
 
 					const firstBlock = container.querySelector('.content-block');
 
-					if (pageType === 'start') {
-						if (!hasGameStatus) {
-							const alert = document.getElementById('missing-game-status-template').cloneNode(true);
-							alert.id = 'missing-game-status';
-							alert.style.display = '';
-							if (firstBlock) {
-								container.insertBefore(alert, firstBlock);
-							} else {
-								container.appendChild(alert);
-							}
+					function insertAlert(templateId, alertId, ref) {
+						const el = document.getElementById(templateId).cloneNode(true);
+						el.id = alertId;
+						el.style.display = '';
+						if (ref) {
+							container.insertBefore(el, ref);
+						} else {
+							container.appendChild(el);
 						}
+						htmx.process(el);
+					}
 
-						if (!hasStartButton) {
-							const alert = document.getElementById('missing-start-button-template').cloneNode(true);
-							alert.id = 'missing-start-button';
-							alert.style.display = '';
-							if (firstBlock) {
-								container.insertBefore(alert, firstBlock);
-							} else {
-								container.appendChild(alert);
-							}
-						}
+					if (pageType === 'start') {
+						if (!hasGameStatus) insertAlert('missing-game-status-template', 'missing-game-status', firstBlock);
+						if (!hasStartButton) insertAlert('missing-start-button-template', 'missing-start-button', firstBlock);
 					} else if (pageType === 'end') {
-						if (!hasGameStatus) {
-							const alert = document.getElementById('missing-game-status-complete-template').cloneNode(true);
-							alert.id = 'missing-game-status';
-							alert.style.display = '';
-							if (firstBlock) {
-								container.insertBefore(alert, firstBlock);
-							} else {
-								container.appendChild(alert);
-							}
-						}
+						if (!hasGameStatus) insertAlert('missing-game-status-complete-template', 'missing-game-status', firstBlock);
 					}
 				}
 
