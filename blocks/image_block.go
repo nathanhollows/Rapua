@@ -104,3 +104,4 @@ func (b *ImageBlock) ValidatePlayerInput(state PlayerState, _ map[string][]strin
 	state.SetComplete(true)
 	return state, nil
 }
+

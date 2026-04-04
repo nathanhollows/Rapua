@@ -124,3 +124,4 @@ func (b *ClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 
 	return newState, nil
 }
+

@@ -93,3 +93,4 @@ func (b *HeaderBlock) GetTitleSizes() map[string]string {
 		"large":  "Large",
 	}
 }
+

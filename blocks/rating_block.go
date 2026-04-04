@@ -139,3 +139,4 @@ func (b *RatingBlock) GetPlayerRating(state PlayerState) int {
 	}
 	return data.Rating
 }
+

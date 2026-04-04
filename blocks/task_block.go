@@ -86,3 +86,4 @@ func (b *TaskBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string
 	state.SetComplete(true)
 	return state, nil
 }
+

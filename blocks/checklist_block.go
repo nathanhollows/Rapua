@@ -182,3 +182,4 @@ func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string
 
 	return newState, nil
 }
+

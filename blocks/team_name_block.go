@@ -85,3 +85,4 @@ func (b *TeamNameChangerBlock) ValidatePlayerInput(state PlayerState, _ map[stri
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+

@@ -1,79 +1,35 @@
 package blocks
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
+
+	"github.com/nathanhollows/Rapua/v7/game"
 )
+
+// Type aliases — blocks/ re-exports game/ vocabulary so callers don't need to change imports.
+type BlockContext = game.BlockContext
+type Block = game.Block
+type BaseBlock = game.BaseBlock
+type PlayerState = game.PlayerState
+type RegisteredBlock = game.RegisteredBlock
+type Blocks = game.Blocks
 
 // ErrBlockTypeNotFound is returned when a block type is not registered.
-var ErrBlockTypeNotFound = errors.New("block type not found")
-
-// BlockContext represents where a block can be used.
-type BlockContext string
-
-const (
-	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
-	ContextLocationClues   BlockContext = "location_clues"   // Clues
-	ContextTask            BlockContext = "task"             // Task a la scavenger hunts
-	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
-	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
-	ContextFinish          BlockContext = "finish"           // Finish/end pages
-)
+var ErrBlockTypeNotFound = game.ErrBlockTypeNotFound
 
 // FormValueTrue is the string value "true" used in form checkbox comparisons.
-const FormValueTrue = "true"
+const FormValueTrue = game.FormValueTrue
 
-// RegisteredBlock holds block metadata for the registry.
-type RegisteredBlock struct {
-	BlockType         string
-	Instance          Block
-	SupportedContexts []BlockContext
-}
-
-type PlayerState interface {
-	GetBlockID() string
-	GetPlayerID() string
-	GetPlayerData() json.RawMessage
-	SetPlayerData(data json.RawMessage)
-	IsComplete() bool
-	SetComplete(complete bool)
-	GetPointsAwarded() int
-	SetPointsAwarded(points int)
-}
-
-type Block interface {
-	// Basic Attributes Getters
-	GetID() string
-	GetType() string
-	GetOwnerID() string
-	GetName() string
-	GetDescription() string
-	GetOrder() int
-	GetPoints() int
-	GetIconSVG() string
-	GetData() json.RawMessage
-
-	// Data Operations
-	ParseData() error
-	UpdateBlockData(data map[string][]string) error
-
-	// Validation and Points Calculation
-	RequiresValidation() bool
-	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
-}
-
-type Blocks []Block
-
-type BaseBlock struct {
-	ID      string          `json:"-"`
-	OwnerID string          `json:"-"`
-	Type    string          `json:"-"`
-	Data    json.RawMessage `json:"-"`
-	Order   int             `json:"-"`
-	Points  int             `json:"-"`
-}
+// BlockContext constants re-exported from game/.
+const (
+	ContextLocationContent = game.ContextLocationContent
+	ContextLocationClues   = game.ContextLocationClues
+	ContextTask            = game.ContextTask
+	ContextCheckpoint      = game.ContextCheckpoint
+	ContextStart           = game.ContextStart
+	ContextFinish          = game.ContextFinish
+)
 
 //nolint:gochecknoglobals // Central block registry pattern requires package-level state
 var (
@@ -173,6 +129,49 @@ func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
 	}
 
 	return false
+}
+
+// Registry returns a game.BlockRegistry backed by this package's block registry.
+// Used by the linter and import service so they don't need to import blocks/ directly.
+func Registry() game.BlockRegistry {
+	return &registryImpl{}
+}
+
+// GetRegisteredBlocks returns all registered block instances (one per type).
+func GetRegisteredBlocks() []RegisteredBlock {
+	out := make([]RegisteredBlock, 0, len(blockRegistry))
+	for _, reg := range blockRegistry {
+		out = append(out, *reg)
+	}
+	return out
+}
+
+// registryImpl implements game.BlockRegistry using the package-level registries.
+type registryImpl struct{}
+
+func (r *registryImpl) IsValidType(blockType string) bool {
+	return blockRegistry[blockType] != nil
+}
+
+func (r *registryImpl) CanUseInContext(blockType string, ctx BlockContext) bool {
+	return CanBlockBeUsedInContext(blockType, ctx)
+}
+
+func (r *registryImpl) KnownFields(blockType string) []string {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return nil
+	}
+	sp, ok := reg.Instance.(game.SpecProvider)
+	if !ok {
+		return nil
+	}
+	spec := sp.GetSpec()
+	names := make([]string, 0, len(spec.Fields))
+	for _, f := range spec.Fields {
+		names = append(names, f.Name)
+	}
+	return names
 }
 
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {

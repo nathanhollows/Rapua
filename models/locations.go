@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 )
 
 type Location struct {
@@ -45,7 +45,7 @@ func (l *Location) HasCoordinates() bool {
 // HasCluesContext returns true if the location has any blocks with clues context.
 func (l *Location) HasCluesContext() bool {
 	for i := range l.Blocks {
-		if l.Blocks[i].Context == blocks.ContextLocationClues {
+		if l.Blocks[i].Context == game.ContextLocationClues {
 			return true
 		}
 	}
@@ -55,7 +55,7 @@ func (l *Location) HasCluesContext() bool {
 // HasTaskContext returns true if the location has any blocks with task context.
 func (l *Location) HasTaskContext() bool {
 	for i := range l.Blocks {
-		if l.Blocks[i].Context == blocks.ContextTask {
+		if l.Blocks[i].Context == game.ContextTask {
 			return true
 		}
 	}

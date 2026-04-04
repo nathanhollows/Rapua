@@ -70,3 +70,4 @@ func (b *ToggleTextBlock) ValidatePlayerInput(state PlayerState, _ map[string][]
 	state.SetComplete(true)
 	return state, nil
 }
+

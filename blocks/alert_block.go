@@ -78,3 +78,4 @@ func (b *AlertBlock) GetStyles() map[string]string {
 		"error":   "Error",
 	}
 }
+

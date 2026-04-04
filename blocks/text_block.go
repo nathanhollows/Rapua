@@ -60,3 +60,4 @@ func (b *MarkdownBlock) ValidatePlayerInput(state PlayerState, _ map[string][]st
 	state.SetComplete(true)
 	return state, nil
 }
+

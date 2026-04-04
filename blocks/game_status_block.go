@@ -91,3 +91,4 @@ func (b *GameStatusAlertBlock) ValidatePlayerInput(state PlayerState, _ map[stri
 	state.SetComplete(true)
 	return state, nil
 }
+

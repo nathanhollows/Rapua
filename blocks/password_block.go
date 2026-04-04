@@ -125,3 +125,4 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+

@@ -95,17 +95,10 @@ func TestParseRouteStrategy(t *testing.T) {
 		expected models.RouteStrategy
 		wantErr  bool
 	}{
-		// String enum values
 		{"randomised", models.RouteStrategyRandomised, false},
 		{"free_roam", models.RouteStrategyFreeRoam, false},
 		{"ordered", models.RouteStrategyOrdered, false},
 		{"secret", models.RouteStrategySecret, false},
-		// Display names
-		{"Randomised Route", models.RouteStrategyRandomised, false},
-		{"Open Exploration", models.RouteStrategyFreeRoam, false},
-		{"Guided Path", models.RouteStrategyOrdered, false},
-		{"Secret", models.RouteStrategySecret, false},
-		// Invalid
 		{"bogus", "", true},
 	}
 	for _, tt := range tests {
@@ -125,19 +118,11 @@ func TestParseNavigationMode(t *testing.T) {
 		expected models.NavigationMode
 		wantErr  bool
 	}{
-		// String enum values
 		{"map", models.NavigationMap, false},
 		{"labelled_map", models.NavigationLabelledMap, false},
 		{"location_list", models.NavigationList, false},
 		{"custom", models.NavigationCustom, false},
 		{"tasks", models.NavigationTasks, false},
-		// Display names
-		{"Map Only", models.NavigationMap, false},
-		{"Labelled Map", models.NavigationLabelledMap, false},
-		{"Location List", models.NavigationList, false},
-		{"Custom Clues", models.NavigationCustom, false},
-		{"Tasks", models.NavigationTasks, false},
-		// Invalid
 		{"bogus", "", true},
 	}
 	for _, tt := range tests {

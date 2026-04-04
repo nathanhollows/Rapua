@@ -96,3 +96,4 @@ func (b *StartGameButtonBlock) GetButtonStyles() map[string]string {
 		"neutral":   "Neutral",
 	}
 }
+

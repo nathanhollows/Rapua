@@ -62,3 +62,4 @@ func (b *DividerBlock) ValidatePlayerInput(state PlayerState, _ map[string][]str
 	state.SetComplete(true)
 	return state, nil
 }
+

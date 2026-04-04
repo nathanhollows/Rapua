@@ -207,3 +207,4 @@ func (b *PhotoBlock) GetImageURLs(state PlayerState) []string {
 
 	return data.URLs
 }
+
