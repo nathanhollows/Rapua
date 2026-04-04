@@ -282,6 +282,8 @@ type Handler struct {
 	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
 	duplicationService      DuplicationService
+	exportService           *services.ExportService
+	importService           *services.ImportService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
 	gameStructureService    *services.GameStructureService
@@ -310,6 +312,8 @@ func NewAdminHandler(
 	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
 	duplicationService DuplicationService,
+	exportService *services.ExportService,
+	importService *services.ImportService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
 	gameStructureService *services.GameStructureService,
@@ -337,6 +341,8 @@ func NewAdminHandler(
 		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,
 		duplicationService:      duplicationService,
+		exportService:           exportService,
+		importService:           importService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
 		gameStructureService:    gameStructureService,

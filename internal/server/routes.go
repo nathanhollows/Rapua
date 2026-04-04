@@ -387,14 +387,26 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 		r.Route("/instances", func(r chi.Router) {
 			r.Get("/", adminHandler.Instances)
 			r.Post("/new", adminHandler.InstancesCreate)
+			r.Post("/import", adminHandler.ImportInstanceCreate)
+			r.Post("/import/check", adminHandler.ImportCheck)
 			r.Get("/{id}", adminHandler.Instances)
 			r.Post("/{id}", adminHandler.Instances)
 			r.Get("/{id}/switch", adminHandler.InstanceSwitch)
 			r.Get("/{id}/name", adminHandler.InstancesName)
 			r.Get("/{id}/edit/name", adminHandler.InstancesNameEdit)
 			r.Post("/{id}/edit/name", adminHandler.InstancesNameEditPost)
+			r.Get("/{id}/export", adminHandler.ExportInstance)
+			r.Post("/{id}/import", adminHandler.ImportInstanceUpdate)
 			r.Post("/delete", adminHandler.InstanceDelete)
 			r.Post("/duplicate", adminHandler.InstanceDuplicate)
+		})
+
+		r.Route("/spec", func(r chi.Router) {
+			r.Get("/", adminHandler.SpecJSON)
+		})
+
+		r.Route("/lint", func(r chi.Router) {
+			r.Post("/", adminHandler.LintDoc)
 		})
 
 		r.Route("/markdown", func(r chi.Router) {

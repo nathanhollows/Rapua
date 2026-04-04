@@ -84,6 +84,10 @@ type BlockRepository interface {
 	// BulkCreate inserts multiple blocks for an owner with specific context
 	// Blocks should have Order set explicitly; IDs will be generated
 	BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error
+
+	// FindModelsByOwnerIDs fetches raw model blocks for a list of owner IDs.
+	// Unlike FindByOwnerID, the returned records preserve the Context field needed for export.
+	FindModelsByOwnerIDs(ctx context.Context, ownerIDs []string) ([]models.Block, error)
 }
 
 type blockRepository struct {
@@ -110,6 +114,23 @@ func (r *blockRepository) FindByOwnerID(ctx context.Context, ownerID string) (bl
 		return nil, err
 	}
 	return r.convertModelsToBlocks(modelBlocks)
+}
+
+// FindModelsByOwnerIDs fetches raw model blocks for multiple owner IDs in one query.
+func (r *blockRepository) FindModelsByOwnerIDs(ctx context.Context, ownerIDs []string) ([]models.Block, error) {
+	if len(ownerIDs) == 0 {
+		return nil, nil
+	}
+	var modelBlocks []models.Block
+	err := r.db.NewSelect().
+		Model(&modelBlocks).
+		Where("owner_id IN (?)", bun.In(ownerIDs)).
+		Order("owner_id ASC", "ordering ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return modelBlocks, nil
 }
 
 // FindByOwnerIDAndContext fetches all blocks for an owner with specific context.

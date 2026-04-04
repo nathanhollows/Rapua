@@ -490,6 +490,12 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
+	exportService := services.NewExportService(
+		instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
+	)
+	importService := services.NewImportService(
+		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+	)
 
 	sessions.Start()
 
@@ -559,6 +565,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		creditPurchaseRepo,
 		deleteService,
 		duplicationService,
+		exportService,
+		importService,
 		facilitatorService,
 		gameScheduleService,
 		gameStructureService,

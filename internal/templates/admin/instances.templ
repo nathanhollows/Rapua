@@ -23,6 +23,13 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 		</h1>
 		<span class="flex gap-2">
 			<button
+				class="btn btn-ghost"
+				onclick="import_modal.showModal()"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+				Import
+			</button>
+			<button
 				class="btn btn-secondary"
 				onclick="new_modal.showModal()"
 			>
@@ -98,6 +105,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 	<!-- Templates -->
 	@TemplatesPage(templates)
 	<!-- Modals -->
+	@ImportModal()
 	<dialog id="confirm_duplicate_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose">
 			<h3 class="text-lg font-bold">Duplicate a game</h3>
@@ -239,6 +247,13 @@ function shareTemplate() {
 
 function launchTemplate() {
 	handleModalAction('launch_template_modal', 'launch-template-name', '', true);
+}
+
+function submitImportTo(url) {
+	const form = document.getElementById('import-form');
+	form.setAttribute('hx-post', url);
+	htmx.process(form);
+	htmx.trigger(form, 'submit');
 }
 </script>
 }
@@ -383,6 +398,13 @@ templ instanceItem(instance models.Instance, active bool) {
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-dashed w-4 h-4"><path d="M12 17h1.5"></path><path d="M12 22h1.5"></path><path d="M12 2h1.5"></path><path d="M17.5 22H19a1 1 0 0 0 1-1"></path><path d="M17.5 2H19a1 1 0 0 1 1 1v1.5"></path><path d="M20 14v3h-2.5"></path><path d="M20 8.5V10"></path><path d="M4 10V8.5"></path><path d="M4 19.5V14"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H8"></path><path d="M8 22H6.5a1 1 0 0 1 0-5H8"></path></svg>
 								Create template
+							</a>
+						</li>
+						<!-- Export as JSON -->
+						<li>
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/instances/%s/export", instance.ID)) }>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+								Download JSON
 							</a>
 						</li>
 						<span class="divider my-0"></span>

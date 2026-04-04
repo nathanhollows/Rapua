@@ -25,6 +25,8 @@ type InstanceRepository interface {
 
 	// Update updates an instance in the database
 	Update(ctx context.Context, instance *models.Instance) error
+	// UpdateTx updates an instance within a transaction
+	UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error
 
 	// Delete deletes an instance from the database.
 	// Deleting an instance cascades to all related data.
@@ -79,6 +81,21 @@ func (r *instanceRepository) Update(ctx context.Context, instance *models.Instan
 		return errors.New("ID is required")
 	}
 	res, err := r.db.NewUpdate().Model(instance).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil || affected == 0 {
+		return errors.New("instance not found")
+	}
+	return nil
+}
+
+func (r *instanceRepository) UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error {
+	if instance.ID == "" {
+		return errors.New("ID is required")
+	}
+	res, err := tx.NewUpdate().Model(instance).WherePK().Exec(ctx)
 	if err != nil {
 		return err
 	}
