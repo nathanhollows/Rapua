@@ -793,6 +793,17 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 			context:    blocks.ContextLocationContent,
 			wantErr:    true,
 		},
+		{
+			// Simulates preview mode: team code is empty so no DB row exists.
+			// Blocks should still be returned with in-memory mock states.
+			name:         "Empty team code returns blocks with mock states",
+			locationID:   gofakeit.UUID(),
+			teamCode:     "",
+			context:      blocks.ContextStart,
+			blockCount:   2,
+			stateCreated: false,
+			wantErr:      false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -845,7 +856,9 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 			} else {
 				require.NoError(t, err)
 				assert.Len(t, blocksFound, tc.blockCount)
-				if tc.stateCreated {
+				if tc.stateCreated || tc.teamCode == "" {
+					// stateCreated: states were persisted before the call.
+					// teamCode == "": preview path — mock states must still be returned for every block.
 					assert.Len(t, states, tc.blockCount)
 				}
 			}

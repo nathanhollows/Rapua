@@ -165,6 +165,8 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 
 // FindByOwnerIDAndTeamCodeWithStateAndContext fetches blocks and their states by owner, team code, and context.
 // Creates missing states for blocks that require validation.
+// When teamCode is empty (e.g. preview mode), blocks are fetched without DB states and all
+// states are created as in-memory mocks — no rows are written to team_block_states.
 func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
 	ctx context.Context,
 	ownerID, teamCode string,
@@ -173,23 +175,31 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
 	if ownerID == "" {
 		return nil, nil, errors.New("ownerID must be set")
 	}
-	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
-		ctx,
-		ownerID,
-		teamCode,
-		blockContext,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
 
-	// Create a map for easier lookup of block states by block ID
-	blockStates := make(map[string]blocks.PlayerState, len(foundBlocks))
-	for _, state := range states {
-		blockStates[state.GetBlockID()] = state
+	var foundBlocks []blocks.Block
+	blockStates := make(map[string]blocks.PlayerState)
+
+	if teamCode == "" {
+		// No real team (e.g. preview): fetch blocks only; states are all mocked below.
+		var err error
+		foundBlocks, err = s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		var states []blocks.PlayerState
+		var err error
+		foundBlocks, states, err = s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(ctx, ownerID, teamCode, blockContext)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, state := range states {
+			blockStates[state.GetBlockID()] = state
+		}
 	}
 
 	// Populate missing states
+	var err error
 	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, teamCode)
 	if err != nil {
 		return nil, nil, err

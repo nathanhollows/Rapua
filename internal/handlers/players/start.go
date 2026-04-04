@@ -30,11 +30,18 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get blocks for the start page
+	// Get blocks for the start page.
+	// In preview mode the team has no DB row, so passing its code would cause a
+	// FK violation when block states are persisted. Use "" instead so mock
+	// (non-persisted) states are created.
+	teamCode := team.Code
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		teamCode = ""
+	}
 	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 		r.Context(),
 		team.InstanceID,
-		team.Code,
+		teamCode,
 		blocks.ContextStart,
 	)
 	if err != nil {
