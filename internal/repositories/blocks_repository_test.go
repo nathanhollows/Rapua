@@ -175,7 +175,7 @@ func TestBlockRepository(t *testing.T) {
 			assertion: func(result any, err error) {
 				require.NoError(t, err)
 				updatedBlock := result.(blocks.Block)
-				assert.JSONEq(t, `{"url":"/updated-url","caption":"","link":""}`, string(updatedBlock.GetData()))
+				assert.JSONEq(t, `{"url":"/updated-url","caption":"","link":"","full_width":false}`, string(updatedBlock.GetData()))
 			},
 			cleanupFunc: func(block blocks.Block) {
 				tx, err := transactor.BeginTx(context.Background(), &sql.TxOptions{})
