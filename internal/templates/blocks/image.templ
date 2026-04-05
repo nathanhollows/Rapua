@@ -8,7 +8,14 @@ import (
 )
 
 templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
-	<figure id={ fmt.Sprintf("player-block-%s", block.ID) } class="flex flex-col items-center">
+	<figure
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		if block.FullWidth {
+			class="flex flex-col w-[calc(100%+3rem)] -mx-6"
+		} else {
+			class="flex flex-col items-center"
+		}
+	>
 		if block.Link != "" {
 			<a
 				href={ templ.SafeURL(block.Link) }
@@ -23,7 +30,11 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 					}
 					alt={ block.Caption }
 					title={ block.Caption }
-					class="rounded-2xl shadow-lg"
+					if block.FullWidth {
+						class="w-full"
+					} else {
+						class="rounded-2xl shadow-lg"
+					}
 				/>
 			</a>
 		} else {
@@ -34,7 +45,11 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 					src={ block.URL }
 				}
 				alt={ block.Caption }
-				class="rounded-2xl shadow-lg"
+				if block.FullWidth {
+					class="w-full"
+				} else {
+					class="rounded-2xl shadow-lg"
+				}
 			/>
 		}
 		if block.Caption != "" {
@@ -136,6 +151,20 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 				<p class="label">Optional</p>
 			</fieldset>
 		</div>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Options</legend>
+			<div class="form-control">
+				<label class="label cursor-pointer justify-start gap-2">
+					<input
+						type="checkbox"
+						name="full_width"
+						class="checkbox checkbox-sm"
+						checked?={ block.FullWidth }
+					/>
+					<span class="label-text">Full width on mobile</span>
+				</label>
+			</div>
+		</fieldset>
 	</form>
 }
 

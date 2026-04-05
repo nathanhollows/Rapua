@@ -10,9 +10,10 @@ import (
 
 type ImageBlock struct {
 	BaseBlock
-	URL     string `json:"url"`
-	Caption string `json:"caption"`
-	Link    string `json:"link"`
+	URL       string `json:"url"`
+	Caption   string `json:"caption"`
+	Link      string `json:"link"`
+	FullWidth bool   `json:"full_width"`
 }
 
 // Basic Attributes Getters
@@ -44,6 +45,7 @@ func (b *ImageBlock) ParseData() error {
 // - url
 // - caption
 // - link
+// - full_width (checkbox, presence means true)
 // Where url is required, and caption and link are optional.
 // Both url and link must be valid URLs.
 func (b *ImageBlock) UpdateBlockData(input map[string][]string) error {
@@ -60,6 +62,8 @@ func (b *ImageBlock) UpdateBlockData(input map[string][]string) error {
 	if link, exists := input["link"]; exists && len(link) > 0 {
 		b.Link = link[0]
 	}
+
+	_, b.FullWidth = input["full_width"]
 
 	return nil
 }
@@ -89,6 +93,9 @@ func (b *ImageBlock) ToYAML() map[string]any {
 	}
 	if b.Link != "" {
 		m["link"] = b.Link
+	}
+	if b.FullWidth {
+		m["full_width"] = true
 	}
 	return m
 }

@@ -15,6 +15,7 @@ tag: updated
 - Markdown tables are now supported in block content and documentation pages.
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
+- Image blocks can now be full width on mobile.
 
 ### Changed
 
