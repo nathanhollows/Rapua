@@ -75,13 +75,22 @@ func validDoc() *game.GameDoc {
 			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
-				{Location: &game.LocationDoc{
-					Slug:       "lobby",
-					Name:       "The Lobby",
-					Content:    []game.BlockDoc{{"type": "text"}},
-					Clues:      []game.BlockDoc{},
-					Tasks:      []game.BlockDoc{},
-					Checkpoint: []game.BlockDoc{},
+				{Group: &game.GroupDoc{
+					Name:       "Stage One",
+					Color:      "primary",
+					Routing:    game.RouteStrategyFreeRoam,
+					Navigation: game.NavigationMap,
+					Completion: game.CompletionAll,
+					Children: []game.ChildDoc{
+						{Location: &game.LocationDoc{
+							Slug:       "lobby",
+							Name:       "The Lobby",
+							Content:    []game.BlockDoc{{"type": "text"}},
+							Clues:      []game.BlockDoc{},
+							Tasks:      []game.BlockDoc{},
+							Checkpoint: []game.BlockDoc{},
+						}},
+					},
 				}},
 			},
 		},
@@ -130,7 +139,7 @@ func TestLint_InvalidNavigation(t *testing.T) {
 
 func TestLint_MissingLocationSlug(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Slug = ""
+	doc.Structure.Children[0].Group.Children[0].Location.Slug = ""
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "MISSING_SLUG", result.Errors[0].Code)
@@ -138,7 +147,7 @@ func TestLint_MissingLocationSlug(t *testing.T) {
 
 func TestLint_MissingLocationName(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Name = ""
+	doc.Structure.Children[0].Group.Children[0].Location.Name = ""
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "MISSING_LOCATION_NAME", result.Errors[0].Code)
@@ -146,7 +155,7 @@ func TestLint_MissingLocationName(t *testing.T) {
 
 func TestLint_UnknownBlockType(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "nonexistent_block"},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -232,7 +241,7 @@ func TestLint_NoStartButton(t *testing.T) {
 func TestLint_PointsDisabled(t *testing.T) {
 	doc := validDoc()
 	doc.Settings.EnablePoints = false
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "points": float64(10)},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -286,7 +295,7 @@ func TestLint_EmptyChild(t *testing.T) {
 
 func TestLint_NegativeLocationPoints(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Points = -1
+	doc.Structure.Children[0].Group.Children[0].Location.Points = -1
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "INVALID_POINTS", result.Errors[0].Code)
@@ -294,7 +303,7 @@ func TestLint_NegativeLocationPoints(t *testing.T) {
 
 func TestLint_ZeroCoordinatesWarning(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Marker = &game.MarkerDoc{Lat: 0, Lng: 0}
+	doc.Structure.Children[0].Group.Children[0].Location.Marker = &game.MarkerDoc{Lat: 0, Lng: 0}
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
 	require.Len(t, result.Warnings, 1)
@@ -303,7 +312,7 @@ func TestLint_ZeroCoordinatesWarning(t *testing.T) {
 
 func TestLint_NonZeroCoordinatesNoWarning(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Marker = &game.MarkerDoc{Lat: 51.5, Lng: -0.1}
+	doc.Structure.Children[0].Group.Children[0].Location.Marker = &game.MarkerDoc{Lat: 51.5, Lng: -0.1}
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
 	assert.Empty(t, result.Warnings)
@@ -321,7 +330,7 @@ func TestLint_InvalidCompletion(t *testing.T) {
 
 func TestLint_MissingBlockType(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{{}} // no "type" key
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{{}} // no "type" key
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "MISSING_BLOCK_TYPE", result.Errors[0].Code)
@@ -329,7 +338,7 @@ func TestLint_MissingBlockType(t *testing.T) {
 
 func TestLint_InvalidBlockTypeNotString(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{{"type": 123}}
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{{"type": 123}}
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "INVALID_BLOCK_TYPE", result.Errors[0].Code)
@@ -337,7 +346,7 @@ func TestLint_InvalidBlockTypeNotString(t *testing.T) {
 
 func TestLint_NegativeBlockPoints(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "points": float64(-5)},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -347,7 +356,7 @@ func TestLint_NegativeBlockPoints(t *testing.T) {
 
 func TestLint_NegativeBlockPointsJsonNumber(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "points": json.Number("-5")},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -361,7 +370,7 @@ func TestLint_UnknownField(t *testing.T) {
 		"text": {"content"},
 	}
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "bogus_field": "value"},
 	}
 	result := game.Lint(doc, reg)
@@ -372,7 +381,7 @@ func TestLint_UnknownField(t *testing.T) {
 
 func TestLint_NilRegistry(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{{"type": "any_type"}}
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{{"type": "any_type"}}
 	result := game.Lint(doc, nil)
 	assert.Empty(t, result.Errors)
 }
@@ -436,7 +445,7 @@ func TestLint_DuplicateSlugInNestedGroup(t *testing.T) {
 
 func TestLint_BlockIDDuplicate(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "id": "block-abc"},
 		{"type": "text", "id": "block-abc"},
 	}
@@ -503,7 +512,7 @@ func TestLint_PointsDisabledInGroup(t *testing.T) {
 func TestLint_PointsDisabledLocationPoints(t *testing.T) {
 	doc := validDoc()
 	doc.Settings.EnablePoints = false
-	doc.Structure.Children[0].Location.Points = 5
+	doc.Structure.Children[0].Group.Children[0].Location.Points = 5
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
 	require.Len(t, result.Warnings, 1)
@@ -513,7 +522,7 @@ func TestLint_PointsDisabledLocationPoints(t *testing.T) {
 func TestLint_PointsDisabledJsonNumber(t *testing.T) {
 	doc := validDoc()
 	doc.Settings.EnablePoints = false
-	doc.Structure.Children[0].Location.Content = []game.BlockDoc{
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "text", "points": json.Number("10")},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -526,9 +535,9 @@ func TestLint_LocationWithCluesTasksCheckpoint(t *testing.T) {
 	// Semantic layer flags INVALID_CONTEXT for "text" in clues and tasks
 	// (text is not a valid block type in those contexts). Quiz is valid in checkpoint.
 	doc := validDoc()
-	doc.Structure.Children[0].Location.Clues = []game.BlockDoc{{"type": "text"}}
-	doc.Structure.Children[0].Location.Tasks = []game.BlockDoc{{"type": "text"}}
-	doc.Structure.Children[0].Location.Checkpoint = []game.BlockDoc{{"type": "quiz"}}
+	doc.Structure.Children[0].Group.Children[0].Location.Clues = []game.BlockDoc{{"type": "text"}}
+	doc.Structure.Children[0].Group.Children[0].Location.Tasks = []game.BlockDoc{{"type": "text"}}
+	doc.Structure.Children[0].Group.Children[0].Location.Checkpoint = []game.BlockDoc{{"type": "quiz"}}
 	result := game.Lint(doc, newTestRegistry())
 	// quiz is valid in checkpoint — only clues/tasks produce INVALID_CONTEXT
 	assert.Len(t, result.Errors, 2)
@@ -568,4 +577,43 @@ func TestLint_PointsDisabledInNestedGroup(t *testing.T) {
 	// POINTS_DISABLED for deep-station.points
 	require.Len(t, result.Warnings, 1)
 	assert.Equal(t, "POINTS_DISABLED", result.Warnings[0].Code)
+}
+
+func TestLint_RootLocationHidden(t *testing.T) {
+	// Locations placed directly under structure.children (not inside a group) are never shown.
+	doc := validDoc()
+	doc.Structure.Children = append(doc.Structure.Children, game.ChildDoc{
+		Location: &game.LocationDoc{
+			Slug:    "orphan",
+			Name:    "Orphan Stop",
+			Content: []game.BlockDoc{{"type": "text"}},
+		},
+	})
+	result := game.Lint(doc, newTestRegistry())
+	assert.Empty(t, result.Errors)
+	require.Len(t, result.Warnings, 1)
+	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[0].Code)
+}
+
+func TestLint_RootHasNoGroups(t *testing.T) {
+	// Structure with only root-level locations and no groups at all — all locations hidden.
+	doc := validDoc()
+	doc.Structure.Children = []game.ChildDoc{
+		{Location: &game.LocationDoc{
+			Slug:    "stop-a",
+			Name:    "Stop A",
+			Content: []game.BlockDoc{{"type": "text"}},
+		}},
+		{Location: &game.LocationDoc{
+			Slug:    "stop-b",
+			Name:    "Stop B",
+			Content: []game.BlockDoc{{"type": "text"}},
+		}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	assert.Empty(t, result.Errors)
+	// One ROOT_LOCATION_HIDDEN per bare location
+	require.Len(t, result.Warnings, 2)
+	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[0].Code)
+	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[1].Code)
 }

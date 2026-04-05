@@ -297,6 +297,13 @@ func (l *linter) trackBlockIDs(path string, blocks []BlockDoc) {
 // --- Layer 3: Structural warnings ---
 
 func (l *linter) checkStructural() {
+	for i, child := range l.doc.Structure.Children {
+		if child.Location != nil {
+			l.warnf(fmt.Sprintf("structure.children[%d].location", i), "ROOT_LOCATION_HIDDEN",
+				"location %q is a direct child of the root structure and will not be shown; wrap it in a group",
+				child.Location.Name)
+		}
+	}
 	l.checkStructuralChildren("structure", l.doc.Structure.Children)
 
 	// Warn if start page has no start_button
