@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/specgen"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -122,39 +121,6 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/instances")
-}
-
-// SpecJSON serves the generated block spec as JSON.
-//
-//	GET /admin/spec
-func (h *Handler) SpecJSON(w http.ResponseWriter, r *http.Request) {
-	data, err := specgen.GenerateJSON()
-	if err != nil {
-		h.handleError(w, r, "SpecJSON: generate", "Error generating spec", "error", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(data)
-}
-
-// LintDoc validates a v7 JSON document without importing it.
-//
-//	POST /admin/lint
-func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
-	doc, err := parseUploadedDoc(r)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid document: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	result := game.Lint(doc, blocks.Registry())
-
-	w.Header().Set("Content-Type", "application/json")
-	if !result.IsValid() {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-	}
-	_ = json.NewEncoder(w).Encode(result)
 }
 
 // parseUploadedDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.

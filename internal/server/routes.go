@@ -318,6 +318,11 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 		r.Get("/{id}", publicHandler.TemplatesPreview)
 	})
 
+	router.Route("/api/v7", func(r chi.Router) {
+		r.Get("/spec", publicHandler.SpecJSON)
+		r.Post("/lint", publicHandler.LintDoc)
+	})
+
 	router.NotFound(publicHandler.NotFound)
 }
 
@@ -401,13 +406,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/duplicate", adminHandler.InstanceDuplicate)
 		})
 
-		r.Route("/spec", func(r chi.Router) {
-			r.Get("/", adminHandler.SpecJSON)
-		})
-
-		r.Route("/lint", func(r chi.Router) {
-			r.Post("/", adminHandler.LintDoc)
-		})
 
 		r.Route("/markdown", func(r chi.Router) {
 			r.Post("/preview", adminHandler.PreviewMarkdown)
