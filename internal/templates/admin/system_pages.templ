@@ -151,7 +151,7 @@ templ EditPage(data EditPageData) {
 				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
 					<div
 						id="mobile-preview-container"
-						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
+						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll px-6 py-12 bg-base-200/50 min-h-full"
 						hx-get={ getPreviewURLForPageType(data.PageType) }
 						hx-trigger="load, htmx:afterSwap from:.blocks"
 						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
