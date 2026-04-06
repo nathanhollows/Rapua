@@ -85,6 +85,7 @@ func (h *Handler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 		h.handleError(w, r, "InstancesCreate: switching instance", "Error switching instance", "error", err)
 		return
 	}
+	h.setCurrentInstance(w, r, instance.ID)
 
 	h.redirect(w, r, "/admin/instances")
 }
@@ -131,6 +132,7 @@ func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+	h.setCurrentInstance(w, r, instance.ID)
 
 	h.redirect(w, r, "/admin/instances")
 }
@@ -168,6 +170,7 @@ func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+	h.setCurrentInstance(w, r, instanceID)
 
 	if r.URL.Query().Has("redirect") {
 		h.redirect(w, r, r.URL.Query().Get("redirect"))

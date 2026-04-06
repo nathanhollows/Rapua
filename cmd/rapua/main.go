@@ -570,6 +570,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		facilitatorService,
 		gameScheduleService,
 		gameStructureService,
+		instanceRepo,
 		instanceService,
 		instanceSettingsService,
 		locationService,
