@@ -227,12 +227,6 @@ func (s *UserService) SwitchInstance(ctx context.Context, user *models.User, ins
 		return ErrPermissionDenied
 	}
 
-	user.CurrentInstanceID = instance.ID
-	err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		return fmt.Errorf("updating user: %w", err)
-	}
-
 	return nil
 }
 

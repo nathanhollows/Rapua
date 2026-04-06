@@ -318,7 +318,6 @@ func TestUserService_SwitchInstance(t *testing.T) {
 					require.Error(t, switchErr)
 				} else {
 					require.NoError(t, switchErr)
-					assert.Equal(t, tc.instanceID, tc.user.CurrentInstanceID)
 				}
 			})
 		}

@@ -98,14 +98,12 @@ func TestUserRepository_Update(t *testing.T) {
 	}
 	newEmailVerified := gofakeit.Bool()
 	newPassword := gofakeit.Password(true, true, true, true, true, 12)
-	newCurrentInstanceID := gofakeit.UUID()
 
 	user.Name = newName
 	user.EmailToken = newEmailToken
 	user.EmailTokenExpiry = newEmailTokenExpiry
 	user.EmailVerified = newEmailVerified
 	user.Password = newPassword
-	user.CurrentInstanceID = newCurrentInstanceID
 
 	err = repo.Update(ctx, user)
 	require.NoError(t, err)
@@ -118,7 +116,6 @@ func TestUserRepository_Update(t *testing.T) {
 	require.NotEqual(t, user.EmailTokenExpiry, fetchedUser.EmailTokenExpiry)
 	assert.Equal(t, newEmailVerified, fetchedUser.EmailVerified)
 	assert.Equal(t, newPassword, fetchedUser.Password)
-	assert.Equal(t, newCurrentInstanceID, fetchedUser.CurrentInstanceID)
 }
 
 func TestUserRepository_FindUserByID(t *testing.T) {

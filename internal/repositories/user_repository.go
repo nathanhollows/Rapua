@@ -59,7 +59,6 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 			"email_token_expiry",
 			"email_verified",
 			"password",
-			"current_instance_id",
 			"share_email",
 			"work_type",
 			"stripe_customer_id",
@@ -93,7 +92,6 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 	err := r.db.NewSelect().
 		Model(user).
 		Where("email = ?", email).
-		Relation("CurrentInstance").
 		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).
@@ -117,14 +115,6 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*models.Us
 	err := r.db.NewSelect().
 		Model(&user).
 		Where("user.id = ?", userID).
-		Relation("CurrentInstance").
-		Relation("CurrentInstance.Settings").
-		Relation("CurrentInstance.Teams").
-		// Locations ordered by Order
-		Relation("CurrentInstance.Locations", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.Order("order ASC")
-		}).
-		Relation("CurrentInstance.Locations.Marker").
 		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).
@@ -142,7 +132,6 @@ func (r *userRepository) GetByEmailAndProvider(ctx context.Context, email, provi
 		Model(user).
 		Where("email = ?", email).
 		Where("provider = ? OR provider = ''", provider).
-		Relation("CurrentInstance").
 		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).

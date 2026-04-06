@@ -36,6 +36,9 @@ type InstanceRepository interface {
 
 	// DismissQuickstart marks the user as having dismissed the quickstart
 	DismissQuickstart(ctx context.Context, instanceID string) error
+
+	// GetByIDWithRelations loads an instance with all relations needed for the admin panel
+	GetByIDWithRelations(ctx context.Context, id string) (*models.Instance, error)
 }
 
 type instanceRepository struct {
@@ -186,6 +189,25 @@ func (r *instanceRepository) DeleteByUser(ctx context.Context, tx *bun.Tx, userI
 		}
 	}
 	return nil
+}
+
+// GetByIDWithRelations loads an instance with all relations needed for the admin panel.
+func (r *instanceRepository) GetByIDWithRelations(ctx context.Context, id string) (*models.Instance, error) {
+	instance := &models.Instance{}
+	err := r.db.NewSelect().
+		Model(instance).
+		Where("instance.id = ?", id).
+		Relation("Settings").
+		Relation("Teams").
+		Relation("Locations", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.Order("order ASC")
+		}).
+		Relation("Locations.Marker").
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return instance, nil
 }
 
 // DismissQuickstart marks the user as having dismissed the quickstart.
