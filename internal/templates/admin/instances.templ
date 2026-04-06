@@ -71,7 +71,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				</div>
 			</div>
 			for _, instance := range instances {
-				@instanceItem(instance, instance.ID == currentInstance.ID)
+				@instanceItem(instance, instance.ID == currentInstance.ID, currentInstance.ID != "")
 			}
 			<div
 				if len(instances) == 0 {
@@ -316,7 +316,7 @@ templ InstanceNameEdit(instance models.Instance) {
 	</form>
 }
 
-templ instanceItem(instance models.Instance, active bool) {
+templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 	<div
 		class="instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
 	>
@@ -346,10 +346,14 @@ templ instanceItem(instance models.Instance, active bool) {
 				<span class="hidden sm:inline-block tooltip" data-tip="Make this your active game">
 					<a
 						href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
-						class="btn btn-sm inline-flex"
+						if anyActive {
+							class="btn btn-sm inline-flex"
+						} else {
+							class="btn btn-sm btn-primary inline-flex"
+						}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-						Switch
+						Select
 					</a>
 				</span>
 			}
@@ -367,14 +371,14 @@ templ instanceItem(instance models.Instance, active bool) {
 									href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-									Switch to this game
+									Select this game
 								</a>
 							</li>
 						} else {
 							<li class="inline-block sm:hidden menu-disabled">
 								<a>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-									Switch to this game
+									Select this game
 								</a>
 							</li>
 						}
