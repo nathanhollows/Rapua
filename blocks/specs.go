@@ -59,8 +59,18 @@ func (b *BrokerBlock) GetSpec() game.BlockSpec {
 				Items: &game.FieldSpec{
 					Type: "object",
 					Fields: []game.FieldSpec{
-						{Name: "points_required", Type: "int", Required: true, Description: "Points cost for this tier"},
-						{Name: "content", Type: "markdown", Required: true, Description: "Information revealed at this tier"},
+						{
+							Name:        "points_required",
+							Type:        "int",
+							Required:    true,
+							Description: "Points cost for this tier",
+						},
+						{
+							Name:        "content",
+							Type:        "markdown",
+							Required:    true,
+							Description: "Information revealed at this tier",
+						},
 					},
 				}},
 		},
@@ -95,7 +105,12 @@ func (b *ClueBlock) GetSpec() game.BlockSpec {
 		Description: "A clue revealed behind a button — players tap to reveal the hint.",
 		Contexts:    []string{"location_content", "location_clues"},
 		Fields: []game.FieldSpec{
-			{Name: "clue", Type: "markdown", Required: true, Description: "Clue content revealed when the button is tapped"},
+			{
+				Name:        "clue",
+				Type:        "markdown",
+				Required:    true,
+				Description: "Clue content revealed when the button is tapped",
+			},
 			{Name: "description", Type: "string", Description: "Description or label shown on the reveal button"},
 			{Name: "button_label", Type: "string", Description: "Custom button label (defaults to 'Reveal clue')"},
 		},

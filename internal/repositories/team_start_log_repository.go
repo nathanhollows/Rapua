@@ -96,4 +96,3 @@ func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, l
 	_, err := tx.NewInsert().Model(log).Exec(ctx)
 	return err
 }
-

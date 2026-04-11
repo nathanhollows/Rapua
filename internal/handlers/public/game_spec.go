@@ -15,7 +15,7 @@ import (
 // SpecJSON serves the generated game spec as JSON.
 //
 //	GET /api/v7/spec
-func (h *Handler) SpecJSON(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SpecJSON(w http.ResponseWriter, _ *http.Request) {
 	data, err := specgen.GenerateJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error generating spec: %v", err), http.StatusInternalServerError)

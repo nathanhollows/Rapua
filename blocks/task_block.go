@@ -75,7 +75,6 @@ func (b *TaskBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // RequiresValidation returns whether this block requires player input validation.
 func (b *TaskBlock) RequiresValidation() bool {
 	return false
@@ -86,4 +85,3 @@ func (b *TaskBlock) ValidatePlayerInput(state PlayerState, _ map[string][]string
 	state.SetComplete(true)
 	return state, nil
 }
-

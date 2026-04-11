@@ -116,7 +116,11 @@ func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
 	}
 	if loc.Marker != nil {
 		if loc.Marker.Lat == 0 && loc.Marker.Lng == 0 {
-			l.warnf(path+".marker", "ZERO_COORDINATES", "marker has zero coordinates; omit marker if location has no map pin")
+			l.warnf(
+				path+".marker",
+				"ZERO_COORDINATES",
+				"marker has zero coordinates; omit marker if location has no map pin",
+			)
 		}
 	}
 	for i, b := range loc.Content {

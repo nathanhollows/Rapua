@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/urfave/cli/v2"
 	"github.com/uptrace/bun/migrate"
+	"github.com/urfave/cli/v2"
 )
 
 //nolint:gocognit // CLI complexity acceptable

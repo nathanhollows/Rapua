@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/internal/config"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/security"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 )
 
 // Password-related errors.

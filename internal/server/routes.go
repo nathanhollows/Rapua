@@ -329,7 +329,11 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.AdminAuthMiddleware(adminHandler.GetIdentityService(), adminHandler.GetInstanceLoader(), next)
+			return middlewares.AdminAuthMiddleware(
+				adminHandler.GetIdentityService(),
+				adminHandler.GetInstanceLoader(),
+				next,
+			)
 		})
 		r.Use(middlewares.AdminCheckInstanceMiddleware)
 
@@ -405,7 +409,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/delete", adminHandler.InstanceDelete)
 			r.Post("/duplicate", adminHandler.InstanceDuplicate)
 		})
-
 
 		r.Route("/markdown", func(r chi.Router) {
 			r.Post("/preview", adminHandler.PreviewMarkdown)

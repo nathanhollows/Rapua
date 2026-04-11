@@ -44,13 +44,13 @@ func recreateTable(ctx context.Context, db bun.IDB, tableName, newCreateSQL stri
 	}
 
 	// Rename old table
-	if _, err := db.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE "%s" RENAME TO "%s"`, tableName, oldName)); err != nil {
-		return fmt.Errorf("renaming %s: %w", tableName, err)
+	if _, dbErr := db.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE "%s" RENAME TO "%s"`, tableName, oldName)); dbErr != nil {
+		return fmt.Errorf("renaming %s: %w", tableName, dbErr)
 	}
 
 	// Create new table with FK constraints
-	if _, err := db.ExecContext(ctx, newCreateSQL); err != nil {
-		return fmt.Errorf("creating new %s: %w", tableName, err)
+	if _, dbErr := db.ExecContext(ctx, newCreateSQL); dbErr != nil {
+		return fmt.Errorf("creating new %s: %w", tableName, dbErr)
 	}
 
 	// Get column names from the new table to find the intersection
@@ -74,13 +74,13 @@ func recreateTable(ctx context.Context, db bun.IDB, tableName, newCreateSQL stri
 
 	// Copy data using explicit column list
 	copySQL := fmt.Sprintf(`INSERT INTO "%s" (%s) SELECT %s FROM "%s"`, tableName, colList, colList, oldName)
-	if _, err := db.ExecContext(ctx, copySQL); err != nil {
-		return fmt.Errorf("copying data to %s: %w\nSQL: %s", tableName, err, copySQL)
+	if _, dbErr := db.ExecContext(ctx, copySQL); dbErr != nil {
+		return fmt.Errorf("copying data to %s: %w\nSQL: %s", tableName, dbErr, copySQL)
 	}
 
 	// Drop old table
-	if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE "%s"`, oldName)); err != nil {
-		return fmt.Errorf("dropping %s: %w", oldName, err)
+	if _, dbErr := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE "%s"`, oldName)); dbErr != nil {
+		return fmt.Errorf("dropping %s: %w", oldName, dbErr)
 	}
 
 	return nil
@@ -91,8 +91,8 @@ func init() {
 		func(ctx context.Context, db *bun.DB) error {
 			// Must disable FK checks during table recreation to avoid
 			// constraint violations while copying data between old/new tables.
-			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
-				return fmt.Errorf("disabling foreign keys: %w", err)
+			if _, dbErr := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); dbErr != nil {
+				return fmt.Errorf("disabling foreign keys: %w", dbErr)
 			}
 			defer func() {
 				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck
@@ -117,8 +117,8 @@ func init() {
 				`DELETE FROM "instances" WHERE user_id NOT IN (SELECT id FROM users)`,
 			}
 			for _, q := range orphanCleanups {
-				if _, err := db.ExecContext(ctx, q); err != nil {
-					return fmt.Errorf("cleaning orphaned rows: %w\nSQL: %s", err, q)
+				if _, dbErr := db.ExecContext(ctx, q); dbErr != nil {
+					return fmt.Errorf("cleaning orphaned rows: %w\nSQL: %s", dbErr, q)
 				}
 			}
 
@@ -196,8 +196,8 @@ func init() {
 				return err
 			}
 			// Recreate the unique partial index on location slugs
-			if _, err := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); err != nil {
-				return fmt.Errorf("creating locations slug index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); dbErr != nil {
+				return fmt.Errorf("creating locations slug index: %w", dbErr)
 			}
 
 			// --- teams ---
@@ -216,8 +216,8 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); err != nil {
-				return fmt.Errorf("creating teams id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); dbErr != nil {
+				return fmt.Errorf("creating teams id index: %w", dbErr)
 			}
 
 			// --- blocks ---
@@ -315,11 +315,11 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); err != nil {
-				return fmt.Errorf("creating credit_adjustments user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_adjustments user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); err != nil {
-				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", dbErr)
 			}
 
 			// --- team_start_logs ---
@@ -333,22 +333,22 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); err != nil {
-				return fmt.Errorf("creating team_start_logs user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating team_start_logs user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); err != nil {
-				return fmt.Errorf("creating team_start_logs instance_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); dbErr != nil {
+				return fmt.Errorf("creating team_start_logs instance_id index: %w", dbErr)
 			}
 
 			// Recreate indexes on credit_purchases (dropped during table recreation)
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); err != nil {
-				return fmt.Errorf("creating credit_purchases user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); err != nil {
-				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); err != nil {
-				return fmt.Errorf("creating credit_purchases status index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases status index: %w", dbErr)
 			}
 
 			// --- facilitator_tokens ---
@@ -379,8 +379,8 @@ func init() {
 
 			// Index on blocks.owner_id is beneficial for lookups even though
 			// owner_id has no FK constraint (it is polymorphic).
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_blocks_owner_id" ON "blocks" ("owner_id")`); err != nil {
-				return fmt.Errorf("creating blocks owner_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_blocks_owner_id" ON "blocks" ("owner_id")`); dbErr != nil {
+				return fmt.Errorf("creating blocks owner_id index: %w", dbErr)
 			}
 
 			// --- Add indexes on FK columns for cascade performance ---
@@ -407,8 +407,8 @@ func init() {
 
 			for _, idx := range fkIndexes {
 				q := fmt.Sprintf(`CREATE INDEX IF NOT EXISTS "%s" ON "%s" ("%s")`, idx.name, idx.table, idx.col)
-				if _, err := db.ExecContext(ctx, q); err != nil {
-					return fmt.Errorf("creating index %s: %w", idx.name, err)
+				if _, dbErr := db.ExecContext(ctx, q); dbErr != nil {
+					return fmt.Errorf("creating index %s: %w", idx.name, dbErr)
 				}
 			}
 
@@ -421,7 +421,13 @@ func init() {
 			if rows.Next() {
 				var table, rowid, parent, fkid string
 				_ = rows.Scan(&table, &rowid, &parent, &fkid)
-				return fmt.Errorf("foreign key violation: table=%s rowid=%s parent=%s fkid=%s", table, rowid, parent, fkid)
+				return fmt.Errorf(
+					"foreign key violation: table=%s rowid=%s parent=%s fkid=%s",
+					table,
+					rowid,
+					parent,
+					fkid,
+				)
 			}
 
 			return nil
@@ -429,8 +435,8 @@ func init() {
 
 		// Down migration: recreate tables without FK constraints
 		func(ctx context.Context, db *bun.DB) error {
-			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
-				return fmt.Errorf("disabling foreign keys: %w", err)
+			if _, dbErr := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); dbErr != nil {
+				return fmt.Errorf("disabling foreign keys: %w", dbErr)
 			}
 			defer func() {
 				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck
@@ -454,8 +460,8 @@ func init() {
 				"idx_share_links_user_id",
 			}
 			for _, idx := range dropIndexes {
-				if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP INDEX IF EXISTS "%s"`, idx)); err != nil {
-					return fmt.Errorf("dropping index %s: %w", idx, err)
+				if _, dbErr := db.ExecContext(ctx, fmt.Sprintf(`DROP INDEX IF EXISTS "%s"`, idx)); dbErr != nil {
+					return fmt.Errorf("dropping index %s: %w", idx, dbErr)
 				}
 			}
 
@@ -494,11 +500,11 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); err != nil {
-				return fmt.Errorf("creating team_start_logs user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating team_start_logs user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); err != nil {
-				return fmt.Errorf("creating team_start_logs instance_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); dbErr != nil {
+				return fmt.Errorf("creating team_start_logs instance_id index: %w", dbErr)
 			}
 
 			err = recreateTable(ctx, db, "credit_adjustments", `CREATE TABLE "credit_adjustments" (
@@ -512,11 +518,11 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); err != nil {
-				return fmt.Errorf("creating credit_adjustments user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_adjustments user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); err != nil {
-				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", dbErr)
 			}
 
 			err = recreateTable(ctx, db, "uploads", `CREATE TABLE "uploads" (
@@ -608,8 +614,8 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); err != nil {
-				return fmt.Errorf("creating teams id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); dbErr != nil {
+				return fmt.Errorf("creating teams id index: %w", dbErr)
 			}
 
 			err = recreateTable(ctx, db, "locations", `CREATE TABLE "locations" (
@@ -630,8 +636,8 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); err != nil {
-				return fmt.Errorf("creating locations slug index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); dbErr != nil {
+				return fmt.Errorf("creating locations slug index: %w", dbErr)
 			}
 
 			err = recreateTable(ctx, db, "instance_settings", `CREATE TABLE "instance_settings" (
@@ -664,14 +670,14 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); err != nil {
-				return fmt.Errorf("creating credit_purchases user_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases user_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); err != nil {
-				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", dbErr)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); err != nil {
-				return fmt.Errorf("creating credit_purchases status index: %w", err)
+			if _, dbErr := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); dbErr != nil {
+				return fmt.Errorf("creating credit_purchases status index: %w", dbErr)
 			}
 
 			err = recreateTable(ctx, db, "instances", `CREATE TABLE "instances" (

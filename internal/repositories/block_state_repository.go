@@ -191,4 +191,3 @@ func (r *blockStateRepository) DeleteByBlockID(ctx context.Context, tx *bun.Tx, 
 		Exec(ctx)
 	return err
 }
-

@@ -100,7 +100,6 @@ func (b *ImageBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // RequiresValidation returns whether this block requires player input validation.
 func (b *ImageBlock) RequiresValidation() bool {
 	return false
@@ -111,4 +110,3 @@ func (b *ImageBlock) ValidatePlayerInput(state PlayerState, _ map[string][]strin
 	state.SetComplete(true)
 	return state, nil
 }
-

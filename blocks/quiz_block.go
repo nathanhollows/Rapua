@@ -211,7 +211,6 @@ func (b *QuizBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // RequiresValidation returns whether this block requires player input validation.
 func (b *QuizBlock) RequiresValidation() bool {
 	return true
@@ -391,4 +390,3 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 		UnlockedContent: "",
 	}
 }
-

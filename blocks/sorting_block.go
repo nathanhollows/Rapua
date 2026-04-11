@@ -157,7 +157,6 @@ func (b *SortingBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // RequiresValidation returns whether this block requires player input validation.
 func (b *SortingBlock) RequiresValidation() bool { return true }
 
@@ -353,4 +352,3 @@ func deterministicShuffle(items []string, seed string) []string {
 
 	return result
 }
-

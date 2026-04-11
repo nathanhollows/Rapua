@@ -260,7 +260,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	inst := &models.Instance{Name: "Old Name", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
 	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:  inst.ID,
+		InstanceID:   inst.ID,
 		EnablePoints: false,
 	}))
 

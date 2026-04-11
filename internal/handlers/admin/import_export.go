@@ -29,13 +29,31 @@ func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
 
 	doc, err := h.exportService.ExportInstance(r.Context(), instanceID)
 	if err != nil {
-		h.handleError(w, r, "ExportInstance: export", "Error exporting instance", "error", err, "instance_id", instanceID)
+		h.handleError(
+			w,
+			r,
+			"ExportInstance: export",
+			"Error exporting instance",
+			"error",
+			err,
+			"instance_id",
+			instanceID,
+		)
 		return
 	}
 
 	data, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
-		h.handleError(w, r, "ExportInstance: marshal", "Error serialising document", "error", err, "instance_id", instanceID)
+		h.handleError(
+			w,
+			r,
+			"ExportInstance: marshal",
+			"Error serialising document",
+			"error",
+			err,
+			"instance_id",
+			instanceID,
+		)
 		return
 	}
 

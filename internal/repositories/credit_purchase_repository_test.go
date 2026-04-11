@@ -415,4 +415,3 @@ func TestCreditPurchaseRepo_UpdateReceiptURLWithTx(t *testing.T) {
 	assert.True(t, retrieved.ReceiptURL.Valid)
 	assert.Equal(t, receiptURL, retrieved.ReceiptURL.String)
 }
-

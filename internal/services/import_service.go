@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -88,7 +89,7 @@ func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *ga
 		}
 	}()
 
-	stats, warnings, err := s.importCreate(ctx, tx, userID, doc)
+	stats, err := s.importCreate(ctx, tx, userID, doc)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return nil, fmt.Errorf("import: %w; rollback failed: %w", err, rbErr)
@@ -101,6 +102,7 @@ func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *ga
 	}
 
 	// Merge lint warnings
+	var warnings []string
 	for _, w := range result.Warnings {
 		warnings = append(warnings, fmt.Sprintf("[%s] %s: %s", w.Code, w.Path, w.Message))
 	}
@@ -113,7 +115,11 @@ func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *ga
 }
 
 // ImportUpdate parses a GameDoc and reconciles it with an existing instance.
-func (s *ImportService) ImportUpdate(ctx context.Context, userID, instanceID string, doc *game.GameDoc) (*ImportResult, error) {
+func (s *ImportService) ImportUpdate(
+	ctx context.Context,
+	userID, instanceID string,
+	doc *game.GameDoc,
+) (*ImportResult, error) {
 	// Lint the document
 	lintResult := game.Lint(doc, blocks.Registry())
 	if !lintResult.IsValid() {
@@ -206,7 +212,7 @@ func (s *ImportService) importCreate(
 	tx *bun.Tx,
 	userID string,
 	doc *game.GameDoc,
-) (*createResult, []string, error) {
+) (*createResult, error) {
 	// Create Instance
 	newInstance := &models.Instance{
 		Name:                  doc.Name,
@@ -214,7 +220,7 @@ func (s *ImportService) importCreate(
 		IsQuickStartDismissed: true,
 	}
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
-		return nil, nil, fmt.Errorf("create instance: %w", err)
+		return nil, fmt.Errorf("create instance: %w", err)
 	}
 
 	// Create InstanceSettings
@@ -227,7 +233,7 @@ func (s *ImportService) importCreate(
 		ShowLeaderboard:   doc.Settings.ShowLeaderboard,
 	}
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
-		return nil, nil, fmt.Errorf("create settings: %w", err)
+		return nil, fmt.Errorf("create settings: %w", err)
 	}
 
 	// Walk structure, creating locations and groups
@@ -244,17 +250,17 @@ func (s *ImportService) importCreate(
 	}
 
 	if err := s.walkCreateChildren(ctx, tx, newInstance.ID, doc.Structure.Children, gs, &stats); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Create start/finish blocks
 	startCount, err := s.createBlockDocs(ctx, tx, newInstance.ID, doc.Start, game.ContextStart)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create start blocks: %w", err)
+		return nil, fmt.Errorf("create start blocks: %w", err)
 	}
 	finishCount, err := s.createBlockDocs(ctx, tx, newInstance.ID, doc.Finish, game.ContextFinish)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create finish blocks: %w", err)
+		return nil, fmt.Errorf("create finish blocks: %w", err)
 	}
 	stats.Blocks += startCount + finishCount
 
@@ -265,10 +271,10 @@ func (s *ImportService) importCreate(
 		Column("game_structure").
 		WherePK().
 		Exec(ctx); err != nil {
-		return nil, nil, fmt.Errorf("save game structure: %w", err)
+		return nil, fmt.Errorf("save game structure: %w", err)
 	}
 
-	return &createResult{InstanceID: newInstance.ID, Created: stats}, nil, nil
+	return &createResult{InstanceID: newInstance.ID, Created: stats}, nil
 }
 
 func (s *ImportService) walkCreateChildren(
@@ -318,7 +324,7 @@ func (s *ImportService) createLocation(
 	tx *bun.Tx,
 	instanceID string,
 	locDoc game.LocationDoc,
-) (locID string, blockCount int, err error) {
+) (string, int, error) {
 	// Create marker
 	marker := &models.Marker{Name: locDoc.Name}
 	if locDoc.Marker != nil {
@@ -527,7 +533,7 @@ func (s *ImportService) reconcileLocation(
 	blockByID map[string]models.Block,
 	seenLocIDs map[string]bool,
 	result *ImportResult,
-) (locID string, err error) {
+) (string, error) {
 	// Try to match existing location
 	var existingLoc *models.Location
 	if locDoc.ID != "" {
@@ -673,7 +679,7 @@ func (s *ImportService) reconcileInstanceBlocks(
 func docToBlock(doc game.BlockDoc, ownerID string, ordering int) (blocks.Block, error) {
 	blockType, _ := doc["type"].(string)
 	if blockType == "" {
-		return nil, fmt.Errorf("block doc missing type field")
+		return nil, errors.New("block doc missing type field")
 	}
 
 	data, bPoints := docToDataAndPoints(doc)
@@ -698,7 +704,8 @@ func docToBlock(doc game.BlockDoc, ownerID string, ordering int) (blocks.Block, 
 
 // docToDataAndPoints extracts the block-specific data JSON and points from a BlockDoc.
 // The "type", "id", and "points" fields are stripped; the rest is marshaled as Data.
-func docToDataAndPoints(doc game.BlockDoc) (data json.RawMessage, points int) {
+func docToDataAndPoints(doc game.BlockDoc) (json.RawMessage, int) {
+	points := 0
 	if pVal, ok := doc["points"]; ok {
 		switch v := pVal.(type) {
 		case float64:
@@ -717,6 +724,6 @@ func docToDataAndPoints(doc game.BlockDoc) (data json.RawMessage, points int) {
 		dataMap[k] = v
 	}
 
-	data, _ = json.Marshal(dataMap)
+	data, _ := json.Marshal(dataMap)
 	return data, points
 }

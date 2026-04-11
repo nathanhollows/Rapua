@@ -27,7 +27,6 @@ type CheckInRepository interface {
 
 	// Update updates an existing check-in
 	Update(ctx context.Context, checkIn *models.CheckIn) error
-
 }
 
 type checkInRepository struct {
@@ -127,5 +126,3 @@ func (r *checkInRepository) LogCheckOut(
 
 	return *checkIn, nil
 }
-
-

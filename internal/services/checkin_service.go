@@ -7,9 +7,9 @@ import (
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/navigation"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 )
 
 const (
@@ -50,7 +50,11 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error { //nolint:gocognit,gocyclo
+func (s *CheckInService) CheckIn(
+	ctx context.Context,
+	team *models.Team,
+	locationCode string,
+) error { //nolint:gocognit,gocyclo
 	// Load team relations
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {

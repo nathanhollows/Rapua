@@ -113,9 +113,9 @@ func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.
 // Always returns non-nil slices so "start" and "finish" are present in the output.
-func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) (start, finish []game.BlockDoc) {
-	start = []game.BlockDoc{}
-	finish = []game.BlockDoc{}
+func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.BlockDoc, []game.BlockDoc) {
+	start := []game.BlockDoc{}
+	finish := []game.BlockDoc{}
 
 	// Sort by ordering to preserve intended sequence
 	sort.Slice(instanceBlocks, func(i, j int) bool {

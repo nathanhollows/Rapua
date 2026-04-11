@@ -17,7 +17,7 @@ func newGenSpecCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "genspec",
 		Usage: "regenerate docs/developer/game-spec.md from code",
-		Action: func(c *cli.Context) error {
+		Action: func(_ *cli.Context) error {
 			out := filepath.Join("docs", "developer", "game-spec.md")
 			n, err := writeGameSpec(out)
 			if err != nil {

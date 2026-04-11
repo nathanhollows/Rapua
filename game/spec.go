@@ -28,11 +28,11 @@ type BlockSpec struct {
 // FieldSpec describes a single field within a block.
 type FieldSpec struct {
 	Name        string      `json:"name"`
-	Type        string      `json:"type"`        // "string", "int", "bool", "markdown", "list", "object", "enum"
+	Type        string      `json:"type"` // "string", "int", "bool", "markdown", "list", "object", "enum"
 	Description string      `json:"description,omitempty"`
 	Required    bool        `json:"required,omitempty"`
 	Default     any         `json:"default,omitempty"`
-	Enum        []string    `json:"enum,omitempty"`  // for enum types
-	Items       *FieldSpec  `json:"items,omitempty"` // for list types
+	Enum        []string    `json:"enum,omitempty"`   // for enum types
+	Items       *FieldSpec  `json:"items,omitempty"`  // for list types
 	Fields      []FieldSpec `json:"fields,omitempty"` // for object types
 }

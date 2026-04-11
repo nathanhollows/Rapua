@@ -182,7 +182,7 @@ func TestParseGameDoc_InvalidJSON(t *testing.T) {
 
 	doc, err := parseGameDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }
 
@@ -196,6 +196,6 @@ func TestParseGameDoc_MultipartMissingFileField(t *testing.T) {
 
 	doc, err := parseGameDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }

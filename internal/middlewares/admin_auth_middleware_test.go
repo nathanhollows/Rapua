@@ -142,26 +142,26 @@ func TestAdminAuthMiddleware_InstanceFromSession(t *testing.T) {
 		expectedInstanceID string
 	}{
 		{
-			name:              "Valid instance in session",
-			sessionInstanceID: instanceID,
-			instance:          &models.Instance{ID: instanceID, UserID: userID},
+			name:               "Valid instance in session",
+			sessionInstanceID:  instanceID,
+			instance:           &models.Instance{ID: instanceID, UserID: userID},
 			expectedInstanceID: instanceID,
 		},
 		{
-			name:              "Instance belongs to different user",
-			sessionInstanceID: instanceID,
-			instance:          &models.Instance{ID: instanceID, UserID: "other-user"},
+			name:               "Instance belongs to different user",
+			sessionInstanceID:  instanceID,
+			instance:           &models.Instance{ID: instanceID, UserID: "other-user"},
 			expectedInstanceID: "",
 		},
 		{
-			name:              "Instance not found",
-			sessionInstanceID: "nonexistent",
-			instanceErr:       http.ErrNoCookie, // any error
+			name:               "Instance not found",
+			sessionInstanceID:  "nonexistent",
+			instanceErr:        http.ErrNoCookie, // any error
 			expectedInstanceID: "",
 		},
 		{
-			name:              "No instance in session",
-			sessionInstanceID: "",
+			name:               "No instance in session",
+			sessionInstanceID:  "",
 			expectedInstanceID: "",
 		},
 	}

@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/uptrace/bun"
 )
 
@@ -73,11 +73,11 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	}
 	var uploads []*models.Upload
 	for _, inst := range instances {
-		iu, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
+		iu, searchErr := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
 			"instance_id": inst.ID,
 		})
-		if err != nil {
-			return fmt.Errorf("fetching uploads for instance %s: %w", inst.ID, err)
+		if searchErr != nil {
+			return fmt.Errorf("fetching uploads for instance %s: %w", inst.ID, searchErr)
 		}
 		uploads = append(uploads, iu...)
 	}
@@ -469,7 +469,6 @@ func (s *DeleteService) cleanupUploadFiles(ctx context.Context, uploads []*model
 func (s *DeleteService) deleteUploadFile(ctx context.Context, urlOrPath string) {
 	path := urlOrPath
 	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
-		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
 		parts := strings.SplitN(urlOrPath, "/", 4)
 		//nolint:mnd // Need 4 parts to extract path after domain
 		if len(parts) >= 4 {

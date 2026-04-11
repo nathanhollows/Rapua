@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -354,4 +354,3 @@ func TestTeamStartLogRepo_OrderingConsistency(t *testing.T) {
 			i, expectedSortedOrder[i], log.ID)
 	}
 }
-

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"net/mail"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/uptrace/bun"
