@@ -1,0 +1,97 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
+)
+
+templ freeTextPlayer(settings models.InstanceSettings, block blocks.FreeTextBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+	>
+		@pointsBadge(settings.EnablePoints, block.GetPoints())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+			if data.IsComplete() {
+				<blockquote class="blockquote mt-0">
+					{ block.GetResponse(data) }
+				</blockquote>
+			} else {
+				<form
+					hx-post="/blocks/validate"
+					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+					class="not-prose"
+				>
+					<input type="hidden" name="block" value={ block.ID }/>
+					<textarea
+						name="response"
+						class="textarea w-full min-h-24"
+						style="field-sizing: content;"
+						if block.Placeholder != "" {
+							placeholder={ block.Placeholder }
+						} else {
+							placeholder="Type your response here..."
+						}
+						required
+					></textarea>
+					<div class="w-full flex justify-center mt-4">
+						<button type="submit" class="btn btn-primary">
+							Submit
+							@icon("send-horizontal", templ.Attributes{"class": "w-5 h-5"})
+						</button>
+					</div>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+templ freeTextPlayerUpdate(settings models.InstanceSettings, block blocks.FreeTextBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class="indicator w-full"
+		hx-swap-oob="true"
+	>
+		@pointsBadge(settings.EnablePoints, block.GetPoints())
+		@completionBadge(data)
+		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+			<blockquote class="blockquote mt-0">
+				{ block.GetResponse(data) }
+			</blockquote>
+		</div>
+	</div>
+}
+
+var freeTextPromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Describe what you see, smell, or think about this location.",
+	Markdown:    true,
+	HelpText:    "The question or instruction shown to the player.",
+}
+
+var freeTextPlaceholderInput = TextInputParams{
+	Name:        "placeholder",
+	Title:       "Placeholder",
+	Placeholder: "Type your response here...",
+	HelpText:    "Placeholder text shown in the empty text field.",
+}
+
+templ freeTextAdmin(settings models.InstanceSettings, block blocks.FreeTextBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		if settings.EnablePoints {
+			@adminPointsField(block.GetPoints())
+		}
+		@TextareaField(freeTextPromptTextarea.SetValue(block.Prompt))
+		@TextInputField(freeTextPlaceholderInput.SetValue(block.Placeholder))
+	</form>
+}

@@ -83,6 +83,7 @@ func init() {
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextNavigation})
 	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextNavigation})
+	registerBlock(&FreeTextBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent})
@@ -211,6 +212,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewButtonBlock(baseBlock), nil
 	case "random_clue":
 		return NewRandomClueBlock(baseBlock), nil
+	case "free_text":
+		return NewFreeTextBlock(baseBlock), nil
 	case "photo":
 		return NewPhotoBlock(baseBlock), nil
 	case "header":
@@ -309,6 +312,12 @@ func NewButtonBlock(base BaseBlock) *ButtonBlock {
 
 func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
 	return &RandomClueBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewFreeTextBlock(base BaseBlock) *FreeTextBlock {
+	return &FreeTextBlock{
 		BaseBlock: base,
 	}
 }

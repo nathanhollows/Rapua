@@ -360,6 +360,19 @@ func (b *MapBlock) GetSpec() game.BlockSpec {
 	}
 }
 
+func (b *FreeTextBlock) GetSpec() game.BlockSpec {
+	return game.BlockSpec{
+		Type:        "free_text",
+		Name:        "Free Text",
+		Description: "An ungraded text input for player reflections and free-form responses.",
+		Contexts:    []string{"location_content", "finish"},
+		Fields: []game.FieldSpec{
+			{Name: "prompt", Type: "string", Description: "Question or instruction shown to the player"},
+			{Name: "placeholder", Type: "string", Description: "Placeholder text for the input field"},
+		},
+	}
+}
+
 func (b *YoutubeBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "youtube",

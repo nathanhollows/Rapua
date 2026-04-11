@@ -23,6 +23,7 @@ Since games are now code, instead of database entities, it also means I can chan
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 - Image blocks can now be full width on mobile.
 - [Map block](/docs/user/blocks/map) to replace the `Map` and `Map and Names` navigation display mode.
+- [Free text block](/docs/user/blocks/free-text) for unconstrained text responses.
 
 ### Changed
 
