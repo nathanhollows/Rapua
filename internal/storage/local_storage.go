@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 )
 
@@ -64,7 +64,7 @@ func (s *LocalStorage) Upload(
 	}
 	defer outFile.Close()
 
-	filePath = helpers.URL(filePath)
+	filePath = config.SiteURL(filePath)
 
 	// Copy the file to the destination
 	_, err = io.Copy(outFile, file)

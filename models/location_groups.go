@@ -5,14 +5,16 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+
+	"github.com/nathanhollows/Rapua/v7/game"
 )
 
-// CompletionType defines how a group is considered completed.
-type CompletionType string
+// Type alias — CompletionType is defined in game/ and re-exported here.
+type CompletionType = game.CompletionType
 
 const (
-	CompletionAll     CompletionType = "all"
-	CompletionMinimum CompletionType = "minimum"
+	CompletionAll     = game.CompletionAll
+	CompletionMinimum = game.CompletionMinimum
 )
 
 // GameStructure represents the hierarchical game state structure

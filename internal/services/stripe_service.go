@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/config"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/charge"
 	"github.com/stripe/stripe-go/v83/checkout/session"
@@ -99,7 +99,7 @@ func (s *StripeService) CreateCheckoutSession(
 	}
 
 	// Calculate amount
-	amountInCents := models.CalculatePurchaseAmount(credits)
+	amountInCents := credits * config.CreditPriceCents()
 
 	// Create checkout session
 	purchaseID := uuid.New().String()

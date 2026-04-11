@@ -1,20 +1,13 @@
 package templates
 
 import (
-	"bytes"
 	"fmt"
 	"html/template"
-	"log/slog"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/helpers"
-	enclave "github.com/quail-ink/goldmark-enclave"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
+	"github.com/nathanhollows/Rapua/v7/internal/render"
 )
 
 var cssVersion string
@@ -37,49 +30,11 @@ func currYear() string {
 }
 
 func stringToMarkdown(s string) template.HTML {
-	md, err := markdownToHTML(s)
+	md, err := render.MarkdownToHTMLFull(s)
 	if err != nil {
 		//nolint:gosec // Error message from goldmark, not user input
 		return template.HTML(err.Error())
 	}
 
 	return md
-}
-
-// MarkdownToHTML converts a string to markdown.
-func markdownToHTML(s string) (template.HTML, error) {
-	md := goldmark.New(
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithExtensions(
-			extension.GFM,
-			extension.Strikethrough,
-			extension.Linkify,
-			extension.Typographer,
-			enclave.New(
-				&enclave.Config{},
-			),
-		),
-		goldmark.WithRendererOptions(
-			html.WithHardWraps(),
-			html.WithUnsafe(),
-		),
-	)
-
-	var buf bytes.Buffer
-	if err := md.Convert([]byte(s), &buf); err != nil {
-		//nolint:sloglint // Template helper function without access to request context
-		slog.Error(
-			"converting markdown to HTML",
-			"err",
-			err,
-		)
-		return template.HTML("Error rendering markdown to HTML"), err
-	}
-
-	sanitizedMD := helpers.SanitizeHTML(buf.Bytes())
-
-	//nolint:gosec // HTML is sanitized with bluemonday policy
-	return template.HTML(sanitizedMD), nil
 }

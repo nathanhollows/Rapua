@@ -8,10 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/db"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"math/rand/v2"
+
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/uptrace/bun"
 )
 
@@ -101,7 +102,7 @@ func (s *TeamService) AddTeams(ctx context.Context, instanceID string, count int
 			var team models.Team
 			for {
 				// TODO: Remove magic number
-				code := helpers.NewCode(teamCodeLength)
+				code := newCode(teamCodeLength)
 				team = models.Team{
 					Code:       code,
 					InstanceID: instanceID,
@@ -435,4 +436,15 @@ func (s *TeamService) GroupCheckInsByGroup(
 	}
 
 	return result
+}
+
+// newCode generates an alpha string of easily recognisable characters.
+// Confusing letters such as I and L, O and Q have one pair removed.
+func newCode(length int) string {
+	symbols := []rune("ABCDEFGHJKLMNPRSTUVWXYZ")
+	b := make([]rune, length)
+	for i := range length {
+		b[i] = symbols[rand.IntN(len(symbols))] //nolint:gosec // Team codes do not need cryptographic randomness
+	}
+	return string(b)
 }

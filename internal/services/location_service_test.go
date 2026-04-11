@@ -6,12 +6,13 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
-func setupLocationService(t *testing.T) (services.LocationService, *services.MarkerService, func()) {
+func setupLocationService(t *testing.T) (services.LocationService, *services.MarkerService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
@@ -21,17 +22,25 @@ func setupLocationService(t *testing.T) (services.LocationService, *services.Mar
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	return locationService, markerService, cleanup
+	return locationService, markerService, dbc, cleanup
+}
+
+// validInstanceID creates a FK-valid user+instance and returns the instance ID.
+func validInstanceID(t *testing.T, dbc *bun.DB) string {
+	t.Helper()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+	return insertTestInstance(t, dbc, userID)
 }
 
 func TestLocationService_CreateLocation(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Create location", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			gofakeit.Name(),
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -54,7 +63,7 @@ func TestLocationService_CreateLocation(t *testing.T) {
 	t.Run("Create location with invalid name", func(t *testing.T) {
 		_, err := service.CreateLocation(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"",
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -64,7 +73,7 @@ func TestLocationService_CreateLocation(t *testing.T) {
 }
 
 func TestLocationService_CreateLocationFromMarker(t *testing.T) {
-	service, markerService, cleanup := setupLocationService(t)
+	service, markerService, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	marker, err := markerService.CreateMarker(
@@ -77,7 +86,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 	t.Run("Create location from marker", func(t *testing.T) {
 		location, createErr := service.CreateLocationFromMarker(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			marker.Code)
@@ -98,7 +107,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 	t.Run("Create location from marker with invalid name", func(t *testing.T) {
 		_, err = service.CreateLocationFromMarker(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"",
 			gofakeit.Number(0, 100),
 			marker.Code)
@@ -108,7 +117,7 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 	t.Run("Create location from marker with invalid marker code", func(t *testing.T) {
 		_, createErr := service.CreateLocationFromMarker(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			gofakeit.Name(),
 			gofakeit.Number(0, 100),
 			"")
@@ -117,13 +126,13 @@ func TestLocationService_CreateLocationFromMarker(t *testing.T) {
 }
 
 func TestLocationService_GetByID(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Get location by ID", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			gofakeit.Name(),
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -142,13 +151,13 @@ func TestLocationService_GetByID(t *testing.T) {
 }
 
 func TestLocationService_GetByInstanceAndCode(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Get location by instance and code", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			context.Background(),
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			gofakeit.Name(),
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -167,11 +176,11 @@ func TestLocationService_GetByInstanceAndCode(t *testing.T) {
 }
 
 func TestLocationService_FindByInstance(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 
 	t.Run("Find locations by instance", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		locations := make([]string, 5)
 		for i := range 5 {
 			location, err := service.CreateLocation(
@@ -198,14 +207,14 @@ func TestLocationService_FindByInstance(t *testing.T) {
 }
 
 func TestLocationService_UpdateCoords(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	// Create location with initial coords
 	location, err := service.CreateLocation(
 		ctx,
-		gofakeit.UUID(),
+		validInstanceID(t, dbc),
 		gofakeit.Name(),
 		10.0,
 		20.0,
@@ -233,14 +242,14 @@ func TestLocationService_UpdateCoords(t *testing.T) {
 }
 
 func TestLocationService_UpdateName(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	// Create location
 	location, err := service.CreateLocation(
 		ctx,
-		gofakeit.UUID(),
+		validInstanceID(t, dbc),
 		"Original Name",
 		gofakeit.Latitude(),
 		gofakeit.Longitude(),
@@ -259,14 +268,14 @@ func TestLocationService_UpdateName(t *testing.T) {
 }
 
 func TestLocationService_UpdateLocation(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	t.Run("Update all fields", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			ctx,
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"Original Name",
 			10.0,
 			20.0,
@@ -298,7 +307,7 @@ func TestLocationService_UpdateLocation(t *testing.T) {
 	t.Run("Invalid latitude", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			ctx,
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"Test Location",
 			10.0,
 			20.0,
@@ -316,7 +325,7 @@ func TestLocationService_UpdateLocation(t *testing.T) {
 	t.Run("Invalid longitude", func(t *testing.T) {
 		location, err := service.CreateLocation(
 			ctx,
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"Test Location",
 			10.0,
 			20.0,
@@ -333,12 +342,12 @@ func TestLocationService_UpdateLocation(t *testing.T) {
 }
 
 func TestLocationService_ReorderLocations(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	t.Run("Reorder locations successfully", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 
 		// Create 3 locations
 		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
@@ -368,7 +377,7 @@ func TestLocationService_ReorderLocations(t *testing.T) {
 	})
 
 	t.Run("Invalid location ID", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
 		require.NoError(t, err)
 
@@ -380,7 +389,7 @@ func TestLocationService_ReorderLocations(t *testing.T) {
 	})
 
 	t.Run("Mismatched list length", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		loc1, err := service.CreateLocation(ctx, instanceID, "Location 1", 10.0, 20.0, 10)
 		require.NoError(t, err)
 		_, err = service.CreateLocation(ctx, instanceID, "Location 2", 11.0, 21.0, 20)
@@ -395,14 +404,14 @@ func TestLocationService_ReorderLocations(t *testing.T) {
 }
 
 func TestLocationService_LoadRelations(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	// Create location
 	location, err := service.CreateLocation(
 		ctx,
-		gofakeit.UUID(),
+		validInstanceID(t, dbc),
 		gofakeit.Name(),
 		gofakeit.Latitude(),
 		gofakeit.Longitude(),
@@ -422,11 +431,11 @@ func TestLocationService_LoadRelations(t *testing.T) {
 }
 
 func TestLocationService_GetByInstanceAndSlug(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
-	instanceID := gofakeit.UUID()
+	instanceID := validInstanceID(t, dbc)
 	location, err := service.CreateLocation(
 		ctx,
 		instanceID,
@@ -456,13 +465,13 @@ func TestLocationService_GetByInstanceAndSlug(t *testing.T) {
 }
 
 func TestLocationService_CreateLocation_Slug(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	t.Run("slug generated from name", func(t *testing.T) {
 		location, err := service.CreateLocation(
-			ctx, gofakeit.UUID(), "Citrus Collection",
+			ctx, validInstanceID(t, dbc), "Citrus Collection",
 			gofakeit.Latitude(), gofakeit.Longitude(), 0,
 		)
 		require.NoError(t, err)
@@ -470,7 +479,7 @@ func TestLocationService_CreateLocation_Slug(t *testing.T) {
 	})
 
 	t.Run("duplicate name in same instance gets unique slug", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		loc1, err := service.CreateLocation(
 			ctx,
 			instanceID,
@@ -495,7 +504,7 @@ func TestLocationService_CreateLocation_Slug(t *testing.T) {
 	t.Run("same name in different instances can share slug", func(t *testing.T) {
 		loc1, err := service.CreateLocation(
 			ctx,
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"Garden Walk",
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -504,7 +513,7 @@ func TestLocationService_CreateLocation_Slug(t *testing.T) {
 		require.NoError(t, err)
 		loc2, err := service.CreateLocation(
 			ctx,
-			gofakeit.UUID(),
+			validInstanceID(t, dbc),
 			"Garden Walk",
 			gofakeit.Latitude(),
 			gofakeit.Longitude(),
@@ -516,20 +525,20 @@ func TestLocationService_CreateLocation_Slug(t *testing.T) {
 }
 
 func TestLocationService_CreateLocationFromMarker_Slug(t *testing.T) {
-	service, markerService, cleanup := setupLocationService(t)
+	service, markerService, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	t.Run("slug generated from name", func(t *testing.T) {
 		marker, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
 		require.NoError(t, err)
-		location, err := service.CreateLocationFromMarker(ctx, gofakeit.UUID(), "Rose Garden", 0, marker.Code)
+		location, err := service.CreateLocationFromMarker(ctx, validInstanceID(t, dbc), "Rose Garden", 0, marker.Code)
 		require.NoError(t, err)
 		assert.Equal(t, "rose-garden", location.Slug)
 	})
 
 	t.Run("duplicate name in same instance gets unique slug", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		marker1, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
 		require.NoError(t, err)
 		marker2, err := markerService.CreateMarker(ctx, gofakeit.Name(), gofakeit.Latitude(), gofakeit.Longitude())
@@ -543,13 +552,13 @@ func TestLocationService_CreateLocationFromMarker_Slug(t *testing.T) {
 }
 
 func TestLocationService_UpdateLocation_Slug(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	t.Run("slug updates when name changes", func(t *testing.T) {
 		location, err := service.CreateLocation(
-			ctx, gofakeit.UUID(), "Original Name",
+			ctx, validInstanceID(t, dbc), "Original Name",
 			gofakeit.Latitude(), gofakeit.Longitude(), 0,
 		)
 		require.NoError(t, err)
@@ -562,7 +571,7 @@ func TestLocationService_UpdateLocation_Slug(t *testing.T) {
 
 	t.Run("slug unchanged when name not provided", func(t *testing.T) {
 		location, err := service.CreateLocation(
-			ctx, gofakeit.UUID(), "Original Name",
+			ctx, validInstanceID(t, dbc), "Original Name",
 			gofakeit.Latitude(), gofakeit.Longitude(), 0,
 		)
 		require.NoError(t, err)
@@ -574,7 +583,7 @@ func TestLocationService_UpdateLocation_Slug(t *testing.T) {
 	})
 
 	t.Run("duplicate name in same instance gets unique slug on rename", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		instanceID := validInstanceID(t, dbc)
 		_, err := service.CreateLocation(ctx, instanceID, "Garden Walk", gofakeit.Latitude(), gofakeit.Longitude(), 0)
 		require.NoError(t, err)
 		loc2, err := service.CreateLocation(
@@ -595,14 +604,14 @@ func TestLocationService_UpdateLocation_Slug(t *testing.T) {
 }
 
 func TestLocationService_LoadBlocks(t *testing.T) {
-	service, _, cleanup := setupLocationService(t)
+	service, _, dbc, cleanup := setupLocationService(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	// Create location (which creates a default header block)
 	location, err := service.CreateLocation(
 		ctx,
-		gofakeit.UUID(),
+		validInstanceID(t, dbc),
 		gofakeit.Name(),
 		gofakeit.Latitude(),
 		gofakeit.Longitude(),

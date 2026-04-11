@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/config"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"net/mail"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/uptrace/bun"
 )
 
@@ -177,7 +179,7 @@ func init() {
 			// Update each user's monthly_credit_limit based on their email
 			for _, user := range existingUsersForLimitUpdate {
 				// Determine the appropriate credit limit for this user's email
-				creditLimit := config.GetFreeCreditsForEmail(user.Email, helpers.IsEducationalEmailHeuristic)
+				creditLimit := config.GetFreeCreditsForEmail(user.Email, isEducationalEmailHeuristic)
 
 				// Update this user's monthly_credit_limit
 				_, err = db.NewUpdate().Model((*m20251017213848_User)(nil)).
@@ -270,4 +272,47 @@ func init() {
 
 			return nil
 		})
+}
+
+// isEducationalEmailHeuristic checks if an email is educational using heuristics.
+func isEducationalEmailHeuristic(email string) bool {
+	parsedEmail, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
+	atIndex := strings.LastIndex(parsedEmail.Address, "@")
+	if atIndex == -1 || atIndex == len(parsedEmail.Address)-1 {
+		return false
+	}
+
+	domain := strings.ToLower(parsedEmail.Address[atIndex+1:])
+
+	if strings.HasPrefix(domain, ".") || strings.Contains(domain, "..") {
+		return false
+	}
+
+	eduTLDs := []string{
+		".edu", ".ac", ".academy", ".school", ".college", ".university",
+		".study", ".training", ".institute", ".museum", ".science",
+	}
+	for _, tld := range eduTLDs {
+		if strings.HasSuffix(domain, tld) || strings.Contains(domain, tld+".") {
+			return true
+		}
+	}
+
+	keywords := []string{
+		"university", "college", "school", "academy", "institute", "education",
+		"faculty", "campus", "students", "museum", "zoo", "botanical",
+		"garden", "arboretum", "aquarium", "sciencecenter", "heritage",
+		"conservatory", "gallery", "galleries",
+	}
+	for _, keyword := range keywords {
+		if strings.Contains(domain, keyword) {
+			return true
+		}
+	}
+
+	return false
 }

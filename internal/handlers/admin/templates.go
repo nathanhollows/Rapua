@@ -149,6 +149,7 @@ func (h *Handler) TemplatesLaunch(w http.ResponseWriter, r *http.Request) {
 		h.handleError(w, r, "TemplatesLaunch: switching instance", "Error switching instance", "error", err)
 		return
 	}
+	h.setCurrentInstance(w, r, newGame.ID)
 
 	h.redirect(w, r, "/admin/instances")
 }
@@ -208,6 +209,7 @@ func (h *Handler) TemplatesLaunchFromLink(w http.ResponseWriter, r *http.Request
 		h.handleError(w, r, "TemplatesLaunchFromLink: switching instance", "Error switching instance", "error", err)
 		return
 	}
+	h.setCurrentInstance(w, r, newGame.ID)
 
 	h.redirect(w, r, "/admin/instances")
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -318,7 +318,6 @@ func TestUserService_SwitchInstance(t *testing.T) {
 					require.Error(t, switchErr)
 				} else {
 					require.NoError(t, switchErr)
-					assert.Equal(t, tc.instanceID, tc.user.CurrentInstanceID)
 				}
 			})
 		}

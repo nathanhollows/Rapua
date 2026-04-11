@@ -89,6 +89,7 @@ func (b *ClueBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *ClueBlock) RequiresValidation() bool { return true }
@@ -123,3 +124,4 @@ func (b *ClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 
 	return newState, nil
 }
+

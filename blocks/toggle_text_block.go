@@ -59,6 +59,7 @@ func (b *ToggleTextBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *ToggleTextBlock) RequiresValidation() bool {
@@ -69,3 +70,4 @@ func (b *ToggleTextBlock) ValidatePlayerInput(state PlayerState, _ map[string][]
 	state.SetComplete(true)
 	return state, nil
 }
+

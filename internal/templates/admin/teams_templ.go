@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -1047,7 +1047,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if helpers.IsLocalURL(upload.OriginalURL) {
+				if config.IsLocalURL(upload.OriginalURL) {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, " href=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -1088,7 +1088,7 @@ func UploadedMediaCard(uploads []*models.Upload, teamCode string) templ.Componen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if helpers.IsLocalURL(upload.OriginalURL) {
+				if config.IsLocalURL(upload.OriginalURL) {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, " src=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

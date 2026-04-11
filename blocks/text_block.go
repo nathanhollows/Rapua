@@ -48,6 +48,7 @@ func (b *MarkdownBlock) ToYAML() map[string]any {
 	}
 }
 
+
 // Validation and Points Calculation
 
 func (b *MarkdownBlock) RequiresValidation() bool {
@@ -59,3 +60,4 @@ func (b *MarkdownBlock) ValidatePlayerInput(state PlayerState, _ map[string][]st
 	state.SetComplete(true)
 	return state, nil
 }
+

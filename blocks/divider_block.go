@@ -50,6 +50,7 @@ func (b *DividerBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *DividerBlock) RequiresValidation() bool {
@@ -61,3 +62,4 @@ func (b *DividerBlock) ValidatePlayerInput(state PlayerState, _ map[string][]str
 	state.SetComplete(true)
 	return state, nil
 }
+

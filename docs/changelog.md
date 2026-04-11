@@ -11,14 +11,24 @@ tag: updated
 
 ### Added
 
+- New `game` package now holds game types (extracted from `models` and `blocks`) and supports game import, export, and linting.
+- Markdown tables are now supported in block content and documentation pages.
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
+- Image blocks can now be full width on mobile.
 
 ### Changed
 
 - **Breaking:** Swapped enums for strings for tracking game settings. Prep work for YAML-based game import/export.
 - **Breaking:** `OwnerID` replaces `LocationID` in blocks.
 - New fields for blocks to support reports in the future.
+- **Breaking:** `config`, `db`, `filesystem`, `helpers`, `repositories`, and `security` packages moved to `internal/`.
+- **Breaking:** Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
+
+### Fixed
+
+- Navigation button issue. Fixes [#122](https://github.com/nathanhollows/Rapua/issues/122)
+- Spacing issue in quiz block. Fixes [#123](https://github.com/nathanhollows/Rapua/issues/123)
 
 ### Removed
 

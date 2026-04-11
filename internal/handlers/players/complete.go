@@ -44,10 +44,15 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	// Get blocks for the complete page
 	var pageBlocks []blocks.Block
 	var blockStates map[string]blocks.PlayerState
+	// Same preview guard as start.go: no DB row for the preview team.
+	teamCode := team.Code
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		teamCode = ""
+	}
 	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
 		r.Context(),
 		team.InstanceID,
-		team.Code,
+		teamCode,
 		blocks.ContextFinish,
 	)
 	if err != nil {

@@ -64,20 +64,85 @@ func EditPage(data EditPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Hidden alert templates --><div id=\"missing-game-status-template\" class=\"alert alert-warning\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><path d=\"M12 9v4\"></path> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z\"></path> <path d=\"M12 16h.01\"></path></svg> <span>Recommended: Add a <strong>Game Status</strong> block to show game state to players</span></div><div id=\"missing-start-button-template\" class=\"alert alert-warning\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><path d=\"M12 9v4\"></path> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z\"></path> <path d=\"M12 16h.01\"></path></svg> <span>Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span></div><div id=\"missing-game-status-complete-template\" class=\"alert alert-info\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <path d=\"M12 16v-4\"></path> <path d=\"M12 8h.01\"></path></svg> <span>Optional: Add a <strong>Game Status</strong> block to show game completion</span></div><div id=\"blocks-container\" class=\"blocks flex flex-col gap-5\" data-page-type=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Hidden alert templates --><div id=\"missing-game-status-template\" class=\"alert alert-warning\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><path d=\"M12 9v4\"></path> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z\"></path> <path d=\"M12 16h.01\"></path></svg> <span class=\"flex-1\">Recommended: Add a <strong>Game Status</strong> block to show game state to players</span><form hx-post=\"/admin/blocks/\" hx-target=\"closest .blocks\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.PageType)
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Settings.InstanceID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 64, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 49, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"> <input type=\"hidden\" name=\"context\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(string(getContextForPageType(data.PageType)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 50, Col: 94}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"> <input type=\"hidden\" name=\"type\" value=\"game_status\"> <button type=\"submit\" class=\"btn btn-sm btn-warning\">Add block</button></form></div><div id=\"missing-start-button-template\" class=\"alert alert-warning\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><path d=\"M12 9v4\"></path> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z\"></path> <path d=\"M12 16h.01\"></path></svg> <span class=\"flex-1\">Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span><form hx-post=\"/admin/blocks/\" hx-target=\"closest .blocks\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Settings.InstanceID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 67, Col: 72}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <input type=\"hidden\" name=\"context\" value=\"start\"> <input type=\"hidden\" name=\"type\" value=\"start_button\"> <button type=\"submit\" class=\"btn btn-sm btn-warning\">Add block</button></form></div><div id=\"missing-game-status-complete-template\" class=\"alert alert-info\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-6 h-6\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <path d=\"M12 16v-4\"></path> <path d=\"M12 8h.01\"></path></svg> <span class=\"flex-1\">Optional: Add a <strong>Game Status</strong> block to show game completion</span><form hx-post=\"/admin/blocks/\" hx-target=\"closest .blocks\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.Settings.InstanceID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 85, Col: 72}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"> <input type=\"hidden\" name=\"context\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(string(getContextForPageType(data.PageType)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 86, Col: 94}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"> <input type=\"hidden\" name=\"type\" value=\"game_status\"> <button type=\"submit\" class=\"btn btn-sm btn-info\">Add block</button></form></div><div id=\"blocks-container\" class=\"blocks flex flex-col gap-5\" data-page-type=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.PageType)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 94, Col: 35}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -87,33 +152,33 @@ func EditPage(data EditPageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><script>\n\t\t\t\tfunction checkMissingBlocks() {\n\t\t\t\t\tconst container = document.getElementById('blocks-container');\n\t\t\t\t\tconst pageType = container.dataset.pageType;\n\n\t\t\t\t\t// Remove existing alerts\n\t\t\t\t\tdocument.querySelectorAll('#missing-game-status, #missing-start-button').forEach(el => el.remove());\n\n\t\t\t\t\tconst blocks = container.querySelectorAll('.content-block');\n\t\t\t\t\tlet hasGameStatus = false;\n\t\t\t\t\tlet hasStartButton = false;\n\n\t\t\t\t\tblocks.forEach(block => {\n\t\t\t\t\t\tconst blockType = block.dataset.blockType;\n\t\t\t\t\t\tif (blockType === 'game_status_alert') hasGameStatus = true;\n\t\t\t\t\t\tif (blockType === 'start_game_button') hasStartButton = true;\n\t\t\t\t\t});\n\n\t\t\t\t\tconst firstBlock = container.querySelector('.content-block');\n\n\t\t\t\t\tif (pageType === 'start') {\n\t\t\t\t\t\tif (!hasGameStatus) {\n\t\t\t\t\t\t\tconst alert = document.getElementById('missing-game-status-template').cloneNode(true);\n\t\t\t\t\t\t\talert.id = 'missing-game-status';\n\t\t\t\t\t\t\talert.style.display = '';\n\t\t\t\t\t\t\tif (firstBlock) {\n\t\t\t\t\t\t\t\tcontainer.insertBefore(alert, firstBlock);\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tcontainer.appendChild(alert);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tif (!hasStartButton) {\n\t\t\t\t\t\t\tconst alert = document.getElementById('missing-start-button-template').cloneNode(true);\n\t\t\t\t\t\t\talert.id = 'missing-start-button';\n\t\t\t\t\t\t\talert.style.display = '';\n\t\t\t\t\t\t\tif (firstBlock) {\n\t\t\t\t\t\t\t\tcontainer.insertBefore(alert, firstBlock);\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tcontainer.appendChild(alert);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t} else if (pageType === 'end') {\n\t\t\t\t\t\tif (!hasGameStatus) {\n\t\t\t\t\t\t\tconst alert = document.getElementById('missing-game-status-complete-template').cloneNode(true);\n\t\t\t\t\t\t\talert.id = 'missing-game-status';\n\t\t\t\t\t\t\talert.style.display = '';\n\t\t\t\t\t\t\tif (firstBlock) {\n\t\t\t\t\t\t\t\tcontainer.insertBefore(alert, firstBlock);\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tcontainer.appendChild(alert);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Run on load\n\t\t\t\tcheckMissingBlocks();\n\n\t\t\t\t// Run after HTMX swaps\n\t\t\t\tdocument.getElementById('blocks-container').addEventListener('htmx:afterSwap', checkMissingBlocks);\n\t\t\t\t</script></section></div><!-- Preview --><div class=\"h-min sticky top-3\"><div class=\"mockup-phone bg-black h-min shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96\"><div id=\"mobile-preview-container\" class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><script>\n\t\t\t\tfunction checkMissingBlocks() {\n\t\t\t\t\tconst container = document.getElementById('blocks-container');\n\t\t\t\t\tconst pageType = container.dataset.pageType;\n\n\t\t\t\t\t// Remove existing alerts\n\t\t\t\t\tdocument.querySelectorAll('#missing-game-status, #missing-start-button').forEach(el => el.remove());\n\n\t\t\t\t\tconst blocks = container.querySelectorAll('.content-block');\n\t\t\t\t\tlet hasGameStatus = false;\n\t\t\t\t\tlet hasStartButton = false;\n\n\t\t\t\t\tblocks.forEach(block => {\n\t\t\t\t\t\tconst blockType = block.dataset.blockType;\n\t\t\t\t\t\tif (blockType === 'game_status') hasGameStatus = true;\n\t\t\t\t\t\tif (blockType === 'start_button') hasStartButton = true;\n\t\t\t\t\t});\n\n\t\t\t\t\tconst firstBlock = container.querySelector('.content-block');\n\n\t\t\t\t\tfunction insertAlert(templateId, alertId, ref) {\n\t\t\t\t\t\tconst el = document.getElementById(templateId).cloneNode(true);\n\t\t\t\t\t\tel.id = alertId;\n\t\t\t\t\t\tel.style.display = '';\n\t\t\t\t\t\tif (ref) {\n\t\t\t\t\t\t\tcontainer.insertBefore(el, ref);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tcontainer.appendChild(el);\n\t\t\t\t\t\t}\n\t\t\t\t\t\thtmx.process(el);\n\t\t\t\t\t}\n\n\t\t\t\t\tif (pageType === 'start') {\n\t\t\t\t\t\tif (!hasGameStatus) insertAlert('missing-game-status-template', 'missing-game-status', firstBlock);\n\t\t\t\t\t\tif (!hasStartButton) insertAlert('missing-start-button-template', 'missing-start-button', firstBlock);\n\t\t\t\t\t} else if (pageType === 'end') {\n\t\t\t\t\t\tif (!hasGameStatus) insertAlert('missing-game-status-complete-template', 'missing-game-status', firstBlock);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Run on load\n\t\t\t\tcheckMissingBlocks();\n\n\t\t\t\t// Run after HTMX swaps\n\t\t\t\tdocument.getElementById('blocks-container').addEventListener('htmx:afterSwap', checkMissingBlocks);\n\t\t\t\t</script></section></div><!-- Preview --><div class=\"h-min sticky top-3\"><div class=\"mockup-phone bg-black h-min shadow-2xl\"><div class=\"mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96\"><div id=\"mobile-preview-container\" class=\"sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll px-6 py-12 bg-base-200/50 min-h-full\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getPreviewURLForPageType(data.PageType))
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(getPreviewURLForPageType(data.PageType))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 141, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 155, Col: 54}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-trigger=\"load, htmx:afterSwap from:.blocks\" hx-vals=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 143, Col: 78}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-trigger=\"load, htmx:afterSwap from:.blocks\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-swap=\"innerHTML\" _=\"on changePreviewPage from <body/> \n\t\t\t\t\tset @hx-get to event.detail.sender.dataset.url\n\t\t\t\t\tthen call htmx.process(me)\n\t\t\t\t\tthen trigger load\"></div></div></div></div></div><!-- Hidden form for block reordering via HTMX -->")
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 157, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"innerHTML\" _=\"on changePreviewPage from <body/> \n\t\t\t\t\tset @hx-get to event.detail.sender.dataset.url\n\t\t\t\t\tthen call htmx.process(me)\n\t\t\t\t\tthen trigger load\"></div></div></div></div></div><!-- Hidden form for block reordering via HTMX -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

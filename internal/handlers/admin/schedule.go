@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/helpers"
 	"github.com/nathanhollows/Rapua/v7/internal/flash"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v7/models"
@@ -164,7 +163,7 @@ func (h *Handler) parseScheduleTime(
 		return time.Time{}, false
 	}
 
-	parsedTime, err := helpers.ParseDateTime(date, timeValue)
+	parsedTime, err := parseDateTime(date, timeValue)
 	if err != nil {
 		h.handleError(
 			w,
@@ -180,4 +179,30 @@ func (h *Handler) parseScheduleTime(
 	}
 
 	return parsedTime, true
+}
+
+func parseDateTime(dateString, timeString string) (time.Time, error) {
+	d, err := time.Parse("2006-01-02", dateString)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	const (
+		shortTimeLen   = 2
+		mediumTimeLen  = 5
+		secondsSuffix  = ":00"
+		fullTimeSuffix = ":00:00"
+	)
+	switch len(timeString) {
+	case mediumTimeLen:
+		timeString += secondsSuffix
+	case shortTimeLen:
+		timeString += fullTimeSuffix
+	}
+	t, err := time.Parse("15:04:05", timeString)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.UTC().Location()), nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/flash"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -176,6 +177,11 @@ type IdentityService interface {
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 }
 
+// InstanceLoader loads an instance with all relations needed for the admin panel.
+type InstanceLoader interface {
+	GetByIDWithRelations(ctx context.Context, id string) (*models.Instance, error)
+}
+
 type InstanceSettingsService interface {
 	SaveSettings(ctx context.Context, settings *models.InstanceSettings) error
 	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
@@ -282,9 +288,12 @@ type Handler struct {
 	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
 	duplicationService      DuplicationService
+	exportService           *services.ExportService
+	importService           *services.ImportService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
 	gameStructureService    *services.GameStructureService
+	instanceLoader          InstanceLoader
 	instanceService         InstanceService
 	instanceSettingsService InstanceSettingsService
 	locationService         services.LocationService
@@ -298,8 +307,6 @@ type Handler struct {
 	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
 	stripeService           StripeService
-	yamlExportService       YAMLExportService
-	yamlImportService       YAMLImportService
 }
 
 func NewAdminHandler(
@@ -312,9 +319,12 @@ func NewAdminHandler(
 	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
 	duplicationService DuplicationService,
+	exportService *services.ExportService,
+	importService *services.ImportService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
 	gameStructureService *services.GameStructureService,
+	instanceLoader InstanceLoader,
 	instanceService InstanceService,
 	instanceSettingsService InstanceSettingsService,
 	locationService services.LocationService,
@@ -328,8 +338,6 @@ func NewAdminHandler(
 	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
 	stripeService StripeService,
-	yamlExportService YAMLExportService,
-	yamlImportService YAMLImportService,
 ) *Handler {
 	return &Handler{
 		logger:                  logger,
@@ -341,9 +349,12 @@ func NewAdminHandler(
 		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,
 		duplicationService:      duplicationService,
+		exportService:           exportService,
+		importService:           importService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
 		gameStructureService:    gameStructureService,
+		instanceLoader:          instanceLoader,
 		instanceService:         instanceService,
 		instanceSettingsService: instanceSettingsService,
 		locationService:         locationService,
@@ -357,14 +368,17 @@ func NewAdminHandler(
 		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
 		stripeService:           stripeService,
-		yamlExportService:       yamlExportService,
-		yamlImportService:       yamlImportService,
 	}
 }
 
 // GetIdentityService returns the IdentityService used by the handler.
 func (h *Handler) GetIdentityService() IdentityService {
 	return h.identityService
+}
+
+// GetInstanceLoader returns the InstanceLoader used by the handler.
+func (h *Handler) GetInstanceLoader() InstanceLoader {
+	return h.instanceLoader
 }
 
 // UserFromContext retrieves the user from the context.
@@ -395,6 +409,19 @@ func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg
 	err := templates.Toast(*flash.NewSuccess(flashMsg)).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error("rendering success template", "error", err)
+	}
+}
+
+// setCurrentInstance stores the current instance ID in the admin session.
+func (h *Handler) setCurrentInstance(w http.ResponseWriter, r *http.Request, instanceID string) {
+	session, err := sessions.Get(r, "admin")
+	if err != nil {
+		h.logger.Error("setCurrentInstance: getting session", "error", err)
+		return
+	}
+	session.Values["current_instance"] = instanceID
+	if err := session.Save(r, w); err != nil {
+		h.logger.Error("setCurrentInstance: saving session", "error", err)
 	}
 }
 

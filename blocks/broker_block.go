@@ -133,6 +133,7 @@ func (b *BrokerBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *BrokerBlock) RequiresValidation() bool { return true }
@@ -213,3 +214,4 @@ func (b *BrokerBlock) determineInfoAndCost(pointsBid int) (string, int) {
 	// They bid something but not enough for any tier
 	return b.DefaultInfo, pointsBid // Still charge what they bid
 }
+

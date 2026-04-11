@@ -11,8 +11,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/nathanhollows/Rapua/v7/filesystem"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/filesystem"
 	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v7/internal/handlers/public"
@@ -318,13 +318,18 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 		r.Get("/{id}", publicHandler.TemplatesPreview)
 	})
 
+	router.Route("/api/v7", func(r chi.Router) {
+		r.Get("/spec", publicHandler.SpecJSON)
+		r.Post("/lint", publicHandler.LintDoc)
+	})
+
 	router.NotFound(publicHandler.NotFound)
 }
 
 func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.AdminAuthMiddleware(adminHandler.GetIdentityService(), next)
+			return middlewares.AdminAuthMiddleware(adminHandler.GetIdentityService(), adminHandler.GetInstanceLoader(), next)
 		})
 		r.Use(middlewares.AdminCheckInstanceMiddleware)
 
@@ -360,15 +365,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
 		})
 
-		// YAML import/export
-		r.Route("/yaml", func(r chi.Router) {
-			r.Get("/export/template", adminHandler.ExportTemplateYAML)
-			r.Get("/export/instance", adminHandler.ExportInstanceYAML)
-			r.Post("/validate", adminHandler.ValidateImportYAML)
-			r.Post("/import", adminHandler.ImportYAML)
-			r.Post("/update", adminHandler.UpdateYAML)
-		})
-
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
 			// Primary RESTful endpoints
@@ -396,15 +392,20 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 		r.Route("/instances", func(r chi.Router) {
 			r.Get("/", adminHandler.Instances)
 			r.Post("/new", adminHandler.InstancesCreate)
+			r.Post("/import", adminHandler.ImportInstanceCreate)
+			r.Post("/import/check", adminHandler.ImportCheck)
 			r.Get("/{id}", adminHandler.Instances)
 			r.Post("/{id}", adminHandler.Instances)
 			r.Get("/{id}/switch", adminHandler.InstanceSwitch)
 			r.Get("/{id}/name", adminHandler.InstancesName)
 			r.Get("/{id}/edit/name", adminHandler.InstancesNameEdit)
 			r.Post("/{id}/edit/name", adminHandler.InstancesNameEditPost)
+			r.Get("/{id}/export", adminHandler.ExportInstance)
+			r.Post("/{id}/import", adminHandler.ImportInstanceUpdate)
 			r.Post("/delete", adminHandler.InstanceDelete)
 			r.Post("/duplicate", adminHandler.InstanceDuplicate)
 		})
+
 
 		r.Route("/markdown", func(r chi.Router) {
 			r.Post("/preview", adminHandler.PreviewMarkdown)

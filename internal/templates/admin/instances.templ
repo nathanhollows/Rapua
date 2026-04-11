@@ -23,11 +23,11 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 		</h1>
 		<span class="flex gap-2">
 			<button
-				class="btn"
-				onclick="document.getElementById('yaml-import-modal').showModal()"
+				class="btn btn-ghost"
+				onclick="import_modal.showModal()"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-				Import from YAML
+				Import
 			</button>
 			<button
 				class="btn btn-secondary"
@@ -71,7 +71,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				</div>
 			</div>
 			for _, instance := range instances {
-				@instanceItem(instance, instance.ID == currentInstance.ID)
+				@instanceItem(instance, instance.ID == currentInstance.ID, currentInstance.ID != "")
 			}
 			<div
 				if len(instances) == 0 {
@@ -105,6 +105,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 	<!-- Templates -->
 	@TemplatesPage(templates)
 	<!-- Modals -->
+	@ImportModal()
 	<dialog id="confirm_duplicate_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose">
 			<h3 class="text-lg font-bold">Duplicate a game</h3>
@@ -186,7 +187,6 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 			</form>
 		</div>
 	</dialog>
-	@yamlImportModal()
 	<script>
 function handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {
 	// Error checking
@@ -248,36 +248,14 @@ function shareTemplate() {
 function launchTemplate() {
 	handleModalAction('launch_template_modal', 'launch-template-name', '', true);
 }
-</script>
-}
 
-templ yamlImportModal() {
-	<dialog id="yaml-import-modal" class="modal">
-		<div class="modal-box">
-			<h3 class="text-lg font-bold">Import from YAML</h3>
-			<p class="py-2 text-sm opacity-70">
-				Upload a YAML file to create a new game. This will create a new instance with all stops, blocks, and stages defined in the file.
-			</p>
-			<form
-				hx-post="/admin/yaml/import"
-				hx-encoding="multipart/form-data"
-				hx-swap="none"
-				class="flex flex-col gap-4 mt-2"
-			>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">YAML File</legend>
-					<input type="file" name="yaml_file" accept=".yaml,.yml" class="file-input file-input-bordered w-full" required/>
-				</fieldset>
-				<div class="modal-action">
-					<button type="button" class="btn" onclick="document.getElementById('yaml-import-modal').close()">Cancel</button>
-					<button type="submit" class="btn btn-primary">Import</button>
-				</div>
-			</form>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
+function submitImportTo(url) {
+	const form = document.getElementById('import-form');
+	form.setAttribute('hx-post', url);
+	htmx.process(form);
+	htmx.trigger(form, 'submit');
+}
+</script>
 }
 
 templ InstanceName(instance models.Instance, active bool) {
@@ -338,7 +316,7 @@ templ InstanceNameEdit(instance models.Instance) {
 	</form>
 }
 
-templ instanceItem(instance models.Instance, active bool) {
+templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 	<div
 		class="instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
 	>
@@ -368,10 +346,14 @@ templ instanceItem(instance models.Instance, active bool) {
 				<span class="hidden sm:inline-block tooltip" data-tip="Make this your active game">
 					<a
 						href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
-						class="btn btn-sm inline-flex"
+						if anyActive {
+							class="btn btn-sm inline-flex"
+						} else {
+							class="btn btn-sm btn-primary inline-flex"
+						}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-						Switch
+						Select
 					</a>
 				</span>
 			}
@@ -389,14 +371,14 @@ templ instanceItem(instance models.Instance, active bool) {
 									href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-									Switch to this game
+									Select this game
 								</a>
 							</li>
 						} else {
 							<li class="inline-block sm:hidden menu-disabled">
 								<a>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
-									Switch to this game
+									Select this game
 								</a>
 							</li>
 						}
@@ -422,21 +404,11 @@ templ instanceItem(instance models.Instance, active bool) {
 								Create template
 							</a>
 						</li>
-						<!-- Export YAML -->
+						<!-- Export as JSON -->
 						<li>
-							<a
-								href={ templ.SafeURL(fmt.Sprintf("/admin/yaml/export/template?id=%s", instance.ID)) }
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-code w-4 h-4"><path d="M10 12.5 8 15l2 2.5"></path><path d="m14 12.5 2 2.5-2 2.5"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path></svg>
-								Export Template YAML
-							</a>
-						</li>
-						<li>
-							<a
-								href={ templ.SafeURL(fmt.Sprintf("/admin/yaml/export/instance?id=%s", instance.ID)) }
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-code w-4 h-4"><path d="M10 12.5 8 15l2 2.5"></path><path d="m14 12.5 2 2.5-2 2.5"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path></svg>
-								Export Instance YAML
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/instances/%s/export", instance.ID)) }>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+								Download JSON
 							</a>
 						</li>
 						<span class="divider my-0"></span>

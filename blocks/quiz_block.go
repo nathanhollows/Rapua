@@ -23,11 +23,12 @@ type QuizBlock struct {
 }
 
 // QuizOption represents an individual answer choice.
+// Options are ordered by their position in the slice; no explicit order field is stored.
 type QuizOption struct {
 	ID        string `json:"id"`      // Unique identifier
 	Text      string `json:"text"`    // Markdown answer text
 	IsCorrect bool   `json:"correct"` // Whether this option is correct
-	Order     int    `json:"order"`   // Display order
+	Order     int    `json:"-"`       // Display order (implicit from slice position, not serialized)
 }
 
 // QuizAttempt records a single submission attempt.
@@ -210,6 +211,7 @@ func (b *QuizBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *QuizBlock) RequiresValidation() bool {
 	return true
@@ -389,3 +391,4 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 		UnlockedContent: "",
 	}
 }
+

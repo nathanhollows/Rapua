@@ -81,6 +81,7 @@ func (b *PasswordBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *PasswordBlock) RequiresValidation() bool { return true }
@@ -124,3 +125,4 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+

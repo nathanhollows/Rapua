@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
 	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
 	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
 	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
@@ -23,7 +23,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 	"github.com/nathanhollows/Rapua/v7/internal/storage"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
@@ -421,18 +421,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor,
-		blockRepo,
-		blockStateRepo,
-		checkInRepo,
 		instanceRepo,
-		instanceSettingsRepo,
 		locationRepo,
 		markerRepo,
 		teamRepo,
-		userRepo,
-		creditRepo,
-		creditPurchaseRepo,
-		teamStartLogRepo,
 		uploadRepo,
 		dbc,
 		uploadsDir,
@@ -492,17 +484,17 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		locationRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	yamlExportService := services.NewYAMLExportService(
-		instanceRepo, instanceSettingsRepo, gameStructureService, blockRepo,
-	)
-	yamlImportService := services.NewYAMLImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, markerRepo, blockRepo, teamRepo,
-	)
 	instanceService := services.NewInstanceService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
+	)
+	exportService := services.NewExportService(
+		instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
+	)
+	importService := services.NewImportService(
+		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
 	)
 
 	sessions.Start()
@@ -573,9 +565,12 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		creditPurchaseRepo,
 		deleteService,
 		duplicationService,
+		exportService,
+		importService,
 		facilitatorService,
 		gameScheduleService,
 		gameStructureService,
+		instanceRepo,
 		instanceService,
 		instanceSettingsService,
 		locationService,
@@ -589,8 +584,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		quickstartService,
 		leaderBoardService,
 		stripeService,
-		yamlExportService,
-		yamlImportService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)

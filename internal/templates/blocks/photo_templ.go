@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
@@ -119,7 +119,7 @@ func photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if helpers.IsLocalURL(imageURL) {
+				if config.IsLocalURL(imageURL) {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " src=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

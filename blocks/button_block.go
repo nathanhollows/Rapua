@@ -61,6 +61,7 @@ func (b *ButtonBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *ButtonBlock) RequiresValidation() bool {
@@ -85,3 +86,4 @@ func (b *ButtonBlock) GetStyles() map[string]string {
 		"error":     "Error",
 	}
 }
+

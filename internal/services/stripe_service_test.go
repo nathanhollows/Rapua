@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/db"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
+	"github.com/nathanhollows/Rapua/v7/internal/db"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v83"
@@ -96,7 +97,7 @@ func TestStripeService_CreateCheckoutSession_ValidInputs(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, user.ID, purchase.UserID)
 			assert.Equal(t, tc.credits, purchase.Credits)
-			assert.Equal(t, models.CalculatePurchaseAmount(tc.credits), purchase.AmountPaid)
+			assert.Equal(t, tc.credits*config.CreditPriceCents(), purchase.AmountPaid)
 			assert.Equal(t, models.CreditPurchaseStatusPending, purchase.Status)
 		})
 	}
@@ -220,7 +221,7 @@ func TestStripeService_ProcessWebhook_CheckoutSessionCompleted(t *testing.T) {
 		UpdatedAt:       time.Now(),
 		UserID:          user.ID,
 		Credits:         25,
-		AmountPaid:      models.CalculatePurchaseAmount(25),
+		AmountPaid:      25 * config.CreditPriceCents(),
 		StripeSessionID: "cs_test_" + gofakeit.UUID(),
 		StripeCustomerID: sql.NullString{
 			String: "cus_test_" + gofakeit.UUID(),
@@ -268,7 +269,7 @@ func TestStripeService_ProcessWebhook_IdempotentProcessing(t *testing.T) {
 		UpdatedAt:       time.Now(),
 		UserID:          user.ID,
 		Credits:         25,
-		AmountPaid:      models.CalculatePurchaseAmount(25),
+		AmountPaid:      25 * config.CreditPriceCents(),
 		StripeSessionID: "cs_test_" + gofakeit.UUID(),
 		StripeCustomerID: sql.NullString{
 			String: "cus_test_" + gofakeit.UUID(),
@@ -283,41 +284,6 @@ func TestStripeService_ProcessWebhook_IdempotentProcessing(t *testing.T) {
 	t.Skip("Webhook processing test requires Stripe test environment setup")
 }
 
-func TestStripeService_PurchaseAmountCalculation(t *testing.T) {
-	testCases := []struct {
-		name           string
-		credits        int
-		expectedAmount int // in cents
-	}{
-		{
-			name:           "1 credit",
-			credits:        1,
-			expectedAmount: 35, // $0.35
-		},
-		{
-			name:           "10 credits",
-			credits:        10,
-			expectedAmount: 350, // $3.50
-		},
-		{
-			name:           "100 credits",
-			credits:        100,
-			expectedAmount: 3500, // $35.00
-		},
-		{
-			name:           "1000 credits",
-			credits:        1000,
-			expectedAmount: 35000, // $350.00
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			amount := models.CalculatePurchaseAmount(tc.credits)
-			assert.Equal(t, tc.expectedAmount, amount)
-		})
-	}
-}
 
 func TestStripeService_CreditAdjustmentPurchaseLink(t *testing.T) {
 	// This test verifies that credit adjustments created from purchases
@@ -345,7 +311,7 @@ func TestStripeService_CreditAdjustmentPurchaseLink(t *testing.T) {
 		UpdatedAt:       time.Now(),
 		UserID:          user.ID,
 		Credits:         25,
-		AmountPaid:      models.CalculatePurchaseAmount(25),
+		AmountPaid:      25 * config.CreditPriceCents(),
 		StripeSessionID: "cs_test_" + gofakeit.UUID(),
 		StripeCustomerID: sql.NullString{
 			String: "cus_test_" + gofakeit.UUID(),

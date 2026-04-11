@@ -12,7 +12,7 @@ type ShareLink struct {
 
 	ID              string       `bun:"id,pk,type:varchar(36)"`
 	TemplateID      string       `bun:"template_id,type:varchar(36),notnull"`
-	UserID          string       `bun:"user_id,type:varchar(36)"` // Owner of the link
+	UserID          string       `bun:"user_id,type:varchar(36),nullzero"` // Owner of the link
 	CreatedAt       time.Time    `bun:"created_at,nullzero"`
 	ExpiresAt       bun.NullTime `bun:"expires_at,nullzero"`
 	MaxUses         int          `bun:"max_uses,type:int,default:0"` // 0 means unlimited

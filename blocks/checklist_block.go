@@ -137,6 +137,7 @@ func (b *ChecklistBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *ChecklistBlock) RequiresValidation() bool { return true }
 
@@ -181,3 +182,4 @@ func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string
 
 	return newState, nil
 }
+

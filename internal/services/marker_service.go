@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 )
 
 var (

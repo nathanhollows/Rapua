@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/uptrace/bun"
 )
 
@@ -247,7 +247,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 		return "", errors.New("creating share link: " + err.Error())
 	}
 
-	url := helpers.URL("/templates/" + shareLink.ID)
+	url := config.SiteURL("/templates/" + shareLink.ID)
 
 	return url, nil
 }

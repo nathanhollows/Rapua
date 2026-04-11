@@ -87,6 +87,7 @@ func (b *YoutubeBlock) ToYAML() map[string]any {
 	}
 }
 
+
 // Validation and Points Calculation
 
 func (b *YoutubeBlock) RequiresValidation() bool {
@@ -98,3 +99,4 @@ func (b *YoutubeBlock) ValidatePlayerInput(state PlayerState, _ map[string][]str
 	state.SetComplete(true)
 	return state, nil
 }
+

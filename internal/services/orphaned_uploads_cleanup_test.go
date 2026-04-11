@@ -8,7 +8,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -79,6 +79,11 @@ func TestOrphanedUploadsCleanupService_CleanupOrphanedUploads(t *testing.T) {
 	err = uploadRepo.Create(ctx, referencedUpload)
 	require.NoError(t, err)
 
+	// Insert orphaned upload with a non-existent block_id.
+	// FK checks must be temporarily disabled because the block doesn't exist,
+	// which is exactly the inconsistency the cleanup service is designed to fix.
+	_, err = dbc.ExecContext(ctx, "PRAGMA foreign_keys=OFF")
+	require.NoError(t, err)
 	orphanedUpload := &models.Upload{
 		ID:          "upload-2",
 		OriginalURL: "/static/uploads/2025/11/17/orphaned-uuid.png",
@@ -87,6 +92,8 @@ func TestOrphanedUploadsCleanupService_CleanupOrphanedUploads(t *testing.T) {
 		Type:        models.MediaTypeImage,
 	}
 	err = uploadRepo.Create(ctx, orphanedUpload)
+	require.NoError(t, err)
+	_, err = dbc.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 	require.NoError(t, err)
 
 	// Verify initial state

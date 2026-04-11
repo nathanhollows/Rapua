@@ -72,11 +72,16 @@ func init() {
 		return err
 	}, func(ctx context.Context, db *bun.DB) error {
 		// Down migration.
-		_, err := db.NewDropIndex().Model((*m20241209090041_Team)(nil)).Index("id").Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("20241209090041_teams_id.go: drop index id: %w", err)
+		// Use IF EXISTS for both index names: the original migration created "id",
+		// but a later migration (cascade_deletes) recreates the teams table and
+		// renames this index to "idx_teams_id". Both must be dropped before
+		// we can remove the column.
+		for _, idx := range []string{`"id"`, `"idx_teams_id"`} {
+			if _, err := db.ExecContext(ctx, `DROP INDEX IF EXISTS `+idx); err != nil {
+				return fmt.Errorf("20241209090041_teams_id.go: drop index %s: %w", idx, err)
+			}
 		}
-		_, err = db.NewDropColumn().Model((*m20241209090041_Team)(nil)).Column("id").Exec(ctx)
+		_, err := db.NewDropColumn().Model((*m20241209090041_Team)(nil)).Column("id").Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("20241209090041_teams_id.go: drop column id: %w", err)
 		}

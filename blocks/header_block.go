@@ -73,6 +73,7 @@ func (b *HeaderBlock) ToYAML() map[string]any {
 	return m
 }
 
+
 // Validation and Points Calculation
 
 func (b *HeaderBlock) RequiresValidation() bool {
@@ -92,3 +93,4 @@ func (b *HeaderBlock) GetTitleSizes() map[string]string {
 		"large":  "Large",
 	}
 }
+

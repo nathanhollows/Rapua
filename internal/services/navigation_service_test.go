@@ -8,7 +8,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -96,11 +96,15 @@ func TestNavigationService_GetPlayerNavigationView_TeamBlocked(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
+	// Create FK-valid user for instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
 	// Create instance with game structure
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: createTestGameStructure(),
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -115,10 +119,12 @@ func TestNavigationService_GetPlayerNavigationView_TeamBlocked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create blocking location
+	markerCode := gofakeit.LetterN(5)
+	insertTestMarker(t, dbc, markerCode)
 	blockingLocation := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Blocking Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   markerCode,
 	}
 	err = locationRepo.Create(ctx, blockingLocation)
 	require.NoError(t, err)
@@ -161,10 +167,12 @@ func TestNavigationService_GetPlayerNavigationView_FirstGroup(t *testing.T) {
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -179,15 +187,19 @@ func TestNavigationService_GetPlayerNavigationView_FirstGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create locations for group 1
+	markerID1 := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerID1)
 	loc1 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Location 1",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   markerID1,
 	}
+	markerID2 := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerID2)
 	loc2 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Location 2",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   markerID2,
 	}
 	err = locationRepo.Create(ctx, loc1)
 	require.NoError(t, err)
@@ -236,10 +248,12 @@ func TestNavigationService_GetPlayerNavigationView_CanAdvanceEarly(t *testing.T)
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -256,10 +270,12 @@ func TestNavigationService_GetPlayerNavigationView_CanAdvanceEarly(t *testing.T)
 	// Create locations for group 1 and 2
 	group1Locs := []*models.Location{}
 	for range 2 {
+		markerID := gofakeit.UUID()
+		insertTestMarker(t, dbc, markerID)
 		loc := &models.Location{
 			InstanceID: instance.ID,
 			Name:       gofakeit.StreetName(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerID,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -268,10 +284,12 @@ func TestNavigationService_GetPlayerNavigationView_CanAdvanceEarly(t *testing.T)
 
 	group2Locs := []*models.Location{}
 	for range 3 {
+		markerID := gofakeit.UUID()
+		insertTestMarker(t, dbc, markerID)
 		loc := &models.Location{
 			InstanceID: instance.ID,
 			Name:       gofakeit.StreetName(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerID,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -330,10 +348,12 @@ func TestNavigationService_GetPlayerNavigationView_SkippedGroup(t *testing.T) {
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -350,10 +370,12 @@ func TestNavigationService_GetPlayerNavigationView_SkippedGroup(t *testing.T) {
 	// Create locations for all groups
 	group1Locs := []*models.Location{}
 	for range 2 {
+		markerID := gofakeit.UUID()
+		insertTestMarker(t, dbc, markerID)
 		loc := &models.Location{
 			InstanceID: instance.ID,
 			Name:       gofakeit.StreetName(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerID,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
@@ -362,20 +384,24 @@ func TestNavigationService_GetPlayerNavigationView_SkippedGroup(t *testing.T) {
 
 	group2Locs := []*models.Location{}
 	for range 3 {
+		markerID := gofakeit.UUID()
+		insertTestMarker(t, dbc, markerID)
 		loc := &models.Location{
 			InstanceID: instance.ID,
 			Name:       gofakeit.StreetName(),
-			MarkerID:   gofakeit.UUID(),
+			MarkerID:   markerID,
 		}
 		err = locationRepo.Create(ctx, loc)
 		require.NoError(t, err)
 		group2Locs = append(group2Locs, loc)
 	}
 
+	group3MarkerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, group3MarkerID)
 	group3Loc := &models.Location{
 		InstanceID: instance.ID,
 		Name:       gofakeit.StreetName(),
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   group3MarkerID,
 	}
 	err = locationRepo.Create(ctx, group3Loc)
 	require.NoError(t, err)
@@ -434,10 +460,12 @@ func TestNavigationService_GetPreviewNavigationView_Success(t *testing.T) {
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -452,10 +480,12 @@ func TestNavigationService_GetPreviewNavigationView_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create location for group 1
+	markerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerID)
 	location := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Preview Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   markerID,
 	}
 	err = locationRepo.Create(ctx, location)
 	require.NoError(t, err)
@@ -504,10 +534,12 @@ func TestNavigationService_GetPreviewNavigationView_LocationNotFound(t *testing.
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -555,10 +587,12 @@ func TestNavigationService_GetPreviewNavigationView_CustomNavigationMode(t *test
 	gameStructure.SubGroups[0].Navigation = models.NavigationCustom
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -573,10 +607,12 @@ func TestNavigationService_GetPreviewNavigationView_CustomNavigationMode(t *test
 	require.NoError(t, err)
 
 	// Create location for group 1
+	markerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerID)
 	location := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Preview Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   markerID,
 	}
 	err = locationRepo.Create(ctx, location)
 	require.NoError(t, err)
@@ -624,10 +660,12 @@ func TestNavigationService_GetPreviewNavigationView_FirstGroupDefault(t *testing
 	gameStructure := createTestGameStructure()
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -642,26 +680,32 @@ func TestNavigationService_GetPreviewNavigationView_FirstGroupDefault(t *testing
 	require.NoError(t, err)
 
 	// Create locations for all three groups
+	g1MarkerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, g1MarkerID)
 	group1Loc := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Group 1 Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   g1MarkerID,
 	}
 	err = locationRepo.Create(ctx, group1Loc)
 	require.NoError(t, err)
 
+	g2MarkerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, g2MarkerID)
 	group2Loc := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Group 2 Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   g2MarkerID,
 	}
 	err = locationRepo.Create(ctx, group2Loc)
 	require.NoError(t, err)
 
+	g3MarkerID := gofakeit.UUID()
+	insertTestMarker(t, dbc, g3MarkerID)
 	group3Loc := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Group 3 Location",
-		MarkerID:   gofakeit.UUID(),
+		MarkerID:   g3MarkerID,
 	}
 	err = locationRepo.Create(ctx, group3Loc)
 	require.NoError(t, err)
@@ -726,10 +770,12 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 	}
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Test Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -744,15 +790,19 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 	require.NoError(t, err)
 
 	// Create two locations
+	markerID1 := strings.ToUpper(gofakeit.LetterN(5))
+	insertTestMarker(t, dbc, markerID1)
 	loc1 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Location 1",
-		MarkerID:   strings.ToUpper(gofakeit.LetterN(5)),
+		MarkerID:   markerID1,
 	}
+	markerID2 := strings.ToUpper(gofakeit.LetterN(5))
+	insertTestMarker(t, dbc, markerID2)
 	loc2 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Location 2",
-		MarkerID:   strings.ToUpper(gofakeit.LetterN(5)),
+		MarkerID:   markerID2,
 	}
 	err = locationRepo.Create(ctx, loc1)
 	require.NoError(t, err)
@@ -819,10 +869,12 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 	}
 
 	// Create instance
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
 	instance := &models.Instance{
 		ID:            gofakeit.UUID(),
 		Name:          "Scavenger Hunt Game",
-		UserID:        gofakeit.UUID(),
+		UserID:        userID,
 		GameStructure: gameStructure,
 	}
 	err := instanceRepo.Create(ctx, instance)
@@ -837,22 +889,28 @@ func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.
 	require.NoError(t, err)
 
 	// Create three locations (tasks)
+	markerID1 := strings.ToUpper(gofakeit.LetterN(5))
+	insertTestMarker(t, dbc, markerID1)
 	loc1 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Photograph the fountain",
-		MarkerID:   strings.ToUpper(gofakeit.LetterN(5)),
+		MarkerID:   markerID1,
 		Points:     10,
 	}
+	markerID2 := strings.ToUpper(gofakeit.LetterN(5))
+	insertTestMarker(t, dbc, markerID2)
 	loc2 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Take a group photo",
-		MarkerID:   strings.ToUpper(gofakeit.LetterN(5)),
+		MarkerID:   markerID2,
 		Points:     20,
 	}
+	markerID3 := strings.ToUpper(gofakeit.LetterN(5))
+	insertTestMarker(t, dbc, markerID3)
 	loc3 := &models.Location{
 		InstanceID: instance.ID,
 		Name:       "Find something blue",
-		MarkerID:   strings.ToUpper(gofakeit.LetterN(5)),
+		MarkerID:   markerID3,
 		Points:     15,
 	}
 	err = locationRepo.Create(ctx, loc1)

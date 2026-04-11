@@ -5,11 +5,11 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/kaugesaar/lucide-go"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/render"
 )
 
 func stringToMarkdown(s string) template.HTML {
-	md, err := helpers.MarkdownToHTML(s, nil)
+	md, err := render.MarkdownToHTML(s, nil)
 	if err != nil {
 		//nolint:gosec // Error message from goldmark, not user input
 		return template.HTML(err.Error())

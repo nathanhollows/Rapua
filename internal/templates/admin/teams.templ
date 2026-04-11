@@ -3,7 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v7/helpers"
+	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -799,7 +799,7 @@ templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
 				for _, upload := range uploads {
 					if upload.Type == models.MediaTypeImage {
 						<a
-							if helpers.IsLocalURL(upload.OriginalURL) {
+							if config.IsLocalURL(upload.OriginalURL) {
 								href={ templ.URL(upload.OriginalURL + "?size=large") }
 							} else {
 								href={ templ.URL(upload.OriginalURL) }
@@ -808,7 +808,7 @@ templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
 							class="block rounded-lg overflow-hidden bg-base-300 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out group break-inside-avoid hover:scale-105"
 						>
 							<img
-								if helpers.IsLocalURL(upload.OriginalURL) {
+								if config.IsLocalURL(upload.OriginalURL) {
 									src={ upload.OriginalURL + "?size=small" }
 								} else {
 									src={ upload.OriginalURL }

@@ -24,7 +24,7 @@ type User struct {
 	StripeCustomerID   sql.NullString `bun:"stripe_customer_id,type:varchar(255),nullzero"`
 
 	Instances         []Instance       `bun:"rel:has-many,join:id=user_id"`
-	CurrentInstanceID string           `bun:"current_instance_id,type:varchar(36)"`
-	CurrentInstance   Instance         `bun:"rel:has-one,join:current_instance_id=id"`
+	CurrentInstanceID string           `bun:"-"`
+	CurrentInstance   Instance         `bun:"-"`
 	CreditPurchases   []CreditPurchase `bun:"rel:has-many,join:id=user_id"`
 }
