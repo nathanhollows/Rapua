@@ -7,7 +7,7 @@ tag: updated
 
 # Changelog
 
-## 7.0.1
+## 7.0.1 (2026-04-11)
 
 ### Changed
 
@@ -18,7 +18,7 @@ tag: updated
 
 - Migration fixes orphaned team block states.
 
-## 7.0.0
+## 7.0.0 (2026-04-11)
 
 ### Added
 
