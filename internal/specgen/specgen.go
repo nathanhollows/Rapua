@@ -1,6 +1,6 @@
-// Package specgen generates the block specification for AI-assisted game authoring.
+// Package specgen generates the game specification for AI-assisted game authoring.
 //
-//go:generate go run ../../cmd/genspec
+//go:generate go run ../../cmd/rapua genspec
 package specgen
 
 import (

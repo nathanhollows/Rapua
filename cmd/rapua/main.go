@@ -4,12 +4,8 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/nathanhollows/Rapua/v7/internal/db"
@@ -17,14 +13,13 @@ import (
 	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
 	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
 	"github.com/nathanhollows/Rapua/v7/internal/migrations"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
 	"github.com/nathanhollows/Rapua/v7/internal/server"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/internal/sessions"
 	"github.com/nathanhollows/Rapua/v7/internal/storage"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/phsym/console-slog"
+	console "github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
@@ -46,17 +41,14 @@ func main() {
 
 	logger.Info("starting application", "version", version)
 
-	// Load environment variables
 	if err := godotenv.Load(".env"); err != nil {
 		logger.Warn("could not load .env file", "error", err)
 	}
 
 	dbc := db.MustOpen(logger)
 
-	// Initialize the migrator
 	migrator := migrate.NewMigrator(dbc, migrations.Migrations)
 
-	// Define CLI app for migrations
 	app := &cli.App{
 		Name:        "Rapua",
 		Usage:       "rapua [global options] command [command options] [arguments...]",
@@ -66,323 +58,25 @@ func main() {
 			newDBCommand(migrator, logger),
 			newCreditsCommand(dbc, logger),
 			newGenerateLoginCommand(dbc, logger),
+			newGenSpecCommand(),
 		},
 		Action: func(_ *cli.Context) error {
-			// Default action: run the app
 			runApp(logger, dbc)
 			return nil
 		},
 	}
 
-	// Run CLI or app
 	err := app.Run(os.Args)
-	_ = dbc.Close() // Ensure Close happens before Exit
+	_ = dbc.Close()
 	if err != nil {
 		logger.Error("application error", "error", err)
 		os.Exit(1)
 	}
 }
 
-//nolint:gocognit // CLI complexity acceptable
-func newDBCommand(
-	migrator *migrate.Migrator,
-	logger *slog.Logger,
-) *cli.Command {
-	return &cli.Command{
-		Name:  "db",
-		Usage: "database migrations",
-		Subcommands: []*cli.Command{
-			{
-				Name:  "init",
-				Usage: "create migration tables",
-				Action: func(c *cli.Context) error {
-					return migrator.Init(c.Context)
-				},
-			},
-			{
-				Name:  "migrate",
-				Usage: "apply database migrations",
-				Action: func(c *cli.Context) error {
-					if err := migrator.Lock(c.Context); err != nil {
-						return err
-					}
-
-					defer func() {
-						if err := migrator.Unlock(c.Context); err != nil {
-							logger.Error("could not unlock", "error", err)
-						}
-					}()
-
-					group, err := migrator.Migrate(c.Context)
-					if err != nil {
-						return err
-					}
-					if group.IsZero() {
-						logger.Info("database is up-to-date")
-					} else {
-						logger.Info("migrated", "group", group)
-					}
-					return nil
-				},
-			},
-			{
-				Name:  "rollback",
-				Usage: "rollback the last migration group",
-				Action: func(c *cli.Context) error {
-					if err := migrator.Lock(c.Context); err != nil {
-						return err
-					}
-
-					defer func() {
-						if err := migrator.Unlock(c.Context); err != nil {
-							logger.Error("could not unlock", "error", err)
-						}
-					}()
-
-					group, err := migrator.Rollback(c.Context)
-					if err != nil {
-						return err
-					}
-					if group.IsZero() {
-						logger.Info("no migrations to rollback")
-					} else {
-						logger.Info("rolled back", "group", group)
-					}
-					return nil
-				},
-			},
-			{
-				Name:  "status",
-				Usage: "print migrations status",
-				Action: func(c *cli.Context) error {
-					ms, err := migrator.MigrationsWithStatus(c.Context)
-					if err != nil {
-						return err
-					}
-					logger.Info("migration status",
-						"migrations", ms,
-						"unapplied", ms.Unapplied(),
-						"last_group", ms.LastGroup())
-					return nil
-				},
-			},
-			{
-				Name:  "create_go",
-				Usage: "create Go migration",
-				Action: func(c *cli.Context) error {
-					name := strings.Join(c.Args().Slice(), "_")
-					mf, err := migrator.CreateGoMigration(c.Context, name)
-					if err != nil {
-						return err
-					}
-					logger.Info("created migration", "name", mf.Name, "path", mf.Path)
-					return nil
-				},
-			},
-		},
-	}
-}
-
-// addCreditsParams contains parameters for adding credits to a user.
-type addCreditsParams struct {
-	Email        string
-	Credits      int
-	Prefix       string
-	CustomReason string
-}
-
-// addCreditsToUser adds credits to a user account with the given parameters.
-func addCreditsToUser(
-	ctx context.Context,
-	params addCreditsParams,
-	creditService *services.CreditService,
-	userRepo repositories.UserRepository,
-) error {
-	// Validate prefix
-	var reasonPrefix string
-	switch params.Prefix {
-	case "Admin":
-		reasonPrefix = models.CreditAdjustmentReasonPrefixAdmin
-	case "Gift":
-		reasonPrefix = models.CreditAdjustmentReasonPrefixGift
-	default:
-		return fmt.Errorf("invalid prefix %q: must be 'Admin' or 'Gift'", params.Prefix)
-	}
-
-	// Validate amount
-	if params.Credits <= 0 {
-		return errors.New("amount must be greater than 0")
-	}
-
-	// Build reason
-	reason := reasonPrefix
-	if params.CustomReason != "" {
-		reason = fmt.Sprintf("%s: %s", reasonPrefix, params.CustomReason)
-	}
-
-	// Find user by email
-	user, err := userRepo.GetByEmail(ctx, params.Email)
-	if err != nil {
-		return fmt.Errorf("user not found: %w", err)
-	}
-
-	// Add credits with retry for SQLITE_BUSY
-	const (
-		maxRetries       = 3
-		retryDelayMillis = 100
-	)
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		err = creditService.AddCredits(ctx, user.ID, 0, params.Credits, reason)
-		if err == nil {
-			return nil
-		}
-
-		if attempt < maxRetries && strings.Contains(err.Error(), "database is locked") {
-			time.Sleep(time.Millisecond * retryDelayMillis * time.Duration(attempt))
-			continue
-		}
-
-		return fmt.Errorf("failed to add credits: %w", err)
-	}
-
-	return errors.New("failed after maximum retries")
-}
-
-func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
-	return &cli.Command{
-		Name:  "credits",
-		Usage: "manage user credits",
-		Subcommands: []*cli.Command{
-			{
-				Name:      "add",
-				Usage:     "add credits to a user (use --prefix=Admin or --prefix=Gift, defaults to Admin)",
-				ArgsUsage: "<email> <amount> [reason]",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "prefix",
-						Usage: "reason prefix: Admin or Gift",
-						Value: "Admin",
-					},
-				},
-				Action: func(c *cli.Context) error {
-					//nolint:mnd // Magic number for argument count
-					if c.NArg() < 2 {
-						return errors.New("usage: rapua credits add <email> <amount> [reason]")
-					}
-
-					// Parse arguments
-					email := c.Args().Get(0)
-					amountStr := c.Args().Get(1)
-					//nolint:mnd // Magic number for argument count
-					customReason := c.Args().Get(2)
-					prefix := c.String("prefix")
-
-					var credits int
-					if _, err := fmt.Sscanf(amountStr, "%d", &credits); err != nil {
-						return fmt.Errorf("invalid amount %q: must be a number", amountStr)
-					}
-
-					// Initialize services (lazy)
-					ctx := c.Context
-					creditRepo := repositories.NewCreditRepository(dbc)
-					teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
-					userRepo := repositories.NewUserRepository(dbc)
-					transactor := db.NewTransactor(dbc)
-					creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
-
-					// Call testable function
-					params := addCreditsParams{
-						Email:        email,
-						Credits:      credits,
-						Prefix:       prefix,
-						CustomReason: customReason,
-					}
-
-					err := addCreditsToUser(ctx, params, creditService, userRepo)
-					if err != nil {
-						return err
-					}
-
-					// Get updated user for logging
-					user, _ := userRepo.GetByEmail(ctx, email)
-					logger.Info("credits added successfully",
-						"user", email,
-						"amount", credits,
-						"new_balance", user.PaidCredits)
-
-					return nil
-				},
-			},
-		},
-	}
-}
-
-func newGenerateLoginCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
-	return &cli.Command{
-		Name:      "generate-login",
-		Usage:     "generate a temporary admin login link",
-		ArgsUsage: "<email>",
-		Flags: []cli.Flag{
-			&cli.IntFlag{
-				Name:  "duration",
-				Usage: "link validity in seconds",
-				Value: 60, //nolint:mnd // default link validity in seconds
-			},
-		},
-		Action: func(c *cli.Context) error {
-			if c.NArg() < 1 {
-				return errors.New("usage: rapua generate-login <email>")
-			}
-
-			email := c.Args().Get(0)
-			duration := time.Duration(c.Int("duration")) * time.Second
-
-			// Get SESSION_KEY for token signing
-			sessionKey := os.Getenv("SESSION_KEY")
-			if sessionKey == "" {
-				return errors.New("SESSION_KEY environment variable is not set")
-			}
-
-			// Get SITE_URL for the login link
-			siteURL := os.Getenv("SITE_URL")
-			if siteURL == "" {
-				siteURL = "http://localhost:8080"
-				logger.Warn("SITE_URL not set, using default", "url", siteURL)
-			}
-
-			// Initialize services
-			ctx := c.Context
-			userRepo := repositories.NewUserRepository(dbc)
-			magicTokenService := services.NewMagicTokenService([]byte(sessionKey))
-
-			// Find user by email
-			user, err := userRepo.GetByEmail(ctx, email)
-			if err != nil {
-				return fmt.Errorf("user not found with email %q: %w", email, err)
-			}
-
-			// Generate token
-			token, err := magicTokenService.GenerateToken(user.ID, duration)
-			if err != nil {
-				return fmt.Errorf("failed to generate token: %w", err)
-			}
-
-			// Build login URL and print to stdout (not logged)
-			loginURL := fmt.Sprintf("%s/login/magic/%s", siteURL, token)
-
-			// Use fmt to print URL - intentionally NOT logged for security
-
-			fmt.Fprintf(os.Stdout, "\nLogin link (valid for %d seconds):\n%s\n\n", c.Int("duration"), loginURL)
-
-			return nil
-		},
-	}
-}
-
 func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup function
 	initialiseFolders(logger)
 
-	// Initialize repositories
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
@@ -400,19 +94,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
-	// Initialize transactor for services
 	transactor := db.NewTransactor(dbc)
-
-	// Storage for the upload service
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
-	// Initialize services
-	accessService := services.NewAccessService(
-		blockRepo,
-		instanceRepo,
-		locationRepo,
-		markerRepo,
-	)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
 	locationStatsService := services.NewLocationStatsService(locationRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
@@ -420,22 +105,11 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
 	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
-		transactor,
-		instanceRepo,
-		locationRepo,
-		markerRepo,
-		teamRepo,
-		uploadRepo,
-		dbc,
-		uploadsDir,
-		logger,
+		transactor, instanceRepo, locationRepo, markerRepo,
+		teamRepo, uploadRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
-		transactor,
-		instanceRepo,
-		instanceSettingsRepo,
-		locationRepo,
-		blockRepo,
+		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
@@ -445,72 +119,38 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 
-	// Set the relation loader so gameStructureService can load location relations
 	gameStructureService.SetRelationLoader(locationService)
 
 	navigationService := services.NewNavigationService(locationRepo, teamRepo, gameStructureService, blockService)
 	checkInService := services.NewCheckInService(
-		checkInRepo,
-		locationRepo,
-		teamRepo,
-		locationStatsService,
-		navigationService,
-		blockService,
+		checkInRepo, locationRepo, teamRepo,
+		locationStatsService, navigationService, blockService,
 	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo, logger)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
 	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(uploadRepo, logger, uploadsDir)
-	creditService := services.NewCreditService(
-		transactor,
-		creditRepo,
-		teamStartLogRepo,
-		userRepo,
-	)
-	stripeService := services.NewStripeService(
-		transactor,
-		creditService,
-		creditPurchaseRepo,
-		userRepo,
-		logger,
-	)
+	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
 	teamService := services.NewTeamService(
-		transactor,
-		teamRepo,
-		checkInRepo,
-		creditService,
-		blockStateRepo,
-		locationRepo,
+		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	instanceService := services.NewInstanceService(
-		instanceRepo, instanceSettingsRepo, blockRepo,
-	)
+	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo, blockRepo)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
-	exportService := services.NewExportService(
-		instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
-	)
+	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
 	importService := services.NewImportService(
 		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
 	)
 
 	sessions.Start()
 
-	// Register jobs
 	jobs := scheduler.NewScheduler(logger)
-	jobs.AddJob(
-		"Monthly Credit Top-Up",
-		monthlyCreditTopupJob.TopUpCredits,
-		scheduler.NextFirstOfMonth,
-	)
-	jobs.AddJob(
-		"Stale Credit Purchase Cleanup",
-		staleCreditCleanupService.CleanupStalePurchases,
-		scheduler.NextDaily,
-	)
+	jobs.AddJob("Monthly Credit Top-Up", monthlyCreditTopupJob.TopUpCredits, scheduler.NextFirstOfMonth)
+	jobs.AddJob("Stale Credit Purchase Cleanup", staleCreditCleanupService.CleanupStalePurchases, scheduler.NextDaily)
 	jobs.AddJob(
 		"Orphaned Uploads Cleanup",
 		func(ctx context.Context) error {
@@ -521,9 +161,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		},
 		scheduler.NextDaily,
 	)
-	jobs.Start()
 
-	// Initialize magic token service for CLI-generated login links
 	sessionKey := os.Getenv("SESSION_KEY")
 	if sessionKey == "" {
 		logger.Warn("SESSION_KEY not set - magic login links will not work")
@@ -531,59 +169,22 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	}
 	magicTokenService := services.NewMagicTokenService([]byte(sessionKey))
 
-	// Construct handlers (dependency injection root)
 	publicHandler := public.NewHandler(
-		logger,
-		identityService,
-		deleteService,
-		emailService,
-		&templateService,
-		userService,
-		magicTokenService,
+		logger, identityService, deleteService, emailService,
+		&templateService, userService, magicTokenService,
 	)
-
 	playerHandler := players.NewPlayerHandler(
-		logger,
-		blockService,
-		checkInService,
-		instanceService,
-		locationService,
-		markerService,
-		navigationService,
-		notificationService,
-		teamService,
-		uploadService,
+		logger, blockService, checkInService, instanceService, locationService,
+		markerService, navigationService, notificationService, teamService, uploadService,
 	)
-
 	adminHandler := admin.NewAdminHandler(
-		logger,
-		accessService,
-		assetGenerator,
-		identityService,
-		blockService,
-		creditService,
-		creditPurchaseRepo,
-		deleteService,
-		duplicationService,
-		exportService,
-		importService,
-		facilitatorService,
-		gameScheduleService,
-		gameStructureService,
-		instanceRepo,
-		instanceService,
-		instanceSettingsService,
-		locationService,
-		markerService,
-		navigationService,
-		notificationService,
-		teamService,
-		templateService,
-		uploadService,
-		userService,
-		quickstartService,
-		leaderBoardService,
-		stripeService,
+		logger, accessService, assetGenerator, identityService, blockService,
+		creditService, creditPurchaseRepo, deleteService, duplicationService,
+		exportService, importService, facilitatorService, gameScheduleService,
+		gameStructureService, instanceRepo, instanceService, instanceSettingsService,
+		locationService, markerService, navigationService, notificationService,
+		teamService, templateService, uploadService, userService, quickstartService,
+		leaderBoardService, stripeService,
 	)
 
 	server.Start(logger, publicHandler, playerHandler, adminHandler, jobs)
@@ -594,7 +195,6 @@ func initialiseFolders(logger *slog.Logger) {
 		"assets/", "assets/codes/", "assets/codes/png/", "assets/codes/svg/",
 		"assets/fonts/", "assets/posters/",
 	}
-
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {
 			if err = os.MkdirAll(folder, 0o750); err != nil {

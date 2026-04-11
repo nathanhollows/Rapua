@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 7.0.1
+
+### Changed
+
+- Split ./rapua commands into separate files.
+
 ## 7.0.0
 
 ### Added
