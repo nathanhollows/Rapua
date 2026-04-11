@@ -14,6 +14,10 @@ tag: updated
 - Split ./rapua commands into separate files.
 - Update docs ordering and roadmap.
 
+### Fixed
+
+- Migration fixes orphaned team block states.
+
 ## 7.0.0
 
 ### Added
