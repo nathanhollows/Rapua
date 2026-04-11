@@ -44,6 +44,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "broker":
 		b := block.(*blocks.BrokerBlock)
 		return brokerAdmin(settings, *b)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextAdmin(settings, *b)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
@@ -116,6 +119,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "broker":
 		b := block.(*blocks.BrokerBlock)
 		return brokerPlayer(settings, *b, state)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
@@ -188,6 +194,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "broker":
 		b := block.(*blocks.BrokerBlock)
 		return brokerPlayerUpdate(settings, *b, state)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextPlayerUpdate(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)

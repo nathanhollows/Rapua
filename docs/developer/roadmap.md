@@ -26,7 +26,6 @@ Each game can override DaisyUI CSS custom properties (`--p`, `--s`, `--a`, `--b1
 
 ## Content blocks
 
-- **Free text:** An ungraded text input for player reflections. Useful for "describe what you see/smell/think" moments where articulating the experience matters more than selecting from options.
 - **Map:** Mapbox integration with arbitrary markers, zooming, and coordinates.
 - **Audio waveform:** A block for admins to upload audio files that users can listen to, with a waveform visualisation.
 

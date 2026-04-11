@@ -8,12 +8,14 @@ import (
 )
 
 // Type aliases — blocks/ re-exports game/ vocabulary so callers don't need to change imports.
-type BlockContext = game.BlockContext
-type Block = game.Block
-type BaseBlock = game.BaseBlock
-type PlayerState = game.PlayerState
-type RegisteredBlock = game.RegisteredBlock
-type Blocks = game.Blocks
+type (
+	BlockContext    = game.BlockContext
+	Block           = game.Block
+	BaseBlock       = game.BaseBlock
+	PlayerState     = game.PlayerState
+	RegisteredBlock = game.RegisteredBlock
+	Blocks          = game.Blocks
+)
 
 // ErrBlockTypeNotFound is returned when a block type is not registered.
 var ErrBlockTypeNotFound = game.ErrBlockTypeNotFound
@@ -82,6 +84,7 @@ func init() {
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
 	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
 	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&FreeTextBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
@@ -211,6 +214,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewButtonBlock(baseBlock), nil
 	case "random_clue":
 		return NewRandomClueBlock(baseBlock), nil
+	case "free_text":
+		return NewFreeTextBlock(baseBlock), nil
 	case "photo":
 		return NewPhotoBlock(baseBlock), nil
 	case "header":
@@ -307,6 +312,12 @@ func NewButtonBlock(base BaseBlock) *ButtonBlock {
 
 func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
 	return &RandomClueBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewFreeTextBlock(base BaseBlock) *FreeTextBlock {
+	return &FreeTextBlock{
 		BaseBlock: base,
 	}
 }

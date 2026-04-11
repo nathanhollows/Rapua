@@ -7,6 +7,12 @@ tag: updated
 
 # Changelog
 
+## 7.1.0 (2026-04-11)
+
+### Added
+
+- [Free text block](/docs/blocks/docs/user/blocks/free-text) for unconstrained text responses.
+
 ## 7.0.1 (2026-04-11)
 
 ### Changed

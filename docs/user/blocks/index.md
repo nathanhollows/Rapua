@@ -1,7 +1,7 @@
 ---
 title: "Content Blocks"
 sidebar: true
-order: 21
+order: 22
 ---
 
 # Content blocks
