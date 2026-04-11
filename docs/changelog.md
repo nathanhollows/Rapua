@@ -12,6 +12,7 @@ tag: updated
 ### Changed
 
 - Split ./rapua commands into separate files.
+- Update docs ordering and roadmap.
 
 ## 7.0.0
 

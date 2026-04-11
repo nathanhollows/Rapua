@@ -1,7 +1,7 @@
 ---
 title: "Location Groups"
 sidebar: true
-order: 13
+order: 12
 ---
 
 # Location groups

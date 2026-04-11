@@ -11,6 +11,7 @@ Welcome to the Rapua developer documentation. This section contains technical in
 ## Getting Started
 
 - [Installation](installation) - Set up your local development environment
+- [Versioning](versioning) - Version numbering and release process
 - [Data Flow](data-flow) - Understand how data flows through the application
 - [Database Schema](database-schema) - Complete database structure and relationships
 - [Middleware](middleware) - Learn about the middleware components
@@ -20,6 +21,7 @@ Welcome to the Rapua developer documentation. This section contains technical in
 
 - [Navigation Logic Reference](navigation-logic) - Routing strategies, navigation modes, and completion settings
 - [Job Scheduler](job-scheduler) - Background job processing and scheduling
+- [Game Spec](game-spec) - Game specification format, authoring constraints, and import/export
 
 ## Development
 
