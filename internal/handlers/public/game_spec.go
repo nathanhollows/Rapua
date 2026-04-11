@@ -12,7 +12,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/specgen"
 )
 
-// SpecJSON serves the generated block spec as JSON.
+// SpecJSON serves the generated game spec as JSON.
 //
 //	GET /api/v7/spec
 func (h *Handler) SpecJSON(w http.ResponseWriter, r *http.Request) {

@@ -104,7 +104,8 @@ func init() {
 				// check_ins referencing deleted teams or instances
 				`DELETE FROM "check_ins" WHERE team_code NOT IN (SELECT code FROM teams)`,
 				`DELETE FROM "check_ins" WHERE instance_id NOT IN (SELECT id FROM instances)`,
-				// team_block_states referencing deleted blocks
+				// team_block_states referencing deleted teams or blocks
+				`DELETE FROM "team_block_states" WHERE team_code NOT IN (SELECT code FROM teams)`,
 				`DELETE FROM "team_block_states" WHERE block_id NOT IN (SELECT id FROM blocks)`,
 				// notifications referencing deleted teams
 				`DELETE FROM "notifications" WHERE team_code IS NOT NULL AND team_code NOT IN (SELECT code FROM teams)`,

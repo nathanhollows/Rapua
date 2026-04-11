@@ -1,7 +1,7 @@
 ---
 title: "Scheduling Games"
 sidebar: true
-order: 12
+order: 13
 ---
 
 # Scheduling Games

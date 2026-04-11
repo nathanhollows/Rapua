@@ -1,7 +1,7 @@
 ---
 title: "Writing with Markdown"
 sidebar: true
-order: 7
+order: 11
 ---
 
 # Writing with Markdown
