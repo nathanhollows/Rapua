@@ -44,6 +44,7 @@ type TeamService struct {
 	creditService  TeamCreditService
 	blockStateRepo repositories.BlockStateRepository
 	locationRepo   repositories.LocationRepository
+	varStateRepo   repositories.TeamVarStateRepository
 	batchSize      int
 }
 
@@ -55,6 +56,7 @@ func NewTeamService(
 	creditService TeamCreditService,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
+	varStateRepo repositories.TeamVarStateRepository,
 ) *TeamService {
 	return &TeamService{
 		transactor:     transactor,
@@ -63,6 +65,7 @@ func NewTeamService(
 		creditService:  creditService,
 		blockStateRepo: bsr,
 		locationRepo:   lr,
+		varStateRepo:   varStateRepo,
 		batchSize:      batchSize,
 	}
 }
@@ -229,10 +232,15 @@ func (s *TeamService) LoadRelation(ctx context.Context, team *models.Team, relat
 
 // LoadRelations loads all relations for a team.
 func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) error {
-	err := s.teamRepo.LoadRelations(ctx, team)
+	if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
+		return err
+	}
+
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
 	if err != nil {
 		return err
 	}
+	team.VarStates = varStates
 
 	return nil
 }

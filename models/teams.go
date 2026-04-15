@@ -17,4 +17,8 @@ type Team struct {
 	BlockingLocation Location         `bun:"rel:has-one,join:must_scan_out=marker_id,join:instance_id=instance_id"`
 	Messages         []Notification   `bun:"rel:has-many,join:code=team_code"`
 	Blocks           []TeamBlockState `bun:"rel:has-many,join:code=team_code"`
+
+	// VarStates holds creator-defined variable values for this team.
+	// Populated by TeamService.LoadRelations(); not a DB column.
+	VarStates map[string]string `bun:"-"`
 }
