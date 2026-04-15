@@ -373,6 +373,15 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 		return fmt.Errorf("deleting uploads: %w", err)
 	}
 
+	_, err = tx.NewDelete().
+		Model((*models.TeamVarState)(nil)).
+		Where("team_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting team var states: %w", err)
+	}
+
 	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
 	if err != nil {
 		_ = tx.Rollback()

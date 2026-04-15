@@ -35,6 +35,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, *bun.DB, func()) {
 	locationRepo := repositories.NewLocationRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	varStateRepo := repositories.NewTeamVarStateRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
 	teamService := services.NewTeamService(
 		transactor,
@@ -43,6 +44,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, *bun.DB, func()) {
 		creditService,
 		blockStateRepo,
 		locationRepo,
+		varStateRepo,
 	)
 
 	return *teamService, dbc, cleanup
