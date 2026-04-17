@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	version    = "v7.0.0"
+	version    = "v7.1.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -125,7 +125,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	navigationService := services.NewNavigationService(locationRepo, teamRepo, gameStructureService, blockService)
 	checkInService := services.NewCheckInService(
 		checkInRepo, locationRepo, teamRepo,
-		locationStatsService, navigationService, blockService,
+		locationStatsService, navigationService, blockService, teamVarStateRepo,
 	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)

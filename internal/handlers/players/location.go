@@ -5,7 +5,9 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -71,6 +73,19 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Filter blocks by visibility conditions
+	resolver := services.NewPlayerVarResolver(team, team.VarStates, nil)
+	visibleBlocks := make(blocks.Blocks, 0, len(contentBlocks))
+	visibleStates := make(map[string]blocks.PlayerState, len(blockStates))
+	for _, b := range contentBlocks {
+		if game.EvaluateWhen(b.GetWhen(), resolver) {
+			visibleBlocks = append(visibleBlocks, b)
+			if s, ok := blockStates[b.GetID()]; ok {
+				visibleStates[b.GetID()] = s
+			}
+		}
+	}
+
 	// Get navigation view to determine current group settings
 	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
@@ -95,8 +110,8 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	data := templates.CheckInViewData{
 		Settings:  team.Instance.Settings,
 		Scan:      team.CheckIns[index],
-		Blocks:    contentBlocks,
-		States:    blockStates,
+		Blocks:    visibleBlocks,
+		States:    visibleStates,
 		View:      view,
 		TaskBlock: taskBlock,
 	}

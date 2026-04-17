@@ -43,6 +43,10 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
+
+	// Conditional visibility
+	GetSets() map[string]string
+	GetWhen() *WhenClause
 }
 
 // Blocks is a slice of Block.
@@ -56,7 +60,15 @@ type BaseBlock struct {
 	Data    json.RawMessage `json:"-"`
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
+	Sets    map[string]string `json:"sets,omitempty"`
+	When    *WhenClause       `json:"when,omitempty"`
 }
+
+// GetSets returns the sets map for this block (var name → trigger keyword).
+func (b *BaseBlock) GetSets() map[string]string { return b.Sets }
+
+// GetWhen returns the visibility condition clause for this block.
+func (b *BaseBlock) GetWhen() *WhenClause { return b.When }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {

@@ -90,14 +90,14 @@ func EvaluateWhen(when *WhenClause, resolver VarResolver) bool {
 		}
 	}
 	if len(when.AnyOf) > 0 {
-		any := false
+		met := false
 		for _, cond := range when.AnyOf {
 			if Evaluate(cond, resolver) {
-				any = true
+				met = true
 				break
 			}
 		}
-		if !any {
+		if !met {
 			return false
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
@@ -17,6 +18,19 @@ const (
 	bonusSecondVisit = 0.5
 	bonusThirdVisit  = 0.2
 )
+
+// triggerValue maps a sets trigger keyword to the value to store.
+// Returns "true" if the trigger fired, "" if it should not be written.
+// Triggers are monotonic — only "true" is ever written; false is the default (unset).
+func triggerValue(trigger string, state game.PlayerState) string {
+	if trigger == "attempted" {
+		return "true"
+	}
+	if state.IsComplete() {
+		return "true"
+	}
+	return ""
+}
 
 type LocationStatsService interface {
 	IncrementVisitors(ctx context.Context, location *models.Location) error
@@ -30,6 +44,7 @@ type CheckInService struct {
 	blockService         *BlockService
 	locationStatsService LocationStatsService
 	navigationService    *NavigationService
+	varStateRepo         repositories.TeamVarStateRepository
 }
 
 func NewCheckInService(
@@ -39,6 +54,7 @@ func NewCheckInService(
 	locationStatsService LocationStatsService,
 	navigationService *NavigationService,
 	blockService *BlockService,
+	varStateRepo repositories.TeamVarStateRepository,
 ) *CheckInService {
 	return &CheckInService{
 		checkInRepo:          checkInRepo,
@@ -47,6 +63,7 @@ func NewCheckInService(
 		locationStatsService: locationStatsService,
 		navigationService:    navigationService,
 		blockService:         blockService,
+		varStateRepo:         varStateRepo,
 	}
 }
 
@@ -393,6 +410,15 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		state, err = s.blockService.UpdateState(ctx, state)
 		if err != nil {
 			return nil, nil, fmt.Errorf("updating block state: %w", err)
+		}
+
+		// Write sets vars for any trigger that fired
+		for varName, trigger := range block.GetSets() {
+			if value := triggerValue(trigger, state); value != "" {
+				if upsertErr := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, value); upsertErr != nil {
+					return nil, nil, fmt.Errorf("writing sets var %q: %w", varName, upsertErr)
+				}
+			}
 		}
 	}
 
