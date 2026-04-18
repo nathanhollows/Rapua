@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/navigation"
@@ -23,6 +25,7 @@ type NavigationService struct {
 	teamRepo             repositories.TeamRepository
 	gameStructureService *GameStructureService
 	blockService         *BlockService
+	logger               *slog.Logger
 }
 
 // PlayerNavigationView contains all data needed to render the player navigation UI.
@@ -50,17 +53,66 @@ func NewNavigationService(
 	teamRepo repositories.TeamRepository,
 	gameStructureService *GameStructureService,
 	blockService *BlockService,
+	logger *slog.Logger,
 ) *NavigationService {
 	return &NavigationService{
 		locationRepo:         locationRepo,
 		teamRepo:             teamRepo,
 		gameStructureService: gameStructureService,
 		blockService:         blockService,
+		logger:               logger,
 	}
+}
+
+// filterGameStructure returns a copy of gs with:
+//   - sub-groups whose when clause evaluates to false removed (recursively)
+//   - location IDs in hiddenLocationIDs removed from LocationIDs
+//
+// This ensures the navigation engine never sees hidden locations or groups
+// when computing group completion, next group, and available locations.
+// The root group itself is never filtered (root has no When clause by convention).
+func filterGameStructure(gs models.GameStructure, resolver game.VarResolver, hiddenLocationIDs map[string]bool) models.GameStructure {
+	filtered := gs
+
+	// Strip hidden location IDs so completion calculations ignore them.
+	if len(hiddenLocationIDs) > 0 && len(gs.LocationIDs) > 0 {
+		filteredIDs := make([]string, 0, len(gs.LocationIDs))
+		for _, id := range gs.LocationIDs {
+			if !hiddenLocationIDs[id] {
+				filteredIDs = append(filteredIDs, id)
+			}
+		}
+		filtered.LocationIDs = filteredIDs
+	}
+
+	filtered.SubGroups = nil
+	for _, sub := range gs.SubGroups {
+		if game.EvaluateWhen(sub.When, resolver) {
+			filtered.SubGroups = append(filtered.SubGroups, filterGameStructure(sub, resolver, hiddenLocationIDs))
+		}
+	}
+	return filtered
+}
+
+// filterLocationsByWhen returns locs with any entry whose when clause evaluates
+// to false removed. nil resolver or nil When clause → always visible.
+func filterLocationsByWhen(locs []models.Location, resolver game.VarResolver) []models.Location {
+	out := make([]models.Location, 0, len(locs))
+	for _, loc := range locs {
+		if game.EvaluateWhen(loc.When, resolver) {
+			out = append(out, loc)
+		}
+	}
+	return out
 }
 
 // IsValidLocation checks if the location code is valid for the team to check in to.
 // This includes both regular available locations AND accessible secret locations.
+//
+// Note: when clauses on locations are intentionally NOT evaluated here. A when clause
+// controls visibility (whether the location appears in the player's list), not access.
+// A team who physically finds a QR code for a condition-gated location should still be
+// able to check in. Use navigation routing mode (ordered, etc.) to restrict access.
 func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error) {
 	if err := s.validateTeamState(team); err != nil {
 		return false, err
@@ -134,6 +186,39 @@ func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
 		BlockStates: make(map[string]blocks.PlayerState),
 	}
 
+	// Build resolver for visibility evaluation.
+	// team_count requires an extra query; failure is non-fatal but logged.
+	teamCount, countErr := s.teamRepo.CountByInstance(ctx, team.InstanceID)
+	if countErr != nil {
+		teamCount = 0
+		s.logger.Warn("getting team count for visibility resolver", "instance_id", team.InstanceID, "error", countErr)
+	}
+	resolver := NewPlayerVarResolver(team, team.VarStates, nil).WithTeamCount(teamCount)
+
+	// Build set of location IDs that are hidden by their when clause.
+	// team.Instance.Locations is populated by LoadRelations and includes when_clause.
+	// Note: filterLocationsByWhen also evaluates When on locations fetched from the
+	// repo later; both use the same resolver so they will always agree.
+	hiddenLocationIDs := make(map[string]bool)
+	for _, loc := range team.Instance.Locations {
+		if !game.EvaluateWhen(loc.When, resolver) {
+			hiddenLocationIDs[loc.ID] = true
+		}
+	}
+
+	// Build a local copy of the team whose Instance.GameStructure has been filtered
+	// for visibility. Using a copy (not pointer mutation + defer) ensures the caller's
+	// team is never modified, which avoids data races if the team is ever accessed
+	// concurrently and makes the control flow easier to reason about.
+	navTeam := team
+	if team.Instance.GameStructure.ID != "" {
+		navInstance := team.Instance
+		navInstance.GameStructure = filterGameStructure(team.Instance.GameStructure, resolver, hiddenLocationIDs)
+		navTeam = &models.Team{}
+		*navTeam = *team
+		navTeam.Instance = navInstance
+	}
+
 	// Check if team is blocked (must check out)
 	if team.MustCheckOut != "" {
 		view.MustCheckOut = true
@@ -150,17 +235,17 @@ func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
 
 	// Get current group (if using GameStructure)
 	var currentGroup *models.GameStructure
-	if team.Instance.GameStructure.ID != "" {
+	if navTeam.Instance.GameStructure.ID != "" {
 		// Compute current group from completed locations
-		completedIDs := s.getCompletedLocationIDs(team.CheckIns)
+		completedIDs := s.getCompletedLocationIDs(navTeam.CheckIns)
 		currentGroupID := navigation.ComputeCurrentGroup(
-			&team.Instance.GameStructure,
+			&navTeam.Instance.GameStructure,
 			completedIDs,
-			team.SkippedGroupIDs,
+			navTeam.SkippedGroupIDs,
 		)
 
 		if currentGroupID != "" {
-			currentGroup = navigation.FindGroupByID(&team.Instance.GameStructure, currentGroupID)
+			currentGroup = navigation.FindGroupByID(&navTeam.Instance.GameStructure, currentGroupID)
 		}
 		view.CurrentGroup = currentGroup
 
@@ -197,6 +282,9 @@ func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
 	if err != nil {
 		return nil, err
 	}
+
+	// Filter by location-level visibility conditions
+	locations = filterLocationsByWhen(locations, resolver)
 
 	// Load full relations for each location
 	for i := range locations {

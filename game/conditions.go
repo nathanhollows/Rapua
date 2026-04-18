@@ -1,6 +1,8 @@
 package game
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -214,4 +216,39 @@ func containsValue(raw string, expected any) bool {
 		}
 	}
 	return false
+}
+
+// Value implements driver.Valuer for bun/sql database storage (TEXT column).
+// Returns nil (SQL NULL) when the clause is empty.
+//
+//nolint:recvcheck // Value requires value receiver per driver.Valuer; Scan requires pointer receiver per sql.Scanner
+func (w WhenClause) Value() (driver.Value, error) {
+	if len(w.AllOf) == 0 && len(w.AnyOf) == 0 {
+		return nil, nil
+	}
+	data, err := json.Marshal(w)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling WhenClause: %w", err)
+	}
+	return string(data), nil
+}
+
+// Scan implements sql.Scanner for bun/sql database retrieval.
+func (w *WhenClause) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+	var data []byte
+	switch v := src.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return fmt.Errorf("cannot scan %T into WhenClause", src)
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	return json.Unmarshal(data, w)
 }

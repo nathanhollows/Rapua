@@ -45,6 +45,7 @@ func setupNavigationService(t *testing.T) (
 		teamRepo,
 		gameStructureService,
 		blockService,
+		newTLogger(t),
 	)
 
 	return navigationService, locationRepo, teamRepo, checkInRepo, instanceRepo, dbc, cleanup

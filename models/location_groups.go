@@ -60,8 +60,9 @@ type GameStructure struct {
 	CompletionType  CompletionType `json:"completion_type"`            // all, minimum
 	MinimumRequired int            `json:"minimum_required,omitempty"` // For minimum completion type
 	MaxNext         int            `json:"max_next,omitempty"`         // Max locations to show for random routing (0 = unlimited)
-	AutoAdvance     bool           `json:"auto_advance"`               // If true, auto-move to next group when CompletionType met
-	IsRoot          bool           `json:"is_root"`                    // true ONLY for the invisible root container
+	AutoAdvance     bool             `json:"auto_advance"`               // If true, auto-move to next group when CompletionType met
+	IsRoot          bool             `json:"is_root"`                    // true ONLY for the invisible root container
+	When            *game.WhenClause `json:"when,omitempty"`             // Visibility condition; nil = always visible. No migration needed: stored inside the JSON blob in instances.game_structure.
 
 	// Storage: locations first, then subgroups - order preserved in arrays
 	LocationIDs []string        `json:"location_ids"` // Ordered list of location IDs

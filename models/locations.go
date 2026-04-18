@@ -15,8 +15,9 @@ type Location struct {
 	Slug         string  `bun:"slug,type:varchar(255)"`
 	InstanceID   string  `bun:"instance_id,notnull"`
 	MarkerID     string  `bun:"marker_id,notnull"`
-	Criteria     string  `bun:"criteria,type:varchar(255)"`
-	Order        int     `bun:"order,type:int"`
+	Criteria     string          `bun:"criteria,type:varchar(255)"`
+	When         *game.WhenClause `bun:"when_clause,type:text,nullzero" json:"when,omitempty"`
+	Order        int             `bun:"order,type:int"`
 	TotalVisits  int     `bun:"total_visits,type:int"`
 	CurrentCount int     `bun:"current_count,type:int"`
 	AvgDuration  float64 `bun:"avg_duration,type:float"`

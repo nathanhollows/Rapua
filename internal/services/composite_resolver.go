@@ -8,7 +8,7 @@ import (
 )
 
 // PlayerVarResolver implements game.VarResolver by composing three state layers:
-//  1. Built-in state (points, location.*.visited, location.*.checked_in)
+//  1. Built-in state (points, game.status, game.team_count, location.*.visited, location.*.checked_in)
 //  2. Creator-defined vars (from team_var_states, set by block `sets` triggers)
 //  3. External vars (admin-set, from instance settings)
 //
@@ -17,6 +17,7 @@ type PlayerVarResolver struct {
 	team         *models.Team
 	creatorVars  map[string]string
 	externalVars map[string]string
+	teamCount    int
 }
 
 // NewPlayerVarResolver creates a resolver for the given team state.
@@ -28,6 +29,13 @@ func NewPlayerVarResolver(team *models.Team, creatorVars, externalVars map[strin
 		creatorVars:  creatorVars,
 		externalVars: externalVars,
 	}
+}
+
+// WithTeamCount enriches the resolver with the number of teams in the instance.
+// Enables the game.team_count built-in variable. Call before evaluating conditions.
+func (r *PlayerVarResolver) WithTeamCount(n int) *PlayerVarResolver {
+	r.teamCount = n
+	return r
 }
 
 // ResolveVar looks up a variable by name across all three state layers.
@@ -46,8 +54,13 @@ func (r *PlayerVarResolver) ResolveVar(name string) (string, bool) {
 
 // resolveBuiltIn handles the built-in state namespace.
 func (r *PlayerVarResolver) resolveBuiltIn(name string) (string, bool) {
-	if name == "points" {
+	switch name {
+	case "points":
 		return strconv.Itoa(r.team.Points), true
+	case "game.status":
+		return strings.ToLower(r.team.Instance.GetStatus().String()), true
+	case "game.team_count":
+		return strconv.Itoa(r.teamCount), true
 	}
 
 	if after, ok := strings.CutPrefix(name, "location."); ok {
