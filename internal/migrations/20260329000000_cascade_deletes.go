@@ -113,6 +113,10 @@ func init() {
 				`DELETE FROM "uploads" WHERE block_id IS NOT NULL AND block_id NOT IN (SELECT id FROM blocks)`,
 				// instance_settings referencing deleted instances
 				`DELETE FROM "instance_settings" WHERE instance_id NOT IN (SELECT id FROM instances)`,
+				// facilitator_tokens referencing deleted instances
+				`DELETE FROM "facilitator_tokens" WHERE instance_id NOT IN (SELECT id FROM instances)`,
+				// share_links referencing deleted instances
+				`DELETE FROM "share_links" WHERE template_id NOT IN (SELECT id FROM instances)`,
 				// instances referencing deleted users
 				`DELETE FROM "instances" WHERE user_id NOT IN (SELECT id FROM users)`,
 			}
