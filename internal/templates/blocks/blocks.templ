@@ -74,6 +74,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextAdmin(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapAdmin(settings, *b)
 	}
 	return nil
 }
@@ -146,6 +149,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextPlayer(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapPlayer(settings, *b)
 	}
 	return nil
 }
@@ -218,6 +224,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextPlayer(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapPlayer(settings, *b)
 	}
 	return nil
 }

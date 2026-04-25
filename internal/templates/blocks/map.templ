@@ -1,0 +1,345 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/models"
+)
+
+func mapZoomOrDefault(zoom float64) float64 {
+	if zoom <= 0 {
+		return 14
+	}
+	return zoom
+}
+
+templ mapPlayer(_ models.InstanceSettings, block blocks.MapBlock) {
+	if block.Latitude != 0 || block.Longitude != 0 {
+		<div class="not-prose">
+			<div
+				id={ fmt.Sprintf("player-map-block-%s", block.ID) }
+				class="player-map-uninit w-full h-64 rounded-box overflow-hidden"
+				data-lat={ fmt.Sprintf("%.6f", block.Latitude) }
+				data-lng={ fmt.Sprintf("%.6f", block.Longitude) }
+				data-zoom={ fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)) }
+				data-hide-marker={ fmt.Sprintf("%v", block.HideMarker) }
+			></div>
+			if block.Caption != "" {
+				<p class="text-sm text-center mt-2 text-base-content/70">{ block.Caption }</p>
+			}
+		</div>
+		<script>
+		(function() {
+			window.__mapInstances = window.__mapInstances || {};
+
+			function destroyMapInstance(id) {
+				var inst = window.__mapInstances[id];
+				if (!inst) return;
+				delete window.__mapInstances[id];
+				try { inst.remove(); } catch(e) {}
+			}
+
+			// Destroy instances BEFORE HTMX removes their canvas.
+			if (!window.__mapBeforeSwapBound) {
+				window.__mapBeforeSwapBound = true;
+				document.body.addEventListener('htmx:beforeSwap', function(e) {
+					var target = e.detail && e.detail.target;
+					if (!target) return;
+					target.querySelectorAll('[id^="player-map-block-"]').forEach(function(mapEl) {
+						destroyMapInstance(mapEl.id);
+					});
+				});
+			}
+
+			var keyEl = document.getElementById('mapbox_key');
+			if (!keyEl) return;
+			mapboxgl.accessToken = keyEl.dataset.key;
+
+			var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+			var style = isDark
+				? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
+				: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
+
+			document.querySelectorAll('.player-map-uninit').forEach(function(el) {
+				el.classList.remove('player-map-uninit');
+				destroyMapInstance(el.id);
+
+				var lat = parseFloat(el.dataset.lat) || 0;
+				var lng = parseFloat(el.dataset.lng) || 0;
+				var zoom = parseFloat(el.dataset.zoom) || 14;
+				var hideMarker = el.dataset.hideMarker === 'true';
+
+				// Two rAFs settle layout after an HTMX swap. The 150ms setTimeout
+				// gives the browser time to release WebGL GPU resources from any maps
+				// destroyed in htmx:beforeSwap (healthy initial maps need more cleanup
+				// time than already-broken maps from a prior failed reload).
+				requestAnimationFrame(function() {
+					requestAnimationFrame(function() {
+						setTimeout(function() {
+							if (!document.body.contains(el)) return;
+							var map = new mapboxgl.Map({
+								container: el,
+								style: style,
+								center: [lng, lat],
+								zoom: zoom,
+								interactive: false,
+							});
+							window.__mapInstances[el.id] = map;
+
+							var marker = null;
+							if (!hideMarker) {
+								marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
+							}
+
+							map.on('load', function() {
+								if (window.__mapInstances[el.id] !== map) return;
+								map.resize();
+								setTimeout(function() {
+									if (window.__mapInstances[el.id] === map) map.resize();
+								}, 150);
+								MapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, marker ? [marker] : []);
+							});
+						}, 150);
+					});
+				});
+			});
+		})();
+		</script>
+	}
+}
+
+templ mapAdmin(_ models.InstanceSettings, block blocks.MapBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("change from:#form-%s delay:800ms", block.ID) }
+		hx-swap="none"
+	>
+		<div class="mb-3 relative">
+			<div
+				id={ fmt.Sprintf("admin-map-block-%s", block.ID) }
+				class="admin-map-uninit w-full h-56 rounded-box overflow-hidden"
+				data-lat={ fmt.Sprintf("%.6f", block.Latitude) }
+				data-lng={ fmt.Sprintf("%.6f", block.Longitude) }
+				data-zoom={ fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)) }
+				data-hide-marker={ fmt.Sprintf("%v", block.HideMarker) }
+				data-form-id={ fmt.Sprintf("form-%s", block.ID) }
+				data-overlay-id={ fmt.Sprintf("map-overlay-%s", block.ID) }
+				data-edit-btn-id={ fmt.Sprintf("edit-map-btn-%s", block.ID) }
+			></div>
+			<div
+				id={ fmt.Sprintf("map-overlay-%s", block.ID) }
+				class="absolute inset-0 bg-base-300/70 flex justify-center items-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition rounded-box"
+				tabindex="0"
+			>
+				<button
+					type="button"
+					id={ fmt.Sprintf("edit-map-btn-%s", block.ID) }
+					class="btn btn-neutral"
+				>
+					@icon("unlock", templ.Attributes{"class": "w-5 h-5"})
+					Edit map
+				</button>
+			</div>
+		</div>
+		<input type="hidden" name="latitude" value={ fmt.Sprintf("%.6f", block.Latitude) }/>
+		<input type="hidden" name="longitude" value={ fmt.Sprintf("%.6f", block.Longitude) }/>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Caption</legend>
+			<input
+				type="text"
+				name="caption"
+				class="input w-full"
+				placeholder="Optional caption below the map"
+				value={ block.Caption }
+			/>
+		</fieldset>
+		<div class="flex gap-3 items-start">
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Show pin</legend>
+				<label class="flex items-center gap-2 mt-1 cursor-pointer">
+					<input
+						type="checkbox"
+						id={ fmt.Sprintf("show-marker-%s", block.ID) }
+						name="show_marker"
+						class="toggle"
+						if !block.HideMarker {
+							checked
+						}
+					/>
+					<span class="label-text">Show map pin</span>
+				</label>
+			</fieldset>
+			<fieldset class="fieldset md:w-1/2">
+				<legend class="fieldset-legend">Zoom Level</legend>
+				<label class="input validator">
+					<input
+						id={ fmt.Sprintf("zoom-input-%s", block.ID) }
+						type="number"
+						name="zoom"
+						placeholder="14"
+						value={ fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)) }
+						min="1"
+						max="20"
+						step="0.5"
+					/>
+				</label>
+				<span class="label">Higher = closer view (1–20)</span>
+			</fieldset>
+		</div>
+	</form>
+	<script>
+	(function() {
+		window.__mapInstances = window.__mapInstances || {};
+
+		var keyEl = document.getElementById('mapbox_key');
+		if (!keyEl) return;
+		mapboxgl.accessToken = keyEl.dataset.key;
+
+		var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+		var style = isDark
+			? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
+			: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
+
+		document.querySelectorAll('.admin-map-uninit').forEach(function(el) {
+			el.classList.remove('admin-map-uninit');
+
+			var prev = window.__mapInstances[el.id];
+			if (prev) { prev.remove(); delete window.__mapInstances[el.id]; }
+
+			var lat = parseFloat(el.dataset.lat);
+			var lng = parseFloat(el.dataset.lng);
+			var zoom = parseFloat(el.dataset.zoom) || 14;
+
+			var hasPosition = !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
+			var centerLat = hasPosition ? lat : -40.9664536;
+			var centerLng = hasPosition ? lng : 174.0710596;
+			var centerZoom = hasPosition ? zoom : 4;
+
+			var map = new mapboxgl.Map({
+				container: el,
+				style: style,
+				center: [centerLng, centerLat],
+				zoom: centerZoom,
+				scrollZoom: false,
+				dragPan: false,
+			});
+			window.__mapInstances[el.id] = map;
+
+			var hideMarker = el.dataset.hideMarker === 'true';
+			var marker = new mapboxgl.Marker().setLngLat([centerLng, centerLat]);
+			if (!hideMarker) marker.addTo(map);
+
+			map.on('load', function() {
+				if (window.__mapInstances[el.id] !== map) return;
+				MapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, [marker]);
+			});
+
+			var form = el.dataset.formId ? document.getElementById(el.dataset.formId) : null;
+
+			var zoomManuallySet = false;
+			var programmaticZoom = false;
+
+			function getLatInput()  { return form && form.querySelector('input[name="latitude"]'); }
+			function getLngInput()  { return form && form.querySelector('input[name="longitude"]'); }
+			function getZoomInput() { return form && form.querySelector('input[name="zoom"]'); }
+
+			function triggerSave() {
+				var latInput = getLatInput();
+				if (latInput) latInput.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+
+			map.on('move', function() {
+				var c = map.getCenter();
+				marker.setLngLat(c);
+				var latInput = getLatInput();
+				var lngInput = getLngInput();
+				if (latInput) latInput.value = c.lat.toFixed(6);
+				if (lngInput) lngInput.value = c.lng.toFixed(6);
+			});
+
+			map.on('moveend', function() {
+				resetLockTimer();
+				triggerSave();
+			});
+
+			map.on('zoomend', function() {
+				resetLockTimer();
+				if (!programmaticZoom && !zoomManuallySet) {
+					var zoomInput = getZoomInput();
+					if (zoomInput) zoomInput.value = map.getZoom().toFixed(1);
+				}
+				triggerSave();
+			});
+
+			var zoomInput = getZoomInput();
+			if (zoomInput) {
+				zoomInput.addEventListener('change', function() {
+					var v = parseFloat(zoomInput.value);
+					if (!isNaN(v)) {
+						zoomManuallySet = true;
+						programmaticZoom = true;
+						map.setZoom(v);
+						setTimeout(function() { programmaticZoom = false; }, 300);
+					}
+				});
+			}
+
+			var showMarkerToggle = form && form.querySelector('input[name="show_marker"]');
+			if (showMarkerToggle) {
+				showMarkerToggle.addEventListener('change', function() {
+					if (showMarkerToggle.checked) {
+						marker.addTo(map);
+					} else {
+						marker.remove();
+					}
+				});
+			}
+
+			// Lock / unlock.
+			var LOCK_TIMEOUT = 30000;
+			var lockTimer = null;
+
+			var overlay = document.getElementById(el.dataset.overlayId);
+			var editBtn = document.getElementById(el.dataset.editBtnId);
+
+			function lock() {
+				clearTimeout(lockTimer);
+				lockTimer = null;
+				map.scrollZoom.disable();
+				map.dragPan.disable();
+				if (overlay) overlay.style.display = '';
+			}
+
+			function resetLockTimer() {
+				clearTimeout(lockTimer);
+				lockTimer = setTimeout(lock, LOCK_TIMEOUT);
+			}
+
+			if (editBtn) {
+				editBtn.addEventListener('click', function() {
+					if (overlay) overlay.style.display = 'none';
+					map.scrollZoom.enable();
+					map.dragPan.enable();
+					zoomManuallySet = false;
+					resetLockTimer();
+				});
+			}
+
+			el.addEventListener('mousedown', resetLockTimer);
+			el.addEventListener('wheel', resetLockTimer, { passive: true });
+
+			// Resize when the parent collapse opens.
+			var collapse = el.closest('.collapse');
+			if (collapse) {
+				var checkbox = collapse.querySelector('input[type="checkbox"]');
+				if (checkbox) {
+					checkbox.addEventListener('change', function() {
+						if (checkbox.checked) setTimeout(function() { map.resize(); }, 50);
+					});
+				}
+			}
+		});
+	})();
+	</script>
+}

@@ -1,7 +1,7 @@
 ---
 title: "Game Status"
 sidebar: true
-order: 20
+order: 21
 tag: System
 ---
 

@@ -8,12 +8,14 @@ import (
 )
 
 // Type aliases — blocks/ re-exports game/ vocabulary so callers don't need to change imports.
-type BlockContext = game.BlockContext
-type Block = game.Block
-type BaseBlock = game.BaseBlock
-type PlayerState = game.PlayerState
-type RegisteredBlock = game.RegisteredBlock
-type Blocks = game.Blocks
+type (
+	BlockContext    = game.BlockContext
+	Block           = game.Block
+	BaseBlock       = game.BaseBlock
+	PlayerState     = game.PlayerState
+	RegisteredBlock = game.RegisteredBlock
+	Blocks          = game.Blocks
+)
 
 // ErrBlockTypeNotFound is returned when a block type is not registered.
 var ErrBlockTypeNotFound = game.ErrBlockTypeNotFound
@@ -71,12 +73,13 @@ func init() {
 		&ImageBlock{},
 		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
 	)
+	registerBlock(&MapBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart})
+	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
 	registerBlock(
 		&ToggleTextBlock{},
 		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextStart, ContextFinish},
 	)
 	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
 
 	// Interactive blocks
 	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
@@ -227,6 +230,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewRatingBlock(baseBlock), nil
 	case "toggle_text":
 		return NewToggleTextBlock(baseBlock), nil
+	case mapBlockType:
+		return NewMapBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -360,6 +365,12 @@ func NewRatingBlock(base BaseBlock) *RatingBlock {
 
 func NewToggleTextBlock(base BaseBlock) *ToggleTextBlock {
 	return &ToggleTextBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewMapBlock(base BaseBlock) *MapBlock {
+	return &MapBlock{
 		BaseBlock: base,
 	}
 }

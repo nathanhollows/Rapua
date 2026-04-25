@@ -613,6 +613,41 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "map",
+      "name": "Map",
+      "description": "Displays a Mapbox map centred on a specific location with a marker.",
+      "contexts": [
+        "location_content",
+        "location_clues",
+        "finish",
+        "start"
+      ],
+      "fields": [
+        {
+          "name": "latitude",
+          "type": "float",
+          "description": "Map centre latitude",
+          "required": true
+        },
+        {
+          "name": "longitude",
+          "type": "float",
+          "description": "Map centre longitude",
+          "required": true
+        },
+        {
+          "name": "zoom",
+          "type": "float",
+          "description": "Map zoom level (1–20, default 14)"
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "description": "Optional caption displayed below the map"
+        }
+      ]
+    },
+    {
       "type": "password",
       "name": "Password",
       "description": "Players must enter the correct text answer to proceed.",

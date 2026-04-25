@@ -1,7 +1,7 @@
 ---
 title: "Pincode"
 sidebar: true
-order: 11
+order: 12
 ---
 
 # Pincode Block

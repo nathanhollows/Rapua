@@ -1,7 +1,7 @@
 ---
 title: "Content Blocks"
 sidebar: true
-order: 21
+order: 22
 ---
 
 # Content blocks
@@ -21,6 +21,7 @@ These blocks are the foundation of your game and are used to provide information
 - [Divider](/docs/user/blocks/divider)
 - [Header](/docs/user/blocks/header)
 - [Image](/docs/user/blocks/image)
+- [Map](/docs/user/blocks/map)
 - [Text](/docs/user/blocks/text)
 - [Toggle Text](/docs/user/blocks/toggle-text)
 - [Random Clue](/docs/user/blocks/random-clue)

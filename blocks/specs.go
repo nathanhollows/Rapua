@@ -329,6 +329,22 @@ func (b *ToggleTextBlock) GetSpec() game.BlockSpec {
 	}
 }
 
+func (b *MapBlock) GetSpec() game.BlockSpec {
+	return game.BlockSpec{
+		Type:        "map",
+		Name:        "Map",
+		Description: "Displays a Mapbox map centred on a specific location with a marker.",
+		Contexts:    []string{"location_content", "location_clues", "finish", "start"},
+		Fields: []game.FieldSpec{
+			{Name: "latitude", Type: "float", Required: true, Description: "Map centre latitude"},
+			{Name: "longitude", Type: "float", Required: true, Description: "Map centre longitude"},
+			{Name: "zoom", Type: "float", Description: "Map zoom level (1–20, default 14)"},
+			{Name: "caption", Type: "string", Description: "Optional caption displayed below the map"},
+			{Name: "hide_marker", Type: "bool", Description: "When true, the map pin is hidden on the player view"},
+		},
+	}
+}
+
 func (b *YoutubeBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "youtube",
