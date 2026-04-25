@@ -352,7 +352,6 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Post("/reorder", adminHandler.ReorderLocations)
 			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/new", adminHandler.LocationNew)
-			r.Post("/new", adminHandler.LocationNewPost)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
 			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)

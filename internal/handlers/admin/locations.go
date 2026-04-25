@@ -66,155 +66,41 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// LocationNew shows the form to create a new location.
+// LocationNew creates a new location with a default name and redirects to the edit page.
 func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	instances, err := h.instanceService.FindInstanceIDsForUser(r.Context(), user.ID)
+	location, err := h.locationService.CreateLocation(
+		r.Context(), user.CurrentInstanceID, "New Location", 0, 0, 0,
+	)
 	if err != nil {
-		h.handleError(w, r, "LocationNew: getting instances", "Error getting instances", "error", err)
+		h.handleError(w, r, "LocationNew: creating location", "Error creating location", "error", err)
 		return
 	}
 
-	duplicatable, err := h.markerService.FindMarkersNotInInstance(r.Context(), user.CurrentInstanceID, instances)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNew: getting markers",
-			"Error getting markers",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	targetGroupID := r.URL.Query().Get("groupId")
+	groupID := r.URL.Query().Get("groupId")
 	afterLocationID := r.URL.Query().Get("afterLocationId")
 	beforeLocationID := r.URL.Query().Get("beforeLocationId")
-
-	var targetGroupName string
-	if targetGroupID != "" {
-		group := h.gameStructureService.FindGroupByID(&user.CurrentInstance.GameStructure, targetGroupID)
-		if group != nil {
-			targetGroupName = group.Name
-		}
-	}
-
-	data := templates.AddLocationData{
-		Settings:         user.CurrentInstance.Settings,
-		Neighbouring:     user.CurrentInstance.Locations,
-		Duplicatable:     duplicatable,
-		TargetGroupID:    targetGroupID,
-		AfterLocationID:  afterLocationID,
-		BeforeLocationID: beforeLocationID,
-		TargetGroupName:  targetGroupName,
-	}
-
-	c := templates.AddLocation(data)
-	err = templates.Layout(c, *user, "Locations", "New Location").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("LocationNew: rendering template", "error", err)
-	}
-}
-
-// LocationNewPost handles creating a new location.
-func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) { //nolint:funlen
-	user := h.UserFromContext(r.Context())
-
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: parsing form",
-			"Error parsing form",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	if !r.Form.Has("name") || r.FormValue("name") == "" {
-		h.handleError(w, r, "LocationNewPost: missing name", "Location name is required")
-		return
-	}
-
-	var lat, lng float64
-	if r.FormValue("latitude") != "" {
-		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting latitude",
-				"Error converting latitude",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-		lng, err = strconv.ParseFloat(r.FormValue("longitude"), 64)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting longitude",
-				"Error converting longitude",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-	}
-
-	points := 0
-	if user.CurrentInstance.Settings.EnablePoints && r.FormValue("points") != "" {
-		points, err = strconv.Atoi(r.FormValue("points"))
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting points",
-				"Error converting points",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-	}
-
-	marker := r.FormValue("marker")
-	location, err := h.createLocationWithOrWithoutMarker(w, r, user, marker, lat, lng, points)
-	if err != nil {
-		return
-	}
-
-	groupID := r.FormValue("groupId")
-	afterLocationID := r.FormValue("afterLocationId")
-	beforeLocationID := r.FormValue("beforeLocationId")
 
 	if groupID != "" {
 		if err = h.gameStructureService.InsertLocationIntoGroup(
 			r.Context(), user.CurrentInstanceID, location.ID, groupID, afterLocationID, beforeLocationID,
 		); err != nil {
-			h.logger.Error("LocationNewPost: inserting location into group", "error", err, "location_id", location.ID)
-			// Non-fatal: orphan detection in Save will catch this
+			h.logger.Error("LocationNew: inserting location into group", "error", err, "location_id", location.ID)
+		}
+		group := h.gameStructureService.FindGroupByID(&user.CurrentInstance.GameStructure, groupID)
+		if group != nil && group.Navigation == models.NavigationCustom {
+			adjacentID := afterLocationID
+			if adjacentID == "" {
+				adjacentID = beforeLocationID
+			}
+			if adjacentID != "" {
+				h.copyClueBlockIfSingle(r.Context(), location.ID, adjacentID)
+			}
 		}
 	} else {
 		if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
-			h.logger.Error("LocationNewPost: adding location to root group", "error", err, "location_id", location.ID)
-			// Don't fail the request - the location was created successfully
+			h.logger.Error("LocationNew: adding location to root group", "error", err, "location_id", location.ID)
 		}
 	}
 
@@ -227,81 +113,6 @@ func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) { //no
 	http.Redirect(w, r, editPath, http.StatusFound)
 }
 
-// createLocationWithOrWithoutMarker creates a location either from coordinates or from an existing marker.
-func (h *Handler) createLocationWithOrWithoutMarker(
-	w http.ResponseWriter,
-	r *http.Request,
-	user *models.User,
-	marker string,
-	lat, lng float64,
-	points int,
-) (models.Location, error) {
-	if marker == "" {
-		location, err := h.locationService.CreateLocation(
-			r.Context(),
-			user.CurrentInstanceID,
-			r.FormValue("name"),
-			lat,
-			lng,
-			points,
-		)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: creating location without marker",
-				"Error creating location without marker",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return models.Location{}, err
-		}
-		return location, nil
-	}
-
-	access, accessErr := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
-	if accessErr != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: checking marker access",
-			"Error checking marker access",
-			"error",
-			accessErr,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return models.Location{}, accessErr
-	}
-	if !access {
-		h.handleError(w, r, "LocationNewPost: no access to marker", "You do not have access to this marker")
-		return models.Location{}, accessErr
-	}
-
-	location, err := h.locationService.CreateLocationFromMarker(
-		r.Context(),
-		user.CurrentInstanceID,
-		r.FormValue("name"),
-		points,
-		marker,
-	)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: creating location from marker",
-			"Error creating location from marker",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return models.Location{}, err
-	}
-	return location, nil
-}
 
 // ReorderLocations handles reordering locations.
 // Returns a 200 status code if successful,
@@ -613,6 +424,18 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.handleSuccess(w, r, "Game structure saved")
+}
+
+// copyClueBlockIfSingle copies the clue block type from adjacentLocationID to newLocationID
+// when the adjacent location has exactly one custom-clue block. Errors are non-fatal.
+func (h *Handler) copyClueBlockIfSingle(ctx context.Context, newLocationID, adjacentLocationID string) {
+	clueBlocks, err := h.blockService.FindByOwnerIDAndContext(ctx, adjacentLocationID, blocks.ContextLocationClues)
+	if err != nil || len(clueBlocks) != 1 {
+		return
+	}
+	if _, err = h.blockService.NewBlockWithOwnerAndContext(ctx, newLocationID, blocks.ContextLocationClues, clueBlocks[0].GetType()); err != nil {
+		h.logger.Warn("copyClueBlockIfSingle: creating clue block", "error", err, "location_id", newLocationID)
+	}
 }
 
 // addLocationToRootGroup adds a newly created location to the root group (unassigned area).
