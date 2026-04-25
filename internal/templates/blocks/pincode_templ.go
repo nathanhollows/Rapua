@@ -112,7 +112,7 @@ func pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock, 
 			return templ_7745c5c3_Err
 		}
 		for i := range block.Pincode {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input type=\"text\" name=\"pincode\" class=\"input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold\" minlength=\"1\" maxlength=\"1\" required")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input type=\"text\" name=\"pincode\" class=\"input input-lg validator w-12 rounded-md aspect-square text-center font-mono font-bold\" minlength=\"1\" maxlength=\"1\" required")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -135,7 +135,7 @@ func pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock, 
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " _=\"on input\n\t\t\t\t\t\t\t\tif event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.nextElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse \n\t\t\t\t\t\t\t\t\tset event.target.value to ''\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\ton keydown\n\t\t\t\t\t\t\t\tif event.key is in ['Backspace', 'Delete'] then\n\t\t\t\t\t\t\t\t\tset event.target.value to ''\n\t\t\t\t\t\t\t\t\tset input to event.target.previousElementSibling\n\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tevent.preventDefault()\n\t\t\t\t\t\t\t\telse if event.key is in ['ArrowLeft'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.previousElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse if event.key is in ['ArrowRight'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.nextElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " _=\"on input\n\t\t\t\t\t\t\t\tif event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.nextElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\tset event.target.value to ''\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\ton keydown\n\t\t\t\t\t\t\t\tif event.key is in ['Backspace', 'Delete'] then\n\t\t\t\t\t\t\t\t\tset event.target.value to ''\n\t\t\t\t\t\t\t\t\tset input to event.target.previousElementSibling\n\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tevent.preventDefault()\n\t\t\t\t\t\t\t\telse if event.key is in ['ArrowLeft'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.previousElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\telse if event.key is in ['ArrowRight'] then\n\t\t\t\t\t\t\t\t\tset input to event.target.nextElementSibling\n\t\t\t\t\t\t\t\t\tif input != null then\n\t\t\t\t\t\t\t\t\t\tinput.focus()\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -276,7 +276,7 @@ func pincodePlayerUpdate(settings models.InstanceSettings, block blocks.PincodeB
 			return templ_7745c5c3_Err
 		}
 		for i := range block.Pincode {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<input type=\"text\" name=\"pincode\" class=\"input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold\" minlength=\"1\" maxlength=\"1\" required")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<input type=\"text\" name=\"pincode\" class=\"input input-lg validator w-12 rounded-md aspect-square text-center font-mono font-bold\" minlength=\"1\" maxlength=\"1\" required")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

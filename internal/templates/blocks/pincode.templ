@@ -31,7 +31,7 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 							<input
 								type="text"
 								name="pincode"
-								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+								class="input input-lg validator w-12 rounded-md aspect-square text-center font-mono font-bold"
 								minlength="1"
 								maxlength="1"
 								required
@@ -45,7 +45,7 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 									if input != null then
 										input.focus()
 									end
-								else 
+								else
 									set event.target.value to ''
 								end
 							on keydown
@@ -113,7 +113,7 @@ templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.Pincode
 							<input
 								type="text"
 								name="pincode"
-								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
+								class="input input-lg validator w-12 rounded-md aspect-square text-center font-mono font-bold"
 								minlength="1"
 								maxlength="1"
 								required
