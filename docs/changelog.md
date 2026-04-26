@@ -7,26 +7,22 @@ tag: updated
 
 # Changelog
 
-## 7.0.1
-
-### Changed
-
-- Split ./rapua commands into separate files.
-- Update docs ordering and roadmap.
-
-### Fixed
-
-- Migration fixes orphaned team block states.
-
 ## 7.0.0
+
+v7.0.0 introduces games as code which lets me do fancy things like static game analysis (finding bugs in games without playing them), have AI write games using a [game specification](/docs/developer/game-spec), and store game templates with the code. 
+
+Since games are now code, instead of database entities, it also means I can change how I think about games, which means I can build in cool things like dynamically visible stages, locations, and content.
 
 ### Added
 
+- Quick add locations with one click.
+- Adding new locations to a group automatically adds a navigation block if the neighbouring location only has one navigation. This is to make it faster to rapidly add locations.
 - New `game` package now holds game types (extracted from `models` and `blocks`) and supports game import, export, and linting.
 - Markdown tables are now supported in block content and documentation pages.
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 - Image blocks can now be full width on mobile.
+- [Map block](/docs/user/blocks/map) to replace the `Map` and `Map and Names` navigation display mode.
 
 ### Changed
 
@@ -35,15 +31,19 @@ tag: updated
 - New fields for blocks to support reports in the future.
 - **Breaking:** `config`, `db`, `filesystem`, `helpers`, `repositories`, and `security` packages moved to `internal/`.
 - **Breaking:** Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
+- Split ./rapua commands into separate files.
+- Update docs ordering and roadmap.
 
 ### Fixed
 
+- The pincode block inputs now render horizontally on chrome based browsers.
 - Navigation button issue. Fixes [#122](https://github.com/nathanhollows/Rapua/issues/122)
 - Spacing issue in quiz block. Fixes [#123](https://github.com/nathanhollows/Rapua/issues/123)
 
 ### Removed
 
 - **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
+- **Breaking:** Removed `NavigationMode` from `/models` and simplified `/blocks` contexts to just have one for each of the start and finish pages, and location content and navigation.
 - Removed legacy block handlers.
 - Removed stub code in leaderboard service.
 

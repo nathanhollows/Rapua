@@ -43,9 +43,7 @@ These blocks allow you to create interactive elements in your game that require 
 
 ## Task blocks
 
-These blocks are designed for specific navigation modes.
-
-- [Task](/docs/user/blocks/task) - Defines tasks for [Task List](/docs/user/game-settings#:~:text=Task%20List) navigation
+- [Task](/docs/user/blocks/task) - Defines a task players must complete at a location
 
 ## System blocks
 

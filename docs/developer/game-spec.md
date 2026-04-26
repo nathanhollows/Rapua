@@ -113,6 +113,11 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
         "required": true,
         "fields": [
           {
+            "name": "color",
+            "type": "string",
+            "description": "Display colour for this group (e.g. \"primary\", \"secondary\"). Omit or empty for the root group."
+          },
+          {
             "name": "routing",
             "type": "enum",
             "description": "How players are routed through locations. See enums.routing.",
@@ -213,19 +218,9 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
             "required": true
           },
           {
-            "name": "clues",
+            "name": "navigation",
             "type": "list",
-            "description": "Clue blocks shown in navigation to help players find this location."
-          },
-          {
-            "name": "tasks",
-            "type": "list",
-            "description": "Task blocks shown in the task checklist (tasks navigation mode)."
-          },
-          {
-            "name": "checkpoint",
-            "type": "list",
-            "description": "Validation blocks that must pass before check-in completes."
+            "description": "Blocks shown on the /next page to help players find this location."
           }
         ]
       }
@@ -300,16 +295,8 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Blocks shown to players after checking in to a location."
     },
     {
-      "value": "location_clues",
-      "description": "Clue blocks shown in the navigation UI to help players find this location."
-    },
-    {
-      "value": "task",
-      "description": "Task blocks shown in the tasks navigation checklist."
-    },
-    {
-      "value": "checkpoint",
-      "description": "Validation blocks that must pass before a check-in is accepted."
+      "value": "navigation",
+      "description": "Blocks shown on the /next page to help players find a location."
     },
     {
       "value": "start",
@@ -356,7 +343,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Players spend points to reveal progressively detailed information tiers.",
       "contexts": [
         "location_content",
-        "location_clues"
+        "navigation"
       ],
       "fields": [
         {
@@ -479,7 +466,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "A clue revealed behind a button — players tap to reveal the hint.",
       "contexts": [
         "location_content",
-        "location_clues"
+        "navigation"
       ],
       "fields": [
         {
@@ -584,7 +571,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Displays an image with an optional caption and link.",
       "contexts": [
         "location_content",
-        "location_clues",
+        "navigation",
         "finish",
         "start"
       ],
@@ -618,7 +605,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Displays a Mapbox map centred on a specific location with a marker.",
       "contexts": [
         "location_content",
-        "location_clues",
+        "navigation",
         "finish",
         "start"
       ],
@@ -644,6 +631,11 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
           "name": "caption",
           "type": "string",
           "description": "Optional caption displayed below the map"
+        },
+        {
+          "name": "hide_marker",
+          "type": "bool",
+          "description": "When true, the map pin is hidden on the player view"
         }
       ]
     },
@@ -652,8 +644,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Password",
       "description": "Players must enter the correct text answer to proceed.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "location_content"
       ],
       "fields": [
         {
@@ -700,8 +691,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Pin Code",
       "description": "Players must enter a numeric PIN to proceed.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "location_content"
       ],
       "fields": [
         {
@@ -727,8 +717,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Quiz",
       "description": "Multiple choice question with configurable answer options.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "location_content"
       ],
       "fields": [
         {
@@ -793,7 +782,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Random Clue",
       "description": "Shows a randomly selected clue from a list each time the player views the location.",
       "contexts": [
-        "location_clues"
+        "navigation"
       ],
       "fields": [
         {
@@ -834,8 +823,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Sorting",
       "description": "Players drag and drop items into the correct order.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "location_content"
       ],
       "fields": [
         {
@@ -918,7 +906,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Task",
       "description": "A single task item in a scavenger hunt task list.",
       "contexts": [
-        "task"
+        "navigation"
       ],
       "fields": [
         {
@@ -965,7 +953,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Renders Markdown content. Supports headings, lists, links, bold, italic, and images.",
       "contexts": [
         "location_content",
-        "location_clues",
+        "navigation",
         "finish",
         "start"
       ],
@@ -984,7 +972,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "description": "Collapsible text section with a title and hidden content.",
       "contexts": [
         "location_content",
-        "location_clues",
+        "navigation",
         "start",
         "finish"
       ],
