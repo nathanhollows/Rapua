@@ -457,6 +457,12 @@ linters:
           - gocognit
           - gocyclo
           - goconst
+          - mnd
+          - rowserrcheck
+      - path: 'internal/migrations/.*\.go'
+        text: 'shadow'
+        linters:
+          - govet
       - path: 'internal/migrations/.*\.go'
         text: 'var-naming'
         linters:
@@ -473,6 +479,17 @@ linters:
       - path: 'internal/handlers/static/resize\.go'
         linters:
           - gochecknoglobals
+          - sloglint
+      - path: 'internal/middlewares/.*_test\.go'
+        linters:
+          - testpackage
+      - path: 'internal/templates/blocks/task_test\.go'
+        linters:
+          - testpackage
+      - path: 'game/doc\.go'
+        text: 'stutters'
+        linters:
+          - revive
       - path: 'internal/templates/.*\.go'
         linters:
           - cyclop
