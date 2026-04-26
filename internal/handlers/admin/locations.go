@@ -67,7 +67,7 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNew creates a new location with a default name and redirects to the edit page.
-func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) { //nolint:nestif // conditional group insertion with optional adjacent-block copy
 	user := h.UserFromContext(r.Context())
 
 	location, err := h.locationService.CreateLocation(
@@ -88,15 +88,12 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 		); err != nil {
 			h.logger.Error("LocationNew: inserting location into group", "error", err, "location_id", location.ID)
 		}
-		group := h.gameStructureService.FindGroupByID(&user.CurrentInstance.GameStructure, groupID)
-		if group != nil && group.Navigation == models.NavigationCustom {
-			adjacentID := afterLocationID
-			if adjacentID == "" {
-				adjacentID = beforeLocationID
-			}
-			if adjacentID != "" {
-				h.copyClueBlockIfSingle(r.Context(), location.ID, adjacentID)
-			}
+		adjacentID := afterLocationID
+		if adjacentID == "" {
+			adjacentID = beforeLocationID
+		}
+		if adjacentID != "" {
+			h.copyClueBlockIfSingle(r.Context(), location.ID, adjacentID)
 		}
 	} else {
 		if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
@@ -112,7 +109,6 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, editPath, http.StatusFound)
 }
-
 
 // ReorderLocations handles reordering locations.
 // Returns a 200 status code if successful,
@@ -206,52 +202,24 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the parent group to get navigation settings
-	parentGroup := h.gameStructureService.FindGroupByLocationID(&user.CurrentInstance.GameStructure, location.ID)
-	navigationMode := models.NavigationCustom // Default to custom
-	if parentGroup != nil {
-		navigationMode = parentGroup.Navigation
-	} else {
-		h.logger.Warn(
-			"LocationEdit: no parent group found",
+	// Load navigation blocks for this location
+	navigationBlocks, err := h.blockService.FindByOwnerIDAndContext(
+		r.Context(),
+		location.ID,
+		blocks.ContextNavigation,
+	)
+	if err != nil {
+		h.logger.Error(
+			"LocationEdit: getting navigation blocks",
+			"error",
+			err,
+			"instance_id",
+			user.CurrentInstanceID,
 			"location_id",
 			location.ID,
-			"using_default",
-			navigationMode,
 		)
-	}
-
-	// Load blocks based on the navigation mode of the parent group
-	var navigationContext blocks.BlockContext
-	var navigationBlocks []blocks.Block
-	switch parentGroup.Navigation {
-	case models.NavigationCustom:
-		navigationContext = blocks.ContextLocationClues
-	case models.NavigationTasks:
-		navigationContext = blocks.ContextTask
-	case models.NavigationMap, models.NavigationLabelledMap,
-		models.NavigationList:
-		// These navigation modes don't use blocks
-	}
-	if navigationContext != "" {
-		navigationBlocks, err = h.blockService.FindByOwnerIDAndContext(
-			r.Context(),
-			location.ID,
-			navigationContext,
-		)
-		if err != nil {
-			h.logger.Error(
-				"LocationEdit: getting blocks",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-				"location_id",
-				location.ID,
-			)
-			h.redirect(w, r, "/admin/locations")
-			return
-		}
+		h.redirect(w, r, "/admin/locations")
+		return
 	}
 
 	data := templates.EditLocationData{
@@ -259,7 +227,6 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		Location:         *location,
 		ContentBlocks:    contentBlocks,
 		NavigationBlocks: navigationBlocks,
-		NavigationMode:   navigationMode,
 	}
 
 	c := templates.EditLocation(data)
@@ -426,15 +393,16 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 	h.handleSuccess(w, r, "Game structure saved")
 }
 
-// copyClueBlockIfSingle copies the clue block type from adjacentLocationID to newLocationID
-// when the adjacent location has exactly one custom-clue block. Errors are non-fatal.
+// copyClueBlockIfSingle copies the navigation block type from adjacentLocationID to newLocationID
+// when the adjacent location has exactly one navigation block. Errors are non-fatal.
 func (h *Handler) copyClueBlockIfSingle(ctx context.Context, newLocationID, adjacentLocationID string) {
-	clueBlocks, err := h.blockService.FindByOwnerIDAndContext(ctx, adjacentLocationID, blocks.ContextLocationClues)
-	if err != nil || len(clueBlocks) != 1 {
+	navBlocks, err := h.blockService.FindByOwnerIDAndContext(ctx, adjacentLocationID, blocks.ContextNavigation)
+	if err != nil || len(navBlocks) != 1 {
 		return
 	}
-	if _, err = h.blockService.NewBlockWithOwnerAndContext(ctx, newLocationID, blocks.ContextLocationClues, clueBlocks[0].GetType()); err != nil {
-		h.logger.Warn("copyClueBlockIfSingle: creating clue block", "error", err, "location_id", newLocationID)
+	if _, err = h.blockService.NewBlockWithOwnerAndContext(ctx, newLocationID, blocks.ContextNavigation, navBlocks[0].GetType()); err != nil {
+		h.logger.WarnContext(ctx, "copyClueBlockIfSingle: creating navigation block",
+			"error", err, "location_id", newLocationID)
 	}
 }
 

@@ -13,7 +13,6 @@ type EditLocationData struct {
 	Location         models.Location
 	ContentBlocks    blocks.Blocks
 	NavigationBlocks blocks.Blocks
-	NavigationMode   models.NavigationMode
 }
 
 templ EditLocation(data EditLocationData) {
@@ -150,35 +149,16 @@ templ EditLocation(data EditLocationData) {
 				}
 			</div>
 			@deleteBlockModal()
-			<!-- Clues (only show when navigation mode is Custom Clues) -->
-			if data.NavigationMode == models.NavigationCustom {
-				@blockAddButton(data.Location.ID, blocks.ContextLocationClues, ".blocks")
-				<div
-					id="nav-blocks"
-					class="blocks flex flex-col gap-5"
-				>
-					for _, block := range data.NavigationBlocks {
-						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
-					}
-				</div>
-			}
-			<!-- Tasks -->
-			if data.NavigationMode == models.NavigationTasks {
-				<div class="divider my-10">
-					<span class="text-sm font-bold">Task</span>
-				</div>
-				if len(data.NavigationBlocks) == 0 {
-					@blockAddButton(data.Location.ID, blocks.ContextTask, ".blocks")
+			<!-- Navigation -->
+			@blockAddButton(data.Location.ID, blocks.ContextNavigation, ".blocks")
+			<div
+				id="nav-blocks"
+				class="blocks flex flex-col gap-5"
+			>
+				for _, block := range data.NavigationBlocks {
+					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
 				}
-				<div
-					id="nav-blocks"
-					class="blocks flex flex-col gap-5"
-				>
-					for _, block := range data.NavigationBlocks {
-						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.NavigationBlocks) < 4)
-					}
-				</div>
-			}
+			</div>
 			<!-- Blocks -->
 			<section>
 				@blockAddButton(data.Location.ID, blocks.ContextLocationContent, ".blocks")
