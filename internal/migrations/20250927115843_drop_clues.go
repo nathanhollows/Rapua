@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/uptrace/bun"
 )
 
@@ -106,7 +105,7 @@ func init() {
 				ID:                 uuid.New().String(),
 				LocationID:         locationID,
 				Type:               "random_clue",
-				Context:            blocks.ContextLocationClues, // New context for clue-based navigation
+				Context:            "location_clues", // New context for clue-based navigation
 				Data:               jsonData,
 				Ordering:           0, // Default ordering
 				Points:             0, // Default points
@@ -153,7 +152,7 @@ func init() {
 		var clueBlocks []m20250926120511_Block
 		err = db.NewSelect().
 			Model(&clueBlocks).
-			Where("type = ? AND context = ?", "random_clue", blocks.ContextLocationClues).
+			Where("type = ? AND context = ?", "random_clue", "location_clues").
 			Scan(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to fetch random_clue blocks: %w", err)
@@ -202,7 +201,7 @@ func init() {
 		// Now remove the random_clue blocks with nav context
 		_, err = db.NewDelete().
 			Model((*m20250926120511_Block)(nil)).
-			Where("type = ? AND context = ?", "random_clue", blocks.ContextLocationClues).
+			Where("type = ? AND context = ?", "random_clue", "location_clues").
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to delete random_clue blocks: %w", err)
