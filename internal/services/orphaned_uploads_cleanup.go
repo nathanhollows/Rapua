@@ -109,7 +109,7 @@ func (s *OrphanedUploadsCleanupService) deleteUploadFile(ctx context.Context, ur
 	path := urlOrPath
 	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
 		// Extract path from URL (everything after domain)
-		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
+
 		parts := strings.SplitN(urlOrPath, "/", 4)
 		//nolint:mnd // Need 4 parts to extract path after domain
 		if len(parts) >= 4 {

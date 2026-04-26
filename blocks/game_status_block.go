@@ -79,7 +79,6 @@ func (b *GameStatusAlertBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *GameStatusAlertBlock) RequiresValidation() bool {
@@ -91,4 +90,3 @@ func (b *GameStatusAlertBlock) ValidatePlayerInput(state PlayerState, _ map[stri
 	state.SetComplete(true)
 	return state, nil
 }
-

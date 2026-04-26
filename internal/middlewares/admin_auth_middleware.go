@@ -22,7 +22,11 @@ type InstanceLoader interface {
 
 // AdminAuthMiddleware ensures the user is authenticated and has verified their email.
 // It also loads the current instance from a cookie and populates the user struct.
-func AdminAuthMiddleware(authService AuthenticatedUserGetter, instanceLoader InstanceLoader, next http.Handler) http.Handler {
+func AdminAuthMiddleware(
+	authService AuthenticatedUserGetter,
+	instanceLoader InstanceLoader,
+	next http.Handler,
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Make sure the user is authenticated
 		user, err := authService.GetAuthenticatedUser(r)

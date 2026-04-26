@@ -75,7 +75,7 @@ func TestLintDoc_ValidDoc_JSONBody(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
 	// LintResult.Errors should be empty (or nil/null)
-	errs, _ := result["Errors"].([]any)
+	errs, _ := result["errors"].([]any)
 	assert.Empty(t, errs)
 }
 
@@ -93,7 +93,7 @@ func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 	var result map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	errs, _ := result["Errors"].([]any)
+	errs, _ := result["errors"].([]any)
 	assert.NotEmpty(t, errs)
 }
 
@@ -182,7 +182,7 @@ func TestParseGameDoc_InvalidJSON(t *testing.T) {
 
 	doc, err := parseGameDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }
 
@@ -196,6 +196,6 @@ func TestParseGameDoc_MultipartMissingFileField(t *testing.T) {
 
 	doc, err := parseGameDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }

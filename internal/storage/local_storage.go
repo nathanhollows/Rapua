@@ -45,7 +45,7 @@ func (s *LocalStorage) Upload(
 
 	// Create the directory for the file
 	destPath := filepath.Join(s.basePath, date)
-	err := os.MkdirAll(destPath, os.ModePerm)
+	err := os.MkdirAll(destPath, 0o750) //nolint:mnd // standard directory permissions
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create directory: %w", err)
 	}

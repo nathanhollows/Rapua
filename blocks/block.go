@@ -72,6 +72,7 @@ func init() {
 		[]BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart},
 	)
 	registerBlock(&MapBlock{}, []BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart})
+	registerBlock(&RandomClueBlock{}, []BlockContext{ContextNavigation})
 	registerBlock(
 		&ToggleTextBlock{},
 		[]BlockContext{ContextLocationContent, ContextNavigation, ContextStart, ContextFinish},

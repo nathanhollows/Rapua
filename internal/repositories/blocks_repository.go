@@ -61,7 +61,12 @@ type BlockRepository interface {
 	// DeleteByOwnerIDPreservingStates deletes all blocks for an owner and returns
 	// the player states for blocks whose IDs appear in preserveIDs. The caller
 	// must re-insert the returned states after recreating those blocks.
-	DeleteByOwnerIDPreservingStates(ctx context.Context, tx *bun.Tx, ownerID string, preserveIDs []string) ([]*models.TeamBlockState, error)
+	DeleteByOwnerIDPreservingStates(
+		ctx context.Context,
+		tx *bun.Tx,
+		ownerID string,
+		preserveIDs []string,
+	) ([]*models.TeamBlockState, error)
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error

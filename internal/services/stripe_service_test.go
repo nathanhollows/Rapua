@@ -284,7 +284,6 @@ func TestStripeService_ProcessWebhook_IdempotentProcessing(t *testing.T) {
 	t.Skip("Webhook processing test requires Stripe test environment setup")
 }
 
-
 func TestStripeService_CreditAdjustmentPurchaseLink(t *testing.T) {
 	// This test verifies that credit adjustments created from purchases
 	// are properly linked via the CreditPurchaseID field

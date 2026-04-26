@@ -94,7 +94,6 @@ func (b *RatingBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *RatingBlock) RequiresValidation() bool { return true }
@@ -139,4 +138,3 @@ func (b *RatingBlock) GetPlayerRating(state PlayerState) int {
 	}
 	return data.Rating
 }
-

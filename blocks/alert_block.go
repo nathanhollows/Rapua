@@ -56,7 +56,6 @@ func (b *AlertBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *AlertBlock) RequiresValidation() bool {
@@ -78,4 +77,3 @@ func (b *AlertBlock) GetStyles() map[string]string {
 		"error":   "Error",
 	}
 }
-

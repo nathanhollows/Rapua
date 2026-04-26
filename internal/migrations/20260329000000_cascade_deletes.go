@@ -95,7 +95,7 @@ func init() {
 				return fmt.Errorf("disabling foreign keys: %w", err)
 			}
 			defer func() {
-				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck
+				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck,gosec // G104: deferred cleanup, error intentionally ignored
 			}()
 
 			// Clean up orphaned rows that accumulated while FK constraints
@@ -425,7 +425,13 @@ func init() {
 			if rows.Next() {
 				var table, rowid, parent, fkid string
 				_ = rows.Scan(&table, &rowid, &parent, &fkid)
-				return fmt.Errorf("foreign key violation: table=%s rowid=%s parent=%s fkid=%s", table, rowid, parent, fkid)
+				return fmt.Errorf(
+					"foreign key violation: table=%s rowid=%s parent=%s fkid=%s",
+					table,
+					rowid,
+					parent,
+					fkid,
+				)
 			}
 
 			return nil
@@ -437,7 +443,7 @@ func init() {
 				return fmt.Errorf("disabling foreign keys: %w", err)
 			}
 			defer func() {
-				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck
+				db.ExecContext(ctx, "PRAGMA foreign_keys=ON") //nolint:errcheck,gosec // G104: deferred cleanup, error intentionally ignored
 			}()
 
 			// Drop FK indexes added by up migration

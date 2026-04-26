@@ -228,4 +228,3 @@ func (r *CreditRepository) DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx
 
 	return nil
 }
-

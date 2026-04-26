@@ -80,7 +80,6 @@ func (b *PincodeBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *PincodeBlock) RequiresValidation() bool { return true }
@@ -139,4 +138,3 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
-

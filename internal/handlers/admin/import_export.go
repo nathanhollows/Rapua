@@ -29,13 +29,31 @@ func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
 
 	doc, err := h.exportService.ExportInstance(r.Context(), instanceID)
 	if err != nil {
-		h.handleError(w, r, "ExportInstance: export", "Error exporting instance", "error", err, "instance_id", instanceID)
+		h.handleError(
+			w,
+			r,
+			"ExportInstance: export",
+			"Error exporting instance",
+			"error",
+			err,
+			"instance_id",
+			instanceID,
+		)
 		return
 	}
 
 	data, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
-		h.handleError(w, r, "ExportInstance: marshal", "Error serialising document", "error", err, "instance_id", instanceID)
+		h.handleError(
+			w,
+			r,
+			"ExportInstance: marshal",
+			"Error serialising document",
+			"error",
+			err,
+			"instance_id",
+			instanceID,
+		)
 		return
 	}
 
@@ -123,13 +141,15 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/admin/instances")
 }
 
+const maxUploadBytes = 4 << 20 // 4 MB
+
 // parseUploadedDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.
-func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) {
+func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) { //nolint:nestif // standard multipart-or-body parse pattern
 	contentType := r.Header.Get("Content-Type")
 
 	var data []byte
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(4 << 20); err != nil {
+		if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
 			return nil, fmt.Errorf("parse form: %w", err)
 		}
 		f, _, err := r.FormFile("file")
@@ -138,13 +158,13 @@ func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) {
 		}
 		defer f.Close()
 		var readErr error
-		data, readErr = io.ReadAll(io.LimitReader(f, 4<<20))
+		data, readErr = io.ReadAll(io.LimitReader(f, maxUploadBytes))
 		if readErr != nil {
 			return nil, fmt.Errorf("read file: %w", readErr)
 		}
 	} else {
 		var readErr error
-		data, readErr = io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		data, readErr = io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
 		if readErr != nil {
 			return nil, fmt.Errorf("read body: %w", readErr)
 		}

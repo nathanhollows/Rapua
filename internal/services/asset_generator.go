@@ -238,17 +238,15 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	// Add the instance name
 	pdf.SetFont("ArchivoBlack", "", gameNameFontSize)
 	title := strings.ToUpper(instanceName)
-	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
-	pdf.SetY(32)
-	pdf.SetX((pageWidth - pdf.GetStringWidth(title)) / 2)
-	pdf.Cell(130, 32, title)
+	pdf.SetY(32)                                          //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.SetX((pageWidth - pdf.GetStringWidth(title)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.Cell(130, 32, title)                              //nolint:mnd // PDF layout: A4 page cell dimensions
 
 	// Add the location name
 	pdf.SetFont("OpenSans", "", locationNameFontSize)
-	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
-	pdf.SetY(40)
-	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2)
-	pdf.Cell(40, 70, page.LocationName)
+	pdf.SetY(40)                                                      //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.Cell(40, 70, page.LocationName)                               //nolint:mnd // PDF layout: A4 page cell dimensions
 
 	// Add the QR code
 	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {
@@ -261,10 +259,9 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	scanText = strings.ReplaceAll(scanText, "https://", "")
 	scanText = strings.ReplaceAll(scanText, "http://", "")
 	scanText = strings.ReplaceAll(scanText, "www.", "")
-	//nolint:mnd // PDF layout: pixel coordinates and cell dimensions for A4 page
-	pdf.SetY(180)
-	pdf.SetX((pageWidth - pdf.GetStringWidth(scanText)) / 2)
-	pdf.Cell(40, 70, scanText)
+	pdf.SetY(180)                                            //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.SetX((pageWidth - pdf.GetStringWidth(scanText)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
+	pdf.Cell(40, 70, scanText)                               //nolint:mnd // PDF layout: A4 page cell dimensions
 }
 
 func (s *assetGenerator) GetQRCodePathAndContent(_, id, name, extension string) (string, string) {

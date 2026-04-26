@@ -14,8 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/charge"
 	"github.com/stripe/stripe-go/v83/checkout/session"
@@ -248,7 +248,10 @@ func (s *StripeService) ProcessWebhook(ctx context.Context, payload []byte, sign
 }
 
 // handleCheckoutSessionCompleted processes successful checkout sessions.
-func (s *StripeService) handleCheckoutSessionCompleted(ctx context.Context, event *stripe.Event) error { //nolint:gocognit,funlen
+func (s *StripeService) handleCheckoutSessionCompleted( //nolint:gocognit,funlen
+	ctx context.Context,
+	event *stripe.Event,
+) error {
 	var sess stripe.CheckoutSession
 	err := json.Unmarshal(event.Data.Raw, &sess)
 	if err != nil {

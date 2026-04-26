@@ -17,7 +17,7 @@ func newGenSpecCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "genspec",
 		Usage: "regenerate docs/developer/game-spec.md from code",
-		Action: func(c *cli.Context) error {
+		Action: func(_ *cli.Context) error {
 			out := filepath.Join("docs", "developer", "game-spec.md")
 			n, err := writeGameSpec(out)
 			if err != nil {
@@ -37,7 +37,7 @@ func writeGameSpec(outPath string) (int, error) {
 		return 0, fmt.Errorf("generate spec: %w", err)
 	}
 	content := gameSpecHeader + string(data) + gameSpecFooter
-	if err := os.WriteFile(outPath, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(outPath, []byte(content), 0o600); err != nil {
 		return 0, fmt.Errorf("write %s: %w", outPath, err)
 	}
 	return len(content), nil

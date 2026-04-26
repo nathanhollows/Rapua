@@ -72,7 +72,6 @@ func (b *RandomClueBlock) ToYAML() map[string]any {
 	}
 }
 
-
 // Validation and Points Calculation
 
 func (b *RandomClueBlock) RequiresValidation() bool { return false }
@@ -82,4 +81,3 @@ func (b *RandomClueBlock) ValidatePlayerInput(state PlayerState, _ map[string][]
 	state.SetComplete(true)
 	return state, nil
 }
-

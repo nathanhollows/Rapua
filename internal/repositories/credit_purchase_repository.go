@@ -209,4 +209,3 @@ func (r *CreditPurchaseRepository) UpdateReceiptURLWithTx(
 		Exec(ctx)
 	return err
 }
-

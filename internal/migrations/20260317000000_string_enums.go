@@ -67,8 +67,6 @@ type m20260317_Row struct {
 }
 
 // Mapping tables for forward migration (int → string).
-//
-//nolint:mnd // Migration-scoped lookup tables with historical iota indices
 var (
 	m20260317_routingForward = map[float64]string{
 		0: "randomised",

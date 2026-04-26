@@ -239,8 +239,8 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL := fmt.Sprintf("%s/reset/%s", os.Getenv("SITE_URL"), token)
-	if err := h.emailService.SendPasswordResetEmail(r.Context(), *user, resetURL); err != nil {
-		h.logger.Warn("ForgotPasswordPost: sending email failed", "error", err)
+	if sendErr := h.emailService.SendPasswordResetEmail(r.Context(), *user, resetURL); sendErr != nil {
+		h.logger.Warn("ForgotPasswordPost: sending email failed", "error", sendErr)
 	}
 
 	time.Sleep(minDuration - time.Since(start))

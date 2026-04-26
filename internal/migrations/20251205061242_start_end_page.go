@@ -192,7 +192,7 @@ func init() {
 // m20251205061242_createStartBlocks creates the default blocks for an instance's start page.
 
 func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251205061242_Block {
-	result := make([]m20251205061242_Block, 7) //nolint:mnd // 7 blocks for start page
+	result := make([]m20251205061242_Block, 7)
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
@@ -231,39 +231,36 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 	// 3. Divider - Instructions
 	divider1Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "How to play"})
 	result[2] = m20251205061242_Block{
-		ID:                 uuid.New().String(),
-		OwnerID:            instanceID,
-		Type:               "divider",
-		Context:            blocks.ContextStart,
-		Data:               divider1Data,
-		Ordering:           2, //nolint:mnd // Sequential ordering
-		Points:             0,
+		ID:       uuid.New().String(),
+		OwnerID:  instanceID,
+		Type:     "divider",
+		Context:  blocks.ContextStart,
+		Data:     divider1Data,
+		Ordering: 2, Points: 0,
 		ValidationRequired: false,
 	}
 
 	// 4. Markdown - Instructions
 	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_StartInstructions})
 	result[3] = m20251205061242_Block{
-		ID:                 uuid.New().String(),
-		OwnerID:            instanceID,
-		Type:               "markdown",
-		Context:            blocks.ContextStart,
-		Data:               markdownData,
-		Ordering:           3, //nolint:mnd // Sequential ordering
-		Points:             0,
+		ID:       uuid.New().String(),
+		OwnerID:  instanceID,
+		Type:     "markdown",
+		Context:  blocks.ContextStart,
+		Data:     markdownData,
+		Ordering: 3, Points: 0,
 		ValidationRequired: false,
 	}
 
 	// 5. Divider - Team Info
 	divider2Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "Team Info"})
 	result[4] = m20251205061242_Block{
-		ID:                 uuid.New().String(),
-		OwnerID:            instanceID,
-		Type:               "divider",
-		Context:            blocks.ContextStart,
-		Data:               divider2Data,
-		Ordering:           4, //nolint:mnd // Sequential ordering
-		Points:             0,
+		ID:       uuid.New().String(),
+		OwnerID:  instanceID,
+		Type:     "divider",
+		Context:  blocks.ContextStart,
+		Data:     divider2Data,
+		Ordering: 4, Points: 0,
 		ValidationRequired: false,
 	}
 
@@ -273,13 +270,12 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		AllowChanging: true,
 	})
 	result[5] = m20251205061242_Block{
-		ID:                 uuid.New().String(),
-		OwnerID:            instanceID,
-		Type:               "team_name",
-		Context:            blocks.ContextStart,
-		Data:               teamNameData,
-		Ordering:           5, //nolint:mnd // Sequential ordering
-		Points:             0,
+		ID:       uuid.New().String(),
+		OwnerID:  instanceID,
+		Type:     "team_name",
+		Context:  blocks.ContextStart,
+		Data:     teamNameData,
+		Ordering: 5, Points: 0,
 		ValidationRequired: true, // TeamNameChangerBlock requires validation
 	}
 
@@ -290,13 +286,12 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ButtonStyle:         "primary",
 	})
 	result[6] = m20251205061242_Block{
-		ID:                 uuid.New().String(),
-		OwnerID:            instanceID,
-		Type:               "start_game_button",
-		Context:            blocks.ContextStart,
-		Data:               startData,
-		Ordering:           6, //nolint:mnd // Sequential ordering
-		Points:             0,
+		ID:       uuid.New().String(),
+		OwnerID:  instanceID,
+		Type:     "start_game_button",
+		Context:  blocks.ContextStart,
+		Data:     startData,
+		Ordering: 6, Points: 0,
 		ValidationRequired: false,
 	}
 
@@ -306,7 +301,7 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 // m20251205061242_createFinishBlocks creates the default blocks for an instance's complete page.
 
 func m20251205061242_createFinishBlocks(instanceID string) []m20251205061242_Block {
-	result := make([]m20251205061242_Block, 2) //nolint:mnd // 2 blocks for complete page
+	result := make([]m20251205061242_Block, 2)
 
 	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{

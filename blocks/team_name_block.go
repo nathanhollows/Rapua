@@ -71,7 +71,6 @@ func (b *TeamNameChangerBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *TeamNameChangerBlock) RequiresValidation() bool {
@@ -85,4 +84,3 @@ func (b *TeamNameChangerBlock) ValidatePlayerInput(state PlayerState, _ map[stri
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
-

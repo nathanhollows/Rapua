@@ -15,7 +15,7 @@ import (
 // SpecJSON serves the generated game spec as JSON.
 //
 //	GET /api/v7/spec
-func (h *Handler) SpecJSON(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SpecJSON(w http.ResponseWriter, _ *http.Request) {
 	data, err := specgen.GenerateJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error generating spec: %v", err), http.StatusInternalServerError)
@@ -45,13 +45,15 @@ func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
+const maxUploadBytes = 4 << 20 // 4 MB
+
 // parseGameDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.
-func parseGameDoc(r *http.Request) (*game.GameDoc, error) {
+func parseGameDoc(r *http.Request) (*game.GameDoc, error) { //nolint:nestif // standard multipart-or-body parse pattern
 	contentType := r.Header.Get("Content-Type")
 
 	var data []byte
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(4 << 20); err != nil {
+		if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
 			return nil, fmt.Errorf("parse form: %w", err)
 		}
 		f, _, err := r.FormFile("file")
@@ -65,7 +67,7 @@ func parseGameDoc(r *http.Request) (*game.GameDoc, error) {
 		}
 	} else {
 		var err error
-		data, err = io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		data, err = io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
 		if err != nil {
 			return nil, fmt.Errorf("read body: %w", err)
 		}

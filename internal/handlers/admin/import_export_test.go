@@ -1,4 +1,3 @@
-//nolint:testpackage // Tests need access to unexported parseUploadedDoc
 package admin
 
 import (
@@ -72,7 +71,7 @@ func TestParseUploadedDoc_InvalidJSON(t *testing.T) {
 
 	doc, err := parseUploadedDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }
 
@@ -86,7 +85,7 @@ func TestParseUploadedDoc_MultipartMissingFile(t *testing.T) {
 
 	doc, err := parseUploadedDoc(req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }
 

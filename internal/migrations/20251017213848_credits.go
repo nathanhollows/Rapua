@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"net/mail"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/nathanhollows/Rapua/v7/internal/config"
 	"github.com/uptrace/bun"
@@ -223,9 +224,8 @@ func init() {
 					ID:        uuid.New().String(),
 					CreatedAt: time.Now(),
 					UserID:    user.ID,
-					//nolint:mnd // 500 is the thank you gift amount
-					Credits: 500,
-					Reason:  "Gift: Founders pack - thank you for being an early user!",
+					Credits:   500,
+					Reason:    "Gift: Founders pack - thank you for being an early user!",
 				}
 			}
 
