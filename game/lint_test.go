@@ -2,6 +2,7 @@ package game_test
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v7/game"
@@ -25,12 +26,7 @@ func (m *mockRegistry) CanUseInContext(blockType string, ctx game.BlockContext) 
 	if !ok {
 		return false
 	}
-	for _, c := range ctxs {
-		if c == ctx {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ctxs, ctx)
 }
 
 func (m *mockRegistry) KnownFields(t string) []string {
@@ -44,6 +40,7 @@ func newTestRegistry() *mockRegistry {
 	return &mockRegistry{
 		validTypes: map[string]bool{
 			"text":         true,
+			"clue":         true,
 			"quiz":         true,
 			"start_button": true,
 			"game_status":  true,
@@ -51,10 +48,10 @@ func newTestRegistry() *mockRegistry {
 		},
 		contexts: map[string][]game.BlockContext{
 			"text":         {game.ContextLocationContent, game.ContextStart, game.ContextFinish},
-			"quiz":         {game.ContextLocationContent, game.ContextCheckpoint},
+			"clue":         {game.ContextNavigation},
+			"quiz":         {game.ContextLocationContent},
 			"start_button": {game.ContextStart},
 			"game_status":  {game.ContextStart},
-			"password":     {game.ContextCheckpoint},
 		},
 	}
 }
@@ -72,23 +69,19 @@ func validDoc() *game.GameDoc {
 		Finish: []game.BlockDoc{},
 		Structure: game.StructureDoc{
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Group: &game.GroupDoc{
 					Name:       "Stage One",
 					Color:      "primary",
 					Routing:    game.RouteStrategyFreeRoam,
-					Navigation: game.NavigationMap,
 					Completion: game.CompletionAll,
 					Children: []game.ChildDoc{
 						{Location: &game.LocationDoc{
 							Slug:       "lobby",
 							Name:       "The Lobby",
 							Content:    []game.BlockDoc{{"type": "text"}},
-							Clues:      []game.BlockDoc{},
-							Tasks:      []game.BlockDoc{},
-							Checkpoint: []game.BlockDoc{},
+							Navigation: []game.BlockDoc{{"type": "clue"}},
 						}},
 					},
 				}},
@@ -127,14 +120,6 @@ func TestLint_InvalidRouting(t *testing.T) {
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
 	assert.Equal(t, "INVALID_ROUTING", result.Errors[0].Code)
-}
-
-func TestLint_InvalidNavigation(t *testing.T) {
-	doc := validDoc()
-	doc.Structure.Navigation = "bogus"
-	result := game.Lint(doc, newTestRegistry())
-	require.Len(t, result.Errors, 1)
-	assert.Equal(t, "INVALID_NAVIGATION", result.Errors[0].Code)
 }
 
 func TestLint_MissingLocationSlug(t *testing.T) {
@@ -190,9 +175,7 @@ func TestLint_DuplicateSlugs(t *testing.T) {
 			Slug:       "lobby", // duplicate
 			Name:       "Another Lobby",
 			Content:    []game.BlockDoc{},
-			Clues:      []game.BlockDoc{},
-			Tasks:      []game.BlockDoc{},
-			Checkpoint: []game.BlockDoc{},
+			Navigation: []game.BlockDoc{},
 		},
 	})
 	result := game.Lint(doc, newTestRegistry())
@@ -218,7 +201,6 @@ func TestLint_EmptyGroup(t *testing.T) {
 			Name:       "Empty Group",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children:   []game.ChildDoc{},
 		},
@@ -275,7 +257,6 @@ func TestLint_MissingGroupName(t *testing.T) {
 			Name:       "",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children:   []game.ChildDoc{},
 		},
@@ -395,7 +376,6 @@ func TestLint_DuplicateSlugInGroup(t *testing.T) {
 			Name:       "Group",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Location: &game.LocationDoc{
@@ -418,14 +398,12 @@ func TestLint_DuplicateSlugInNestedGroup(t *testing.T) {
 			Name:       "Outer",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Group: &game.GroupDoc{
 					Name:       "Inner",
 					Color:      "secondary",
 					Routing:    game.RouteStrategyFreeRoam,
-					Navigation: game.NavigationMap,
 					Completion: game.CompletionAll,
 					Children: []game.ChildDoc{
 						{Location: &game.LocationDoc{
@@ -463,14 +441,12 @@ func TestLint_NestedEmptyGroupWarning(t *testing.T) {
 			Name:       "Outer Group",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Group: &game.GroupDoc{
 					Name:       "Inner Empty",
 					Color:      "secondary",
 					Routing:    game.RouteStrategyFreeRoam,
-					Navigation: game.NavigationMap,
 					Completion: game.CompletionAll,
 					Children:   []game.ChildDoc{},
 				}},
@@ -491,14 +467,14 @@ func TestLint_PointsDisabledInGroup(t *testing.T) {
 			Name:       "Group",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Location: &game.LocationDoc{
-					Slug:    "station",
-					Name:    "Station",
-					Points:  10,
-					Content: []game.BlockDoc{},
+					Slug:       "station",
+					Name:       "Station",
+					Points:     10,
+					Content:    []game.BlockDoc{{"type": "text"}},
+					Navigation: []game.BlockDoc{{"type": "clue"}},
 				}},
 			},
 		},
@@ -531,16 +507,13 @@ func TestLint_PointsDisabledJsonNumber(t *testing.T) {
 	assert.Equal(t, "POINTS_DISABLED", result.Warnings[0].Code)
 }
 
-func TestLint_LocationWithCluesTasksCheckpoint(t *testing.T) {
-	// Semantic layer flags INVALID_CONTEXT for "text" in clues and tasks
-	// (text is not a valid block type in those contexts). Quiz is valid in checkpoint.
+func TestLint_InvalidNavigationContext(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Location.Clues = []game.BlockDoc{{"type": "text"}}
-	doc.Structure.Children[0].Group.Children[0].Location.Tasks = []game.BlockDoc{{"type": "text"}}
-	doc.Structure.Children[0].Group.Children[0].Location.Checkpoint = []game.BlockDoc{{"type": "quiz"}}
+	// quiz is not registered for ContextNavigation — should produce INVALID_CONTEXT
+	doc.Structure.Children[0].Group.Children[0].Location.Navigation = []game.BlockDoc{{"type": "quiz"}}
 	result := game.Lint(doc, newTestRegistry())
-	// quiz is valid in checkpoint — only clues/tasks produce INVALID_CONTEXT
-	assert.Len(t, result.Errors, 2)
+	require.Len(t, result.Errors, 1)
+	assert.Equal(t, "INVALID_CONTEXT", result.Errors[0].Code)
 }
 
 func TestLint_PointsDisabledInNestedGroup(t *testing.T) {
@@ -551,21 +524,20 @@ func TestLint_PointsDisabledInNestedGroup(t *testing.T) {
 			Name:       "Outer",
 			Color:      "primary",
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Group: &game.GroupDoc{
 					Name:       "Inner",
 					Color:      "secondary",
 					Routing:    game.RouteStrategyFreeRoam,
-					Navigation: game.NavigationMap,
 					Completion: game.CompletionAll,
 					Children: []game.ChildDoc{
 						{Location: &game.LocationDoc{
-							Slug:    "deep-station",
-							Name:    "Deep Station",
-							Points:  10,
-							Content: []game.BlockDoc{},
+							Slug:       "deep-station",
+							Name:       "Deep Station",
+							Points:     10,
+							Content:    []game.BlockDoc{{"type": "text"}},
+							Navigation: []game.BlockDoc{{"type": "clue"}},
 						}},
 					},
 				}},
@@ -584,9 +556,10 @@ func TestLint_RootLocationHidden(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children = append(doc.Structure.Children, game.ChildDoc{
 		Location: &game.LocationDoc{
-			Slug:    "orphan",
-			Name:    "Orphan Stop",
-			Content: []game.BlockDoc{{"type": "text"}},
+			Slug:       "orphan",
+			Name:       "Orphan Stop",
+			Content:    []game.BlockDoc{{"type": "text"}},
+			Navigation: []game.BlockDoc{{"type": "clue"}},
 		},
 	})
 	result := game.Lint(doc, newTestRegistry())
@@ -600,14 +573,16 @@ func TestLint_RootHasNoGroups(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children = []game.ChildDoc{
 		{Location: &game.LocationDoc{
-			Slug:    "stop-a",
-			Name:    "Stop A",
-			Content: []game.BlockDoc{{"type": "text"}},
+			Slug:       "stop-a",
+			Name:       "Stop A",
+			Content:    []game.BlockDoc{{"type": "text"}},
+			Navigation: []game.BlockDoc{{"type": "clue"}},
 		}},
 		{Location: &game.LocationDoc{
-			Slug:    "stop-b",
-			Name:    "Stop B",
-			Content: []game.BlockDoc{{"type": "text"}},
+			Slug:       "stop-b",
+			Name:       "Stop B",
+			Content:    []game.BlockDoc{{"type": "text"}},
+			Navigation: []game.BlockDoc{{"type": "clue"}},
 		}},
 	}
 	result := game.Lint(doc, newTestRegistry())
@@ -616,4 +591,22 @@ func TestLint_RootHasNoGroups(t *testing.T) {
 	require.Len(t, result.Warnings, 2)
 	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[0].Code)
 	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[1].Code)
+}
+
+func TestLint_NoNavigationBlocksWarning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Navigation = []game.BlockDoc{}
+	result := game.Lint(doc, newTestRegistry())
+	assert.Empty(t, result.Errors)
+	require.Len(t, result.Warnings, 1)
+	assert.Equal(t, "NO_NAVIGATION_BLOCKS", result.Warnings[0].Code)
+}
+
+func TestLint_NoContentBlocksWarning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{}
+	result := game.Lint(doc, newTestRegistry())
+	assert.Empty(t, result.Errors)
+	require.Len(t, result.Warnings, 1)
+	assert.Equal(t, "NO_CONTENT_BLOCKS", result.Warnings[0].Code)
 }

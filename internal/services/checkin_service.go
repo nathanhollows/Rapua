@@ -7,9 +7,8 @@ import (
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/navigation"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 const (
@@ -50,38 +49,20 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locationCode string) error { //nolint:gocognit,gocyclo
+func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
+	ctx context.Context,
+	team *models.Team,
+	locationCode string,
+) error {
 	// Load team relations
 	err := s.teamRepo.LoadRelations(ctx, team)
 	if err != nil {
 		return fmt.Errorf("loading relations: %w", err)
 	}
 
-	// Determine current group to check navigation mode
-	var currentGroup *models.GameStructure
-	if team.Instance.GameStructure.ID != "" {
-		completedIDs := make([]string, 0)
-		for _, checkIn := range team.CheckIns {
-			if checkIn.BlocksCompleted {
-				completedIDs = append(completedIDs, checkIn.LocationID)
-			}
-		}
-		currentGroupID := navigation.ComputeCurrentGroup(
-			&team.Instance.GameStructure,
-			completedIDs,
-			team.SkippedGroupIDs,
-		)
-		if currentGroupID != "" {
-			currentGroup = navigation.FindGroupByID(&team.Instance.GameStructure, currentGroupID)
-		}
-	}
-
 	// A team may not check in if they must check out at a different location
-	// Exception: Task mode allows switching between tasks freely
 	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
-			return ErrAlreadyCheckedIn
-		}
+		return ErrAlreadyCheckedIn
 	}
 
 	// Find the location
@@ -124,7 +105,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 	var pointsForCheckInRecord int
 	var bonusPoints int
 
-	if team.Instance.Settings.MustCheckOut { //nolint:nestif // bonus-point logic branches on three independent settings flags
+	if team.Instance.Settings.MustCheckOut {
 		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
 		if location.Instance.Settings.EnableBonusPoints {
 			// Calculate bonus points based on visit count
@@ -150,10 +131,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, team *models.Team, locatio
 		// Award bonus points to team immediately
 		team.Points += bonusPoints
 
-		// Don't block team in task mode - task checklist implies freedom to switch between tasks
-		if currentGroup == nil || currentGroup.Navigation != models.NavigationTasks {
-			team.MustCheckOut = location.ID
-		}
+		team.MustCheckOut = location.ID
 	} else {
 		// Check-in-only mode: full points awarded immediately
 		if location.Instance.Settings.EnableBonusPoints {

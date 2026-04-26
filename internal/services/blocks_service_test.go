@@ -6,8 +6,8 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -715,7 +715,7 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 			locationID:   gofakeit.UUID(),
 			context:      blocks.ContextLocationContent,
 			blockCount:   2,
-			otherContext: blocks.ContextLocationClues,
+			otherContext: blocks.ContextNavigation,
 			wantErr:      false,
 		},
 		{
@@ -837,7 +837,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 				_, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					tc.locationID,
-					blocks.ContextLocationClues,
+					blocks.ContextNavigation,
 					"text",
 				)
 				require.NoError(t, err)

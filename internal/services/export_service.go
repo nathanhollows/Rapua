@@ -101,7 +101,6 @@ func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (
 		Finish: finishDoc,
 		Structure: game.StructureDoc{
 			Routing:         instance.GameStructure.Routing,
-			Navigation:      instance.GameStructure.Navigation,
 			Completion:      instance.GameStructure.CompletionType,
 			MinimumRequired: instance.GameStructure.MinimumRequired,
 			Children:        children,
@@ -113,9 +112,9 @@ func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.
 // Always returns non-nil slices so "start" and "finish" are present in the output.
-func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) (start, finish []game.BlockDoc) {
-	start = []game.BlockDoc{}
-	finish = []game.BlockDoc{}
+func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.BlockDoc, []game.BlockDoc) {
+	start := []game.BlockDoc{}
+	finish := []game.BlockDoc{}
 
 	// Sort by ordering to preserve intended sequence
 	sort.Slice(instanceBlocks, func(i, j int) bool {
@@ -129,6 +128,8 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) (start, 
 			start = append(start, doc)
 		case game.ContextFinish:
 			finish = append(finish, doc)
+		default:
+			// instance-level blocks only; skip other contexts
 		}
 	}
 
@@ -159,11 +160,11 @@ func (s *ExportService) walkStructure(
 			Name:            subGroup.Name,
 			Color:           subGroup.Color,
 			Routing:         subGroup.Routing,
-			Navigation:      subGroup.Navigation,
 			Completion:      subGroup.CompletionType,
 			MinimumRequired: subGroup.MinimumRequired,
 			Children:        groupChildren,
 		}
+		groupDoc.AutoAdvance = &subGroup.AutoAdvance
 		children = append(children, game.ChildDoc{Group: &groupDoc})
 	}
 
@@ -177,21 +178,18 @@ func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []model
 		return locBlocks[i].Ordering < locBlocks[j].Ordering
 	})
 
-	// content is always present; clues/tasks/checkpoint are omitted when empty.
 	content := []game.BlockDoc{}
-	var clues, tasks, checkpoint []game.BlockDoc
+	var navigation []game.BlockDoc
 
 	for _, b := range locBlocks {
 		doc := modelBlockToDoc(b, true)
 		switch b.Context {
 		case game.ContextLocationContent:
 			content = append(content, doc)
-		case game.ContextLocationClues:
-			clues = append(clues, doc)
-		case game.ContextTask:
-			tasks = append(tasks, doc)
-		case game.ContextCheckpoint:
-			checkpoint = append(checkpoint, doc)
+		case game.ContextNavigation:
+			navigation = append(navigation, doc)
+		default:
+			// location blocks only; skip other contexts
 		}
 	}
 
@@ -201,9 +199,7 @@ func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []model
 		Name:       loc.Name,
 		Points:     loc.Points,
 		Content:    content,
-		Clues:      clues,
-		Tasks:      tasks,
-		Checkpoint: checkpoint,
+		Navigation: navigation,
 	}
 
 	if loc.Marker.IsMapped() {

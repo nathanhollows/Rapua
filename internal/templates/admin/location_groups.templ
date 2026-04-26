@@ -12,7 +12,6 @@ var emptyGroupData = models.GameStructure{
 	Locations:       nil,
 	SubGroups:       nil,
 	Routing:         models.RouteStrategyFreeRoam,
-	Navigation:      models.NavigationCustom,
 	CompletionType:  models.CompletionAll,
 	MinimumRequired: 0,
 	AutoAdvance:     true,
@@ -105,7 +104,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 							Posters
 						</a>
 					</li>
-					</ul>
+				</ul>
 			</div>
 			<a
 				href="/admin/locations/new"
@@ -164,7 +163,7 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 				</div>
 			</div>
 		</div>
-		<div class="locations-area flex flex-col mb-6 w-full bg-base-300 rounded-2xl overflow-hidden saturate-0" data-unassigned="true" data-nav-mode={ string(group.Navigation) } data-route-mode={ string(group.Routing) }>
+		<div class="locations-area flex flex-col mb-6 w-full bg-base-300 rounded-2xl overflow-hidden saturate-0" data-unassigned="true" data-route-mode={ string(group.Routing) }>
 			for _, location := range group.Locations {
 				@locationItem(*location, settings, "")
 			}
@@ -188,7 +187,6 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 				<div
 					class="locations-area flex flex-col"
 					data-group-id={ group.ID }
-					data-nav-mode={ string(group.Navigation) }
 					data-route-mode={ string(group.Routing) }
 					_="on mouseleave
 						js(me)
@@ -257,37 +255,15 @@ templ locationItem(location models.Location, settings models.InstanceSettings, g
 			<div class="tooltip tooltip-right" data-tip="Drag to reorder location">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move location-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
 			</div>
-			<!-- Map marker icon - always rendered, visibility controlled by CSS -->
-			if location.HasCoordinates() {
-				<span class="tooltip cursor-help location-marker-icon" data-tip="Has map coordinates">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-				</span>
-			} else {
-				<span class="tooltip cursor-help location-marker-icon text-base-content/30" data-tip="Missing coordinates">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-off"><path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"></path><path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568"></path><path d="m2 2 20 20"></path><path d="M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533"></path><path d="M9.13 9.13a3 3 0 0 0 3.74 3.74"></path></svg>
-				</span>
-			}
-			<!-- Clues icon - always rendered, visibility controlled by CSS -->
-			if location.HasCluesContext() {
-				<span class="tooltip cursor-help location-clues-icon" data-tip="Has clues">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-				</span>
-			} else {
-				<span class="tooltip cursor-help location-clues-icon text-base-content/30" data-tip="No clues">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-slash"><path d="m13.5 8.5-5 5"></path><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-				</span>
-			}
-			<!-- Task icon - always rendered, visibility controlled by CSS -->
-			if location.HasTaskContext() {
-				<span class="tooltip cursor-help location-task-icon" data-tip="Has task">
-					@icon("check-square", templ.Attributes{"class": "w-4 h-4"})
-				</span>
-			} else {
-				<span class="tooltip cursor-help location-task-icon text-base-content/30" data-tip="No task">
-					@icon("square", templ.Attributes{"class": "w-4 h-4"})
-				</span>
-			}
 			<div class="badge badge-sm badge-outline border-primary font-medium tooltip" data-tip="Location ID"><code>{ location.MarkerID }</code></div>
+			if !location.HasNavigationContext() || !location.HasContentContext() {
+				<span
+					class="tooltip cursor-help location-nav-icon text-primary"
+					data-tip={ "Missing data" }
+				>
+					@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 m-auto"})
+				</span>
+			}
 			<a
 				href={ templ.URL(fmt.Sprintf("/admin/locations/%s", location.Slug)) }
 				class="link link-hover font-medium"
@@ -498,14 +474,8 @@ templ groupMenu(group models.GameStructure) {
 	<div class="flex gap-2 items-center">
 		<!-- Route Strategy Picker -->
 		@routeStrategyPicker(group)
-		<!-- Navigation Display Picker -->
-		@navigationDisplayPicker(group.Navigation)
 		<!-- Completion Requirements Menu -->
 		@completionCount(group)
-		if false {
-			<!-- Auto Advance Picker -->
-			@autoAdvancePicker(group.Navigation)
-		}
 		<button
 			class="btn btn-sm btn-ghost tooltip delete-group-btn"
 			data-tip="Delete group"
@@ -741,94 +711,6 @@ templ routeStrategyPicker(group models.GameStructure) {
 	</div>
 }
 
-templ navigationDisplayPicker(nav models.NavigationMode) {
-	<div class="dropdown dropdown-bottom dropdown-center nav-display-dropdown">
-		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Navigation Display">
-			<div class="nav-display contents">
-				switch nav {
-					case models.NavigationMap:
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
-						{ models.NavigationMap.String() }
-					case models.NavigationLabelledMap:
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-house"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"></path><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"></path><path d="M18 22v-3"></path><circle cx="10" cy="10" r="3"></circle></svg>
-						{ models.NavigationLabelledMap.String() }
-					case models.NavigationList:
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 12h.01"></path><path d="M3 18h.01"></path><path d="M3 6h.01"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M8 6h13"></path></svg>
-						{ models.NavigationList.String() }
-					case models.NavigationCustom:
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
-						{ models.NavigationCustom.String() }
-					case models.NavigationTasks:
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-checks"><path d="m3 17 2 2 4-4"></path><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></svg>
-						{ models.NavigationTasks.String() }
-				}
-			</div>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
-		</a>
-		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow">
-			for _, mode := range models.GetNavigationModes() {
-				<li>
-					<button
-						role="button"
-						class="nav-display-option grid-flow-row gap-1 whitespace-normal h-auto py-3"
-						data-value={ string(mode) }
-						_="on click
-							remove .bg-base-300 from <.nav-display-option/>
-							add .bg-base-300 to me
-							set navDisplay to (closest <.nav-display-dropdown/>).querySelector('.nav-display')
-							set navDisplay's innerHTML to my.querySelector('div').innerHTML
-							-- Update data-nav-mode attribute on locations-area to reflect new navigation mode
-							set groupCard to closest <.group-item/>
-							if groupCard
-								set locationsArea to groupCard.querySelector('.locations-area')
-								if locationsArea
-									set locationsArea's @data-nav-mode to my @data-value
-								end
-							else
-								-- For root group
-								set rootLocationsArea to document.querySelector('#root-container .locations-area')
-								if rootLocationsArea
-									set rootLocationsArea's @data-nav-mode to my @data-value
-								end
-							end
-							js saveGameStructure() end"
-					>
-						<div class="flex items-center gap-2">
-							switch mode {
-								case models.NavigationMap:
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
-								case models.NavigationLabelledMap:
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-house"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"></path><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"></path><path d="M18 22v-3"></path><circle cx="10" cy="10" r="3"></circle></svg>
-								case models.NavigationList:
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 12h.01"></path><path d="M3 18h.01"></path><path d="M3 6h.01"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M8 6h13"></path></svg>
-								case models.NavigationCustom:
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
-								case models.NavigationTasks:
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-checks"><path d="m3 17 2 2 4-4"></path><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></svg>
-							}
-							<span class="font-medium">{ mode.String() }</span>
-						</div>
-						<span class="text-xs text-base-content/60">{ mode.Description() }</span>
-					</button>
-				</li>
-			}
-		</ul>
-	</div>
-}
-
-templ autoAdvancePicker(nav models.NavigationMode) {
-	<div class="dropdown dropdown-bottom dropdown-center nav-display-dropdown">
-		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Auto Advance">
-			<div class="nav-display contents">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-fading-arrow-up-icon lucide-circle-fading-arrow-right w-4 h-4" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 7.38 16.75M12 16l4-4-4-4M8 12h8M2.5 8.875a10 10 0 0 0-.5 3M2.83 16a10 10 0 0 0 2.43 3.4M4.636 5.235a10 10 0 0 1 .891-.857M8.644 21.42a10 10 0 0 0 7.631-.38"></path></svg>
-				Auto Advance
-			</div>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down w-4 h-4"><path d="m6 9 6 6 6-6"></path></svg>
-		</a>
-		<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-80 p-2 shadow"></ul>
-	</div>
-}
-
 func colours() []string {
 	return []string{
 		"primary", "secondary", "accent", "success", "info", "warning", "error", "base-content",
@@ -1023,10 +905,9 @@ templ sortableScript() {
 			const nameInput = groupCard.querySelector('input[type="text"]');
 			const name = nameInput ? nameInput.value : 'Unnamed Group';
 
-			// Get routing and navigation from data attributes on locations-area
+			// Get routing from data attributes on locations-area
 			const locationsArea = groupCard.querySelector('.locations-area');
 			const routing = locationsArea?.dataset.routeMode || 'free_roam';
-			const navigation = locationsArea?.dataset.navMode || 'custom';
 
 			let maxNext = 0;
 			if (routing === 'randomised') {
@@ -1075,7 +956,6 @@ templ sortableScript() {
 				name: name,
 				color: groupColor,
 				routing: routing,
-				navigation: navigation,
 				completion_type: completionType,
 				minimum_required: minimumRequired,
 				max_next: maxNext,
@@ -1481,35 +1361,9 @@ templ sortableScript() {
 			background: hsl(var(--p) / 0.05);
 		}
 
-		/* Location indicator visibility rules based on parent group navigation mode */
-		/* Map marker: visible for Map Only and Labelled Map */
-		.locations-area .location-marker-icon {
-			display: none;
-		}
-		.locations-area[data-nav-mode="map"] .location-marker-icon,
-		.locations-area[data-nav-mode="labelled_map"] .location-marker-icon {
-			display: inline-flex;
-		}
-
-		/* Clues: visible only for Custom Clues */
-		.locations-area .location-clues-icon {
-			display: none;
-		}
-		.locations-area[data-nav-mode="custom"] .location-clues-icon {
-			display: inline-flex;
-		}
-
-		/* Tasks: visible only for Tasks mode */
-		.locations-area .location-task-icon {
-			display: none;
-		}
-		.locations-area[data-nav-mode="tasks"] .location-task-icon {
-			display: inline-flex;
-		}
-
-		/* Secret mode: hide all icons regardless of nav mode */
+		/* Secret mode: hide all icons */
 		.locations-area[data-route-mode="secret"] .location-marker-icon,
-		.locations-area[data-route-mode="secret"] .location-clues-icon {
+		.locations-area[data-route-mode="secret"] .location-nav-icon {
 			display: none !important;
 		}
 	</style>

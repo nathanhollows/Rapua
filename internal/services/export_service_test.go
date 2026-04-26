@@ -71,7 +71,6 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 			ID:             gofakeit.UUID(),
 			IsRoot:         true,
 			Routing:        game.RouteStrategyOrdered,
-			Navigation:     game.NavigationMap,
 			CompletionType: game.CompletionAll,
 			LocationIDs:    []string{},
 			SubGroups:      []models.GameStructure{},
@@ -93,7 +92,6 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	assert.True(t, doc.Settings.EnablePoints)
 	assert.True(t, doc.Settings.ShowLeaderboard)
 	assert.Equal(t, game.RouteStrategyOrdered, doc.Structure.Routing)
-	assert.Equal(t, game.NavigationMap, doc.Structure.Navigation)
 	assert.Equal(t, game.CompletionAll, doc.Structure.Completion)
 	assert.Empty(t, doc.Structure.Children)
 	assert.Empty(t, doc.Start)
@@ -135,7 +133,6 @@ func TestExportService_ExportInstance_WithLocationsAndBlocks(t *testing.T) {
 		ID:             gofakeit.UUID(),
 		IsRoot:         true,
 		Routing:        game.RouteStrategyFreeRoam,
-		Navigation:     game.NavigationList,
 		CompletionType: game.CompletionAll,
 		LocationIDs:    []string{loc.ID},
 		SubGroups:      []models.GameStructure{},
@@ -183,7 +180,6 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 		ID:             gofakeit.UUID(),
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
 		CompletionType: game.CompletionAll,
 		LocationIDs:    []string{},
 		SubGroups:      []models.GameStructure{},
@@ -227,7 +223,6 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 		ID:             gofakeit.UUID(),
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
 		CompletionType: game.CompletionAll,
 		LocationIDs:    []string{},
 		SubGroups: []models.GameStructure{
@@ -236,7 +231,6 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 				Name:           "Wave 1",
 				Color:          "primary",
 				Routing:        game.RouteStrategyOrdered,
-				Navigation:     game.NavigationMap,
 				CompletionType: game.CompletionAll,
 				LocationIDs:    []string{loc.ID},
 				SubGroups:      []models.GameStructure{},

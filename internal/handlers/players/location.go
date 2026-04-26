@@ -78,27 +78,12 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("getting navigation view", "error", err.Error())
 	}
 
-	// Get the task block for this location if in task mode
-	var taskBlock blocks.Block
-	if view != nil && view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
-		var taskBlocks blocks.Blocks
-		taskBlocks, err = h.blockService.FindByOwnerIDAndContext(
-			r.Context(),
-			team.CheckIns[index].Location.ID,
-			blocks.ContextTask,
-		)
-		if err == nil && len(taskBlocks) > 0 {
-			taskBlock = taskBlocks[0]
-		}
-	}
-
 	data := templates.CheckInViewData{
-		Settings:  team.Instance.Settings,
-		Scan:      team.CheckIns[index],
-		Blocks:    contentBlocks,
-		States:    blockStates,
-		View:      view,
-		TaskBlock: taskBlock,
+		Settings: team.Instance.Settings,
+		Scan:     team.CheckIns[index],
+		Blocks:   contentBlocks,
+		States:   blockStates,
+		View:     view,
 	}
 
 	c := templates.CheckInView(data)
@@ -162,12 +147,11 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := templates.CheckInViewData{
-		Settings:  team.Instance.Settings,
-		Scan:      scan,
-		Blocks:    contentBlocks,
-		States:    blockStates,
-		View:      nil, // Preview mode doesn't have navigation context
-		TaskBlock: nil, // Preview mode doesn't have task context
+		Settings: team.Instance.Settings,
+		Scan:     scan,
+		Blocks:   contentBlocks,
+		States:   blockStates,
+		View:     nil,
 	}
 
 	err = templates.CheckInView(data).Render(r.Context(), w)

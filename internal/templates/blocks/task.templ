@@ -52,22 +52,25 @@ func getColorForIcon(iconName string) string {
 	return "primary"
 }
 
-templ taskPlayer(_ models.InstanceSettings, block blocks.TaskBlock) {
+templ taskPlayer(_ models.InstanceSettings, block blocks.TaskBlock, state blocks.PlayerState) {
 	<a
 		if block.LinkThrough {
 			href={ templ.URL(fmt.Sprintf("/l/%s", block.OwnerID)) }
 		}
 		hx-boost="true"
-		class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300"
+		if state != nil && state.IsComplete() {
+			class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300 line-through opacity-60"
+		} else {
+			class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300"
+		}
 	>
 		<input
 			type="checkbox"
 			disabled="disabled"
 			class="checkbox checkbox-lg checkbox-primary opacity-100"
-			_="init 
-			if closest <.line-through/> then
-			set my checked to 'checked'
-			end"
+			if state != nil && state.IsComplete() {
+				checked="checked"
+			}
 		/>
 		<span class="">
 			{ block.Task }

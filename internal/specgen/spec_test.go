@@ -121,8 +121,7 @@ func TestGenerateFullSpec_HasAllContexts(t *testing.T) {
 	}
 
 	expected := []string{
-		"location_content", "location_clues", "task",
-		"checkpoint", "start", "finish",
+		"location_content", "navigation", "start", "finish",
 	}
 	for _, ctx := range expected {
 		if !contextValues[ctx] {

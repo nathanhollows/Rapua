@@ -10,7 +10,7 @@ func (b *MarkdownBlock) GetSpec() game.BlockSpec {
 		Type:        "text",
 		Name:        "Markdown",
 		Description: "Renders Markdown content. Supports headings, lists, links, bold, italic, and images.",
-		Contexts:    []string{"location_content", "location_clues", "finish", "start"},
+		Contexts:    []string{"location_content", "navigation", "finish", "start"},
 		Fields: []game.FieldSpec{
 			{Name: "content", Type: "markdown", Required: true, Description: "Markdown text to display"},
 		},
@@ -51,7 +51,7 @@ func (b *BrokerBlock) GetSpec() game.BlockSpec {
 		Type:        "broker",
 		Name:        "Information Broker",
 		Description: "Players spend points to reveal progressively detailed information tiers.",
-		Contexts:    []string{"location_content", "location_clues"},
+		Contexts:    []string{"location_content", "navigation"},
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Description: "Instructions shown to the player"},
 			{Name: "default_info", Type: "markdown", Description: "Information shown for free (0 points)"},
@@ -59,8 +59,18 @@ func (b *BrokerBlock) GetSpec() game.BlockSpec {
 				Items: &game.FieldSpec{
 					Type: "object",
 					Fields: []game.FieldSpec{
-						{Name: "points_required", Type: "int", Required: true, Description: "Points cost for this tier"},
-						{Name: "content", Type: "markdown", Required: true, Description: "Information revealed at this tier"},
+						{
+							Name:        "points_required",
+							Type:        "int",
+							Required:    true,
+							Description: "Points cost for this tier",
+						},
+						{
+							Name:        "content",
+							Type:        "markdown",
+							Required:    true,
+							Description: "Information revealed at this tier",
+						},
 					},
 				}},
 		},
@@ -93,9 +103,14 @@ func (b *ClueBlock) GetSpec() game.BlockSpec {
 		Type:        "clue",
 		Name:        "Clue",
 		Description: "A clue revealed behind a button — players tap to reveal the hint.",
-		Contexts:    []string{"location_content", "location_clues"},
+		Contexts:    []string{"location_content", "navigation"},
 		Fields: []game.FieldSpec{
-			{Name: "clue", Type: "markdown", Required: true, Description: "Clue content revealed when the button is tapped"},
+			{
+				Name:        "clue",
+				Type:        "markdown",
+				Required:    true,
+				Description: "Clue content revealed when the button is tapped",
+			},
 			{Name: "description", Type: "string", Description: "Description or label shown on the reveal button"},
 			{Name: "button_label", Type: "string", Description: "Custom button label (defaults to 'Reveal clue')"},
 		},
@@ -148,7 +163,7 @@ func (b *ImageBlock) GetSpec() game.BlockSpec {
 		Type:        "image",
 		Name:        "Image",
 		Description: "Displays an image with an optional caption and link.",
-		Contexts:    []string{"location_content", "location_clues", "finish", "start"},
+		Contexts:    []string{"location_content", "navigation", "finish", "start"},
 		Fields: []game.FieldSpec{
 			{Name: "url", Type: "string", Required: true, Description: "Image URL"},
 			{Name: "caption", Type: "string", Description: "Caption displayed below the image"},
@@ -163,7 +178,7 @@ func (b *PasswordBlock) GetSpec() game.BlockSpec {
 		Type:        "password",
 		Name:        "Password",
 		Description: "Players must enter the correct text answer to proceed.",
-		Contexts:    []string{"location_content", "checkpoint"},
+		Contexts:    []string{"location_content"},
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Description: "Question or instruction shown to the player"},
 			{Name: "answer", Type: "string", Required: true, Description: "Correct answer (case-insensitive)"},
@@ -190,7 +205,7 @@ func (b *PincodeBlock) GetSpec() game.BlockSpec {
 		Type:        "pincode",
 		Name:        "Pin Code",
 		Description: "Players must enter a numeric PIN to proceed.",
-		Contexts:    []string{"location_content", "checkpoint"},
+		Contexts:    []string{"location_content"},
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Description: "Question or instruction shown to the player"},
 			{Name: "pincode", Type: "string", Required: true, Description: "Correct PIN (digits only)"},
@@ -204,7 +219,7 @@ func (b *QuizBlock) GetSpec() game.BlockSpec {
 		Type:        "quiz",
 		Name:        "Quiz",
 		Description: "Multiple choice question with configurable answer options.",
-		Contexts:    []string{"location_content", "checkpoint"},
+		Contexts:    []string{"location_content"},
 		Fields: []game.FieldSpec{
 			{Name: "question", Type: "markdown", Required: true, Description: "Question text"},
 			{Name: "options", Type: "list", Required: true, Description: "Answer choices",
@@ -229,7 +244,7 @@ func (b *RandomClueBlock) GetSpec() game.BlockSpec {
 		Type:        "random_clue",
 		Name:        "Random Clue",
 		Description: "Shows a randomly selected clue from a list each time the player views the location.",
-		Contexts:    []string{"location_clues"},
+		Contexts:    []string{"navigation"},
 		Fields: []game.FieldSpec{
 			{Name: "clues", Type: "list", Required: true, Description: "List of clue strings to randomly select from",
 				Items: &game.FieldSpec{Type: "string"}},
@@ -255,7 +270,7 @@ func (b *SortingBlock) GetSpec() game.BlockSpec {
 		Type:        "sorting",
 		Name:        "Sorting",
 		Description: "Players drag and drop items into the correct order.",
-		Contexts:    []string{"location_content", "checkpoint"},
+		Contexts:    []string{"location_content"},
 		Fields: []game.FieldSpec{
 			{Name: "content", Type: "markdown", Description: "Instructions or question shown above the items"},
 			{Name: "items", Type: "list", Required: true, Description: "Items to sort",
@@ -293,7 +308,7 @@ func (b *TaskBlock) GetSpec() game.BlockSpec {
 		Type:        "task",
 		Name:        "Task",
 		Description: "A single task item in a scavenger hunt task list.",
-		Contexts:    []string{"task"},
+		Contexts:    []string{"navigation"},
 		Fields: []game.FieldSpec{
 			{Name: "task", Type: "string", Required: true, Description: "Task description shown to players"},
 			{Name: "icon", Type: "string", Description: "Icon name (Lucide icon)"},
@@ -320,7 +335,7 @@ func (b *ToggleTextBlock) GetSpec() game.BlockSpec {
 		Type:        "toggle_text",
 		Name:        "Toggle Text",
 		Description: "Collapsible text section with a title and hidden content.",
-		Contexts:    []string{"location_content", "location_clues", "start", "finish"},
+		Contexts:    []string{"location_content", "navigation", "start", "finish"},
 		Fields: []game.FieldSpec{
 			{Name: "title", Type: "string", Required: true, Description: "Visible toggle button label"},
 			{Name: "content", Type: "markdown", Required: true, Description: "Hidden content revealed when toggled"},
@@ -334,7 +349,7 @@ func (b *MapBlock) GetSpec() game.BlockSpec {
 		Type:        "map",
 		Name:        "Map",
 		Description: "Displays a Mapbox map centred on a specific location with a marker.",
-		Contexts:    []string{"location_content", "location_clues", "finish", "start"},
+		Contexts:    []string{"location_content", "navigation", "finish", "start"},
 		Fields: []game.FieldSpec{
 			{Name: "latitude", Type: "float", Required: true, Description: "Map centre latitude"},
 			{Name: "longitude", Type: "float", Required: true, Description: "Map centre longitude"},

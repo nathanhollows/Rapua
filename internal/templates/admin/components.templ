@@ -7,25 +7,7 @@ import (
 
 // blockAddButton renders a dropdown for adding blocks to a container
 templ blockAddButton(ownerID string, context blocks.BlockContext, targetSelector string) {
-	if context == blocks.ContextTask {
-		@blockAddTask(ownerID, context, targetSelector)
-	} else {
-		@blockAddDropdownForContext(ownerID, context, targetSelector)
-	}
-}
-
-// blockAddTask renders a special element to automatically trigger adding a task block if none exist
-templ blockAddTask(ownerID string, context blocks.BlockContext, targetSelector string) {
-	<form
-		hx-post="/admin/blocks/"
-		hx-target={ fmt.Sprintf("next %s", targetSelector) }
-		hx-swap="beforeend"
-		hx-trigger="load"
-	>
-		<input type="hidden" name="owner" value={ ownerID }/>
-		<input type="hidden" name="context" value={ string(context) }/>
-		<input type="hidden" name="type" value="task"/>
-	</form>
+	@blockAddDropdownForContext(ownerID, context, targetSelector)
 }
 
 // blockAddDropdownForContext renders the dropdown options for adding blocks based on context
@@ -35,7 +17,14 @@ templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, ta
 			<div class="block">
 				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
 					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
-					Add content
+					switch context {
+						case blocks.ContextNavigation:
+							Add clues
+						case blocks.ContextLocationContent:
+							Add content
+						default:
+							Add content
+					}
 				</div>
 			</div>
 			<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">

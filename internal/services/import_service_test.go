@@ -53,7 +53,6 @@ func minimalValidDoc(name string) *game.GameDoc {
 		Finish: []game.BlockDoc{},
 		Structure: game.StructureDoc{
 			Routing:    game.RouteStrategyOrdered,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children:   []game.ChildDoc{},
 		},
@@ -154,7 +153,6 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 
 	doc := minimalValidDoc("Structure Test")
 	doc.Structure.Routing = game.RouteStrategyFreeRoam
-	doc.Structure.Navigation = game.NavigationList
 	doc.Structure.Completion = game.CompletionAll
 
 	result, err := svc.ImportCreate(ctx, userID, doc)
@@ -163,7 +161,6 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
 	require.NoError(t, err)
 	assert.Equal(t, game.RouteStrategyFreeRoam, inst.GameStructure.Routing)
-	assert.Equal(t, game.NavigationList, inst.GameStructure.Navigation)
 	assert.Equal(t, game.CompletionAll, inst.GameStructure.CompletionType)
 	assert.True(t, inst.GameStructure.IsRoot)
 }
@@ -183,7 +180,6 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 				Name:       "Wave 1",
 				Color:      "primary",
 				Routing:    game.RouteStrategyOrdered,
-				Navigation: game.NavigationMap,
 				Completion: game.CompletionAll,
 				Children: []game.ChildDoc{
 					{
@@ -260,7 +256,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	inst := &models.Instance{Name: "Old Name", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
 	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:  inst.ID,
+		InstanceID:   inst.ID,
 		EnablePoints: false,
 	}))
 
@@ -302,7 +298,6 @@ func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
 		ID:             gofakeit.UUID(),
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
 		CompletionType: game.CompletionAll,
 		LocationIDs:    []string{orphanLocID},
 		SubGroups:      []models.GameStructure{},

@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/game"
 )
 
-// Type aliases — blocks/ re-exports game/ vocabulary so callers don't need to change imports.
+// BlockContext and related type aliases re-export game/ vocabulary so callers don't need to change imports.
 type (
 	BlockContext    = game.BlockContext
 	Block           = game.Block
@@ -26,9 +26,7 @@ const FormValueTrue = game.FormValueTrue
 // BlockContext constants re-exported from game/.
 const (
 	ContextLocationContent = game.ContextLocationContent
-	ContextLocationClues   = game.ContextLocationClues
-	ContextTask            = game.ContextTask
-	ContextCheckpoint      = game.ContextCheckpoint
+	ContextNavigation      = game.ContextNavigation
 	ContextStart           = game.ContextStart
 	ContextFinish          = game.ContextFinish
 )
@@ -63,7 +61,7 @@ func init() {
 	// Content blocks
 	registerBlock(
 		&MarkdownBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+		[]BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart},
 	)
 	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
@@ -71,29 +69,27 @@ func init() {
 	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
 	registerBlock(
 		&ImageBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+		[]BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart},
 	)
-	registerBlock(&MapBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart})
-	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
+	registerBlock(&MapBlock{}, []BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart})
 	registerBlock(
 		&ToggleTextBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextStart, ContextFinish},
+		[]BlockContext{ContextLocationContent, ContextNavigation, ContextStart, ContextFinish},
 	)
 	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
 
 	// Interactive blocks
-	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
+	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextNavigation})
 	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
-	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextNavigation})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&RatingBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent})
 
-	// Task specific blocks
-	registerBlock(&TaskBlock{}, []BlockContext{ContextTask})
+	registerBlock(&TaskBlock{}, []BlockContext{ContextNavigation})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
@@ -177,7 +173,7 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	return names
 }
 
-func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
+func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]
 	if registration == nil {

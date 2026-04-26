@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 type InstanceService struct {
@@ -52,7 +52,6 @@ func (s *InstanceService) CreateInstance(
 			Name:           "",
 			Color:          "",
 			Routing:        models.RouteStrategyFreeRoam,
-			Navigation:     models.NavigationMap,
 			CompletionType: models.CompletionAll,
 			IsRoot:         true,
 			LocationIDs:    []string{},
@@ -62,7 +61,6 @@ func (s *InstanceService) CreateInstance(
 					Name:           "Locations",
 					Color:          "primary",
 					Routing:        models.RouteStrategyRandomised,
-					Navigation:     models.NavigationCustom,
 					CompletionType: models.CompletionAll,
 					MaxNext:        3, //nolint:mnd // Default max next locations
 					AutoAdvance:    true,

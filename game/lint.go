@@ -7,15 +7,15 @@ import (
 
 // LintResult holds errors and warnings from linting a GameDoc.
 type LintResult struct {
-	Errors   []LintDiag // Must fix before importing
-	Warnings []LintDiag // Should fix but won't block import
+	Errors   []LintDiag `json:"errors"`   // Must fix before importing
+	Warnings []LintDiag `json:"warnings"` // Should fix but won't block import
 }
 
 // LintDiag is a single diagnostic message with a path and code.
 type LintDiag struct {
-	Path    string // e.g. "structure.children[0].location.content[1]"
-	Code    string // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
-	Message string
+	Path    string `json:"path"` // e.g. "structure.children[0].location.content[1]"
+	Code    string `json:"code"` // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
+	Message string `json:"message"`
 }
 
 // IsValid returns true if there are no errors (warnings are acceptable).
@@ -75,7 +75,6 @@ func (l *linter) checkSchema() {
 
 func (l *linter) checkStructureDoc(path string, s StructureDoc) {
 	l.checkRouting(path+".routing", s.Routing)
-	l.checkNavigation(path+".navigation", s.Navigation)
 	l.checkCompletion(path, s.Completion, s.MinimumRequired)
 	for i, child := range s.Children {
 		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
@@ -87,7 +86,6 @@ func (l *linter) checkGroupDoc(path string, g GroupDoc) {
 		l.errorf(path+".name", "MISSING_GROUP_NAME", "group name is required")
 	}
 	l.checkRouting(path+".routing", g.Routing)
-	l.checkNavigation(path+".navigation", g.Navigation)
 	l.checkCompletion(path, g.Completion, g.MinimumRequired)
 	for i, child := range g.Children {
 		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
@@ -95,11 +93,12 @@ func (l *linter) checkGroupDoc(path string, g GroupDoc) {
 }
 
 func (l *linter) checkChildDoc(path string, child ChildDoc) {
-	if child.Location != nil {
+	switch {
+	case child.Location != nil:
 		l.checkLocationDoc(path+".location", *child.Location)
-	} else if child.Group != nil {
+	case child.Group != nil:
 		l.checkGroupDoc(path+".group", *child.Group)
-	} else {
+	default:
 		l.errorf(path, "EMPTY_CHILD", "child has neither location nor group")
 	}
 }
@@ -116,24 +115,22 @@ func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
 	}
 	if loc.Marker != nil {
 		if loc.Marker.Lat == 0 && loc.Marker.Lng == 0 {
-			l.warnf(path+".marker", "ZERO_COORDINATES", "marker has zero coordinates; omit marker if location has no map pin")
+			l.warnf(
+				path+".marker",
+				"ZERO_COORDINATES",
+				"marker has zero coordinates; omit marker if location has no map pin",
+			)
 		}
 	}
 	for i, b := range loc.Content {
 		l.checkBlockDoc(fmt.Sprintf("%s.content[%d]", path, i), b, ContextLocationContent)
 	}
-	for i, b := range loc.Clues {
-		l.checkBlockDoc(fmt.Sprintf("%s.clues[%d]", path, i), b, ContextLocationClues)
-	}
-	for i, b := range loc.Tasks {
-		l.checkBlockDoc(fmt.Sprintf("%s.tasks[%d]", path, i), b, ContextTask)
-	}
-	for i, b := range loc.Checkpoint {
-		l.checkBlockDoc(fmt.Sprintf("%s.checkpoint[%d]", path, i), b, ContextCheckpoint)
+	for i, b := range loc.Navigation {
+		l.checkBlockDoc(fmt.Sprintf("%s.navigation[%d]", path, i), b, ContextNavigation)
 	}
 }
 
-func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
+func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) { //nolint:gocognit
 	typVal, ok := b["type"]
 	if !ok {
 		l.errorf(path+".type", "MISSING_BLOCK_TYPE", "block is missing required \"type\" field")
@@ -164,7 +161,7 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
 	if l.registry != nil {
 		known := l.registry.KnownFields(typStr)
 		if known != nil {
-			knownSet := make(map[string]bool, len(known)+3)
+			knownSet := make(map[string]bool, len(known)+3) //nolint:mnd // +3 for promoted fields: type, id, points
 			for _, f := range known {
 				knownSet[f] = true
 			}
@@ -188,15 +185,6 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 		// valid
 	default:
 		l.errorf(path, "INVALID_ROUTING", "invalid routing value %q", r)
-	}
-}
-
-func (l *linter) checkNavigation(path string, n NavigationMode) {
-	switch n {
-	case NavigationMap, NavigationLabelledMap, NavigationList, NavigationCustom, NavigationTasks:
-		// valid
-	default:
-		l.errorf(path, "INVALID_NAVIGATION", "invalid navigation value %q", n)
 	}
 }
 
@@ -249,13 +237,9 @@ func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc
 
 func (l *linter) checkLocationContexts(path string, loc LocationDoc) {
 	l.checkBlockContexts(path+".content", loc.Content, ContextLocationContent)
-	l.checkBlockContexts(path+".clues", loc.Clues, ContextLocationClues)
-	l.checkBlockContexts(path+".tasks", loc.Tasks, ContextTask)
-	l.checkBlockContexts(path+".checkpoint", loc.Checkpoint, ContextCheckpoint)
+	l.checkBlockContexts(path+".navigation", loc.Navigation, ContextNavigation)
 	l.trackBlockIDs(path+".content", loc.Content)
-	l.trackBlockIDs(path+".clues", loc.Clues)
-	l.trackBlockIDs(path+".tasks", loc.Tasks)
-	l.trackBlockIDs(path+".checkpoint", loc.Checkpoint)
+	l.trackBlockIDs(path+".navigation", loc.Navigation)
 }
 
 func (l *linter) checkBlockContexts(path string, blocks []BlockDoc, ctx BlockContext) {
@@ -330,7 +314,19 @@ func (l *linter) checkStructural() {
 func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Group != nil {
+		if child.Location != nil {
+			loc := child.Location
+			if len(loc.Navigation) == 0 {
+				l.warnf(childPath+".location.navigation", "NO_NAVIGATION_BLOCKS",
+					"location %q has no navigation blocks; players will see no clues to find it",
+					loc.Name)
+			}
+			if len(loc.Content) == 0 {
+				l.warnf(childPath+".location.content", "NO_CONTENT_BLOCKS",
+					"location %q has no content blocks; players will see an empty page on check-in",
+					loc.Name)
+			}
+		} else if child.Group != nil {
 			if len(child.Group.Children) == 0 {
 				l.warnf(childPath+".group", "EMPTY_GROUP",
 					"group %q has no children", child.Group.Name)
@@ -368,9 +364,7 @@ func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
 					"location has points but enable_points is false")
 			}
 			l.warnBlocksWithPoints(childPath+".location.content", loc.Content)
-			l.warnBlocksWithPoints(childPath+".location.clues", loc.Clues)
-			l.warnBlocksWithPoints(childPath+".location.tasks", loc.Tasks)
-			l.warnBlocksWithPoints(childPath+".location.checkpoint", loc.Checkpoint)
+			l.warnBlocksWithPoints(childPath+".location.navigation", loc.Navigation)
 		} else if child.Group != nil {
 			l.warnChildrenBlockPoints(childPath+".group", child.Group.Children)
 		}

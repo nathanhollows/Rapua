@@ -67,68 +67,6 @@ func TestParseRouteStrategy(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// --- NavigationMode ---
-
-func TestNavigationMode_String(t *testing.T) {
-	cases := []struct {
-		input game.NavigationMode
-		want  string
-	}{
-		{game.NavigationMap, "Map Only"},
-		{game.NavigationLabelledMap, "Labelled Map"},
-		{game.NavigationList, "Location List"},
-		{game.NavigationCustom, "Custom Clues"},
-		{game.NavigationTasks, "Tasks"},
-		{game.NavigationMode("unknown"), "unknown"},
-	}
-	for _, c := range cases {
-		assert.Equal(t, c.want, c.input.String(), "NavigationMode(%q).String()", c.input)
-	}
-}
-
-func TestNavigationMode_Description(t *testing.T) {
-	cases := []struct {
-		input game.NavigationMode
-		empty bool
-	}{
-		{game.NavigationMap, false},
-		{game.NavigationLabelledMap, false},
-		{game.NavigationList, false},
-		{game.NavigationCustom, false},
-		{game.NavigationTasks, false},
-		{game.NavigationMode("unknown"), true},
-	}
-	for _, c := range cases {
-		desc := c.input.Description()
-		if c.empty {
-			assert.Empty(t, desc)
-		} else {
-			assert.NotEmpty(t, desc)
-		}
-	}
-}
-
-func TestParseNavigationMode(t *testing.T) {
-	valid := []struct {
-		input string
-		want  game.NavigationMode
-	}{
-		{"map", game.NavigationMap},
-		{"labelled_map", game.NavigationLabelledMap},
-		{"location_list", game.NavigationList},
-		{"custom", game.NavigationCustom},
-		{"tasks", game.NavigationTasks},
-	}
-	for _, c := range valid {
-		got, err := game.ParseNavigationMode(c.input)
-		require.NoError(t, err, "input %q", c.input)
-		assert.Equal(t, c.want, got)
-	}
-
-	_, err := game.ParseNavigationMode("bogus")
-	assert.Error(t, err)
-}
-
 func TestCompletionType_String(t *testing.T) {
 	cases := []struct {
 		input game.CompletionType

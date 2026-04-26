@@ -93,28 +93,27 @@ func TestLocation_HasCoordinates(t *testing.T) {
 	}
 }
 
-func TestLocation_HasCluesContext(t *testing.T) {
+func TestLocation_HasNavigationContext(t *testing.T) {
 	tests := []struct {
 		name     string
 		location models.Location
 		want     bool
 	}{
 		{
-			name: "Location with clues block",
+			name: "Location with navigation block",
 			location: models.Location{
 				Blocks: []models.Block{
-					{Context: blocks.ContextLocationClues},
+					{Context: blocks.ContextNavigation},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "Location with multiple blocks including clues",
+			name: "Location with multiple blocks including navigation",
 			location: models.Location{
 				Blocks: []models.Block{
 					{Context: blocks.ContextLocationContent},
-					{Context: blocks.ContextLocationClues},
-					{Context: blocks.ContextCheckpoint},
+					{Context: blocks.ContextNavigation},
 				},
 			},
 			want: true,
@@ -124,7 +123,6 @@ func TestLocation_HasCluesContext(t *testing.T) {
 			location: models.Location{
 				Blocks: []models.Block{
 					{Context: blocks.ContextLocationContent},
-					{Context: blocks.ContextCheckpoint},
 				},
 			},
 			want: false,
@@ -147,7 +145,7 @@ func TestLocation_HasCluesContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.location.HasCluesContext()
+			got := tt.location.HasNavigationContext()
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -63,7 +63,6 @@ func createTestGameStructure() models.GameStructure {
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationList,
 				LocationIDs:    []string{}, // Will be filled with actual location IDs
 			},
 			{
@@ -74,7 +73,6 @@ func createTestGameStructure() models.GameStructure {
 				MinimumRequired: 2,
 				AutoAdvance:     false, // Key: can advance early
 				Routing:         models.RouteStrategyFreeRoam,
-				Navigation:      models.NavigationList,
 				LocationIDs:     []string{}, // Will be filled
 			},
 			{
@@ -84,7 +82,6 @@ func createTestGameStructure() models.GameStructure {
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationList,
 				LocationIDs:    []string{}, // Will be filled
 			},
 		},
@@ -577,80 +574,6 @@ func TestNavigationService_GetPreviewNavigationView_LocationNotFound(t *testing.
 	assert.Contains(t, err.Error(), "location not found in game structure")
 }
 
-func TestNavigationService_GetPreviewNavigationView_CustomNavigationMode(t *testing.T) {
-	navService, locationRepo, teamRepo, _, instanceRepo, dbc, cleanup := setupNavigationService(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	// Create game structure with custom navigation mode
-	gameStructure := createTestGameStructure()
-	gameStructure.SubGroups[0].Navigation = models.NavigationCustom
-
-	// Create instance
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-	instance := &models.Instance{
-		ID:            gofakeit.UUID(),
-		Name:          "Test Game",
-		UserID:        userID,
-		GameStructure: gameStructure,
-	}
-	err := instanceRepo.Create(ctx, instance)
-	require.NoError(t, err)
-
-	// Create instance settings
-	settings := &models.InstanceSettings{
-		InstanceID: instance.ID,
-	}
-	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	err = settingsRepo.Create(ctx, settings)
-	require.NoError(t, err)
-
-	// Create location for group 1
-	markerID := gofakeit.UUID()
-	insertTestMarker(t, dbc, markerID)
-	location := &models.Location{
-		InstanceID: instance.ID,
-		Name:       "Preview Location",
-		MarkerID:   markerID,
-	}
-	err = locationRepo.Create(ctx, location)
-	require.NoError(t, err)
-
-	// Update game structure with location ID
-	instance.GameStructure.SubGroups[0].LocationIDs = []string{location.ID}
-	err = instanceRepo.Update(ctx, instance)
-	require.NoError(t, err)
-
-	// Create team
-	team := models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4)),
-		Name:       "Test Team",
-		InstanceID: instance.ID,
-	}
-	err = teamRepo.InsertBatch(ctx, []models.Team{team})
-	require.NoError(t, err)
-
-	// Load team
-	teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
-	require.NoError(t, err)
-	err = teamRepo.LoadRelations(ctx, teamPtr)
-	require.NoError(t, err)
-
-	// Execute
-	view, err := navService.GetPreviewNavigationView(ctx, teamPtr, location.ID)
-
-	// Assert
-	require.NoError(t, err)
-	assert.NotNil(t, view)
-	assert.NotNil(t, view.CurrentGroup)
-	assert.Equal(t, models.NavigationCustom, view.CurrentGroup.Navigation)
-	// Blocks and BlockStates should be initialized (may be empty if no blocks exist)
-	assert.NotNil(t, view.Blocks)
-	assert.NotNil(t, view.BlockStates)
-}
-
 func TestNavigationService_GetPreviewNavigationView_FirstGroupDefault(t *testing.T) {
 	navService, locationRepo, teamRepo, _, instanceRepo, dbc, cleanup := setupNavigationService(t)
 	defer cleanup()
@@ -763,7 +686,6 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 				CompletionType: models.CompletionAll,
 				AutoAdvance:    true,
 				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationList,
 				LocationIDs:    []string{},
 			},
 		},
@@ -843,173 +765,4 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 	require.Error(t, err)
 	require.ErrorIs(t, err, services.ErrAllLocationsVisited)
 	assert.Nil(t, view)
-}
-
-func TestNavigationService_GetPlayerNavigationView_ScavengerHuntMode(t *testing.T) {
-	navService, locationRepo, teamRepo, checkInRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	// Create a game structure with scavenger hunt navigation mode
-	gameStructure := models.GameStructure{
-		ID:     gofakeit.UUID(),
-		IsRoot: true,
-		SubGroups: []models.GameStructure{
-			{
-				ID:             gofakeit.UUID(),
-				Name:           "Scavenger Hunt Group",
-				Color:          "blue",
-				CompletionType: models.CompletionAll,
-				AutoAdvance:    true,
-				Routing:        models.RouteStrategyFreeRoam,
-				Navigation:     models.NavigationTasks, // Key: scavenger hunt mode
-				LocationIDs:    []string{},
-			},
-		},
-	}
-
-	// Create instance
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-	instance := &models.Instance{
-		ID:            gofakeit.UUID(),
-		Name:          "Scavenger Hunt Game",
-		UserID:        userID,
-		GameStructure: gameStructure,
-	}
-	err := instanceRepo.Create(ctx, instance)
-	require.NoError(t, err)
-
-	// Create instance settings
-	settings := &models.InstanceSettings{
-		InstanceID: instance.ID,
-	}
-	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	err = settingsRepo.Create(ctx, settings)
-	require.NoError(t, err)
-
-	// Create three locations (tasks)
-	markerID1 := strings.ToUpper(gofakeit.LetterN(5))
-	insertTestMarker(t, dbc, markerID1)
-	loc1 := &models.Location{
-		InstanceID: instance.ID,
-		Name:       "Photograph the fountain",
-		MarkerID:   markerID1,
-		Points:     10,
-	}
-	markerID2 := strings.ToUpper(gofakeit.LetterN(5))
-	insertTestMarker(t, dbc, markerID2)
-	loc2 := &models.Location{
-		InstanceID: instance.ID,
-		Name:       "Take a group photo",
-		MarkerID:   markerID2,
-		Points:     20,
-	}
-	markerID3 := strings.ToUpper(gofakeit.LetterN(5))
-	insertTestMarker(t, dbc, markerID3)
-	loc3 := &models.Location{
-		InstanceID: instance.ID,
-		Name:       "Find something blue",
-		MarkerID:   markerID3,
-		Points:     15,
-	}
-	err = locationRepo.Create(ctx, loc1)
-	require.NoError(t, err)
-	err = locationRepo.Create(ctx, loc2)
-	require.NoError(t, err)
-	err = locationRepo.Create(ctx, loc3)
-	require.NoError(t, err)
-
-	// Update game structure with location IDs
-	instance.GameStructure.SubGroups[0].LocationIDs = []string{loc1.ID, loc2.ID, loc3.ID}
-	err = instanceRepo.Update(ctx, instance)
-	require.NoError(t, err)
-
-	// Create team
-	team := models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4)),
-		Name:       "Test Team",
-		InstanceID: instance.ID,
-	}
-	err = teamRepo.InsertBatch(ctx, []models.Team{team})
-	require.NoError(t, err)
-
-	t.Run("all locations uncompleted", func(t *testing.T) {
-		// Load fresh team
-		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
-		require.NoError(t, err)
-		err = teamRepo.LoadRelations(ctx, teamPtr)
-		require.NoError(t, err)
-
-		// Execute
-		view, err := navService.GetPlayerNavigationView(ctx, teamPtr)
-
-		// Assert
-		require.NoError(t, err)
-		assert.NotNil(t, view)
-		assert.Equal(t, models.NavigationTasks, view.CurrentGroup.Navigation)
-		assert.Len(t, view.NextLocations, 3, "all 3 locations should be uncompleted")
-		assert.Empty(t, view.CompletedLocations, "no locations should be completed")
-	})
-
-	t.Run("one location completed via check-in", func(t *testing.T) {
-		// Check in to loc1 - since location has no blocks, it's immediately complete
-		_, err := checkInRepo.LogCheckIn(ctx, team, *loc1, false, false)
-		require.NoError(t, err)
-
-		// Load fresh team
-		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
-		require.NoError(t, err)
-		err = teamRepo.LoadRelations(ctx, teamPtr)
-		require.NoError(t, err)
-
-		// Execute
-		view, err := navService.GetPlayerNavigationView(ctx, teamPtr)
-
-		// Assert - location with no blocks is immediately complete on check-in
-		require.NoError(t, err)
-		assert.Len(t, view.NextLocations, 2, "2 locations should be uncompleted")
-		assert.Len(t, view.CompletedLocations, 1, "1 location should be completed")
-	})
-
-	t.Run("two locations completed", func(t *testing.T) {
-		// Check in to loc2 - also immediately complete (no blocks)
-		_, err := checkInRepo.LogCheckIn(ctx, team, *loc2, false, false)
-		require.NoError(t, err)
-
-		// Load fresh team
-		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
-		require.NoError(t, err)
-		err = teamRepo.LoadRelations(ctx, teamPtr)
-		require.NoError(t, err)
-
-		// Execute
-		view, err := navService.GetPlayerNavigationView(ctx, teamPtr)
-
-		// Assert
-		require.NoError(t, err)
-		assert.Len(t, view.NextLocations, 1, "1 location should be uncompleted")
-		assert.Len(t, view.CompletedLocations, 2, "2 locations should be completed")
-	})
-
-	t.Run("all locations completed", func(t *testing.T) {
-		// Check in to loc3 - immediately complete (no blocks)
-		_, err := checkInRepo.LogCheckIn(ctx, team, *loc3, false, false)
-		require.NoError(t, err)
-
-		// Load fresh team
-		teamPtr, err := teamRepo.GetByCode(ctx, team.Code)
-		require.NoError(t, err)
-		err = teamRepo.LoadRelations(ctx, teamPtr)
-		require.NoError(t, err)
-
-		// Execute
-		view, err := navService.GetPlayerNavigationView(ctx, teamPtr)
-
-		// Assert - all completed, scavenger hunt mode returns the view (not ErrAllLocationsVisited)
-		require.NoError(t, err)
-		assert.Empty(t, view.NextLocations, "no locations should be uncompleted")
-		assert.Len(t, view.CompletedLocations, 3, "all 3 locations should be completed")
-	})
 }

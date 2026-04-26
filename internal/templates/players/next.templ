@@ -15,19 +15,11 @@ type NextParams struct {
 
 templ Next(data NextParams) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
-			@icon("circle-check-big", templ.Attributes{"class": "w-16 h-16 m-auto"})
-		} else {
-			@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
-		}
+		@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
 		<h2
 			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
 		>
-			if data.View.CurrentGroup != nil && data.View.CurrentGroup.Navigation == models.NavigationTasks {
-				{ data.View.CurrentGroup.Name }
-			} else {
-				Next location
-			}
+			Next location
 		</h2>
 		if data.View.MustCheckOut {
 			<div role="alert" class="alert alert-info mb-10">
@@ -45,7 +37,7 @@ templ Next(data NextParams) {
 				<div role="alert" class="alert alert-info alert-vertical sm:alert-horizontal mb-10">
 					<div>
 						<div class="text-sm">
-							You have completed the minimum number of tasks. Would you like to skip ahead? 
+							You have completed the minimum number of tasks. Would you like to skip ahead?
 						</div>
 					</div>
 					<a
@@ -59,18 +51,7 @@ templ Next(data NextParams) {
 				</div>
 			}
 			if data.View.CurrentGroup != nil {
-				switch data.View.CurrentGroup.Navigation {
-					case models.NavigationMap:
-						@showMap(data.View.NextLocations)
-					case models.NavigationLabelledMap:
-						@showMapAndNames(data.View.Settings, data.View.NextLocations)
-					case models.NavigationList:
-						@showNames(data.View.Settings, data.View.NextLocations)
-					case models.NavigationCustom:
-						@showCustom(prepareCustomContentViewData(data))
-					case models.NavigationTasks:
-						@showTasks(prepareTaskViewData(data.View))
-				}
+				@showNavigation(prepareNavViewData(data))
 			}
 		}
 		<div id="player-nav" class="flex flex-row justify-center mt-10">
@@ -83,125 +64,78 @@ templ Next(data NextParams) {
 	</div>
 }
 
-templ showMap(locations []models.Location) {
-	<p class="text-center pb-5">
-		You may choose any of the following locations. Use the map below to help
-		find where you want to go.
-	</p>
-	<div id="map-container" class="relative w-full aspect-square h-96 rounded-lg shadow-lg my-5 overflow-hidden">
-		<div id="map-next" class="map w-full h-full rounded-lg"></div>
-	</div>
-	for _, location := range locations {
-		if location.Marker.IsMapped() {
-			<span
-				class="location-name"
-				data-lat={ fmt.Sprint(location.Marker.Lat) }
-				data-lng={ fmt.Sprint(location.Marker.Lng) }
-				data-code={ location.MarkerID }
-			></span>
-		}
-	}
-	@mapScript()
-}
-
-templ showMapAndNames(settings models.InstanceSettings, locations []models.Location) {
-	<p class="text-center pb-5">
-		You may choose any of the following locations. Use the map below to help find where you want to go.
-	</p>
-	for _, location := range locations {
-		<p class="text-center pb-3">
-			if location.Marker.IsMapped() {
-				<em
-					class="location-name"
-					data-lat={ fmt.Sprint(location.Marker.Lat) }
-					data-lng={ fmt.Sprint(location.Marker.Lng) }
-					data-name={ location.Name }
-					data-code={ location.MarkerID }
-				>{ location.Name }</em>
-			} else {
-				<em>{ location.Name }</em>
-			}
-			<!-- Show the number of teams visiting this location -->
-			if settings.ShowTeamCount {
-				<br/>
-				<span class="badge badge-ghost">
-					{ fmt.Sprint(location.CurrentCount) } Teams Visiting
-				</span>
-			}
-		</p>
-	}
-	<div id="map-container" class="relative w-full aspect-square h-96 rounded-lg shadow-lg my-5 overflow-hidden">
-		<div id="map-next" class="map w-full h-full rounded-lg"></div>
-	</div>
-	@mapScript()
-}
-
-templ showNames(settings models.InstanceSettings, locations []models.Location) {
-	<p class="text-center pb-5">
-		You may visit any of the following locations.
-	</p>
-	for _, location := range locations {
-		<p class="text-center pb-3">
-			<em>{ location.Name }</em>
-			<!-- Show the number of teams visiting this location -->
-			if settings.ShowTeamCount {
-				<br/>
-				<span class="badge badge-ghost">
-					{ fmt.Sprint(location.CurrentCount) } Teams Visiting
-				</span>
-			}
-		</p>
-	}
-}
-
-type customContentViewData struct {
+type navViewData struct {
 	Settings            models.InstanceSettings
 	LocationsWithBlocks []locationWithBlocks
 }
 
 type locationWithBlocks struct {
 	Location models.Location
-	Blocks   []blocks.Block
-	States   map[string]blocks.PlayerState
+	Runs     []blockRun
 }
 
-func prepareCustomContentViewData(data NextParams) customContentViewData {
+type blockRun struct {
+	IsTask bool
+	Blocks []blocks.Block
+	States map[string]blocks.PlayerState
+}
+
+func prepareNavViewData(data NextParams) navViewData {
 	locationsWithBlocks := make([]locationWithBlocks, 0, len(data.View.NextLocations))
 	for _, location := range data.View.NextLocations {
-		lwb := locationWithBlocks{
-			Location: location,
-			Blocks:   make([]blocks.Block, 0),
-		}
+		// Collect blocks for this location
+		locationBlocks := make([]blocks.Block, 0)
 		for _, block := range data.View.Blocks {
 			if block.GetOwnerID() == location.ID {
-				lwb.Blocks = append(lwb.Blocks, block)
+				locationBlocks = append(locationBlocks, block)
 			}
 		}
-		locationsWithBlocks = append(locationsWithBlocks, lwb)
-	}
-	for i, lwb := range locationsWithBlocks {
-		lwb.States = make(map[string]blocks.PlayerState)
-		for _, block := range lwb.Blocks {
+
+		// Build state map
+		states := make(map[string]blocks.PlayerState)
+		for _, block := range locationBlocks {
 			if state, ok := data.View.BlockStates[block.GetID()]; ok {
-				lwb.States[block.GetID()] = state
+				states[block.GetID()] = state
 			}
 		}
-		locationsWithBlocks[i] = lwb
+
+		runs := groupByTaskRuns(locationBlocks, states)
+		locationsWithBlocks = append(locationsWithBlocks, locationWithBlocks{
+			Location: location,
+			Runs:     runs,
+		})
 	}
-	return customContentViewData{
+	return navViewData{
 		Settings:            data.View.Settings,
 		LocationsWithBlocks: locationsWithBlocks,
 	}
 }
 
-templ showCustom(data customContentViewData) {
+func groupByTaskRuns(blks []blocks.Block, states map[string]blocks.PlayerState) []blockRun {
+	runs := make([]blockRun, 0)
+	for _, block := range blks {
+		_, isTask := block.(*blocks.TaskBlock)
+		if len(runs) == 0 || runs[len(runs)-1].IsTask != isTask {
+			runs = append(runs, blockRun{
+				IsTask: isTask,
+				Blocks: []blocks.Block{block},
+				States: states,
+			})
+		} else {
+			runs[len(runs)-1].Blocks = append(runs[len(runs)-1].Blocks, block)
+		}
+	}
+	return runs
+}
+
+templ showNavigation(data navViewData) {
 	<div class="prose">
 		if len(data.LocationsWithBlocks) > 1 {
 			<p>
 				You may choose any of the following locations. Use the clues below to help
 				find where you want to go.
 			</p>
-		} else {
+		} else if len(data.LocationsWithBlocks) == 1 && len(data.LocationsWithBlocks[0].Runs) > 0 {
 			<p class="text-center pb-5">
 				Use the clues below to find your next location.
 			</p>
@@ -212,7 +146,7 @@ templ showCustom(data customContentViewData) {
 			if len(data.LocationsWithBlocks) > 1 {
 				<div class="divider my-8 m-auto w-1/2">{ i + 1 }</div>
 			}
-			if len(locWithBlocks.Blocks) == 0 {
+			if len(locWithBlocks.Runs) == 0 {
 				<div class="alert alert-success my-3">
 					<span>
 						<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlocks.Location.Name }</em></strong> so we'll just tell you where it is!
@@ -220,247 +154,31 @@ templ showCustom(data customContentViewData) {
 				</div>
 			} else {
 				<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
-					for _, block := range locWithBlocks.Blocks {
-						if block.GetOwnerID() != locWithBlocks.Location.ID {
-							continue
+					for _, run := range locWithBlocks.Runs {
+						if run.IsTask {
+							<div class="join join-vertical w-full">
+								for _, block := range run.Blocks {
+									<div
+										class="block-view"
+										id={ fmt.Sprint("preview-block-", block.GetID()) }
+									>
+										@templates.RenderPlayerView(data.Settings, block, run.States[block.GetID()])
+									</div>
+								}
+							</div>
+						} else {
+							for _, block := range run.Blocks {
+								<div
+									class="block-view"
+									id={ fmt.Sprint("preview-block-", block.GetID()) }
+								>
+									@templates.RenderPlayerView(data.Settings, block, run.States[block.GetID()])
+								</div>
+							}
 						}
-						<div
-							class="block-view"
-							id={ fmt.Sprint("preview-block-", block.GetID()) }
-						>
-							@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
-						</div>
 					}
 				</div>
 			}
 		</div>
 	}
-}
-
-type taskViewData struct {
-	Settings         models.InstanceSettings
-	UncompletedTasks []locationTask
-	CompletedTasks   []locationTask
-}
-
-type locationTask struct {
-	Location models.Location
-	Block    blocks.Block
-	State    blocks.PlayerState
-}
-
-func prepareTaskViewData(view *services.PlayerNavigationView) taskViewData {
-	// Build a map of locationID -> task block for quick lookup
-	blockByLocation := make(map[string]blocks.Block)
-	for _, block := range view.Blocks {
-		blockByLocation[block.GetOwnerID()] = block
-	}
-
-	// Build uncompleted tasks in location order
-	uncompletedTasks := make([]locationTask, 0, len(view.NextLocations))
-	for _, loc := range view.NextLocations {
-		task := locationTask{Location: loc}
-		if block, exists := blockByLocation[loc.ID]; exists {
-			task.Block = block
-			if state, hasState := view.BlockStates[block.GetID()]; hasState {
-				task.State = state
-			}
-		}
-		uncompletedTasks = append(uncompletedTasks, task)
-	}
-
-	// Build completed tasks in location order
-	completedTasks := make([]locationTask, 0, len(view.CompletedLocations))
-	for _, loc := range view.CompletedLocations {
-		task := locationTask{Location: loc}
-		if block, exists := blockByLocation[loc.ID]; exists {
-			task.Block = block
-			if state, hasState := view.BlockStates[block.GetID()]; hasState {
-				task.State = state
-			}
-		}
-		completedTasks = append(completedTasks, task)
-	}
-
-	return taskViewData{
-		Settings:         view.Settings,
-		UncompletedTasks: uncompletedTasks,
-		CompletedTasks:   completedTasks,
-	}
-}
-
-templ showTasks(data taskViewData) {
-	<div class="space-y-4">
-		<!-- Uncompleted tasks -->
-		if len(data.UncompletedTasks) > 0 {
-			<div class="join join-vertical w-full">
-				for _, task := range data.UncompletedTasks {
-					@taskItem(data.Settings, task, false)
-				}
-			</div>
-		}
-		<!-- Completed tasks -->
-		if len(data.CompletedTasks) > 0 {
-			<div class="divider text-sm text-base-content/70">
-				Completed
-				{ fmt.Sprint(len(data.CompletedTasks)) }/{ fmt.Sprint(len(data.UncompletedTasks) + len(data.CompletedTasks)) }
-			</div>
-			<div class="join join-vertical line-through w-full">
-				for _, task := range data.CompletedTasks {
-					@taskItem(data.Settings, task, true)
-				}
-			</div>
-		}
-		<!-- All done message -->
-		if len(data.UncompletedTasks) == 0 && len(data.CompletedTasks) > 0 {
-			<div role="alert" class="alert alert-success mt-4">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 shrink-0">
-					<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-					<polyline points="22 4 12 14.01 9 11.01"></polyline>
-				</svg>
-				<span>All tasks in this section complete!</span>
-			</div>
-		}
-	</div>
-}
-
-templ taskItem(settings models.InstanceSettings, task locationTask, isCompleted bool) {
-	if task.Block != nil {
-		<div
-			class="block-view"
-			id={ fmt.Sprint("preview-block-", task.Block.GetID()) }
-		>
-			@templates.RenderPlayerView(settings, task.Block, task.State)
-		</div>
-	} else {
-		<!-- Fallback if no task block exists for the location -->
-		<a
-			href={ templ.URL(fmt.Sprintf("/l/%s", task.Location.ID)) }
-			hx-boost="true"
-			class="join-item flex items-center gap-3 p-4 border bg-base-200 transition-colors hover:bg-base-300 border-base-300"
-		>
-			<input
-				type="checkbox"
-				disabled="disabled"
-				class="checkbox checkbox-lg checkbox-primary opacity-100"
-				if isCompleted {
-					checked="checked"
-				}
-			/>
-			<span class="">
-				{ task.Location.Name }
-			</span>
-			<div class="flex items-center ml-auto">
-				@icon("chevron-right", templ.Attributes{"class": "ml-1 w-4 h-4 text-base-content"})
-			</div>
-		</a>
-	}
-}
-
-templ mapScript() {
-	<script>
-(function () {
-  let map; // Store the map instance globally within the IIFE
-  let markerArray = []; // Store the markers array globally within the IIFE
-
-  function initializeMap() {
-	const locations = document.querySelectorAll('.location-name');
-	// Calculate the center and zoom level based on the locations
-	let coords = [170.5111643, -45.8650509];
-	let zoom = 17;
-	for (let i = 0; i < locations.length; i++) {
-		lat = parseFloat(locations[i].dataset.lat);
-		lng = parseFloat(locations[i].dataset.lng);
-		if (lat !== 0 && lng !== 0) {
-			coords = [lng, lat];
-			break;
-		}
-	}
-
-    // Clear any existing markers
-    markerArray.forEach(marker => marker.remove());
-    markerArray = [];
-
-    // Destroy existing map instance if it exists
-    if (map) {
-      map.remove();
-      map = null; // Explicitly set to null to clear reference
-    }
-
-    // Set the Mapbox access token
-    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;
-
-    // Determine the style based on color scheme
-    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
-      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
-
-    // Create the map
-    map = new mapboxgl.Map({
-      container: 'map-next',
-      style: style,
-      center: coords,
-      zoom: zoom,
-	  cooperativeGestures: true,
-    });
-
-    // Find and loop through .location-name elements to create markers
-    document.querySelectorAll('.location-name').forEach(function(location) {
-      const marker = new mapboxgl.Marker()
-        .setLngLat([location.dataset.lng, location.dataset.lat])
-	  if (location.dataset.name) marker
-        .setPopup(new mapboxgl.Popup() // Add popups
-	    .setHTML('<h3>' + location.dataset.name + '</h3>'));
-	  marker._element.id = "marker-"+location.dataset.code;
-      markerArray.push(marker);
-    });
-
-    // Sort markers by latitude
-    markerArray.sort(function(a, b) {
-      // If northern hemisphere, sort by descending latitude
-      return a.getLngLat().lat < 0
-        ? b.getLngLat().lat - a.getLngLat().lat
-        : a.getLngLat().lat - b.getLngLat().lat;
-    });
-
-    // Add markers to the map
-    markerArray.forEach(marker => marker.addTo(map));
-
-    // Fit the map to the bounds of the markers
-	if (markerArray.length > 1) {
-		const bounds = new mapboxgl.LngLatBounds();
-		markerArray.forEach(marker => {
-		  bounds.extend(marker.getLngLat());
-		});
-
-		map.fitBounds(bounds, { padding: 50 });
-	}
-
-    MapboxStyleSwitcher.extend(map, {
-      // Optional: Override default options
-      controlPosition: 'top-left', // Position on the map
-      // satelliteStyle: 'custom-satellite-style-if-needed'
-    }, markerArray);
-  }
-
-  // Initialize the map on page load
-  initializeMap();
-
-	// Event listener for span click/tap
-	document.querySelectorAll('.location-name').forEach(function(span) {
-	  span.addEventListener('click', function() {
-		const id = "marker-"+span.dataset.code; // Get the id from the clicked span
-		const marker = document.getElementById(id); // Find the marker by id
-
-		if (marker) {
-		  // Open the popup for the marker
-		  marker.click();
-		} else {
-		  console.error('Marker not found for id:', id);
-		}
-	  });
-	});
-
-})();
-</script>
 }

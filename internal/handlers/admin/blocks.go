@@ -49,11 +49,9 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 	// Validate context parameter
 	validContexts := []blocks.BlockContext{
 		blocks.ContextLocationContent,
-		blocks.ContextLocationClues,
-		blocks.ContextCheckpoint,
+		blocks.ContextNavigation,
 		blocks.ContextStart,
 		blocks.ContextFinish,
-		blocks.ContextTask,
 	}
 	blockContext := blocks.BlockContext(contextParam)
 	isValidContext := slices.Contains(validContexts, blocks.BlockContext(contextParam))

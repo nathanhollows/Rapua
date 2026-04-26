@@ -8,9 +8,7 @@ type BlockContext string
 
 const (
 	ContextLocationContent BlockContext = "location_content" // Regular location content blocks
-	ContextLocationClues   BlockContext = "location_clues"   // Clues
-	ContextTask            BlockContext = "task"             // Task a la scavenger hunts
-	ContextCheckpoint      BlockContext = "checkpoint"       // Verify a player is at a location
+	ContextNavigation      BlockContext = "navigation"       // Navigation blocks shown on the /next page
 	ContextStart           BlockContext = "start"            // Start pages - introductions, rules, set team name
 	ContextFinish          BlockContext = "finish"           // Finish/end pages
 )

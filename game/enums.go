@@ -12,17 +12,6 @@ const (
 	RouteStrategySecret     RouteStrategy = "secret" // Locations that may be accessed out of sequence
 )
 
-// NavigationMode defines how the navigation interface is presented to players.
-type NavigationMode string
-
-const (
-	NavigationMap         NavigationMode = "map"
-	NavigationLabelledMap NavigationMode = "labelled_map"
-	NavigationList        NavigationMode = "location_list"
-	NavigationCustom      NavigationMode = "custom" // For Block content
-	NavigationTasks       NavigationMode = "tasks"  // Task checklist with completion tracking
-)
-
 // CompletionType defines how a group is considered completed.
 type CompletionType string
 
@@ -63,42 +52,6 @@ func (n RouteStrategy) Description() string {
 	}
 }
 
-// String returns the display name of the NavigationMode.
-func (n NavigationMode) String() string {
-	switch n {
-	case NavigationMap:
-		return "Map Only"
-	case NavigationLabelledMap:
-		return "Labelled Map"
-	case NavigationList:
-		return "Location List"
-	case NavigationCustom:
-		return "Custom Clues"
-	case NavigationTasks:
-		return "Tasks"
-	default:
-		return string(n)
-	}
-}
-
-// Description returns the description of the NavigationMode.
-func (n NavigationMode) Description() string {
-	switch n {
-	case NavigationMap:
-		return "Players are shown a map."
-	case NavigationLabelledMap:
-		return "Players are shown a map with location names."
-	case NavigationList:
-		return "Players are shown a list of locations by name."
-	case NavigationCustom:
-		return "Players are shown custom content, e.g., randomised clues or images, using the block builder."
-	case NavigationTasks:
-		return "Players see a checklist, like a scavenger hunt, with completion tracking."
-	default:
-		return ""
-	}
-}
-
 // ParseRouteStrategy returns a RouteStrategy from its canonical string value.
 func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	switch s {
@@ -112,24 +65,6 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 		return RouteStrategySecret, nil
 	default:
 		return "", errors.New("invalid RouteStrategy")
-	}
-}
-
-// ParseNavigationMode returns a NavigationMode from its canonical string value.
-func ParseNavigationMode(s string) (NavigationMode, error) {
-	switch s {
-	case "map":
-		return NavigationMap, nil
-	case "labelled_map":
-		return NavigationLabelledMap, nil
-	case "location_list":
-		return NavigationList, nil
-	case "custom":
-		return NavigationCustom, nil
-	case "tasks":
-		return NavigationTasks, nil
-	default:
-		return "", errors.New("invalid NavigationMode")
 	}
 }
 

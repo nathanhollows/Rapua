@@ -42,20 +42,20 @@ func (l *Location) HasCoordinates() bool {
 	return l.Marker.IsMapped()
 }
 
-// HasCluesContext returns true if the location has any blocks with clues context.
-func (l *Location) HasCluesContext() bool {
+// HasNavigationContext returns true if the location has any navigation blocks.
+func (l *Location) HasNavigationContext() bool {
 	for i := range l.Blocks {
-		if l.Blocks[i].Context == game.ContextLocationClues {
+		if l.Blocks[i].Context == game.ContextNavigation {
 			return true
 		}
 	}
 	return false
 }
 
-// HasTaskContext returns true if the location has any blocks with task context.
-func (l *Location) HasTaskContext() bool {
+// HasContentContext returns true if the location has any content blocks.
+func (l *Location) HasContentContext() bool {
 	for i := range l.Blocks {
-		if l.Blocks[i].Context == game.ContextTask {
+		if l.Blocks[i].Context == game.ContextLocationContent {
 			return true
 		}
 	}

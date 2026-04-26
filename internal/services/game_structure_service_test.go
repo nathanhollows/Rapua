@@ -6,9 +6,9 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,7 +63,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add block to location 1
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextNavigation, "text")
 		require.NoError(t, err)
 
 		// Create game structure
@@ -89,7 +89,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		assert.Equal(t, blocks.ContextLocationContent, structure.Locations[0].Blocks[0].Context)
 		assert.Equal(t, "header", structure.Locations[0].Blocks[0].Type)
 		// Second block should be the manually created markdown with location_clues context
-		assert.Equal(t, blocks.ContextLocationClues, structure.Locations[0].Blocks[1].Context)
+		assert.Equal(t, blocks.ContextNavigation, structure.Locations[0].Blocks[1].Context)
 		assert.Equal(t, "text", structure.Locations[0].Blocks[1].Type)
 	})
 
@@ -110,7 +110,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add blocks
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextNavigation, "text")
 		require.NoError(t, err)
 		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "text")
 		require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add blocks
-		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextLocationClues, "text")
+		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc1.ID, blocks.ContextNavigation, "text")
 		require.NoError(t, err)
 		_, err = blockService.NewBlockWithOwnerAndContext(ctx, loc2.ID, blocks.ContextLocationContent, "text")
 		require.NoError(t, err)

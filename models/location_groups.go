@@ -9,7 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/game"
 )
 
-// Type alias — CompletionType is defined in game/ and re-exported here.
+// CompletionType is a type alias; defined in game/ and re-exported here.
 type CompletionType = game.CompletionType
 
 const (
@@ -57,7 +57,6 @@ type GameStructure struct {
 	Name            string         `json:"name"`                       // Empty for root group, required for visible groups
 	Color           string         `json:"color"`                      // Empty for root, required for visible groups (e.g., "primary", "secondary")
 	Routing         RouteStrategy  `json:"routing"`                    // ordered, randomised, free_roam, secret
-	Navigation      NavigationMode `json:"navigation"`                 // map, labelled_map, location_list, custom, tasks
 	CompletionType  CompletionType `json:"completion_type"`            // all, minimum
 	MinimumRequired int            `json:"minimum_required,omitempty"` // For minimum completion type
 	MaxNext         int            `json:"max_next,omitempty"`         // Max locations to show for random routing (0 = unlimited)
@@ -251,11 +250,6 @@ func (gc *GameContext) Color() string {
 // Routing returns the structure's routing mode.
 func (gc *GameContext) Routing() RouteStrategy {
 	return gc.Structure.Routing
-}
-
-// Navigation returns the structure's navigation method.
-func (gc *GameContext) Navigation() NavigationMode {
-	return gc.Structure.Navigation
 }
 
 // CompletionType returns the structure's completion type.

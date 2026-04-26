@@ -185,7 +185,6 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 		Finish: []game.BlockDoc{},
 		Structure: game.StructureDoc{
 			Routing:    game.RouteStrategyFreeRoam,
-			Navigation: game.NavigationMap,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
 				{Location: &game.LocationDoc{
@@ -197,7 +196,6 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 					Name:       "East Wing",
 					Color:      "primary",
 					Routing:    game.RouteStrategyFreeRoam,
-					Navigation: game.NavigationMap,
 					Completion: game.CompletionAll,
 					Children: []game.ChildDoc{
 						{Location: &game.LocationDoc{

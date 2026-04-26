@@ -25,21 +25,22 @@ type SettingsDoc struct {
 // StructureDoc represents the root group of the game structure.
 type StructureDoc struct {
 	Routing         RouteStrategy  `json:"routing"`
-	Navigation      NavigationMode `json:"navigation"`
 	Completion      CompletionType `json:"completion"`
 	MinimumRequired int            `json:"minimum_required,omitempty"`
 	Children        []ChildDoc     `json:"children"`
 }
 
 // GroupDoc represents a named group within the structure tree.
+// AutoAdvance defaults to true when omitted — set explicitly to false to keep players in the group
+// after the completion criteria are met.
 type GroupDoc struct {
 	ID              string         `json:"id,omitempty"`
 	Name            string         `json:"name"`
 	Color           string         `json:"color"`
 	Routing         RouteStrategy  `json:"routing"`
-	Navigation      NavigationMode `json:"navigation"`
 	Completion      CompletionType `json:"completion"`
 	MinimumRequired int            `json:"minimum_required,omitempty"`
+	AutoAdvance     *bool          `json:"auto_advance,omitempty"`
 	Children        []ChildDoc     `json:"children"`
 }
 
@@ -51,9 +52,7 @@ type LocationDoc struct {
 	Points     int        `json:"points,omitempty"`
 	Marker     *MarkerDoc `json:"marker,omitempty"`
 	Content    []BlockDoc `json:"content"`
-	Clues      []BlockDoc `json:"clues,omitempty"`
-	Tasks      []BlockDoc `json:"tasks,omitempty"`
-	Checkpoint []BlockDoc `json:"checkpoint,omitempty"`
+	Navigation []BlockDoc `json:"navigation,omitempty"`
 }
 
 // MarkerDoc holds geographic coordinates for a location.

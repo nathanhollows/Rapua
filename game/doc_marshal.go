@@ -3,6 +3,7 @@ package game
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 )
@@ -10,7 +11,7 @@ import (
 // MarshalJSON serializes ChildDoc as {"location": ...} or {"group": ...}.
 func (c ChildDoc) MarshalJSON() ([]byte, error) {
 	if c.Location != nil && c.Group != nil {
-		return nil, fmt.Errorf("ChildDoc: both Location and Group are set")
+		return nil, errors.New("ChildDoc: both Location and Group are set")
 	}
 	if c.Location != nil {
 		return json.Marshal(map[string]any{"location": c.Location})
@@ -18,7 +19,7 @@ func (c ChildDoc) MarshalJSON() ([]byte, error) {
 	if c.Group != nil {
 		return json.Marshal(map[string]any{"group": c.Group})
 	}
-	return nil, fmt.Errorf("ChildDoc: neither Location nor Group is set")
+	return nil, errors.New("ChildDoc: neither Location nor Group is set")
 }
 
 // UnmarshalJSON deserializes {"location": ...} or {"group": ...} into ChildDoc.
