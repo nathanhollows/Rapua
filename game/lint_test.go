@@ -12,9 +12,10 @@ import (
 
 // mockRegistry implements game.BlockRegistry for testing.
 type mockRegistry struct {
-	validTypes  map[string]bool
-	contexts    map[string][]game.BlockContext
-	knownFields map[string][]string
+	validTypes   map[string]bool
+	contexts     map[string][]game.BlockContext
+	knownFields  map[string][]string
+	interactive  map[string]bool
 }
 
 func (m *mockRegistry) IsValidType(blockType string) bool {
@@ -36,6 +37,10 @@ func (m *mockRegistry) KnownFields(t string) []string {
 	return m.knownFields[t]
 }
 
+func (m *mockRegistry) IsInteractive(blockType string) bool {
+	return m.interactive[blockType]
+}
+
 func newTestRegistry() *mockRegistry {
 	return &mockRegistry{
 		validTypes: map[string]bool{
@@ -52,6 +57,10 @@ func newTestRegistry() *mockRegistry {
 			"quiz":         {game.ContextLocationContent},
 			"start_button": {game.ContextStart},
 			"game_status":  {game.ContextStart},
+		},
+		interactive: map[string]bool{
+			"quiz":     true,
+			"password": true,
 		},
 	}
 }
@@ -609,4 +618,516 @@ func TestLint_NoContentBlocksWarning(t *testing.T) {
 	assert.Empty(t, result.Errors)
 	require.Len(t, result.Warnings, 1)
 	assert.Equal(t, "NO_CONTENT_BLOCKS", result.Warnings[0].Code)
+}
+
+// --- When / variable resolution ---
+
+func TestLint_UndefinedVar_LocationWhen(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
+		AllOf: []game.Condition{{Var: "ghost_var"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	assert.Empty(t, result.Errors)
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNDEFINED_VAR")
+}
+
+func TestLint_UndefinedVar_GroupWhen(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.When = &game.WhenClause{
+		AnyOf: []game.Condition{{Var: "ghost_var"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNDEFINED_VAR")
+}
+
+func TestLint_UndefinedVar_BlockWhen(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{
+			"type": "quiz",
+			"when": map[string]any{
+				"all_of": []any{
+					map[string]any{"var": "ghost_var"},
+				},
+			},
+		},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNDEFINED_VAR")
+}
+
+func TestLint_DefinedVar_NoWarning(t *testing.T) {
+	doc := validDoc()
+	// Block sets "score", location when references "score" — should be clean
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{
+			"type": "quiz",
+			"sets": map[string]any{"score": "correct"},
+		},
+	}
+	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
+		AllOf: []game.Condition{{Var: "score"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "UNDEFINED_VAR", w.Code)
+	}
+}
+
+func TestLint_WhenUnreachableVar_Min1AutoAdvance(t *testing.T) {
+	autoAdvanceTrue := true
+	doc := validDoc()
+	// Group with completion=minimum, min=1, auto_advance=true
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 1
+	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
+
+	loc := doc.Structure.Children[0].Group.Children[0].Location
+	// First location sets "visited_loc1"
+	loc.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+	}
+	// Add a second location that depends on "visited_loc1" being set
+	secondLoc := &game.LocationDoc{
+		Slug: "loc2",
+		Name: "Location 2",
+		When: &game.WhenClause{
+			AllOf: []game.Condition{{Var: "visited_loc1"}},
+		},
+		Content:    []game.BlockDoc{{"type": "text"}},
+		Navigation: []game.BlockDoc{{"type": "clue"}},
+	}
+	doc.Structure.Children[0].Group.Children = append(
+		doc.Structure.Children[0].Group.Children,
+		game.ChildDoc{Location: secondLoc},
+	)
+
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "WHEN_UNREACHABLE_VAR")
+}
+
+func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
+	doc := validDoc()
+	// Group with completion=minimum, min=2 — should NOT warn
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 2
+	loc := doc.Structure.Children[0].Group.Children[0].Location
+	loc.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+	}
+	secondLoc := &game.LocationDoc{
+		Slug: "loc2",
+		Name: "Location 2",
+		When: &game.WhenClause{
+			AllOf: []game.Condition{{Var: "visited_loc1"}},
+		},
+		Content:    []game.BlockDoc{{"type": "text"}},
+		Navigation: []game.BlockDoc{{"type": "clue"}},
+	}
+	doc.Structure.Children[0].Group.Children = append(
+		doc.Structure.Children[0].Group.Children,
+		game.ChildDoc{Location: secondLoc},
+	)
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "WHEN_UNREACHABLE_VAR", w.Code)
+	}
+}
+
+func TestLint_UnusedVar(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+	}
+	// "score" is set but no when clause references it
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNUSED_VAR")
+}
+
+func TestLint_UnusedVar_UsedElsewhere_NoWarning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+	}
+	// A second location's when references "score" — should suppress UNUSED_VAR
+	secondLoc := &game.LocationDoc{
+		Slug: "loc2",
+		Name: "Location 2",
+		When: &game.WhenClause{
+			AllOf: []game.Condition{{Var: "score"}},
+		},
+		Content:    []game.BlockDoc{{"type": "text"}},
+		Navigation: []game.BlockDoc{{"type": "clue"}},
+	}
+	doc.Structure.Children[0].Group.Children = append(
+		doc.Structure.Children[0].Group.Children,
+		game.ChildDoc{Location: secondLoc},
+	)
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "UNUSED_VAR", w.Code)
+	}
+}
+
+// --- Non-interactive block when/sets tests ---
+
+func TestLint_WhenOnNonInteractiveBlock_UndefinedVar(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{
+			"type": "text",
+			"when": map[string]any{
+				"all_of": []any{
+					map[string]any{"var": "ghost_var"},
+				},
+			},
+		},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNDEFINED_VAR")
+}
+
+func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+		{
+			"type": "text",
+			"when": map[string]any{
+				"all_of": []any{
+					map[string]any{"var": "score"},
+				},
+			},
+		},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "UNDEFINED_VAR", w.Code)
+	}
+}
+
+func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "text", "sets": map[string]any{"foo": "bar"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "SETS_ON_CONTENT_BLOCK")
+}
+
+// --- LintJSON unknown field tests ---
+
+func TestLintJSON_UnknownFieldInGameDoc(t *testing.T) {
+	data := []byte(`{
+		"rapua": "v7",
+		"name": "Test",
+		"hallucinated_field": true,
+		"settings": {},
+		"start": [],
+		"finish": [],
+		"structure": {"routing": "free_roam", "completion": "all", "children": []}
+	}`)
+	result := game.LintJSON(data, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNKNOWN_FIELD")
+}
+
+func TestLintJSON_UnknownFieldInLocation(t *testing.T) {
+	data := []byte(`{
+		"rapua": "v7",
+		"name": "Test",
+		"settings": {},
+		"start": [],
+		"finish": [],
+		"structure": {
+			"routing": "free_roam",
+			"completion": "all",
+			"children": [{
+				"group": {
+					"name": "Stage 1",
+					"routing": "free_roam",
+					"completion": "all",
+					"children": [{
+						"location": {
+							"slug": "loc-a",
+							"name": "Loc A",
+							"content": [],
+							"navigation": [],
+							"ai_added_field": "oops"
+						}
+					}]
+				}
+			}]
+		}
+	}`)
+	result := game.LintJSON(data, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNKNOWN_FIELD")
+}
+
+func TestLintJSON_UnknownFieldInGroup(t *testing.T) {
+	data := []byte(`{
+		"rapua": "v7",
+		"name": "Test",
+		"settings": {},
+		"start": [],
+		"finish": [],
+		"structure": {
+			"routing": "free_roam",
+			"completion": "all",
+			"children": [{
+				"group": {
+					"name": "Stage 1",
+					"routing": "free_roam",
+					"completion": "all",
+					"children": [],
+					"ai_added_field": "oops"
+				}
+			}]
+		}
+	}`)
+	result := game.LintJSON(data, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNKNOWN_FIELD")
+}
+
+func TestLintJSON_ValidDoc_NoUnknownFieldWarnings(t *testing.T) {
+	doc := validDoc()
+	data, err := json.Marshal(doc)
+	require.NoError(t, err)
+	result := game.LintJSON(data, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "UNKNOWN_FIELD", w.Code,
+			"unexpected UNKNOWN_FIELD warning: %s at %s", w.Message, w.Path)
+	}
+}
+
+func TestLint_WhenUnreachableVar_AutoAdvanceFalse_NoWarning(t *testing.T) {
+	autoAdvanceFalse := false
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 1
+	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceFalse
+
+	loc := doc.Structure.Children[0].Group.Children[0].Location
+	loc.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+	}
+	secondLoc := &game.LocationDoc{
+		Slug: "loc2",
+		Name: "Location 2",
+		When: &game.WhenClause{
+			AllOf: []game.Condition{{Var: "visited_loc1"}},
+		},
+		Content:    []game.BlockDoc{{"type": "text"}},
+		Navigation: []game.BlockDoc{{"type": "clue"}},
+	}
+	doc.Structure.Children[0].Group.Children = append(
+		doc.Structure.Children[0].Group.Children,
+		game.ChildDoc{Location: secondLoc},
+	)
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "WHEN_UNREACHABLE_VAR", w.Code)
+	}
+}
+
+// --- SLUG_INVALID_FORMAT ---
+
+func TestLint_SlugInvalidFormat_Uppercase(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Slug = "The-Lobby"
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "SLUG_INVALID_FORMAT")
+}
+
+func TestLint_SlugInvalidFormat_LeadingHyphen(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Slug = "-lobby"
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "SLUG_INVALID_FORMAT")
+}
+
+func TestLint_SlugValidFormat_NoError(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Slug = "the-lobby-2"
+	result := game.Lint(doc, newTestRegistry())
+	for _, e := range result.Errors {
+		assert.NotEqual(t, "SLUG_INVALID_FORMAT", e.Code)
+	}
+}
+
+// --- MINIMUM_REQUIRED_EXCEEDS_CHILDREN ---
+
+func TestLint_MinimumRequiredExceedsChildren_Group(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 5
+	// Group has 1 child
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "MINIMUM_REQUIRED_EXCEEDS_CHILDREN")
+}
+
+func TestLint_MinimumRequiredExceedsChildren_Structure(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Completion = game.CompletionMinimum
+	doc.Structure.MinimumRequired = 99
+	// Structure has 1 child
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "MINIMUM_REQUIRED_EXCEEDS_CHILDREN")
+}
+
+func TestLint_MinimumRequiredEqualsChildren_NoError(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 1
+	result := game.Lint(doc, newTestRegistry())
+	for _, e := range result.Errors {
+		assert.NotEqual(t, "MINIMUM_REQUIRED_EXCEEDS_CHILDREN", e.Code)
+	}
+}
+
+// --- AUTO_ADVANCE_IGNORED ---
+
+func TestLint_AutoAdvanceIgnored_Warning(t *testing.T) {
+	autoTrue := true
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionAll
+	doc.Structure.Children[0].Group.AutoAdvance = &autoTrue
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "AUTO_ADVANCE_IGNORED")
+}
+
+func TestLint_AutoAdvanceOnMinimumGroup_NoWarning(t *testing.T) {
+	autoTrue := true
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
+	doc.Structure.Children[0].Group.MinimumRequired = 1
+	doc.Structure.Children[0].Group.AutoAdvance = &autoTrue
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "AUTO_ADVANCE_IGNORED", w.Code)
+	}
+}
+
+func TestLint_AutoAdvanceNil_NoWarning(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Completion = game.CompletionAll
+	doc.Structure.Children[0].Group.AutoAdvance = nil
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "AUTO_ADVANCE_IGNORED", w.Code)
+	}
+}
+
+// --- WHEN_VACUOUS ---
+
+func TestLint_WhenVacuous_EmptyAllOfAnyOf(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "WHEN_VACUOUS")
+}
+
+func TestLint_WhenWithConditions_NotVacuous(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+	}
+	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
+		AllOf: []game.Condition{{Var: "score"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "WHEN_VACUOUS", w.Code)
+	}
+}
+
+// --- WHEN_ON_START_BLOCK ---
+
+func TestLint_WhenOnStartBlock_Warning(t *testing.T) {
+	doc := validDoc()
+	doc.Start = []game.BlockDoc{
+		{"type": "start_button"},
+		{
+			"type": "text",
+			"when": map[string]any{"all_of": []any{map[string]any{"var": "score"}}},
+		},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "WHEN_ON_START_BLOCK")
+}
+
+func TestLint_WhenOnStartBlock_NoWhenClause_NoWarning(t *testing.T) {
+	doc := validDoc()
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "WHEN_ON_START_BLOCK", w.Code)
+	}
 }

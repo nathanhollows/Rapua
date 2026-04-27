@@ -3,7 +3,11 @@ package game
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 )
+
+var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
 
 // LintResult holds errors and warnings from linting a GameDoc.
 type LintResult struct {
@@ -34,14 +38,19 @@ func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
 type linter struct {
 	doc      *GameDoc
 	registry BlockRegistry
-	result   LintResult
-	slugs    map[string]bool
-	blockIDs map[string]bool
+	result      LintResult
+	slugs       map[string]bool
+	blockIDs    map[string]bool
+	definedVars map[string]bool // all variable names set by any block in the doc
+	usedVars    map[string]bool // all variable names referenced in any when clause
 }
 
 func (l *linter) run() {
 	l.slugs = make(map[string]bool)
 	l.blockIDs = make(map[string]bool)
+	l.definedVars = make(map[string]bool)
+	l.usedVars = make(map[string]bool)
+	l.collectAllDefinedVars()
 
 	// Layer 1: Schema
 	l.checkSchema()
@@ -76,6 +85,11 @@ func (l *linter) checkSchema() {
 func (l *linter) checkStructureDoc(path string, s StructureDoc) {
 	l.checkRouting(path+".routing", s.Routing)
 	l.checkCompletion(path, s.Completion, s.MinimumRequired)
+	if s.Completion == CompletionMinimum && s.MinimumRequired > len(s.Children) {
+		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_EXCEEDS_CHILDREN",
+			"minimum_required (%d) exceeds number of children (%d); players can never complete this group",
+			s.MinimumRequired, len(s.Children))
+	}
 	for i, child := range s.Children {
 		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
@@ -87,6 +101,15 @@ func (l *linter) checkGroupDoc(path string, g GroupDoc) {
 	}
 	l.checkRouting(path+".routing", g.Routing)
 	l.checkCompletion(path, g.Completion, g.MinimumRequired)
+	if g.Completion == CompletionMinimum && g.MinimumRequired > len(g.Children) {
+		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_EXCEEDS_CHILDREN",
+			"minimum_required (%d) exceeds number of children (%d); players can never complete this group",
+			g.MinimumRequired, len(g.Children))
+	}
+	if g.AutoAdvance != nil && g.Completion != CompletionMinimum {
+		l.warnf(path+".auto_advance", "AUTO_ADVANCE_IGNORED",
+			"auto_advance has no effect unless completion is %q", string(CompletionMinimum))
+	}
 	for i, child := range g.Children {
 		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
@@ -106,6 +129,9 @@ func (l *linter) checkChildDoc(path string, child ChildDoc) {
 func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
 	if loc.Slug == "" {
 		l.errorf(path+".slug", "MISSING_SLUG", "location slug is required")
+	} else if !slugPattern.MatchString(loc.Slug) {
+		l.errorf(path+".slug", "SLUG_INVALID_FORMAT",
+			"slug %q must contain only lowercase letters, digits, and hyphens (no leading/trailing hyphens)", loc.Slug)
 	}
 	if loc.Name == "" {
 		l.errorf(path+".name", "MISSING_LOCATION_NAME", "location name is required")
@@ -165,16 +191,23 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) { //no
 			for _, f := range known {
 				knownSet[f] = true
 			}
-			// Promoted fields are always valid
+			// Promoted fields always valid on every block; sets/when handled below.
 			knownSet["type"] = true
 			knownSet["id"] = true
 			knownSet["points"] = true
+			knownSet["when"] = true
+			knownSet["sets"] = true
 			for k := range b {
 				if !knownSet[k] {
 					l.warnf(path+"."+k, "UNKNOWN_FIELD",
 						"block type %q has no field %q; possible typo", typStr, k)
 				}
 			}
+		}
+		// sets is only valid on interactive blocks (those that require player input).
+		if _, hasSets := b["sets"]; hasSets && !l.registry.IsInteractive(typStr) {
+			l.warnf(path+".sets", "SETS_ON_CONTENT_BLOCK",
+				"block type %q does not support \"sets\"; only interactive blocks (quiz, password, pincode, etc.) may set variables", typStr)
 		}
 	}
 }
@@ -214,6 +247,7 @@ func (l *linter) checkSemantic() {
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
 	l.trackBlockIDs("finish", l.doc.Finish)
+	l.checkWhenClausesInDoc()
 }
 
 func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc) {
@@ -331,6 +365,7 @@ func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
 				l.warnf(childPath+".group", "EMPTY_GROUP",
 					"group %q has no children", child.Group.Name)
 			}
+			l.checkGroupMinOneAutoAdvance(childPath+".group", *child.Group)
 			l.checkStructuralChildren(childPath+".group", child.Group.Children)
 		}
 	}
@@ -387,4 +422,265 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 		Code:    code,
 		Message: fmt.Sprintf(format, args...),
 	})
+}
+
+// --- When / variable resolution checks ---
+
+// collectAllDefinedVars walks the entire doc and records every variable name
+// that any block can set (via the "sets" field). Called before semantic checks.
+func (l *linter) collectAllDefinedVars() {
+	l.collectVarsFromBlocks(l.doc.Start)
+	l.collectVarsFromBlocks(l.doc.Finish)
+	l.collectVarsFromChildrenIntoSet(l.doc.Structure.Children, l.definedVars)
+}
+
+func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
+	for _, b := range blocks {
+		for _, v := range blockDocSetsVars(b) {
+			l.definedVars[v] = true
+		}
+	}
+}
+
+func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[string]bool) {
+	for _, child := range children {
+		if child.Location != nil {
+			for _, v := range blockDocSetsVars(child.Location.Content...) {
+				vars[v] = true
+			}
+			for _, v := range blockDocSetsVars(child.Location.Navigation...) {
+				vars[v] = true
+			}
+		} else if child.Group != nil {
+			l.collectVarsFromChildrenIntoSet(child.Group.Children, vars)
+		}
+	}
+}
+
+// checkWhenClausesInDoc checks that every Condition.Var in every when clause
+// (on blocks, locations, and groups) refers to a variable that is actually set
+// somewhere in the game.
+func (l *linter) checkWhenClausesInDoc() {
+	l.checkWhenInFixedContextBlocks("start", l.doc.Start)
+	l.checkWhenInFixedContextBlocks("finish", l.doc.Finish)
+	l.checkWhenInChildren("structure", l.doc.Structure.Children)
+	l.checkUnusedVars()
+}
+
+// checkWhenInFixedContextBlocks warns when blocks in start/finish carry a when
+// clause. The start and finish pages have no variable resolver and render all
+// blocks unconditionally, so when clauses there are silently ignored.
+func (l *linter) checkWhenInFixedContextBlocks(path string, blks []BlockDoc) {
+	for i, b := range blks {
+		blockPath := fmt.Sprintf("%s[%d]", path, i)
+		wc, err := blockDocWhen(b)
+		if err != nil {
+			l.warnf(blockPath+".when", "WHEN_INVALID", "when clause is structurally invalid: %s", err)
+			continue
+		}
+		if wc != nil {
+			// Dead code: when clauses on start/finish are never evaluated.
+			// Skip further checks to avoid spurious UNDEFINED_VAR warnings.
+			l.warnf(blockPath+".when", "WHEN_ON_START_BLOCK",
+				"when clauses on %s blocks are not evaluated; all blocks on this page are always shown", path)
+			continue
+		}
+	}
+}
+
+func (l *linter) checkUnusedVars() {
+	for varName := range l.definedVars {
+		if !l.usedVars[varName] {
+			l.warnf("", "UNUSED_VAR",
+				"variable %q is set by a block but never referenced in any when clause", varName)
+		}
+	}
+}
+
+func (l *linter) checkWhenInChildren(path string, children []ChildDoc) {
+	for i, child := range children {
+		childPath := fmt.Sprintf("%s.children[%d]", path, i)
+		if child.Location != nil {
+			loc := child.Location
+			locPath := childPath + ".location"
+			l.checkWhenClause(locPath+".when", loc.When)
+			l.checkWhenInBlocks(locPath+".content", loc.Content)
+			l.checkWhenInBlocks(locPath+".navigation", loc.Navigation)
+		} else if child.Group != nil {
+			l.checkWhenClause(childPath+".group.when", child.Group.When)
+			l.checkWhenInChildren(childPath+".group", child.Group.Children)
+		}
+	}
+}
+
+func (l *linter) checkWhenInBlocks(path string, blocks []BlockDoc) {
+	for i, b := range blocks {
+		blockPath := fmt.Sprintf("%s[%d]", path, i)
+		wc, err := blockDocWhen(b)
+		if err != nil {
+			l.warnf(blockPath+".when", "WHEN_INVALID", "when clause is structurally invalid: %s", err)
+			continue
+		}
+		l.checkWhenClause(blockPath+".when", wc)
+	}
+}
+
+func (l *linter) checkWhenClause(path string, wc *WhenClause) {
+	if wc == nil {
+		return
+	}
+	if len(wc.AllOf) == 0 && len(wc.AnyOf) == 0 {
+		l.warnf(path, "WHEN_VACUOUS",
+			"when clause has no conditions; it is always true and has no effect — omit it or add conditions")
+		return
+	}
+	for i, cond := range wc.AllOf {
+		if cond.Var == "" {
+			continue
+		}
+		l.usedVars[cond.Var] = true
+		if !l.definedVars[cond.Var] && !isBuiltInVar(cond.Var) {
+			l.warnf(fmt.Sprintf("%s.all_of[%d].var", path, i), "UNDEFINED_VAR",
+				"condition references variable %q which is never set by any block in this game", cond.Var)
+		}
+	}
+	for i, cond := range wc.AnyOf {
+		if cond.Var == "" {
+			continue
+		}
+		l.usedVars[cond.Var] = true
+		if !l.definedVars[cond.Var] && !isBuiltInVar(cond.Var) {
+			l.warnf(fmt.Sprintf("%s.any_of[%d].var", path, i), "UNDEFINED_VAR",
+				"condition references variable %q which is never set by any block in this game", cond.Var)
+		}
+	}
+}
+
+// checkGroupMinOneAutoAdvance warns when a when clause inside a group references
+// a variable that is only set within that same group, and the group has
+// completion=minimum, minimum_required=1, and auto_advance=true (or nil/default).
+// Because the team advances as soon as one location is completed, variables set
+// by other locations in the group may never be written.
+func (l *linter) checkGroupMinOneAutoAdvance(path string, g GroupDoc) {
+	if g.Completion != CompletionMinimum || g.MinimumRequired != 1 {
+		return
+	}
+	// nil defaults to true (matches import logic: g.AutoAdvance == nil || *g.AutoAdvance)
+	if g.AutoAdvance != nil && !*g.AutoAdvance {
+		return
+	}
+
+	groupVars := make(map[string]bool)
+	l.collectVarsFromChildrenIntoSet(g.Children, groupVars)
+	if len(groupVars) == 0 {
+		return
+	}
+
+	l.checkGroupScopedWhenInChildren(path, g.Children, groupVars)
+}
+
+func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc, groupVars map[string]bool) {
+	for i, child := range children {
+		childPath := fmt.Sprintf("%s.children[%d]", path, i)
+		if child.Location != nil {
+			loc := child.Location
+			locPath := childPath + ".location"
+			l.checkGroupScopedWhen(locPath+".when", loc.When, groupVars)
+			for j, b := range loc.Content {
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, groupVars)
+			}
+			for j, b := range loc.Navigation {
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.navigation[%d].when", locPath, j), wc, groupVars)
+			}
+		} else if child.Group != nil {
+			l.checkGroupScopedWhenInChildren(childPath+".group", child.Group.Children, groupVars)
+		}
+	}
+}
+
+func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map[string]bool) {
+	if wc == nil {
+		return
+	}
+	for i, cond := range wc.AllOf {
+		if groupVars[cond.Var] {
+			l.warnf(fmt.Sprintf("%s.all_of[%d].var", path, i), "WHEN_UNREACHABLE_VAR",
+				"condition references %q which is set within a min=1 auto-advance group; "+
+					"the team may advance before this variable is ever written", cond.Var)
+		}
+	}
+	for i, cond := range wc.AnyOf {
+		if groupVars[cond.Var] {
+			l.warnf(fmt.Sprintf("%s.any_of[%d].var", path, i), "WHEN_UNREACHABLE_VAR",
+				"condition references %q which is set within a min=1 auto-advance group; "+
+					"the team may advance before this variable is ever written", cond.Var)
+		}
+	}
+}
+
+// blockDocSetsVars returns all variable names set by the given blocks via "sets".
+func blockDocSetsVars(blocks ...BlockDoc) []string {
+	var vars []string
+	for _, b := range blocks {
+		raw, ok := b["sets"]
+		if !ok {
+			continue
+		}
+		m, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		for k := range m {
+			vars = append(vars, k)
+		}
+	}
+	return vars
+}
+
+// blockDocWhen extracts the WhenClause from a BlockDoc by JSON roundtrip.
+// Returns (nil, nil) when the "when" key is absent.
+// Returns (nil, err) when the key is present but structurally invalid.
+func blockDocWhen(b BlockDoc) (*WhenClause, error) {
+	raw, ok := b["when"]
+	if !ok {
+		return nil, nil
+	}
+	data, err := json.Marshal(raw)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling when clause: %w", err)
+	}
+	var wc WhenClause
+	if err := json.Unmarshal(data, &wc); err != nil {
+		return nil, fmt.Errorf("invalid when clause structure: %w", err)
+	}
+	return &wc, nil
+}
+
+// isBuiltInVar reports whether name is a built-in variable provided by the
+// runtime (not set by any block in the game doc). Referencing a built-in in a
+// when clause is valid even though it never appears in definedVars.
+//
+// Built-ins (from specgen.BuiltInVarSpecs):
+//
+//	points, game.status, game.team_count
+//	location.<slug>.visited, location.<slug>.checked_in
+//	group.<name>.completed
+func isBuiltInVar(name string) bool {
+	switch name {
+	case "points", "game.status", "game.team_count":
+		return true
+	}
+	if after, ok := strings.CutPrefix(name, "location."); ok {
+		dot := strings.LastIndex(after, ".")
+		if dot >= 0 {
+			attr := after[dot+1:]
+			return attr == "visited" || attr == "checked_in"
+		}
+	}
+	if after, ok := strings.CutPrefix(name, "group."); ok {
+		return strings.HasSuffix(after, ".completed")
+	}
+	return false
 }
