@@ -8,7 +8,6 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
@@ -20,22 +19,23 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	// Skip redirect logic in preview mode
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		var locations []models.Location
-		locations, err = h.navigationService.GetNextLocations(r.Context(), team)
-		if err != nil {
-			if !errors.Is(err, services.ErrAllLocationsVisited) {
+		// Use the same navigation view as /next so both handlers agree on
+		// remaining locations (including when-clause filtering).
+		view, navErr := h.navigationService.GetPlayerNavigationView(r.Context(), team)
+		if navErr != nil {
+			if !errors.Is(navErr, services.ErrAllLocationsVisited) {
 				h.handleError(
 					w,
 					r,
-					"Next: getting next locations",
-					"Error getting next locations",
+					"Complete: getting navigation view",
+					"Error getting navigation view",
 					"Could not load data",
-					err,
+					navErr,
 				)
 				return
 			}
-		}
-		if len(locations) > 0 {
+			// ErrAllLocationsVisited — fall through to show complete page
+		} else if len(view.NextLocations) > 0 {
 			h.redirect(w, r, "/next")
 			return
 		}

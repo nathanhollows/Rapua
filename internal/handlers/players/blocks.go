@@ -213,6 +213,12 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If the block fires sets triggers on completion, notify listening containers
+	// so they can re-fetch and re-evaluate block visibility without a full reload.
+	if state.IsComplete() && len(block.GetSets()) > 0 {
+		w.Header().Set("HX-Trigger", "varsChanged")
+	}
+
 	err = templates.RenderPlayerUpdate(team.Instance.Settings, block, state).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, fmt.Errorf("validateBlock: rendering template: %w", err).Error(), "Something went wrong!")
