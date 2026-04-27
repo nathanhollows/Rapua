@@ -43,10 +43,15 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
+	// SupportsVariableSets returns true when the block can carry a "sets" field.
+	// Only blocks that fire sets triggers on validation should return true;
+	// the linter warns if a "sets" field appears on a block that returns false.
+	SupportsVariableSets() bool
 
 	// Conditional visibility
 	GetSets() map[string]string
 	GetWhen() *WhenClause
+	SetWhen(when *WhenClause)
 }
 
 // Blocks is a slice of Block.
@@ -64,11 +69,17 @@ type BaseBlock struct {
 	When    *WhenClause       `json:"when,omitempty"`
 }
 
+// SupportsVariableSets returns false by default; interactive blocks override this.
+func (b *BaseBlock) SupportsVariableSets() bool { return false }
+
 // GetSets returns the sets map for this block (var name → trigger keyword).
 func (b *BaseBlock) GetSets() map[string]string { return b.Sets }
 
 // GetWhen returns the visibility condition clause for this block.
 func (b *BaseBlock) GetWhen() *WhenClause { return b.When }
+
+// SetWhen sets the visibility condition clause for this block.
+func (b *BaseBlock) SetWhen(when *WhenClause) { b.When = when }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {

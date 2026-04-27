@@ -175,6 +175,26 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	return names
 }
 
+// supportsSetsTypes is the explicit set of block types that accept a "sets"
+// field. RequiresValidation alone is not sufficient — a block may validate
+// player input without supporting variable triggers (e.g. acknowledgement).
+// New interactive blocks must opt in here to allow "sets" in the linter.
+var supportsSetsTypes = map[string]bool{
+	"quiz":      true,
+	"password":  true,
+	"pincode":   true,
+	"broker":    true,
+	"sorting":   true,
+	"photo":     true,
+	"checklist": true,
+	"rating":    true,
+	"free_text": true,
+}
+
+func (r *registryImpl) IsInteractive(blockType string) bool {
+	return supportsSetsTypes[blockType]
+}
+
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]
