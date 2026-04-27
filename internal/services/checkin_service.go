@@ -213,8 +213,13 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 		return ErrCheckOutAtWrongLocation
 	}
 
-	// Check if all blocks are completed
-	unfinishedCheckIn, err := s.blockService.CheckValidationRequiredForCheckIn(ctx, location.ID, team.Code)
+	// Check if all visible blocks are completed (reload var states so when-clauses are current).
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	if err != nil {
+		return fmt.Errorf("loading var states: %w", err)
+	}
+	resolver := NewPlayerVarResolver(team, varStates, nil)
+	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(ctx, location.ID, team.Code, resolver)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)
 	}
@@ -404,11 +409,18 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 			return nil, nil, fmt.Errorf("awarding points: %w", err)
 		}
 
-		// Update the check in all blocks have been completed
-		unfinishedCheckIn, checkErr := s.blockService.CheckValidationRequiredForCheckIn(
+		// Update the check in all blocks have been completed.
+		// Reload var states so that sets-triggered vars are reflected in when-clause evaluation.
+		varStates, checkErr := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+		if checkErr != nil {
+			return nil, nil, fmt.Errorf("loading var states: %w", checkErr)
+		}
+		blockResolver := NewPlayerVarResolver(&team, varStates, nil)
+		unfinishedCheckIn, checkErr := s.blockService.checkValidationRequiredForCheckIn(
 			ctx,
 			block.GetOwnerID(),
 			team.Code,
+			blockResolver,
 		)
 		if checkErr != nil {
 			return nil, nil, fmt.Errorf("checking if validation is required: %w", checkErr)

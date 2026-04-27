@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
@@ -40,9 +41,11 @@ func setupNavigationService(t *testing.T) (
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	gameStructureService.SetRelationLoader(locationService)
 
+	varStateRepo := repositories.NewTeamVarStateRepository(dbc)
 	navigationService := services.NewNavigationService(
 		locationRepo,
 		teamRepo,
+		varStateRepo,
 		gameStructureService,
 		blockService,
 		newTLogger(t),
@@ -766,4 +769,128 @@ func TestNavigationService_GetPlayerNavigationView_AllLocationsVisited(t *testin
 	require.Error(t, err)
 	require.ErrorIs(t, err, services.ErrAllLocationsVisited)
 	assert.Nil(t, view)
+}
+
+// TestNavigationService_WhenConditionUsesVarStates is a regression test for the
+// /next ↔ /complete redirect loop.
+//
+// Root cause: GetPlayerNavigationView evaluated `when` conditions on locations,
+// but the navigation service's ensureTeamRelationsLoaded did not reload VarStates
+// after they were written by a block's `sets` trigger. This caused the conditional
+// location to be hidden (var not seen → when=false), while Complete's old
+// GetNextLocations call (no when-filtering) still returned it, creating a loop:
+//
+//	/next → "conditional loc hidden, nothing left" → /complete
+//	/complete → "loc exists (no filter)" → /next → ...
+//
+// The fix: navigation service always reloads VarStates; Complete uses
+// GetPlayerNavigationView (same filtering as /next).
+func TestNavigationService_WhenConditionUsesVarStates(t *testing.T) {
+	navService, locationRepo, teamRepo, checkInRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	varStateRepo := repositories.NewTeamVarStateRepository(dbc)
+
+	// Create a simple two-location game inside a single group.
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	instance := &models.Instance{
+		ID:     gofakeit.UUID(),
+		Name:   "Regression Test Game",
+		UserID: userID,
+		GameStructure: models.GameStructure{
+			ID:     gofakeit.UUID(),
+			IsRoot: true,
+			SubGroups: []models.GameStructure{
+				{
+					ID:             gofakeit.UUID(),
+					Name:           "Main",
+					CompletionType: models.CompletionAll,
+					AutoAdvance:    true,
+					Routing:        models.RouteStrategyOrdered,
+					LocationIDs:    []string{}, // filled below
+				},
+			},
+		},
+	}
+	err := instanceRepo.Create(ctx, instance)
+	require.NoError(t, err)
+
+	settingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	err = settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: instance.ID})
+	require.NoError(t, err)
+
+	// loc1: always visible (no when clause)
+	markerCode1 := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerCode1)
+	loc1 := &models.Location{
+		InstanceID: instance.ID,
+		MarkerID:   markerCode1,
+		Name:       "Location 1",
+	}
+	err = locationRepo.Create(ctx, loc1)
+	require.NoError(t, err)
+
+	// loc2: only visible when var "visited_loc1" is truthy
+	markerCode2 := gofakeit.UUID()
+	insertTestMarker(t, dbc, markerCode2)
+	loc2 := &models.Location{
+		InstanceID: instance.ID,
+		MarkerID:   markerCode2,
+		Name:       "Location 2",
+		When: &game.WhenClause{
+			AllOf: []game.Condition{{Var: "visited_loc1"}},
+		},
+	}
+	err = locationRepo.Create(ctx, loc2)
+	require.NoError(t, err)
+
+	// Wire both locations into the group.
+	instance.GameStructure.SubGroups[0].LocationIDs = []string{loc1.ID, loc2.ID}
+	err = instanceRepo.Update(ctx, instance)
+	require.NoError(t, err)
+
+	// Create team
+	teamCode := strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4))
+	insertTestTeam(t, dbc, teamCode, instance.ID)
+
+	loadTeam := func() *models.Team {
+		t.Helper()
+		tp, e := teamRepo.GetByCode(ctx, teamCode)
+		require.NoError(t, e)
+		require.NoError(t, teamRepo.LoadRelations(ctx, tp))
+		return tp
+	}
+
+	t.Run("loc2 hidden before var is set", func(t *testing.T) {
+		team := loadTeam()
+		view, err := navService.GetPlayerNavigationView(ctx, team)
+		require.NoError(t, err)
+		// Only loc1 should be offered — loc2's when clause hides it.
+		require.Len(t, view.NextLocations, 1)
+		assert.Equal(t, loc1.ID, view.NextLocations[0].ID)
+	})
+
+	t.Run("loc2 visible after var is set", func(t *testing.T) {
+		// Simulate the block sets trigger writing the var.
+		err := varStateRepo.Upsert(ctx, teamCode, instance.ID, "visited_loc1", "true")
+		require.NoError(t, err)
+
+		// Check in to loc1 so it's marked completed.
+		team := loadTeam()
+		_, err = checkInRepo.LogCheckIn(ctx, *team, *loc1, false, false)
+		require.NoError(t, err)
+
+		// Reload team — navigation service must pick up the new VarState.
+		team = loadTeam()
+		view, err := navService.GetPlayerNavigationView(ctx, team)
+		require.NoError(t, err)
+
+		// loc2 should now be visible because visited_loc1 is truthy.
+		require.Len(t, view.NextLocations, 1,
+			"conditional loc2 should appear once var is set (regression: VarStates were not reloaded)")
+		assert.Equal(t, loc2.ID, view.NextLocations[0].ID)
+	})
 }

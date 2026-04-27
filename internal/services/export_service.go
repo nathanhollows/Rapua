@@ -162,6 +162,7 @@ func (s *ExportService) walkStructure(
 			Routing:         subGroup.Routing,
 			Completion:      subGroup.CompletionType,
 			MinimumRequired: subGroup.MinimumRequired,
+			When:            subGroup.When,
 			Children:        groupChildren,
 		}
 		groupDoc.AutoAdvance = &subGroup.AutoAdvance
@@ -198,6 +199,7 @@ func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []model
 		Slug:       loc.Slug,
 		Name:       loc.Name,
 		Points:     loc.Points,
+		When:       loc.When,
 		Content:    content,
 		Navigation: navigation,
 	}

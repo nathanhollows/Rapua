@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
 )
@@ -126,6 +128,22 @@ func (s *BlockService) UpdateBlock(
 	if err != nil {
 		return nil, fmt.Errorf("updating block data: %w", err)
 	}
+
+	// Parse when_clause if submitted (empty string clears the condition).
+	if vals, ok := data["when_clause"]; ok {
+		var when *game.WhenClause
+		if len(vals) > 0 && vals[0] != "" {
+			var wc game.WhenClause
+			if err = json.Unmarshal([]byte(vals[0]), &wc); err != nil {
+				return nil, fmt.Errorf("parsing when_clause: %w", err)
+			}
+			if len(wc.AllOf) > 0 || len(wc.AnyOf) > 0 {
+				when = &wc
+			}
+		}
+		block.SetWhen(when)
+	}
+
 	return s.blockRepo.Update(ctx, block)
 }
 
@@ -282,7 +300,7 @@ func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 
 // CheckValidationRequiredForLocation checks if any blocks in a location require validation.
 func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
-	blocks, err := s.FindByOwnerID(ctx, locationID)
+	blocks, err := s.FindByOwnerIDAndContext(ctx, locationID, game.ContextLocationContent)
 	if err != nil {
 		return false, err
 	}
@@ -301,13 +319,26 @@ func (s *BlockService) CheckValidationRequiredForCheckIn(
 	ctx context.Context,
 	locationID, teamCode string,
 ) (bool, error) {
-	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithState(ctx, locationID, teamCode)
+	return s.checkValidationRequiredForCheckIn(ctx, locationID, teamCode, nil)
+}
+
+// checkValidationRequiredForCheckIn is the internal implementation. When resolver is non-nil,
+// blocks whose when-clause evaluates to false are skipped (they are hidden from the player).
+func (s *BlockService) checkValidationRequiredForCheckIn(
+	ctx context.Context,
+	locationID, teamCode string,
+	resolver game.VarResolver,
+) (bool, error) {
+	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithStateAndContext(ctx, locationID, teamCode, game.ContextLocationContent)
 	if err != nil {
 		return false, err
 	}
 
 	for _, block := range blocks {
 		if block.RequiresValidation() {
+			if resolver != nil && !game.EvaluateWhen(block.GetWhen(), resolver) {
+				continue
+			}
 			if state[block.GetID()] == nil {
 				return true, nil
 			}

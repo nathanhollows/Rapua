@@ -353,6 +353,11 @@ func (s locationService) UpdateLocation( //nolint:gocognit
 		update = true
 	}
 
+	if data.SetWhen {
+		location.When = data.When
+		update = true
+	}
+
 	if data.Name != "" && data.Name != location.Name {
 		location.Name = data.Name
 		newSlug, slugErr := s.generateUniqueSlug(ctx, location.InstanceID, data.Name, location.ID)

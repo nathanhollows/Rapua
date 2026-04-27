@@ -251,3 +251,99 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 	require.NotNil(t, child.Group.Children[0].Location)
 	assert.Equal(t, "spot", child.Group.Children[0].Location.Slug)
 }
+
+func TestExportService_LocationWhenRoundTrip(t *testing.T) {
+	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	markerCode := gofakeit.LetterN(5)
+	insertTestMarker(t, dbc, markerCode)
+
+	inst := &models.Instance{Name: "When Test", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+
+	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
+	loc := &models.Location{
+		InstanceID: inst.ID,
+		MarkerID:   markerCode,
+		Name:       "Gated Spot",
+		Slug:       "gated",
+		When:       when,
+	}
+	require.NoError(t, locationRepo.Create(ctx, loc))
+
+	inst.GameStructure = models.GameStructure{
+		ID:          gofakeit.UUID(),
+		IsRoot:      true,
+		LocationIDs: []string{loc.ID},
+		SubGroups:   []models.GameStructure{},
+	}
+	require.NoError(t, instanceRepo.Update(ctx, inst))
+
+	doc, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 1)
+	locDoc := doc.Structure.Children[0].Location
+	require.NotNil(t, locDoc)
+	require.NotNil(t, locDoc.When)
+	require.Len(t, locDoc.When.AllOf, 1)
+	assert.Equal(t, "gate", locDoc.When.AllOf[0].Var)
+}
+
+func TestExportService_GroupWhenRoundTrip(t *testing.T) {
+	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	markerCode := gofakeit.LetterN(5)
+	insertTestMarker(t, dbc, markerCode)
+
+	inst := &models.Instance{Name: "Group When Test", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+
+	loc := &models.Location{
+		InstanceID: inst.ID,
+		MarkerID:   markerCode,
+		Name:       "Inner Spot",
+		Slug:       "inner",
+	}
+	require.NoError(t, locationRepo.Create(ctx, loc))
+
+	groupWhen := &game.WhenClause{AllOf: []game.Condition{{Var: "phase2"}}}
+	inst.GameStructure = models.GameStructure{
+		ID:          gofakeit.UUID(),
+		IsRoot:      true,
+		LocationIDs: []string{},
+		SubGroups: []models.GameStructure{
+			{
+				ID:          gofakeit.UUID(),
+				Name:        "Phase 2",
+				Color:       "secondary",
+				When:        groupWhen,
+				LocationIDs: []string{loc.ID},
+				SubGroups:   []models.GameStructure{},
+			},
+		},
+	}
+	require.NoError(t, instanceRepo.Update(ctx, inst))
+
+	doc, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 1)
+	groupDoc := doc.Structure.Children[0].Group
+	require.NotNil(t, groupDoc)
+	require.NotNil(t, groupDoc.When)
+	require.Len(t, groupDoc.When.AllOf, 1)
+	assert.Equal(t, "phase2", groupDoc.When.AllOf[0].Var)
+}

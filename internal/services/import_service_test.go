@@ -379,3 +379,119 @@ func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
 
 	_ = blockRepo
 }
+
+func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
+	svc, _, _, locationRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	when := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
+	doc := minimalValidDoc("When Location Game")
+	doc.Structure.Children = []game.ChildDoc{
+		{
+			Location: &game.LocationDoc{
+				Slug:    "secret",
+				Name:    "Secret Spot",
+				When:    when,
+				Content: []game.BlockDoc{},
+			},
+		},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	locs, err := locationRepo.FindByInstance(ctx, result.InstanceID)
+	require.NoError(t, err)
+	require.Len(t, locs, 1)
+	require.NotNil(t, locs[0].When)
+	require.Len(t, locs[0].When.AllOf, 1)
+	assert.Equal(t, "unlocked", locs[0].When.AllOf[0].Var)
+}
+
+func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
+	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	when := &game.WhenClause{AllOf: []game.Condition{{Var: "phase2"}}}
+	doc := minimalValidDoc("Group When Game")
+	doc.Structure.Children = []game.ChildDoc{
+		{
+			Group: &game.GroupDoc{
+				Name:       "Phase 2 Group",
+				Color:      "primary",
+				Routing:    game.RouteStrategyOrdered,
+				Completion: game.CompletionAll,
+				When:       when,
+				Children:   []game.ChildDoc{},
+			},
+		},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	require.NoError(t, err)
+	require.Len(t, inst.GameStructure.SubGroups, 1)
+	subGroup := inst.GameStructure.SubGroups[0]
+	require.NotNil(t, subGroup.When)
+	require.Len(t, subGroup.When.AllOf, 1)
+	assert.Equal(t, "phase2", subGroup.When.AllOf[0].Var)
+}
+
+func TestImportService_ImportUpdate_LocationWhenUpdated(t *testing.T) {
+	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	// Set up existing instance with a location (no when clause)
+	createDoc := docWithLocation("When Update Game", "spot", "The Spot")
+	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
+	require.NoError(t, err)
+
+	locs, err := locationRepo.FindByInstance(ctx, createResult.InstanceID)
+	require.NoError(t, err)
+	require.Len(t, locs, 1)
+	assert.Nil(t, locs[0].When)
+
+	// Load instance for update
+	inst, err := instanceRepo.GetByID(ctx, createResult.InstanceID)
+	require.NoError(t, err)
+	_ = settingsRepo
+
+	// Update doc: add when clause to same location (matched by slug)
+	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
+	updateDoc := minimalValidDoc("When Update Game")
+	updateDoc.Structure.Children = []game.ChildDoc{
+		{
+			Location: &game.LocationDoc{
+				ID:      locs[0].ID,
+				Slug:    "spot",
+				Name:    "The Spot",
+				When:    when,
+				Content: []game.BlockDoc{},
+			},
+		},
+	}
+
+	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
+	require.NoError(t, err)
+
+	updatedLocs, err := locationRepo.FindByInstance(ctx, inst.ID)
+	require.NoError(t, err)
+	require.Len(t, updatedLocs, 1)
+	require.NotNil(t, updatedLocs[0].When)
+	require.Len(t, updatedLocs[0].When.AllOf, 1)
+	assert.Equal(t, "gate", updatedLocs[0].When.AllOf[0].Var)
+}

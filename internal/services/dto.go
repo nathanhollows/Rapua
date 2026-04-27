@@ -1,6 +1,10 @@
 package services
 
-import "time"
+import (
+	"time"
+
+	"github.com/nathanhollows/Rapua/v7/game"
+)
 
 const (
 	always = "always"
@@ -18,6 +22,8 @@ type LocationUpdateData struct {
 	Latitude  float64
 	Longitude float64
 	Points    int
+	When      *game.WhenClause // visibility condition; nil = no conditions
+	SetWhen   bool             // true when the caller explicitly submitted a when_clause value
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.

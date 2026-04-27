@@ -302,6 +302,7 @@ func (s *ImportService) walkCreateChildren(
 				CompletionType:  g.Completion,
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
+				When:            g.When,
 				LocationIDs:     []string{},
 				SubGroups:       []models.GameStructure{},
 			}
@@ -339,6 +340,7 @@ func (s *ImportService) createLocation(
 		Slug:       locDoc.Slug,
 		Name:       locDoc.Name,
 		Points:     locDoc.Points,
+		When:       locDoc.When,
 		MarkerID:   marker.Code,
 	}
 	if err := s.locationRepo.CreateTx(ctx, tx, loc); err != nil {
@@ -503,6 +505,7 @@ func (s *ImportService) walkUpdateChildren(
 				CompletionType:  g.Completion,
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
+				When:            g.When,
 				LocationIDs:     []string{},
 				SubGroups:       []models.GameStructure{},
 			}
@@ -554,6 +557,7 @@ func (s *ImportService) reconcileLocation(
 	existingLoc.Name = locDoc.Name
 	existingLoc.Slug = locDoc.Slug
 	existingLoc.Points = locDoc.Points
+	existingLoc.When = locDoc.When
 
 	if err := s.locationRepo.UpdateTx(ctx, tx, existingLoc); err != nil {
 		return "", fmt.Errorf("update location %q: %w", locDoc.Slug, err)

@@ -23,6 +23,7 @@ var (
 type NavigationService struct {
 	locationRepo         repositories.LocationRepository
 	teamRepo             repositories.TeamRepository
+	varStateRepo         repositories.TeamVarStateRepository
 	gameStructureService *GameStructureService
 	blockService         *BlockService
 	logger               *slog.Logger
@@ -51,6 +52,7 @@ type PlayerNavigationView struct {
 func NewNavigationService(
 	locationRepo repositories.LocationRepository,
 	teamRepo repositories.TeamRepository,
+	varStateRepo repositories.TeamVarStateRepository,
 	gameStructureService *GameStructureService,
 	blockService *BlockService,
 	logger *slog.Logger,
@@ -58,6 +60,7 @@ func NewNavigationService(
 	return &NavigationService{
 		locationRepo:         locationRepo,
 		teamRepo:             teamRepo,
+		varStateRepo:         varStateRepo,
 		gameStructureService: gameStructureService,
 		blockService:         blockService,
 		logger:               logger,
@@ -335,11 +338,20 @@ func (s *NavigationService) validateTeamState(team *models.Team) error {
 	return nil
 }
 
-// ensureTeamRelationsLoaded loads team relations if not already loaded.
+// ensureTeamRelationsLoaded loads team relations (including VarStates) if not already loaded.
 func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team *models.Team) error {
 	if team.Instance.ID == "" || len(team.CheckIns) == 0 {
-		return s.teamRepo.LoadRelations(ctx, team)
+		if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
+			return err
+		}
 	}
+	// Always reload VarStates: they change when blocks fire `sets` triggers and must
+	// be fresh for `when` evaluation on locations/groups to work correctly.
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	if err != nil {
+		return fmt.Errorf("loading var states: %w", err)
+	}
+	team.VarStates = varStates
 	return nil
 }
 
