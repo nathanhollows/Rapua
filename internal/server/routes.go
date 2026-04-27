@@ -76,8 +76,9 @@ func setupRouter(
 		})
 	}
 
-	// Webhook routes that bypass CSRF protection
+	// Routes that bypass CSRF protection
 	setupWebhookRoutes(router, adminHandler)
+	setupAPIRoutes(router, publicHandler)
 
 	// All other routes with CSRF protection
 	router.Group(func(r chi.Router) {
@@ -318,11 +319,6 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 		r.Get("/{id}", publicHandler.TemplatesPreview)
 	})
 
-	router.Route("/api/v7", func(r chi.Router) {
-		r.Get("/spec", publicHandler.SpecJSON)
-		r.Post("/lint", publicHandler.LintDoc)
-	})
-
 	router.NotFound(publicHandler.NotFound)
 }
 
@@ -484,4 +480,12 @@ func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.Handler) {
 func setupWebhookRoutes(router chi.Router, adminHandler *admin.Handler) {
 	// Webhook routes are registered before CSRF middleware, so they bypass it
 	router.Post("/webhooks/stripe", adminHandler.StripeWebhook)
+}
+
+// setupAPIRoutes sets up public API routes that bypass CSRF protection.
+func setupAPIRoutes(router chi.Router, publicHandler *public.Handler) {
+	router.Route("/api/v7", func(r chi.Router) {
+		r.Get("/spec", publicHandler.SpecJSON)
+		r.Post("/lint", publicHandler.LintDoc)
+	})
 }
