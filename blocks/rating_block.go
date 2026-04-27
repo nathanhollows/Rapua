@@ -96,7 +96,8 @@ func (b *RatingBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
-func (b *RatingBlock) RequiresValidation() bool { return true }
+func (b *RatingBlock) SupportsVariableSets() bool { return true }
+func (b *RatingBlock) RequiresValidation() bool  { return true }
 
 func (b *RatingBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
 	if input["rating"] == nil {

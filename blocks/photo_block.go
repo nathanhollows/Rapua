@@ -96,7 +96,8 @@ func (b *PhotoBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
-func (b *PhotoBlock) RequiresValidation() bool { return true }
+func (b *PhotoBlock) SupportsVariableSets() bool { return true }
+func (b *PhotoBlock) RequiresValidation() bool  { return true }
 
 func (b *PhotoBlock) ValidatePlayerInput( //nolint:gocognit
 	state PlayerState,

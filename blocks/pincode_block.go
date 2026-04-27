@@ -82,7 +82,8 @@ func (b *PincodeBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
-func (b *PincodeBlock) RequiresValidation() bool { return true }
+func (b *PincodeBlock) SupportsVariableSets() bool { return true }
+func (b *PincodeBlock) RequiresValidation() bool  { return true }
 
 func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
 	if input["pincode"] == nil {

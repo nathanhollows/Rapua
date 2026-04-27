@@ -137,6 +137,8 @@ func (b *ChecklistBlock) ToYAML() map[string]any {
 	return m
 }
 
+func (b *ChecklistBlock) SupportsVariableSets() bool { return true }
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *ChecklistBlock) RequiresValidation() bool { return true }
 

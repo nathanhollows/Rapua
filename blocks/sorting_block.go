@@ -157,6 +157,8 @@ func (b *SortingBlock) ToYAML() map[string]any {
 	return m
 }
 
+func (b *SortingBlock) SupportsVariableSets() bool { return true }
+
 // RequiresValidation returns whether this block requires player input validation.
 func (b *SortingBlock) RequiresValidation() bool { return true }
 

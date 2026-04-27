@@ -135,7 +135,8 @@ func (b *BrokerBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
-func (b *BrokerBlock) RequiresValidation() bool { return true }
+func (b *BrokerBlock) SupportsVariableSets() bool { return true }
+func (b *BrokerBlock) RequiresValidation() bool  { return true }
 
 func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
 	newState := state
