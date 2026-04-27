@@ -4,11 +4,13 @@ import "github.com/nathanhollows/Rapua/v7/game"
 
 // FullSpec is the complete machine-readable specification for the v7 game format.
 type FullSpec struct {
-	Version  string           `json:"version"`
-	Document ObjectSpec       `json:"document"`
-	Enums    EnumDefs         `json:"enums"`
-	Contexts []ContextDef     `json:"contexts"`
-	Blocks   []game.BlockSpec `json:"blocks"`
+	Version           string           `json:"version"`
+	Document          ObjectSpec       `json:"document"`
+	Enums             EnumDefs         `json:"enums"`
+	BuiltInVars       []BuiltInVarSpec `json:"built_in_vars"`
+	Contexts          []ContextDef     `json:"contexts"`
+	BlockSharedFields []game.FieldSpec `json:"block_shared_fields"` // fields shared by all/some blocks; referenced by name in BlockSpec.shared_fields
+	Blocks            []game.BlockSpec `json:"blocks"`
 }
 
 // ObjectSpec describes a named object with a set of fields.
@@ -19,15 +21,23 @@ type ObjectSpec struct {
 
 // EnumDefs holds all enum definitions used in the document format.
 type EnumDefs struct {
-	Routing    []EnumValue `json:"routing"`
-	Navigation []EnumValue `json:"navigation"`
-	Completion []EnumValue `json:"completion"`
+	Routing       []EnumValue `json:"routing"`
+	Navigation    []EnumValue `json:"navigation"`
+	Completion    []EnumValue `json:"completion"`
+	ConditionOps  []EnumValue `json:"condition_ops"`
 }
 
 // EnumValue is a single allowed enum value with a human-readable label and description.
 type EnumValue struct {
 	Value       string `json:"value"`
 	Label       string `json:"label"`
+	Description string `json:"description"`
+}
+
+// BuiltInVarSpec documents a single built-in variable available in when clauses.
+type BuiltInVarSpec struct {
+	Var         string `json:"var"`
+	Type        string `json:"type"`
 	Description string `json:"description"`
 }
 
@@ -40,11 +50,73 @@ type ContextDef struct {
 // GenerateFullSpec assembles the complete v7 spec.
 func GenerateFullSpec() FullSpec {
 	return FullSpec{
-		Version:  "v7",
-		Document: documentSpec(),
-		Enums:    enumDefs(),
-		Contexts: contextDefs(),
-		Blocks:   GenerateBlockSpecs(),
+		Version:           "v7",
+		Document:          documentSpec(),
+		Enums:             enumDefs(),
+		BuiltInVars:       builtInVarSpecs(),
+		Contexts:          contextDefs(),
+		BlockSharedFields: []game.FieldSpec{whenFieldSpec(), setsFieldSpec()},
+		Blocks:            GenerateBlockSpecs(),
+	}
+}
+
+// whenFieldSpec returns the shared `when` field spec used on blocks, locations, and groups.
+func whenFieldSpec() game.FieldSpec {
+	condItem := &game.FieldSpec{
+		Type:        "object",
+		Description: "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+		Fields: []game.FieldSpec{
+			{
+				Name:        "var",
+				Type:        "string",
+				Required:    true,
+				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count, game.status. Creator-defined via block sets. External via settings.vars.",
+			},
+			{
+				Name:        "op",
+				Type:        "enum",
+				Description: "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+				Enum:        []string{"eq", "neq", "gt", "lt", "gte", "lte", "in", "not_in"},
+			},
+			{
+				Name:        "value",
+				Type:        "any",
+				Description: "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present.",
+			},
+			{
+				Name:        "not",
+				Type:        "bool",
+				Description: "Negate the result of this condition.",
+			},
+		},
+	}
+	return game.FieldSpec{
+		Name:        "when",
+		Type:        "object",
+		Description: "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
+		Fields: []game.FieldSpec{
+			{
+				Name:        "all_of",
+				Type:        "list",
+				Description: "ALL conditions must be true (AND). Each item is a condition object.",
+				Items:       condItem,
+			},
+			{
+				Name:        "any_of",
+				Type:        "list",
+				Description: "At least one condition must be true (OR). Each item is a condition object.",
+				Items:       condItem,
+			},
+		},
+	}
+}
+
+// setsFieldSpec returns the `sets` field spec used on interactive blocks.
+func setsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name:        "sets",
+		Type:        "object",
+		Description: "Variables to set when this block's trigger fires. Key: freeform variable name. Value: trigger keyword (block-type specific; see block spec for supported triggers). Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
 	}
 }
 
@@ -78,6 +150,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "int",
 			Description: "Number of locations required when completion is \"minimum\".",
 		},
+		whenFieldSpec(),
 		{Name: "children", Type: "list", Required: true, Description: "Ordered list of location or group children.",
 			Items: &game.FieldSpec{
 				Type:        "object",
@@ -112,6 +185,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				{Name: "lat", Type: "float", Required: true, Description: "Latitude in decimal degrees."},
 				{Name: "lng", Type: "float", Required: true, Description: "Longitude in decimal degrees."},
 			}},
+		whenFieldSpec(),
 		{
 			Name:        "content",
 			Type:        "list",
@@ -124,21 +198,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Description: "Blocks shown on the /next page to help players find this location.",
 		},
 	}
-
-	blockField := game.FieldSpec{
-		Type:        "object",
-		Description: "Flat map with a \"type\" discriminator. See blocks for per-type fields.",
-		Fields: []game.FieldSpec{
-			{Name: "type", Type: "string", Required: true, Description: "Block type identifier. See blocks[].type."},
-			{
-				Name:        "id",
-				Type:        "string",
-				Description: "Block UUID. Present on export; omit on create-import to generate a new UUID.",
-			},
-			{Name: "points", Type: "int", Description: "Points awarded when this block is completed."},
-		},
-	}
-	_ = blockField
 
 	return ObjectSpec{
 		Description: "Top-level v7 game document.",
@@ -165,6 +224,11 @@ func documentSpec() ObjectSpec { //nolint:funlen
 					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
 					{Name: "enable_bonus_points", Type: "bool", Description: "Enable bonus points on blocks."},
 					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
+					{
+						Name:        "vars",
+						Type:        "object",
+						Description: "External variables set by admins or via API. Each key is a variable name; value is an object with a default field. Readable in when clauses.",
+					},
 				},
 			},
 			{
@@ -242,6 +306,56 @@ func enumDefs() EnumDefs {
 				Label:       "Minimum",
 				Description: "At least minimum_required locations/groups must be completed.",
 			},
+		},
+		ConditionOps: []EnumValue{
+			{Value: "eq", Label: "Equal", Description: "var == value"},
+			{Value: "neq", Label: "Not equal", Description: "var != value"},
+			{Value: "gt", Label: "Greater than", Description: "var > value (numeric)"},
+			{Value: "lt", Label: "Less than", Description: "var < value (numeric)"},
+			{Value: "gte", Label: "Greater than or equal", Description: "var >= value (numeric)"},
+			{Value: "lte", Label: "Less than or equal", Description: "var <= value (numeric)"},
+			{Value: "in", Label: "In array", Description: "var is one of value (value must be an array)"},
+			{Value: "not_in", Label: "Not in array", Description: "var is not in value (value must be an array)"},
+		},
+	}
+}
+
+// BuiltInVars returns the list of built-in variables available in when-clause conditions.
+func BuiltInVars() []BuiltInVarSpec {
+	return builtInVarSpecs()
+}
+
+func builtInVarSpecs() []BuiltInVarSpec {
+	return []BuiltInVarSpec{
+		{
+			Var:         "points",
+			Type:        "int",
+			Description: "Total points earned by this team. Evaluated live from team.Points.",
+		},
+		{
+			Var:         "location.<slug>.visited",
+			Type:        "bool",
+			Description: "True when the team has a CheckIn record for the location with the given slug.",
+		},
+		{
+			Var:         "location.<slug>.checked_in",
+			Type:        "bool",
+			Description: "True when the team has checked in and BlocksCompleted is true for the given location slug.",
+		},
+		{
+			Var:         "group.<name>.completed",
+			Type:        "bool",
+			Description: "True when all required locations in the named group have been visited and completed.",
+		},
+		{
+			Var:         "game.team_count",
+			Type:        "int",
+			Description: "Number of teams with HasStarted == true in this game instance.",
+		},
+		{
+			Var:         "game.status",
+			Type:        "string",
+			Description: "Current game status. One of: active, scheduled, closed.",
 		},
 	}
 }

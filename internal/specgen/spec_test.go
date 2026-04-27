@@ -218,3 +218,159 @@ func TestSpecStaleness_IgnoresBaseBlockFields(t *testing.T) {
 		}
 	}
 }
+
+// TestGenerateBlockSpecs_WhenOnAll verifies every block spec references "when" in shared_fields.
+func TestGenerateBlockSpecs_WhenOnAll(t *testing.T) {
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		found := false
+		for _, name := range spec.SharedFields {
+			if name == "when" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("block %q: missing \"when\" in shared_fields", spec.Type)
+		}
+	}
+}
+
+// TestGenerateBlockSpecs_SetsOnInteractiveOnly verifies "sets" appears in shared_fields
+// on interactive block types and not on content-only block types.
+func TestGenerateBlockSpecs_SetsOnInteractiveOnly(t *testing.T) {
+	interactiveTypes := map[string]bool{
+		"quiz": true, "password": true, "pincode": true, "broker": true,
+		"sorting": true, "photo": true, "checklist": true, "rating": true, "free_text": true,
+	}
+
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		hasSets := false
+		for _, name := range spec.SharedFields {
+			if name == "sets" {
+				hasSets = true
+				break
+			}
+		}
+		if interactiveTypes[spec.Type] && !hasSets {
+			t.Errorf("interactive block %q: missing \"sets\" in shared_fields", spec.Type)
+		}
+		if !interactiveTypes[spec.Type] && hasSets {
+			t.Errorf("content block %q: should not have \"sets\" in shared_fields", spec.Type)
+		}
+	}
+}
+
+// TestGenerateFullSpec_BlockSharedFields verifies block_shared_fields contains "when" and "sets".
+func TestGenerateFullSpec_BlockSharedFields(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+	names := make(map[string]bool, len(spec.BlockSharedFields))
+	for _, f := range spec.BlockSharedFields {
+		names[f.Name] = true
+	}
+	for _, want := range []string{"when", "sets"} {
+		if !names[want] {
+			t.Errorf("block_shared_fields missing %q", want)
+		}
+	}
+}
+
+// TestGenerateFullSpec_WhenOnLocationAndGroup verifies the location and structure (group)
+// schemas both contain a "when" field.
+func TestGenerateFullSpec_WhenOnLocationAndGroup(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+
+	// Find location schema
+	var locationFields []game.FieldSpec
+	var structureFields []game.FieldSpec
+	for _, f := range spec.Document.Fields {
+		switch f.Name {
+		case "location":
+			locationFields = f.Fields
+		case "structure":
+			structureFields = f.Fields
+		}
+	}
+
+	hasWhen := func(fields []game.FieldSpec) bool {
+		for _, f := range fields {
+			if f.Name == "when" {
+				return true
+			}
+		}
+		return false
+	}
+
+	if !hasWhen(locationFields) {
+		t.Error("location schema missing \"when\" field")
+	}
+	if !hasWhen(structureFields) {
+		t.Error("structure (group) schema missing \"when\" field")
+	}
+}
+
+// TestGenerateFullSpec_BuiltInVars verifies built_in_vars is non-empty and contains
+// expected variable names.
+func TestGenerateFullSpec_BuiltInVars(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+	if len(spec.BuiltInVars) == 0 {
+		t.Fatal("GenerateFullSpec().BuiltInVars is empty")
+	}
+
+	varNames := make(map[string]bool, len(spec.BuiltInVars))
+	for _, v := range spec.BuiltInVars {
+		varNames[v.Var] = true
+		if v.Type == "" {
+			t.Errorf("built_in_var %q has empty Type", v.Var)
+		}
+		if v.Description == "" {
+			t.Errorf("built_in_var %q has empty Description", v.Var)
+		}
+	}
+
+	expected := []string{"points", "game.status", "game.team_count"}
+	for _, name := range expected {
+		if !varNames[name] {
+			t.Errorf("built_in_vars missing %q", name)
+		}
+	}
+}
+
+// TestGenerateFullSpec_ConditionOpsEnum verifies condition_ops enum is non-empty and
+// contains all expected operators.
+func TestGenerateFullSpec_ConditionOpsEnum(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+	if len(spec.Enums.ConditionOps) == 0 {
+		t.Fatal("GenerateFullSpec().Enums.ConditionOps is empty")
+	}
+
+	ops := make(map[string]bool, len(spec.Enums.ConditionOps))
+	for _, op := range spec.Enums.ConditionOps {
+		ops[op.Value] = true
+	}
+
+	expected := []string{"eq", "neq", "gt", "lt", "gte", "lte", "in", "not_in"}
+	for _, op := range expected {
+		if !ops[op] {
+			t.Errorf("condition_ops missing operator %q", op)
+		}
+	}
+}
+
+// TestGenerateFullSpec_SettingsHasVars verifies settings schema contains a "vars" field.
+func TestGenerateFullSpec_SettingsHasVars(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+
+	for _, f := range spec.Document.Fields {
+		if f.Name != "settings" {
+			continue
+		}
+		for _, sf := range f.Fields {
+			if sf.Name == "vars" {
+				return
+			}
+		}
+		t.Error("settings schema missing \"vars\" field")
+		return
+	}
+	t.Error("document schema missing \"settings\" field")
+}
