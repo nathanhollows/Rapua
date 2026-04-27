@@ -41,18 +41,20 @@ type GroupDoc struct {
 	Completion      CompletionType `json:"completion"`
 	MinimumRequired int            `json:"minimum_required,omitempty"`
 	AutoAdvance     *bool          `json:"auto_advance,omitempty"`
+	When            *WhenClause    `json:"when,omitempty"`
 	Children        []ChildDoc     `json:"children"`
 }
 
 // LocationDoc represents a single game location with its blocks.
 type LocationDoc struct {
-	ID         string     `json:"id,omitempty"`
-	Slug       string     `json:"slug"`
-	Name       string     `json:"name"`
-	Points     int        `json:"points,omitempty"`
-	Marker     *MarkerDoc `json:"marker,omitempty"`
-	Content    []BlockDoc `json:"content"`
-	Navigation []BlockDoc `json:"navigation,omitempty"`
+	ID         string      `json:"id,omitempty"`
+	Slug       string      `json:"slug"`
+	Name       string      `json:"name"`
+	Points     int         `json:"points,omitempty"`
+	When       *WhenClause `json:"when,omitempty"`
+	Marker     *MarkerDoc  `json:"marker,omitempty"`
+	Content    []BlockDoc  `json:"content"`
+	Navigation []BlockDoc  `json:"navigation,omitempty"`
 }
 
 // MarkerDoc holds geographic coordinates for a location.

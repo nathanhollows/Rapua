@@ -27,6 +27,16 @@ func (r LintResult) IsValid() bool {
 	return len(r.Errors) == 0
 }
 
+// HasError returns true if any error in the result has the given code.
+func (r LintResult) HasError(code string) bool {
+	for _, e := range r.Errors {
+		if e.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
 // Lint validates a GameDoc in three layers: schema, semantic, structural.
 // registry is used to check valid block types and contexts; pass blocks.Registry().
 func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
@@ -585,19 +595,50 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 		if child.Location != nil {
 			loc := child.Location
 			locPath := childPath + ".location"
+			// Location-level when: check against full groupVars.
+			// A location whose own blocks set x, but whose when also references x, is
+			// a circular dependency (location hidden until x set, x only set inside it).
 			l.checkGroupScopedWhen(locPath+".when", loc.When, groupVars)
+			// Block-level when: exclude vars set by this location's own blocks.
+			// "Self-reveal" — block B sets x, block C on the same location has when:{var:x} —
+			// is valid; the sequence B→x→C plays out within a single location visit.
+			crossVars := groupVarsExcludingSelf(groupVars, loc.Content, loc.Navigation)
 			for j, b := range loc.Content {
 				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, groupVars)
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, crossVars)
 			}
 			for j, b := range loc.Navigation {
 				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.navigation[%d].when", locPath, j), wc, groupVars)
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.navigation[%d].when", locPath, j), wc, crossVars)
 			}
 		} else if child.Group != nil {
 			l.checkGroupScopedWhenInChildren(childPath+".group", child.Group.Children, groupVars)
 		}
 	}
+}
+
+// groupVarsExcludingSelf returns a copy of groupVars with vars set by the given
+// block slices removed. Used so that same-location setter+reference pairs do not
+// trigger WHEN_UNREACHABLE_VAR (the self-reveal pattern is valid within one location visit).
+func groupVarsExcludingSelf(groupVars map[string]bool, blockSlices ...[]BlockDoc) map[string]bool {
+	selfVars := blockDocSetsVars(func() []BlockDoc {
+		var all []BlockDoc
+		for _, s := range blockSlices {
+			all = append(all, s...)
+		}
+		return all
+	}()...)
+	if len(selfVars) == 0 {
+		return groupVars
+	}
+	out := make(map[string]bool, len(groupVars))
+	for v := range groupVars {
+		out[v] = true
+	}
+	for _, v := range selfVars {
+		delete(out, v)
+	}
+	return out
 }
 
 func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map[string]bool) {
