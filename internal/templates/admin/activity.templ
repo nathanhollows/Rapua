@@ -318,7 +318,7 @@ templ ActivityStatusBadge(instance models.Instance) {
 		<div class="inline-grid *:[grid-area:1/1]">
 			switch instance.GetStatus() {
 				case models.Active:
-					<div class="status status-lg status-success animate-ping"></div>
+					<div class="status status-lg status-success"></div>
 					<div class="status status-lg status-success"></div>
 				case models.Scheduled:
 					<div class="status status-lg status-info"></div>

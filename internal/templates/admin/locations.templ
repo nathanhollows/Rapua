@@ -148,7 +148,7 @@ templ EditLocation(data EditLocationData) {
 					<input type="hidden" name="points" value={ fmt.Sprint(data.Location.Points) }/>
 				}
 			</div>
-			@deleteBlockModal()
+		@deleteBlockModal()
 			<!-- Navigation -->
 			@blockAddButton(data.Location.ID, blocks.ContextNavigation, ".blocks")
 			<div
@@ -249,3 +249,4 @@ templ EditLocation(data EditLocationData) {
 	@blockMoveScript()
 	@sortableStyles()
 }
+

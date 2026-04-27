@@ -745,7 +745,7 @@ func ActivityStatusBadge(instance models.Instance) templ.Component {
 		}
 		switch instance.GetStatus() {
 		case models.Active:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div class=\"status status-lg status-success\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
