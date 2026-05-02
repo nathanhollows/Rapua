@@ -7,15 +7,23 @@ import (
 	"github.com/nathanhollows/Rapua/v7/game"
 )
 
-// BlockContext and related type aliases re-export game/ vocabulary so callers don't need to change imports.
-type (
-	BlockContext    = game.BlockContext
-	Block           = game.Block
-	BaseBlock       = game.BaseBlock
-	PlayerState     = game.PlayerState
-	RegisteredBlock = game.RegisteredBlock
-	Blocks          = game.Blocks
-)
+// Block re-exports game.Block; see game package for full documentation.
+type Block = game.Block
+
+// BlockContext re-exports game.BlockContext; see game package for full documentation.
+type BlockContext = game.BlockContext
+
+// BaseBlock re-exports game.BaseBlock; see game package for full documentation.
+type BaseBlock = game.BaseBlock
+
+// PlayerState re-exports game.PlayerState; see game package for full documentation.
+type PlayerState = game.PlayerState
+
+// RegisteredBlock re-exports game.RegisteredBlock; see game package for full documentation.
+type RegisteredBlock = game.RegisteredBlock
+
+// Blocks re-exports game.Blocks; see game package for full documentation.
+type Blocks = game.Blocks
 
 // ErrBlockTypeNotFound is returned when a block type is not registered.
 var ErrBlockTypeNotFound = game.ErrBlockTypeNotFound
@@ -90,6 +98,7 @@ func init() {
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&RatingBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ChoiceBlock{}, []BlockContext{ContextLocationContent})
 
 	registerBlock(&TaskBlock{}, []BlockContext{ContextNavigation})
 
@@ -183,6 +192,35 @@ func (r *registryImpl) IsInteractive(blockType string) bool {
 	return reg.Instance.SupportsVariableSets()
 }
 
+func (r *registryImpl) DocSetsVars(blockType string, doc game.BlockDoc) []string {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return nil
+	}
+	if p, ok := reg.Instance.(game.BlockDocVarsProvider); ok {
+		return p.DocSetsVars(doc)
+	}
+	return nil
+}
+
+func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return nil, nil
+	}
+	if v, ok := reg.Instance.(game.BlockDocValidator); ok {
+		return v.ValidateBlockDoc(path, doc)
+	}
+	return nil, nil
+}
+
+// ChoiceVarSetter is implemented by blocks that determine which vars to write
+// based on runtime player state. Used when per-option var selection is needed
+// (e.g. only the chosen option's var, not all listed vars).
+type ChoiceVarSetter interface {
+	GetTriggeredVars(state PlayerState) map[string]string
+}
+
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]
@@ -240,6 +278,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewToggleTextBlock(baseBlock), nil
 	case mapBlockType:
 		return NewMapBlock(baseBlock), nil
+	case "choice":
+		return NewChoiceBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
