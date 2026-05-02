@@ -384,6 +384,23 @@ func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStruc
 	return nil
 }
 
+// FindGroupByName recursively searches for a group with the specified name (case-sensitive).
+// Returns nil if not found. The root group is skipped (root name is always "").
+func FindGroupByName(root *models.GameStructure, name string) *models.GameStructure {
+	if root == nil {
+		return nil
+	}
+	for i := range root.SubGroups {
+		if root.SubGroups[i].Name == name {
+			return &root.SubGroups[i]
+		}
+		if found := FindGroupByName(&root.SubGroups[i], name); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
 // FindGroupContainingLocation recursively searches for a group containing the specified location ID.
 // Returns nil if not found.
 func FindGroupContainingLocation(root *models.GameStructure, locationID string) *models.GameStructure {

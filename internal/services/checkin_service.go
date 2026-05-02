@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
@@ -17,19 +16,6 @@ const (
 	bonusSecondVisit = 0.5
 	bonusThirdVisit  = 0.2
 )
-
-// triggerValue maps a sets trigger keyword to the value to store.
-// Returns "true" if the trigger fired, "" if it should not be written.
-// Triggers are monotonic — only "true" is ever written; false is the default (unset).
-func triggerValue(trigger string, state game.PlayerState) string {
-	if trigger == "attempted" {
-		return "true"
-	}
-	if state.IsComplete() {
-		return "true"
-	}
-	return ""
-}
 
 type LocationStatsService interface {
 	IncrementVisitors(ctx context.Context, location *models.Location) error
@@ -218,7 +204,7 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 	if err != nil {
 		return fmt.Errorf("loading var states: %w", err)
 	}
-	resolver := NewPlayerVarResolver(team, varStates, nil)
+	resolver := NewPlayerVarResolver(team, varStates)
 	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(ctx, location.ID, team.Code, resolver)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)
@@ -390,49 +376,69 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		if err != nil {
 			return nil, nil, fmt.Errorf("updating block state: %w", err)
 		}
-
-		// Write sets vars for any trigger that fired
-		for varName, trigger := range block.GetSets() {
-			if value := triggerValue(trigger, state); value != "" {
-				if upsertErr := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, value); upsertErr != nil {
-					return nil, nil, fmt.Errorf("writing sets var %q: %w", varName, upsertErr)
-				}
-			}
+		if err = s.writeSetsVars(ctx, team, block, state); err != nil {
+			return nil, nil, err
 		}
 	}
 
 	// Only award points and update check-ins in regular mode, not preview mode
-	if !isPreview && state.IsComplete() { //nolint:nestif // nesting required for guard before point-awarding
-		team.Points += block.GetPoints()
-		err = s.teamRepo.Update(ctx, &team)
-		if err != nil {
-			return nil, nil, fmt.Errorf("awarding points: %w", err)
-		}
-
-		// Update the check in all blocks have been completed.
-		// Reload var states so that sets-triggered vars are reflected in when-clause evaluation.
-		varStates, checkErr := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
-		if checkErr != nil {
-			return nil, nil, fmt.Errorf("loading var states: %w", checkErr)
-		}
-		blockResolver := NewPlayerVarResolver(&team, varStates, nil)
-		unfinishedCheckIn, checkErr := s.blockService.checkValidationRequiredForCheckIn(
-			ctx,
-			block.GetOwnerID(),
-			team.Code,
-			blockResolver,
-		)
-		if checkErr != nil {
-			return nil, nil, fmt.Errorf("checking if validation is required: %w", checkErr)
-		}
-
-		if !unfinishedCheckIn {
-			err = s.CompleteBlocks(ctx, team.Code, block.GetOwnerID())
-			if err != nil {
-				return nil, nil, fmt.Errorf("completing blocks: %w", err)
-			}
+	if !isPreview && state.IsComplete() {
+		if err = s.awardPointsAndComplete(ctx, &team, block); err != nil {
+			return nil, nil, err
 		}
 	}
 
 	return state, block, nil
+}
+
+// writeSetsVars writes block sets variables to the var-state store after block completion.
+func (s *CheckInService) writeSetsVars(
+	ctx context.Context,
+	team models.Team,
+	block blocks.Block,
+	state blocks.PlayerState,
+) error {
+	if setter, ok := block.(blocks.ChoiceVarSetter); ok {
+		for varName, val := range setter.GetTriggeredVars(state) {
+			if val != "" {
+				if err := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, val); err != nil {
+					return fmt.Errorf("writing sets var %q: %w", varName, err)
+				}
+			}
+		}
+		return nil
+	}
+	if state.IsComplete() {
+		for _, varName := range block.GetSets() {
+			if err := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, "true"); err != nil {
+				return fmt.Errorf("writing sets var %q: %w", varName, err)
+			}
+		}
+	}
+	return nil
+}
+
+// awardPointsAndComplete awards points and marks check-in complete when all visible blocks are done.
+func (s *CheckInService) awardPointsAndComplete(ctx context.Context, team *models.Team, block blocks.Block) error {
+	team.Points += block.GetPoints()
+	if err := s.teamRepo.Update(ctx, team); err != nil {
+		return fmt.Errorf("awarding points: %w", err)
+	}
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	if err != nil {
+		return fmt.Errorf("loading var states: %w", err)
+	}
+	blockResolver := NewPlayerVarResolver(team, varStates)
+	unfinished, err := s.blockService.checkValidationRequiredForCheckIn(
+		ctx, block.GetOwnerID(), team.Code, blockResolver,
+	)
+	if err != nil {
+		return fmt.Errorf("checking if validation is required: %w", err)
+	}
+	if !unfinished {
+		if err = s.CompleteBlocks(ctx, team.Code, block.GetOwnerID()); err != nil {
+			return fmt.Errorf("completing blocks: %w", err)
+		}
+	}
+	return nil
 }

@@ -54,7 +54,7 @@ func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
 const maxUploadBytes = 4 << 20 // 4 MB
 
 // parseGameBytes reads raw JSON bytes from a multipart file upload (field "file") or raw JSON body.
-func parseGameBytes(r *http.Request) ([]byte, error) { //nolint:nestif // standard multipart-or-body parse pattern
+func parseGameBytes(r *http.Request) ([]byte, error) {
 	contentType := r.Header.Get("Content-Type")
 
 	if strings.HasPrefix(contentType, "multipart/form-data") {

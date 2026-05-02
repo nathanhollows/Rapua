@@ -24,8 +24,9 @@ func makeTeamWithInstance(points int, instance models.Instance) *models.Team {
 	}
 }
 
-func makeCheckIn(slug string, blocksCompleted bool) models.CheckIn {
+func makeCheckIn(slug, locationID string, blocksCompleted bool) models.CheckIn {
 	return models.CheckIn{
+		LocationID:      locationID,
 		Location:        models.Location{Slug: slug},
 		BlocksCompleted: blocksCompleted,
 		TimeIn:          time.Now(),
@@ -33,7 +34,7 @@ func makeCheckIn(slug string, blocksCompleted bool) models.CheckIn {
 }
 
 func TestCompositeResolver_Points(t *testing.T) {
-	r := services.NewPlayerVarResolver(makeTeam(42, nil), nil, nil)
+	r := services.NewPlayerVarResolver(makeTeam(42, nil), nil)
 	val, ok := r.ResolveVar("points")
 	assert.True(t, ok)
 	assert.Equal(t, "42", val)
@@ -41,9 +42,9 @@ func TestCompositeResolver_Points(t *testing.T) {
 
 func TestCompositeResolver_LocationVisited(t *testing.T) {
 	team := makeTeam(0, []models.CheckIn{
-		makeCheckIn("the-dell", false),
+		makeCheckIn("the-dell", "loc-1", false),
 	})
-	r := services.NewPlayerVarResolver(team, nil, nil)
+	r := services.NewPlayerVarResolver(team, nil)
 
 	val, ok := r.ResolveVar("location.the-dell.visited")
 	assert.True(t, ok)
@@ -56,10 +57,10 @@ func TestCompositeResolver_LocationVisited(t *testing.T) {
 
 func TestCompositeResolver_LocationCheckedIn(t *testing.T) {
 	team := makeTeam(0, []models.CheckIn{
-		makeCheckIn("the-dell", true),
-		makeCheckIn("citrus-lab", false),
+		makeCheckIn("the-dell", "loc-1", true),
+		makeCheckIn("citrus-lab", "loc-2", false),
 	})
-	r := services.NewPlayerVarResolver(team, nil, nil)
+	r := services.NewPlayerVarResolver(team, nil)
 
 	val, ok := r.ResolveVar("location.the-dell.checked_in")
 	assert.True(t, ok)
@@ -74,48 +75,75 @@ func TestCompositeResolver_LocationCheckedIn(t *testing.T) {
 	assert.Equal(t, "false", val)
 }
 
+func TestCompositeResolver_GroupCompleted(t *testing.T) {
+	gs := models.GameStructure{
+		ID: "root",
+		SubGroups: []models.GameStructure{
+			{
+				ID:             "grp-1",
+				Name:           "Top Notes",
+				CompletionType: models.CompletionAll,
+				LocationIDs:    []string{"loc-a", "loc-b"},
+			},
+		},
+	}
+	team := &models.Team{
+		Instance: models.Instance{GameStructure: gs},
+		CheckIns: []models.CheckIn{
+			{LocationID: "loc-a", BlocksCompleted: true},
+			{LocationID: "loc-b", BlocksCompleted: true},
+		},
+	}
+	r := services.NewPlayerVarResolver(team, nil)
+
+	val, ok := r.ResolveVar("group.Top Notes.completed")
+	assert.True(t, ok)
+	assert.Equal(t, "true", val)
+
+	// Incomplete group
+	team2 := &models.Team{
+		Instance: models.Instance{GameStructure: gs},
+		CheckIns: []models.CheckIn{
+			{LocationID: "loc-a", BlocksCompleted: true},
+		},
+	}
+	r2 := services.NewPlayerVarResolver(team2, nil)
+	val, ok = r2.ResolveVar("group.Top Notes.completed")
+	assert.True(t, ok)
+	assert.Equal(t, "false", val)
+
+	// Unknown group name
+	val, ok = r.ResolveVar("group.Unknown.completed")
+	assert.True(t, ok)
+	assert.Equal(t, "false", val)
+}
+
 func TestCompositeResolver_CreatorVars(t *testing.T) {
 	creator := map[string]string{"took_bergamot": "true"}
-	r := services.NewPlayerVarResolver(makeTeam(0, nil), creator, nil)
+	r := services.NewPlayerVarResolver(makeTeam(0, nil), creator)
 
 	val, ok := r.ResolveVar("took_bergamot")
 	assert.True(t, ok)
 	assert.Equal(t, "true", val)
 }
 
-func TestCompositeResolver_ExternalVars(t *testing.T) {
-	ext := map[string]string{"weather": "raining"}
-	r := services.NewPlayerVarResolver(makeTeam(0, nil), nil, ext)
-
-	val, ok := r.ResolveVar("weather")
-	assert.True(t, ok)
-	assert.Equal(t, "raining", val)
-}
-
 func TestCompositeResolver_Priority(t *testing.T) {
 	// built-in beats creator
 	creator := map[string]string{"points": "999"}
-	r := services.NewPlayerVarResolver(makeTeam(10, nil), creator, nil)
+	r := services.NewPlayerVarResolver(makeTeam(10, nil), creator)
 	val, _ := r.ResolveVar("points")
 	assert.Equal(t, "10", val, "built-in points must beat creator var named 'points'")
-
-	// creator beats external
-	ext := map[string]string{"weather": "sunny"}
-	creator2 := map[string]string{"weather": "raining"}
-	r2 := services.NewPlayerVarResolver(makeTeam(0, nil), creator2, ext)
-	val, _ = r2.ResolveVar("weather")
-	assert.Equal(t, "raining", val, "creator var must beat external var")
 }
 
 func TestCompositeResolver_UnknownVar(t *testing.T) {
-	r := services.NewPlayerVarResolver(makeTeam(0, nil), nil, nil)
+	r := services.NewPlayerVarResolver(makeTeam(0, nil), nil)
 	val, ok := r.ResolveVar("undefined_var")
 	assert.False(t, ok)
-	assert.Equal(t, "", val)
+	assert.Empty(t, val)
 }
 
 func TestCompositeResolver_NilMaps(t *testing.T) {
-	r := services.NewPlayerVarResolver(makeTeam(5, nil), nil, nil)
+	r := services.NewPlayerVarResolver(makeTeam(5, nil), nil)
 	// Should not panic
 	val, ok := r.ResolveVar("points")
 	assert.True(t, ok)
@@ -139,9 +167,9 @@ func TestPlayerVarResolver_GameStatus(t *testing.T) {
 			want:     "active",
 		},
 		{
-			name: "scheduled",
+			name:     "scheduled",
 			instance: models.Instance{StartTime: bun.NullTime{Time: now.Add(1 * time.Hour)}},
-			want: "scheduled",
+			want:     "scheduled",
 		},
 		{
 			name:     "closed (no start time)",
@@ -151,7 +179,7 @@ func TestPlayerVarResolver_GameStatus(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := services.NewPlayerVarResolver(makeTeamWithInstance(0, tt.instance), nil, nil)
+			r := services.NewPlayerVarResolver(makeTeamWithInstance(0, tt.instance), nil)
 			val, ok := r.ResolveVar("game.status")
 			assert.True(t, ok)
 			assert.Equal(t, tt.want, val)
@@ -160,7 +188,7 @@ func TestPlayerVarResolver_GameStatus(t *testing.T) {
 }
 
 func TestPlayerVarResolver_TeamCount(t *testing.T) {
-	r := services.NewPlayerVarResolver(makeTeam(0, nil), nil, nil)
+	r := services.NewPlayerVarResolver(makeTeam(0, nil), nil)
 
 	val, ok := r.ResolveVar("game.team_count")
 	assert.True(t, ok)

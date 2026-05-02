@@ -1,13 +1,15 @@
-package services
+package services_test
 
 import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/nathanhollows/Rapua/v7/internal/services"
 )
 
 func TestMagicTokenService_GenerateAndValidate(t *testing.T) {
-	service := NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
+	service := services.NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
 
 	userID := "user-123-uuid"
 	duration := 1 * time.Minute
@@ -34,7 +36,7 @@ func TestMagicTokenService_GenerateAndValidate(t *testing.T) {
 }
 
 func TestMagicTokenService_ExpiredToken(t *testing.T) {
-	service := NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
+	service := services.NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
 
 	userID := "user-123-uuid"
 	// Generate token that expires immediately
@@ -47,13 +49,13 @@ func TestMagicTokenService_ExpiredToken(t *testing.T) {
 
 	// Validate token should fail with expired error
 	_, err = service.ValidateToken(token)
-	if !errors.Is(err, ErrMagicTokenExpired) {
-		t.Errorf("ValidateToken: got error %v, want %v", err, ErrMagicTokenExpired)
+	if !errors.Is(err, services.ErrMagicTokenExpired) {
+		t.Errorf("ValidateToken: got error %v, want %v", err, services.ErrMagicTokenExpired)
 	}
 }
 
 func TestMagicTokenService_InvalidToken(t *testing.T) {
-	service := NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
+	service := services.NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
 
 	testCases := []struct {
 		name  string
@@ -68,16 +70,16 @@ func TestMagicTokenService_InvalidToken(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := service.ValidateToken(tc.token)
-			if !errors.Is(err, ErrMagicTokenInvalid) {
-				t.Errorf("ValidateToken(%q): got error %v, want %v", tc.token, err, ErrMagicTokenInvalid)
+			if !errors.Is(err, services.ErrMagicTokenInvalid) {
+				t.Errorf("ValidateToken(%q): got error %v, want %v", tc.token, err, services.ErrMagicTokenInvalid)
 			}
 		})
 	}
 }
 
 func TestMagicTokenService_WrongSecretKey(t *testing.T) {
-	service1 := NewMagicTokenService([]byte("secret-key-one-32-bytes-long!!!"))
-	service2 := NewMagicTokenService([]byte("secret-key-two-32-bytes-long!!!"))
+	service1 := services.NewMagicTokenService([]byte("secret-key-one-32-bytes-long!!!"))
+	service2 := services.NewMagicTokenService([]byte("secret-key-two-32-bytes-long!!!"))
 
 	userID := "user-123-uuid"
 	duration := 1 * time.Minute
@@ -90,13 +92,13 @@ func TestMagicTokenService_WrongSecretKey(t *testing.T) {
 
 	// Try to validate with service2 (different key)
 	_, err = service2.ValidateToken(token)
-	if !errors.Is(err, ErrMagicTokenInvalid) {
-		t.Errorf("ValidateToken with wrong key: got error %v, want %v", err, ErrMagicTokenInvalid)
+	if !errors.Is(err, services.ErrMagicTokenInvalid) {
+		t.Errorf("ValidateToken with wrong key: got error %v, want %v", err, services.ErrMagicTokenInvalid)
 	}
 }
 
 func TestMagicTokenService_EmptyUserID(t *testing.T) {
-	service := NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
+	service := services.NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
 
 	_, err := service.GenerateToken("", 1*time.Minute)
 	if err == nil {
@@ -105,7 +107,7 @@ func TestMagicTokenService_EmptyUserID(t *testing.T) {
 }
 
 func TestMagicTokenService_UserIDWithColon(t *testing.T) {
-	service := NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
+	service := services.NewMagicTokenService([]byte("test-secret-key-32-bytes-long!!"))
 
 	_, err := service.GenerateToken("user:with:colons", 1*time.Minute)
 	if err == nil {

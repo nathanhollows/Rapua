@@ -74,7 +74,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filter blocks by visibility conditions
-	resolver := services.NewPlayerVarResolver(team, team.VarStates, nil)
+	resolver := services.NewPlayerVarResolver(team, team.VarStates)
 	visibleBlocks := make(blocks.Blocks, 0, len(contentBlocks))
 	visibleStates := make(map[string]blocks.PlayerState, len(blockStates))
 	for _, b := range contentBlocks {

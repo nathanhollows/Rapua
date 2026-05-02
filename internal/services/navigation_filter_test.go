@@ -1,4 +1,4 @@
-package services
+package services //nolint:testpackage // tests unexported filterGameStructure and filterLocationsByWhen
 
 import (
 	"testing"

@@ -24,13 +24,11 @@ func validSpecDoc() string {
 		"finish":[],
 		"structure":{
 			"routing":"free_roam",
-			"navigation":"map",
 			"completion":"all",
 			"children":[{
 				"group":{
 					"name":"Stage One",
 					"routing":"free_roam",
-					"navigation":"map",
 					"completion":"all",
 					"children":[{
 						"location":{
@@ -82,7 +80,7 @@ func TestLintDoc_ValidDoc_JSONBody(t *testing.T) {
 func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 	h := &Handler{}
 	// Missing required "name" field
-	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[]}}`
+	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

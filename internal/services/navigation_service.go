@@ -74,7 +74,11 @@ func NewNavigationService(
 // This ensures the navigation engine never sees hidden locations or groups
 // when computing group completion, next group, and available locations.
 // The root group itself is never filtered (root has no When clause by convention).
-func filterGameStructure(gs models.GameStructure, resolver game.VarResolver, hiddenLocationIDs map[string]bool) models.GameStructure {
+func filterGameStructure(
+	gs models.GameStructure,
+	resolver game.VarResolver,
+	hiddenLocationIDs map[string]bool,
+) models.GameStructure {
 	filtered := gs
 
 	// Strip hidden location IDs so completion calculations ignore them.
@@ -174,7 +178,7 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 }
 
 // GetPlayerNavigationView returns a complete view of navigation data for the player UI.
-func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
+func (s *NavigationService) GetPlayerNavigationView(
 	ctx context.Context,
 	team *models.Team,
 ) (*PlayerNavigationView, error) {
@@ -194,9 +198,10 @@ func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
 	teamCount, countErr := s.teamRepo.CountByInstance(ctx, team.InstanceID)
 	if countErr != nil {
 		teamCount = 0
-		s.logger.Warn("getting team count for visibility resolver", "instance_id", team.InstanceID, "error", countErr)
+		s.logger.WarnContext(ctx, "getting team count for visibility resolver",
+			"instance_id", team.InstanceID, "error", countErr)
 	}
-	resolver := NewPlayerVarResolver(team, team.VarStates, nil).WithTeamCount(teamCount)
+	resolver := NewPlayerVarResolver(team, team.VarStates).WithTeamCount(teamCount)
 
 	// Build set of location IDs that are hidden by their when clause.
 	// team.Instance.Locations is populated by LoadRelations and includes when_clause.
@@ -252,32 +257,7 @@ func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit
 		}
 		view.CurrentGroup = currentGroup
 
-		// Check if team can advance early (minimum met, AutoAdvance=false, not 100% complete)
-		if currentGroup != nil && !currentGroup.AutoAdvance && len(currentGroup.LocationIDs) > 0 {
-			// Count completed locations in current group
-			completedSet := make(map[string]bool)
-			for _, id := range completedIDs {
-				completedSet[id] = true
-			}
-			completedCount := 0
-			for _, locID := range currentGroup.LocationIDs {
-				if completedSet[locID] {
-					completedCount++
-				}
-			}
-
-			// Check if minimum met but not all complete
-			isMinimumMet := false
-			switch currentGroup.CompletionType {
-			case models.CompletionAll:
-				isMinimumMet = completedCount == len(currentGroup.LocationIDs)
-			case models.CompletionMinimum:
-				isMinimumMet = completedCount >= currentGroup.MinimumRequired
-			}
-
-			allComplete := completedCount == len(currentGroup.LocationIDs)
-			view.CanAdvanceEarly = isMinimumMet && !allComplete
-		}
+		view.CanAdvanceEarly = s.computeCanAdvanceEarly(currentGroup, completedIDs)
 	}
 
 	// Get next locations
@@ -353,6 +333,33 @@ func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team 
 	}
 	team.VarStates = varStates
 	return nil
+}
+
+// computeCanAdvanceEarly returns true when the team has met the group minimum
+// but not all locations are complete, and AutoAdvance is disabled.
+func (s *NavigationService) computeCanAdvanceEarly(group *models.GameStructure, completedIDs []string) bool {
+	if group == nil || group.AutoAdvance || len(group.LocationIDs) == 0 {
+		return false
+	}
+	completedSet := make(map[string]bool, len(completedIDs))
+	for _, id := range completedIDs {
+		completedSet[id] = true
+	}
+	completedCount := 0
+	for _, locID := range group.LocationIDs {
+		if completedSet[locID] {
+			completedCount++
+		}
+	}
+	allComplete := completedCount == len(group.LocationIDs)
+	var isMinimumMet bool
+	switch group.CompletionType {
+	case models.CompletionAll:
+		isMinimumMet = allComplete
+	case models.CompletionMinimum:
+		isMinimumMet = completedCount >= group.MinimumRequired
+	}
+	return isMinimumMet && !allComplete
 }
 
 // normalizeMarkerID trims and uppercases marker ID.
