@@ -131,15 +131,9 @@ func (s *BlockService) UpdateBlock(
 
 	// Parse when_clause if submitted (empty string clears the condition).
 	if vals, ok := data["when_clause"]; ok {
-		var when *game.WhenClause
-		if len(vals) > 0 && vals[0] != "" {
-			var wc game.WhenClause
-			if err = json.Unmarshal([]byte(vals[0]), &wc); err != nil {
-				return nil, fmt.Errorf("parsing when_clause: %w", err)
-			}
-			if len(wc.AllOf) > 0 || len(wc.AnyOf) > 0 {
-				when = &wc
-			}
+		when, parseErr := parseWhenClause(vals)
+		if parseErr != nil {
+			return nil, parseErr
 		}
 		block.SetWhen(when)
 	}
@@ -148,6 +142,22 @@ func (s *BlockService) UpdateBlock(
 }
 
 // ReorderBlocks reorders the blocks in a location.
+// parseWhenClause parses the when_clause form values into a *game.WhenClause.
+// Returns nil when vals is empty or the value is empty (clears the condition).
+func parseWhenClause(vals []string) (*game.WhenClause, error) {
+	if len(vals) == 0 || vals[0] == "" {
+		return nil, nil //nolint:nilnil // nil clause = clear condition; nil error = no failure
+	}
+	var wc game.WhenClause
+	if err := json.Unmarshal([]byte(vals[0]), &wc); err != nil {
+		return nil, fmt.Errorf("parsing when_clause: %w", err)
+	}
+	if len(wc.AllOf) == 0 && len(wc.AnyOf) == 0 {
+		return nil, nil //nolint:nilnil // empty clause = clear condition; nil error = no failure
+	}
+	return &wc, nil
+}
+
 func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
@@ -329,7 +339,12 @@ func (s *BlockService) checkValidationRequiredForCheckIn(
 	locationID, teamCode string,
 	resolver game.VarResolver,
 ) (bool, error) {
-	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithStateAndContext(ctx, locationID, teamCode, game.ContextLocationContent)
+	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithStateAndContext(
+		ctx,
+		locationID,
+		teamCode,
+		game.ContextLocationContent,
+	)
 	if err != nil {
 		return false, err
 	}

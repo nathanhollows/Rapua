@@ -19,7 +19,7 @@ import (
 
 // validImportDocJSON returns a minimal valid v7 game document as JSON.
 func validImportDocJSON() string {
-	return `{"rapua":"v7","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","navigation":"map","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
+	return `{"rapua":"v7","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
 }
 
 func withImportUser(r *http.Request) *http.Request {
@@ -109,7 +109,7 @@ func TestImportCheck_MalformedUpload(t *testing.T) {
 func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 	h := newImportHandler()
 	// Missing required "name" field → lint error
-	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[]}}`
+	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
 	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
 		strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

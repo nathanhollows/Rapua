@@ -67,7 +67,7 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 }
 
 // LocationNew creates a new location with a default name and redirects to the edit page.
-func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) { //nolint:nestif // conditional group insertion with optional adjacent-block copy
+func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	location, err := h.locationService.CreateLocation(
@@ -82,7 +82,7 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) { //nolint
 	afterLocationID := r.URL.Query().Get("afterLocationId")
 	beforeLocationID := r.URL.Query().Get("beforeLocationId")
 
-	if groupID != "" {
+	if groupID != "" { //nolint:nestif // linear structure placement logic with adjacent-ID fallback
 		if err = h.gameStructureService.InsertLocationIntoGroup(
 			r.Context(), user.CurrentInstanceID, location.ID, groupID, afterLocationID, beforeLocationID,
 		); err != nil {

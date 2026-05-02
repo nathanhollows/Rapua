@@ -144,30 +144,12 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 const maxUploadBytes = 4 << 20 // 4 MB
 
 // parseUploadedDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.
-func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) { //nolint:nestif // standard multipart-or-body parse pattern
+func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) {
 	contentType := r.Header.Get("Content-Type")
 
-	var data []byte
-	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
-			return nil, fmt.Errorf("parse form: %w", err)
-		}
-		f, _, err := r.FormFile("file")
-		if err != nil {
-			return nil, fmt.Errorf("read file field: %w", err)
-		}
-		defer f.Close()
-		var readErr error
-		data, readErr = io.ReadAll(io.LimitReader(f, maxUploadBytes))
-		if readErr != nil {
-			return nil, fmt.Errorf("read file: %w", readErr)
-		}
-	} else {
-		var readErr error
-		data, readErr = io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
-		if readErr != nil {
-			return nil, fmt.Errorf("read body: %w", readErr)
-		}
+	data, err := readUploadData(r, contentType)
+	if err != nil {
+		return nil, err
 	}
 
 	var doc game.GameDoc
@@ -175,4 +157,28 @@ func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) { //nolint:nestif 
 		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
 	return &doc, nil
+}
+
+// readUploadData reads the raw bytes from either a multipart upload or a raw JSON body.
+func readUploadData(r *http.Request, contentType string) ([]byte, error) {
+	if !strings.HasPrefix(contentType, "multipart/form-data") {
+		data, err := io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
+		if err != nil {
+			return nil, fmt.Errorf("read body: %w", err)
+		}
+		return data, nil
+	}
+	if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
+		return nil, fmt.Errorf("parse form: %w", err)
+	}
+	f, _, err := r.FormFile("file")
+	if err != nil {
+		return nil, fmt.Errorf("read file field: %w", err)
+	}
+	defer f.Close()
+	data, err := io.ReadAll(io.LimitReader(f, maxUploadBytes))
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	return data, nil
 }
