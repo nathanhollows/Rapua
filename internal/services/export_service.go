@@ -128,8 +128,8 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 			start = append(start, doc)
 		case game.ContextFinish:
 			finish = append(finish, doc)
-		default:
-			// instance-level blocks only; skip other contexts
+		case game.ContextLocationContent, game.ContextNavigation:
+			// not valid for instance-level blocks; skip
 		}
 	}
 
@@ -189,8 +189,8 @@ func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []model
 			content = append(content, doc)
 		case game.ContextNavigation:
 			navigation = append(navigation, doc)
-		default:
-			// location blocks only; skip other contexts
+		case game.ContextStart, game.ContextFinish:
+			// not valid for location blocks; skip
 		}
 	}
 

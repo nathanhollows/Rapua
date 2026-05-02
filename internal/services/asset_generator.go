@@ -246,7 +246,11 @@ func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName stri
 	pdf.SetFont("OpenSans", "", locationNameFontSize)
 	pdf.SetY(40)                                                      //nolint:mnd // PDF layout: A4 page coordinates
 	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.Cell(40, 70, page.LocationName)                               //nolint:mnd // PDF layout: A4 page cell dimensions
+	pdf.Cell(
+		40, //nolint:mnd // PDF layout: A4 page cell width
+		70, //nolint:mnd // PDF layout: A4 page cell height
+		page.LocationName,
+	)
 
 	// Add the QR code
 	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {

@@ -53,13 +53,13 @@ const (
 //
 //nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type GameStructure struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`                       // Empty for root group, required for visible groups
-	Color           string         `json:"color"`                      // Empty for root, required for visible groups (e.g., "primary", "secondary")
-	Routing         RouteStrategy  `json:"routing"`                    // ordered, randomised, free_roam, secret
-	CompletionType  CompletionType `json:"completion_type"`            // all, minimum
-	MinimumRequired int            `json:"minimum_required,omitempty"` // For minimum completion type
-	MaxNext         int            `json:"max_next,omitempty"`         // Max locations to show for random routing (0 = unlimited)
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`                       // Empty for root group, required for visible groups
+	Color           string           `json:"color"`                      // Empty for root, required for visible groups (e.g., "primary", "secondary")
+	Routing         RouteStrategy    `json:"routing"`                    // ordered, randomised, free_roam, secret
+	CompletionType  CompletionType   `json:"completion_type"`            // all, minimum
+	MinimumRequired int              `json:"minimum_required,omitempty"` // For minimum completion type
+	MaxNext         int              `json:"max_next,omitempty"`         // Max locations to show for random routing (0 = unlimited)
 	AutoAdvance     bool             `json:"auto_advance"`               // If true, auto-move to next group when CompletionType met
 	IsRoot          bool             `json:"is_root"`                    // true ONLY for the invisible root container
 	When            *game.WhenClause `json:"when,omitempty"`             // Visibility condition; nil = always visible. No migration needed: stored inside the JSON blob in instances.game_structure.

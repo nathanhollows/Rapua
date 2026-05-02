@@ -59,7 +59,7 @@ func TestChildDoc_UnmarshalJSON_Location(t *testing.T) {
 }
 
 func TestChildDoc_UnmarshalJSON_Group(t *testing.T) {
-	input := `{"group":{"name":"My Group","color":"primary","routing":"free_roam","navigation":"map","completion":"all","children":[]}}`
+	input := `{"group":{"name":"My Group","color":"primary","routing":"free_roam","completion":"all","children":[]}}`
 	var c game.ChildDoc
 	require.NoError(t, json.Unmarshal([]byte(input), &c))
 	require.NotNil(t, c.Group)
