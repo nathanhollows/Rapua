@@ -130,14 +130,11 @@ func TestGenerateFullSpec_HasAllContexts(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_HasEnums checks routing, navigation, and completion enums are non-empty.
+// TestGenerateFullSpec_HasEnums checks routing and completion enums are non-empty.
 func TestGenerateFullSpec_HasEnums(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 	if len(spec.Enums.Routing) == 0 {
 		t.Error("GenerateFullSpec().Enums.Routing is empty")
-	}
-	if len(spec.Enums.Navigation) == 0 {
-		t.Error("GenerateFullSpec().Enums.Navigation is empty")
 	}
 	if len(spec.Enums.Completion) == 0 {
 		t.Error("GenerateFullSpec().Enums.Completion is empty")
@@ -354,23 +351,4 @@ func TestGenerateFullSpec_ConditionOpsEnum(t *testing.T) {
 			t.Errorf("condition_ops missing operator %q", op)
 		}
 	}
-}
-
-// TestGenerateFullSpec_SettingsHasVars verifies settings schema contains a "vars" field.
-func TestGenerateFullSpec_SettingsHasVars(t *testing.T) {
-	spec := specgen.GenerateFullSpec()
-
-	for _, f := range spec.Document.Fields {
-		if f.Name != "settings" {
-			continue
-		}
-		for _, sf := range f.Fields {
-			if sf.Name == "vars" {
-				return
-			}
-		}
-		t.Error("settings schema missing \"vars\" field")
-		return
-	}
-	t.Error("document schema missing \"settings\" field")
 }

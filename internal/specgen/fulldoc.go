@@ -21,10 +21,9 @@ type ObjectSpec struct {
 
 // EnumDefs holds all enum definitions used in the document format.
 type EnumDefs struct {
-	Routing       []EnumValue `json:"routing"`
-	Navigation    []EnumValue `json:"navigation"`
-	Completion    []EnumValue `json:"completion"`
-	ConditionOps  []EnumValue `json:"condition_ops"`
+	Routing      []EnumValue `json:"routing"`
+	Completion   []EnumValue `json:"completion"`
+	ConditionOps []EnumValue `json:"condition_ops"`
 }
 
 // EnumValue is a single allowed enum value with a human-readable label and description.
@@ -70,7 +69,7 @@ func whenFieldSpec() game.FieldSpec {
 				Name:        "var",
 				Type:        "string",
 				Required:    true,
-				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count, game.status. Creator-defined via block sets. External via settings.vars.",
+				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count, game.status. Creator-defined via block sets.",
 			},
 			{
 				Name:        "op",
@@ -115,8 +114,9 @@ func whenFieldSpec() game.FieldSpec {
 func setsFieldSpec() game.FieldSpec {
 	return game.FieldSpec{
 		Name:        "sets",
-		Type:        "object",
-		Description: "Variables to set when this block's trigger fires. Key: freeform variable name. Value: trigger keyword (block-type specific; see block spec for supported triggers). Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
+		Type:        "list",
+		Description: "Variable names to set to \"true\" when this block completes. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
+		Items:       &game.FieldSpec{Type: "string"},
 	}
 }
 
@@ -132,12 +132,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "enum",
 			Required:    true,
 			Description: "How players are routed through locations. See enums.routing.",
-		},
-		{
-			Name:        "navigation",
-			Type:        "enum",
-			Required:    true,
-			Description: "How the navigation UI is presented. See enums.navigation.",
 		},
 		{
 			Name:        "completion",
@@ -160,7 +154,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 					{
 						Name:        "group",
 						Type:        "object",
-						Description: "A named sub-group with its own routing/navigation/completion settings.",
+						Description: "A named sub-group with its own routing and completion settings.",
 					},
 				},
 			}},
@@ -224,11 +218,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
 					{Name: "enable_bonus_points", Type: "bool", Description: "Enable bonus points on blocks."},
 					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
-					{
-						Name:        "vars",
-						Type:        "object",
-						Description: "External variables set by admins or via API. Each key is a variable name; value is an object with a default field. Readable in when clauses.",
-					},
 				},
 			},
 			{
@@ -247,7 +236,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Name:        "structure",
 				Type:        "object",
 				Required:    true,
-				Description: "Root group defining routing, navigation, and the location tree.",
+				Description: "Root group defining routing and the location tree.",
 				Fields:      structureFields,
 			},
 			{
@@ -278,25 +267,6 @@ func enumDefs() EnumDefs {
 				Value:       "secret",
 				Label:       "Secret",
 				Description: "Locations never explicitly shown; players access them out of sequence.",
-			},
-		},
-		Navigation: []EnumValue{
-			{Value: "map", Label: "Map Only", Description: "Players are shown a map with unlabelled pins."},
-			{Value: "labelled_map", Label: "Labelled Map", Description: "Players are shown a map with location names."},
-			{
-				Value:       "location_list",
-				Label:       "Location List",
-				Description: "Players are shown a list of location names.",
-			},
-			{
-				Value:       "custom",
-				Label:       "Custom Clues",
-				Description: "Players see custom content (e.g. randomised clues) built with the block builder.",
-			},
-			{
-				Value:       "tasks",
-				Label:       "Tasks",
-				Description: "Players see a scavenger-hunt-style checklist with completion tracking.",
 			},
 		},
 		Completion: []EnumValue{

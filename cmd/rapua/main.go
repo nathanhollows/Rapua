@@ -122,7 +122,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	gameStructureService.SetRelationLoader(locationService)
 
-	navigationService := services.NewNavigationService(locationRepo, teamRepo, teamVarStateRepo, gameStructureService, blockService, logger)
+	navigationService := services.NewNavigationService(
+		locationRepo,
+		teamRepo,
+		teamVarStateRepo,
+		gameStructureService,
+		blockService,
+		logger,
+	)
 	checkInService := services.NewCheckInService(
 		checkInRepo, locationRepo, teamRepo,
 		locationStatsService, navigationService, blockService, teamVarStateRepo,

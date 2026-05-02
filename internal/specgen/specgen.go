@@ -12,7 +12,9 @@ import (
 )
 
 // interactiveBlockTypes is the set of block types that support the `sets` field.
-// Content-only blocks (text, alert, image, etc.) do not support sets.
+// Content-only blocks (text, alert, image, etc.) do not support sets. Never mutated after init.
+//
+//nolint:gochecknoglobals // lookup table initialised once, never written after init
 var interactiveBlockTypes = map[string]bool{
 	"quiz":      true,
 	"password":  true,
