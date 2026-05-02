@@ -191,19 +191,19 @@ func TestFreeTextBlock_GetResponse(t *testing.T) {
 	})
 
 	t.Run("nil state", func(t *testing.T) {
-		assert.Equal(t, "", block.GetResponse(nil))
+		assert.Empty(t, block.GetResponse(nil))
 	})
 
 	t.Run("nil player data", func(t *testing.T) {
 		state := &blocks.MockPlayerState{}
-		assert.Equal(t, "", block.GetResponse(state))
+		assert.Empty(t, block.GetResponse(state))
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
 		state := &blocks.MockPlayerState{
 			PlayerData: json.RawMessage(`not-json`),
 		}
-		assert.Equal(t, "", block.GetResponse(state))
+		assert.Empty(t, block.GetResponse(state))
 	})
 }
 

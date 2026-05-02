@@ -73,7 +73,7 @@ func (b *FreeTextBlock) ToYAML() map[string]any {
 // Validation and Points Calculation
 
 func (b *FreeTextBlock) SupportsVariableSets() bool { return true }
-func (b *FreeTextBlock) RequiresValidation() bool  { return true }
+func (b *FreeTextBlock) RequiresValidation() bool   { return true }
 
 func (b *FreeTextBlock) ValidatePlayerInput(
 	state PlayerState,

@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+const (
+	opEq    = "eq"
+	opNeq   = "neq"
+	opGt    = "gt"
+	opLt    = "lt"
+	opGte   = "gte"
+	opLte   = "lte"
+	opIn    = "in"
+	opNotIn = "not_in"
+)
+
 // Condition is a single structured visibility condition.
 //
 // Bare check (op omitted): the variable must be truthy.
@@ -28,11 +39,6 @@ type Condition struct {
 type WhenClause struct {
 	AllOf []Condition `json:"all_of,omitempty"`
 	AnyOf []Condition `json:"any_of,omitempty"`
-}
-
-// VarDef defines an external variable with its default value.
-type VarDef struct {
-	Default string `json:"default"`
 }
 
 // VarResolver looks up variable values by name.
@@ -109,7 +115,7 @@ func EvaluateWhen(when *WhenClause, resolver VarResolver) bool {
 // evalOp compares raw (string from resolver) against expected using op.
 func evalOp(raw, op string, expected any) bool {
 	switch op {
-	case "eq":
+	case opEq:
 		// If expected is numeric, prefer numeric equality so "5.0" == float64(5).
 		// Falls back to string comparison if either side cannot be parsed.
 		rawF, rawErr := strconv.ParseFloat(strings.TrimSpace(raw), 64)
@@ -118,18 +124,18 @@ func evalOp(raw, op string, expected any) bool {
 			return rawF == expF
 		}
 		return raw == toString(expected)
-	case "neq":
+	case opNeq:
 		rawF, rawErr := strconv.ParseFloat(strings.TrimSpace(raw), 64)
 		expF, expErr := toFloat64(expected)
 		if rawErr == nil && expErr == nil {
 			return rawF != expF
 		}
 		return raw != toString(expected)
-	case "gt", "lt", "gte", "lte":
+	case opGt, opLt, opGte, opLte:
 		return compareNumeric(raw, op, expected)
-	case "in":
+	case opIn:
 		return containsValue(raw, expected)
-	case "not_in":
+	case opNotIn:
 		return !containsValue(raw, expected)
 	}
 	return false
@@ -154,26 +160,26 @@ func compareNumeric(raw, op string, expected any) bool {
 		rawStr := raw
 		expStr := toString(expected)
 		switch op {
-		case "gt":
+		case opGt:
 			return rawStr > expStr
-		case "lt":
+		case opLt:
 			return rawStr < expStr
-		case "gte":
+		case opGte:
 			return rawStr >= expStr
-		case "lte":
+		case opLte:
 			return rawStr <= expStr
 		}
 		return false
 	}
 
 	switch op {
-	case "gt":
+	case opGt:
 		return rawF > expF
-	case "lt":
+	case opLt:
 		return rawF < expF
-	case "gte":
+	case opGte:
 		return rawF >= expF
-	case "lte":
+	case opLte:
 		return rawF <= expF
 	}
 	return false
@@ -221,10 +227,10 @@ func containsValue(raw string, expected any) bool {
 // Value implements driver.Valuer for bun/sql database storage (TEXT column).
 // Returns nil (SQL NULL) when the clause is empty.
 //
-//nolint:recvcheck // Value requires value receiver per driver.Valuer; Scan requires pointer receiver per sql.Scanner
-func (w WhenClause) Value() (driver.Value, error) {
+
+func (w *WhenClause) Value() (driver.Value, error) {
 	if len(w.AllOf) == 0 && len(w.AnyOf) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil driver.Value = SQL NULL; nil error = no failure
 	}
 	data, err := json.Marshal(w)
 	if err != nil {

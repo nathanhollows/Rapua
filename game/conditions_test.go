@@ -51,12 +51,36 @@ func TestEvaluate_Not(t *testing.T) {
 func TestEvaluate_NotWithOperator(t *testing.T) {
 	vars := mapResolver{"color": "red", "count": "5"}
 
-	assert.False(t, game.Evaluate(game.Condition{Var: "color", Op: "eq", Value: "red", Not: true}, vars), "not (color eq red) = false")
-	assert.True(t, game.Evaluate(game.Condition{Var: "color", Op: "eq", Value: "blue", Not: true}, vars), "not (color eq blue) = true")
-	assert.False(t, game.Evaluate(game.Condition{Var: "count", Op: "gt", Value: float64(3), Not: true}, vars), "not (count gt 3) = false")
-	assert.True(t, game.Evaluate(game.Condition{Var: "count", Op: "gt", Value: float64(10), Not: true}, vars), "not (count gt 10) = true")
-	assert.False(t, game.Evaluate(game.Condition{Var: "color", Op: "in", Value: []any{"red", "blue"}, Not: true}, vars), "not (color in [red,blue]) = false")
-	assert.True(t, game.Evaluate(game.Condition{Var: "color", Op: "in", Value: []any{"green", "blue"}, Not: true}, vars), "not (color in [green,blue]) = true")
+	assert.False(
+		t,
+		game.Evaluate(game.Condition{Var: "color", Op: "eq", Value: "red", Not: true}, vars),
+		"not (color eq red) = false",
+	)
+	assert.True(
+		t,
+		game.Evaluate(game.Condition{Var: "color", Op: "eq", Value: "blue", Not: true}, vars),
+		"not (color eq blue) = true",
+	)
+	assert.False(
+		t,
+		game.Evaluate(game.Condition{Var: "count", Op: "gt", Value: float64(3), Not: true}, vars),
+		"not (count gt 3) = false",
+	)
+	assert.True(
+		t,
+		game.Evaluate(game.Condition{Var: "count", Op: "gt", Value: float64(10), Not: true}, vars),
+		"not (count gt 10) = true",
+	)
+	assert.False(
+		t,
+		game.Evaluate(game.Condition{Var: "color", Op: "in", Value: []any{"red", "blue"}, Not: true}, vars),
+		"not (color in [red,blue]) = false",
+	)
+	assert.True(
+		t,
+		game.Evaluate(game.Condition{Var: "color", Op: "in", Value: []any{"green", "blue"}, Not: true}, vars),
+		"not (color in [green,blue]) = true",
+	)
 }
 
 // --- Operators ---
