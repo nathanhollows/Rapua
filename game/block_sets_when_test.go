@@ -15,10 +15,10 @@ type concreteBlock struct {
 	Content string `json:"content,omitempty"`
 }
 
-func (b *concreteBlock) GetName() string        { return "" }
-func (b *concreteBlock) GetDescription() string { return "" }
-func (b *concreteBlock) GetIconSVG() string     { return "" }
-func (b *concreteBlock) RequiresValidation() bool { return false }
+func (b *concreteBlock) GetName() string                             { return "" }
+func (b *concreteBlock) GetDescription() string                      { return "" }
+func (b *concreteBlock) GetIconSVG() string                          { return "" }
+func (b *concreteBlock) RequiresValidation() bool                    { return false }
 func (b *concreteBlock) UpdateBlockData(_ map[string][]string) error { return nil }
 func (b *concreteBlock) ValidatePlayerInput(state game.PlayerState, _ map[string][]string) (game.PlayerState, error) {
 	return state, nil
@@ -37,15 +37,12 @@ func TestBaseBlock_GetSets_NilByDefault(t *testing.T) {
 func TestBaseBlock_GetSets_PopulatedByParseData(t *testing.T) {
 	raw := json.RawMessage(`{
 		"content": "hello",
-		"sets": {"took_bergamot": "correct", "visited_lab": "attempted"}
+		"sets": ["took_bergamot", "visited_lab"]
 	}`)
 	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
 	require.NoError(t, b.ParseData())
 
-	assert.Equal(t, map[string]string{
-		"took_bergamot": "correct",
-		"visited_lab":   "attempted",
-	}, b.GetSets())
+	assert.Equal(t, []string{"took_bergamot", "visited_lab"}, b.GetSets())
 	assert.Equal(t, "hello", b.Content)
 }
 

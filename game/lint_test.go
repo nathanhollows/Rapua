@@ -12,10 +12,10 @@ import (
 
 // mockRegistry implements game.BlockRegistry for testing.
 type mockRegistry struct {
-	validTypes   map[string]bool
-	contexts     map[string][]game.BlockContext
-	knownFields  map[string][]string
-	interactive  map[string]bool
+	validTypes  map[string]bool
+	contexts    map[string][]game.BlockContext
+	knownFields map[string][]string
+	interactive map[string]bool
 }
 
 func (m *mockRegistry) IsValidType(blockType string) bool {
@@ -39,6 +39,14 @@ func (m *mockRegistry) KnownFields(t string) []string {
 
 func (m *mockRegistry) IsInteractive(blockType string) bool {
 	return m.interactive[blockType]
+}
+
+func (m *mockRegistry) DocSetsVars(_ string, _ game.BlockDoc) []string {
+	return nil
+}
+
+func (m *mockRegistry) ValidateBlock(_, _ string, _ game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
+	return nil, nil
 }
 
 func newTestRegistry() *mockRegistry {
@@ -675,7 +683,7 @@ func TestLint_DefinedVar_NoWarning(t *testing.T) {
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{
 			"type": "quiz",
-			"sets": map[string]any{"score": "correct"},
+			"sets": []any{"score"},
 		},
 	}
 	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
@@ -698,7 +706,7 @@ func TestLint_WhenUnreachableVar_Min1AutoAdvance(t *testing.T) {
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	// First location sets "visited_loc1"
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+		{"type": "quiz", "sets": []any{"visited_loc1"}},
 	}
 	// Add a second location that depends on "visited_loc1" being set
 	secondLoc := &game.LocationDoc{
@@ -730,7 +738,7 @@ func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
 	doc.Structure.Children[0].Group.MinimumRequired = 2
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+		{"type": "quiz", "sets": []any{"visited_loc1"}},
 	}
 	secondLoc := &game.LocationDoc{
 		Slug: "loc2",
@@ -754,7 +762,7 @@ func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
 func TestLint_UnusedVar(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+		{"type": "quiz", "sets": []any{"score"}},
 	}
 	// "score" is set but no when clause references it
 	result := game.Lint(doc, newTestRegistry())
@@ -768,7 +776,7 @@ func TestLint_UnusedVar(t *testing.T) {
 func TestLint_UnusedVar_UsedElsewhere_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+		{"type": "quiz", "sets": []any{"score"}},
 	}
 	// A second location's when references "score" — should suppress UNUSED_VAR
 	secondLoc := &game.LocationDoc{
@@ -815,7 +823,7 @@ func TestLint_WhenOnNonInteractiveBlock_UndefinedVar(t *testing.T) {
 func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+		{"type": "quiz", "sets": []any{"score"}},
 		{
 			"type": "text",
 			"when": map[string]any{
@@ -834,7 +842,7 @@ func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
 func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "text", "sets": map[string]any{"foo": "bar"}},
+		{"type": "text", "sets": []any{"foo"}},
 	}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
@@ -949,7 +957,7 @@ func TestLint_WhenUnreachableVar_AutoAdvanceFalse_NoWarning(t *testing.T) {
 
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"visited_loc1": "correct"}},
+		{"type": "quiz", "sets": []any{"visited_loc1"}},
 	}
 	secondLoc := &game.LocationDoc{
 		Slug: "loc2",
@@ -1094,7 +1102,7 @@ func TestLint_WhenVacuous_EmptyAllOfAnyOf(t *testing.T) {
 func TestLint_WhenWithConditions_NotVacuous(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": map[string]any{"score": "correct"}},
+		{"type": "quiz", "sets": []any{"score"}},
 	}
 	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
 		AllOf: []game.Condition{{Var: "score"}},

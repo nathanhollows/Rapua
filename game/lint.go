@@ -46,8 +46,8 @@ func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
 }
 
 type linter struct {
-	doc      *GameDoc
-	registry BlockRegistry
+	doc         *GameDoc
+	registry    BlockRegistry
 	result      LintResult
 	slugs       map[string]bool
 	blockIDs    map[string]bool
@@ -166,7 +166,7 @@ func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
 	}
 }
 
-func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) { //nolint:gocognit
+func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //nolint:gocognit
 	typVal, ok := b["type"]
 	if !ok {
 		l.errorf(path+".type", "MISSING_BLOCK_TYPE", "block is missing required \"type\" field")
@@ -216,9 +216,17 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) { //no
 		}
 		// sets is only valid on interactive blocks (those that require player input).
 		if _, hasSets := b["sets"]; hasSets && !l.registry.IsInteractive(typStr) {
-			l.warnf(path+".sets", "SETS_ON_CONTENT_BLOCK",
-				"block type %q does not support \"sets\"; only interactive blocks (quiz, password, pincode, etc.) may set variables", typStr)
+			l.warnf(
+				path+".sets",
+				"SETS_ON_CONTENT_BLOCK",
+				"block type %q does not support \"sets\"; only interactive blocks (quiz, password, pincode, etc.) may set variables",
+				typStr,
+			)
 		}
+		// Block-type-specific structural validation.
+		errs, warns := l.registry.ValidateBlock(typStr, path, b)
+		l.result.Errors = append(l.result.Errors, errs...)
+		l.result.Warnings = append(l.result.Warnings, warns...)
 	}
 }
 
@@ -446,7 +454,7 @@ func (l *linter) collectAllDefinedVars() {
 
 func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
 	for _, b := range blocks {
-		for _, v := range blockDocSetsVars(b) {
+		for _, v := range l.blockDocSetsVars(b) {
 			l.definedVars[v] = true
 		}
 	}
@@ -455,11 +463,15 @@ func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
 func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[string]bool) {
 	for _, child := range children {
 		if child.Location != nil {
-			for _, v := range blockDocSetsVars(child.Location.Content...) {
-				vars[v] = true
+			for _, b := range child.Location.Content {
+				for _, v := range l.blockDocSetsVars(b) {
+					vars[v] = true
+				}
 			}
-			for _, v := range blockDocSetsVars(child.Location.Navigation...) {
-				vars[v] = true
+			for _, b := range child.Location.Navigation {
+				for _, v := range l.blockDocSetsVars(b) {
+					vars[v] = true
+				}
 			}
 		} else if child.Group != nil {
 			l.collectVarsFromChildrenIntoSet(child.Group.Children, vars)
@@ -602,7 +614,7 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 			// Block-level when: exclude vars set by this location's own blocks.
 			// "Self-reveal" — block B sets x, block C on the same location has when:{var:x} —
 			// is valid; the sequence B→x→C plays out within a single location visit.
-			crossVars := groupVarsExcludingSelf(groupVars, loc.Content, loc.Navigation)
+			crossVars := l.groupVarsExcludingSelf(groupVars, loc.Content, loc.Navigation)
 			for j, b := range loc.Content {
 				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
 				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, crossVars)
@@ -620,14 +632,13 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 // groupVarsExcludingSelf returns a copy of groupVars with vars set by the given
 // block slices removed. Used so that same-location setter+reference pairs do not
 // trigger WHEN_UNREACHABLE_VAR (the self-reveal pattern is valid within one location visit).
-func groupVarsExcludingSelf(groupVars map[string]bool, blockSlices ...[]BlockDoc) map[string]bool {
-	selfVars := blockDocSetsVars(func() []BlockDoc {
-		var all []BlockDoc
-		for _, s := range blockSlices {
-			all = append(all, s...)
+func (l *linter) groupVarsExcludingSelf(groupVars map[string]bool, blockSlices ...[]BlockDoc) map[string]bool {
+	var selfVars []string
+	for _, slice := range blockSlices {
+		for _, b := range slice {
+			selfVars = append(selfVars, l.blockDocSetsVars(b)...)
 		}
-		return all
-	}()...)
+	}
 	if len(selfVars) == 0 {
 		return groupVars
 	}
@@ -661,20 +672,23 @@ func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map
 	}
 }
 
-// blockDocSetsVars returns all variable names set by the given blocks via "sets".
-func blockDocSetsVars(blocks ...BlockDoc) []string {
+// blockDocSetsVars returns all variable names that the given block doc defines.
+// It reads from the standard top-level "sets" list and, via the registry,
+// from block-type-specific sub-fields (e.g. options[*].sets on a choice block).
+func (l *linter) blockDocSetsVars(b BlockDoc) []string {
 	var vars []string
-	for _, b := range blocks {
-		raw, ok := b["sets"]
-		if !ok {
-			continue
+	if raw, ok := b["sets"]; ok {
+		if arr, ok := raw.([]any); ok {
+			for _, item := range arr {
+				if s, ok := item.(string); ok && s != "" {
+					vars = append(vars, s)
+				}
+			}
 		}
-		m, ok := raw.(map[string]any)
-		if !ok {
-			continue
-		}
-		for k := range m {
-			vars = append(vars, k)
+	}
+	if l.registry != nil {
+		if t, ok := b["type"].(string); ok {
+			vars = append(vars, l.registry.DocSetsVars(t, b)...)
 		}
 	}
 	return vars
@@ -686,7 +700,7 @@ func blockDocSetsVars(blocks ...BlockDoc) []string {
 func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 	raw, ok := b["when"]
 	if !ok {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil clause = absent, not an error
 	}
 	data, err := json.Marshal(raw)
 	if err != nil {

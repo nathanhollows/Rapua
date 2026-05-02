@@ -25,6 +25,9 @@ func LintJSON(data []byte, registry BlockRegistry) LintResult {
 }
 
 // Known JSON field sets for each structural type.
+// These maps are effectively constant; they are never mutated after init.
+//
+//nolint:gochecknoglobals // lookup tables initialised once, never written after init
 var (
 	knownGameDocFields = map[string]bool{
 		"rapua": true, "id": true, "name": true,
