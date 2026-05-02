@@ -1,7 +1,7 @@
 ---
 title: "Divider"
 sidebar: true
-order: 6
+order: 7
 ---
 
 # Divider Block

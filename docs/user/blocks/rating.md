@@ -1,7 +1,7 @@
 ---
 title: "Rating"
 sidebar: true
-order: 13
+order: 15
 tag: new
 ---
 

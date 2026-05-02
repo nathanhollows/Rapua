@@ -80,6 +80,9 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "map":
 		b := block.(*blocks.MapBlock)
 		return mapAdmin(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choiceAdmin(settings, *b)
 	}
 	return nil
 }
@@ -158,6 +161,9 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "map":
 		b := block.(*blocks.MapBlock)
 		return mapPlayer(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choicePlayer(settings, *b, state)
 	}
 	return nil
 }
@@ -236,6 +242,9 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "map":
 		b := block.(*blocks.MapBlock)
 		return mapPlayer(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choicePlayerUpdate(settings, *b, state)
 	}
 	return nil
 }

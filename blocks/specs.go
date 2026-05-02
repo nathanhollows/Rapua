@@ -373,6 +373,34 @@ func (b *FreeTextBlock) GetSpec() game.BlockSpec {
 	}
 }
 
+func (b *ChoiceBlock) GetSpec() game.BlockSpec {
+	return game.BlockSpec{
+		Type:        "choice",
+		Name:        "Choice",
+		Description: "Presents labelled options; selecting one sets a boolean variable.",
+		Contexts:    []string{"location_content"},
+		Fields: []game.FieldSpec{
+			{Name: "prompt", Type: "string", Required: true,
+				Description: "Question or instruction shown above the choices"},
+			{Name: "button_text", Type: "string", Required: false,
+				Description: "Label for the submit button (default: \"Confirm choice\")"},
+			{Name: "multi_select", Type: "bool", Required: false,
+				Description: "Allow selecting multiple options (default: false — single choice)"},
+			{Name: "options", Type: "list", Required: true,
+				Description: "Choices presented to the player",
+				Items: &game.FieldSpec{
+					Type: "object",
+					Fields: []game.FieldSpec{
+						{Name: "label", Type: "string", Required: true,
+							Description: "Display text for this choice"},
+						{Name: "sets", Type: "string", Required: true,
+							Description: "Variable name set to \"true\" when this choice is selected"},
+					},
+				}},
+		},
+	}
+}
+
 func (b *YoutubeBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "youtube",

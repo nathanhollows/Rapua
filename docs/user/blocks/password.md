@@ -1,7 +1,7 @@
 ---
 title: "Password"
 sidebar: true
-order: 10
+order: 12
 ---
 
 # Password Block

@@ -1,7 +1,7 @@
 ---
 title: "Free Text"
 sidebar: true
-order: 7
+order: 8
 tag: new
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Sorting"
 sidebar: true
-order: 16
+order: 18
 ---
 
 # Sorting Block

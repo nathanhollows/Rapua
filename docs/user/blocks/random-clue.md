@@ -1,7 +1,7 @@
 ---
 title: "Random Clue"
 sidebar: true
-order: 15
+order: 17
 ---
 
 # Random Clue Block

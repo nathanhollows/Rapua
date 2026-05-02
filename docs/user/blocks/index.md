@@ -1,7 +1,7 @@
 ---
 title: "Content Blocks"
 sidebar: true
-order: 22
+order: 24
 ---
 
 # Content blocks
@@ -33,6 +33,7 @@ These blocks allow you to create interactive elements in your game that require 
 
 - [Broker](/docs/user/blocks/broker)
 - [Checklist](/docs/user/blocks/checklist)
+- [Choice](/docs/user/blocks/choice)
 - [Clue](/docs/user/blocks/clue)
 - [Password](/docs/user/blocks/password)
 - [Photo](/docs/user/blocks/photo)

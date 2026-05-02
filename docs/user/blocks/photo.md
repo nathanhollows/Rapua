@@ -1,7 +1,7 @@
 ---
 title: "Photo"
 sidebar: true
-order: 11
+order: 13
 ---
 
 # Photo Block
