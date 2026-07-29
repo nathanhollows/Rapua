@@ -14,7 +14,7 @@ const (
 )
 
 // PlayerVarResolver implements game.VarResolver by composing two state layers:
-//  1. Built-in state (points, game.status, game.team_count, location.*.visited, location.*.checked_in, group.*.completed)
+//  1. Built-in state (points, game.team_count, location.*.visited, location.*.checked_in, group.*.completed)
 //  2. Creator-defined vars (from team_var_states, set by block `sets` triggers)
 //
 // Priority: built-in > creator. Unknown vars return ("", false).
@@ -56,8 +56,6 @@ func (r *PlayerVarResolver) resolveBuiltIn(name string) (string, bool) {
 	switch name {
 	case "points":
 		return strconv.Itoa(r.team.Points), true
-	case "game.status":
-		return strings.ToLower(r.team.Instance.GetStatus().String()), true
 	case "game.team_count":
 		return strconv.Itoa(r.teamCount), true
 	}

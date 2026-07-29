@@ -719,12 +719,12 @@ func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 //
 // Built-ins (from specgen.BuiltInVarSpecs):
 //
-//	points, game.status, game.team_count
+//	points, game.team_count
 //	location.<slug>.visited, location.<slug>.checked_in
 //	group.<name>.completed
 func isBuiltInVar(name string) bool {
 	switch name {
-	case "points", "game.status", "game.team_count":
+	case "points", "game.team_count":
 		return true
 	}
 	if after, ok := strings.CutPrefix(name, "location."); ok {

@@ -69,7 +69,7 @@ func whenFieldSpec() game.FieldSpec {
 				Name:        "var",
 				Type:        "string",
 				Required:    true,
-				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count, game.status. Creator-defined via block sets.",
+				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count. Creator-defined via block sets.",
 			},
 			{
 				Name:        "op",
@@ -321,11 +321,6 @@ func builtInVarSpecs() []BuiltInVarSpec {
 			Var:         "game.team_count",
 			Type:        "int",
 			Description: "Number of teams with HasStarted == true in this game instance.",
-		},
-		{
-			Var:         "game.status",
-			Type:        "string",
-			Description: "Current game status. One of: active, scheduled, closed.",
 		},
 	}
 }

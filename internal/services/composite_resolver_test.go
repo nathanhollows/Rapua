@@ -7,20 +7,12 @@ import (
 	"github.com/nathanhollows/Rapua/v7/internal/services"
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/uptrace/bun"
 )
 
 func makeTeam(points int, checkIns []models.CheckIn) *models.Team {
 	return &models.Team{
 		Points:   points,
 		CheckIns: checkIns,
-	}
-}
-
-func makeTeamWithInstance(points int, instance models.Instance) *models.Team {
-	return &models.Team{
-		Points:   points,
-		Instance: instance,
 	}
 }
 
@@ -151,40 +143,6 @@ func TestCompositeResolver_NilMaps(t *testing.T) {
 
 	_, ok = r.ResolveVar("missing")
 	assert.False(t, ok)
-}
-
-func TestPlayerVarResolver_GameStatus(t *testing.T) {
-	now := time.Now()
-
-	tests := []struct {
-		name     string
-		instance models.Instance
-		want     string
-	}{
-		{
-			name:     "active",
-			instance: models.Instance{StartTime: bun.NullTime{Time: now.Add(-1 * time.Hour)}},
-			want:     "active",
-		},
-		{
-			name:     "scheduled",
-			instance: models.Instance{StartTime: bun.NullTime{Time: now.Add(1 * time.Hour)}},
-			want:     "scheduled",
-		},
-		{
-			name:     "closed (no start time)",
-			instance: models.Instance{},
-			want:     "closed",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := services.NewPlayerVarResolver(makeTeamWithInstance(0, tt.instance), nil)
-			val, ok := r.ResolveVar("game.status")
-			assert.True(t, ok)
-			assert.Equal(t, tt.want, val)
-		})
-	}
 }
 
 func TestPlayerVarResolver_TeamCount(t *testing.T) {

@@ -324,7 +324,7 @@ func TestGenerateFullSpec_BuiltInVars(t *testing.T) {
 		}
 	}
 
-	expected := []string{"points", "game.status", "game.team_count"}
+	expected := []string{"points", "game.team_count"}
 	for _, name := range expected {
 		if !varNames[name] {
 			t.Errorf("built_in_vars missing %q", name)
