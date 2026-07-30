@@ -113,28 +113,20 @@ templ taskAdmin(_ models.InstanceSettings, block blocks.TaskBlock) {
 						Optional
 					</span>
 				</legend>
-				<select
+				<input
+					type="text"
 					name="icon"
-					class="select w-full"
-				>
-					<option
-						value=""
-						if block.Icon == "" {
-							selected="selected"
-						}
-					>None</option>
+					list={ fmt.Sprintf("icon-options-%s", block.ID) }
+					value={ block.Icon }
+					class="input w-full"
+					placeholder="e.g. camera"
+					autocomplete="off"
+				/>
+				<datalist id={ fmt.Sprintf("icon-options-%s", block.ID) }>
 					for _, opt := range taskIconOptions {
-						<option
-							value={ opt.Icon }
-							class={ fmt.Sprintf("bg-%s text-%s-content", opt.Color, opt.Color) }
-							if block.Icon == opt.Icon {
-								selected="selected"
-							}
-						>
-							{ opt.Name }
-						</option>
+						<option value={ opt.Icon }>{ opt.Name }</option>
 					}
-				</select>
+				</datalist>
 				<div class="label text-wrap">
 					Choose an icon to display next to the task.
 				</div>
