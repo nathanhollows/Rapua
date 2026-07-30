@@ -22,53 +22,21 @@ templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock,
 				<input type="hidden" name="block" value={ block.ID }/>
 				<label
 					for={ fmt.Sprintf("pincode-%s", block.ID) }
-					class="form-control w-full"
+					class="form-control w-full prose-none"
 				>
-					<div
-						class="flex flex-row flex-wrap gap-2 justify-center mb-4"
-					>
-						for i := range block.Pincode {
-							<input
-								type="text"
-								name="pincode"
-								class="input input-lg validator w-12 rounded-md aspect-square text-center font-mono font-bold"
-								minlength="1"
-								maxlength="1"
-								required
-								if data.IsComplete() {
-									disabled
-									value={ string(block.Pincode[i]) }
-								}
-								_="on input
-								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								else
-									set event.target.value to ''
-								end
-							on keydown
-								if event.key is in ['Backspace', 'Delete'] then
-									set event.target.value to ''
-									set input to event.target.previousElementSibling
-									input.focus()
-									event.preventDefault()
-								else if event.key is in ['ArrowLeft'] then
-									set input to event.target.previousElementSibling
-									if input != null then
-										input.focus()
-									end
-								else if event.key is in ['ArrowRight'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								end
-							"
-							/>
+					<label class="otp otp-lg mb-4 mx-auto">
+						for range block.Pincode {
+							<span></span>
 						}
-					</div>
+						<input
+							type="text"
+							name="pincode"
+							inputmode="numeric"
+							maxlength={ len(block.Pincode) }
+							pattern={ fmt.Sprintf("[0-9]{%d}", len(block.Pincode)) }
+							required
+						/>
+					</label>
 					if !data.IsComplete() {
 						<button type="submit" class="btn btn-primary w-full">
 							Check
