@@ -100,7 +100,6 @@ Settings that control how a game instance works.
 | completion_method | int | How location completion is determined |
 | show_team_count | bool | Whether to show the number of teams at each location |
 | enable_points | bool | Whether points are enabled for this game |
-| enable_bonus_points | bool | Whether bonus points are enabled |
 | show_leaderboard | bool | Whether to show the leaderboard to players |
 
 ### Location

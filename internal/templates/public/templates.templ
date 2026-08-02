@@ -255,15 +255,6 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 								<li>
 									Points are <strong>enabled</strong>
 								</li>
-								if link.Template.Settings.EnableBonusPoints {
-									<li>
-										Bonus points are <strong>enabled</strong>
-									</li>
-								} else {
-									<li>
-										Bonus points are <strong>disabled</strong>
-									</li>
-								}
 							} else {
 								<li>
 									Points are <strong>disabled</strong>

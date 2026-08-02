@@ -15,11 +15,10 @@ type GameDoc struct {
 
 // SettingsDoc mirrors InstanceSettings fields.
 type SettingsDoc struct {
-	MustCheckOut      bool `json:"must_check_out"`
-	ShowTeamCount     bool `json:"show_team_count"`
-	EnablePoints      bool `json:"enable_points"`
-	EnableBonusPoints bool `json:"enable_bonus_points"`
-	ShowLeaderboard   bool `json:"show_leaderboard"`
+	MustCheckOut    bool `json:"must_check_out"`
+	ShowTeamCount   bool `json:"show_team_count"`
+	EnablePoints    bool `json:"enable_points"`
+	ShowLeaderboard bool `json:"show_leaderboard"`
 }
 
 // StructureDoc represents the root group of the game structure.

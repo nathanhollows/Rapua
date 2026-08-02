@@ -39,11 +39,10 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			setup: func() *models.InstanceSettings {
 				parents := createTestParents(t, dbc)
 				return &models.InstanceSettings{
-					InstanceID:        parents.InstanceID,
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
+					InstanceID:      parents.InstanceID,
+					MustCheckOut:    gofakeit.Bool(),
+					EnablePoints:    gofakeit.Bool(),
+					ShowLeaderboard: gofakeit.Bool(),
 				}
 			},
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
@@ -59,11 +58,10 @@ func TestInstanceSettingsRepository(t *testing.T) {
 			setup: func() *models.InstanceSettings {
 				parents := createTestParents(t, dbc)
 				return &models.InstanceSettings{
-					InstanceID:        parents.InstanceID,
-					MustCheckOut:      gofakeit.Bool(),
-					EnablePoints:      gofakeit.Bool(),
-					EnableBonusPoints: gofakeit.Bool(),
-					ShowLeaderboard:   gofakeit.Bool(),
+					InstanceID:      parents.InstanceID,
+					MustCheckOut:    gofakeit.Bool(),
+					EnablePoints:    gofakeit.Bool(),
+					ShowLeaderboard: gofakeit.Bool(),
 				}
 			},
 			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
@@ -104,12 +102,11 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 
 	// Create test settings
 	settings := &models.InstanceSettings{
-		InstanceID:        parents.InstanceID,
-		MustCheckOut:      gofakeit.Bool(),
-		ShowTeamCount:     gofakeit.Bool(),
-		EnablePoints:      true,
-		EnableBonusPoints: gofakeit.Bool(),
-		ShowLeaderboard:   gofakeit.Bool(),
+		InstanceID:      parents.InstanceID,
+		MustCheckOut:    gofakeit.Bool(),
+		ShowTeamCount:   gofakeit.Bool(),
+		EnablePoints:    true,
+		ShowLeaderboard: gofakeit.Bool(),
 	}
 
 	// Create the settings first

@@ -134,7 +134,6 @@ templ CompetitionCard(settings models.InstanceSettings) {
 								checked
 							}
 							onchange="updatePreview()"
-							_={ enablePointsScript() }
 						/>
 						<div class="flex-1">
 							<span class="font-semibold text-base-content flex items-center gap-2">
@@ -143,36 +142,6 @@ templ CompetitionCard(settings models.InstanceSettings) {
 							<p class="text-sm text-base-content/60 mt-1 text-wrap">Teams earn points for checking into locations and completing activities</p>
 						</div>
 					</label>
-				</div>
-			</div>
-			<!-- Bonus Points -->
-			<div class="form-control">
-				<label class="label cursor-pointer justify-start gap-3">
-					<input
-						type="checkbox"
-						id="enableBonusPoints"
-						name="enableBonusPoints"
-						class="toggle"
-						if settings.EnableBonusPoints {
-							checked
-						}
-						onchange="updatePreview()"
-					/>
-					<div class="flex-1">
-						<span class="font-medium text-base-content flex items-center gap-2 text-wrap">
-							Bonus points for early check-ins
-						</span>
-						<p class="text-sm text-base-content/60 mt-1 text-wrap">Encourage teams to disperse and race for the first, second, and third check-in</p>
-					</div>
-				</label>
-				<div
-					id="bonusPointsDisabledMessage"
-					class="alert alert-warning alert-soft alert-outline mt-2 text-sm invisible"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-					</svg>
-					<span>Enable points before using bonus points</span>
 				</div>
 			</div>
 		</div>
@@ -250,15 +219,4 @@ func navigationDisplayScript(index int) string {
 			add @disabled to #showTeamCount
 		end
 	`
-}
-
-func enablePointsScript() string {
-	return `on click or load
-		if me.checked
-			remove @disabled from #enableBonusPoints
-			add .invisible to #bonusPointsDisabledMessage
-		else
-			add @disabled to #enableBonusPoints
-			remove .invisible from #bonusPointsDisabledMessage
-		end`
 }

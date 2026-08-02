@@ -216,7 +216,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 					},
 					{Name: "show_team_count", Type: "bool", Description: "Show how many teams are at each location."},
 					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
-					{Name: "enable_bonus_points", Type: "bool", Description: "Enable bonus points on blocks."},
 					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
 				},
 			},

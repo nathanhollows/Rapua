@@ -46,8 +46,6 @@ func (h *Handler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 
 	// Parse points
 	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
-	user.CurrentInstance.Settings.EnableBonusPoints = r.Form.Has("enableBonusPoints") &&
-		r.Form.Get("enableBonusPoints") == "on"
 
 	// Update the navigation settings
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)

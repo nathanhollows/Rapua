@@ -35,7 +35,7 @@ var (
 	}
 	knownSettingsDocFields = map[string]bool{
 		"must_check_out": true, "show_team_count": true, "enable_points": true,
-		"enable_bonus_points": true, "show_leaderboard": true,
+		"show_leaderboard": true,
 	}
 	knownStructureDocFields = map[string]bool{
 		"routing": true, "completion": true, "minimum_required": true, "children": true,

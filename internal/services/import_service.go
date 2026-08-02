@@ -224,12 +224,11 @@ func (s *ImportService) importCreate(
 
 	// Create InstanceSettings
 	settings := &models.InstanceSettings{
-		InstanceID:        newInstance.ID,
-		MustCheckOut:      doc.Settings.MustCheckOut,
-		ShowTeamCount:     doc.Settings.ShowTeamCount,
-		EnablePoints:      doc.Settings.EnablePoints,
-		EnableBonusPoints: doc.Settings.EnableBonusPoints,
-		ShowLeaderboard:   doc.Settings.ShowLeaderboard,
+		InstanceID:      newInstance.ID,
+		MustCheckOut:    doc.Settings.MustCheckOut,
+		ShowTeamCount:   doc.Settings.ShowTeamCount,
+		EnablePoints:    doc.Settings.EnablePoints,
+		ShowLeaderboard: doc.Settings.ShowLeaderboard,
 	}
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("create settings: %w", err)
@@ -413,7 +412,6 @@ func (s *ImportService) importUpdate(
 	settings.MustCheckOut = doc.Settings.MustCheckOut
 	settings.ShowTeamCount = doc.Settings.ShowTeamCount
 	settings.EnablePoints = doc.Settings.EnablePoints
-	settings.EnableBonusPoints = doc.Settings.EnableBonusPoints
 	settings.ShowLeaderboard = doc.Settings.ShowLeaderboard
 	if err := s.instanceSettingsRepo.UpdateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("update settings: %w", err)

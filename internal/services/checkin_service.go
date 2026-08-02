@@ -11,12 +11,6 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-const (
-	bonusFirstVisit  = 1.0
-	bonusSecondVisit = 0.5
-	bonusThirdVisit  = 0.2
-)
-
 type LocationStatsService interface {
 	IncrementVisitors(ctx context.Context, location *models.Location) error
 	DecrementVisitors(ctx context.Context, location *models.Location) error
@@ -74,10 +68,6 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
 
-	// The team relations loaded above include Instance and Instance.Settings
-	// Copy the instance settings to the location for bonus points calculation
-	location.Instance = team.Instance
-
 	// A team may not check in if they have previously checked in at this location
 	scanned := false
 	for _, s := range team.CheckIns {
@@ -106,54 +96,16 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 
 	// Calculate the points to award
 	var pointsForCheckInRecord int
-	var bonusPoints int
 
 	if team.Instance.Settings.MustCheckOut {
-		// Check-in-and-out mode: bonus points awarded immediately, base points on completion
-		if location.Instance.Settings.EnableBonusPoints {
-			// Calculate bonus points based on visit count
-			switch location.TotalVisits {
-			case 0:
-				bonusPoints = location.Points // First visit gets +100% bonus (2x total)
-
-			case 1:
-				bonusPoints = int(
-					float64(location.Points) * bonusSecondVisit,
-				) // Second visit gets +50% bonus (1.5x total)
-			//nolint:mnd // Magic numbers for bonus multipliers
-			case 2:
-				bonusPoints = int(
-					float64(location.Points) * bonusThirdVisit,
-				) // Third visit gets +20% bonus (1.2x total)
-			default:
-				bonusPoints = 0 // No bonus for later visits
-			}
-		}
-		// For CheckIn record: only bonus points are recorded (base points awarded at checkout)
-		pointsForCheckInRecord = bonusPoints
-		// Award bonus points to team immediately
-		team.Points += bonusPoints
+		// Check-in-and-out mode: base points awarded on checkout completion
+		pointsForCheckInRecord = 0
 
 		team.MustCheckOut = location.ID
 	} else {
 		// Check-in-only mode: full points awarded immediately
-		if location.Instance.Settings.EnableBonusPoints {
-			// Calculate total points with bonus
-			switch location.TotalVisits {
-			case 0:
-				pointsForCheckInRecord = location.Points * (1 + bonusFirstVisit) // First visit gets double points
+		pointsForCheckInRecord = location.Points
 
-			case 1:
-				pointsForCheckInRecord = int(float64(location.Points) * (1 + bonusSecondVisit)) // Second visit gets 1.5x points
-			//nolint:mnd // Magic numbers for bonus multipliers
-			case 2:
-				pointsForCheckInRecord = int(float64(location.Points) * (1 + bonusThirdVisit)) // Third visit gets 1.2x points
-			default:
-				pointsForCheckInRecord = location.Points // Regular points for all other visits
-			}
-		} else {
-			pointsForCheckInRecord = location.Points
-		}
 		// Award full points to team immediately
 		team.Points += pointsForCheckInRecord
 	}
@@ -214,9 +166,6 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 		return ErrUnfinishedCheckIn
 	}
 
-	// Copy the team's instance settings to the location for consistency
-	location.Instance = team.Instance
-
 	// Award base points on checkout completion
 	team.Points += location.Points
 
@@ -226,7 +175,7 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 		return fmt.Errorf("logging scan out: %w", err)
 	}
 
-	// Update the CheckIn record to include the base points in addition to any bonus points
+	// Update the CheckIn record to include the base points
 	// This ensures the CheckIn record shows the total points earned from this location
 	checkIn.Points += location.Points
 	err = s.checkInRepo.Update(ctx, &checkIn)

@@ -26,11 +26,10 @@ func createTestInstanceSettings(t *testing.T) *models.InstanceSettings {
 	t.Helper()
 
 	return &models.InstanceSettings{
-		InstanceID:        gofakeit.UUID(),
-		MustCheckOut:      gofakeit.Bool(),
-		ShowTeamCount:     false,
-		EnablePoints:      true,
-		EnableBonusPoints: false,
+		InstanceID:    gofakeit.UUID(),
+		MustCheckOut:  gofakeit.Bool(),
+		ShowTeamCount: false,
+		EnablePoints:  true,
 	}
 }
 
@@ -85,8 +84,6 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 			{"ShowTeamCount false", func(s *models.InstanceSettings) { s.ShowTeamCount = false }},
 			{"EnablePoints true", func(s *models.InstanceSettings) { s.EnablePoints = true }},
 			{"EnablePoints false", func(s *models.InstanceSettings) { s.EnablePoints = false }},
-			{"EnableBonusPoints true", func(s *models.InstanceSettings) { s.EnableBonusPoints = true }},
-			{"EnableBonusPoints false", func(s *models.InstanceSettings) { s.EnableBonusPoints = false }},
 		}
 
 		for _, tc := range testCases {
