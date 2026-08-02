@@ -90,21 +90,14 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		return state, errors.New("pincode is a required field")
 	}
 
-	if len(input["pincode"]) == 0 {
+	if len(input["pincode"]) == 0 || input["pincode"][0] == "" {
 		return state, errors.New("pincode cannot be empty")
 	}
 
-	if len(input["pincode"]) < len(b.Pincode) {
-		return state, errors.New("pincode length does not match the required length")
-	}
+	pincodeGuess := input["pincode"][0]
 
-	// Construct the pincode from individual characters
-	var pincodeChars string
-	for _, char := range input["pincode"] {
-		if len(char) != 1 {
-			return state, errors.New("pincode must be a single character per input")
-		}
-		pincodeChars += char
+	if len(pincodeGuess) != len(b.Pincode) {
+		return state, errors.New("pincode length does not match the required length")
 	}
 
 	newPlayerData := pincodeBlockData{}
@@ -117,9 +110,9 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 	// Increment the number of attempts and save guesses
 	newPlayerData.Attempts++
-	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeChars)
+	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeGuess)
 
-	if pincodeChars != b.Pincode {
+	if pincodeGuess != b.Pincode {
 		// Incorrect pincode, save player data and return an error
 		playerData, err := json.Marshal(newPlayerData)
 		if err != nil {

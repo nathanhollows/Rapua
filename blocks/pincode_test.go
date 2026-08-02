@@ -77,14 +77,10 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	err := block.UpdateBlockData(data)
 	require.NoError(t, err)
 
-	// Keep track of attempts - tests that fail validation don't increment attempts
-	// Only successful validation (correct or incorrect but valid format) increments attempts
-
-	// Test: Incorrect pincode (wrong digits)
-	// Each digit provided as separate input
+	// Test: Incorrect pincode (wrong digits, single OTP input)
 	// Expected behaviour: No error and no points awarded
 	input := map[string][]string{
-		"pincode": {"9", "8", "7", "6", "5"},
+		"pincode": {"98765"},
 	}
 	state1 := &blocks.MockPlayerState{}
 	newState, err := block.ValidatePlayerInput(state1, input)
@@ -92,10 +88,10 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
-	// Test: Invalid input (non-digit character)
-	// Expected behaviour: No error and no points awarded (still valid format)
+	// Test: Incorrect pincode (non-digit characters, single OTP input)
+	// Expected behaviour: No error and no points awarded
 	input = map[string][]string{
-		"pincode": {"a", "b", "c", "d", "e"},
+		"pincode": {"abcde"},
 	}
 	state2 := &blocks.MockPlayerState{}
 	newState, err = block.ValidatePlayerInput(state2, input)
@@ -103,33 +99,23 @@ func TestPincodeBlock_ValidatePlayerInput(t *testing.T) {
 	assert.False(t, newState.IsComplete())
 	assert.Equal(t, 0, newState.GetPointsAwarded())
 
-	// Test: Insufficient digits
+	// Test: Insufficient digits (single OTP input)
 	// Expected behaviour: Error due to length mismatch
 	input = map[string][]string{
-		"pincode": {"1", "2", "3"},
+		"pincode": {"123"},
 	}
 	state3 := &blocks.MockPlayerState{}
 	_, err = block.ValidatePlayerInput(state3, input)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pincode length does not match")
 
-	// Test: Multiple characters in single input (invalid)
-	// Expected behaviour: Error due to multi-character input
-	input = map[string][]string{
-		"pincode": {"12", "3", "4", "5", "6"},
-	}
-	state4 := &blocks.MockPlayerState{}
-	_, err = block.ValidatePlayerInput(state4, input)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "pincode must be a single character per input")
-
-	// Test: Correct pincode (individual digits)
+	// Test: Correct pincode (single OTP input)
 	// Expected behaviour: No error and points awarded
 	input = map[string][]string{
-		"pincode": {"1", "2", "3", "4", "5"},
+		"pincode": {"12345"},
 	}
-	state5 := &blocks.MockPlayerState{}
-	newState, err = block.ValidatePlayerInput(state5, input)
+	state4 := &blocks.MockPlayerState{}
+	newState, err = block.ValidatePlayerInput(state4, input)
 	require.NoError(t, err)
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, points, strconv.Itoa(newState.GetPointsAwarded()))

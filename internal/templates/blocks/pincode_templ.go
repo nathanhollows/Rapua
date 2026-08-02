@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock, data blocks.PlayerState) templ.Component {
+func pincodePlayer(settings models.QuestSettings, block blocks.PincodeBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -166,7 +166,7 @@ func pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock, 
 	})
 }
 
-func pincodePlayerUpdate(settings models.InstanceSettings, block blocks.PincodeBlock, data blocks.PlayerState) templ.Component {
+func pincodePlayerUpdate(settings models.QuestSettings, block blocks.PincodeBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -346,7 +346,7 @@ var pincodeUnlockedContentTextarea = TextareaParams{
 	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
-func pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) templ.Component {
+func pincodeAdmin(settings models.QuestSettings, block blocks.PincodeBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
