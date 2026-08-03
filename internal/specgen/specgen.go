@@ -34,7 +34,7 @@ func GenerateBlockSpecs() []game.BlockSpec {
 
 	specs := make([]game.BlockSpec, 0, len(registered))
 	for _, reg := range registered {
-		if sp, ok := reg.Instance.(game.SpecProvider); ok {
+		if sp, ok := reg.Prototype.(game.SpecProvider); ok {
 			spec := sp.GetSpec()
 			spec.SharedFields = []string{"when"}
 			if interactiveBlockTypes[spec.Type] {

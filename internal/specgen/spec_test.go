@@ -17,7 +17,7 @@ func TestSpecStaleness(t *testing.T) {
 	registered := blocks.GetRegisteredBlocks()
 
 	for _, reg := range registered {
-		sp, ok := reg.Instance.(game.SpecProvider)
+		sp, ok := reg.Prototype.(game.SpecProvider)
 		if !ok {
 			t.Errorf("block type %q does not implement game.SpecProvider", reg.BlockType)
 			continue
@@ -38,8 +38,8 @@ func TestSpecStaleness(t *testing.T) {
 		}
 
 		// Reflect-walk the block struct's exported JSON-tagged fields
-		blockType := reflect.TypeOf(reg.Instance)
-		if blockType.Kind() == reflect.Ptr {
+		blockType := reflect.TypeOf(reg.Prototype)
+		if blockType.Kind() == reflect.Pointer {
 			blockType = blockType.Elem()
 		}
 
@@ -197,7 +197,7 @@ func TestGenerateFullSpec_AllBlocksHaveNonEmptyType(t *testing.T) {
 func TestSpecStaleness_IgnoresBaseBlockFields(t *testing.T) {
 	registered := blocks.GetRegisteredBlocks()
 	for _, reg := range registered {
-		sp, ok := reg.Instance.(game.SpecProvider)
+		sp, ok := reg.Prototype.(game.SpecProvider)
 		if !ok {
 			continue
 		}

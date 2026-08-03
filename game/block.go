@@ -83,7 +83,10 @@ func (b *BaseBlock) SetWhen(when *WhenClause) { b.When = when }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
-	BlockType         string
-	Instance          Block
+	BlockType string
+	// Prototype is a zero-value exemplar of the block type, kept so the
+	// registry can interrogate the type itself (specs, doc vars, capabilities).
+	// It carries no per-block data and is never rendered.
+	Prototype         Block
 	SupportedContexts []BlockContext
 }

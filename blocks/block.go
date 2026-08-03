@@ -46,21 +46,21 @@ var (
 )
 
 // registerBlock is an internal helper to register blocks with their contexts.
-func registerBlock(instance Block, contexts []BlockContext) {
+func registerBlock(prototype Block, contexts []BlockContext) {
 	registration := &RegisteredBlock{
-		BlockType:         instance.GetType(),
-		Instance:          instance,
+		BlockType:         prototype.GetType(),
+		Prototype:         prototype,
 		SupportedContexts: contexts,
 	}
 
-	blockRegistry[instance.GetType()] = registration
+	blockRegistry[prototype.GetType()] = registration
 
 	// Update context registry
 	for _, context := range contexts {
 		if contextRegistry[context] == nil {
 			contextRegistry[context] = make([]string, 0)
 		}
-		contextRegistry[context] = append(contextRegistry[context], instance.GetType())
+		contextRegistry[context] = append(contextRegistry[context], prototype.GetType())
 	}
 }
 
@@ -120,7 +120,7 @@ func GetBlocksForContext(context BlockContext) Blocks {
 	blocks := make(Blocks, 0, len(blockTypes))
 	for _, blockType := range blockTypes {
 		if registration := blockRegistry[blockType]; registration != nil {
-			blocks = append(blocks, registration.Instance)
+			blocks = append(blocks, registration.Prototype)
 		}
 	}
 
@@ -172,7 +172,7 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	if reg == nil {
 		return nil
 	}
-	sp, ok := reg.Instance.(game.SpecProvider)
+	sp, ok := reg.Prototype.(game.SpecProvider)
 	if !ok {
 		return nil
 	}
@@ -189,7 +189,7 @@ func (r *registryImpl) IsInteractive(blockType string) bool {
 	if reg == nil {
 		return false
 	}
-	return reg.Instance.SupportsVariableSets()
+	return reg.Prototype.SupportsVariableSets()
 }
 
 func (r *registryImpl) DocSetsVars(blockType string, doc game.BlockDoc) []string {
@@ -197,7 +197,7 @@ func (r *registryImpl) DocSetsVars(blockType string, doc game.BlockDoc) []string
 	if reg == nil {
 		return nil
 	}
-	if p, ok := reg.Instance.(game.BlockDocVarsProvider); ok {
+	if p, ok := reg.Prototype.(game.BlockDocVarsProvider); ok {
 		return p.DocSetsVars(doc)
 	}
 	return nil
@@ -208,7 +208,7 @@ func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) 
 	if reg == nil {
 		return nil, nil
 	}
-	if v, ok := reg.Instance.(game.BlockDocValidator); ok {
+	if v, ok := reg.Prototype.(game.BlockDocValidator); ok {
 		return v.ValidateBlockDoc(path, doc)
 	}
 	return nil, nil
