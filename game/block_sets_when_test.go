@@ -37,13 +37,22 @@ func TestBaseBlock_GetSets_NilByDefault(t *testing.T) {
 func TestBaseBlock_GetSets_PopulatedByParseData(t *testing.T) {
 	raw := json.RawMessage(`{
 		"content": "hello",
-		"sets": ["took_bergamot", "visited_lab"]
+		"sets": {"took_bergamot": "true", "score": 40}
 	}`)
 	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
 	require.NoError(t, b.ParseData())
 
-	assert.Equal(t, []string{"took_bergamot", "visited_lab"}, b.GetSets())
+	assert.Equal(t, game.SetsField{"took_bergamot": "true", "score": "40"}, b.GetSets())
 	assert.Equal(t, "hello", b.Content)
+}
+
+func TestBaseBlock_ParseData_RejectsListSets(t *testing.T) {
+	raw := json.RawMessage(`{"sets": ["took_bergamot"]}`)
+	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
+
+	err := b.ParseData()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must be an object")
 }
 
 func TestBaseBlock_GetWhen_PopulatedByParseData(t *testing.T) {

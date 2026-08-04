@@ -3,6 +3,7 @@ package services
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v7/models"
 	"github.com/nathanhollows/Rapua/v7/navigation"
@@ -14,29 +15,30 @@ const (
 )
 
 // PlayerVarResolver implements game.VarResolver by composing two state layers:
-//  1. Built-in state (points, game.team_count, location.*.visited, location.*.checked_in, group.*.completed)
-//  2. Creator-defined vars (from team_var_states, set by block `sets` triggers)
+//  1. Built-in state (player.points, run.started_at, game.team_count,
+//     location.*.visited, location.*.checked_in, group.*.completed)
+//  2. Creator-defined vars (from run_var_states, set by block `sets` triggers)
 //
 // Priority: built-in > creator. Unknown vars return ("", false).
 type PlayerVarResolver struct {
-	team        *models.Team
+	team        *models.Run
 	creatorVars map[string]string
-	teamCount   int
+	runCount    int
 }
 
 // NewPlayerVarResolver creates a resolver for the given team state.
 // creatorVars is typically team.VarStates.
-func NewPlayerVarResolver(team *models.Team, creatorVars map[string]string) *PlayerVarResolver {
+func NewPlayerVarResolver(team *models.Run, creatorVars map[string]string) *PlayerVarResolver {
 	return &PlayerVarResolver{
 		team:        team,
 		creatorVars: creatorVars,
 	}
 }
 
-// WithTeamCount enriches the resolver with the number of teams in the instance.
+// WithRunCount enriches the resolver with the number of teams in the instance.
 // Enables the game.team_count built-in variable. Call before evaluating conditions.
-func (r *PlayerVarResolver) WithTeamCount(n int) *PlayerVarResolver {
-	r.teamCount = n
+func (r *PlayerVarResolver) WithRunCount(n int) *PlayerVarResolver {
+	r.runCount = n
 	return r
 }
 
@@ -54,10 +56,15 @@ func (r *PlayerVarResolver) ResolveVar(name string) (string, bool) {
 // resolveBuiltIn handles the built-in state namespace.
 func (r *PlayerVarResolver) resolveBuiltIn(name string) (string, bool) {
 	switch name {
-	case "points":
+	case "player.points", "points": // "points" is the pre-respine spelling
 		return strconv.Itoa(r.team.Points), true
+	case "run.started_at":
+		if r.team.StartedAt.IsZero() {
+			return "", true
+		}
+		return r.team.StartedAt.Format(time.RFC3339), true
 	case "game.team_count":
-		return strconv.Itoa(r.teamCount), true
+		return strconv.Itoa(r.runCount), true
 	}
 	if after, ok := strings.CutPrefix(name, "location."); ok {
 		return r.resolveLocationVar(after)
@@ -99,12 +106,12 @@ func (r *PlayerVarResolver) resolveGroupVar(after string) (string, bool) {
 		return "", false
 	}
 	groupName := strings.TrimSuffix(after, ".completed")
-	group := navigation.FindGroupByName(&r.team.Instance.GameStructure, groupName)
+	group := navigation.FindGroupByName(&r.team.Quest.GameStructure, groupName)
 	if group == nil {
 		return varFalse, true
 	}
 	completedIDs := completedLocationIDs(r.team.CheckIns)
-	if navigation.IsGroupCompleted(&r.team.Instance.GameStructure, group.ID, completedIDs) {
+	if navigation.IsGroupCompleted(&r.team.Quest.GameStructure, group.ID, completedIDs) {
 		return varTrue, true
 	}
 	return varFalse, true

@@ -19,21 +19,21 @@ type LocationStatsService interface {
 type CheckInService struct {
 	checkInRepo          repositories.CheckInRepository
 	locationRepo         repositories.LocationRepository
-	teamRepo             repositories.TeamRepository
+	teamRepo             repositories.RunRepository
 	blockService         *BlockService
 	locationStatsService LocationStatsService
 	navigationService    *NavigationService
-	varStateRepo         repositories.TeamVarStateRepository
+	varStateRepo         repositories.RunVarStateRepository
 }
 
 func NewCheckInService(
 	checkInRepo repositories.CheckInRepository,
 	locationRepo repositories.LocationRepository,
-	teamRepo repositories.TeamRepository,
+	teamRepo repositories.RunRepository,
 	locationStatsService LocationStatsService,
 	navigationService *NavigationService,
 	blockService *BlockService,
-	varStateRepo repositories.TeamVarStateRepository,
+	varStateRepo repositories.RunVarStateRepository,
 ) *CheckInService {
 	return &CheckInService{
 		checkInRepo:          checkInRepo,
@@ -46,9 +46,9 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
+func (s *CheckInService) CheckIn(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 	locationCode string,
 ) error {
 	// Load team relations
@@ -63,7 +63,7 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 	}
 
 	// Find the location
-	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.InstanceID, locationCode)
+	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.QuestID, locationCode)
 	if err != nil {
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
@@ -97,7 +97,7 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 	// Calculate the points to award
 	var pointsForCheckInRecord int
 
-	if team.Instance.Settings.MustCheckOut {
+	if team.Quest.Settings.MustCheckOut {
 		// Check-in-and-out mode: base points awarded on checkout completion
 		pointsForCheckInRecord = 0
 
@@ -115,7 +115,7 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 	locationForCheckIn.Points = pointsForCheckInRecord
 
 	// Log the check in with the correct points
-	_, err = s.checkIn(ctx, *team, locationForCheckIn, team.Instance.Settings.MustCheckOut, validationRequired)
+	_, err = s.checkIn(ctx, *team, locationForCheckIn, team.Quest.Settings.MustCheckOut, validationRequired)
 	if err != nil {
 		return fmt.Errorf("logging scan: %w", err)
 	}
@@ -133,8 +133,8 @@ func (s *CheckInService) CheckIn( //nolint:gocognit,funlen
 	return nil
 }
 
-func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locationCode string) error {
-	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.InstanceID, locationCode)
+func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locationCode string) error {
+	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.QuestID, locationCode)
 	if err != nil {
 		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
 	}
@@ -152,12 +152,14 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 	}
 
 	// Check if all visible blocks are completed (reload var states so when-clauses are current).
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
 		return fmt.Errorf("loading var states: %w", err)
 	}
 	resolver := NewPlayerVarResolver(team, varStates)
-	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(ctx, location.ID, team.Code, resolver)
+	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(
+		ctx, location.ID, team.Code, team.QuestID, resolver,
+	)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)
 	}
@@ -192,8 +194,8 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Team, locati
 	return nil
 }
 
-func (s *CheckInService) CompleteBlocks(ctx context.Context, teamCode string, locationID string) error {
-	checkIn, err := s.checkInRepo.FindCheckInByTeamAndLocation(ctx, teamCode, locationID)
+func (s *CheckInService) CompleteBlocks(ctx context.Context, runCode string, locationID string) error {
+	checkIn, err := s.checkInRepo.FindCheckInByTeamAndLocation(ctx, runCode, locationID)
 	if err != nil {
 		return fmt.Errorf("finding check in: %w", err)
 	}
@@ -215,7 +217,7 @@ func (s *CheckInService) CompleteBlocks(ctx context.Context, teamCode string, lo
 // CheckIn logs a check in for a team at a location.
 func (s *CheckInService) checkIn(
 	ctx context.Context,
-	team models.Team,
+	team models.Run,
 	location models.Location,
 	mustCheckOut bool,
 	validationRequired bool,
@@ -230,7 +232,7 @@ func (s *CheckInService) checkIn(
 // CheckOut logs a check out for a team at a location.
 func (s *CheckInService) checkOut(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 	location *models.Location,
 ) (models.CheckIn, error) {
 	scan, err := s.checkInRepo.LogCheckOut(ctx, team, location)
@@ -265,7 +267,7 @@ func (s *CheckInService) checkOut(
 
 func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	ctx context.Context,
-	team models.Team,
+	team models.Run,
 	data map[string][]string,
 ) (blocks.PlayerState, blocks.Block, error) {
 	blockID := data["block"][0]
@@ -287,13 +289,13 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
 		}
 
-		state, err = s.blockService.NewMockBlockState(ctx, blockID, team.Code)
+		state, err = s.blockService.NewMockBlockState(ctx, blockID, team.Code, team.QuestID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
 		}
 	} else {
 		// In regular mode, get the existing block and state
-		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndTeamCode(ctx, blockID, team.Code)
+		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndRunCode(ctx, blockID, team.Code, team.QuestID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block with state: %w", err)
 		}
@@ -343,23 +345,23 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 // writeSetsVars writes block sets variables to the var-state store after block completion.
 func (s *CheckInService) writeSetsVars(
 	ctx context.Context,
-	team models.Team,
+	team models.Run,
 	block blocks.Block,
 	state blocks.PlayerState,
 ) error {
 	if setter, ok := block.(blocks.ChoiceVarSetter); ok {
+		// GetTriggeredVars already filters to the options the player chose, so
+		// every returned value is written — matching the GetSets path below.
 		for varName, val := range setter.GetTriggeredVars(state) {
-			if val != "" {
-				if err := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, val); err != nil {
-					return fmt.Errorf("writing sets var %q: %w", varName, err)
-				}
+			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
+				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}
 		}
 		return nil
 	}
 	if state.IsComplete() {
-		for _, varName := range block.GetSets() {
-			if err := s.varStateRepo.Upsert(ctx, team.Code, team.InstanceID, varName, "true"); err != nil {
+		for varName, val := range block.GetSets() {
+			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
 				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}
 		}
@@ -368,18 +370,18 @@ func (s *CheckInService) writeSetsVars(
 }
 
 // awardPointsAndComplete awards points and marks check-in complete when all visible blocks are done.
-func (s *CheckInService) awardPointsAndComplete(ctx context.Context, team *models.Team, block blocks.Block) error {
+func (s *CheckInService) awardPointsAndComplete(ctx context.Context, team *models.Run, block blocks.Block) error {
 	team.Points += block.GetPoints()
 	if err := s.teamRepo.Update(ctx, team); err != nil {
 		return fmt.Errorf("awarding points: %w", err)
 	}
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
 		return fmt.Errorf("loading var states: %w", err)
 	}
 	blockResolver := NewPlayerVarResolver(team, varStates)
 	unfinished, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, block.GetOwnerID(), team.Code, blockResolver,
+		ctx, block.GetOwnerID(), team.Code, team.QuestID, blockResolver,
 	)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)

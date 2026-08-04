@@ -143,7 +143,7 @@ func TestChoiceBlock_GetSets(t *testing.T) {
 		},
 	}
 	sets := block.GetSets()
-	assert.Equal(t, []string{"went_left", "went_right"}, sets)
+	assert.Equal(t, game.SetsField{"went_left": "true", "went_right": "true"}, sets)
 }
 
 func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
@@ -190,7 +190,10 @@ func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
 	})
 
 	t.Run("already complete is no-op", func(t *testing.T) {
-		completedState, err := block.ValidatePlayerInput(&blocks.MockPlayerState{}, map[string][]string{"choice": {"forest"}})
+		completedState, err := block.ValidatePlayerInput(
+			&blocks.MockPlayerState{},
+			map[string][]string{"choice": {"forest"}},
+		)
 		require.NoError(t, err)
 		require.True(t, completedState.IsComplete())
 
@@ -441,7 +444,7 @@ func TestChoiceBlock_ValidateBlockDoc(t *testing.T) {
 	t.Run("multiple errors and warnings", func(t *testing.T) {
 		doc := game.BlockDoc{
 			"options": []any{
-				map[string]any{"label": "", "sets": ""},    // missing both
+				map[string]any{"label": "", "sets": ""},     // missing both
 				map[string]any{"label": "OK", "sets": "ok"}, // valid
 			},
 		}

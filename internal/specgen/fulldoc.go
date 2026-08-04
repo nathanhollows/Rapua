@@ -69,7 +69,7 @@ func whenFieldSpec() game.FieldSpec {
 				Name:        "var",
 				Type:        "string",
 				Required:    true,
-				Description: "Variable to check. Built-in: points, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count. Creator-defined via block sets.",
+				Description: "Variable to check. Built-in: player.points, run.started_at, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count. Creator-defined via block sets.",
 			},
 			{
 				Name:        "op",
@@ -113,10 +113,13 @@ func whenFieldSpec() game.FieldSpec {
 // setsFieldSpec returns the `sets` field spec used on interactive blocks.
 func setsFieldSpec() game.FieldSpec {
 	return game.FieldSpec{
-		Name:        "sets",
-		Type:        "list",
-		Description: "Variable names to set to \"true\" when this block completes. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
-		Items:       &game.FieldSpec{Type: "string"},
+		Name: "sets",
+		Type: "object",
+		Description: "Variables written when this block completes, as an object of {name: value}. " +
+			"Values may be strings, numbers, or booleans; all are stored as strings. " +
+			"Any other shape emits SETS_NOT_OBJECT. " +
+			"Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
+		Items: &game.FieldSpec{Type: "string"},
 	}
 }
 
@@ -297,9 +300,19 @@ func BuiltInVars() []BuiltInVarSpec {
 func builtInVarSpecs() []BuiltInVarSpec {
 	return []BuiltInVarSpec{
 		{
+			Var:         "player.points",
+			Type:        "int",
+			Description: "Total points earned on this run. Evaluated live from the run's points.",
+		},
+		{
 			Var:         "points",
 			Type:        "int",
-			Description: "Total points earned by this team. Evaluated live from team.Points.",
+			Description: "Pre-respine spelling of player.points. Still resolves; prefer player.points.",
+		},
+		{
+			Var:         "run.started_at",
+			Type:        "timestamp",
+			Description: "RFC3339 timestamp of when the run began. Empty until the players start.",
 		},
 		{
 			Var:         "location.<slug>.visited",

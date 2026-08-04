@@ -683,7 +683,7 @@ func TestLint_DefinedVar_NoWarning(t *testing.T) {
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{
 			"type": "quiz",
-			"sets": []any{"score"},
+			"sets": map[string]any{"score": "true"},
 		},
 	}
 	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
@@ -706,7 +706,7 @@ func TestLint_WhenUnreachableVar_Min1AutoAdvance(t *testing.T) {
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	// First location sets "visited_loc1"
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"visited_loc1"}},
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}},
 	}
 	// Add a second location that depends on "visited_loc1" being set
 	secondLoc := &game.LocationDoc{
@@ -738,7 +738,7 @@ func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
 	doc.Structure.Children[0].Group.MinimumRequired = 2
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"visited_loc1"}},
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}},
 	}
 	secondLoc := &game.LocationDoc{
 		Slug: "loc2",
@@ -762,7 +762,7 @@ func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
 func TestLint_UnusedVar(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"score"}},
+		{"type": "quiz", "sets": map[string]any{"score": "true"}},
 	}
 	// "score" is set but no when clause references it
 	result := game.Lint(doc, newTestRegistry())
@@ -776,7 +776,7 @@ func TestLint_UnusedVar(t *testing.T) {
 func TestLint_UnusedVar_UsedElsewhere_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"score"}},
+		{"type": "quiz", "sets": map[string]any{"score": "true"}},
 	}
 	// A second location's when references "score" — should suppress UNUSED_VAR
 	secondLoc := &game.LocationDoc{
@@ -823,7 +823,7 @@ func TestLint_WhenOnNonInteractiveBlock_UndefinedVar(t *testing.T) {
 func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"score"}},
+		{"type": "quiz", "sets": map[string]any{"score": "true"}},
 		{
 			"type": "text",
 			"when": map[string]any{
@@ -842,7 +842,7 @@ func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
 func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "text", "sets": []any{"foo"}},
+		{"type": "text", "sets": map[string]any{"foo": "true"}},
 	}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
@@ -850,6 +850,77 @@ func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
 		codes[i] = w.Code
 	}
 	assert.Contains(t, codes, "SETS_ON_CONTENT_BLOCK")
+}
+
+// A wrong-shaped "sets" must be caught by lint, with a path, rather than
+// surfacing later as an unmarshalling error with no location.
+func TestLint_SetsAsList_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": []any{"found_clue"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	require.Contains(t, codes, "SETS_NOT_OBJECT")
+
+	for _, e := range result.Errors {
+		if e.Code == "SETS_NOT_OBJECT" {
+			assert.Contains(t, e.Path, ".sets")
+			assert.Contains(t, e.Message, "must be an object")
+		}
+	}
+}
+
+func TestLint_SetsAsScalar_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": "found_clue"},
+	}
+	result := game.Lint(doc, newTestRegistry())
+
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "SETS_NOT_OBJECT")
+}
+
+// The shape check does not depend on the block type resolving, so a block that
+// is broken in two ways reports both faults rather than only the first.
+func TestLint_SetsShapeChecked_WhenTypeIsUnusable(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		block game.BlockDoc
+		want  string
+	}{
+		{
+			name:  "unknown type",
+			block: game.BlockDoc{"type": "not_a_block", "sets": []any{"found_clue"}},
+			want:  "UNKNOWN_BLOCK_TYPE",
+		},
+		{
+			name:  "missing type",
+			block: game.BlockDoc{"sets": []any{"found_clue"}},
+			want:  "MISSING_BLOCK_TYPE",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := validDoc()
+			doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{tt.block}
+			result := game.Lint(doc, newTestRegistry())
+
+			codes := make([]string, len(result.Errors))
+			for i, e := range result.Errors {
+				codes[i] = e.Code
+			}
+			assert.Contains(t, codes, tt.want)
+			assert.Contains(t, codes, "SETS_NOT_OBJECT")
+		})
+	}
 }
 
 // --- LintJSON unknown field tests ---
@@ -957,7 +1028,7 @@ func TestLint_WhenUnreachableVar_AutoAdvanceFalse_NoWarning(t *testing.T) {
 
 	loc := doc.Structure.Children[0].Group.Children[0].Location
 	loc.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"visited_loc1"}},
+		{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}},
 	}
 	secondLoc := &game.LocationDoc{
 		Slug: "loc2",
@@ -1102,7 +1173,7 @@ func TestLint_WhenVacuous_EmptyAllOfAnyOf(t *testing.T) {
 func TestLint_WhenWithConditions_NotVacuous(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
-		{"type": "quiz", "sets": []any{"score"}},
+		{"type": "quiz", "sets": map[string]any{"score": "true"}},
 	}
 	doc.Structure.Children[0].Group.Children[0].Location.When = &game.WhenClause{
 		AllOf: []game.Condition{{Var: "score"}},

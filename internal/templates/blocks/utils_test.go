@@ -62,6 +62,7 @@ func TestGetBrokerInfoReceived(t *testing.T) {
 type mockPlayerState struct {
 	blockID       string
 	playerID      string
+	questID       string
 	playerData    json.RawMessage
 	complete      bool
 	pointsAwarded int
@@ -69,6 +70,7 @@ type mockPlayerState struct {
 
 func (m *mockPlayerState) GetBlockID() string                 { return m.blockID }
 func (m *mockPlayerState) GetPlayerID() string                { return m.playerID }
+func (m *mockPlayerState) GetQuestID() string                 { return m.questID }
 func (m *mockPlayerState) GetPlayerData() json.RawMessage     { return m.playerData }
 func (m *mockPlayerState) SetPlayerData(data json.RawMessage) { m.playerData = data }
 func (m *mockPlayerState) IsComplete() bool                   { return m.complete }

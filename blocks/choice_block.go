@@ -184,11 +184,11 @@ func (b *ChoiceBlock) ValidatePlayerInput(
 // GetSets overrides BaseBlock to return all option var names.
 // Var-writing is handled exclusively by GetTriggeredVars (ChoiceVarSetter).
 // This method exists for: (1) admin variables endpoint listing, (2) UNUSED_VAR lint.
-func (b *ChoiceBlock) GetSets() []string {
-	vars := make([]string, 0, len(b.Options))
+func (b *ChoiceBlock) GetSets() game.SetsField {
+	vars := make(game.SetsField, len(b.Options))
 	for _, opt := range b.Options {
 		if opt.Sets != "" {
-			vars = append(vars, opt.Sets)
+			vars[opt.Sets] = "true"
 		}
 	}
 	return vars

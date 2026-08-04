@@ -15,6 +15,9 @@ const FormValueTrue = "true"
 type PlayerState interface {
 	GetBlockID() string
 	GetPlayerID() string
+	// GetQuestID returns the quest the state belongs to. It is part of the
+	// state's primary key, so implementations must return it.
+	GetQuestID() string
 	GetPlayerData() json.RawMessage
 	SetPlayerData(data json.RawMessage)
 	IsComplete() bool
@@ -49,7 +52,7 @@ type Block interface {
 	SupportsVariableSets() bool
 
 	// Conditional visibility
-	GetSets() []string
+	GetSets() SetsField
 	GetWhen() *WhenClause
 	SetWhen(when *WhenClause)
 }
@@ -65,15 +68,15 @@ type BaseBlock struct {
 	Data    json.RawMessage `json:"-"`
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
-	Sets    []string        `json:"sets,omitempty"`
+	Sets    SetsField       `json:"sets,omitempty"`
 	When    *WhenClause     `json:"when,omitempty"`
 }
 
 // SupportsVariableSets returns false by default; interactive blocks override this.
 func (b *BaseBlock) SupportsVariableSets() bool { return false }
 
-// GetSets returns the variable names this block sets on completion.
-func (b *BaseBlock) GetSets() []string { return b.Sets }
+// GetSets returns the variables this block sets on completion.
+func (b *BaseBlock) GetSets() SetsField { return b.Sets }
 
 // GetWhen returns the visibility condition clause for this block.
 func (b *BaseBlock) GetWhen() *WhenClause { return b.When }

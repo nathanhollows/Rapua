@@ -167,6 +167,10 @@ func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
 }
 
 func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //nolint:gocognit
+	// Runs before the type checks below so that a malformed "sets" still gets
+	// its own diagnostic on a block whose type is missing or unknown.
+	l.checkSetsShape(path, b)
+
 	typVal, ok := b["type"]
 	if !ok {
 		l.errorf(path+".type", "MISSING_BLOCK_TYPE", "block is missing required \"type\" field")
@@ -673,22 +677,49 @@ func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map
 }
 
 // blockDocSetsVars returns all variable names that the given block doc defines.
-// It reads from the standard top-level "sets" list and, via the registry,
+// It reads from the standard top-level "sets" map and, via the registry,
 // from block-type-specific sub-fields (e.g. options[*].sets on a choice block).
 func (l *linter) blockDocSetsVars(b BlockDoc) []string {
-	var vars []string
-	if raw, ok := b["sets"]; ok {
-		if arr, ok := raw.([]any); ok {
-			for _, item := range arr {
-				if s, ok := item.(string); ok && s != "" {
-					vars = append(vars, s)
-				}
-			}
-		}
-	}
+	vars := collectSetsFromBlockDoc(b)
 	if l.registry != nil {
 		if t, ok := b["type"].(string); ok {
 			vars = append(vars, l.registry.DocSetsVars(t, b)...)
+		}
+	}
+	return vars
+}
+
+// checkSetsShape reports a "sets" value that is not an object of {name: value}.
+// Catching it here gives the author a path; without it the failure surfaces
+// later as an unmarshalling error with no location.
+func (l *linter) checkSetsShape(path string, b BlockDoc) {
+	raw, ok := b["sets"]
+	if !ok {
+		return
+	}
+	if _, ok := raw.(map[string]any); ok {
+		return
+	}
+	l.errorf(path+".sets", "SETS_NOT_OBJECT",
+		`"sets" must be an object {"name": "value"}`)
+}
+
+// collectSetsFromBlockDoc extracts variable names from the "sets" key of a block doc.
+// "sets" is a map[string]any of {name: value}; any other shape is reported by
+// checkSetsShape and contributes no vars.
+func collectSetsFromBlockDoc(b BlockDoc) []string {
+	raw, ok := b["sets"]
+	if !ok {
+		return nil
+	}
+	m, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	var vars []string
+	for name := range m {
+		if name != "" {
+			vars = append(vars, name)
 		}
 	}
 	return vars
@@ -719,12 +750,12 @@ func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 //
 // Built-ins (from specgen.BuiltInVarSpecs):
 //
-//	points, game.team_count
+//	player.points (legacy spelling: points), run.started_at, game.team_count
 //	location.<slug>.visited, location.<slug>.checked_in
 //	group.<name>.completed
 func isBuiltInVar(name string) bool {
 	switch name {
-	case "points", "game.team_count":
+	case "player.points", "points", "run.started_at", "game.team_count":
 		return true
 	}
 	if after, ok := strings.CutPrefix(name, "location."); ok {
