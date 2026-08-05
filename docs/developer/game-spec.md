@@ -20,8 +20,8 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
 - Location slugs must be unique across the entire game, including across groups. *(`SLUG_DUPLICATE`)*
 
 **Import modes**
-- **Create-import** (`POST /admin/instances/import`): omit `id` on locations and blocks — new UUIDs are generated.
-- **Update-import** (`POST /admin/instances/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`TeamBlockState`). Locations absent from the document are deleted.
+- **Create-import** (`POST /admin/quests/import`): omit `id` on locations and blocks — new UUIDs are generated.
+- **Update-import** (`POST /admin/quests/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`TeamBlockState`). Locations absent from the document are deleted.
 - Group `id` is preserved on update-import to avoid orphaning team progress records (`SkippedGroupIDs`).
 
 **Blocks**

@@ -34,7 +34,7 @@ Individual and team play with the same way in Rapua. Players can either play sol
 
 ## Creating Teams
 
-1. Navigate to the [Teams](/admin/teams) section in your dashboard.
+1. Navigate to the [Teams](/admin/runs) section in your dashboard.
 2. Click `Add Teams` to batch create multiple teams at once.
     - You can specify the number of teams to create and assign a team name prefix.
     - Teams are automatically assigned unique codes for players to join.
@@ -44,7 +44,7 @@ Rapua generates random team codes. Team names are blank by default and players w
 
 ## Copying Team Codes
 
-1. Navigate to the [Teams](/admin/teams) section in your dashboard.
+1. Navigate to the [Teams](/admin/runs) section in your dashboard.
 3. Click `Copy Codes` to copy the team codes to your clipboard.
     - You can limit codes to specific teams by selecting them before copying.
 
@@ -58,7 +58,7 @@ Once you've copied the team codes, you can distribute them to your players by:
 
 ## Deleting and Resetting Teams
 
-Deleting and resetting teams can be done in the [Teams](/admin/teams) section of your dashboard. Here's how it works:
+Deleting and resetting teams can be done in the [Teams](/admin/runs) section of your dashboard. Here's how it works:
 
 - **Delete Teams**: Removes teams and all associated data from the system.
 - **Reset Teams**: Clears team progress and check-ins, but retains the team for future use.

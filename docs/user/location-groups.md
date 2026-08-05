@@ -19,7 +19,7 @@ Groups contain locations. They can represent anything you want:
 
 ## Creating a Group
 
-1. Go to [Locations](/admin/locations) in your game admin
+1. Go to [Locations](/admin/quest) in your game admin
 2. Click `Add Group` (top right)
 3. Name it something meaningful ("Tutorial", "Act 1", etc.)
 4. Pick a color

@@ -21,11 +21,11 @@ By default, templates use the same location codes as the original game, allowing
 
 ## Creating Templates
 
-All templates are managed in the [Games and Templates](/admin/instances) section of the admin interface. You can create a template from any game you have access to, including games you have created or those shared with you.
+All templates are managed in the [Games and Templates](/admin/quests) section of the admin interface. You can create a template from any game you have access to, including games you have created or those shared with you.
 
 You can create a template from any existing game:
 
-1. Navigate to the [Games and Templates](/admin/instances) section
+1. Navigate to the [Games and Templates](/admin/quests) section
 2. Choose the game you want to use as a template
 4. Click "Create template" (this may be collapsed under the ellipsis menu)
 5. Enter a name for your template

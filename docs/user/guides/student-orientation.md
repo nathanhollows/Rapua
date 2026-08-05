@@ -68,8 +68,8 @@ Team codes allow participants to join the game without needing to create an acco
 
 Run a test with a small group to ensure the platform works as expected.
 
-- [Add some teams](/admin/teams) for testing.
-- Print the QR codes for each [location](/admin/locations). They don't need to be in the correct location for testing.
+- [Add some teams](/admin/runs) for testing.
+- Print the QR codes for each [location](/admin/quest). They don't need to be in the correct location for testing.
 - Ensure the clues are solvable and make sense.
 - Visit each location to get a feel for how long it takes to solve the clue and check in.
 

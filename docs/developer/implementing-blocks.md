@@ -207,7 +207,7 @@ import (
 templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
-        hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+        hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
         hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, change from:(#form-%s input) delay:500ms", block.ID, block.ID) }
         hx-swap="none"
     >
@@ -497,7 +497,7 @@ Admin view:
 templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
-        hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+        hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
         hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, click from:(#form-%s button) delay:100ms", block.ID, block.ID) }
         hx-swap="none"
     >

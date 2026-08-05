@@ -19,7 +19,7 @@ This guide expands on the Quickstart Bar that appears when you first sign up or 
 Every game begins with an instance. An instance is the container for your game, where you define the rules, create locations, and manage teams.
 
 1. [Log in](/login) to your Rapua account.  
-2. Navigate to your [Instances](/admin/instances) and click **Create New Instance**.  
+2. Navigate to your [Quests](/admin/quests) and click **Create New Instance**.  
 3. Give your instance a name (e.g., "Orientation" or "Health and Safety Tour").  
 4. Save the instance to proceed.  
 
@@ -33,8 +33,8 @@ You’re now ready to add locations, content, teams, and update the settings!
 
 Adding locations is the foundation of your game. Rapua (for now) expects all locations to be real-world spots, such as landmarks, buildings, or objects.
 
-1. Go to the [Locations](/admin/locations) tab.  
-2. Click [Add Location](/admin/locations) and provide the following details:  
+1. Go to the [Locations](/admin/quest) tab.  
+2. Click [Add Location](/admin/quest) and provide the following details:  
    - Location name (e.g., "Library").  
    - Points (hidden by default, see [Step 4](#step-4-update-game-settings) for details).
 3. Use the map to pinpoint the location or enter the coordinates manually. Use the search bar for quick location lookup by address.
@@ -52,7 +52,7 @@ Locations you add will appear on the map in the activity view.
 ## Step 3: Add Teams  
 
 Organize participants into teams for collaboration or competition.  
-1. Navigate to the [Teams](/admin/teams) tab in your instance.  
+1. Navigate to the [Teams](/admin/runs) tab in your instance.  
 2. Click **Add Team** and specify the number of teams you want to create.
 3. Save your team and repeat as needed.  
 
@@ -80,7 +80,7 @@ Rapua automatically generates a set of rules based on your selections. Players w
 ## Step 5: Start (or Schedule) the Game
 
 Your game is ready to launch!  
-1. Go to the [Activity](/admin/actvity) page.  
+1. Go to the [Activity](/admin/activity) page.  
 2. Choose one of the following:  
    - **Start**: Launch the game immediately.  
    - **Schedule**: Pick a date and time for automatic launch.  
