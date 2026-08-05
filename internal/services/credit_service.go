@@ -163,7 +163,7 @@ func (s *CreditService) DeductCreditForRunStartWithTx(
 	return s.runStartLogRepo.CreateWithTx(ctx, tx, log)
 }
 
-// RunStartLogFilter defines filtering options for team start logs.
+// RunStartLogFilter defines filtering options for run start logs.
 type RunStartLogFilter struct {
 	UserID    string
 	QuestID   string
@@ -199,14 +199,14 @@ func (s *CreditService) GetCreditAdjustments(
 	return s.creditRepo.GetCreditAdjustmentsByUserID(ctx, filter.UserID)
 }
 
-// RunStartSummary represents aggregated team start data for a time period.
+// RunStartSummary represents aggregated run start data for a time period.
 type RunStartSummary struct {
 	Date  time.Time `json:"date"`
 	Count int       `json:"count"`
 	Ratio float64   `json:"ratio,omitempty"` // Optional ratio for percentage calculations
 }
 
-// GetRunStartLogsSummary returns team start logs aggregated by time periods with zero-filling.
+// GetRunStartLogsSummary returns run start logs aggregated by time periods with zero-filling.
 func (s *CreditService) GetRunStartLogsSummary(
 	ctx context.Context,
 	filter RunStartLogFilter,

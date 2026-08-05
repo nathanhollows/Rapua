@@ -8,13 +8,13 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// RunVarStateRepository manages persistent creator-defined variable state per team per instance.
+// RunVarStateRepository manages persistent creator-defined variable state per run per quest.
 type RunVarStateRepository interface {
 	// Upsert sets a variable value, inserting or updating as needed.
 	Upsert(ctx context.Context, runCode, questID, varName, varValue string) error
-	// GetAll returns all var states for a team in an instance as a map[varName]varValue.
+	// GetAll returns all var states for a run in a quest as a map[varName]varValue.
 	GetAll(ctx context.Context, runCode, questID string) (map[string]string, error)
-	// DeleteByTeamAndInstance removes all vars for a team in an instance (used on reset).
+	// DeleteByTeamAndInstance removes all vars for a run in a quest (used on reset).
 	DeleteByTeamAndInstance(ctx context.Context, tx *bun.Tx, runCode, questID string) error
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-// ExportQuest exports an instance as a v7 JSON document download.
+// ExportQuest exports a quest as a v7 JSON document download.
 //
 //	GET /admin/quests/{id}/export
 func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {

@@ -128,7 +128,7 @@ func (s *QuestService) GetByID(ctx context.Context, id string) (*models.Quest, e
 	return instance, nil
 }
 
-// GetQuestSettings returns the settings for an instance.
+// GetQuestSettings returns the settings for a quest.
 func (s *QuestService) GetQuestSettings(
 	ctx context.Context,
 	questID string,

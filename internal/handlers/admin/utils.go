@@ -159,12 +159,12 @@ type GameScheduleService interface {
 }
 
 type QuestService interface {
-	// CreateQuest creates a new instance for the given user
+	// CreateQuest creates a new quest for the given user
 	CreateQuest(ctx context.Context, name string, user *models.User) (*models.Quest, error)
 
 	// FindByUserID returns all instances for the given user
 	FindByUserID(ctx context.Context, userID string) ([]models.Quest, error)
-	// FindQuestIDsForUser returns the IDs of all instances for the given user
+	// FindQuestIDsForUser returns the IDs of all quests for the given user
 	FindQuestIDsForUser(ctx context.Context, userID string) ([]string, error)
 
 	// GetByID finds an instance by ID
@@ -177,7 +177,7 @@ type IdentityService interface {
 	GetAuthenticatedUser(r *http.Request) (*models.User, error)
 }
 
-// QuestLoader loads an instance with all relations needed for the admin panel.
+// QuestLoader loads a quest with all relations needed for the admin panel.
 type QuestLoader interface {
 	GetByIDWithRelations(ctx context.Context, id string) (*models.Quest, error)
 }
@@ -191,7 +191,7 @@ type MarkerService interface {
 	// CreateMarker creates a new marker
 	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
 	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
-	// FindMarkersNotInQuest finds all markers that are not in the given instance
+	// FindMarkersNotInQuest finds all markers that are not in the given quest
 	FindMarkersNotInQuest(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
@@ -216,9 +216,9 @@ type RunService interface {
 
 	// FindAll returns all teams for an instance
 	FindAll(ctx context.Context, instanceID string) ([]models.Run, error)
-	// GetRunByCode returns a team by code
+	// GetRunByCode returns a run by code
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
-	// GetRunActivityOverview returns a list of teams and their activity
+	// GetRunActivityOverview returns a list of runs and their activity
 	GetRunActivityOverview(
 		ctx context.Context,
 		instanceID string,
@@ -260,7 +260,7 @@ type UserService interface {
 	UpdateUserProfile(ctx context.Context, user *models.User, profile map[string]string) error
 	// ChangePassword changes a user's password
 	ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword, confirmPassword string) error
-	// SwitchQuest switches the user's current instance
+	// SwitchQuest switches the user's current quest
 	SwitchQuest(ctx context.Context, user *models.User, instanceID string) error
 }
 
@@ -411,7 +411,7 @@ func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg
 	}
 }
 
-// setCurrentQuest stores the current instance ID in the admin session.
+// setCurrentQuest stores the current quest ID in the admin session.
 func (h *Handler) setCurrentQuest(w http.ResponseWriter, r *http.Request, instanceID string) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {

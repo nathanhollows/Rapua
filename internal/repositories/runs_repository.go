@@ -41,12 +41,12 @@ type RunRepository interface {
 	// Delete removes the team from the database
 	// Requires a transaction as related data will also need to be deleted
 	Delete(ctx context.Context, tx *bun.Tx, questID string, runCode string) error
-	// DeleteByQuestID removes all teams for a specific instance
+	// DeleteByQuestID removes all runs for a specific quest
 	// Requires a transaction as this implies a cascade delete and related data
 	// will also need to be deleted
 	DeleteByQuestID(ctx context.Context, tx *bun.Tx, questID string) error
 
-	// LoadQuest loads the instance for a team
+	// LoadQuest loads the quest for a run
 	LoadQuest(ctx context.Context, team *models.Run) error
 	// LoadCheckIns loads the check-ins for a team
 	LoadCheckIns(ctx context.Context, team *models.Run) error

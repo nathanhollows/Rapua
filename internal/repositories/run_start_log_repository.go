@@ -52,7 +52,7 @@ func (r *RunStartLogRepository) GetByUserIDWithTimeframe(
 	return logs, nil
 }
 
-// GetByUserIDAndQuestID returns team start logs for a user and specific instance.
+// GetByUserIDAndQuestID returns run start logs for a user and specific quest.
 func (r *RunStartLogRepository) GetByUserIDAndQuestID(
 	ctx context.Context,
 	userID, questID string,
@@ -70,7 +70,7 @@ func (r *RunStartLogRepository) GetByUserIDAndQuestID(
 	return logs, nil
 }
 
-// GetByUserIDAndQuestIDWithTimeframe returns team start logs for a user and instance within a timeframe.
+// GetByUserIDAndQuestIDWithTimeframe returns run start logs for a user and quest within a timeframe.
 func (r *RunStartLogRepository) GetByUserIDAndQuestIDWithTimeframe(
 	ctx context.Context,
 	userID, questID string,

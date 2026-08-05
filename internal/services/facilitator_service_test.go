@@ -25,7 +25,7 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	// Create a valid instance to satisfy FK constraint: facilitator_tokens.quest_id → instances.id
+	// Create a valid quest to satisfy FK constraint: facilitator_tokens.quest_id → quests.id
 	parents := createTestParents(t, dbc)
 
 	// Create a new facilitator token

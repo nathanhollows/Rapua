@@ -99,7 +99,7 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 }
 
 // TestPreviewMiddleware_PreviewWithoutQuestID verifies that if the preview request
-// does not include an questID in its form data, the middleware does not add preview context.
+// does not include a questID in its form data, the middleware does not add preview context.
 func TestPreviewMiddleware_PreviewWithoutQuestID(t *testing.T) {
 	nextCalled := false
 	var receivedCtx context.Context
@@ -118,7 +118,7 @@ func TestPreviewMiddleware_PreviewWithoutQuestID(t *testing.T) {
 	)
 
 	// Create a preview request (HX-Request header is "true" and referer starts with "/templates")
-	// but without an "questID" form value.
+	// but without a "questID" form value.
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/templates/some", strings.NewReader(""))
 	req.Header.Set("Hx-Request", "true")
 	req.Header.Set("Referer", "http://example.com/templates/some")
@@ -138,8 +138,8 @@ func TestPreviewMiddleware_PreviewWithoutQuestID(t *testing.T) {
 	}
 }
 
-// TestPreviewMiddleware_PreviewWithQuestID ensures that for a valid preview request with an questID,
-// the middleware injects a team with the expected properties into the context.
+// TestPreviewMiddleware_PreviewWithQuestID ensures that for a valid preview request with a questID,
+// the middleware injects a run with the expected properties into the context.
 func TestPreviewMiddleware_PreviewWithQuestID(t *testing.T) {
 	nextCalled := false
 	var receivedCtx context.Context

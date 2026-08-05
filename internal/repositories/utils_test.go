@@ -61,7 +61,7 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 	}
 }
 
-// createTestTeam inserts a team for the given questID and returns its code.
+// createTestTeam inserts a run for the given questID and returns its code.
 // Codes are upper-cased because GetByCode upper-cases before querying.
 func createTestTeam(t *testing.T, dbc *bun.DB, questID string) string {
 	t.Helper()

@@ -43,7 +43,7 @@ func NewDuplicationService(
 	}
 }
 
-// DuplicateQuest duplicates a non-template instance and all its content with transaction safety.
+// DuplicateQuest duplicates a non-template quest and all its content with transaction safety.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is a template (use CreateTemplateFromInstance instead).
 func (s *DuplicationService) DuplicateQuest(
@@ -55,7 +55,7 @@ func (s *DuplicationService) DuplicateQuest(
 	return s.duplicateInstanceOrCreateTemplate(ctx, user, sourceInstanceID, name, false)
 }
 
-// CreateTemplateFromQuest creates a template from an existing non-template instance.
+// CreateTemplateFromQuest creates a template from an existing non-template quest.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is already a template.
 func (s *DuplicationService) CreateTemplateFromQuest(
@@ -140,7 +140,7 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	return newInstance, nil
 }
 
-// CreateQuestFromTemplate creates a regular instance from a template.
+// CreateQuestFromTemplate creates a regular quest from a template.
 // Returns error if source is not a template.
 func (s *DuplicationService) CreateQuestFromTemplate(
 	ctx context.Context,
@@ -151,7 +151,7 @@ func (s *DuplicationService) CreateQuestFromTemplate(
 	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
-// CreateQuestFromSharedTemplate creates a regular instance from a shared template.
+// CreateQuestFromSharedTemplate creates a regular quest from a shared template.
 // Bypasses ownership check for share link scenarios.
 // Returns error if source is not a template.
 func (s *DuplicationService) CreateQuestFromSharedTemplate(

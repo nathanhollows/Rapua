@@ -16,7 +16,7 @@ type NotificationRepository interface {
 
 	//	GetByID finds a notification by its ID
 	GetByID(ctx context.Context, id string) (models.Notification, error)
-	// FindByRunCode finds all notifications for a specific team code
+	// FindByRunCode finds all notifications for a specific run code
 	FindByRunCode(ctx context.Context, runCode string) ([]models.Notification, error)
 
 	//	Update updates a notification in the database
@@ -99,7 +99,7 @@ func (r *notificationRepository) GetByID(ctx context.Context, id string) (models
 	return notification, nil
 }
 
-// FindByRunCode finds all notifications for a specific team code.
+// FindByRunCode finds all notifications for a specific run code.
 func (r *notificationRepository) FindByRunCode(ctx context.Context, runCode string) ([]models.Notification, error) {
 	var notifications []models.Notification
 	err := r.db.NewSelect().Model(&notifications).Where("run_code = ? AND NOT dismissed", runCode).Scan(ctx)

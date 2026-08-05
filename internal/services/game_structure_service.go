@@ -20,7 +20,7 @@ type LocationRepository interface {
 	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
-// QuestRepository defines the interface for instance data access.
+// QuestRepository defines the interface for quest data access.
 type QuestRepository interface {
 	GetByID(ctx context.Context, id string) (*models.Quest, error)
 	Update(ctx context.Context, instance *models.Quest) error

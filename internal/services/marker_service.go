@@ -57,7 +57,7 @@ func (s *MarkerService) GetMarkerByCode(ctx context.Context, locationCode string
 	return *marker, nil
 }
 
-// FindMarkersNotInQuest finds all markers that are not in the given instance.
+// FindMarkersNotInQuest finds all markers that are not in the given quest.
 func (s *MarkerService) FindMarkersNotInQuest(
 	ctx context.Context,
 	questID string,

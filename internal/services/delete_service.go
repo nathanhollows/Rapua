@@ -187,7 +187,7 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	return nil
 }
 
-// DeleteQuest deletes an instance and all its content.
+// DeleteQuest deletes a quest and all its content.
 // Returns ErrUserNotAuthenticated if userID doesn't own the instance.
 // Blocks are deleted explicitly because owner_id is polymorphic.
 func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string) error {

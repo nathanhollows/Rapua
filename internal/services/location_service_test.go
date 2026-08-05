@@ -25,7 +25,7 @@ func setupLocationService(t *testing.T) (services.LocationService, *services.Mar
 	return locationService, markerService, dbc, cleanup
 }
 
-// validQuestID creates a FK-valid user+instance and returns the instance ID.
+// validQuestID creates a FK-valid user+quest and returns the quest ID.
 func validQuestID(t *testing.T, dbc *bun.DB) string {
 	t.Helper()
 	userID := gofakeit.UUID()

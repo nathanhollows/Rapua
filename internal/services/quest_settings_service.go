@@ -21,7 +21,7 @@ func NewQuestSettingsService(
 	}
 }
 
-// GetQuestSettings retrieves the settings for the given instance ID.
+// GetQuestSettings retrieves the settings for the given quest ID.
 func (s *QuestSettingsService) GetQuestSettings(
 	ctx context.Context,
 	questID string,

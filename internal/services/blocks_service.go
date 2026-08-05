@@ -166,7 +166,7 @@ func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) err
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
 
-// FindByOwnerIDAndRunCodeWithState fetches blocks and their states by owner and team code.
+// FindByOwnerIDAndRunCodeWithState fetches blocks and their states by owner and run code.
 // Creates missing states for blocks that require validation.
 func (s *BlockService) FindByOwnerIDAndRunCodeWithState(
 	ctx context.Context,
@@ -195,7 +195,7 @@ func (s *BlockService) FindByOwnerIDAndRunCodeWithState(
 	return foundBlocks, blockStates, nil
 }
 
-// FindByOwnerIDAndRunCodeWithStateAndContext fetches blocks and their states by owner, team code, and context.
+// FindByOwnerIDAndRunCodeWithStateAndContext fetches blocks and their states by owner, run code, and context.
 // Creates missing states for blocks that require validation.
 // When runCode is empty (e.g. preview mode), blocks are fetched without DB states and all
 // states are created as in-memory mocks — no rows are written to team_block_states.

@@ -152,13 +152,13 @@ func (s *RunService) FindAll(ctx context.Context, questID string) ([]models.Run,
 	return s.teamRepo.FindAll(ctx, questID)
 }
 
-// GetRunByCode returns a team by code.
+// GetRunByCode returns a run by code.
 func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	return s.teamRepo.GetByCode(ctx, code)
 }
 
-// GetRunActivityOverview returns a list of teams and their activity.
+// GetRunActivityOverview returns a list of runs and their activity.
 func (s *RunService) GetRunActivityOverview(
 	ctx context.Context,
 	questID string,

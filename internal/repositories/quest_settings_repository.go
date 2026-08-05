@@ -20,7 +20,7 @@ type QuestSettingsRepository interface {
 	// UpdateTx updates instance settings within a transaction
 	UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.QuestSettings) error
 
-	// GetByQuestID retrieves instance settings by instance ID
+	// GetByQuestID retrieves quest settings by quest ID
 	GetByQuestID(ctx context.Context, questID string) (*models.QuestSettings, error)
 }
 
@@ -92,7 +92,7 @@ func (r *instanceSettingsRepository) UpdateTx(
 	return nil
 }
 
-// GetByQuestID retrieves instance settings by instance ID.
+// GetByQuestID retrieves quest settings by quest ID.
 func (r *instanceSettingsRepository) GetByQuestID(
 	ctx context.Context,
 	questID string,

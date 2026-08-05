@@ -22,7 +22,7 @@ type BlockRepository interface {
 
 	// GetByID fetches a block by its ID
 	GetByID(ctx context.Context, blockID string) (blocks.Block, error)
-	// GetBlockAndStateByBlockIDAndRunCode fetches a block and its state by block ID and team code
+	// GetBlockAndStateByBlockIDAndRunCode fetches a block and its state by block ID and run code
 	GetBlockAndStateByBlockIDAndRunCode(
 		ctx context.Context, blockID, runCode, questID string,
 	) (blocks.Block, blocks.PlayerState, error)
@@ -36,13 +36,13 @@ type BlockRepository interface {
 		ownerID string,
 		blockContext blocks.BlockContext,
 	) (blocks.Blocks, error)
-	// FindBlocksAndStatesByOwnerIDAndRunCode fetches blocks and their states by owner and team code
+	// FindBlocksAndStatesByOwnerIDAndRunCode fetches blocks and their states by owner and run code
 	FindBlocksAndStatesByOwnerIDAndRunCode(
 		ctx context.Context,
 		ownerID string,
 		runCode string,
 	) ([]blocks.Block, []blocks.PlayerState, error)
-	// FindBlocksAndStatesByOwnerIDAndRunCodeWithContext fetches blocks and their states by owner, team code, and context
+	// FindBlocksAndStatesByOwnerIDAndRunCodeWithContext fetches blocks and their states by owner, run code, and context
 	FindBlocksAndStatesByOwnerIDAndRunCodeWithContext(
 		ctx context.Context,
 		ownerID string,
@@ -495,7 +495,7 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndRunCodeWithContext(
 	return foundBlocks, playerStates, nil
 }
 
-// GetBlockAndStateByBlockIDAndRunCode fetches a block by its ID with the player state for a given team.
+// GetBlockAndStateByBlockIDAndRunCode fetches a block by its ID with the player state for a given run.
 func (r *blockRepository) GetBlockAndStateByBlockIDAndRunCode(
 	ctx context.Context,
 	blockID, runCode, questID string,

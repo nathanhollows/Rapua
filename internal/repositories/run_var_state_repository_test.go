@@ -58,7 +58,6 @@ func TestRunVarStateRepository_GetAll(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Empty result for unknown team
 	got, err := repo.GetAll(ctx, "XXXX", parents.QuestID)
 	require.NoError(t, err)
 	assert.Empty(t, got)
@@ -72,7 +71,6 @@ func TestRunVarStateRepository_GetAll(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, map[string]string{"a": "1", "b": "2", "c": "3"}, got)
 
-	// Other team's vars not returned
 	runCode2 := createTestTeam(t, dbc, parents.QuestID)
 	require.NoError(t, repo.Upsert(ctx, runCode2, parents.QuestID, "a", "99"))
 

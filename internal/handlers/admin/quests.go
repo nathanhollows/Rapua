@@ -9,7 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-// Quests shows admin the instances.
+// Quests shows admin the quests.
 func (h *Handler) Quests(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -45,7 +45,7 @@ func (h *Handler) Quests(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// QuestsCreate creates a new instance.
+// QuestsCreate creates a new quest.
 func (h *Handler) QuestsCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -90,7 +90,7 @@ func (h *Handler) QuestsCreate(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/admin/quests")
 }
 
-// QuestDuplicate duplicates an instance.
+// QuestDuplicate duplicates a quest.
 func (h *Handler) QuestDuplicate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -137,7 +137,7 @@ func (h *Handler) QuestDuplicate(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/admin/quests")
 }
 
-// QuestSwitch switches the current instance.
+// QuestSwitch switches the current quest.
 func (h *Handler) QuestSwitch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -180,7 +180,7 @@ func (h *Handler) QuestSwitch(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, r.Header.Get("Referer"))
 }
 
-// QuestDelete deletes an instance.
+// QuestDelete deletes a quest.
 func (h *Handler) QuestDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -309,7 +309,7 @@ func (h *Handler) getInstanceByID(
 	return instance, true
 }
 
-// QuestsName retrieves the name of an instance.
+// QuestsName retrieves the name of a quest.
 func (h *Handler) QuestsName(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	instance, ok := h.getInstanceByID(w, r)
@@ -323,7 +323,7 @@ func (h *Handler) QuestsName(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// QuestsNameEdit shows the form to edit the name of an instance.
+// QuestsNameEdit shows the form to edit the name of a quest.
 func (h *Handler) QuestsNameEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	instance, ok := h.getInstanceByID(w, r)
@@ -337,7 +337,7 @@ func (h *Handler) QuestsNameEdit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// QuestsNameEditPost updates the name of an instance.
+// QuestsNameEditPost updates the name of a quest.
 func (h *Handler) QuestsNameEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
