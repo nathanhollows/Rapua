@@ -99,27 +99,52 @@ func init() {
 				db.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 			}()
 
-			// Clean up orphaned rows that accumulated while FK constraints
-			// were not enforced. These reference parents that no longer exist.
+			// Parents before children: rows orphaned by a parent's deletion must
+			// still be swept, or they survive into the copy below and violate the
+			// constraint being added. NOT EXISTS, not NOT IN — NOT IN matches
+			// nothing at all if its subquery yields a NULL.
 			orphanCleanups := []string{
-				// check_ins referencing deleted teams or instances
-				`DELETE FROM "check_ins" WHERE team_code NOT IN (SELECT code FROM teams)`,
-				`DELETE FROM "check_ins" WHERE instance_id NOT IN (SELECT id FROM instances)`,
-				// team_block_states referencing deleted teams or blocks
-				`DELETE FROM "team_block_states" WHERE team_code NOT IN (SELECT code FROM teams)`,
-				`DELETE FROM "team_block_states" WHERE block_id NOT IN (SELECT id FROM blocks)`,
-				// notifications referencing deleted teams
-				`DELETE FROM "notifications" WHERE team_code IS NOT NULL AND team_code NOT IN (SELECT code FROM teams)`,
-				// uploads referencing deleted blocks
-				`DELETE FROM "uploads" WHERE block_id IS NOT NULL AND block_id NOT IN (SELECT id FROM blocks)`,
-				// instance_settings referencing deleted instances
-				`DELETE FROM "instance_settings" WHERE instance_id NOT IN (SELECT id FROM instances)`,
-				// facilitator_tokens referencing deleted instances
-				`DELETE FROM "facilitator_tokens" WHERE instance_id NOT IN (SELECT id FROM instances)`,
-				// share_links referencing deleted instances
-				`DELETE FROM "share_links" WHERE template_id NOT IN (SELECT id FROM instances)`,
-				// instances referencing deleted users
-				`DELETE FROM "instances" WHERE user_id NOT IN (SELECT id FROM users)`,
+				`DELETE FROM "instances" WHERE user_id IS NOT NULL
+					AND NOT EXISTS (SELECT 1 FROM users WHERE users.id = instances.user_id)`,
+				// SET NULL, so blank the reference rather than drop the instance.
+				`UPDATE "instances" SET template_id = NULL WHERE template_id IS NOT NULL
+					AND NOT EXISTS (SELECT 1 FROM instances AS t WHERE t.id = "instances".template_id)`,
+
+				`DELETE FROM "instance_settings" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = instance_settings.instance_id)`,
+				`DELETE FROM "locations" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = locations.instance_id)`,
+				// marker_id is NOT NULL and RESTRICT, so the location has to go.
+				`DELETE FROM "locations" WHERE NOT EXISTS
+					(SELECT 1 FROM markers WHERE markers.code = locations.marker_id)`,
+				`DELETE FROM "teams" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = teams.instance_id)`,
+				`DELETE FROM "facilitator_tokens" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = facilitator_tokens.instance_id)`,
+				`DELETE FROM "share_links" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = share_links.template_id)`,
+
+				`DELETE FROM "check_ins" WHERE NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = check_ins.instance_id)`,
+				`DELETE FROM "check_ins" WHERE NOT EXISTS
+					(SELECT 1 FROM teams WHERE teams.code = check_ins.team_code)`,
+				`DELETE FROM "check_ins" WHERE NOT EXISTS
+					(SELECT 1 FROM locations WHERE locations.id = check_ins.location_id)`,
+				`DELETE FROM "team_block_states" WHERE NOT EXISTS
+					(SELECT 1 FROM teams WHERE teams.code = team_block_states.team_code)`,
+				`DELETE FROM "team_block_states" WHERE NOT EXISTS
+					(SELECT 1 FROM blocks WHERE blocks.id = team_block_states.block_id)`,
+				`DELETE FROM "notifications" WHERE team_code IS NOT NULL AND NOT EXISTS
+					(SELECT 1 FROM teams WHERE teams.code = notifications.team_code)`,
+
+				`DELETE FROM "uploads" WHERE instance_id IS NOT NULL AND NOT EXISTS
+					(SELECT 1 FROM instances WHERE instances.id = uploads.instance_id)`,
+				`DELETE FROM "uploads" WHERE team_code IS NOT NULL AND NOT EXISTS
+					(SELECT 1 FROM teams WHERE teams.code = uploads.team_code)`,
+				`UPDATE "uploads" SET block_id = NULL WHERE block_id IS NOT NULL
+					AND NOT EXISTS (SELECT 1 FROM blocks WHERE blocks.id = uploads.block_id)`,
+				`UPDATE "uploads" SET location_id = NULL WHERE location_id IS NOT NULL
+					AND NOT EXISTS (SELECT 1 FROM locations WHERE locations.id = uploads.location_id)`,
 			}
 			for _, q := range orphanCleanups {
 				if _, err := db.ExecContext(ctx, q); err != nil {
@@ -201,7 +226,10 @@ func init() {
 				return err
 			}
 			// Recreate the unique partial index on location slugs
-			if _, err := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`,
+			); err != nil {
 				return fmt.Errorf("creating locations slug index: %w", err)
 			}
 
@@ -221,7 +249,10 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`,
+			); err != nil {
 				return fmt.Errorf("creating teams id index: %w", err)
 			}
 
@@ -320,10 +351,16 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_adjustments user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", err)
 			}
 
@@ -338,21 +375,36 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating team_start_logs user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`,
+			); err != nil {
 				return fmt.Errorf("creating team_start_logs instance_id index: %w", err)
 			}
 
 			// Recreate indexes on credit_purchases (dropped during table recreation)
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases status index: %w", err)
 			}
 
@@ -384,7 +436,10 @@ func init() {
 
 			// Index on blocks.owner_id is beneficial for lookups even though
 			// owner_id has no FK constraint (it is polymorphic).
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_blocks_owner_id" ON "blocks" ("owner_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_blocks_owner_id" ON "blocks" ("owner_id")`,
+			); err != nil {
 				return fmt.Errorf("creating blocks owner_id index: %w", err)
 			}
 
@@ -506,10 +561,16 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_team_start_log_user_id" ON "team_start_logs" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating team_start_logs user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_team_start_log_instance_id" ON "team_start_logs" ("instance_id")`,
+			); err != nil {
 				return fmt.Errorf("creating team_start_logs instance_id index: %w", err)
 			}
 
@@ -524,10 +585,16 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_user_id" ON "credit_adjustments" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_adjustments user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_adjustments_purchase_id" ON "credit_adjustments" ("credit_purchase_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", err)
 			}
 
@@ -620,7 +687,10 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_teams_id" ON "teams" ("id")`,
+			); err != nil {
 				return fmt.Errorf("creating teams id index: %w", err)
 			}
 
@@ -642,7 +712,10 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`,
+			); err != nil {
 				return fmt.Errorf("creating locations slug index: %w", err)
 			}
 
@@ -676,13 +749,22 @@ func init() {
 			if err != nil {
 				return err
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases user_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_stripe_session_id" ON "credit_purchases" ("stripe_session_id")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases stripe_session_id index: %w", err)
 			}
-			if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`); err != nil {
+			if _, err := db.ExecContext(
+				ctx,
+				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_status" ON "credit_purchases" ("status")`,
+			); err != nil {
 				return fmt.Errorf("creating credit_purchases status index: %w", err)
 			}
 

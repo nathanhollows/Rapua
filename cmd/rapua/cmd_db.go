@@ -4,12 +4,21 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
 
+// pinToOneConn keeps a migration on a single connection. PRAGMA foreign_keys is
+// per-connection and the DSN re-enables it on every new one, so a migration that
+// disables foreign keys otherwise fails or passes on pool scheduling.
+func pinToOneConn(db *bun.DB) func() {
+	db.SetMaxOpenConns(1)
+	return func() { db.SetMaxOpenConns(0) }
+}
+
 //nolint:gocognit // CLI complexity acceptable
-func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command {
+func newDBCommand(db *bun.DB, migrator *migrate.Migrator, logger *slog.Logger) *cli.Command {
 	return &cli.Command{
 		Name:  "db",
 		Usage: "database migrations",
@@ -25,6 +34,8 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 				Name:  "migrate",
 				Usage: "apply database migrations",
 				Action: func(c *cli.Context) error {
+					defer pinToOneConn(db)()
+
 					if err := migrator.Lock(c.Context); err != nil {
 						return err
 					}
@@ -51,6 +62,8 @@ func newDBCommand(migrator *migrate.Migrator, logger *slog.Logger) *cli.Command 
 				Name:  "rollback",
 				Usage: "rollback the last migration group",
 				Action: func(c *cli.Context) error {
+					defer pinToOneConn(db)()
+
 					if err := migrator.Lock(c.Context); err != nil {
 						return err
 					}

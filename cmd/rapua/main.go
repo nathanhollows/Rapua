@@ -55,7 +55,7 @@ func main() {
 		Description: `An open-source platform for location-based games.`,
 		Version:     version,
 		Commands: []*cli.Command{
-			newDBCommand(migrator, logger),
+			newDBCommand(dbc, migrator, logger),
 			newCreditsCommand(dbc, logger),
 			newGenerateLoginCommand(dbc, logger),
 			newGenSpecCommand(),
