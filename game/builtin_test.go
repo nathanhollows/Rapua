@@ -23,9 +23,7 @@ func TestIsBuiltInVar_CanonicalSet(t *testing.T) {
 
 	// Prefix/wildcard builtins.
 	prefix := []string{
-		"location.some-slug.visited",
-		"location.some-slug.checked_in",
-		"group.Some Group.completed",
+		"objective.some-slug",
 	}
 	for _, name := range prefix {
 		if !isBuiltInVar(name) {
@@ -36,17 +34,44 @@ func TestIsBuiltInVar_CanonicalSet(t *testing.T) {
 	// Explicitly NOT built-in.
 	notBuiltin := []string{
 		"game.status",
-		"location.some-slug.other",
-		"group.Some Group.other",
+		"location.some-slug.visited",
+		"location.some-slug.checked_in",
+		"group.Some Group.completed",
 		"",
 		"something.else",
 		"points.something",
 		"player.badges", // Stage 2 — not implemented yet
 		"run.finished_at",
+		"objective.",
 	}
 	for _, name := range notBuiltin {
 		if isBuiltInVar(name) {
 			t.Errorf("isBuiltInVar(%q) = true, want false", name)
+		}
+	}
+}
+
+func TestIsReservedVarName(t *testing.T) {
+	reserved := []string{
+		"objective.find-maisie",
+		"objective.any-slug",
+	}
+	for _, name := range reserved {
+		if !IsReservedVarName(name) {
+			t.Errorf("IsReservedVarName(%q) = false, want true", name)
+		}
+	}
+
+	notReserved := []string{
+		"player.points",
+		"run.started_at",
+		"my_var",
+		"objective.", // empty slug
+		"",
+	}
+	for _, name := range notReserved {
+		if IsReservedVarName(name) {
+			t.Errorf("IsReservedVarName(%q) = true, want false", name)
 		}
 	}
 }

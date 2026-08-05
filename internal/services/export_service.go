@@ -34,7 +34,7 @@ func NewExportService(
 	}
 }
 
-// ExportInstance serialises a live instance to a v7 GameDoc.
+// ExportInstance serialises a live instance to a v8 GameDoc.
 func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, error) {
 	// 1. Load Instance (includes GameStructure JSON column)
 	instance, err := s.instanceRepo.GetByID(ctx, questID)
@@ -87,7 +87,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 
 	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
-		Rapua: "v7",
+		Rapua: "v8",
 		ID:    questID,
 		Name:  instance.Name,
 		Settings: game.SettingsDoc{

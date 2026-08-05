@@ -176,7 +176,7 @@ func TestBlockDoc_RoundTrip(t *testing.T) {
 
 func TestGameDoc_RoundTrip(t *testing.T) {
 	doc := &game.GameDoc{
-		Rapua: "v7",
+		Rapua: "v8",
 		Name:  "Round Trip Game",
 		Settings: game.SettingsDoc{
 			EnablePoints: true,
@@ -215,7 +215,7 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 	var out game.GameDoc
 	require.NoError(t, json.Unmarshal(data, &out))
 
-	assert.Equal(t, "v7", out.Rapua)
+	assert.Equal(t, "v8", out.Rapua)
 	assert.Equal(t, "Round Trip Game", out.Name)
 	require.Len(t, out.Structure.Children, 2)
 

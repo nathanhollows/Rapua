@@ -75,59 +75,6 @@ func TestFindGroupByID_NilStructure(t *testing.T) {
 	assert.Nil(t, found)
 }
 
-// === IsGroupCompleted Tests ===
-
-func TestIsGroupCompleted_CompletionAll_Complete(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc1", "loc2"}
-
-	result := navigation.IsGroupCompleted(structure, "group1", completed)
-	assert.True(t, result)
-}
-
-func TestIsGroupCompleted_CompletionAll_Incomplete(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc1"}
-
-	result := navigation.IsGroupCompleted(structure, "group1", completed)
-	assert.False(t, result)
-}
-
-func TestIsGroupCompleted_CompletionMinimum_Complete(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc3", "loc4"} // 2 out of 3, minimum is 2
-
-	result := navigation.IsGroupCompleted(structure, "group2", completed)
-	assert.True(t, result)
-}
-
-func TestIsGroupCompleted_CompletionMinimum_Incomplete(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc3"} // 1 out of 3, minimum is 2
-
-	result := navigation.IsGroupCompleted(structure, "group2", completed)
-	assert.False(t, result)
-}
-
-func TestIsGroupCompleted_GroupNotFound(t *testing.T) {
-	structure := makeTestStructure()
-	completed := []string{"loc1"}
-
-	result := navigation.IsGroupCompleted(structure, "nonexistent", completed)
-	assert.False(t, result)
-}
-
-func TestIsGroupCompleted_EmptyLocationIDs(t *testing.T) {
-	structure := &models.GameStructure{
-		ID:             "empty",
-		CompletionType: models.CompletionAll,
-		LocationIDs:    []string{},
-	}
-
-	result := navigation.IsGroupCompleted(structure, "empty", []string{})
-	assert.False(t, result)
-}
-
 // === GetNextGroup Tests ===
 
 func TestGetNextGroup_HasNextSibling(t *testing.T) {
@@ -623,16 +570,6 @@ func TestValidateStructure_NestedNonRootIsRoot(t *testing.T) {
 }
 
 // === Performance Tests ===
-
-func BenchmarkIsGroupCompleted(b *testing.B) {
-	structure := makeTestStructure()
-	completed := []string{"loc1", "loc2"}
-
-	b.ResetTimer()
-	for range b.N {
-		navigation.IsGroupCompleted(structure, "group1", completed)
-	}
-}
 
 func BenchmarkGetNextGroup(b *testing.B) {
 	structure := makeTestStructure()

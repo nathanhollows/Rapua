@@ -77,8 +77,8 @@ func (l *linter) run() {
 // --- Layer 1: Schema ---
 
 func (l *linter) checkSchema() {
-	if l.doc.Rapua != "v7" {
-		l.errorf("", "VERSION_MISMATCH", "expected rapua: \"v7\", got %q", l.doc.Rapua)
+	if l.doc.Rapua != "v8" {
+		l.errorf("", "VERSION_MISMATCH", "expected rapua: \"v8\", got %q", l.doc.Rapua)
 	}
 	if l.doc.Name == "" {
 		l.errorf("name", "MISSING_NAME", "game name is required")
@@ -184,6 +184,11 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 	if l.registry != nil && !l.registry.IsValidType(typStr) {
 		l.errorf(path+".type", "UNKNOWN_BLOCK_TYPE", "unknown block type %q", typStr)
 		return
+	}
+	// Check registry-sourced set vars for reserved namespaces (e.g. choice
+	// block options[*].sets). Direct b["sets"] is handled by checkSetsShape above.
+	if l.registry != nil {
+		l.checkRegistrySetsReserved(typStr, b, path)
 	}
 	if pointsVal, ok := b["points"]; ok {
 		switch v := pointsVal.(type) {
@@ -689,19 +694,41 @@ func (l *linter) blockDocSetsVars(b BlockDoc) []string {
 	return vars
 }
 
-// checkSetsShape reports a "sets" value that is not an object of {name: value}.
-// Catching it here gives the author a path; without it the failure surfaces
-// later as an unmarshalling error with no location.
+// checkSetsShape validates the "sets" field on a block: it must be an object
+// {name: value} and must not write into reserved runtime namespaces.
 func (l *linter) checkSetsShape(path string, b BlockDoc) {
 	raw, ok := b["sets"]
 	if !ok {
 		return
 	}
-	if _, ok := raw.(map[string]any); ok {
+	m, ok := raw.(map[string]any)
+	if !ok {
+		l.errorf(path+".sets", "SETS_NOT_OBJECT",
+			`"sets" must be an object {"name": "value"}`)
 		return
 	}
-	l.errorf(path+".sets", "SETS_NOT_OBJECT",
-		`"sets" must be an object {"name": "value"}`)
+	for name := range m {
+		l.checkReservedVarName(path+".sets", name)
+	}
+}
+
+// checkRegistrySetsReserved checks registry-sourced set var names for reserved
+// namespaces (e.g. choice block options[*].sets). Direct b["sets"] is handled
+// by checkSetsShape. The path points to the block itself because DocSetsVars
+// returns bare names with no sub-path index.
+func (l *linter) checkRegistrySetsReserved(typStr string, b BlockDoc, path string) {
+	for _, name := range l.registry.DocSetsVars(typStr, b) {
+		l.checkReservedVarName(path, name)
+	}
+}
+
+// checkReservedVarName reports a SETS_RESERVED_NAMESPACE error if name belongs
+// to a runtime-owned namespace.
+func (l *linter) checkReservedVarName(path string, name string) {
+	if IsReservedVarName(name) {
+		l.errorf(path, "SETS_RESERVED_NAMESPACE",
+			`cannot write to reserved namespace: %q — this var is set automatically by the runtime`, name)
+	}
 }
 
 // collectSetsFromBlockDoc extracts variable names from the "sets" key of a block doc.
@@ -751,22 +778,25 @@ func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 // Built-ins (from specgen.BuiltInVarSpecs):
 //
 //	player.points (legacy spelling: points), run.started_at, game.team_count
-//	location.<slug>.visited, location.<slug>.checked_in
-//	group.<name>.completed
+//	objective.<slug>
 func isBuiltInVar(name string) bool {
 	switch name {
 	case "player.points", "points", "run.started_at", "game.team_count":
 		return true
 	}
-	if after, ok := strings.CutPrefix(name, "location."); ok {
-		dot := strings.LastIndex(after, ".")
-		if dot >= 0 {
-			attr := after[dot+1:]
-			return attr == "visited" || attr == "checked_in"
-		}
-	}
-	if after, ok := strings.CutPrefix(name, "group."); ok {
-		return strings.HasSuffix(after, ".completed")
+	if after, ok := strings.CutPrefix(name, "objective."); ok {
+		return len(after) > 0
 	}
 	return false
+}
+
+// reservedVarPrefix marks namespace prefixes owned by the runtime.
+// Blocks must not write to these — the runtime sets them automatically.
+const reservedVarPrefix = "objective."
+
+// IsReservedVarName reports whether name belongs to a runtime-owned namespace.
+// Blocks that attempt to sets or trigger a reserved var should be rejected.
+func IsReservedVarName(name string) bool {
+	after, ok := strings.CutPrefix(name, reservedVarPrefix)
+	return ok && len(after) > 0
 }

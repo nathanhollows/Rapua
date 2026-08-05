@@ -86,7 +86,7 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	doc, err := svc.ExportInstance(ctx, inst.ID)
 	require.NoError(t, err)
 
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, inst.ID, doc.ID)
 	assert.Equal(t, "My Game", doc.Name)
 	assert.True(t, doc.Settings.EnablePoints)

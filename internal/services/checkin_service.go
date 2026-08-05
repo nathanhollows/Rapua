@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v7/game"
 	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v7/internal/repositories"
 	"github.com/nathanhollows/Rapua/v7/models"
@@ -353,6 +354,9 @@ func (s *CheckInService) writeSetsVars(
 		// GetTriggeredVars already filters to the options the player chose, so
 		// every returned value is written — matching the GetSets path below.
 		for varName, val := range setter.GetTriggeredVars(state) {
+			if game.IsReservedVarName(varName) {
+				continue
+			}
 			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
 				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}
@@ -361,6 +365,9 @@ func (s *CheckInService) writeSetsVars(
 	}
 	if state.IsComplete() {
 		for varName, val := range block.GetSets() {
+			if game.IsReservedVarName(varName) {
+				continue
+			}
 			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
 				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}

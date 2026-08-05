@@ -27,37 +27,6 @@ const (
 // - Efficient: O(n) or better time complexity
 // - Multi-tenant safe: no shared state between game instances
 
-// IsGroupCompleted checks if a group's completion criteria are met based on completed locations.
-// Uses map lookup for O(n) performance instead of nested loops.
-func IsGroupCompleted(
-	structure *models.GameStructure,
-	groupID string,
-	completedLocationIDs []string,
-) bool {
-	group := FindGroupByID(structure, groupID)
-	if group == nil || len(group.LocationIDs) == 0 {
-		return false
-	}
-
-	// Use map for more efficient lookup
-	completed := makeSet(completedLocationIDs)
-	count := 0
-	for _, locID := range group.LocationIDs {
-		if completed[locID] {
-			count++
-		}
-	}
-
-	switch group.CompletionType {
-	case models.CompletionAll:
-		return count == len(group.LocationIDs)
-	case models.CompletionMinimum:
-		return count >= group.MinimumRequired
-	default:
-		return false
-	}
-}
-
 // ComputeCurrentGroup determines which group a team should currently be in based on their
 // completed locations. This walks through the structure from the first visible group,
 // automatically advancing through completed groups.
@@ -381,23 +350,6 @@ func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStruc
 		}
 	}
 
-	return nil
-}
-
-// FindGroupByName recursively searches for a group with the specified name (case-sensitive).
-// Returns nil if not found. The root group is skipped (root name is always "").
-func FindGroupByName(root *models.GameStructure, name string) *models.GameStructure {
-	if root == nil {
-		return nil
-	}
-	for i := range root.SubGroups {
-		if root.SubGroups[i].Name == name {
-			return &root.SubGroups[i]
-		}
-		if found := FindGroupByName(&root.SubGroups[i], name); found != nil {
-			return found
-		}
-	}
 	return nil
 }
 

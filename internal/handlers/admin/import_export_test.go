@@ -18,7 +18,7 @@ import (
 
 // validImportDocJSON returns a minimal valid v7 game document as JSON.
 func validImportDocJSON() string {
-	return `{"rapua":"v7","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
+	return `{"rapua":"v8","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
 }
 
 func withImportUser(r *http.Request) *http.Request {
@@ -41,7 +41,7 @@ func TestParseUploadedDoc_JSONBody(t *testing.T) {
 	doc, err := parseUploadedDoc(req)
 
 	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, "Test Game", doc.Name)
 }
 
@@ -60,7 +60,7 @@ func TestParseUploadedDoc_MultipartFile(t *testing.T) {
 	doc, err := parseUploadedDoc(req)
 
 	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, "Test Game", doc.Name)
 }
 
@@ -108,7 +108,7 @@ func TestImportCheck_MalformedUpload(t *testing.T) {
 func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 	h := newImportHandler()
 	// Missing required "name" field → lint error
-	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
+	body := `{"rapua":"v8","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
 	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

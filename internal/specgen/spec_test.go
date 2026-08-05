@@ -103,11 +103,11 @@ func TestGenerateJSON(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_Version checks that the generated spec reports version "v7".
+// TestGenerateFullSpec_Version checks that the generated spec reports version "v8".
 func TestGenerateFullSpec_Version(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
-	if spec.Version != "v7" {
-		t.Errorf("GenerateFullSpec().Version = %q, want %q", spec.Version, "v7")
+	if spec.Version != "v8" {
+		t.Errorf("GenerateFullSpec().Version = %q, want %q", spec.Version, "v8")
 	}
 }
 

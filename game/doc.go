@@ -1,6 +1,6 @@
 package game
 
-// GameDoc is the top-level v7 JSON game document.
+// GameDoc is the top-level v8 JSON game document.
 // The DB is source of truth; this document is a complete lossless projection.
 // Export reads from DB; import writes to DB; round-trips are lossless.
 type GameDoc struct {

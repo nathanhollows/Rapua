@@ -16,6 +16,7 @@ type mockRegistry struct {
 	contexts    map[string][]game.BlockContext
 	knownFields map[string][]string
 	interactive map[string]bool
+	docSetsVars map[string][]string // block type → var names returned by DocSetsVars
 }
 
 func (m *mockRegistry) IsValidType(blockType string) bool {
@@ -41,8 +42,11 @@ func (m *mockRegistry) IsInteractive(blockType string) bool {
 	return m.interactive[blockType]
 }
 
-func (m *mockRegistry) DocSetsVars(_ string, _ game.BlockDoc) []string {
-	return nil
+func (m *mockRegistry) DocSetsVars(blockType string, _ game.BlockDoc) []string {
+	if m.docSetsVars == nil {
+		return nil
+	}
+	return m.docSetsVars[blockType]
 }
 
 func (m *mockRegistry) ValidateBlock(_, _ string, _ game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
@@ -55,6 +59,7 @@ func newTestRegistry() *mockRegistry {
 			"text":         true,
 			"clue":         true,
 			"quiz":         true,
+			"choice":       true,
 			"start_button": true,
 			"game_status":  true,
 			"password":     true,
@@ -63,11 +68,13 @@ func newTestRegistry() *mockRegistry {
 			"text":         {game.ContextLocationContent, game.ContextStart, game.ContextFinish},
 			"clue":         {game.ContextNavigation},
 			"quiz":         {game.ContextLocationContent},
+			"choice":       {game.ContextLocationContent},
 			"start_button": {game.ContextStart},
 			"game_status":  {game.ContextStart},
 		},
 		interactive: map[string]bool{
 			"quiz":     true,
+			"choice":   true,
 			"password": true,
 		},
 	}
@@ -75,7 +82,7 @@ func newTestRegistry() *mockRegistry {
 
 func validDoc() *game.GameDoc {
 	return &game.GameDoc{
-		Rapua: "v7",
+		Rapua: "v8",
 		Name:  "Test Game",
 		Settings: game.SettingsDoc{
 			EnablePoints: true,
@@ -889,6 +896,55 @@ func TestLint_SetsAsScalar_Error(t *testing.T) {
 	assert.Contains(t, codes, "SETS_NOT_OBJECT")
 }
 
+func TestLint_SetsReservedNamespace_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "quiz", "sets": map[string]any{"objective.find-maisie": "done"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	require.Contains(t, codes, "SETS_RESERVED_NAMESPACE")
+
+	for _, e := range result.Errors {
+		if e.Code == "SETS_RESERVED_NAMESPACE" {
+			assert.Contains(t, e.Path, ".sets")
+			assert.Contains(t, e.Message, "reserved namespace")
+		}
+	}
+}
+
+func TestLint_SetsReservedNamespace_RegistryPath_Error(t *testing.T) {
+	// Registry-sourced vars (e.g. choice block options[*].sets) must also
+	// be checked for reserved namespaces.
+	reg := newTestRegistry()
+	reg.docSetsVars = map[string][]string{"choice": {"objective.find-maisie"}}
+
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
+		{"type": "choice", "options": []any{
+			map[string]any{"label": "Yes", "sets": "objective.find-maisie"},
+		}},
+	}
+	result := game.Lint(doc, reg)
+
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	require.Contains(t, codes, "SETS_RESERVED_NAMESPACE")
+
+	for _, e := range result.Errors {
+		if e.Code == "SETS_RESERVED_NAMESPACE" {
+			assert.Contains(t, e.Path, "content[0]") // block path, not .sets
+			assert.Contains(t, e.Message, "reserved namespace")
+		}
+	}
+}
+
 // The shape check does not depend on the block type resolving, so a block that
 // is broken in two ways reports both faults rather than only the first.
 func TestLint_SetsShapeChecked_WhenTypeIsUnusable(t *testing.T) {
@@ -927,7 +983,7 @@ func TestLint_SetsShapeChecked_WhenTypeIsUnusable(t *testing.T) {
 
 func TestLintJSON_UnknownFieldInGameDoc(t *testing.T) {
 	data := []byte(`{
-		"rapua": "v7",
+		"rapua": "v8",
 		"name": "Test",
 		"hallucinated_field": true,
 		"settings": {},
@@ -945,7 +1001,7 @@ func TestLintJSON_UnknownFieldInGameDoc(t *testing.T) {
 
 func TestLintJSON_UnknownFieldInLocation(t *testing.T) {
 	data := []byte(`{
-		"rapua": "v7",
+		"rapua": "v8",
 		"name": "Test",
 		"settings": {},
 		"start": [],
@@ -981,7 +1037,7 @@ func TestLintJSON_UnknownFieldInLocation(t *testing.T) {
 
 func TestLintJSON_UnknownFieldInGroup(t *testing.T) {
 	data := []byte(`{
-		"rapua": "v7",
+		"rapua": "v8",
 		"name": "Test",
 		"settings": {},
 		"start": [],

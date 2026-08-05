@@ -45,7 +45,7 @@ func setupImportService(t *testing.T) (
 // minimalValidDoc returns a valid GameDoc with no locations and no blocks.
 func minimalValidDoc(name string) *game.GameDoc {
 	return &game.GameDoc{
-		Rapua: "v7",
+		Rapua: "v8",
 		Name:  name,
 		Settings: game.SettingsDoc{
 			EnablePoints: true,

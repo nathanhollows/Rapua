@@ -2,7 +2,7 @@ package specgen
 
 import "github.com/nathanhollows/Rapua/v7/game"
 
-// FullSpec is the complete machine-readable specification for the v7 game format.
+// FullSpec is the complete machine-readable specification for the v8 game format.
 type FullSpec struct {
 	Version           string           `json:"version"`
 	Document          ObjectSpec       `json:"document"`
@@ -46,10 +46,10 @@ type ContextDef struct {
 	Description string `json:"description"`
 }
 
-// GenerateFullSpec assembles the complete v7 spec.
+// GenerateFullSpec assembles the complete v8 spec.
 func GenerateFullSpec() FullSpec {
 	return FullSpec{
-		Version:           "v7",
+		Version:           "v8",
 		Document:          documentSpec(),
 		Enums:             enumDefs(),
 		BuiltInVars:       builtInVarSpecs(),
@@ -69,7 +69,7 @@ func whenFieldSpec() game.FieldSpec {
 				Name:        "var",
 				Type:        "string",
 				Required:    true,
-				Description: "Variable to check. Built-in: player.points, run.started_at, location.<slug>.visited, location.<slug>.checked_in, group.<name>.completed, game.team_count. Creator-defined via block sets.",
+				Description: "Variable to check. Built-in: player.points, run.started_at, objective.<slug>, game.team_count. Creator-defined via block sets.",
 			},
 			{
 				Name:        "op",
@@ -118,7 +118,9 @@ func setsFieldSpec() game.FieldSpec {
 		Description: "Variables written when this block completes, as an object of {name: value}. " +
 			"Values may be strings, numbers, or booleans; all are stored as strings. " +
 			"Any other shape emits SETS_NOT_OBJECT. " +
-			"Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise.",
+			"Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. " +
+			"Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — " +
+			"that prefix is owned by the runtime and set automatically when objectives complete.",
 		Items: &game.FieldSpec{Type: "string"},
 	}
 }
@@ -197,9 +199,9 @@ func documentSpec() ObjectSpec { //nolint:funlen
 	}
 
 	return ObjectSpec{
-		Description: "Top-level v7 game document.",
+		Description: "Top-level v8 game document.",
 		Fields: []game.FieldSpec{
-			{Name: "rapua", Type: "string", Required: true, Description: "Format version. Must be \"v7\"."},
+			{Name: "rapua", Type: "string", Required: true, Description: "Format version. Must be \"v8\"."},
 			{
 				Name:        "id",
 				Type:        "string",
@@ -315,19 +317,9 @@ func builtInVarSpecs() []BuiltInVarSpec {
 			Description: "RFC3339 timestamp of when the run began. Empty until the players start.",
 		},
 		{
-			Var:         "location.<slug>.visited",
-			Type:        "bool",
-			Description: "True when the team has a CheckIn record for the location with the given slug.",
-		},
-		{
-			Var:         "location.<slug>.checked_in",
-			Type:        "bool",
-			Description: "True when the team has checked in and BlocksCompleted is true for the given location slug.",
-		},
-		{
-			Var:         "group.<name>.completed",
-			Type:        "bool",
-			Description: "True when all required locations in the named group have been visited and completed.",
+			Var:         "objective.<slug>",
+			Type:        "string",
+			Description: "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise. (Not yet implemented — always returns empty string until objectives ship in Stage C.)",
 		},
 		{
 			Var:         "game.team_count",
