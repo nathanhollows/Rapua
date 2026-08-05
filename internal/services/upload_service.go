@@ -27,8 +27,8 @@ func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage
 
 // UploadMetadata contains metadata for an uploaded file.
 type UploadMetadata struct {
-	InstanceID string `json:"instanceID,omitempty"`
-	TeamID     string `json:"teamID,omitempty"`
+	QuestID    string `json:"questID,omitempty"`
+	RunID      string `json:"teamID,omitempty"`
 	BlockID    string `json:"blockID,omitempty"`
 	LocationID string `json:"locationID,omitempty"`
 }
@@ -88,8 +88,8 @@ func (s *UploadService) UploadFile(
 		Storage:     s.storage.Type(),
 		DeleteData:  deleteData,
 		Type:        fileType,
-		InstanceID:  data.InstanceID,
-		TeamCode:    data.TeamID,
+		QuestID:     data.QuestID,
+		RunCode:     data.RunID,
 		BlockID:     data.BlockID,
 		LocationID:  data.LocationID,
 	}

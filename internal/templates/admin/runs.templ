@@ -8,7 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ TeamsTable(teams []models.Team) {
+templ TeamsTable(teams []models.Run) {
 	<ul
 		id="teams-ul"
 		class="list rounded-lg mx-5"
@@ -250,10 +250,10 @@ templ TeamsTable(teams []models.Team) {
 				</div>
 			</div>
 		</div>
-		for _, team := range filter(teams, func(team models.Team) bool { return team.HasStarted }) {
+		for _, team := range filter(teams, func(team models.Run) bool { return team.HasStarted }) {
 			@teamItem(team, "active")
 		}
-		for _, team := range filter(teams, func(team models.Team) bool { return !team.HasStarted }) {
+		for _, team := range filter(teams, func(team models.Run) bool { return !team.HasStarted }) {
 			@teamItem(team, "inactive")
 		}
 	</ul>
@@ -288,13 +288,13 @@ templ TeamsTable(teams []models.Team) {
 	</div>
 }
 
-templ TeamsList(teams []models.Team) {
+templ TeamsList(teams []models.Run) {
 	for _, team := range teams {
 		@teamItem(team, "inactive")
 	}
 }
 
-templ teamItem(team models.Team, classes string) {
+templ teamItem(team models.Run, classes string) {
 	<li class={ fmt.Sprint("team-item list-row hover:bg-base-200 transition-colors justify-between flex ", classes) }>
 		<div class="flex flex-row items-center gap-3 grow">
 			<input
@@ -389,7 +389,7 @@ templ teamItem(team models.Team, classes string) {
 			}
 			if team.HasStarted {
 				<a
-					href={ templ.URL(fmt.Sprintf("/admin/teams/%s", team.Code)) }
+					href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
 					class="btn btn-xs"
 				>
 					See activity
@@ -399,7 +399,7 @@ templ teamItem(team models.Team, classes string) {
 	</li>
 }
 
-templ Teams(teams []models.Team, credits int) {
+templ Teams(teams []models.Run, credits int) {
 	<span class="hidden bg-danger text-danger-content border-error border-warning"></span>
 	<div class="flex gap-3 flex-row justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
@@ -462,7 +462,7 @@ templ Teams(teams []models.Team, credits int) {
 			<h3 class="font-bold text-lg">Quick add teams</h3>
 			<p class="py-4">How many teams would you like to add?</p>
 			<form
-				hx-post="/admin/teams/add"
+				hx-post="/admin/runs/add"
 				hx-target="#teams-ul"
 				hx-swap="beforeend swap:0.5s"
 				class="join flex flex-row w-full"
@@ -496,8 +496,8 @@ templ Teams(teams []models.Team, credits int) {
 
 // TeamOverviewData contains all data needed to render the team overview page.
 type TeamOverviewData struct {
-	Instance       models.Instance
-	Team           models.Team
+	Quest          models.Quest
+	Run models.Run
 	Notifications  []models.Notification
 	NextLocations  []models.Location
 	Uploads        []*models.Upload
@@ -513,10 +513,10 @@ templ TeamOverview(data TeamOverviewData) {
 			<div>
 				<h1 class="text-2xl font-bold">Team Overview</h1>
 				<p class="text-sm text-base-content/60">
-					{ data.Team.Code }
-					if data.Team.Name != "" {
+					{ data.Run.Code }
+					if data.Run.Name != "" {
 						<span class="opacity-50 mx-1">∕</span>
-						{ data.Team.Name }
+						{ data.Run.Name }
 					}
 				</p>
 			</div>
@@ -547,27 +547,27 @@ templ TeamOverview(data TeamOverviewData) {
 			<!-- Main Content Panel -->
 			<div class="flex-1 space-y-6">
 				<!-- Team Stats Card -->
-				@TeamStatsCard(data.Instance.Settings, data.Team, len(data.Team.CheckIns), data.TotalLocations)
+				@TeamStatsCard(data.Quest.Settings, data.Run, len(data.Run.CheckIns), data.TotalLocations)
 				<!-- Current Location Card -->
-				if data.Team.MustCheckOut != "" {
-					@CurrentLocationCard(data.Team)
+				if data.Run.MustCheckOut != "" {
+					@CurrentLocationCard(data.Run)
 				}
 				<!-- Next Locations Card -->
 				@NextLocationsCard(data.NextLocations, data.LocationGroups)
 				<!-- Previous Locations Card -->
 				if len(data.GroupedHistory) > 0 {
-					@PreviousLocationsCard(data.Instance.Settings, data.GroupedHistory)
+					@PreviousLocationsCard(data.Quest.Settings, data.GroupedHistory)
 				}
 				<!-- Uploaded Media Card -->
 				if len(data.Uploads) > 0 {
-					@UploadedMediaCard(data.Uploads, data.Team.Code)
+					@UploadedMediaCard(data.Uploads, data.Run.Code)
 				}
 				<!-- Alerts Card -->
-				@AlertsCard(data.Team, data.Notifications)
+				@AlertsCard(data.Run, data.Notifications)
 			</div>
 		</div>
 	</main>
-	@TeamPageModals(data.Team.Code)
+	@TeamPageModals(data.Run.Code)
 }
 
 templ TeamPageModals(teamCode string) {
@@ -584,7 +584,7 @@ templ TeamPageModals(teamCode string) {
 			<p>Credits are not restored if a team is reset.</p>
 			<p>Only the team code will be kept. This action cannot be undone.</p>
 			<form
-				hx-post={ fmt.Sprintf("/admin/teams/%s/reset", teamCode) }
+				hx-post={ fmt.Sprintf("/admin/runs/%s/reset", teamCode) }
 			>
 				<input type="hidden" name="id" value=""/>
 				<div class="modal-action">
@@ -609,7 +609,7 @@ templ TeamPageModals(teamCode string) {
 			<p>Credits are not restored if a team is deleted.</p>
 			<p>This action cannot be undone.</p>
 			<form
-				hx-delete={ fmt.Sprintf("/admin/teams/%s", teamCode) }
+				hx-delete={ fmt.Sprintf("/admin/runs/%s", teamCode) }
 			>
 				<input type="hidden" name="id" value=""/>
 				<div class="modal-action">
@@ -621,7 +621,7 @@ templ TeamPageModals(teamCode string) {
 	</dialog>
 }
 
-templ TeamStatsCard(settings models.InstanceSettings, team models.Team, completedLocations int, totalLocations int) {
+templ TeamStatsCard(settings models.QuestSettings, team models.Run, completedLocations int, totalLocations int) {
 	<div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/30 transition-colors">
 		<div class="card-body p-0">
 			<div class="stats">
@@ -684,7 +684,7 @@ templ TeamStatsCard(settings models.InstanceSettings, team models.Team, complete
 	</div>
 }
 
-templ CurrentLocationCard(team models.Team) {
+templ CurrentLocationCard(team models.Run) {
 	<div class="card bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 hover:border-accent/30 transition-colors">
 		<div class="card-body p-6">
 			<h2 class="card-title text-lg flex items-center gap-2">
@@ -749,7 +749,7 @@ templ NextLocationsCard(nextLocations []models.Location, locationGroups map[stri
 	</div>
 }
 
-templ PreviousLocationsCard(settings models.InstanceSettings, groupedHistory []services.GroupedCheckIns) {
+templ PreviousLocationsCard(settings models.QuestSettings, groupedHistory []services.GroupedCheckIns) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
 		<div class="card-body p-6">
 			<h2 class="card-title text-lg flex items-center gap-2">
@@ -831,7 +831,7 @@ templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
 	</div>
 }
 
-templ AlertsCard(team models.Team, notifications []models.Notification) {
+templ AlertsCard(team models.Run, notifications []models.Notification) {
 	<div class="card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors">
 		<div class="card-body p-6">
 			<h2 class="card-title text-lg flex items-center gap-2">

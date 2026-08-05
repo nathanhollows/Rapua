@@ -41,7 +41,12 @@ func init() {
 					candidate = fmt.Sprintf("%s-%d", base, n)
 				}
 				used[candidate] = true
-				if _, err = db.ExecContext(ctx, `UPDATE locations SET slug = ? WHERE id = ?`, candidate, loc.ID); err != nil {
+				if _, err = db.ExecContext(
+					ctx,
+					`UPDATE locations SET slug = ? WHERE id = ?`,
+					candidate,
+					loc.ID,
+				); err != nil {
 					return fmt.Errorf("setting slug for location %s: %w", loc.ID, err)
 				}
 			}

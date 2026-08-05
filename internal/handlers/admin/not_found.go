@@ -13,10 +13,10 @@ func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
 	if r.Header.Get("Hx-Boosted") != htmxHeaderTrue {
-		h.logger.Warn("NotFound called without HTMX boost", "path", r.URL.Path)
+		h.logger.WarnContext(r.Context(), "NotFound called without HTMX boost", "path", r.URL.Path)
 		err := templates.NotFound().Render(r.Context(), w)
 		if err != nil {
-			h.logger.Error("rendering NotFound page", "err", err.Error())
+			h.logger.ErrorContext(r.Context(), "rendering NotFound page", "err", err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -26,7 +26,7 @@ func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	c := templates.NotFound()
 	err := templates.Layout(c, *user, "Error", "Not Found").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering NotFound page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering NotFound page", "error", err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

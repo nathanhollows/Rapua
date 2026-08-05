@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-templ TemplatesPage(templates []models.Instance) {
+templ TemplatesPage(templates []models.Quest) {
 	@Templates(templates)
 	<!-- Modals -->
 	@templateModals()
@@ -14,7 +14,7 @@ templ TemplatesPage(templates []models.Instance) {
 	@templateScripts()
 }
 
-templ Templates(templates []models.Instance) {
+templ Templates(templates []models.Quest) {
 	<div id="templates" class="px-5">
 		<!-- Header -->
 		<div class="flex flex-row justify-between items-center w-full py-5 mt-6">
@@ -112,7 +112,7 @@ templ Templates(templates []models.Instance) {
 	</div>
 }
 
-templ TemplateName(template models.Instance) {
+templ TemplateName(template models.Quest) {
 	<div
 		class="tooltip cursor-pointer"
 		data-tip="Click to rename"
@@ -134,7 +134,7 @@ templ TemplateName(template models.Instance) {
 	</div>
 }
 
-templ TemplateNameEdit(template models.Instance) {
+templ TemplateNameEdit(template models.Quest) {
 	<form
 		hx-post={ fmt.Sprint("/admin/templates/", template.ID, "/edit/name") }
 		hx-target={ fmt.Sprint("#name-", template.ID) }
@@ -174,7 +174,7 @@ templ TemplateNameEdit(template models.Instance) {
 	</form>
 }
 
-templ templateItem(template models.Instance) {
+templ templateItem(template models.Quest) {
 	<div
 		class="template-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
 	>
@@ -243,7 +243,7 @@ templ templateItem(template models.Instance) {
 					</li>
 					<!-- Export as JSON -->
 					<li>
-						<a href={ templ.SafeURL(fmt.Sprintf("/admin/instances/%s/export", template.ID)) }>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", template.ID)) }>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
 							Download JSON
 						</a>
@@ -406,7 +406,7 @@ templ templateModals() {
 	></dialog>
 }
 
-templ TemplateShareModal(template models.Instance) {
+templ TemplateShareModal(template models.Quest) {
 	<div
 		class="modal-box"
 		_="on load share_template_modal.showModal()"

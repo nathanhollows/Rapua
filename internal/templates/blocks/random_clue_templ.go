@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func randomCluePlayer(_ models.InstanceSettings, block blocks.RandomClueBlock, state blocks.PlayerState) templ.Component {
+func randomCluePlayer(_ models.QuestSettings, block blocks.RandomClueBlock, state blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -53,7 +53,7 @@ func randomCluePlayer(_ models.InstanceSettings, block blocks.RandomClueBlock, s
 	})
 }
 
-func randomClueAdmin(_ models.InstanceSettings, block blocks.RandomClueBlock) templ.Component {
+func randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

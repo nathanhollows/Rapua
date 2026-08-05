@@ -25,10 +25,10 @@ func setupCreditService(
 	transactor := db.NewTransactor(dbc)
 
 	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 
-	service := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	service := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 
 	return *service, userRepo, creditRepo, transactor, cleanup
 }
@@ -244,13 +244,13 @@ func TestCreditService_AddCredits(t *testing.T) {
 	}
 }
 
-func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
+func TestCreditService_DeductCreditForRunStartWithTx(t *testing.T) {
 	testCases := []struct {
-		name       string
-		setupFn    func(userRepo repositories.UserRepository) string
-		teamID     string
-		instanceID string
-		wantErr    bool
+		name    string
+		setupFn func(userRepo repositories.UserRepository) string
+		teamID  string
+		questID string
+		wantErr bool
 	}{
 		{
 			name: "Valid team start deduction",
@@ -265,9 +265,9 @@ func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
 				userRepo.Create(context.Background(), user)
 				return user.ID
 			},
-			teamID:     gofakeit.UUID(),
-			instanceID: gofakeit.UUID(),
-			wantErr:    false,
+			teamID:  gofakeit.UUID(),
+			questID: gofakeit.UUID(),
+			wantErr: false,
 		},
 		{
 			name: "User with only paid credits",
@@ -282,9 +282,9 @@ func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
 				userRepo.Create(context.Background(), user)
 				return user.ID
 			},
-			teamID:     gofakeit.UUID(),
-			instanceID: gofakeit.UUID(),
-			wantErr:    false,
+			teamID:  gofakeit.UUID(),
+			questID: gofakeit.UUID(),
+			wantErr: false,
 		},
 	}
 
@@ -300,7 +300,7 @@ func TestCreditService_DeductCreditForTeamStartWithTx(t *testing.T) {
 			require.NoError(t, err)
 			defer tx.Rollback()
 
-			err = svc.DeductCreditForTeamStartWithTx(ctx, tx, userID, tc.teamID, tc.instanceID)
+			err = svc.DeductCreditForRunStartWithTx(ctx, tx, userID, tc.teamID, tc.questID)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
@@ -398,7 +398,7 @@ func TestCreditService_GetCreditAdjustments(t *testing.T) {
 	}
 }
 
-func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
+func TestCreditService_GetRunStartLogsSummary(t *testing.T) {
 	testCases := []struct {
 		name    string
 		setupFn func(userRepo repositories.UserRepository) string
@@ -495,12 +495,12 @@ func TestCreditService_GetTeamStartLogsSummary(t *testing.T) {
 			ctx := context.Background()
 			userID := tc.setupFn(userRepo)
 
-			filter := services.TeamStartLogFilter{
+			filter := services.RunStartLogFilter{
 				UserID:  userID,
 				GroupBy: tc.groupBy,
 			}
 
-			summary, err := svc.GetTeamStartLogsSummary(ctx, filter)
+			summary, err := svc.GetRunStartLogsSummary(ctx, filter)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
@@ -594,7 +594,7 @@ func TestCreditService_AddCredits_ValidationEdgeCases(t *testing.T) {
 	}
 }
 
-func TestCreditService_DeductCreditForTeamStart_InsufficientCredits(t *testing.T) {
+func TestCreditService_DeductCreditForRunStart_InsufficientCredits(t *testing.T) {
 	svc, userRepo, creditRepo, transactor, cleanup := setupCreditService(t)
 	defer cleanup()
 
@@ -624,12 +624,12 @@ func TestCreditService_DeductCreditForTeamStart_InsufficientCredits(t *testing.T
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	err = svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+	err = svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 	require.Error(t, err)
 	assert.Equal(t, services.ErrInsufficientCredits, err)
 }
 
-func TestCreditService_DeductCreditForTeamStart_ConcurrentAccess(t *testing.T) {
+func TestCreditService_DeductCreditForRunStart_ConcurrentAccess(t *testing.T) {
 	svc, userRepo, _, transactor, cleanup := setupCreditService(t)
 	defer cleanup()
 
@@ -666,7 +666,7 @@ func TestCreditService_DeductCreditForTeamStart_ConcurrentAccess(t *testing.T) {
 			}
 			defer tx.Rollback()
 
-			deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, teamID, gofakeit.UUID())
+			deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, teamID, gofakeit.UUID())
 			if deductErr == nil {
 				deductErr = tx.Commit()
 			}
@@ -820,7 +820,7 @@ func TestCreditService_TransactionRollback(t *testing.T) {
 	tx, err := transactor.BeginTx(ctx, nil)
 	require.NoError(t, err)
 
-	err = svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+	err = svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 	require.NoError(t, err)
 
 	// Rollback transaction

@@ -22,10 +22,10 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	transactor := db.NewTransactor(dbc)
 
 	// Initialize required repositories
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
+	teamRepo := repositories.NewRunRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
 	// Create temp uploads directory for testing
@@ -87,11 +87,11 @@ func TestDeleteService_DeleteUser_WithCreditData(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create team start log
-	teamStartLog := &models.TeamStartLog{
-		ID:         gofakeit.UUID(),
-		UserID:     user.ID,
-		TeamID:     gofakeit.UUID(),
-		InstanceID: gofakeit.UUID(),
+	teamStartLog := &models.RunStartLog{
+		ID:      gofakeit.UUID(),
+		UserID:  user.ID,
+		RunID:   gofakeit.UUID(),
+		QuestID: gofakeit.UUID(),
 	}
 	_, err = dbc.NewInsert().Model(teamStartLog).Exec(ctx)
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestDeleteService_DeleteUser_WithCreditData(t *testing.T) {
 	assert.Equal(t, 0, count, "Credit adjustment should be deleted")
 
 	// Verify team start log was deleted
-	count, err = dbc.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", teamStartLog.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.RunStartLog{}).Where("id = ?", teamStartLog.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Team start log should be deleted")
 }
@@ -428,18 +428,18 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	}
 
 	// Create team start logs
-	teamStartLogs := []models.TeamStartLog{
+	teamStartLogs := []models.RunStartLog{
 		{
-			ID:         gofakeit.UUID(),
-			UserID:     user.ID,
-			TeamID:     gofakeit.UUID(),
-			InstanceID: gofakeit.UUID(),
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			RunID:   gofakeit.UUID(),
+			QuestID: gofakeit.UUID(),
 		},
 		{
-			ID:         gofakeit.UUID(),
-			UserID:     user.ID,
-			TeamID:     gofakeit.UUID(),
-			InstanceID: gofakeit.UUID(),
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			RunID:   gofakeit.UUID(),
+			QuestID: gofakeit.UUID(),
 		},
 	}
 	for _, log := range teamStartLogs {
@@ -464,7 +464,7 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All adjustments should be deleted")
 
-	count, err = dbc.NewSelect().Model(&models.TeamStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.RunStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All team start logs should be deleted")
 }
@@ -479,13 +479,13 @@ func TestDeleteService_DeleteBlock_ImageBlock(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	inst := &models.Instance{ID: gofakeit.UUID(), UserID: user.ID, Name: "test"}
+	inst := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "test"}
 	_, err = dbc.NewInsert().Model(inst).Exec(ctx)
 	require.NoError(t, err)
 	marker := &models.Marker{Code: "TESTMK"}
 	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
 	require.NoError(t, err)
-	loc := &models.Location{ID: gofakeit.UUID(), InstanceID: inst.ID, MarkerID: marker.Code, Name: "test-loc"}
+	loc := &models.Location{ID: gofakeit.UUID(), QuestID: inst.ID, MarkerID: marker.Code, Name: "test-loc"}
 	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
 	require.NoError(t, err)
 
@@ -540,7 +540,7 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -549,10 +549,10 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test team
-	team := &models.Team{
+	team := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "AAAAA",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team).Exec(ctx)
@@ -561,16 +561,16 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 	// Create test uploads for the team
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test1.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test2.jpg",
@@ -585,12 +585,12 @@ func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify team still exists
-	count, err := dbc.NewSelect().Model(&models.Team{}).Where("code = ?", team.Code).Count(ctx)
+	count, err := dbc.NewSelect().Model(&models.Run{}).Where("code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "Team should still exist after reset")
 
 	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("team_code = ?", team.Code).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("run_code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team reset")
 }
@@ -605,7 +605,7 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -614,10 +614,10 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test team
-	team := &models.Team{
+	team := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "BBBBB",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team).Exec(ctx)
@@ -626,16 +626,16 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	// Create test uploads for the team
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test3.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test4.mp4",
@@ -650,12 +650,12 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify team was deleted
-	count, err := dbc.NewSelect().Model(&models.Team{}).Where("code = ?", team.Code).Count(ctx)
+	count, err := dbc.NewSelect().Model(&models.Run{}).Where("code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Team should be deleted")
 
 	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("team_code = ?", team.Code).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("run_code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team deletion")
 }
@@ -670,7 +670,7 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -679,16 +679,16 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create multiple test teams
-	team1 := &models.Team{
+	team1 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "CCCCC",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
-	team2 := &models.Team{
+	team2 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "DDDDD",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team1).Exec(ctx)
@@ -699,16 +699,16 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	// Create uploads for both teams
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team1.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team1.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team1.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team2.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team2.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team2.jpg",
@@ -723,7 +723,7 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify both teams still exist
-	count, err := dbc.NewSelect().Model(&models.Team{}).
+	count, err := dbc.NewSelect().Model(&models.Run{}).
 		Where("code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
@@ -731,7 +731,7 @@ func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	// Verify all uploads were deleted
 	count, err = dbc.NewSelect().Model(&models.Upload{}).
-		Where("team_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
+		Where("run_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team reset")
@@ -747,7 +747,7 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -756,16 +756,16 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create multiple test teams
-	team1 := &models.Team{
+	team1 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "EEEEE",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
-	team2 := &models.Team{
+	team2 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "FFFFF",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team1).Exec(ctx)
@@ -776,16 +776,16 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	// Create uploads for both teams
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team1.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team1.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team1-delete.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team2.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team2.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team2-delete.mp4",
@@ -800,7 +800,7 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify both teams were deleted
-	count, err := dbc.NewSelect().Model(&models.Team{}).
+	count, err := dbc.NewSelect().Model(&models.Run{}).
 		Where("code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
@@ -808,13 +808,13 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	// Verify all uploads were deleted
 	count, err = dbc.NewSelect().Model(&models.Upload{}).
-		Where("team_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
+		Where("run_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team deletion")
 }
 
-func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
+func TestDeleteService_DeleteQuest_WithUploads(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()
 
@@ -830,7 +830,7 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test instance owned by the user
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance with Media",
@@ -839,10 +839,10 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test team for the instance
-	team := &models.Team{
+	team := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "CCCCC",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team).Exec(ctx)
@@ -851,16 +851,16 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	// Create test uploads for the instance
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/instance_test1.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/instance_test2.mp4",
@@ -871,16 +871,16 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Delete the instance
-	err = svc.DeleteInstance(ctx, user.ID, instance.ID)
+	err = svc.DeleteQuest(ctx, user.ID, instance.ID)
 	require.NoError(t, err)
 
 	// Verify instance was deleted
-	count, err := dbc.NewSelect().Model(&models.Instance{}).Where("id = ?", instance.ID).Count(ctx)
+	count, err := dbc.NewSelect().Model(&models.Quest{}).Where("id = ?", instance.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Instance should be deleted")
 
 	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("instance_id = ?", instance.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("quest_id = ?", instance.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after instance deletion")
 }

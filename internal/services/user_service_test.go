@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupUserService(t *testing.T) (services.UserService, repositories.InstanceRepository, func()) {
+func setupUserService(t *testing.T) (services.UserService, repositories.QuestRepository, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	return *userService, instanceRepo, cleanup
@@ -287,24 +287,24 @@ func TestChangePassword(t *testing.T) {
 	})
 }
 
-func TestUserService_SwitchInstance(t *testing.T) {
+func TestUserService_SwitchQuest(t *testing.T) {
 	service, instanceRepo, cleanup := setupUserService(t)
 	defer cleanup()
 
 	email := gofakeit.Email()
-	user := &models.User{Email: email, Password: "password", CurrentInstanceID: "instance123"}
+	user := &models.User{Email: email, Password: "password", CurrentQuestID: "instance123"}
 	err := service.CreateUser(context.Background(), user, "password")
 	require.NoError(t, err)
 
-	err = instanceRepo.Create(context.Background(), &models.Instance{ID: "instance789", Name: "Game1", UserID: user.ID})
+	err = instanceRepo.Create(context.Background(), &models.Quest{ID: "instance789", Name: "Game1", UserID: user.ID})
 	require.NoError(t, err)
 
-	t.Run("SwitchInstance", func(t *testing.T) {
+	t.Run("SwitchQuest", func(t *testing.T) {
 		tests := []struct {
-			name       string
-			instanceID string
-			user       *models.User
-			wantErr    bool
+			name    string
+			questID string
+			user    *models.User
+			wantErr bool
 		}{
 			{"Valid Instance", "instance789", user, false},
 			{"Empty ID", "", user, true},
@@ -313,7 +313,7 @@ func TestUserService_SwitchInstance(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				switchErr := service.SwitchInstance(context.Background(), tc.user, tc.instanceID)
+				switchErr := service.SwitchQuest(context.Background(), tc.user, tc.questID)
 				if tc.wantErr {
 					require.Error(t, switchErr)
 				} else {

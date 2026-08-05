@@ -7,16 +7,16 @@ import (
 )
 
 type QuickstartService struct {
-	instanceRepo repositories.InstanceRepository
+	instanceRepo repositories.QuestRepository
 }
 
-func NewQuickstartService(instanceRepo repositories.InstanceRepository) *QuickstartService {
+func NewQuickstartService(instanceRepo repositories.QuestRepository) *QuickstartService {
 	return &QuickstartService{
 		instanceRepo: instanceRepo,
 	}
 }
 
 // DismissQuickstart marks the quickstart as dismissed for the given instance.
-func (s *QuickstartService) DismissQuickstart(ctx context.Context, instanceID string) error {
-	return s.instanceRepo.DismissQuickstart(ctx, instanceID)
+func (s *QuickstartService) DismissQuickstart(ctx context.Context, questID string) error {
+	return s.instanceRepo.DismissQuickstart(ctx, questID)
 }

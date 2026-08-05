@@ -92,7 +92,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 	err := r.db.NewSelect().
 		Model(user).
 		Where("email = ?", email).
-		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+		Relation("Quests", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).
 		Scan(ctx)
@@ -115,7 +115,7 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*models.Us
 	err := r.db.NewSelect().
 		Model(&user).
 		Where("user.id = ?", userID).
-		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+		Relation("Quests", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).
 		Scan(ctx)
@@ -132,7 +132,7 @@ func (r *userRepository) GetByEmailAndProvider(ctx context.Context, email, provi
 		Model(user).
 		Where("email = ?", email).
 		Where("provider = ? OR provider = ''", provider).
-		Relation("Instances", func(q *bun.SelectQuery) *bun.SelectQuery {
+		Relation("Quests", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Where("is_template = ?", false)
 		}).
 		Scan(ctx)

@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
+func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -87,7 +87,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	return nil
 }
 
-func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -168,7 +168,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	return nil
 }
 
-func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -249,7 +249,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	return nil
 }
 
-templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open bool) {
+templ RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bool) {
 	<div
 		id={ fmt.Sprint("block-", block.GetID()) }
 		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"

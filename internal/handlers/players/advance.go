@@ -7,7 +7,7 @@ import (
 // AdvanceGroup allows a team to manually skip the current group and advance to the next one.
 // This delegates validation to the navigation service via CanAdvanceEarly flag.
 func (h *PlayerHandler) AdvanceGroup(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -38,7 +38,7 @@ func (h *PlayerHandler) AdvanceGroup(w http.ResponseWriter, r *http.Request) {
 	team.SkippedGroupIDs = append(team.SkippedGroupIDs, view.CurrentGroup.ID)
 
 	// Update team in database
-	err = h.teamService.Update(r.Context(), team)
+	err = h.runService.Update(r.Context(), team)
 	if err != nil {
 		h.handleError(w, r, "AdvanceGroup: updating team", "Error advancing group", "Could not save progress", err)
 		return

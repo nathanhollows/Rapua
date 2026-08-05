@@ -5,8 +5,8 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ QuickstartBar(instance models.Instance) {
-	if instance.ID == "" || !instance.IsQuickStartDismissed {
+templ QuickstartBar(quest models.Quest) {
+	if quest.ID == "" || !quest.IsQuickStartDismissed {
 		<div
 			id="quickstart"
 			role="alert"
@@ -27,25 +27,25 @@ templ QuickstartBar(instance models.Instance) {
 				hx-boost="true"
 				hx-target="body"
 			>
-				if instance.ID != "" {
+				if quest.ID != "" {
 					@completedStep("Create an Instance")
 				} else {
-					@nextStep(1, "Create an instance", "/admin/instances", false)
+					@nextStep(1, "Create an instance", "/admin/quests", false)
 				}
-				if len(instance.Locations) > 0 {
+				if len(quest.Locations) > 0 {
 					@completedStep("Add a Location")
 				} else {
-					@nextStep(2, "Add a Location", "/admin/locations/new", instance.ID == "")
+					@nextStep(2, "Add a Location", "/admin/quest/new", quest.ID == "")
 				}
-				if len(instance.Teams) > 0 {
+				if len(quest.Runs) > 0 {
 					@completedStep("Add a Team")
 				} else {
-					@nextStep(3, "Add a Team", "/admin/teams", instance.ID == "")
+					@nextStep(3, "Add a Team", "/admin/runs", quest.ID == "")
 				}
-				if !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+				if !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 					@completedStep("Update Settings")
 				} else {
-					@nextStep(4, "Update Settings", "/admin/experience", instance.ID == "")
+					@nextStep(4, "Update Settings", "/admin/experience", quest.ID == "")
 				}
 			</ol>
 			<button
@@ -53,13 +53,13 @@ templ QuickstartBar(instance models.Instance) {
 				hx-post="/admin/quickstart/dismiss"
 				hx-swap="outerHTML"
 				hx-target="#quickstart"
-				if instance.ID == "" && len(instance.Locations) > 0 && len(instance.Teams) > 0 && !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+				if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 					class="btn btn-sm btn-success tooltip tooltip-left text-center flex"
 				} else {
 					class="btn btn-sm btn-circle btn-ghost tooltip tooltip-left text-center opacity-50 hover:opacity-100 transition-opacity"
 				}
 			>
-				if instance.ID == "" && len(instance.Locations) > 0 && len(instance.Teams) > 0 && !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+				if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 					Ready to play!
 				} else {
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4 m-auto"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>

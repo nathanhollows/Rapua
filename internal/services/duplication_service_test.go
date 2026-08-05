@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -19,8 +20,8 @@ import (
 func setupDuplicationService(t *testing.T) (
 	*services.DuplicationService,
 	db.Transactor,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
 	repositories.LocationRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -32,11 +33,12 @@ func setupDuplicationService(t *testing.T) (
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 
 	duplicationService := services.NewDuplicationService(
+		slog.Default(),
 		transactor,
 		instanceRepo,
 		instanceSettingsRepo,
@@ -47,7 +49,7 @@ func setupDuplicationService(t *testing.T) (
 	return duplicationService, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
 }
 
-func TestDuplicationService_DuplicateInstance(t *testing.T) {
+func TestDuplicationService_DuplicateQuest(t *testing.T) {
 	svc, transactor, instanceRepo, settingsRepo, locationRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -58,7 +60,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -67,8 +69,8 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID:      sourceInstance.ID,
+		settings := &models.QuestSettings{
+			QuestID:         sourceInstance.ID,
 			EnablePoints:    true,
 			ShowLeaderboard: true,
 		}
@@ -79,10 +81,10 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		markerCode := gofakeit.LetterN(5)
 		insertTestMarker(t, dbc, markerCode)
 		location := &models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: sourceInstance.ID,
-			MarkerID:   markerCode,
-			Points:     100,
+			Name:     gofakeit.Word(),
+			QuestID:  sourceInstance.ID,
+			MarkerID: markerCode,
+			Points:   100,
 		}
 		err = locationRepo.Create(ctx, location)
 		require.NoError(t, err)
@@ -97,7 +99,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 
 		// Duplicate the instance
 		newName := gofakeit.Word()
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, newName)
+		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, newName)
 		require.NoError(t, err)
 
 		// Verify instance was duplicated
@@ -107,7 +109,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		assert.False(t, duplicated.IsTemplate)
 
 		// Verify settings were duplicated
-		duplicatedSettings, err := settingsRepo.GetByInstanceID(ctx, duplicated.ID)
+		duplicatedSettings, err := settingsRepo.GetByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
@@ -126,7 +128,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance with game structure
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -138,9 +140,9 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		marker1 := gofakeit.LetterN(5)
 		insertTestMarker(t, dbc, marker1)
 		location1 := &models.Location{
-			Name:       "Location 1",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker1,
+			Name:     "Location 1",
+			QuestID:  sourceInstance.ID,
+			MarkerID: marker1,
 		}
 		err = locationRepo.Create(ctx, location1)
 		require.NoError(t, err)
@@ -148,9 +150,9 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		marker2 := gofakeit.LetterN(5)
 		insertTestMarker(t, dbc, marker2)
 		location2 := &models.Location{
-			Name:       "Location 2",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker2,
+			Name:     "Location 2",
+			QuestID:  sourceInstance.ID,
+			MarkerID: marker2,
 		}
 		err = locationRepo.Create(ctx, location2)
 		require.NoError(t, err)
@@ -158,9 +160,9 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		marker3 := gofakeit.LetterN(5)
 		insertTestMarker(t, dbc, marker3)
 		location3 := &models.Location{
-			Name:       "Location 3",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker3,
+			Name:     "Location 3",
+			QuestID:  sourceInstance.ID,
+			MarkerID: marker3,
 		}
 		err = locationRepo.Create(ctx, location3)
 		require.NoError(t, err)
@@ -192,15 +194,15 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID: sourceInstance.ID,
+		settings := &models.QuestSettings{
+			QuestID: sourceInstance.ID,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
 		// Duplicate the instance
 		newName := gofakeit.Word()
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, newName)
+		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, newName)
 		require.NoError(t, err)
 
 		// Verify game structure was copied
@@ -251,7 +253,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template instance
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -260,7 +262,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to duplicate template
-		_, err = svc.DuplicateInstance(ctx, user, template.ID, gofakeit.Word())
+		_, err = svc.DuplicateQuest(ctx, user, template.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot duplicate a template")
 	})
@@ -271,7 +273,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user1.ID)
 
 		// Create instance owned by user1
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user1.ID,
 			IsTemplate: false,
@@ -280,19 +282,19 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to duplicate as user2
-		_, err = svc.DuplicateInstance(ctx, user2, instance.ID, gofakeit.Word())
+		_, err = svc.DuplicateQuest(ctx, user2, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 
 	t.Run("validates user is not nil", func(t *testing.T) {
-		_, err := svc.DuplicateInstance(ctx, nil, gofakeit.UUID(), gofakeit.Word())
+		_, err := svc.DuplicateQuest(ctx, nil, gofakeit.UUID(), gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 }
 
-func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
+func TestDuplicationService_CreateTemplateFromQuest(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -303,7 +305,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -312,8 +314,8 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID:   sourceInstance.ID,
+		settings := &models.QuestSettings{
+			QuestID:      sourceInstance.ID,
 			EnablePoints: true,
 		}
 		err = settingsRepo.Create(ctx, settings)
@@ -321,7 +323,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 
 		// Create template from instance
 		templateName := gofakeit.Word()
-		template, err := svc.CreateTemplateFromInstance(ctx, user, sourceInstance.ID, templateName)
+		template, err := svc.CreateTemplateFromQuest(ctx, user, sourceInstance.ID, templateName)
 		require.NoError(t, err)
 
 		// Verify template
@@ -336,7 +338,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		user2 := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user1.ID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user1.ID,
 			IsTemplate: false,
@@ -344,13 +346,13 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateTemplateFromInstance(ctx, user2, instance.ID, gofakeit.Word())
+		_, err = svc.CreateTemplateFromQuest(ctx, user2, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 }
 
-func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
+func TestDuplicationService_CreateQuestFromTemplate(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -361,7 +363,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -369,8 +371,8 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID:   template.ID,
+		settings := &models.QuestSettings{
+			QuestID:      template.ID,
 			EnablePoints: false,
 		}
 		err = settingsRepo.Create(ctx, settings)
@@ -378,7 +380,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 		// Create instance from template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromTemplate(ctx, user, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify instance
@@ -392,7 +394,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -400,7 +402,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateInstanceFromTemplate(ctx, user, instance.ID, gofakeit.Word())
+		_, err = svc.CreateQuestFromTemplate(ctx, user, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "source is not a template")
 	})
@@ -410,7 +412,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -418,8 +420,8 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID: template.ID,
+		settings := &models.QuestSettings{
+			QuestID: template.ID,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
@@ -459,7 +461,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 		// Create instance from template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromTemplate(ctx, user, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify ContextStart blocks were copied to new instance
@@ -490,7 +492,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 	})
 }
 
-func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
+func TestDuplicationService_CreateQuestFromSharedTemplate(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -503,7 +505,7 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		insertTestUser(t, dbc, recipient.ID)
 
 		// Create template owned by owner
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     owner.ID,
 			IsTemplate: true,
@@ -511,15 +513,15 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID: template.ID,
+		settings := &models.QuestSettings{
+			QuestID: template.ID,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
 		// Recipient creates instance from shared template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromSharedTemplate(ctx, recipient, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromSharedTemplate(ctx, recipient, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify instance is owned by recipient
@@ -535,7 +537,7 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		ownerID := gofakeit.UUID()
 		insertTestUser(t, dbc, ownerID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     ownerID,
 			IsTemplate: false,
@@ -543,7 +545,7 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateInstanceFromSharedTemplate(ctx, user, instance.ID, gofakeit.Word())
+		_, err = svc.CreateQuestFromSharedTemplate(ctx, user, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "source is not a template")
 	})
@@ -559,17 +561,17 @@ func TestDuplicationService_DuplicateLocation(t *testing.T) {
 		// Create FK-valid parent chain for source and target instances
 		userID := gofakeit.UUID()
 		insertTestUser(t, dbc, userID)
-		sourceInstanceID := insertTestInstance(t, dbc, userID)
-		targetInstanceID := insertTestInstance(t, dbc, userID)
+		sourceQuestID := insertTestInstance(t, dbc, userID)
+		targetQuestID := insertTestInstance(t, dbc, userID)
 
 		// Create source location with valid marker
 		markerCode := gofakeit.LetterN(5)
 		insertTestMarker(t, dbc, markerCode)
 		sourceLocation := models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: sourceInstanceID,
-			MarkerID:   markerCode,
-			Points:     50,
+			Name:     gofakeit.Word(),
+			QuestID:  sourceQuestID,
+			MarkerID: markerCode,
+			Points:   50,
 		}
 		err := locationRepo.Create(ctx, &sourceLocation)
 		require.NoError(t, err)
@@ -583,13 +585,13 @@ func TestDuplicationService_DuplicateLocation(t *testing.T) {
 		require.NoError(t, err)
 
 		// Duplicate location
-		duplicated, err := svc.DuplicateLocation(ctx, sourceLocation, targetInstanceID)
+		duplicated, err := svc.DuplicateLocation(ctx, sourceLocation, targetQuestID)
 		require.NoError(t, err)
 
 		// Verify duplicated location
 		assert.NotEqual(t, sourceLocation.ID, duplicated.ID)
 		assert.Equal(t, sourceLocation.Name, duplicated.Name)
-		assert.Equal(t, targetInstanceID, duplicated.InstanceID)
+		assert.Equal(t, targetQuestID, duplicated.QuestID)
 		assert.Equal(t, sourceLocation.Points, duplicated.Points)
 	})
 }
@@ -600,11 +602,11 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("DuplicateInstance dismisses quickstart", func(t *testing.T) {
+	t.Run("DuplicateQuest dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -612,20 +614,20 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 		err := instanceRepo.Create(ctx, sourceInstance)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
+		settings := &models.QuestSettings{QuestID: sourceInstance.ID}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
+		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
 		require.NoError(t, err)
 		assert.True(t, duplicated.IsQuickStartDismissed, "duplicated instance should have quickstart dismissed")
 	})
 
-	t.Run("CreateTemplateFromInstance dismisses quickstart", func(t *testing.T) {
+	t.Run("CreateTemplateFromQuest dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -633,20 +635,20 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 		err := instanceRepo.Create(ctx, sourceInstance)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
+		settings := &models.QuestSettings{QuestID: sourceInstance.ID}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		template, err := svc.CreateTemplateFromInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
+		template, err := svc.CreateTemplateFromQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
 		require.NoError(t, err)
 		assert.True(t, template.IsQuickStartDismissed, "template should have quickstart dismissed")
 	})
 
-	t.Run("CreateInstanceFromTemplate dismisses quickstart", func(t *testing.T) {
+	t.Run("CreateQuestFromTemplate dismisses quickstart", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -654,22 +656,22 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{InstanceID: template.ID}
+		settings := &models.QuestSettings{QuestID: template.ID}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, gofakeit.Word())
+		instance, err := svc.CreateQuestFromTemplate(ctx, user, template.ID, gofakeit.Word())
 		require.NoError(t, err)
 		assert.True(t, instance.IsQuickStartDismissed, "instance from template should have quickstart dismissed")
 	})
 
-	t.Run("CreateInstanceFromSharedTemplate dismisses quickstart", func(t *testing.T) {
+	t.Run("CreateQuestFromSharedTemplate dismisses quickstart", func(t *testing.T) {
 		owner := &models.User{ID: gofakeit.UUID()}
 		recipient := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, owner.ID)
 		insertTestUser(t, dbc, recipient.ID)
 
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     owner.ID,
 			IsTemplate: true,
@@ -677,11 +679,11 @@ func TestDuplicationService_QuickStartDismissed(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{InstanceID: template.ID}
+		settings := &models.QuestSettings{QuestID: template.ID}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		instance, err := svc.CreateInstanceFromSharedTemplate(ctx, recipient, template.ID, gofakeit.Word())
+		instance, err := svc.CreateQuestFromSharedTemplate(ctx, recipient, template.ID, gofakeit.Word())
 		require.NoError(t, err)
 		assert.True(t, instance.IsQuickStartDismissed, "instance from shared template should have quickstart dismissed")
 	})

@@ -33,6 +33,6 @@ func (h *Handler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.MarkdownPreview(md).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("markdown preview: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "markdown preview: rendering template", "error", err)
 	}
 }

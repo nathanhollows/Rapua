@@ -14,20 +14,20 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-// ExportInstance exports an instance as a v7 JSON document download.
+// ExportQuest exports an instance as a v7 JSON document download.
 //
-//	GET /admin/instances/{id}/export
-func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
+//	GET /admin/quests/{id}/export
+func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-	instanceID := chi.URLParam(r, "id")
+	questID := chi.URLParam(r, "id")
 
-	ok, err := h.accessService.CanAdminAccessInstance(r.Context(), user.ID, instanceID)
+	ok, err := h.accessService.CanAdminAccessQuest(r.Context(), user.ID, questID)
 	if err != nil || !ok {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
-	doc, err := h.exportService.ExportInstance(r.Context(), instanceID)
+	doc, err := h.exportService.ExportInstance(r.Context(), questID)
 	if err != nil {
 		h.handleError(
 			w,
@@ -36,8 +36,8 @@ func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
 			"Error exporting instance",
 			"error",
 			err,
-			"instance_id",
-			instanceID,
+			"quest_id",
+			questID,
 		)
 		return
 	}
@@ -51,13 +51,13 @@ func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
 			"Error serialising document",
 			"error",
 			err,
-			"instance_id",
-			instanceID,
+			"quest_id",
+			questID,
 		)
 		return
 	}
 
-	filename := fmt.Sprintf("rapua-instance-%s.json", instanceID)
+	filename := fmt.Sprintf("rapua-instance-%s.json", questID)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	w.WriteHeader(http.StatusOK)
@@ -68,7 +68,7 @@ func (h *Handler) ExportInstance(w http.ResponseWriter, r *http.Request) {
 // If the document ID matches an instance owned by the logged-in user, the
 // fragment offers an "overwrite" button alongside "create new".
 //
-//	POST /admin/instances/import/check
+//	POST /admin/quests/import/check
 func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -81,9 +81,9 @@ func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 	lintResult := game.Lint(doc, blocks.Registry())
 
 	// Only check ownership when the doc is otherwise valid.
-	var matched *models.Instance
+	var matched *models.Quest
 	if lintResult.IsValid() && doc.ID != "" {
-		inst, err := h.instanceService.GetByID(r.Context(), doc.ID)
+		inst, err := h.questService.GetByID(r.Context(), doc.ID)
 		if err == nil && inst.UserID == user.ID {
 			matched = inst
 		}
@@ -94,7 +94,7 @@ func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 
 // ImportInstanceCreate creates a new instance from an uploaded v7 JSON document.
 //
-//	POST /admin/instances/import
+//	POST /admin/quests/import
 func (h *Handler) ImportInstanceCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
@@ -110,17 +110,17 @@ func (h *Handler) ImportInstanceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/admin/instances")
+	h.redirect(w, r, "/admin/quests")
 }
 
 // ImportInstanceUpdate updates an existing instance from an uploaded v7 JSON document.
 //
-//	POST /admin/instances/{id}/import
+//	POST /admin/quests/{id}/import
 func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-	instanceID := chi.URLParam(r, "id")
+	questID := chi.URLParam(r, "id")
 
-	ok, err := h.accessService.CanAdminAccessInstance(r.Context(), user.ID, instanceID)
+	ok, err := h.accessService.CanAdminAccessQuest(r.Context(), user.ID, questID)
 	if err != nil || !ok {
 		_ = templates.ImportErrorResult("You do not have permission to update this game.").Render(r.Context(), w)
 		return
@@ -132,13 +132,13 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.importService.ImportUpdate(r.Context(), user.ID, instanceID, doc)
+	_, err = h.importService.ImportUpdate(r.Context(), user.ID, questID, doc)
 	if err != nil {
 		_ = templates.ImportErrorResult(fmt.Sprintf("Import failed: %v", err)).Render(r.Context(), w)
 		return
 	}
 
-	h.redirect(w, r, "/admin/instances")
+	h.redirect(w, r, "/admin/quests")
 }
 
 const maxUploadBytes = 4 << 20 // 4 MB

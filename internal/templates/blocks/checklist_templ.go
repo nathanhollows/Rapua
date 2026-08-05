@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func checklistPlayer(settings models.InstanceSettings, block blocks.ChecklistBlock, data blocks.PlayerState) templ.Component {
+func checklistPlayer(settings models.QuestSettings, block blocks.ChecklistBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -218,7 +218,7 @@ var checklistInstructionsTextarea = TextareaParams{
 	Required:    true,
 }
 
-func checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBlock) templ.Component {
+func checklistAdmin(settings models.QuestSettings, block blocks.ChecklistBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

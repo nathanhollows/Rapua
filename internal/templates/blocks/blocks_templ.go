@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
+func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -95,7 +95,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	return nil
 }
 
-func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -176,7 +176,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	return nil
 }
 
-func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -257,7 +257,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	return nil
 }
 
-func RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open bool) templ.Component {
+func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

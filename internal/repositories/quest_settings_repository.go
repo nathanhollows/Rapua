@@ -9,33 +9,33 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type InstanceSettingsRepository interface {
+type QuestSettingsRepository interface {
 	// Create new instance settings to the database
-	Create(ctx context.Context, settings *models.InstanceSettings) error
+	Create(ctx context.Context, settings *models.QuestSettings) error
 	// CreateTx creates new instance settings within a transaction
-	CreateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error
+	CreateTx(ctx context.Context, tx *bun.Tx, settings *models.QuestSettings) error
 
 	// Update updates an instance in the database
-	Update(ctx context.Context, settings *models.InstanceSettings) error
+	Update(ctx context.Context, settings *models.QuestSettings) error
 	// UpdateTx updates instance settings within a transaction
-	UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.InstanceSettings) error
+	UpdateTx(ctx context.Context, tx *bun.Tx, settings *models.QuestSettings) error
 
-	// GetByInstanceID retrieves instance settings by instance ID
-	GetByInstanceID(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
+	// GetByQuestID retrieves instance settings by instance ID
+	GetByQuestID(ctx context.Context, questID string) (*models.QuestSettings, error)
 }
 
 type instanceSettingsRepository struct {
 	db *bun.DB
 }
 
-func NewInstanceSettingsRepository(db *bun.DB) InstanceSettingsRepository {
+func NewQuestSettingsRepository(db *bun.DB) QuestSettingsRepository {
 	return &instanceSettingsRepository{
 		db: db,
 	}
 }
 
-func (r *instanceSettingsRepository) Create(ctx context.Context, settings *models.InstanceSettings) error {
-	if settings.InstanceID == "" {
+func (r *instanceSettingsRepository) Create(ctx context.Context, settings *models.QuestSettings) error {
+	if settings.QuestID == "" {
 		return errors.New("instance ID is required")
 	}
 	settings.CreatedAt = time.Now().UTC()
@@ -50,9 +50,9 @@ func (r *instanceSettingsRepository) Create(ctx context.Context, settings *model
 func (r *instanceSettingsRepository) CreateTx(
 	ctx context.Context,
 	tx *bun.Tx,
-	settings *models.InstanceSettings,
+	settings *models.QuestSettings,
 ) error {
-	if settings.InstanceID == "" {
+	if settings.QuestID == "" {
 		return errors.New("instance ID is required")
 	}
 	settings.CreatedAt = time.Now().UTC()
@@ -64,8 +64,8 @@ func (r *instanceSettingsRepository) CreateTx(
 	return nil
 }
 
-func (r *instanceSettingsRepository) Update(ctx context.Context, settings *models.InstanceSettings) error {
-	if settings.InstanceID == "" {
+func (r *instanceSettingsRepository) Update(ctx context.Context, settings *models.QuestSettings) error {
+	if settings.QuestID == "" {
 		return errors.New("instance ID is required")
 	}
 	settings.UpdatedAt = time.Now().UTC()
@@ -79,9 +79,9 @@ func (r *instanceSettingsRepository) Update(ctx context.Context, settings *model
 func (r *instanceSettingsRepository) UpdateTx(
 	ctx context.Context,
 	tx *bun.Tx,
-	settings *models.InstanceSettings,
+	settings *models.QuestSettings,
 ) error {
-	if settings.InstanceID == "" {
+	if settings.QuestID == "" {
 		return errors.New("instance ID is required")
 	}
 	settings.UpdatedAt = time.Now().UTC()
@@ -92,19 +92,19 @@ func (r *instanceSettingsRepository) UpdateTx(
 	return nil
 }
 
-// GetByInstanceID retrieves instance settings by instance ID.
-func (r *instanceSettingsRepository) GetByInstanceID(
+// GetByQuestID retrieves instance settings by instance ID.
+func (r *instanceSettingsRepository) GetByQuestID(
 	ctx context.Context,
-	instanceID string,
-) (*models.InstanceSettings, error) {
-	if instanceID == "" {
+	questID string,
+) (*models.QuestSettings, error) {
+	if questID == "" {
 		return nil, errors.New("instance ID is required")
 	}
 
-	var settings models.InstanceSettings
+	var settings models.QuestSettings
 	err := r.db.NewSelect().
 		Model(&settings).
-		Where("instance_id = ?", instanceID).
+		Where("quest_id = ?", questID).
 		Scan(ctx)
 	if err != nil {
 		return nil, err

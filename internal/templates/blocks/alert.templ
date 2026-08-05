@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ alertPlayer(_ models.InstanceSettings, block blocks.AlertBlock) {
+templ alertPlayer(_ models.QuestSettings, block blocks.AlertBlock) {
 	if block.Content != "" {
 		<div
 			role="alert"
@@ -41,7 +41,7 @@ var alertTextarea = TextareaParams{
 	Required:    true,
 }
 
-templ alertAdmin(_ models.InstanceSettings, block blocks.AlertBlock) {
+templ alertAdmin(_ models.QuestSettings, block blocks.AlertBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

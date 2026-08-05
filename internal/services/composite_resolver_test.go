@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeTeam(points int, checkIns []models.CheckIn) *models.Team {
-	return &models.Team{
+func makeTeam(points int, checkIns []models.CheckIn) *models.Run {
+	return &models.Run{
 		Points:   points,
 		CheckIns: checkIns,
 	}
@@ -79,8 +79,8 @@ func TestCompositeResolver_GroupCompleted(t *testing.T) {
 			},
 		},
 	}
-	team := &models.Team{
-		Instance: models.Instance{GameStructure: gs},
+	team := &models.Run{
+		Quest: models.Quest{GameStructure: gs},
 		CheckIns: []models.CheckIn{
 			{LocationID: "loc-a", BlocksCompleted: true},
 			{LocationID: "loc-b", BlocksCompleted: true},
@@ -93,8 +93,8 @@ func TestCompositeResolver_GroupCompleted(t *testing.T) {
 	assert.Equal(t, "true", val)
 
 	// Incomplete group
-	team2 := &models.Team{
-		Instance: models.Instance{GameStructure: gs},
+	team2 := &models.Run{
+		Quest: models.Quest{GameStructure: gs},
 		CheckIns: []models.CheckIn{
 			{LocationID: "loc-a", BlocksCompleted: true},
 		},
@@ -152,7 +152,7 @@ func TestPlayerVarResolver_TeamCount(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "0", val, "default team count is 0")
 
-	r = r.WithTeamCount(17)
+	r = r.WithRunCount(17)
 	val, ok = r.ResolveVar("game.team_count")
 	assert.True(t, ok)
 	assert.Equal(t, "17", val)

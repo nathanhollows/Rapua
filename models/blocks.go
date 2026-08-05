@@ -17,10 +17,11 @@ type Block struct {
 	ValidationRequired bool              `bun:"validation_required,type:bool"`
 }
 
-type TeamBlockState struct {
+type RunBlockState struct {
 	baseModel
-	TeamCode      string          `bun:"team_code,pk,notnull"`
+	RunCode       string          `bun:"run_code,pk,notnull"`
 	BlockID       string          `bun:"block_id,pk,notnull"`
+	QuestID       string          `bun:"quest_id,pk,notnull"`
 	IsComplete    bool            `bun:"is_complete,type:bool"`
 	PointsAwarded int             `bun:"points_awarded,type:int"`
 	PlayerData    json.RawMessage `bun:"player_data,type:jsonb"`

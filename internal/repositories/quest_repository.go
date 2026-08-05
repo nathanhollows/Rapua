@@ -10,23 +10,23 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type InstanceRepository interface {
+type QuestRepository interface {
 	// Create saves an instance to the database
-	Create(ctx context.Context, instance *models.Instance) error
+	Create(ctx context.Context, instance *models.Quest) error
 	// CreateTx saves an instance to the database within a transaction
-	CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error
+	CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error
 
 	// GetByID finds an instance by ID
-	GetByID(ctx context.Context, id string) (*models.Instance, error)
+	GetByID(ctx context.Context, id string) (*models.Quest, error)
 	// FindByUserID finds all instances associated with a user ID
-	FindByUserID(ctx context.Context, userID string) ([]models.Instance, error)
+	FindByUserID(ctx context.Context, userID string) ([]models.Quest, error)
 	// FindTemplates finds all instances that are templates
-	FindTemplates(ctx context.Context, userID string) ([]models.Instance, error)
+	FindTemplates(ctx context.Context, userID string) ([]models.Quest, error)
 
 	// Update updates an instance in the database
-	Update(ctx context.Context, instance *models.Instance) error
+	Update(ctx context.Context, instance *models.Quest) error
 	// UpdateTx updates an instance within a transaction
-	UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error
+	UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error
 
 	// Delete deletes an instance from the database.
 	// Deleting an instance cascades to all related data.
@@ -35,23 +35,23 @@ type InstanceRepository interface {
 	DeleteByUser(ctx context.Context, tx *bun.Tx, userID string) error
 
 	// DismissQuickstart marks the user as having dismissed the quickstart
-	DismissQuickstart(ctx context.Context, instanceID string) error
+	DismissQuickstart(ctx context.Context, questID string) error
 
 	// GetByIDWithRelations loads an instance with all relations needed for the admin panel
-	GetByIDWithRelations(ctx context.Context, id string) (*models.Instance, error)
+	GetByIDWithRelations(ctx context.Context, id string) (*models.Quest, error)
 }
 
-type instanceRepository struct {
+type questRepository struct {
 	db *bun.DB
 }
 
-func NewInstanceRepository(db *bun.DB) InstanceRepository {
-	return &instanceRepository{
+func NewQuestRepository(db *bun.DB) QuestRepository {
+	return &questRepository{
 		db: db,
 	}
 }
 
-func (r *instanceRepository) Create(ctx context.Context, instance *models.Instance) error {
+func (r *questRepository) Create(ctx context.Context, instance *models.Quest) error {
 	if instance.ID == "" {
 		instance.ID = uuid.New().String()
 	}
@@ -65,7 +65,7 @@ func (r *instanceRepository) Create(ctx context.Context, instance *models.Instan
 	return nil
 }
 
-func (r *instanceRepository) CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error {
+func (r *questRepository) CreateTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error {
 	if instance.ID == "" {
 		instance.ID = uuid.New().String()
 	}
@@ -79,7 +79,7 @@ func (r *instanceRepository) CreateTx(ctx context.Context, tx *bun.Tx, instance 
 	return nil
 }
 
-func (r *instanceRepository) Update(ctx context.Context, instance *models.Instance) error {
+func (r *questRepository) Update(ctx context.Context, instance *models.Quest) error {
 	if instance.ID == "" {
 		return errors.New("ID is required")
 	}
@@ -94,7 +94,7 @@ func (r *instanceRepository) Update(ctx context.Context, instance *models.Instan
 	return nil
 }
 
-func (r *instanceRepository) UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Instance) error {
+func (r *questRepository) UpdateTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error {
 	if instance.ID == "" {
 		return errors.New("ID is required")
 	}
@@ -109,8 +109,8 @@ func (r *instanceRepository) UpdateTx(ctx context.Context, tx *bun.Tx, instance 
 	return nil
 }
 
-func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.Instance, error) {
-	instance := &models.Instance{}
+func (r *questRepository) GetByID(ctx context.Context, id string) (*models.Quest, error) {
+	instance := &models.Quest{}
 	err := r.db.NewSelect().
 		Model(instance).
 		Where("id = ?", id).
@@ -124,8 +124,8 @@ func (r *instanceRepository) GetByID(ctx context.Context, id string) (*models.In
 	return instance, nil
 }
 
-func (r *instanceRepository) FindByUserID(ctx context.Context, userID string) ([]models.Instance, error) {
-	instances := []models.Instance{}
+func (r *questRepository) FindByUserID(ctx context.Context, userID string) ([]models.Quest, error) {
+	instances := []models.Quest{}
 	err := r.db.NewSelect().
 		Model(&instances).
 		Where("user_id = ? AND is_template = ?", userID, false).
@@ -136,8 +136,8 @@ func (r *instanceRepository) FindByUserID(ctx context.Context, userID string) ([
 	return instances, nil
 }
 
-func (r *instanceRepository) FindTemplates(ctx context.Context, userID string) ([]models.Instance, error) {
-	instances := []models.Instance{}
+func (r *questRepository) FindTemplates(ctx context.Context, userID string) ([]models.Quest, error) {
+	instances := []models.Quest{}
 	err := r.db.NewSelect().
 		Model(&instances).
 		Where("user_id = ? AND is_template = ?", userID, true).
@@ -149,21 +149,21 @@ func (r *instanceRepository) FindTemplates(ctx context.Context, userID string) (
 	return instances, nil
 }
 
-func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) error {
+func (r *questRepository) Delete(ctx context.Context, tx *bun.Tx, id string) error {
 	// Delete instance
-	_, err := tx.NewDelete().Model(&models.Instance{}).Where("id = ?", id).Exec(ctx)
+	_, err := tx.NewDelete().Model(&models.Quest{}).Where("id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Delete CheckIns
-	_, err = tx.NewDelete().Model(&models.CheckIn{}).Where("instance_id = ?", id).Exec(ctx)
+	_, err = tx.NewDelete().Model(&models.CheckIn{}).Where("quest_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Delete locations
-	_, err = tx.NewDelete().Model(&models.Location{}).Where("instance_id = ?", id).Exec(ctx)
+	_, err = tx.NewDelete().Model(&models.Location{}).Where("quest_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (r *instanceRepository) Delete(ctx context.Context, tx *bun.Tx, id string) 
 }
 
 // DeleteByUserID removes all instances associated with a user ID.
-func (r *instanceRepository) DeleteByUser(ctx context.Context, tx *bun.Tx, userID string) error {
+func (r *questRepository) DeleteByUser(ctx context.Context, tx *bun.Tx, userID string) error {
 	instances, err := r.FindByUserID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("finding instances by user ID: %w", err)
@@ -192,13 +192,13 @@ func (r *instanceRepository) DeleteByUser(ctx context.Context, tx *bun.Tx, userI
 }
 
 // GetByIDWithRelations loads an instance with all relations needed for the admin panel.
-func (r *instanceRepository) GetByIDWithRelations(ctx context.Context, id string) (*models.Instance, error) {
-	instance := &models.Instance{}
+func (r *questRepository) GetByIDWithRelations(ctx context.Context, id string) (*models.Quest, error) {
+	instance := &models.Quest{}
 	err := r.db.NewSelect().
 		Model(instance).
-		Where("instance.id = ?", id).
+		Where("quest.id = ?", id).
 		Relation("Settings").
-		Relation("Teams").
+		Relation("Runs").
 		Relation("Locations", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.Order("order ASC")
 		}).
@@ -211,11 +211,11 @@ func (r *instanceRepository) GetByIDWithRelations(ctx context.Context, id string
 }
 
 // DismissQuickstart marks the user as having dismissed the quickstart.
-func (r *instanceRepository) DismissQuickstart(ctx context.Context, instanceID string) error {
+func (r *questRepository) DismissQuickstart(ctx context.Context, questID string) error {
 	_, err := r.db.NewUpdate().
-		Model(&models.Instance{}).
+		Model(&models.Quest{}).
 		Set("is_quick_start_dismissed = ?", true).
-		Where("id = ?", instanceID).
+		Where("id = ?", questID).
 		Exec(ctx)
 	return err
 }

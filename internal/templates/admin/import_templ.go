@@ -39,7 +39,7 @@ func ImportModal() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"import_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Import game</h3><p class=\"py-2 text-sm opacity-60\">Upload a Rapua v7 JSON file. It will be validated before any changes are made.</p><form id=\"import-form\" hx-post=\"/admin/instances/import/check\" hx-target=\"#import-result\" hx-swap=\"innerHTML\" hx-encoding=\"multipart/form-data\" hx-indicator=\"#import-spinner\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Game file (.json)</legend> <input type=\"file\" name=\"file\" accept=\".json,application/json\" class=\"file-input w-full\" onchange=\"htmx.trigger('#import-form', 'submit')\" required></fieldset><span id=\"import-spinner\" class=\"htmx-indicator loading loading-spinner loading-sm mt-2\"></span></form><div id=\"import-result\" class=\"mt-3\"></div></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"import_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Import game</h3><p class=\"py-2 text-sm opacity-60\">Upload a Rapua v7 JSON file. It will be validated before any changes are made.</p><form id=\"import-form\" hx-post=\"/admin/quests/import/check\" hx-target=\"#import-result\" hx-swap=\"innerHTML\" hx-encoding=\"multipart/form-data\" hx-indicator=\"#import-spinner\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Game file (.json)</legend> <input type=\"file\" name=\"file\" accept=\".json,application/json\" class=\"file-input w-full\" onchange=\"htmx.trigger('#import-form', 'submit')\" required></fieldset><span id=\"import-spinner\" class=\"htmx-indicator loading loading-spinner loading-sm mt-2\"></span></form><div id=\"import-result\" class=\"mt-3\"></div></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -48,7 +48,7 @@ func ImportModal() templ.Component {
 }
 
 // ImportCheckResult is the HTMX fragment returned after validating an uploaded JSON file.
-func ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Instance, docName string) templ.Component {
+func ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Quest, docName string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -232,9 +232,9 @@ func ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Insta
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/instances/%s/import", matchedInstance.ID))
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/quests/%s/import", matchedInstance.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/import.templ`, Line: 89, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/import.templ`, Line: 89, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 				if templ_7745c5c3_Err != nil {
@@ -258,7 +258,7 @@ func ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Insta
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<button class=\"btn btn-primary w-full\" onclick=\"submitImportTo('/admin/instances/import')\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Import as new game</button></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<button class=\"btn btn-primary w-full\" onclick=\"submitImportTo('/admin/quests/import')\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Import as new game</button></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

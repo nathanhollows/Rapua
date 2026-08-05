@@ -16,20 +16,20 @@ import (
 func setupQuickstartService(t *testing.T) (*services.QuickstartService, func()) {
 	dbc, cleanup := setupDB(t)
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	quickstartService := services.NewQuickstartService(instanceRepo)
 
 	return quickstartService, cleanup
 }
 
-func createTestInstanceForQuickstart(t *testing.T, dbc *bun.DB, dismissed bool) *models.Instance {
+func createTestInstanceForQuickstart(t *testing.T, dbc *bun.DB, dismissed bool) *models.Quest {
 	t.Helper()
 
 	// Insert a valid user to satisfy FK constraint: instances.user_id → users.id
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:                    gofakeit.UUID(),
 		UserID:                userID,
 		Name:                  gofakeit.Name(),
@@ -38,7 +38,7 @@ func createTestInstanceForQuickstart(t *testing.T, dbc *bun.DB, dismissed bool) 
 		EndTime:               bun.NullTime{},
 	}
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	err := instanceRepo.Create(context.Background(), instance)
 	require.NoError(t, err)
 
@@ -48,8 +48,8 @@ func createTestInstanceForQuickstart(t *testing.T, dbc *bun.DB, dismissed bool) 
 func TestQuickstartService_DismissQuickstart(t *testing.T) {
 	testCases := []struct {
 		name              string
-		setupFn           func(dbc *bun.DB) (string, bool) // returns instanceID and whether it should exist
-		instanceID        string
+		setupFn           func(dbc *bun.DB) (string, bool) // returns questID and whether it should exist
+		questID           string
 		wantErr           bool
 		expectedDismissed bool
 		expectedName      string
@@ -98,9 +98,9 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 			dbc, dbCleanup := setupDB(t)
 			defer dbCleanup()
 
-			instanceID, shouldExist := tc.setupFn(dbc)
+			questID, shouldExist := tc.setupFn(dbc)
 
-			err := svc.DismissQuickstart(context.Background(), instanceID)
+			err := svc.DismissQuickstart(context.Background(), questID)
 
 			if tc.wantErr { //nolint:nestif // table-driven test pattern requires checking both error and success paths
 				require.Error(t, err)
@@ -112,8 +112,8 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 
 				if shouldExist {
 					// Verify the instance was actually updated in the database
-					instanceRepo := repositories.NewInstanceRepository(dbc)
-					instance, getErr := instanceRepo.GetByID(context.Background(), instanceID)
+					instanceRepo := repositories.NewQuestRepository(dbc)
+					instance, getErr := instanceRepo.GetByID(context.Background(), questID)
 					if assert.NoError(t, getErr) {
 						assert.Equal(t, tc.expectedDismissed, instance.IsQuickStartDismissed)
 					}
@@ -125,29 +125,29 @@ func TestQuickstartService_DismissQuickstart(t *testing.T) {
 
 func TestQuickstartService_DismissQuickstart_ValidationCases(t *testing.T) {
 	testCases := []struct {
-		name       string
-		instanceID string
-		wantErr    bool
+		name    string
+		questID string
+		wantErr bool
 	}{
 		{
-			name:       "Valid UUID",
-			instanceID: gofakeit.UUID(),
-			wantErr:    false, // Repository doesn't validate existence, just updates
+			name:    "Valid UUID",
+			questID: gofakeit.UUID(),
+			wantErr: false, // Repository doesn't validate existence, just updates
 		},
 		{
-			name:       "Empty string",
-			instanceID: "",
-			wantErr:    false, // Repository accepts empty string
+			name:    "Empty string",
+			questID: "",
+			wantErr: false, // Repository accepts empty string
 		},
 		{
-			name:       "Invalid UUID format",
-			instanceID: "not-a-uuid",
-			wantErr:    false, // Repository doesn't validate UUID format
+			name:    "Invalid UUID format",
+			questID: "not-a-uuid",
+			wantErr: false, // Repository doesn't validate UUID format
 		},
 		{
-			name:       "SQL injection attempt",
-			instanceID: "'; DROP TABLE instances; --",
-			wantErr:    false, // Repository should handle this safely with parameterized queries
+			name:    "SQL injection attempt",
+			questID: "'; DROP TABLE instances; --",
+			wantErr: false, // Repository should handle this safely with parameterized queries
 		},
 	}
 
@@ -156,7 +156,7 @@ func TestQuickstartService_DismissQuickstart_ValidationCases(t *testing.T) {
 			svc, cleanup := setupQuickstartService(t)
 			defer cleanup()
 
-			err := svc.DismissQuickstart(context.Background(), tc.instanceID)
+			err := svc.DismissQuickstart(context.Background(), tc.questID)
 
 			if tc.wantErr {
 				require.Error(t, err)
@@ -177,7 +177,7 @@ func TestQuickstartService_Integration_DatabasePersistence(t *testing.T) {
 
 	// Create an instance that hasn't dismissed quickstart
 	instance := createTestInstanceForQuickstart(t, dbc, false)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 
 	// Verify initial state
 	fetchedInstance, err := instanceRepo.GetByID(context.Background(), instance.ID)
@@ -210,7 +210,7 @@ func TestQuickstartService_Integration_MultipleInstances(t *testing.T) {
 	instance2 := createTestInstanceForQuickstart(t, dbc, false)
 	instance3 := createTestInstanceForQuickstart(t, dbc, true) // Already dismissed
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 
 	// Dismiss quickstart for instance1 only
 	err := svc.DismissQuickstart(context.Background(), instance1.ID)
@@ -284,7 +284,7 @@ func TestQuickstartService_Integration_ConcurrentAccess(t *testing.T) {
 	assert.Equal(t, numGoroutines, successCount, "All concurrent dismissals should succeed")
 
 	// Verify final state
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	fetchedInstance, err := instanceRepo.GetByID(context.Background(), instance.ID)
 	require.NoError(t, err)
 	assert.True(t, fetchedInstance.IsQuickStartDismissed)

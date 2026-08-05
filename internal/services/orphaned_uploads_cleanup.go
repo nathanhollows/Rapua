@@ -172,18 +172,18 @@ func (s *OrphanedUploadsCleanupService) CleanupEmptyDirectories(ctx context.Cont
 		// Check if directory is empty
 		entries, readErr := os.ReadDir(path)
 		if readErr != nil {
-			s.logger.Warn("Failed to read directory", "path", path, "error", readErr)
+			s.logger.WarnContext(ctx, "Failed to read directory", "path", path, "error", readErr)
 			return nil
 		}
 
 		if len(entries) == 0 {
 			if removeErr := os.Remove(path); removeErr != nil {
-				s.logger.Warn("Failed to delete empty directory",
+				s.logger.WarnContext(ctx, "Failed to delete empty directory",
 					"path", path,
 					"error", removeErr,
 				)
 			} else {
-				s.logger.Info("Deleted empty directory", "path", path)
+				s.logger.InfoContext(ctx, "Deleted empty directory", "path", path)
 				dirsDeleted++
 			}
 		}

@@ -6,11 +6,11 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ dividerPlayer(_ models.InstanceSettings, block blocks.DividerBlock) {
+templ dividerPlayer(_ models.QuestSettings, block blocks.DividerBlock) {
 	<div class="divider">{ block.Title }</div>
 }
 
-templ dividerAdmin(_ models.InstanceSettings, block blocks.DividerBlock) {
+templ dividerAdmin(_ models.QuestSettings, block blocks.DividerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

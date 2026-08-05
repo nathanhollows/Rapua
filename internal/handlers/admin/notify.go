@@ -18,8 +18,8 @@ func (h *Handler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -27,7 +27,7 @@ func (h *Handler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 
 	// Send the notification
-	err := h.notificationService.SendNotificationToAllTeams(r.Context(), user.CurrentInstanceID, content)
+	err := h.notificationService.SendNotificationToAllTeams(r.Context(), user.CurrentQuestID, content)
 	if err != nil {
 		h.handleError(
 			w,
@@ -36,8 +36,8 @@ func (h *Handler) NotifyAllPost(w http.ResponseWriter, r *http.Request) {
 			"Error sending notification",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -57,17 +57,17 @@ func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	content := r.FormValue("content")
-	teamCode := r.FormValue("teamCode")
+	runCode := r.FormValue("runCode")
 
 	// Send the notification
-	_, err := h.notificationService.SendNotification(r.Context(), teamCode, content)
+	_, err := h.notificationService.SendNotification(r.Context(), runCode, content)
 	if err != nil {
 		h.handleError(
 			w,
@@ -76,14 +76,14 @@ func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 			"Error sending notification",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	// Fetch updated notifications
-	notifications, err := h.notificationService.GetNotifications(r.Context(), teamCode)
+	notifications, err := h.notificationService.GetNotifications(r.Context(), runCode)
 	if err != nil {
 		h.handleError(
 			w,
@@ -92,8 +92,8 @@ func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 			"Error fetching notifications",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -108,8 +108,8 @@ func (h *Handler) NotifyTeamPost(w http.ResponseWriter, r *http.Request) {
 			"Error rendering notifications",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}

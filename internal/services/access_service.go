@@ -10,32 +10,32 @@ import (
 
 type AccessService struct {
 	blockRepo    repositories.BlockRepository
-	instanceRepo repositories.InstanceRepository
+	instanceRepo repositories.QuestRepository
 	locationRepo repositories.LocationRepository
 	markerRepo   repositories.MarkerRepository
 }
 
-// NewAccessService creates a new instance of accessService.
+// NewAccessService creates an accessService.
 func NewAccessService(
 	blockRepository repositories.BlockRepository,
-	instanceRepository repositories.InstanceRepository,
+	questRepository repositories.QuestRepository,
 	locationRepository repositories.LocationRepository,
 	markerRepository repositories.MarkerRepository,
 ) *AccessService {
 	return &AccessService{
 		blockRepo:    blockRepository,
-		instanceRepo: instanceRepository,
+		instanceRepo: questRepository,
 		locationRepo: locationRepository,
 		markerRepo:   markerRepository,
 	}
 }
 
-// CanAdminAccessInstance checks if the user can access the instance.
-func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error) {
+// CanAdminAccessQuest checks if the user can access the quest.
+func (s *AccessService) CanAdminAccessQuest(ctx context.Context, userID, questID string) (bool, error) {
 	if userID == "" {
 		return false, ErrUserNotAuthenticated
 	}
-	if instanceID == "" {
+	if questID == "" {
 		return false, errors.New("instance ID cannot be empty")
 	}
 
@@ -45,7 +45,7 @@ func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, inst
 	}
 
 	for _, instance := range instanceIDs {
-		if instance.ID == instanceID {
+		if instance.ID == questID {
 			return true, nil
 		}
 	}
@@ -72,7 +72,7 @@ func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, loca
 		return false, err
 	}
 	for _, instance := range instanceIDs {
-		if instance.ID == location.InstanceID {
+		if instance.ID == location.QuestID {
 			return true, nil
 		}
 	}
@@ -119,9 +119,9 @@ func (s *AccessService) CanAdminAccessBlockOwner(
 		return false, errors.New("owner ID cannot be empty")
 	}
 
-	// For start/complete blocks, owner is instanceID/complete
+	// For start/complete blocks, owner is questID/complete
 	if blockContext == blocks.ContextStart || blockContext == blocks.ContextFinish {
-		return s.CanAdminAccessInstance(ctx, userID, ownerID)
+		return s.CanAdminAccessQuest(ctx, userID, ownerID)
 	}
 
 	// For location blocks, owner is locationID

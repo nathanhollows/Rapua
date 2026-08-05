@@ -15,13 +15,13 @@ import (
 
 func setupGameStructureService(
 	t *testing.T,
-) (*services.GameStructureService, services.LocationService, services.BlockService, services.InstanceService, services.UserService, func()) {
+) (*services.GameStructureService, services.LocationService, services.BlockService, services.QuestService, services.UserService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	// Initialize repositories
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
@@ -33,17 +33,17 @@ func setupGameStructureService(
 	markerService := services.NewMarkerService(markerRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo, blockRepo)
+	questService := services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 
 	// Set up relation loader
 	gameStructureService.SetRelationLoader(locationRepo)
 
-	return gameStructureService, locationService, *blockService, *instanceService, *userService, cleanup
+	return gameStructureService, locationService, *blockService, *questService, *userService, cleanup
 }
 
 func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
-	service, locationService, blockService, instanceService, userService, cleanup := setupGameStructureService(t)
+	service, locationService, blockService, questService, userService, cleanup := setupGameStructureService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -55,7 +55,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance", user)
 		require.NoError(t, err)
 
 		// Create locations with blocks
@@ -100,7 +100,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 2", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 2", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -150,7 +150,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 3", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 3", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -195,7 +195,7 @@ func TestGameStructureService_LoadBlocksForStructure(t *testing.T) {
 }
 
 func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
-	service, locationService, _, instanceService, userService, cleanup := setupGameStructureService(t)
+	service, locationService, _, questService, userService, cleanup := setupGameStructureService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -207,7 +207,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -230,7 +230,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Reload instance to verify
-		reloaded, err := instanceService.GetByID(ctx, instance.ID)
+		reloaded, err := questService.GetByID(ctx, instance.ID)
 		require.NoError(t, err)
 
 		// All locations should be in root group
@@ -247,7 +247,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 2", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 2", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -278,7 +278,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Reload instance to verify
-		reloaded, err := instanceService.GetByID(ctx, instance.ID)
+		reloaded, err := questService.GetByID(ctx, instance.ID)
 		require.NoError(t, err)
 
 		// Orphaned location should be in root group
@@ -293,7 +293,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 3", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 3", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -314,7 +314,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 		require.NoError(t, err)
 
 		// Reload instance to verify
-		reloaded, err := instanceService.GetByID(ctx, instance.ID)
+		reloaded, err := questService.GetByID(ctx, instance.ID)
 		require.NoError(t, err)
 
 		// Structure should be unchanged
@@ -325,7 +325,7 @@ func TestGameStructureService_EnsureAllLocationsIncluded(t *testing.T) {
 }
 
 func TestGameStructureService_Save_Integration(t *testing.T) {
-	service, locationService, _, instanceService, userService, cleanup := setupGameStructureService(t)
+	service, locationService, _, questService, userService, cleanup := setupGameStructureService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -337,7 +337,7 @@ func TestGameStructureService_Save_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance", user)
 		require.NoError(t, err)
 
 		// Create location
@@ -372,7 +372,7 @@ func TestGameStructureService_Save_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 2", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 2", user)
 		require.NoError(t, err)
 
 		// Create location
@@ -399,7 +399,7 @@ func TestGameStructureService_Save_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instance
-		instance, err := instanceService.CreateInstance(ctx, "Test Instance 3", user)
+		instance, err := questService.CreateQuest(ctx, "Test Instance 3", user)
 		require.NoError(t, err)
 
 		// Create locations
@@ -428,7 +428,7 @@ func TestGameStructureService_Save_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify save
-		reloaded, err := instanceService.GetByID(ctx, instance.ID)
+		reloaded, err := questService.GetByID(ctx, instance.ID)
 		require.NoError(t, err)
 		assert.Len(t, reloaded.GameStructure.SubGroups, 1)
 		assert.Equal(t, "Group 1", reloaded.GameStructure.SubGroups[0].Name)

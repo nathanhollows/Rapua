@@ -9,8 +9,8 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-// Instances shows admin the instances.
-func (h *Handler) Instances(w http.ResponseWriter, r *http.Request) {
+// Quests shows admin the instances.
+func (h *Handler) Quests(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// We need to show both the instances and the templates
@@ -23,13 +23,13 @@ func (h *Handler) Instances(w http.ResponseWriter, r *http.Request) {
 			"Error finding templates",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	c := templates.Instances(user.Instances, user.CurrentInstance, gameTemplates)
+	c := templates.Instances(user.Quests, user.CurrentQuest, gameTemplates)
 	err = templates.Layout(c, *user, "Games and Templates", "Games and Templates").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
@@ -39,14 +39,14 @@ func (h *Handler) Instances(w http.ResponseWriter, r *http.Request) {
 			"Error rendering template",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 	}
 }
 
-// InstancesCreate creates a new instance.
-func (h *Handler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
+// QuestsCreate creates a new instance.
+func (h *Handler) QuestsCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -57,14 +57,14 @@ func (h *Handler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	name := r.FormValue("name")
-	instance, err := h.instanceService.CreateInstance(r.Context(), name, user)
+	instance, err := h.questService.CreateQuest(r.Context(), name, user)
 	if err != nil {
 		h.handleError(
 			w,
@@ -73,25 +73,25 @@ func (h *Handler) InstancesCreate(w http.ResponseWriter, r *http.Request) {
 			"Error creating instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	// Switch to the new instance
-	err = h.userService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.userService.SwitchQuest(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(w, r, "InstancesCreate: switching instance", "Error switching instance", "error", err)
 		return
 	}
-	h.setCurrentInstance(w, r, instance.ID)
+	h.setCurrentQuest(w, r, instance.ID)
 
-	h.redirect(w, r, "/admin/instances")
+	h.redirect(w, r, "/admin/quests")
 }
 
-// InstanceDuplicate duplicates an instance.
-func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
+// QuestDuplicate duplicates an instance.
+func (h *Handler) QuestDuplicate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	err := r.ParseForm()
@@ -103,7 +103,7 @@ func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 	id := r.Form.Get("id")
 	name := r.Form.Get("name")
 
-	instance, err := h.duplicationService.DuplicateInstance(r.Context(), user, id, name)
+	instance, err := h.duplicationService.DuplicateQuest(r.Context(), user, id, name)
 	if err != nil {
 		h.handleError(
 			w,
@@ -112,13 +112,13 @@ func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 			"Error duplicating instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	err = h.userService.SwitchInstance(r.Context(), user, instance.ID)
+	err = h.userService.SwitchQuest(r.Context(), user, instance.ID)
 	if err != nil {
 		h.handleError(
 			w,
@@ -127,22 +127,22 @@ func (h *Handler) InstanceDuplicate(w http.ResponseWriter, r *http.Request) {
 			"Error switching instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
-	h.setCurrentInstance(w, r, instance.ID)
+	h.setCurrentQuest(w, r, instance.ID)
 
-	h.redirect(w, r, "/admin/instances")
+	h.redirect(w, r, "/admin/quests")
 }
 
-// InstanceSwitch switches the current instance.
-func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
+// QuestSwitch switches the current instance.
+func (h *Handler) QuestSwitch(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	instanceID := chi.URLParam(r, "id")
-	if instanceID == "" {
+	questID := chi.URLParam(r, "id")
+	if questID == "" {
 		h.handleError(
 			w,
 			r,
@@ -150,13 +150,13 @@ func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 			"Could not switch instance",
 			"error",
 			"Instance ID is required",
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	err := h.userService.SwitchInstance(r.Context(), user, instanceID)
+	err := h.userService.SwitchQuest(r.Context(), user, questID)
 	if err != nil {
 		h.handleError(
 			w,
@@ -165,12 +165,12 @@ func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 			"Error switching instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
-	h.setCurrentInstance(w, r, instanceID)
+	h.setCurrentQuest(w, r, questID)
 
 	if r.URL.Query().Has("redirect") {
 		h.redirect(w, r, r.URL.Query().Get("redirect"))
@@ -180,8 +180,8 @@ func (h *Handler) InstanceSwitch(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, r.Header.Get("Referer"))
 }
 
-// InstanceDelete deletes an instance.
-func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
+// QuestDelete deletes an instance.
+func (h *Handler) QuestDelete(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	if err := r.ParseForm(); err != nil {
@@ -192,8 +192,8 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -205,8 +205,8 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			r,
 			"InstanceDelete: missing instance ID",
 			"Could not find the instance ID",
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -218,13 +218,13 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			r,
 			"InstanceDelete: missing name",
 			"Please type the game name to confirm",
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	instance, err := h.instanceService.GetByID(r.Context(), id)
+	instance, err := h.questService.GetByID(r.Context(), id)
 	if err != nil {
 		h.handleError(
 			w,
@@ -233,8 +233,8 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			"Could not find the instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -245,22 +245,22 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			r,
 			"InstanceDelete: name mismatch",
 			"The game name you entered does not match",
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	if user.CurrentInstanceID == id {
+	if user.CurrentQuestID == id {
 		renderErr := templates.Toast(*flash.NewError("You cannot delete the instance you are currently using")).
 			Render(r.Context(), w)
 		if renderErr != nil {
-			h.logger.Error("InstanceDelete: rendering template", "error", renderErr)
+			h.logger.ErrorContext(r.Context(), "InstanceDelete: rendering template", "error", renderErr)
 		}
 		return
 	}
 
-	err = h.deleteService.DeleteInstance(r.Context(), user.ID, id)
+	err = h.deleteService.DeleteQuest(r.Context(), user.ID, id)
 	if err != nil {
 		h.handleError(
 			w,
@@ -269,20 +269,20 @@ func (h *Handler) InstanceDelete(w http.ResponseWriter, r *http.Request) {
 			"Error deleting instance",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	h.redirect(w, r, "/admin/instances")
+	h.redirect(w, r, "/admin/quests")
 }
 
 // getInstanceByID retrieves an instance by ID from various sources (param, form).
 func (h *Handler) getInstanceByID(
 	w http.ResponseWriter,
 	r *http.Request,
-) (*models.Instance, bool) {
+) (*models.Quest, bool) {
 	var id string
 
 	// Check form value (for POST requests)
@@ -300,7 +300,7 @@ func (h *Handler) getInstanceByID(
 		return nil, false
 	}
 
-	instance, err := h.instanceService.GetByID(r.Context(), id)
+	instance, err := h.questService.GetByID(r.Context(), id)
 	if err != nil {
 		h.handleError(w, r, "InstanceName: getting instance", "Error getting instance", "error", err)
 		return nil, false
@@ -309,22 +309,22 @@ func (h *Handler) getInstanceByID(
 	return instance, true
 }
 
-// InstancesName retrieves the name of an instance.
-func (h *Handler) InstancesName(w http.ResponseWriter, r *http.Request) {
+// QuestsName retrieves the name of an instance.
+func (h *Handler) QuestsName(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	instance, ok := h.getInstanceByID(w, r)
 	if !ok {
 		return
 	}
 
-	if err := templates.InstanceName(*instance, instance.ID == user.CurrentInstanceID).Render(r.Context(), w); err != nil {
-		h.logger.Error("InstancesName: rendering template", "Error", err, "user_id", user.ID)
-		_ = templates.InstanceName(*instance, instance.ID == user.CurrentInstanceID).Render(r.Context(), w)
+	if err := templates.InstanceName(*instance, instance.ID == user.CurrentQuestID).Render(r.Context(), w); err != nil {
+		h.logger.ErrorContext(r.Context(), "InstancesName: rendering template", "Error", err, "user_id", user.ID)
+		_ = templates.InstanceName(*instance, instance.ID == user.CurrentQuestID).Render(r.Context(), w)
 	}
 }
 
-// InstancesNameEdit shows the form to edit the name of an instance.
-func (h *Handler) InstancesNameEdit(w http.ResponseWriter, r *http.Request) {
+// QuestsNameEdit shows the form to edit the name of an instance.
+func (h *Handler) QuestsNameEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 	instance, ok := h.getInstanceByID(w, r)
 	if !ok {
@@ -332,13 +332,13 @@ func (h *Handler) InstancesNameEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := templates.InstanceNameEdit(*instance).Render(r.Context(), w); err != nil {
-		h.logger.Error("InstancesNameEdit: rendering template", "Error", err, "user_id", user.ID)
+		h.logger.ErrorContext(r.Context(), "InstancesNameEdit: rendering template", "Error", err, "user_id", user.ID)
 		_ = templates.InstanceNameEdit(*instance).Render(r.Context(), w)
 	}
 }
 
-// InstancesNameEditPost updates the name of an instance.
-func (h *Handler) InstancesNameEditPost(w http.ResponseWriter, r *http.Request) {
+// QuestsNameEditPost updates the name of an instance.
+func (h *Handler) QuestsNameEditPost(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	// Fetch instance, considering form data or URL param
@@ -370,15 +370,15 @@ func (h *Handler) InstancesNameEditPost(w http.ResponseWriter, r *http.Request) 
 	}
 
 	instance.Name = name
-	if err := h.instanceService.Update(r.Context(), instance); err != nil {
-		h.logger.Error("InstancesNameEditPost: updating instance", "Error", err)
+	if err := h.questService.Update(r.Context(), instance); err != nil {
+		h.logger.ErrorContext(r.Context(), "InstancesNameEditPost: updating instance", "Error", err)
 		_ = templates.InstanceNameEdit(*instance).Render(r.Context(), w)
 		return
 	}
 
 	h.handleSuccess(w, r, "Updated instance name")
 
-	if err := templates.InstanceName(*instance, instance.ID == user.CurrentInstanceID).Render(r.Context(), w); err != nil {
-		h.logger.Error("InstancesNameEditPost: rendering template", "Error", err)
+	if err := templates.InstanceName(*instance, instance.ID == user.CurrentQuestID).Render(r.Context(), w); err != nil {
+		h.logger.ErrorContext(r.Context(), "InstancesNameEditPost: rendering template", "Error", err)
 	}
 }

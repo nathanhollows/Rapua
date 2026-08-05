@@ -93,7 +93,7 @@ func TestWithUserStatus(t *testing.T) {
 func TestContextKeyUniqueness(t *testing.T) {
 	keys := []contextkeys.ContextKey{
 		contextkeys.UserKey,
-		contextkeys.TeamKey,
+		contextkeys.RunKey,
 		contextkeys.PreviewKey,
 		contextkeys.StatusKey,
 	}

@@ -19,11 +19,11 @@ import (
 
 // ImportResult summarises what happened during an import.
 type ImportResult struct {
-	InstanceID string
-	Created    ImportStats
-	Updated    ImportStats
-	Deleted    ImportStats
-	Warnings   []string
+	QuestID  string
+	Created  ImportStats
+	Updated  ImportStats
+	Deleted  ImportStats
+	Warnings []string
 }
 
 // ImportStats counts entities affected by an import operation.
@@ -35,9 +35,10 @@ type ImportStats struct {
 
 // ImportService creates or updates instances from a GameDoc.
 type ImportService struct {
+	logger               *slog.Logger
 	transactor           db.Transactor
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
 	blockRepo            repositories.BlockRepository
 	markerRepo           repositories.MarkerRepository
@@ -45,14 +46,16 @@ type ImportService struct {
 
 // NewImportService creates a new ImportService with the provided dependencies.
 func NewImportService(
+	logger *slog.Logger,
 	transactor db.Transactor,
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
 	blockRepo repositories.BlockRepository,
 	markerRepo repositories.MarkerRepository,
 ) *ImportService {
 	return &ImportService{
+		logger:               logger,
 		transactor:           transactor,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
@@ -83,7 +86,7 @@ func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *ga
 	defer func() {
 		if p := recover(); p != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
-				slog.Error("import: rollback after panic", "error", rbErr)
+				s.logger.ErrorContext(ctx, "import: rollback after panic", "error", rbErr)
 			}
 			panic(p)
 		}
@@ -107,16 +110,16 @@ func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *ga
 	}
 
 	return &ImportResult{
-		InstanceID: stats.InstanceID,
-		Created:    stats.Created,
-		Warnings:   warnings,
+		QuestID:  stats.QuestID,
+		Created:  stats.Created,
+		Warnings: warnings,
 	}, nil
 }
 
 // ImportUpdate parses a GameDoc and reconciles it with an existing instance.
 func (s *ImportService) ImportUpdate( //nolint:gocognit
 	ctx context.Context,
-	userID, instanceID string,
+	userID, questID string,
 	doc *game.GameDoc,
 ) (*ImportResult, error) {
 	// Lint the document
@@ -130,7 +133,7 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 	}
 
 	// Load existing instance
-	existing, err := s.instanceRepo.GetByID(ctx, instanceID)
+	existing, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("import update: load instance: %w", err)
 	}
@@ -139,13 +142,13 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 	}
 
 	// Load all existing locations and their raw blocks
-	existingLocations, err := s.locationRepo.FindByInstance(ctx, instanceID)
+	existingLocations, err := s.locationRepo.FindByInstance(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("import update: load locations: %w", err)
 	}
 
 	existingOwnerIDs := make([]string, 0, len(existingLocations)+1)
-	existingOwnerIDs = append(existingOwnerIDs, instanceID)
+	existingOwnerIDs = append(existingOwnerIDs, questID)
 	for i := range existingLocations {
 		existingOwnerIDs = append(existingOwnerIDs, existingLocations[i].ID)
 	}
@@ -174,7 +177,7 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 	defer func() {
 		if p := recover(); p != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
-				slog.Error("import update: rollback after panic", "error", rbErr)
+				s.logger.ErrorContext(ctx, "import update: rollback after panic", "error", rbErr)
 			}
 			panic(p)
 		}
@@ -202,8 +205,8 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 // --- Internal create implementation ---
 
 type createResult struct {
-	InstanceID string
-	Created    ImportStats
+	QuestID string
+	Created ImportStats
 }
 
 func (s *ImportService) importCreate(
@@ -213,7 +216,7 @@ func (s *ImportService) importCreate(
 	doc *game.GameDoc,
 ) (*createResult, error) {
 	// Create Instance
-	newInstance := &models.Instance{
+	newInstance := &models.Quest{
 		Name:                  doc.Name,
 		UserID:                userID,
 		IsQuickStartDismissed: true,
@@ -222,9 +225,9 @@ func (s *ImportService) importCreate(
 		return nil, fmt.Errorf("create instance: %w", err)
 	}
 
-	// Create InstanceSettings
-	settings := &models.InstanceSettings{
-		InstanceID:      newInstance.ID,
+	// Create QuestSettings
+	settings := &models.QuestSettings{
+		QuestID:         newInstance.ID,
 		MustCheckOut:    doc.Settings.MustCheckOut,
 		ShowTeamCount:   doc.Settings.ShowTeamCount,
 		EnablePoints:    doc.Settings.EnablePoints,
@@ -271,20 +274,20 @@ func (s *ImportService) importCreate(
 		return nil, fmt.Errorf("save game structure: %w", err)
 	}
 
-	return &createResult{InstanceID: newInstance.ID, Created: stats}, nil
+	return &createResult{QuestID: newInstance.ID, Created: stats}, nil
 }
 
 func (s *ImportService) walkCreateChildren(
 	ctx context.Context,
 	tx *bun.Tx,
-	instanceID string,
+	questID string,
 	children []game.ChildDoc,
 	parentGS *models.GameStructure,
 	stats *ImportStats,
 ) error {
 	for _, child := range children {
 		if child.Location != nil {
-			locID, blockCount, err := s.createLocation(ctx, tx, instanceID, *child.Location)
+			locID, blockCount, err := s.createLocation(ctx, tx, questID, *child.Location)
 			if err != nil {
 				return err
 			}
@@ -305,7 +308,7 @@ func (s *ImportService) walkCreateChildren(
 				LocationIDs:     []string{},
 				SubGroups:       []models.GameStructure{},
 			}
-			if err := s.walkCreateChildren(ctx, tx, instanceID, g.Children, &subGS, stats); err != nil {
+			if err := s.walkCreateChildren(ctx, tx, questID, g.Children, &subGS, stats); err != nil {
 				return err
 			}
 			parentGS.SubGroups = append(parentGS.SubGroups, subGS)
@@ -320,7 +323,7 @@ func (s *ImportService) walkCreateChildren(
 func (s *ImportService) createLocation(
 	ctx context.Context,
 	tx *bun.Tx,
-	instanceID string,
+	questID string,
 	locDoc game.LocationDoc,
 ) (string, int, error) {
 	// Create marker
@@ -335,12 +338,12 @@ func (s *ImportService) createLocation(
 
 	// Create location
 	loc := &models.Location{
-		InstanceID: instanceID,
-		Slug:       locDoc.Slug,
-		Name:       locDoc.Name,
-		Points:     locDoc.Points,
-		When:       locDoc.When,
-		MarkerID:   marker.Code,
+		QuestID:  questID,
+		Slug:     locDoc.Slug,
+		Name:     locDoc.Name,
+		Points:   locDoc.Points,
+		When:     locDoc.When,
+		MarkerID: marker.Code,
 	}
 	if err := s.locationRepo.CreateTx(ctx, tx, loc); err != nil {
 		return "", 0, fmt.Errorf("create location %q: %w", locDoc.Slug, err)
@@ -390,13 +393,13 @@ func (s *ImportService) createBlockDocs(
 func (s *ImportService) importUpdate(
 	ctx context.Context,
 	tx *bun.Tx,
-	existing *models.Instance,
+	existing *models.Quest,
 	doc *game.GameDoc,
 	locByID map[string]*models.Location,
 	locBySlug map[string]*models.Location,
 	blockByID map[string]models.Block,
 ) (*ImportResult, error) {
-	result := &ImportResult{InstanceID: existing.ID}
+	result := &ImportResult{QuestID: existing.ID}
 
 	// Update instance name
 	existing.Name = doc.Name
@@ -405,7 +408,7 @@ func (s *ImportService) importUpdate(
 	}
 
 	// Update settings
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, existing.ID)
+	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, existing.ID)
 	if err != nil {
 		return nil, fmt.Errorf("load settings: %w", err)
 	}
@@ -437,10 +440,26 @@ func (s *ImportService) importUpdate(
 	}
 
 	// Reconcile start/finish blocks
-	if err := s.reconcileInstanceBlocks(ctx, tx, existing.ID, doc.Start, game.ContextStart, blockByID, result); err != nil {
+	if err := s.reconcileInstanceBlocks(
+		ctx,
+		tx,
+		existing.ID,
+		doc.Start,
+		game.ContextStart,
+		blockByID,
+		result,
+	); err != nil {
 		return nil, err
 	}
-	if err := s.reconcileInstanceBlocks(ctx, tx, existing.ID, doc.Finish, game.ContextFinish, blockByID, result); err != nil {
+	if err := s.reconcileInstanceBlocks(
+		ctx,
+		tx,
+		existing.ID,
+		doc.Finish,
+		game.ContextFinish,
+		blockByID,
+		result,
+	); err != nil {
 		return nil, err
 	}
 
@@ -472,7 +491,7 @@ func (s *ImportService) importUpdate(
 func (s *ImportService) walkUpdateChildren(
 	ctx context.Context,
 	tx *bun.Tx,
-	instanceID string,
+	questID string,
 	children []game.ChildDoc,
 	parentGS *models.GameStructure,
 	locByID map[string]*models.Location,
@@ -483,7 +502,7 @@ func (s *ImportService) walkUpdateChildren(
 ) error {
 	for _, child := range children {
 		if child.Location != nil {
-			locID, err := s.reconcileLocation(ctx, tx, instanceID, *child.Location,
+			locID, err := s.reconcileLocation(ctx, tx, questID, *child.Location,
 				locByID, locBySlug, blockByID, seenLocIDs, result)
 			if err != nil {
 				return err
@@ -507,7 +526,7 @@ func (s *ImportService) walkUpdateChildren(
 				LocationIDs:     []string{},
 				SubGroups:       []models.GameStructure{},
 			}
-			if err := s.walkUpdateChildren(ctx, tx, instanceID, g.Children, &subGS,
+			if err := s.walkUpdateChildren(ctx, tx, questID, g.Children, &subGS,
 				locByID, locBySlug, blockByID, seenLocIDs, result); err != nil {
 				return err
 			}
@@ -522,7 +541,7 @@ func (s *ImportService) walkUpdateChildren(
 func (s *ImportService) reconcileLocation(
 	ctx context.Context,
 	tx *bun.Tx,
-	instanceID string,
+	questID string,
 	locDoc game.LocationDoc,
 	locByID map[string]*models.Location,
 	locBySlug map[string]*models.Location,
@@ -541,7 +560,7 @@ func (s *ImportService) reconcileLocation(
 
 	if existingLoc == nil {
 		// Create new location
-		newLocID, blockCount, err := s.createLocation(ctx, tx, instanceID, locDoc)
+		newLocID, blockCount, err := s.createLocation(ctx, tx, questID, locDoc)
 		if err != nil {
 			return "", err
 		}
@@ -658,13 +677,13 @@ func (s *ImportService) reconcileBlocks( //nolint:gocognit
 func (s *ImportService) reconcileInstanceBlocks(
 	ctx context.Context,
 	tx *bun.Tx,
-	instanceID string,
+	questID string,
 	docs []game.BlockDoc,
 	blockCtx game.BlockContext,
 	blockByID map[string]models.Block,
 	result *ImportResult,
 ) error {
-	return s.reconcileBlocks(ctx, tx, instanceID, docs, blockCtx, blockByID, result)
+	return s.reconcileBlocks(ctx, tx, questID, docs, blockCtx, blockByID, result)
 }
 
 // --- Helpers ---

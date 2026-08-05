@@ -225,7 +225,7 @@ func quizResults(block blocks.QuizBlock, data blocks.PlayerState) templ.Componen
 	})
 }
 
-func quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data blocks.PlayerState) templ.Component {
+func quizPlayer(settings models.QuestSettings, block blocks.QuizBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -483,7 +483,7 @@ func quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data b
 	})
 }
 
-func quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock, data blocks.PlayerState) templ.Component {
+func quizPlayerUpdate(settings models.QuestSettings, block blocks.QuizBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -777,7 +777,7 @@ var quizUnlockedContentTextarea = TextareaParams{
 	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
-func quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) templ.Component {
+func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

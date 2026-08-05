@@ -13,7 +13,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func QuickstartBar(instance models.Instance) templ.Component {
+func QuickstartBar(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,51 +34,51 @@ func QuickstartBar(instance models.Instance) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if instance.ID == "" || !instance.IsQuickStartDismissed {
+		if quest.ID == "" || !quest.IsQuickStartDismissed {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"quickstart\" role=\"alert\" class=\"hidden bg-gradient-to-r from-info/10 via-info/5 to-info/10 shadow-md p-4 bg-base-200 md:flex w-full justify-between rounded-lg rounded-t-none items-center\" hx-get=\"/admin/quickstart\" hx-swap=\"outerHTML\" hx-trigger=\"htmx:afterSwap from:body\"><div class=\"flex flex-shrink-0 gap-3 align-middle items-center\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-book-check stroke-info w-6 h-6\"><path d=\"M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20\"></path><path d=\"m9 9.5 2 2 4-4\"></path></svg><div class=\"flex flex-row sm:flex-col items-baseline\"><h3 class=\"font-bold\">Quickstart</h3><p class=\"text-xs text-base-content/80\">Or check the <a href=\"/docs/user/quickstart\" class=\"link\">guide</a></p></div></div><ol class=\"flex items-center md:gap-12 flex-shrink-0 text-center\" hx-boost=\"true\" hx-target=\"body\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if instance.ID != "" {
+			if quest.ID != "" {
 				templ_7745c5c3_Err = completedStep("Create an Instance").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = nextStep(1, "Create an instance", "/admin/instances", false).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = nextStep(1, "Create an instance", "/admin/quests", false).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			if len(instance.Locations) > 0 {
+			if len(quest.Locations) > 0 {
 				templ_7745c5c3_Err = completedStep("Add a Location").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = nextStep(2, "Add a Location", "/admin/locations/new", instance.ID == "").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = nextStep(2, "Add a Location", "/admin/quest/new", quest.ID == "").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			if len(instance.Teams) > 0 {
+			if len(quest.Runs) > 0 {
 				templ_7745c5c3_Err = completedStep("Add a Team").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = nextStep(3, "Add a Team", "/admin/teams", instance.ID == "").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = nextStep(3, "Add a Team", "/admin/runs", quest.ID == "").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			if !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+			if !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 				templ_7745c5c3_Err = completedStep("Update Settings").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = nextStep(4, "Update Settings", "/admin/experience", instance.ID == "").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = nextStep(4, "Update Settings", "/admin/experience", quest.ID == "").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -87,7 +87,7 @@ func QuickstartBar(instance models.Instance) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if instance.ID == "" && len(instance.Locations) > 0 && len(instance.Teams) > 0 && !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+			if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " class=\"btn btn-sm btn-success tooltip tooltip-left text-center flex\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -102,7 +102,7 @@ func QuickstartBar(instance models.Instance) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if instance.ID == "" && len(instance.Locations) > 0 && len(instance.Teams) > 0 && !instance.Settings.CreatedAt.Equal(instance.Settings.UpdatedAt) {
+			if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "Ready to play!")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

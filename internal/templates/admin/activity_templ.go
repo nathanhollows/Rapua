@@ -19,7 +19,7 @@ import (
 )
 
 // getTeamStatus calculates the status of a team based on its current state
-func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
+func getTeamStatus(team models.Run, totalLocations int) services.TeamStatus {
 	if team.MustCheckOut != "" {
 		return services.StatusOnsite
 	} else if len(team.CheckIns) == totalLocations && totalLocations > 0 {
@@ -33,7 +33,7 @@ func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
 }
 
 // countActiveTeams counts teams that have started
-func countActiveTeams(teams []models.Team) int {
+func countActiveTeams(teams []models.Run) int {
 	count := 0
 	for _, team := range teams {
 		if team.HasStarted {
@@ -44,7 +44,7 @@ func countActiveTeams(teams []models.Team) int {
 }
 
 // countTeamsByStatus counts teams in each status category
-func countTeamsByStatus(teams []models.Team, totalLocations int) (inTransit, checkedIn int) {
+func countTeamsByStatus(teams []models.Run, totalLocations int) (inTransit, checkedIn int) {
 	for _, team := range teams {
 		if !team.HasStarted {
 			continue
@@ -303,7 +303,7 @@ func TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) 
 	})
 }
 
-func ActivityTracker(instance models.Instance) templ.Component {
+func ActivityTracker(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -328,7 +328,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ActivityStatusBadge(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ActivityStatusBadge(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -336,7 +336,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = GameScheduleStatus(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = GameScheduleStatus(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -352,7 +352,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ActivityStats(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ActivityStats(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -360,7 +360,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = LocationOverviewCard(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LocationOverviewCard(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -368,7 +368,7 @@ func ActivityTracker(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if instance.Settings.EnablePoints {
+		if quest.Settings.EnablePoints {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trophy w-5 h-5\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path><path d=\"M4 22h16\"></path><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path></svg> Leaderboard")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -379,11 +379,11 @@ func ActivityTracker(instance models.Instance) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h2><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams-activity\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\t\ton input or load\n\t\t\t\t\t\t\t\t\tshow .team-activity-row\n\t\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search-activity\n\t\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"> <button id=\"clear-search-activity\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\t\tinit if #search-teams-activity's value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\t\tset #search-teams-activity's value to ''\n\t\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\t\tsend input to #search-teams-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div><div class=\"overflow-x-auto -mx-6\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full h-auto self-start\" hx-get=\"/admin/activity/teams\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h2><label class=\"input input-sm flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams-activity\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\t\ton input or load\n\t\t\t\t\t\t\t\t\tshow .team-activity-row\n\t\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search-activity\n\t\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"> <button id=\"clear-search-activity\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\t\tinit if #search-teams-activity's value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\t\tset #search-teams-activity's value to ''\n\t\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\t\tsend input to #search-teams-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div><div class=\"overflow-x-auto -mx-6\"><table id=\"team-activity\" class=\"overflow-hidden table table-sm md:table-md table-zebra w-full h-auto self-start\" hx-get=\"/admin/activity/runs\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = scheduleModal(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = scheduleModal(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -428,7 +428,7 @@ func teamModal() templ.Component {
 	})
 }
 
-func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) templ.Component {
+func ActivityTeamsTable(settings models.QuestSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -454,9 +454,9 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder))
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", currentSortField, currentSortOrder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 217, Col: 101}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 217, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
@@ -538,9 +538,9 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var24 string
-			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)))
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.URL(fmt.Sprintf("/admin/runs/%s", teamData.Code)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 259, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 259, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 			if templ_7745c5c3_Err != nil {
@@ -718,7 +718,7 @@ func ActivityTeamsTable(settings models.InstanceSettings, locationCount int, lea
 	})
 }
 
-func ActivityStatusBadge(instance models.Instance) templ.Component {
+func ActivityStatusBadge(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -743,7 +743,7 @@ func ActivityStatusBadge(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		switch instance.GetStatus() {
+		switch quest.GetStatus() {
 		case models.Active:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div class=\"status status-lg status-success\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
@@ -765,9 +765,9 @@ func ActivityStatusBadge(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(quest.GetStatus().String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 329, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 329, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -781,7 +781,7 @@ func ActivityStatusBadge(instance models.Instance) templ.Component {
 	})
 }
 
-func ActivityStatusBadgeOOB(instance models.Instance) templ.Component {
+func ActivityStatusBadgeOOB(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -806,7 +806,7 @@ func ActivityStatusBadgeOOB(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		switch instance.GetStatus() {
+		switch quest.GetStatus() {
 		case models.Active:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
@@ -828,9 +828,9 @@ func ActivityStatusBadgeOOB(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
-		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(instance.GetStatus().String())
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(quest.GetStatus().String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 346, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 346, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -844,7 +844,7 @@ func ActivityStatusBadgeOOB(instance models.Instance) templ.Component {
 	})
 }
 
-func GameScheduleStatus(instance models.Instance, messages ...flash.Message) templ.Component {
+func GameScheduleStatus(quest models.Quest, messages ...flash.Message) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -875,13 +875,13 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		switch instance.GetStatus() {
+		switch quest.GetStatus() {
 		case models.Active:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<a hx-get=\"/admin/schedule/stop\" hx-target=\"#schedule-status\" class=\"btn btn-error flex join-item tooltip\" data-tip=\"Stop the game\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-octagon-x w-5 h-5\"><path d=\"m15 9-6 6\"></path><path d=\"M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z\"></path><path d=\"m9 9 6 6\"></path></svg> Stop</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = scheduleButton(instance.EndTime.After(instance.StartTime.Time), instance.EndTime).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = scheduleButton(quest.EndTime.After(quest.StartTime.Time), quest.EndTime).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -890,7 +890,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = scheduleButton(true, instance.StartTime).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = scheduleButton(true, quest.StartTime).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -899,7 +899,7 @@ func GameScheduleStatus(instance models.Instance, messages ...flash.Message) tem
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = scheduleButton(false, instance.StartTime).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = scheduleButton(false, quest.StartTime).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1039,7 +1039,7 @@ func scheduleButton(scheduled bool, t schema.NullTime) templ.Component {
 	})
 }
 
-func TeamActivity(settings models.InstanceSettings, team models.Team, notifications []models.Notification, nextLocations []models.Location) templ.Component {
+func RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, nextLocations []models.Location) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1317,7 +1317,7 @@ func TeamActivity(settings models.InstanceSettings, team models.Team, notificati
 	})
 }
 
-func scheduleModal(instance models.Instance) templ.Component {
+func scheduleModal(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1342,7 +1342,7 @@ func scheduleModal(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if instance.StartTime.Time.IsZero() {
+		if quest.StartTime.Time.IsZero() {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<input type=\"checkbox\" name=\"set_start\" class=\"checkbox\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -1358,9 +1358,9 @@ func scheduleModal(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var56 string
-		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.StartTime.Format("2006-01-02 15:04"))
+		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.StartTime.Format("2006-01-02 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 650, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 650, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var56)
 		if templ_7745c5c3_Err != nil {
@@ -1370,7 +1370,7 @@ func scheduleModal(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
+		if !quest.EndTime.IsZero() && quest.EndTime.After(quest.StartTime.Time) {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "<input type=\"checkbox\" name=\"set_end\" class=\"checkbox\" checked>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -1386,9 +1386,9 @@ func scheduleModal(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var57 string
-		templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.EndTime.Format("2006-01-02 15:04"))
+		templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.EndTime.Format("2006-01-02 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 676, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 676, Col: 111}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
 		if templ_7745c5c3_Err != nil {
@@ -1556,7 +1556,7 @@ func getSortURL(field string, currentSortField string, currentSortOrder string) 
 			newOrder = "desc"
 		}
 	}
-	return fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", field, newOrder)
+	return fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", field, newOrder)
 }
 
 func getSortTooltip(field string, currentSortField string, currentSortOrder string) string {
@@ -1584,7 +1584,7 @@ type LocationVisitStats struct {
 }
 
 // getLocationVisitStats returns visit statistics for all locations
-func getLocationVisitStats(locations []models.Location, teams []models.Team, mustCheckOut bool) []LocationVisitStats {
+func getLocationVisitStats(locations []models.Location, teams []models.Run, mustCheckOut bool) []LocationVisitStats {
 	stats := make([]LocationVisitStats, len(locations))
 
 	for i, location := range locations {
@@ -1602,7 +1602,7 @@ func getLocationVisitStats(locations []models.Location, teams []models.Team, mus
 	return stats
 }
 
-func ActivityStats(instance models.Instance) templ.Component {
+func ActivityStats(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1628,9 +1628,9 @@ func ActivityStats(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var66 string
-		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(countActiveTeams(instance.Teams)))
+		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(countActiveTeams(quest.Runs)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 938, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 938, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 		if templ_7745c5c3_Err != nil {
@@ -1641,9 +1641,9 @@ func ActivityStats(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var67 string
-		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(instance.Teams)))
+		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(quest.Runs)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 939, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 939, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {
@@ -1654,12 +1654,9 @@ func ActivityStats(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var68 string
-		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(func() int {
-			inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations))
-			return inTransit
-		}()))
+		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(quest.Runs, len(quest.Locations)); return inTransit }()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 944, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 944, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 		if templ_7745c5c3_Err != nil {
@@ -1670,12 +1667,9 @@ func ActivityStats(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var69 string
-		templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(func() int {
-			_, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations))
-			return checkedIn
-		}()))
+		templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(quest.Runs, len(quest.Locations)); return checkedIn }()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 951, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 951, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
 		if templ_7745c5c3_Err != nil {
@@ -1685,12 +1679,12 @@ func ActivityStats(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
+		if len(quest.Locations) > 0 && len(quest.Runs) > 0 {
 			var templ_7745c5c3_Var70 string
 			templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", func() float64 {
 				total := 0
 				activeCount := 0
-				for _, team := range instance.Teams {
+				for _, team := range quest.Runs {
 					if team.HasStarted {
 						total += len(team.CheckIns)
 						activeCount++
@@ -1699,7 +1693,7 @@ func ActivityStats(instance models.Instance) templ.Component {
 				if activeCount == 0 {
 					return 0
 				}
-				return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
+				return (float64(total) / float64(activeCount)) / float64(len(quest.Locations)) * 100
 			}()))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 972, Col: 9}
@@ -1718,16 +1712,16 @@ func ActivityStats(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if len(instance.Teams) > 0 {
+		if len(quest.Runs) > 0 {
 			var templ_7745c5c3_Var71 string
 			templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", func() float64 {
 				finishedCount := 0
-				for _, team := range instance.Teams {
-					if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
+				for _, team := range quest.Runs {
+					if len(quest.Locations) > 0 && len(team.CheckIns) == len(quest.Locations) {
 						finishedCount++
 					}
 				}
-				return (float64(finishedCount) / float64(len(instance.Teams))) * 100
+				return (float64(finishedCount) / float64(len(quest.Runs))) * 100
 			}()))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 991, Col: 9}
@@ -1750,7 +1744,7 @@ func ActivityStats(instance models.Instance) templ.Component {
 	})
 }
 
-func LocationOverviewList(instance models.Instance) templ.Component {
+func LocationOverviewList(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1771,12 +1765,12 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 			templ_7745c5c3_Var72 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if len(instance.Locations) > 0 {
+		if len(quest.Locations) > 0 {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 151, "<ul id=\"location-overview-list\" class=\"list max-h-96 overflow-y-auto overflow-x-hidden\" hx-get=\"/admin/activity/locations\" hx-target=\"#location-overview-list\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\" hx-disinherit=\"*\" _=\"init send input to #search-locations\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
+			for i, stat := range getLocationVisitStats(quest.Locations, quest.Runs, quest.Settings.MustCheckOut) {
 				var templ_7745c5c3_Var73 = []any{"location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0)}
 				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var73...)
 				if templ_7745c5c3_Err != nil {
@@ -1800,7 +1794,7 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var75 templ.SafeURL
-				templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.Slug)))
+				templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/objective/%s", stat.Location.Slug)))
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1017, Col: 82}
 				}
@@ -1826,7 +1820,7 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				if func() bool {
-					for _, t := range instance.Teams {
+					for _, t := range quest.Runs {
 						if t.MustCheckOut == stat.Location.ID {
 							return true
 						}
@@ -1837,16 +1831,16 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					for _, t := range instance.Teams {
+					for _, t := range quest.Runs {
 						if t.MustCheckOut == stat.Location.ID {
 							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "<a href=\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var77 templ.SafeURL
-							templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)))
+							templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/runs/%s", t.Code)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1032, Col: 68}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 1032, Col: 67}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
 							if templ_7745c5c3_Err != nil {
@@ -1893,7 +1887,7 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if instance.Settings.MustCheckOut {
+				if quest.Settings.MustCheckOut {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 163, "<div class=\"tooltip tooltip-left\" data-tip=\"Avg time spent\"><div class=\"flex items-center gap-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-timer w-4 h-4 text-info\"><line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"></line><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"></line><circle cx=\"12\" cy=\"14\" r=\"8\"></circle></svg> <span class=\"font-bold text-sm text-info\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -1950,7 +1944,7 @@ func LocationOverviewList(instance models.Instance) templ.Component {
 	})
 }
 
-func LocationOverviewCard(instance models.Instance) templ.Component {
+func LocationOverviewCard(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1975,7 +1969,7 @@ func LocationOverviewCard(instance models.Instance) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = LocationOverviewList(instance).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LocationOverviewList(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

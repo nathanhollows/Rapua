@@ -13,7 +13,7 @@ func mapZoomOrDefault(zoom float64) float64 {
 	return zoom
 }
 
-templ mapPlayer(_ models.InstanceSettings, block blocks.MapBlock) {
+templ mapPlayer(_ models.QuestSettings, block blocks.MapBlock) {
 	if block.Latitude != 0 || block.Longitude != 0 {
 		<div class="not-prose">
 			<div
@@ -39,7 +39,7 @@ templ mapPlayer(_ models.InstanceSettings, block blocks.MapBlock) {
 				try { inst.remove(); } catch(e) {}
 			}
 
-			// Destroy instances BEFORE HTMX removes their canvas.
+			// Destroy quests BEFORE HTMX removes their canvas.
 			if (!window.__mapBeforeSwapBound) {
 				window.__mapBeforeSwapBound = true;
 				document.body.addEventListener('htmx:beforeSwap', function(e) {
@@ -108,7 +108,7 @@ templ mapPlayer(_ models.InstanceSettings, block blocks.MapBlock) {
 	}
 }
 
-templ mapAdmin(_ models.InstanceSettings, block blocks.MapBlock) {
+templ mapAdmin(_ models.QuestSettings, block blocks.MapBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

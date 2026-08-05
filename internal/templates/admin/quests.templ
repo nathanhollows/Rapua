@@ -5,7 +5,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ Instances(instances []models.Instance, currentInstance models.Instance, templates []models.Instance) {
+templ Instances(quests []models.Quest, currentQuest models.Quest, templates []models.Quest) {
 	<div class="flex flex-row justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Games
@@ -44,10 +44,10 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
 					<span
 						id="instance-count"
-						_="on htmx:afterSettle from body or keyup from #search-instances
+						_="on htmx:afterSettle from body or keyup from #search-quests
 						set my textContent to <.instance-item:not( [style*='display: none'] )/>'s length"
 					>
-						{ fmt.Sprint(len(instances)) }
+						{ fmt.Sprint(len(quests)) }
 					</span> games
 				</span>
 				<span class="flex-grow"></span>
@@ -57,7 +57,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 						<label class="input input-sm flex items-center gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 							<input
-								id="search-instances"
+								id="search-quests"
 								type="text"
 								class="grow"
 								placeholder="Search Games"
@@ -70,11 +70,11 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 					</div>
 				</div>
 			</div>
-			for _, instance := range instances {
-				@instanceItem(instance, instance.ID == currentInstance.ID, currentInstance.ID != "")
+			for _, quest := range quests {
+				@instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "")
 			}
 			<div
-				if len(instances) == 0 {
+				if len(quests) == 0 {
 					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
 				} else {
 					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden"
@@ -115,7 +115,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<li>settings</li>
 			</ul>
 			<p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p>
-			<form hx-post="/admin/instances/duplicate">
+			<form hx-post="/admin/quests/duplicate">
 				<input type="hidden" name="id" value=""/>
 				<fieldset class="fieldset not-prose">
 					<legend class="fieldset-legend">New game name</legend>
@@ -144,7 +144,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 				<li>settings</li>
 			</ul>
 			<p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id="instance_name">instance</code></p>
-			<form hx-post="/admin/instances/delete" hx-swap="none">
+			<form hx-post="/admin/quests/delete" hx-swap="none">
 				<input type="hidden" name="id" value=""/>
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Game name</legend>
@@ -162,7 +162,7 @@ templ Instances(instances []models.Instance, currentInstance models.Instance, te
 	</dialog>
 	<dialog id="new_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box">
-			<form hx-post="/admin/instances/new" hx-swap="none">
+			<form hx-post="/admin/quests/new" hx-swap="none">
 				<h3 class="text-lg font-bold">Create a new game</h3>
 				<fieldset class="fieldset not-prose">
 					<legend class="fieldset-legend">Game name</legend>
@@ -258,16 +258,16 @@ function submitImportTo(url) {
 </script>
 }
 
-templ InstanceName(instance models.Instance, active bool) {
+templ InstanceName(quest models.Quest, active bool) {
 	<div
 		class="tooltip cursor-pointer"
 		data-tip="Click to rename"
-		hx-get={ fmt.Sprint("/admin/instances/", instance.ID, "/edit/name") }
-		hx-target={ fmt.Sprint("#name-", instance.ID) }
+		hx-get={ fmt.Sprint("/admin/quests/", quest.ID, "/edit/name") }
+		hx-target={ fmt.Sprint("#name-", quest.ID) }
 		hx-swap="innerHTML"
 		_="on click send closeNameEdit"
 	>
-		{ instance.Name }
+		{ quest.Name }
 		if active {
 			<div class="text-xs font-semibold opacity-60">
 				Currently selected game
@@ -276,10 +276,10 @@ templ InstanceName(instance models.Instance, active bool) {
 	</div>
 }
 
-templ InstanceNameEdit(instance models.Instance) {
+templ InstanceNameEdit(quest models.Quest) {
 	<form
-		hx-post={ fmt.Sprint("/admin/instances/", instance.ID, "/edit/name") }
-		hx-target={ fmt.Sprint("#name-", instance.ID) }
+		hx-post={ fmt.Sprint("/admin/quests/", quest.ID, "/edit/name") }
+		hx-target={ fmt.Sprint("#name-", quest.ID) }
 		hx-swap="innerHTML"
 		hx-trigger="submit"
 	>
@@ -293,13 +293,13 @@ templ InstanceNameEdit(instance models.Instance) {
 				autoComplete="off"
 				autoFocus
 				tabIndex="0"
-				value={ instance.Name }
+				value={ quest.Name }
 				_="on keyup[key == 'Escape'] send closeNameEdit"
 			/>
 			<button
 				type="button"
-				hx-get={ fmt.Sprint("/admin/instances/", instance.ID, "/name") }
-				hx-target={ fmt.Sprint("#name-", instance.ID) }
+				hx-get={ fmt.Sprint("/admin/quests/", quest.ID, "/name") }
+				hx-target={ fmt.Sprint("#name-", quest.ID) }
 				hx-swap="innerHTML"
 				class="btn btn-xs btn-circle"
 				hx-trigger="click, closeNameEdit from:body"
@@ -316,14 +316,14 @@ templ InstanceNameEdit(instance models.Instance) {
 	</form>
 }
 
-templ instanceItem(instance models.Instance, active bool, anyActive bool) {
+templ instanceItem(quest models.Quest, active bool, anyActive bool) {
 	<div
 		class="instance-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
 	>
 		<div class="flex flex-row items-center gap-3 grow">
 			<!-- Play Status -->
-			<div class="inline-grid *:[grid-area:1/1] tooltip tooltip-right" data-tip={ instance.GetStatus().Description() }>
-				switch instance.GetStatus() {
+			<div class="inline-grid *:[grid-area:1/1] tooltip tooltip-right" data-tip={ quest.GetStatus().Description() }>
+				switch quest.GetStatus() {
 					case models.Active:
 						<div class="status status-lg status-success animate-ping"></div>
 						<div class="status status-lg status-success"></div>
@@ -335,17 +335,17 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 			</div>
 			<!-- Instance name -->
 			<span
-				id={ fmt.Sprint("name-", instance.ID) }
+				id={ fmt.Sprint("name-", quest.ID) }
 				class="instance-name grow"
 			>
-				@InstanceName(instance, active)
+				@InstanceName(quest, active)
 			</span>
 			<span class="grow"></span>
 			<!-- Action buttons -->
 			if !active {
 				<span class="hidden sm:inline-block tooltip" data-tip="Make this your active game">
 					<a
-						href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
+						href={ templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")) }
 						if anyActive {
 							class="btn btn-sm inline-flex"
 						} else {
@@ -368,7 +368,7 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 						if !active {
 							<li class="inline-block sm:hidden">
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")) }
+									href={ templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")) }
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
 									Select this game
@@ -385,8 +385,8 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 						<!-- Duplicate -->
 						<li>
 							<a
-								data-id={ fmt.Sprint(instance.ID) }
-								data-name={ instance.Name }
+								data-id={ fmt.Sprint(quest.ID) }
+								data-name={ quest.Name }
 								onclick="confirmDuplicate()"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-copy w-4 h-4"><path d="M2 16V4a2 2 0 0 1 2-2h11"></path><path d="M22 18H11a2 2 0 1 0 0 4h10.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5H11a2 2 0 0 0-2 2v12"></path><path d="M5 14H4a2 2 0 1 0 0 4h1"></path></svg>
@@ -396,8 +396,8 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 						<!-- Create new template -->
 						<li>
 							<a
-								data-id={ fmt.Sprint(instance.ID) }
-								data-name={ instance.Name }
+								data-id={ fmt.Sprint(quest.ID) }
+								data-name={ quest.Name }
 								onclick="createTemplate()"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-dashed w-4 h-4"><path d="M12 17h1.5"></path><path d="M12 22h1.5"></path><path d="M12 2h1.5"></path><path d="M17.5 22H19a1 1 0 0 0 1-1"></path><path d="M17.5 2H19a1 1 0 0 1 1 1v1.5"></path><path d="M20 14v3h-2.5"></path><path d="M20 8.5V10"></path><path d="M4 10V8.5"></path><path d="M4 19.5V14"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H8"></path><path d="M8 22H6.5a1 1 0 0 1 0-5H8"></path></svg>
@@ -406,7 +406,7 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 						</li>
 						<!-- Export as JSON -->
 						<li>
-							<a href={ templ.SafeURL(fmt.Sprintf("/admin/instances/%s/export", instance.ID)) }>
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", quest.ID)) }>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
 								Download JSON
 							</a>
@@ -430,8 +430,8 @@ templ instanceItem(instance models.Instance, active bool, anyActive bool) {
 							<li>
 								<a
 									class="text-error"
-									data-id={ fmt.Sprint(instance.ID) }
-									data-name={ instance.Name }
+									data-id={ fmt.Sprint(quest.ID) }
+									data-name={ quest.Name }
 									onclick="confirmDeleteInstance()"
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>

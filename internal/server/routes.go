@@ -84,9 +84,9 @@ func setupRouter(
 	router.Group(func(r chi.Router) {
 		r.Use(CSRF)
 		setupPublicRoutes(r, publicHandler)
-		setupPlayerRoutes(r, playerHandler, adminHandler)
-		setupAdminRoutes(r, adminHandler)
-		setupFacilitatorRoutes(r, adminHandler)
+		setupPlayerRoutes(r, logger, playerHandler, adminHandler)
+		setupAdminRoutes(r, logger, adminHandler)
+		setupFacilitatorRoutes(r, logger, adminHandler)
 	})
 
 	// Static files
@@ -102,13 +102,18 @@ func setupRouter(
 }
 
 // Setup the player routes.
-func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, adminHandler *admin.Handler) {
+func setupPlayerRoutes(
+	router chi.Router,
+	logger *slog.Logger,
+	playerHandler *players.PlayerHandler,
+	adminHandler *admin.Handler,
+) {
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
 	router.Route("/play", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
+			return middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next)
 		})
 
 		r.Get("/", playerHandler.Play)
@@ -119,11 +124,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/next", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
 			)
 		})
 		r.Get("/", playerHandler.Next)
@@ -133,9 +139,10 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	// Advance to next group (manual skip)
 	router.Route("/advance", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(
-				playerHandler.GetTeamService(),
-				middlewares.StartMiddleware(playerHandler.GetTeamService(), next),
+			return middlewares.RunMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				middlewares.StartMiddleware(playerHandler.GetRunService(), next),
 			)
 		})
 		r.Post("/", playerHandler.AdvanceGroup)
@@ -144,11 +151,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/blocks", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
 			)
 		})
 		r.Post("/validate", playerHandler.ValidateBlock)
@@ -160,8 +168,8 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	// Upload route for player media
 	router.Route("/upload", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-				middlewares.StartMiddleware(playerHandler.GetTeamService(), next))
+			return middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+				middlewares.StartMiddleware(playerHandler.GetRunService(), next))
 		})
 		r.Post("/image", playerHandler.UploadImage)
 	})
@@ -170,11 +178,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/start", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
 			)
 		})
 		r.Get("/", playerHandler.Start)
@@ -187,10 +196,11 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/complete", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next),
 			)
 		})
 		r.Get("/", playerHandler.Complete)
@@ -200,10 +210,11 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/s", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next),
 			)
 		})
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
@@ -214,10 +225,11 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/l", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(), next),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next),
 			)
 		})
 		r.Get("/{id}", playerHandler.CheckInByLocationID)
@@ -226,7 +238,7 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	// Check out of a location
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.TeamMiddleware(playerHandler.GetTeamService(), next)
+			return middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next)
 		})
 		r.Get("/", playerHandler.CheckOut)
 		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)
@@ -236,11 +248,12 @@ func setupPlayerRoutes(router chi.Router, playerHandler *players.PlayerHandler, 
 	router.Route("/checkins", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
-				playerHandler.GetTeamService(),
-				playerHandler.GetInstanceService(),
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
 				adminHandler.GetIdentityService(),
-				middlewares.TeamMiddleware(playerHandler.GetTeamService(),
-					middlewares.StartMiddleware(playerHandler.GetTeamService(), next)),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
 			)
 		})
 		r.Get("/", playerHandler.MyCheckins)
@@ -322,12 +335,13 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 	router.NotFound(publicHandler.NotFound)
 }
 
-func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
+func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admin.Handler) {
 	router.Route("/admin", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.AdminAuthMiddleware(
+				logger,
 				adminHandler.GetIdentityService(),
-				adminHandler.GetInstanceLoader(),
+				adminHandler.GetQuestLoader(),
 				next,
 			)
 		})
@@ -341,28 +355,33 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 		r.Get("/", adminHandler.Activity)
 		r.Route("/activity", func(r chi.Router) {
 			r.Get("/", adminHandler.Activity)
-			r.Get("/teams", adminHandler.ActivityTeamsOverview)
-			r.Get("/team/{teamCode}", adminHandler.TeamActivity)
+			r.Get("/runs", adminHandler.ActivityRunsOverview)
+			r.Get("/run/{runCode}", adminHandler.RunActivity)
 			r.Get("/stats", adminHandler.ActivityStats)
 			r.Get("/locations", adminHandler.ActivityLocations)
 		})
 
-		r.Route("/locations", func(r chi.Router) {
+		r.Route("/quest", func(r chi.Router) {
 			r.Get("/", adminHandler.Locations)
 			r.Post("/reorder", adminHandler.ReorderLocations)
 			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/new", adminHandler.LocationNew)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
-			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)
-			r.Post("/{slug:[a-z0-9-]+}", adminHandler.LocationEditPost)
-			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
 			// Assets
 			r.Get("/qr/{action}/{id}.{extension}", adminHandler.QRCode)
 			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
 			r.Get("/poster/{id}.pdf", adminHandler.GeneratePoster)
 			r.Get("/posters.pdf", adminHandler.GeneratePosters)
 		})
+
+		r.Route("/objective", func(r chi.Router) {
+			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)
+			r.Post("/{slug:[a-z0-9-]+}", adminHandler.LocationEditPost)
+			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
+		})
+
+		r.Get("/spaces", adminHandler.Spaces)
 
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
@@ -374,35 +393,34 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 			r.Delete("/{id}", adminHandler.BlockDelete)   // DELETE /admin/blocks/{id}
 			r.Post("/reorder", adminHandler.BlockReorder) // POST /admin/blocks/reorder
 		})
-		r.Route("/teams", func(r chi.Router) {
-			r.Get("/", adminHandler.Teams)
-			r.Post("/add", adminHandler.TeamsAdd)
-			r.Get("/{teamCode}", adminHandler.TeamOverview)
-			r.Delete("/{teamCode}", adminHandler.TeamDelete)
-			r.Post("/{teamCode}/reset", adminHandler.TeamReset)
+		r.Route("/runs", func(r chi.Router) {
+			r.Get("/", adminHandler.Runs)
+			r.Post("/add", adminHandler.RunsAdd)
+			r.Get("/{runCode}", adminHandler.RunOverview)
+			r.Delete("/{runCode}", adminHandler.RunDelete)
+			r.Post("/{runCode}/reset", adminHandler.RunReset)
 		})
 
 		r.Route("/experience", func(r chi.Router) {
 			r.Get("/", adminHandler.Experience)
 			r.Post("/", adminHandler.ExperiencePost)
-			r.Post("/preview", adminHandler.ExperiencePreview)
 		})
 
-		r.Route("/instances", func(r chi.Router) {
-			r.Get("/", adminHandler.Instances)
-			r.Post("/new", adminHandler.InstancesCreate)
+		r.Route("/quests", func(r chi.Router) {
+			r.Get("/", adminHandler.Quests)
+			r.Post("/new", adminHandler.QuestsCreate)
 			r.Post("/import", adminHandler.ImportInstanceCreate)
 			r.Post("/import/check", adminHandler.ImportCheck)
-			r.Get("/{id}", adminHandler.Instances)
-			r.Post("/{id}", adminHandler.Instances)
-			r.Get("/{id}/switch", adminHandler.InstanceSwitch)
-			r.Get("/{id}/name", adminHandler.InstancesName)
-			r.Get("/{id}/edit/name", adminHandler.InstancesNameEdit)
-			r.Post("/{id}/edit/name", adminHandler.InstancesNameEditPost)
-			r.Get("/{id}/export", adminHandler.ExportInstance)
+			r.Get("/{id}", adminHandler.Quests)
+			r.Post("/{id}", adminHandler.Quests)
+			r.Get("/{id}/switch", adminHandler.QuestSwitch)
+			r.Get("/{id}/name", adminHandler.QuestsName)
+			r.Get("/{id}/edit/name", adminHandler.QuestsNameEdit)
+			r.Post("/{id}/edit/name", adminHandler.QuestsNameEditPost)
+			r.Get("/{id}/export", adminHandler.ExportQuest)
 			r.Post("/{id}/import", adminHandler.ImportInstanceUpdate)
-			r.Post("/delete", adminHandler.InstanceDelete)
-			r.Post("/duplicate", adminHandler.InstanceDuplicate)
+			r.Post("/delete", adminHandler.QuestDelete)
+			r.Post("/duplicate", adminHandler.QuestDuplicate)
 		})
 
 		r.Route("/markdown", func(r chi.Router) {
@@ -469,7 +487,7 @@ func setupAdminRoutes(router chi.Router, adminHandler *admin.Handler) {
 	})
 }
 
-func setupFacilitatorRoutes(router chi.Router, adminHandler *admin.Handler) {
+func setupFacilitatorRoutes(router chi.Router, _ *slog.Logger, adminHandler *admin.Handler) {
 	router.Route("/facilitator", func(r chi.Router) {
 		r.Get("/login/{token}", adminHandler.FacilitatorLogin)
 		r.Get("/dashboard", adminHandler.FacilitatorDashboard)

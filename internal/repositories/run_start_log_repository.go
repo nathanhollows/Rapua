@@ -8,19 +8,19 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type TeamStartLogRepository struct {
+type RunStartLogRepository struct {
 	db *bun.DB
 }
 
-func NewTeamStartLogRepository(db *bun.DB) *TeamStartLogRepository {
-	return &TeamStartLogRepository{
+func NewRunStartLogRepository(db *bun.DB) *RunStartLogRepository {
+	return &RunStartLogRepository{
 		db: db,
 	}
 }
 
 // GetByUserID returns all team start logs for a user.
-func (r *TeamStartLogRepository) GetByUserID(ctx context.Context, userID string) ([]models.TeamStartLog, error) {
-	var logs []models.TeamStartLog
+func (r *RunStartLogRepository) GetByUserID(ctx context.Context, userID string) ([]models.RunStartLog, error) {
+	var logs []models.RunStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
 		Where("user_id = ?", userID).
@@ -33,12 +33,12 @@ func (r *TeamStartLogRepository) GetByUserID(ctx context.Context, userID string)
 }
 
 // GetByUserIDWithTimeframe returns team start logs for a user within a timeframe.
-func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(
+func (r *RunStartLogRepository) GetByUserIDWithTimeframe(
 	ctx context.Context,
 	userID string,
 	startTime, endTime time.Time,
-) ([]models.TeamStartLog, error) {
-	var logs []models.TeamStartLog
+) ([]models.RunStartLog, error) {
+	var logs []models.RunStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
 		Where("user_id = ?", userID).
@@ -52,16 +52,16 @@ func (r *TeamStartLogRepository) GetByUserIDWithTimeframe(
 	return logs, nil
 }
 
-// GetByUserIDAndInstanceID returns team start logs for a user and specific instance.
-func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(
+// GetByUserIDAndQuestID returns team start logs for a user and specific instance.
+func (r *RunStartLogRepository) GetByUserIDAndQuestID(
 	ctx context.Context,
-	userID, instanceID string,
-) ([]models.TeamStartLog, error) {
-	var logs []models.TeamStartLog
+	userID, questID string,
+) ([]models.RunStartLog, error) {
+	var logs []models.RunStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
 		Where("user_id = ?", userID).
-		Where("instance_id = ?", instanceID).
+		Where("quest_id = ?", questID).
 		Order("created_at DESC").
 		Scan(ctx)
 	if err != nil {
@@ -70,17 +70,17 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceID(
 	return logs, nil
 }
 
-// GetByUserIDAndInstanceIDWithTimeframe returns team start logs for a user and instance within a timeframe.
-func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(
+// GetByUserIDAndQuestIDWithTimeframe returns team start logs for a user and instance within a timeframe.
+func (r *RunStartLogRepository) GetByUserIDAndQuestIDWithTimeframe(
 	ctx context.Context,
-	userID, instanceID string,
+	userID, questID string,
 	startTime, endTime time.Time,
-) ([]models.TeamStartLog, error) {
-	var logs []models.TeamStartLog
+) ([]models.RunStartLog, error) {
+	var logs []models.RunStartLog
 	err := r.db.NewSelect().
 		Model(&logs).
 		Where("user_id = ?", userID).
-		Where("instance_id = ?", instanceID).
+		Where("quest_id = ?", questID).
 		Where("created_at >= ?", startTime).
 		Where("created_at <= ?", endTime).
 		Order("created_at DESC").
@@ -92,7 +92,7 @@ func (r *TeamStartLogRepository) GetByUserIDAndInstanceIDWithTimeframe(
 }
 
 // CreateWithTx saves a new team start log entry.
-func (r *TeamStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, log *models.TeamStartLog) error {
+func (r *RunStartLogRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, log *models.RunStartLog) error {
 	_, err := tx.NewInsert().Model(log).Exec(ctx)
 	return err
 }

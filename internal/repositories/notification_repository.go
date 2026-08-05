@@ -16,8 +16,8 @@ type NotificationRepository interface {
 
 	//	GetByID finds a notification by its ID
 	GetByID(ctx context.Context, id string) (models.Notification, error)
-	// FindByTeamCode finds all notifications for a specific team code
-	FindByTeamCode(ctx context.Context, teamCode string) ([]models.Notification, error)
+	// FindByRunCode finds all notifications for a specific team code
+	FindByRunCode(ctx context.Context, runCode string) ([]models.Notification, error)
 
 	//	Update updates a notification in the database
 	Update(context.Context, *models.Notification) error
@@ -44,8 +44,8 @@ func (r *notificationRepository) Create(ctx context.Context, notification *model
 	if notification.Content == "" {
 		return errors.New("message is required")
 	}
-	if notification.TeamCode == "" {
-		return errors.New("team_code is required")
+	if notification.RunCode == "" {
+		return errors.New("run_code is required")
 	}
 
 	// Generate a new ID if one doesn't exist
@@ -99,12 +99,12 @@ func (r *notificationRepository) GetByID(ctx context.Context, id string) (models
 	return notification, nil
 }
 
-// FindByTeamCode finds all notifications for a specific team code.
-func (r *notificationRepository) FindByTeamCode(ctx context.Context, teamCode string) ([]models.Notification, error) {
+// FindByRunCode finds all notifications for a specific team code.
+func (r *notificationRepository) FindByRunCode(ctx context.Context, runCode string) ([]models.Notification, error) {
 	var notifications []models.Notification
-	err := r.db.NewSelect().Model(&notifications).Where("team_code = ? AND NOT dismissed", teamCode).Scan(ctx)
+	err := r.db.NewSelect().Model(&notifications).Where("run_code = ? AND NOT dismissed", runCode).Scan(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("FindByTeamCode: %w", err)
+		return nil, fmt.Errorf("FindByRunCode: %w", err)
 	}
 	return notifications, nil
 }

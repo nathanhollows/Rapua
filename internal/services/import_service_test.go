@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -17,8 +18,8 @@ import (
 
 func setupImportService(t *testing.T) (
 	*services.ImportService,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
 	repositories.LocationRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -30,13 +31,13 @@ func setupImportService(t *testing.T) (
 	transactor := db.NewTransactor(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 
 	svc := services.NewImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
 	)
 	return svc, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
 }
@@ -101,16 +102,16 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 	doc := minimalValidDoc("Fresh Game")
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
-	require.NotEmpty(t, result.InstanceID)
+	require.NotEmpty(t, result.QuestID)
 
 	// Verify instance was created
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.Equal(t, "Fresh Game", inst.Name)
 	assert.Equal(t, userID, inst.UserID)
 
 	// Verify settings
-	settings, err := settingsRepo.GetByInstanceID(ctx, result.InstanceID)
+	settings, err := settingsRepo.GetByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
 }
@@ -130,7 +131,7 @@ func TestImportService_ImportCreate_WithLocationsAndBlocks(t *testing.T) {
 	assert.Equal(t, 1, result.Created.Locations)
 	assert.Equal(t, 1, result.Created.Blocks)
 
-	locations, err := locationRepo.FindByInstance(ctx, result.InstanceID)
+	locations, err := locationRepo.FindByInstance(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, locations, 1)
 	assert.Equal(t, "park", locations[0].Slug)
@@ -158,7 +159,7 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.Equal(t, game.RouteStrategyFreeRoam, inst.GameStructure.Routing)
 	assert.Equal(t, game.CompletionAll, inst.GameStructure.CompletionType)
@@ -199,12 +200,12 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 	assert.Equal(t, 1, result.Created.Groups)
 	assert.Equal(t, 1, result.Created.Locations)
 
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, inst.GameStructure.SubGroups, 1)
 	assert.Equal(t, "Wave 1", inst.GameStructure.SubGroups[0].Name)
 
-	locations, err := locationRepo.FindByInstance(ctx, result.InstanceID)
+	locations, err := locationRepo.FindByInstance(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, locations, 1)
 	assert.Equal(t, "checkpoint-a", locations[0].Slug)
@@ -219,9 +220,9 @@ func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
 	otherUserID := gofakeit.UUID()
 	insertTestUser(t, dbc, ownerID)
 
-	inst := &models.Instance{Name: "Someone's Game", UserID: ownerID}
+	inst := &models.Quest{Name: "Someone's Game", UserID: ownerID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	doc := minimalValidDoc("Hijack Attempt")
 	_, err := svc.ImportUpdate(ctx, otherUserID, inst.ID, doc)
@@ -236,9 +237,9 @@ func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "My Game", UserID: userID}
+	inst := &models.Quest{Name: "My Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	bad := &game.GameDoc{Rapua: "v99", Name: "Bad"}
 	_, err := svc.ImportUpdate(ctx, userID, inst.ID, bad)
@@ -253,10 +254,10 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "Old Name", UserID: userID}
+	inst := &models.Quest{Name: "Old Name", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:   inst.ID,
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{
+		QuestID:      inst.ID,
 		EnablePoints: false,
 	}))
 
@@ -266,13 +267,13 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 
 	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
 	require.NoError(t, err)
-	assert.Equal(t, inst.ID, result.InstanceID)
+	assert.Equal(t, inst.ID, result.QuestID)
 
 	updated, err := instanceRepo.GetByID(ctx, inst.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "New Name", updated.Name)
 
-	settings, err := settingsRepo.GetByInstanceID(ctx, inst.ID)
+	settings, err := settingsRepo.GetByQuestID(ctx, inst.ID)
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
 	assert.True(t, settings.ShowLeaderboard)
@@ -287,9 +288,9 @@ func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	// Create instance with a location that won't be in the update doc
-	inst := &models.Instance{Name: "Game", UserID: userID}
+	inst := &models.Quest{Name: "Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	orphanLocID := insertTestLocation(t, dbc, inst.ID)
 
@@ -328,7 +329,7 @@ func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
 	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, createResult.InstanceID)
+	locs, err := locationRepo.FindByInstance(ctx, createResult.QuestID)
 	require.NoError(t, err)
 	require.Len(t, locs, 1)
 	existingLocID := locs[0].ID
@@ -354,7 +355,7 @@ func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
 		},
 	}
 
-	inst, err := instanceRepo.GetByID(ctx, createResult.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
 	require.NoError(t, err)
 
 	result, err := svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
@@ -404,7 +405,7 @@ func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, result.InstanceID)
+	locs, err := locationRepo.FindByInstance(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, locs, 1)
 	require.NotNil(t, locs[0].When)
@@ -438,7 +439,7 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, inst.GameStructure.SubGroups, 1)
 	subGroup := inst.GameStructure.SubGroups[0]
@@ -460,13 +461,13 @@ func TestImportService_ImportUpdate_LocationWhenUpdated(t *testing.T) {
 	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, createResult.InstanceID)
+	locs, err := locationRepo.FindByInstance(ctx, createResult.QuestID)
 	require.NoError(t, err)
 	require.Len(t, locs, 1)
 	assert.Nil(t, locs[0].When)
 
 	// Load instance for update
-	inst, err := instanceRepo.GetByID(ctx, createResult.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
 	require.NoError(t, err)
 	_ = settingsRepo
 

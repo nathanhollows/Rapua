@@ -24,8 +24,8 @@ type Upload struct {
 	OriginalURL string    `bun:"original_url,notnull"` // Original file link
 	Timestamp   time.Time `bun:"timestamp"`
 	LocationID  string    `bun:"location_id,nullzero"`
-	InstanceID  string    `bun:"instance_id,nullzero"`
-	TeamCode    string    `bun:"team_code,nullzero"`
+	QuestID     string    `bun:"quest_id,nullzero"`
+	RunCode     string    `bun:"run_code,nullzero"`
 	BlockID     string    `bun:"block_id,nullzero"`
 	Storage     string    `bun:"storage,notnull"`
 	DeleteData  string    `bun:"delete_data"`

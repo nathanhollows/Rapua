@@ -8,7 +8,7 @@ import (
 )
 
 type EditPageData struct {
-	Settings   models.InstanceSettings
+	Settings   models.QuestSettings
 	PageBlocks blocks.Blocks
 	PageTitle  string
 	PageType   string
@@ -32,7 +32,7 @@ templ EditPage(data EditPageData) {
 		<div class="flex flex-col flex-grow min-w-0">
 			<!-- Blocks -->
 			<section>
-				@blockAddButton(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks")
+				@blockAddButton(data.Settings.QuestID, getContextForPageType(data.PageType), ".blocks")
 				<!-- Hidden alert templates -->
 				<div id="missing-game-status-template" class="alert alert-warning" style="display: none;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
@@ -46,7 +46,7 @@ templ EditPage(data EditPageData) {
 						hx-target="closest .blocks"
 						hx-swap="beforeend"
 					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="owner" value={ data.Settings.QuestID }/>
 						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
 						<input type="hidden" name="type" value="game_status"/>
 						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
@@ -64,7 +64,7 @@ templ EditPage(data EditPageData) {
 						hx-target="closest .blocks"
 						hx-swap="beforeend"
 					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="owner" value={ data.Settings.QuestID }/>
 						<input type="hidden" name="context" value="start"/>
 						<input type="hidden" name="type" value="start_button"/>
 						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
@@ -82,7 +82,7 @@ templ EditPage(data EditPageData) {
 						hx-target="closest .blocks"
 						hx-swap="beforeend"
 					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
+						<input type="hidden" name="owner" value={ data.Settings.QuestID }/>
 						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
 						<input type="hidden" name="type" value="game_status"/>
 						<button type="submit" class="btn btn-sm btn-info">Add block</button>
@@ -154,7 +154,7 @@ templ EditPage(data EditPageData) {
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll px-6 py-12 bg-base-200/50 min-h-full"
 						hx-get={ getPreviewURLForPageType(data.PageType) }
 						hx-trigger="load, htmx:afterSwap from:.blocks"
-						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
+						hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
 						hx-swap="innerHTML"
 						_="on changePreviewPage from <body/> 
 					set @hx-get to event.detail.sender.dataset.url

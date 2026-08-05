@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) templ.Component {
+func brokerPlayer(settings models.QuestSettings, block blocks.BrokerBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -127,7 +127,7 @@ func brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, da
 	})
 }
 
-func brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) templ.Component {
+func brokerPlayerUpdate(settings models.QuestSettings, block blocks.BrokerBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -292,7 +292,7 @@ var brokerInformationTierTextarea = TextareaParams{
 	`,
 }
 
-func brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) templ.Component {
+func brokerAdmin(settings models.QuestSettings, block blocks.BrokerBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

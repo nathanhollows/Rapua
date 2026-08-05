@@ -9,7 +9,7 @@ import (
 )
 
 type CheckInViewData struct {
-	Settings models.InstanceSettings
+	Settings models.QuestSettings
 	Scan     models.CheckIn
 	Blocks   blocks.Blocks
 	States   map[string]blocks.PlayerState
@@ -32,7 +32,7 @@ templ CheckInView(data CheckInViewData) {
 					<a
 						hx-post={ fmt.Sprint("/o/", data.Scan.Location.MarkerID) }
 						hx-swap="none"
-						hx-vals={ fmt.Sprintf(`{"team": "%s"}`, data.Scan.TeamID) }
+						hx-vals={ fmt.Sprintf(`{"run": "%s"}`, data.Scan.RunID) }
 						class="btn btn-accent btn-wide"
 					>Check Out</a>
 				</div>

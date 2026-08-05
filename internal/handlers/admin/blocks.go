@@ -88,9 +88,9 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.RenderAdminBlock(user.CurrentInstance.Settings, block, true).Render(r.Context(), w)
+	err = templates.RenderAdminBlock(user.CurrentQuest.Settings, block, true).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("BlockCreate: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "BlockCreate: rendering template", "error", err)
 	}
 }
 
@@ -121,9 +121,9 @@ func (h *Handler) BlockGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.RenderAdminEdit(user.CurrentInstance.Settings, block).Render(r.Context(), w)
+	err = templates.RenderAdminEdit(user.CurrentQuest.Settings, block).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("BlockGet: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "BlockGet: rendering template", "error", err)
 	}
 }
 
@@ -269,7 +269,7 @@ func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(foundBlocks)
 	if err != nil {
-		h.logger.Error("BlockList: encoding JSON", "error", err)
+		h.logger.ErrorContext(r.Context(), "BlockList: encoding JSON", "error", err)
 		h.handleError(w, r, "BlockList: encoding response", "Could not encode response", "error", err)
 	}
 }

@@ -12,7 +12,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Home", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Error rendering index", "err", err)
+		h.logger.ErrorContext(r.Context(), "Error rendering index", "err", err)
 		return
 	}
 }

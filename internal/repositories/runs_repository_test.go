@@ -15,17 +15,17 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupTeamRepo(t *testing.T) (repositories.TeamRepository, db.Transactor, *bun.DB, func()) {
+func setupTeamRepo(t *testing.T) (repositories.RunRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
-	teamRepository := repositories.NewTeamRepository(dbc)
+	teamRepository := repositories.NewRunRepository(dbc)
 	return teamRepository, transactor, dbc, cleanup
 }
 
-func TestTeamRepository_InsertTeam(t *testing.T) {
+func TestRunRepository_InsertTeam(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -33,12 +33,12 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	// Check that teams without an ID are assigned a UUID
-	sampleTeam := &models.Team{
-		Code:       gofakeit.Password(false, true, false, false, false, 5),
-		InstanceID: parents.InstanceID,
+	sampleTeam := &models.Run{
+		Code:    gofakeit.Password(false, true, false, false, false, 5),
+		QuestID: parents.QuestID,
 	}
 
-	err := repo.InsertBatch(ctx, []models.Team{*sampleTeam})
+	err := repo.InsertBatch(ctx, []models.Run{*sampleTeam})
 	require.NoError(t, err, "expected no error when saving team")
 
 	team, err := repo.GetByCode(ctx, sampleTeam.Code)
@@ -47,20 +47,20 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 
 	// Check that teams with duplicate codes are not allowed
 	parents2 := createTestParents(t, dbc)
-	sampleTeam = &models.Team{
-		ID:         gofakeit.UUID(),
-		InstanceID: parents2.InstanceID,
+	sampleTeam = &models.Run{
+		ID:      gofakeit.UUID(),
+		QuestID: parents2.QuestID,
 	}
 
-	err = repo.InsertBatch(ctx, []models.Team{*sampleTeam, *sampleTeam})
+	err = repo.InsertBatch(ctx, []models.Run{*sampleTeam, *sampleTeam})
 	require.Error(t, err, "expected error when saving teams with duplicate codes")
 
 	// Cleanup
-	for _, team := range []models.Team{*sampleTeam} {
+	for _, team := range []models.Run{*sampleTeam} {
 		tx, txErr := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, txErr, "expected no error when starting transaction")
 
-		deleteErr := repo.Delete(ctx, tx, team.InstanceID, team.Code)
+		deleteErr := repo.Delete(ctx, tx, team.QuestID, team.Code)
 		if deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
@@ -72,21 +72,21 @@ func TestTeamRepository_InsertTeam(t *testing.T) {
 	}
 }
 
-func TestTeamRepository_InsertAndUpdate(t *testing.T) {
+func TestRunRepository_InsertAndUpdate(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeam := &models.Team{
-		ID:         uuid.New().String(),
-		Code:       gofakeit.Password(false, true, false, false, false, 5),
-		InstanceID: parents.InstanceID,
+	sampleTeam := &models.Run{
+		ID:      uuid.New().String(),
+		Code:    gofakeit.Password(false, true, false, false, false, 5),
+		QuestID: parents.QuestID,
 	}
 
 	// Insert team first
-	err := repo.InsertBatch(ctx, []models.Team{*sampleTeam})
+	err := repo.InsertBatch(ctx, []models.Run{*sampleTeam})
 	require.NoError(t, err, "expected no error when saving team")
 
 	// Check that the team was saved
@@ -105,7 +105,7 @@ func TestTeamRepository_InsertAndUpdate(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 
-	if deleteErr := repo.Delete(ctx, tx, sampleTeam.InstanceID, sampleTeam.Code); deleteErr != nil {
+	if deleteErr := repo.Delete(ctx, tx, sampleTeam.QuestID, sampleTeam.Code); deleteErr != nil {
 		rollbackErr := tx.Rollback()
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, deleteErr, "expected no error when deleting team")
@@ -115,17 +115,17 @@ func TestTeamRepository_InsertAndUpdate(t *testing.T) {
 	}
 }
 
-func TestTeamRepository_Delete(t *testing.T) {
+func TestRunRepository_Delete(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeam := []models.Team{{
-		ID:         uuid.New().String(),
-		Code:       gofakeit.Password(false, true, false, false, false, 5),
-		InstanceID: parents.InstanceID,
+	sampleTeam := []models.Run{{
+		ID:      uuid.New().String(),
+		Code:    gofakeit.Password(false, true, false, false, false, 5),
+		QuestID: parents.QuestID,
 	}}
 
 	// Insert team first
@@ -139,7 +139,7 @@ func TestTeamRepository_Delete(t *testing.T) {
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
-	if deleteErr := repo.Delete(ctx, tx, sampleTeam[0].InstanceID, sampleTeam[0].Code); deleteErr != nil {
+	if deleteErr := repo.Delete(ctx, tx, sampleTeam[0].QuestID, sampleTeam[0].Code); deleteErr != nil {
 		rollbackErr := tx.Rollback()
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, deleteErr, "expected no error when deleting team")
@@ -149,17 +149,17 @@ func TestTeamRepository_Delete(t *testing.T) {
 	}
 }
 
-func TestTeamRepository_Reset(t *testing.T) {
+func TestRunRepository_Reset(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeam := []models.Team{{
-		ID:         uuid.New().String(),
-		Code:       gofakeit.Password(false, true, false, false, false, 4),
-		InstanceID: parents.InstanceID,
+	sampleTeam := []models.Run{{
+		ID:      uuid.New().String(),
+		Code:    gofakeit.Password(false, true, false, false, false, 4),
+		QuestID: parents.QuestID,
 	}}
 
 	// Insert team first
@@ -173,7 +173,7 @@ func TestTeamRepository_Reset(t *testing.T) {
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
-	if resetErr := repo.Reset(ctx, tx, sampleTeam[0].InstanceID, []string{sampleTeam[0].Code}); resetErr != nil {
+	if resetErr := repo.Reset(ctx, tx, sampleTeam[0].QuestID, []string{sampleTeam[0].Code}); resetErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
@@ -185,23 +185,23 @@ func TestTeamRepository_Reset(t *testing.T) {
 	}
 }
 
-func TestTeamRepository_FindAll(t *testing.T) {
+func TestRunRepository_FindAll(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeams := []models.Team{
+	sampleTeams := []models.Run{
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents.QuestID,
 		},
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents.QuestID,
 		},
 	}
 
@@ -209,7 +209,7 @@ func TestTeamRepository_FindAll(t *testing.T) {
 	err := repo.InsertBatch(ctx, sampleTeams)
 	require.NoError(t, err, "expected no error when saving team")
 
-	teams, err := repo.FindAll(ctx, parents.InstanceID)
+	teams, err := repo.FindAll(ctx, parents.QuestID)
 	require.NoError(t, err, "expected no error when finding all teams")
 	assert.Len(t, teams, len(sampleTeams), "expected correct number of teams to be found")
 
@@ -221,7 +221,7 @@ func TestTeamRepository_FindAll(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
-		if deleteErr := repo.Delete(ctx, tx, parents.InstanceID, team.Code); deleteErr != nil {
+		if deleteErr := repo.Delete(ctx, tx, parents.QuestID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 			require.NoError(t, deleteErr, "expected no error when deleting team")
@@ -232,30 +232,30 @@ func TestTeamRepository_FindAll(t *testing.T) {
 	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
-func TestTeamRepository_FindAllWithScans(t *testing.T) {
+func TestRunRepository_FindAllWithScans(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeams := []models.Team{
+	sampleTeams := []models.Run{
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents.QuestID,
 		},
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents.QuestID,
 		},
 	}
 
 	err := repo.InsertBatch(ctx, sampleTeams)
 	require.NoError(t, err, "expected no error when saving team")
 
-	teams, err := repo.FindAllWithScans(ctx, parents.InstanceID)
+	teams, err := repo.FindAllWithScans(ctx, parents.QuestID)
 	require.NoError(t, err, "expected no error when finding all teams with scans")
 	assert.Len(t, teams, len(sampleTeams), "expected correct number of teams to be found")
 
@@ -267,7 +267,7 @@ func TestTeamRepository_FindAllWithScans(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range teams {
-		if deleteErr := repo.Delete(ctx, tx, parents.InstanceID, team.Code); deleteErr != nil {
+		if deleteErr := repo.Delete(ctx, tx, parents.QuestID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 			require.NoError(t, deleteErr, "expected no error when deleting team")
@@ -278,7 +278,7 @@ func TestTeamRepository_FindAllWithScans(t *testing.T) {
 	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
-func TestTeamRepository_InsertBatch(t *testing.T) {
+func TestRunRepository_InsertBatch(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -286,16 +286,16 @@ func TestTeamRepository_InsertBatch(t *testing.T) {
 	parents1 := createTestParents(t, dbc)
 	parents2 := createTestParents(t, dbc)
 
-	sampleTeams := []models.Team{
+	sampleTeams := []models.Run{
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents1.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents1.QuestID,
 		},
 		{
-			ID:         uuid.New().String(),
-			Code:       gofakeit.Password(false, true, false, false, false, 5),
-			InstanceID: parents2.InstanceID,
+			ID:      uuid.New().String(),
+			Code:    gofakeit.Password(false, true, false, false, false, 5),
+			QuestID: parents2.QuestID,
 		},
 	}
 	err := repo.InsertBatch(ctx, sampleTeams)
@@ -315,7 +315,7 @@ func TestTeamRepository_InsertBatch(t *testing.T) {
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
 	for _, team := range sampleTeams {
-		if deleteErr := repo.Delete(ctx, tx, team.InstanceID, team.Code); deleteErr != nil {
+		if deleteErr := repo.Delete(ctx, tx, team.QuestID, team.Code); deleteErr != nil {
 			rollbackErr := tx.Rollback()
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 			require.NoError(t, deleteErr, "expected no error when deleting team")
@@ -326,16 +326,16 @@ func TestTeamRepository_InsertBatch(t *testing.T) {
 	require.NoError(t, commitErr, "expected no error when committing transaction")
 }
 
-func TestTeamRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
+func TestRunRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
 	repo, _, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()
 	ctx := context.Background()
 
 	parents := createTestParents(t, dbc)
 
-	sampleTeams := []models.Team{
-		{Code: "team1", InstanceID: parents.InstanceID},
-		{Code: "team2", InstanceID: parents.InstanceID},
+	sampleTeams := []models.Run{
+		{Code: "team1", QuestID: parents.QuestID},
+		{Code: "team2", QuestID: parents.QuestID},
 	}
 	err := repo.InsertBatch(ctx, sampleTeams)
 	require.NoError(t, err, "expected no error when inserting batch of teams")

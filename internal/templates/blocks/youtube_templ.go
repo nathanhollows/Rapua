@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) templ.Component {
+func youtubePlayer(_ models.QuestSettings, block blocks.YoutubeBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -53,7 +53,7 @@ func youtubePlayer(_ models.InstanceSettings, block blocks.YoutubeBlock) templ.C
 	})
 }
 
-func youtubeAdmin(_ models.InstanceSettings, block blocks.YoutubeBlock) templ.Component {
+func youtubeAdmin(_ models.QuestSettings, block blocks.YoutubeBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

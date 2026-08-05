@@ -51,9 +51,9 @@ func Start(
 	go func() {
 		err := server.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
-			slog.Info("server closed")
+			logger.Info("server closed")
 		} else {
-			slog.Error("server failed to start", "err", err)
+			logger.Error("server failed to start", "err", err)
 			os.Exit(1)
 		}
 	}()

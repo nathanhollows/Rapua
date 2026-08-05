@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func freeTextPlayer(settings models.InstanceSettings, block blocks.FreeTextBlock, data blocks.PlayerState) templ.Component {
+func freeTextPlayer(settings models.QuestSettings, block blocks.FreeTextBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -162,7 +162,7 @@ func freeTextPlayer(settings models.InstanceSettings, block blocks.FreeTextBlock
 	})
 }
 
-func freeTextPlayerUpdate(settings models.InstanceSettings, block blocks.FreeTextBlock, data blocks.PlayerState) templ.Component {
+func freeTextPlayerUpdate(settings models.QuestSettings, block blocks.FreeTextBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -252,7 +252,7 @@ var freeTextPlaceholderInput = TextInputParams{
 	HelpText:    "Placeholder text shown in the empty text field.",
 }
 
-func freeTextAdmin(settings models.InstanceSettings, block blocks.FreeTextBlock) templ.Component {
+func freeTextAdmin(settings models.QuestSettings, block blocks.FreeTextBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

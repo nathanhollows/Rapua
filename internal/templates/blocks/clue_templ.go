@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func cluePlayer(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) templ.Component {
+func cluePlayer(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -160,7 +160,7 @@ func cluePlayer(settings models.InstanceSettings, block blocks.ClueBlock, data b
 	})
 }
 
-func cluePlayerUpdate(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) templ.Component {
+func cluePlayerUpdate(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -247,7 +247,7 @@ var clueButtonTextInput = TextInputParams{
 	HyperScript:  "",
 }
 
-func clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) templ.Component {
+func clueAdmin(settings models.QuestSettings, block blocks.ClueBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

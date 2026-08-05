@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ markdownPlayer(_ models.InstanceSettings, block blocks.MarkdownBlock) {
+templ markdownPlayer(_ models.QuestSettings, block blocks.MarkdownBlock) {
 	<div class="card prose">
 		@templ.Raw(stringToMarkdown(block.Content))
 	</div>
@@ -21,7 +21,7 @@ var markdownTextarea = TextareaParams{
 	Required:     true,
 }
 
-templ markdownAdmin(_ models.InstanceSettings, block blocks.MarkdownBlock) {
+templ markdownAdmin(_ models.QuestSettings, block blocks.MarkdownBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

@@ -9,28 +9,28 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-type InstanceSettingsService struct {
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+type QuestSettingsService struct {
+	instanceSettingsRepo repositories.QuestSettingsRepository
 }
 
-func NewInstanceSettingsService(
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
-) *InstanceSettingsService {
-	return &InstanceSettingsService{
+func NewQuestSettingsService(
+	instanceSettingsRepo repositories.QuestSettingsRepository,
+) *QuestSettingsService {
+	return &QuestSettingsService{
 		instanceSettingsRepo: instanceSettingsRepo,
 	}
 }
 
-// GetInstanceSettings retrieves the settings for the given instance ID.
-func (s *InstanceSettingsService) GetInstanceSettings(
+// GetQuestSettings retrieves the settings for the given instance ID.
+func (s *QuestSettingsService) GetQuestSettings(
 	ctx context.Context,
-	instanceID string,
-) (*models.InstanceSettings, error) {
-	if instanceID == "" {
+	questID string,
+) (*models.QuestSettings, error) {
+	if questID == "" {
 		return nil, errors.New("instance ID cannot be empty")
 	}
 
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
 		return nil, errors.New("failed to retrieve instance settings: " + err.Error())
 	}
@@ -41,7 +41,7 @@ func (s *InstanceSettingsService) GetInstanceSettings(
 }
 
 // SaveSettings validates and saves the instance settings to the database.
-func (s *InstanceSettingsService) SaveSettings(ctx context.Context, settings *models.InstanceSettings) error {
+func (s *QuestSettingsService) SaveSettings(ctx context.Context, settings *models.QuestSettings) error {
 	if settings == nil {
 		return errors.New("settings cannot be nil")
 	}

@@ -14,11 +14,11 @@ import (
 
 type LocationService interface {
 	// CreateLocation creates a new location
-	CreateLocation(ctx context.Context, instanceID, name string, lat, lng float64, points int) (models.Location, error)
+	CreateLocation(ctx context.Context, questID, name string, lat, lng float64, points int) (models.Location, error)
 	// CreateLocationFromMarker creates a new location from an existing marker
 	CreateLocationFromMarker(
 		ctx context.Context,
-		instanceID, name string,
+		questID, name string,
 		points int,
 		markerCode string,
 	) (models.Location, error)
@@ -26,11 +26,11 @@ type LocationService interface {
 	// GetByID finds a location by its ID
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
 	// GetByInstanceAndCode finds a location by its instance and code
-	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
+	GetByInstanceAndCode(ctx context.Context, questID string, code string) (*models.Location, error)
 	// GetByInstanceAndSlug finds a location by its instance and slug
-	GetByInstanceAndSlug(ctx context.Context, instanceID string, slug string) (*models.Location, error)
+	GetByInstanceAndSlug(ctx context.Context, questID string, slug string) (*models.Location, error)
 	// FindByInstance finds all locations for an instance
-	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
+	FindByInstance(ctx context.Context, questID string) ([]models.Location, error)
 
 	// UpdateCoords updates the coordinates for a location
 	UpdateCoords(ctx context.Context, location *models.Location, lat, lng float64) error
@@ -39,7 +39,7 @@ type LocationService interface {
 	// UpdateLocation updates a location
 	UpdateLocation(ctx context.Context, location *models.Location, data LocationUpdateData) error
 	// ReorderLocations accepts IDs of locations and reorders them
-	ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error
+	ReorderLocations(ctx context.Context, questID string, locationIDs []string) error
 
 	// LoadRelations loads the related data for a location
 	LoadRelations(ctx context.Context, location *models.Location) error
@@ -54,7 +54,7 @@ type locationService struct {
 	markerService *MarkerService
 }
 
-// NewLocationService creates a new instance of LocationService.
+// NewLocationService creates a LocationService.
 func NewLocationService(
 	locationRepo repositories.LocationRepository,
 	markerRepo repositories.MarkerRepository,
@@ -69,8 +69,8 @@ func NewLocationService(
 	}
 }
 
-// generateUniqueSlug returns a slug unique within instanceID, excluding excludeID from conflict checks.
-func (s locationService) generateUniqueSlug(ctx context.Context, instanceID, name, excludeID string) (string, error) {
+// generateUniqueSlug returns a slug unique within questID, excluding excludeID from conflict checks.
+func (s locationService) generateUniqueSlug(ctx context.Context, questID, name, excludeID string) (string, error) {
 	base := models.Slugify(name)
 	if base == "" {
 		base = "location"
@@ -78,7 +78,7 @@ func (s locationService) generateUniqueSlug(ctx context.Context, instanceID, nam
 	candidate := base
 	const maxAttempts = 100
 	for range maxAttempts {
-		existing, err := s.locationRepo.GetByInstanceAndSlug(ctx, instanceID, candidate)
+		existing, err := s.locationRepo.GetByInstanceAndSlug(ctx, questID, candidate)
 		if err != nil {
 			return candidate, nil //nolint:nilerr // err means "not found" — slug is available
 		}
@@ -91,12 +91,12 @@ func (s locationService) generateUniqueSlug(ctx context.Context, instanceID, nam
 }
 
 // checkLocationData checks if the provided location data is valid.
-func checkLocationData(instanceID, name string, lat, lng float64) error {
+func checkLocationData(questID, name string, lat, lng float64) error {
 	if name == "" {
 		return errors.New("name cannot be empty")
 	}
-	if instanceID == "" {
-		return errors.New("instanceID cannot be empty")
+	if questID == "" {
+		return errors.New("questID cannot be empty")
 	}
 	if lat < -90 || lat > 90 {
 		return fmt.Errorf("latitude must be between -90 and 90, got: %f", lat)
@@ -110,11 +110,11 @@ func checkLocationData(instanceID, name string, lat, lng float64) error {
 // CreateLocation creates a new location.
 func (s locationService) CreateLocation(
 	ctx context.Context,
-	instanceID, name string,
+	questID, name string,
 	lat, lng float64,
 	points int,
 ) (models.Location, error) {
-	if err := checkLocationData(instanceID, name, lat, lng); err != nil {
+	if err := checkLocationData(questID, name, lat, lng); err != nil {
 		return models.Location{}, err
 	}
 
@@ -124,17 +124,17 @@ func (s locationService) CreateLocation(
 		return models.Location{}, fmt.Errorf("creating marker: %w", err)
 	}
 
-	slug, err := s.generateUniqueSlug(ctx, instanceID, name, "")
+	slug, err := s.generateUniqueSlug(ctx, questID, name, "")
 	if err != nil {
 		return models.Location{}, fmt.Errorf("generating slug: %w", err)
 	}
 
 	location := models.Location{
-		Name:       name,
-		Slug:       slug,
-		InstanceID: instanceID,
-		MarkerID:   marker.Code,
-		Points:     points,
+		Name:     name,
+		Slug:     slug,
+		QuestID:  questID,
+		MarkerID: marker.Code,
+		Points:   points,
 	}
 	err = s.locationRepo.Create(ctx, &location)
 	if err != nil {
@@ -153,11 +153,11 @@ func (s locationService) CreateLocation(
 // CreateLocationFromMarker creates a new location from an existing marker.
 func (s locationService) CreateLocationFromMarker(
 	ctx context.Context,
-	instanceID, name string,
+	questID, name string,
 	points int,
 	markerCode string,
 ) (models.Location, error) {
-	if err := checkLocationData(instanceID, name, 0, 0); err != nil {
+	if err := checkLocationData(questID, name, 0, 0); err != nil {
 		return models.Location{}, err
 	}
 
@@ -166,17 +166,17 @@ func (s locationService) CreateLocationFromMarker(
 		return models.Location{}, fmt.Errorf("finding marker: %w", err)
 	}
 
-	slug, err := s.generateUniqueSlug(ctx, instanceID, name, "")
+	slug, err := s.generateUniqueSlug(ctx, questID, name, "")
 	if err != nil {
 		return models.Location{}, fmt.Errorf("generating slug: %w", err)
 	}
 
 	location := models.Location{
-		Name:       name,
-		Slug:       slug,
-		InstanceID: instanceID,
-		MarkerID:   marker.Code,
-		Points:     points,
+		Name:     name,
+		Slug:     slug,
+		QuestID:  questID,
+		MarkerID: marker.Code,
+		Points:   points,
 	}
 	err = s.locationRepo.Create(ctx, &location)
 	if err != nil {
@@ -235,9 +235,9 @@ func (s locationService) createDefaultHeaderBlock(ctx context.Context, location 
 
 // GetByInstanceAndSlug finds a location by instance and slug.
 func (s locationService) GetByInstanceAndSlug(
-	ctx context.Context, instanceID string, slug string,
+	ctx context.Context, questID string, slug string,
 ) (*models.Location, error) {
-	location, err := s.locationRepo.GetByInstanceAndSlug(ctx, instanceID, slug)
+	location, err := s.locationRepo.GetByInstanceAndSlug(ctx, questID, slug)
 	if err != nil {
 		return nil, fmt.Errorf("finding location by slug: %w", err)
 	}
@@ -256,10 +256,10 @@ func (s locationService) GetByID(ctx context.Context, locationID string) (*model
 // GetByInstanceAndCode finds a location by instance and code.
 func (s locationService) GetByInstanceAndCode(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	code string,
 ) (*models.Location, error) {
-	location, err := s.locationRepo.GetByInstanceAndCode(ctx, instanceID, code)
+	location, err := s.locationRepo.GetByInstanceAndCode(ctx, questID, code)
 	if err != nil {
 		return nil, fmt.Errorf("finding location by instance and code: %w", err)
 	}
@@ -267,8 +267,8 @@ func (s locationService) GetByInstanceAndCode(
 }
 
 // FindByInstance finds all locations for an instance.
-func (s locationService) FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error) {
-	locations, err := s.locationRepo.FindByInstance(ctx, instanceID)
+func (s locationService) FindByInstance(ctx context.Context, questID string) ([]models.Location, error) {
+	locations, err := s.locationRepo.FindByInstance(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("finding all locations: %w", err)
 	}
@@ -360,7 +360,7 @@ func (s locationService) UpdateLocation( //nolint:gocognit
 
 	if data.Name != "" && data.Name != location.Name {
 		location.Name = data.Name
-		newSlug, slugErr := s.generateUniqueSlug(ctx, location.InstanceID, data.Name, location.ID)
+		newSlug, slugErr := s.generateUniqueSlug(ctx, location.QuestID, data.Name, location.ID)
 		if slugErr != nil {
 			return fmt.Errorf("generating slug: %w", slugErr)
 		}
@@ -378,8 +378,8 @@ func (s locationService) UpdateLocation( //nolint:gocognit
 }
 
 // ReorderLocations reorders locations.
-func (s locationService) ReorderLocations(ctx context.Context, instanceID string, locationIDs []string) error {
-	locations, err := s.locationRepo.FindByInstance(ctx, instanceID)
+func (s locationService) ReorderLocations(ctx context.Context, questID string, locationIDs []string) error {
+	locations, err := s.locationRepo.FindByInstance(ctx, questID)
 	if err != nil {
 		return fmt.Errorf("finding all locations: %w", err)
 	}

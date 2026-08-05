@@ -16,7 +16,7 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -35,7 +35,7 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nextData := templates.NextParams{
-		Team: *team,
+		Run:  *team,
 		View: view,
 	}
 
@@ -48,15 +48,15 @@ func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.handleError(w, r, "NextPreview: getting team", "Error getting team", "error", err)
 		return
 	}
 
-	err = h.teamService.LoadRelation(r.Context(), team, "Instance")
+	err = h.runService.LoadQuest(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "NextPreview: loading instance", "Error loading instance", "error", err)
+		h.handleError(w, r, "NextPreview: loading quest", "Error loading quest", "error", err)
 		return
 	}
 
@@ -72,8 +72,8 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// No specific location - preview first location in first group
-		if len(team.Instance.GameStructure.SubGroups) > 0 && len(team.Instance.GameStructure.SubGroups[0].LocationIDs) > 0 {
-			firstLocationID := team.Instance.GameStructure.SubGroups[0].LocationIDs[0]
+		if len(team.Quest.GameStructure.SubGroups) > 0 && len(team.Quest.GameStructure.SubGroups[0].LocationIDs) > 0 {
+			firstLocationID := team.Quest.GameStructure.SubGroups[0].LocationIDs[0]
 			view, err = h.navigationService.GetPreviewNavigationView(r.Context(), team, firstLocationID)
 			if err != nil {
 				h.handleError(w, r, "NextPreview: building first group view", "Error loading first group", "error", err)
@@ -94,7 +94,7 @@ func (h *PlayerHandler) nextPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nextData := templates.NextParams{
-		Team: *team,
+		Run:  *team,
 		View: view,
 	}
 

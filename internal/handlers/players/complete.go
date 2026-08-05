@@ -11,7 +11,7 @@ import (
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -49,14 +49,15 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		teamCode = ""
 	}
-	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
-		team.InstanceID,
+		team.QuestID,
 		teamCode,
+		team.QuestID,
 		blocks.ContextFinish,
 	)
 	if err != nil {
-		h.logger.Error("getting 'complete' page blocks", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting 'complete' page blocks", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -69,6 +70,6 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering 'complete' page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering 'complete' page", "error", err.Error())
 	}
 }

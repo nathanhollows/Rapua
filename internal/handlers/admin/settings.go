@@ -28,7 +28,7 @@ func (h *Handler) SettingsProfile(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(templates.SettingsProfile(*user))
 	err := templates.Layout(c, *user, "Settings", "Profile").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering account page", "error", err.Error())
 	}
 }
 
@@ -69,7 +69,7 @@ func (h *Handler) SettingsAppearance(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(templates.SettingsAppearance(*user))
 	err := templates.Layout(c, *user, "Settings", "Appearance").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering account page", "error", err.Error())
 	}
 }
 
@@ -80,7 +80,7 @@ func (h *Handler) SettingsSecurity(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(templates.SettingsSecurity(*user))
 	err := templates.Layout(c, *user, "Settings", "Security").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering account page", "error", err.Error())
 	}
 }
 
@@ -119,7 +119,7 @@ func (h *Handler) SettingsSecurityPost(w http.ResponseWriter, r *http.Request) {
 				errorMessage = "Password cannot be empty"
 			default:
 				errorMessage = "Failed to update password"
-				h.logger.Error("change password", "error", changeErr.Error())
+				h.logger.ErrorContext(r.Context(), "change password", "error", changeErr.Error())
 			}
 
 			h.handleError(w, r, "SettingsSecurityPost", errorMessage, changeErr)
@@ -173,13 +173,13 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usageFilter := services.TeamStartLogFilter{
+	usageFilter := services.RunStartLogFilter{
 		UserID:    user.ID,
 		StartTime: time.Now().AddDate(0, 0, -6), // Last year
 		EndTime:   time.Now(),
 		GroupBy:   day,
 	}
-	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	usage, err := h.creditService.GetRunStartLogsSummary(r.Context(), usageFilter)
 	if err != nil {
 		h.handleError(w, r, "SettingsCreditUsage: get team start logs", "Failed to retrieve team start logs", err)
 		return
@@ -194,7 +194,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 	))
 	err = templates.Layout(c, *user, "Settings", "Credit Usage & Billing").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering account page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering account page", "error", err.Error())
 	}
 }
 
@@ -226,14 +226,14 @@ func (h *Handler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	usageFilter := services.TeamStartLogFilter{
+	usageFilter := services.RunStartLogFilter{
 		UserID:    user.ID,
 		StartTime: start,
 		EndTime:   end,
 		GroupBy:   groupBy,
 	}
 
-	usage, err := h.creditService.GetTeamStartLogsSummary(r.Context(), usageFilter)
+	usage, err := h.creditService.GetRunStartLogsSummary(r.Context(), usageFilter)
 	if err != nil {
 		h.handleError(w, r, "SettingsCreditUsageChart: get team start logs", "Failed to retrieve team start logs", err)
 		return

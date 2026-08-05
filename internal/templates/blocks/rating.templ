@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ ratingPlayer(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) {
+templ ratingPlayer(settings models.QuestSettings, block blocks.RatingBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
@@ -58,7 +58,7 @@ templ ratingPlayer(settings models.InstanceSettings, block blocks.RatingBlock, d
 	</div>
 }
 
-templ ratingPlayerUpdate(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) {
+templ ratingPlayerUpdate(settings models.QuestSettings, block blocks.RatingBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
@@ -130,7 +130,7 @@ var ratingPromptTextarea = TextareaParams{
 	HelpText:    "The question or prompt for the rating.",
 }
 
-templ ratingAdmin(settings models.InstanceSettings, block blocks.RatingBlock) {
+templ ratingAdmin(settings models.QuestSettings, block blocks.RatingBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

@@ -11,12 +11,12 @@ import (
 
 type NotificationService struct {
 	notificationRepository repositories.NotificationRepository
-	teamRepository         repositories.TeamRepository
+	teamRepository         repositories.RunRepository
 }
 
 func NewNotificationService(
 	notificationRepository repositories.NotificationRepository,
-	teamRepository repositories.TeamRepository,
+	teamRepository repositories.RunRepository,
 ) *NotificationService {
 	return &NotificationService{
 		notificationRepository: notificationRepository,
@@ -27,12 +27,12 @@ func NewNotificationService(
 // SendNotification sends a notification to a team.
 func (s *NotificationService) SendNotification(
 	ctx context.Context,
-	teamCode string,
+	runCode string,
 	content string,
 ) (models.Notification, error) {
 	notification := models.Notification{
-		TeamCode: teamCode,
-		Content:  content,
+		RunCode: runCode,
+		Content: content,
 	}
 
 	err := s.notificationRepository.Create(ctx, &notification)
@@ -66,8 +66,8 @@ func (s *NotificationService) SendNotificationToAllTeams(ctx context.Context, in
 }
 
 // GetNotifications retrieves all notifications for a team.
-func (s *NotificationService) GetNotifications(ctx context.Context, teamCode string) ([]models.Notification, error) {
-	return s.notificationRepository.FindByTeamCode(ctx, teamCode)
+func (s *NotificationService) GetNotifications(ctx context.Context, runCode string) ([]models.Notification, error) {
+	return s.notificationRepository.FindByRunCode(ctx, runCode)
 }
 
 // DismissNotification marks a notification as dismissed.

@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func choicePlayer(settings models.InstanceSettings, block blocks.ChoiceBlock, state blocks.PlayerState) templ.Component {
+func choicePlayer(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -227,7 +227,7 @@ func choicePlayer(settings models.InstanceSettings, block blocks.ChoiceBlock, st
 	})
 }
 
-func choicePlayerUpdate(settings models.InstanceSettings, block blocks.ChoiceBlock, state blocks.PlayerState) templ.Component {
+func choicePlayerUpdate(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -322,7 +322,7 @@ func choicePlayerUpdate(settings models.InstanceSettings, block blocks.ChoiceBlo
 	})
 }
 
-func choiceAdmin(settings models.InstanceSettings, block blocks.ChoiceBlock) templ.Component {
+func choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

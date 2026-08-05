@@ -33,23 +33,23 @@ func TestLocationRepository_GetByInstanceAndSlug(t *testing.T) {
 	slug := gofakeit.Word()
 
 	location := &models.Location{
-		Name:       gofakeit.Name(),
-		Slug:       slug,
-		InstanceID: parents.InstanceID,
-		MarkerID:   parents.MarkerCode,
+		Name:     gofakeit.Name(),
+		Slug:     slug,
+		QuestID:  parents.QuestID,
+		MarkerID: parents.MarkerCode,
 	}
 	err := repo.Create(ctx, location)
 	require.NoError(t, err)
 
 	t.Run("found by slug", func(t *testing.T) {
-		found, findErr := repo.GetByInstanceAndSlug(ctx, parents.InstanceID, slug)
+		found, findErr := repo.GetByInstanceAndSlug(ctx, parents.QuestID, slug)
 		require.NoError(t, findErr)
 		assert.Equal(t, location.ID, found.ID)
 		assert.Equal(t, slug, found.Slug)
 	})
 
 	t.Run("not found with wrong slug", func(t *testing.T) {
-		_, findErr := repo.GetByInstanceAndSlug(ctx, parents.InstanceID, gofakeit.Word())
+		_, findErr := repo.GetByInstanceAndSlug(ctx, parents.QuestID, gofakeit.Word())
 		require.Error(t, findErr)
 	})
 
@@ -61,15 +61,15 @@ func TestLocationRepository_GetByInstanceAndSlug(t *testing.T) {
 	t.Run("same slug in different instances is allowed", func(t *testing.T) {
 		otherParents := createTestParents(t, dbc)
 		other := &models.Location{
-			Name:       gofakeit.Name(),
-			Slug:       slug,
-			InstanceID: otherParents.InstanceID,
-			MarkerID:   otherParents.MarkerCode,
+			Name:     gofakeit.Name(),
+			Slug:     slug,
+			QuestID:  otherParents.QuestID,
+			MarkerID: otherParents.MarkerCode,
 		}
 		createErr := repo.Create(ctx, other)
 		require.NoError(t, createErr)
 
-		found, findErr := repo.GetByInstanceAndSlug(ctx, otherParents.InstanceID, slug)
+		found, findErr := repo.GetByInstanceAndSlug(ctx, otherParents.QuestID, slug)
 		require.NoError(t, findErr)
 		assert.Equal(t, other.ID, found.ID)
 	})
@@ -89,10 +89,10 @@ func TestLocationRepository_CreateTx(t *testing.T) {
 		defer tx.Rollback()
 
 		location := &models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: parents.InstanceID,
-			MarkerID:   parents.MarkerCode,
-			Points:     100,
+			Name:     gofakeit.Word(),
+			QuestID:  parents.QuestID,
+			MarkerID: parents.MarkerCode,
+			Points:   100,
 		}
 
 		err = repo.CreateTx(ctx, tx, location)
@@ -106,7 +106,7 @@ func TestLocationRepository_CreateTx(t *testing.T) {
 		found, err := repo.GetByID(ctx, location.ID)
 		require.NoError(t, err)
 		assert.Equal(t, location.Name, found.Name)
-		assert.Equal(t, location.InstanceID, found.InstanceID)
+		assert.Equal(t, location.QuestID, found.QuestID)
 		assert.Equal(t, location.MarkerID, found.MarkerID)
 	})
 
@@ -117,10 +117,10 @@ func TestLocationRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 		location := &models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: parents.InstanceID,
-			MarkerID:   parents.MarkerCode,
-			Points:     50,
+			Name:     gofakeit.Word(),
+			QuestID:  parents.QuestID,
+			MarkerID: parents.MarkerCode,
+			Points:   50,
 		}
 
 		err = repo.CreateTx(ctx, tx, location)

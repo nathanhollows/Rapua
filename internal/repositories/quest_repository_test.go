@@ -14,26 +14,26 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupInstanceRepo(t *testing.T) (repositories.InstanceRepository, db.Transactor, *bun.DB, func()) {
+func setupInstanceRepo(t *testing.T) (repositories.QuestRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	return instanceRepo, transactor, dbc, cleanup
 }
 
-func TestInstanceRepository_Create(t *testing.T) {
+func TestQuestRepository_Create(t *testing.T) {
 	testCases := []struct {
 		name       string
-		instanceFn func() *models.Instance
+		instanceFn func() *models.Quest
 		wantErr    bool
 	}{
 		{
 			name: "Valid instance",
-			instanceFn: func() *models.Instance {
-				return &models.Instance{
+			instanceFn: func() *models.Quest {
+				return &models.Quest{
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
 				}
@@ -42,8 +42,8 @@ func TestInstanceRepository_Create(t *testing.T) {
 		},
 		{
 			name: "Missing UserID",
-			instanceFn: func() *models.Instance {
-				return &models.Instance{
+			instanceFn: func() *models.Quest {
+				return &models.Quest{
 					Name: gofakeit.Word(),
 					// No UserID
 				}
@@ -72,16 +72,16 @@ func TestInstanceRepository_Create(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_FindByID(t *testing.T) {
+func TestQuestRepository_FindByID(t *testing.T) {
 	testCases := []struct {
-		name       string
-		setupFn    func(context.Context, testing.TB, models.Instance, *testing.T)
-		instanceID string
-		wantErr    bool
+		name    string
+		setupFn func(context.Context, testing.TB, models.Quest, *testing.T)
+		questID string
+		wantErr bool
 	}{
 		{
 			name: "Existing instance",
-			setupFn: func(ctx context.Context, _ testing.TB, inst models.Instance, t *testing.T) {
+			setupFn: func(ctx context.Context, _ testing.TB, inst models.Quest, t *testing.T) {
 				innerRepo, _, innerDbc, cleanup := setupInstanceRepo(t)
 				defer cleanup()
 				insertUserWithID(t, innerDbc, inst.UserID)
@@ -92,7 +92,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 		},
 		{
 			name: "Non-existent instance",
-			setupFn: func(_ context.Context, _ testing.TB, _ models.Instance, _ *testing.T) {
+			setupFn: func(_ context.Context, _ testing.TB, _ models.Quest, _ *testing.T) {
 				// Intentionally do not save
 			},
 			wantErr: true,
@@ -105,7 +105,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 			defer cleanup()
 
 			ctx := context.Background()
-			inst := models.Instance{
+			inst := models.Quest{
 				ID:     gofakeit.UUID(),
 				Name:   gofakeit.Word(),
 				UserID: gofakeit.UUID(),
@@ -126,7 +126,7 @@ func TestInstanceRepository_FindByID(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_FindByUserID(t *testing.T) {
+func TestQuestRepository_FindByUserID(t *testing.T) {
 	testCases := []struct {
 		name    string
 		userID  string
@@ -154,7 +154,7 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 			insertUserWithID(t, dbc, tc.userID)
 			// Create instances for the given user
 			for range tc.count {
-				inst := &models.Instance{
+				inst := &models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: tc.userID,
@@ -175,7 +175,7 @@ func TestInstanceRepository_FindByUserID(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_FindTemplates(t *testing.T) {
+func TestQuestRepository_FindTemplates(t *testing.T) {
 	testCases := []struct {
 		name          string
 		userID        string
@@ -222,7 +222,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 			insertUserWithID(t, dbc, tc.userID)
 			// Create instances for the given user
 			for range tc.templateCount {
-				inst := &models.Instance{
+				inst := &models.Quest{
 					ID:         gofakeit.UUID(),
 					Name:       gofakeit.Word(),
 					UserID:     tc.userID,
@@ -232,7 +232,7 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 				require.NoError(t, err)
 			}
 			for range tc.instanceCount {
-				inst := &models.Instance{
+				inst := &models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: tc.userID,
@@ -253,18 +253,18 @@ func TestInstanceRepository_FindTemplates(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_Update(t *testing.T) {
+func TestQuestRepository_Update(t *testing.T) {
 	testCases := []struct {
 		name       string
-		setupFn    func(context.Context, testing.TB) (models.Instance, error)
+		setupFn    func(context.Context, testing.TB) (models.Quest, error)
 		updateName string
 		wantErr    bool
 	}{
 		{
 			name: "Update existing instance",
-			setupFn: func(ctx context.Context, tb testing.TB) (models.Instance, error) {
+			setupFn: func(ctx context.Context, tb testing.TB) (models.Quest, error) {
 				innerRepo, _, innerDbc, _ := setupInstanceRepo(tb.(*testing.T))
-				inst := models.Instance{
+				inst := models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
@@ -278,9 +278,9 @@ func TestInstanceRepository_Update(t *testing.T) {
 		},
 		{
 			name: "Update non-existent instance",
-			setupFn: func(_ context.Context, _ testing.TB) (models.Instance, error) {
+			setupFn: func(_ context.Context, _ testing.TB) (models.Quest, error) {
 				// Return an instance that hasn't been created
-				inst := models.Instance{
+				inst := models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
@@ -317,24 +317,24 @@ func TestInstanceRepository_Update(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_Delete(t *testing.T) {
+func TestQuestRepository_Delete(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 	defer cleanup()
 
 	testCases := []struct {
 		name    string
-		setupFn func(ctx context.Context, t *testing.T) (models.Instance, *bun.Tx, error)
+		setupFn func(ctx context.Context, t *testing.T) (models.Quest, *bun.Tx, error)
 		wantErr bool
 	}{
 		{
 			name: "Delete existing instance",
-			setupFn: func(ctx context.Context, _ *testing.T) (models.Instance, *bun.Tx, error) {
+			setupFn: func(ctx context.Context, _ *testing.T) (models.Quest, *bun.Tx, error) {
 				tx, err := transactor.BeginTx(ctx, nil)
 				if err != nil {
-					return models.Instance{}, nil, err
+					return models.Quest{}, nil, err
 				}
 
-				inst := models.Instance{
+				inst := models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: gofakeit.UUID(),
@@ -347,14 +347,14 @@ func TestInstanceRepository_Delete(t *testing.T) {
 		},
 		{
 			name: "Delete non-existent instance",
-			setupFn: func(ctx context.Context, _ *testing.T) (models.Instance, *bun.Tx, error) {
+			setupFn: func(ctx context.Context, _ *testing.T) (models.Quest, *bun.Tx, error) {
 				// For a non-existent instance, just return an instance that wasn't saved
 				tx, err := transactor.BeginTx(ctx, nil)
 				if err != nil {
-					return models.Instance{}, nil, err
+					return models.Quest{}, nil, err
 				}
 
-				inst := models.Instance{
+				inst := models.Quest{
 					ID:   gofakeit.UUID(),
 					Name: gofakeit.Word(),
 				}
@@ -396,7 +396,7 @@ func TestInstanceRepository_Delete(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_DeleteByUser(t *testing.T) {
+func TestQuestRepository_DeleteByUser(t *testing.T) {
 	testCases := []struct {
 		name    string
 		userID  string
@@ -427,7 +427,7 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 			insertUserWithID(t, dbc, tc.userID)
 			// Create some instances for this user
 			for range tc.count {
-				inst := models.Instance{
+				inst := models.Quest{
 					ID:     gofakeit.UUID(),
 					Name:   gofakeit.Word(),
 					UserID: tc.userID,
@@ -456,20 +456,20 @@ func TestInstanceRepository_DeleteByUser(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_DismissQuickstart(t *testing.T) {
+func TestQuestRepository_DismissQuickstart(t *testing.T) {
 	testCases := []struct {
-		name       string
-		instanceID string
-		setupFn    func(context.Context, testing.TB, string) error
-		wantErr    bool
+		name    string
+		questID string
+		setupFn func(context.Context, testing.TB, string) error
+		wantErr bool
 	}{
 		{
-			name:       "Dismiss quickstart for existing user",
-			instanceID: gofakeit.UUID(),
-			setupFn: func(ctx context.Context, tb testing.TB, instanceID string) error {
+			name:    "Dismiss quickstart for existing user",
+			questID: gofakeit.UUID(),
+			setupFn: func(ctx context.Context, tb testing.TB, questID string) error {
 				innerRepo, _, innerDbc, _ := setupInstanceRepo(tb.(*testing.T))
-				inst := models.Instance{
-					ID:                    instanceID,
+				inst := models.Quest{
+					ID:                    questID,
 					Name:                  gofakeit.Word(),
 					UserID:                gofakeit.UUID(),
 					IsQuickStartDismissed: false,
@@ -480,8 +480,8 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:       "Dismiss quickstart for user who has no instances",
-			instanceID: gofakeit.UUID(),
+			name:    "Dismiss quickstart for user who has no instances",
+			questID: gofakeit.UUID(),
 			setupFn: func(_ context.Context, _ testing.TB, _ string) error {
 				return nil
 			},
@@ -495,15 +495,15 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 			defer cleanup()
 
 			ctx := context.Background()
-			err := tc.setupFn(ctx, t, tc.instanceID)
+			err := tc.setupFn(ctx, t, tc.questID)
 			require.NoError(t, err)
 
-			err = repo.DismissQuickstart(ctx, tc.instanceID)
+			err = repo.DismissQuickstart(ctx, tc.questID)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				instances, findErr := repo.FindByUserID(ctx, tc.instanceID)
+				instances, findErr := repo.FindByUserID(ctx, tc.questID)
 				require.NoError(t, findErr)
 				for _, inst := range instances {
 					assert.True(t, inst.IsQuickStartDismissed, "quickstart should be dismissed")
@@ -513,7 +513,7 @@ func TestInstanceRepository_DismissQuickstart(t *testing.T) {
 	}
 }
 
-func TestInstanceRepository_CreateTx(t *testing.T) {
+func TestQuestRepository_CreateTx(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 	defer cleanup()
 
@@ -524,7 +524,7 @@ func TestInstanceRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 		defer tx.Rollback()
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:   gofakeit.Word(),
 			UserID: gofakeit.UUID(),
 		}
@@ -548,7 +548,7 @@ func TestInstanceRepository_CreateTx(t *testing.T) {
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:   gofakeit.Word(),
 			UserID: gofakeit.UUID(),
 		}
@@ -571,7 +571,7 @@ func TestInstanceRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 		defer tx.Rollback()
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name: gofakeit.Word(),
 			// Missing UserID
 		}

@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func ratingPlayer(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) templ.Component {
+func ratingPlayer(settings models.QuestSettings, block blocks.RatingBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -201,7 +201,7 @@ func ratingPlayer(settings models.InstanceSettings, block blocks.RatingBlock, da
 	})
 }
 
-func ratingPlayerUpdate(settings models.InstanceSettings, block blocks.RatingBlock, data blocks.PlayerState) templ.Component {
+func ratingPlayerUpdate(settings models.QuestSettings, block blocks.RatingBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -386,7 +386,7 @@ var ratingPromptTextarea = TextareaParams{
 	HelpText:    "The question or prompt for the rating.",
 }
 
-func ratingAdmin(settings models.InstanceSettings, block blocks.RatingBlock) templ.Component {
+func ratingAdmin(settings models.QuestSettings, block blocks.RatingBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

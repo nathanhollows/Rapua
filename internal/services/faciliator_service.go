@@ -34,7 +34,7 @@ func (s *FacilitatorService) generateToken() string {
 // CreateFacilitatorToken generates and stores a facilitator access token.
 func (s *FacilitatorService) CreateFacilitatorToken(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	locations []string,
 	duration time.Duration,
 ) (string, error) {
@@ -42,10 +42,10 @@ func (s *FacilitatorService) CreateFacilitatorToken(
 	expiry := time.Now().Add(duration)
 
 	newToken := models.FacilitatorToken{
-		Token:      token,
-		InstanceID: instanceID,
-		Locations:  locations,
-		ExpiresAt:  expiry,
+		Token:     token,
+		QuestID:   questID,
+		Locations: locations,
+		ExpiresAt: expiry,
 	}
 
 	err := s.repo.SaveToken(ctx, newToken)

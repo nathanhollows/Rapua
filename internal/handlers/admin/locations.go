@@ -21,8 +21,8 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	// Load locations and their relations into the game structure recursively
 	err := h.gameStructureService.LoadWithRelations(
 		r.Context(),
-		user.CurrentInstanceID,
-		&user.CurrentInstance.GameStructure,
+		user.CurrentQuestID,
+		&user.CurrentQuest.GameStructure,
 		true, // recursive
 	)
 	if err != nil {
@@ -33,8 +33,8 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 			"Error loading locations",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -42,7 +42,7 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	// Load blocks for all locations (needed for displaying clues/marker indicators)
 	err = h.gameStructureService.LoadBlocksForStructure(
 		r.Context(),
-		&user.CurrentInstance.GameStructure,
+		&user.CurrentQuest.GameStructure,
 		true, // recursive
 	)
 	if err != nil {
@@ -53,16 +53,16 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 			"Error loading location blocks",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	c := templates.LocationGroupList(user.CurrentInstance.Settings, user.CurrentInstance.GameStructure)
-	err = templates.Layout(c, *user, "Locations", "Locations").Render(r.Context(), w)
+	c := templates.LocationGroupList(user.CurrentQuest.Settings, user.CurrentQuest.GameStructure)
+	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Locations: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
 	}
 }
 
@@ -71,7 +71,7 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	location, err := h.locationService.CreateLocation(
-		r.Context(), user.CurrentInstanceID, "New Location", 0, 0, 0,
+		r.Context(), user.CurrentQuestID, "New Location", 0, 0, 0,
 	)
 	if err != nil {
 		h.handleError(w, r, "LocationNew: creating location", "Error creating location", "error", err)
@@ -84,9 +84,16 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 
 	if groupID != "" { //nolint:nestif // linear structure placement logic with adjacent-ID fallback
 		if err = h.gameStructureService.InsertLocationIntoGroup(
-			r.Context(), user.CurrentInstanceID, location.ID, groupID, afterLocationID, beforeLocationID,
+			r.Context(), user.CurrentQuestID, location.ID, groupID, afterLocationID, beforeLocationID,
 		); err != nil {
-			h.logger.Error("LocationNew: inserting location into group", "error", err, "location_id", location.ID)
+			h.logger.ErrorContext(
+				r.Context(),
+				"LocationNew: inserting location into group",
+				"error",
+				err,
+				"location_id",
+				location.ID,
+			)
 		}
 		adjacentID := afterLocationID
 		if adjacentID == "" {
@@ -96,12 +103,19 @@ func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
 			h.copyClueBlockIfSingle(r.Context(), location.ID, adjacentID)
 		}
 	} else {
-		if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
-			h.logger.Error("LocationNew: adding location to root group", "error", err, "location_id", location.ID)
+		if err = h.addLocationToRootGroup(r.Context(), user.CurrentQuestID, location.ID); err != nil {
+			h.logger.ErrorContext(
+				r.Context(),
+				"LocationNew: adding location to root group",
+				"error",
+				err,
+				"location_id",
+				location.ID,
+			)
 		}
 	}
 
-	editPath := "/admin/locations/" + location.Slug
+	editPath := "/admin/objective/" + location.Slug
 	if r.Header.Get("Hx-Request") == "true" {
 		w.Header().Set("Hx-Location", editPath)
 		w.WriteHeader(http.StatusNoContent)
@@ -131,14 +145,14 @@ func (h *Handler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	locations := r.Form["location"]
-	err = h.locationService.ReorderLocations(r.Context(), user.CurrentInstanceID, locations)
+	err = h.locationService.ReorderLocations(r.Context(), user.CurrentQuestID, locations)
 	if err != nil {
 		h.handleError(
 			w,
@@ -147,8 +161,8 @@ func (h *Handler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
 			"Error reordering locations",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -168,18 +182,18 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	user := h.UserFromContext(r.Context())
 
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, slug)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentQuestID, slug)
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"LocationEdit: finding location",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 			"location_slug",
 			slug,
 		)
-		h.redirect(w, r, "/admin/locations")
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
@@ -189,16 +203,16 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextLocationContent,
 	)
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"LocationEdit: getting blocks",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 			"location_id",
 			location.ID,
 		)
-		h.redirect(w, r, "/admin/locations")
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
@@ -209,28 +223,28 @@ func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextNavigation,
 	)
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"LocationEdit: getting navigation blocks",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 			"location_id",
 			location.ID,
 		)
-		h.redirect(w, r, "/admin/locations")
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
 	data := templates.EditLocationData{
-		Settings:         user.CurrentInstance.Settings,
+		Settings:         user.CurrentQuest.Settings,
 		Location:         *location,
 		ContentBlocks:    contentBlocks,
 		NavigationBlocks: navigationBlocks,
 	}
 
 	c := templates.EditLocation(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Location").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Quest", "Edit Location").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "LocationEdit: rendering template", "Error rendering template", "error", err)
 	}
@@ -282,7 +296,7 @@ func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 		Points:    points,
 	}
 
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentQuestID, locationSlug)
 	if err != nil {
 		h.handleError(w, r, "LocationEditPost: finding location", "Error finding location", "error", err)
 		return
@@ -295,7 +309,7 @@ func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if location.Slug != locationSlug {
-		h.redirect(w, r, "/admin/locations/"+location.Slug)
+		h.redirect(w, r, "/admin/objective/"+location.Slug)
 		return
 	}
 
@@ -308,7 +322,7 @@ func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 
 	user := h.UserFromContext(r.Context())
 
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
+	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentQuestID, locationSlug)
 	if err != nil {
 		h.handleError(w, r, "LocationDelete: finding location", "Error finding location", "error", err)
 		return
@@ -324,7 +338,7 @@ func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/admin/locations")
+	h.redirect(w, r, "/admin/quest")
 }
 
 // SaveGameStructure handles saving the game structure from the browser.
@@ -346,8 +360,8 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 			"Error parsing form",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -369,14 +383,14 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 			"Invalid JSON: "+err.Error(),
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
 	// Validate and save using the service
-	if err := h.gameStructureService.Save(r.Context(), user.CurrentInstanceID, &structure); err != nil {
+	if err := h.gameStructureService.Save(r.Context(), user.CurrentQuestID, &structure); err != nil {
 		h.handleError(
 			w,
 			r,
@@ -384,8 +398,8 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 			"Validation failed: "+err.Error(),
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
@@ -400,16 +414,21 @@ func (h *Handler) copyClueBlockIfSingle(ctx context.Context, newLocationID, adja
 	if err != nil || len(navBlocks) != 1 {
 		return
 	}
-	if _, err = h.blockService.NewBlockWithOwnerAndContext(ctx, newLocationID, blocks.ContextNavigation, navBlocks[0].GetType()); err != nil {
+	if _, err = h.blockService.NewBlockWithOwnerAndContext(
+		ctx,
+		newLocationID,
+		blocks.ContextNavigation,
+		navBlocks[0].GetType(),
+	); err != nil {
 		h.logger.WarnContext(ctx, "copyClueBlockIfSingle: creating navigation block",
 			"error", err, "location_id", newLocationID)
 	}
 }
 
 // addLocationToRootGroup adds a newly created location to the root group (unassigned area).
-func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locationID string) error {
+func (h *Handler) addLocationToRootGroup(ctx context.Context, questID, locationID string) error {
 	// Load the current instance
-	instance, err := h.instanceService.GetByID(ctx, instanceID)
+	instance, err := h.questService.GetByID(ctx, questID)
 	if err != nil {
 		return fmt.Errorf("loading instance: %w", err)
 	}
@@ -418,11 +437,21 @@ func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locati
 	instance.GameStructure.LocationIDs = append(instance.GameStructure.LocationIDs, locationID)
 
 	// Save the updated structure
-	if err = h.gameStructureService.Save(ctx, instanceID, &instance.GameStructure); err != nil {
+	if err = h.gameStructureService.Save(ctx, questID, &instance.GameStructure); err != nil {
 		return fmt.Errorf("saving structure: %w", err)
 	}
 
 	return nil
+}
+
+// Spaces shows a placeholder page for the Spaces feature (not yet implemented).
+func (h *Handler) Spaces(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+	c := templates.SpacesPage()
+	err := templates.Layout(c, *user, "Spaces", "Spaces").Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "Spaces: rendering template", "error", err)
+	}
 }
 
 // StartPageEdit shows the start page editor.
@@ -432,30 +461,30 @@ func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
 	// Get blocks for the start page.
 	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
 		r.Context(),
-		user.CurrentInstanceID,
+		user.CurrentQuestID,
 		blocks.ContextStart,
 	)
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"StartPageEdit: getting blocks",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
-		h.redirect(w, r, "/admin/locations")
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
 	data := templates.EditPageData{
-		Settings:   user.CurrentInstance.Settings,
+		Settings:   user.CurrentQuest.Settings,
 		PageBlocks: pageBlocks,
 		PageTitle:  "Start",
 		PageType:   "start",
 	}
 
 	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Start Page").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Quest", "Edit Start Page").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "StartPageEdit: rendering template", "Error rendering template", "error", err)
 	}
@@ -468,30 +497,30 @@ func (h *Handler) CompletePageEdit(w http.ResponseWriter, r *http.Request) {
 	// Get blocks for the complete page
 	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
 		r.Context(),
-		user.CurrentInstanceID,
+		user.CurrentQuestID,
 		blocks.ContextFinish,
 	)
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"completePageEdit: getting blocks",
 			"error",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
-		h.redirect(w, r, "/admin/locations")
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
 	data := templates.EditPageData{
-		Settings:   user.CurrentInstance.Settings,
+		Settings:   user.CurrentQuest.Settings,
 		PageBlocks: pageBlocks,
 		PageTitle:  "Complete",
 		PageType:   "complete",
 	}
 
 	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Complete Page").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Quest", "Edit Complete Page").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "CompletePageEdit: rendering template", "Error rendering template", "error", err)
 	}

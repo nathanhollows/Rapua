@@ -83,7 +83,7 @@ func CheckIn(marker models.Marker, teamCode string, blocking models.Location) te
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"form-control w-full\" for=\"team\"><div class=\"label font-bold\"><span class=\"label-text\">Team code</span></div><input id=\"team\" name=\"team\" type=\"text\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"form-control w-full\" for=\"run\"><div class=\"label font-bold\"><span class=\"label-text\">Team code</span></div><input id=\"run\" name=\"run\" type=\"text\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -221,7 +221,7 @@ func CheckOut(marker models.Marker, teamCode string, blocking models.Location) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<label class=\"form-control w-full\" for=\"team\"><div class=\"label font-bold\"><span class=\"label-text\">Team code</span></div><input id=\"team\" name=\"team\" type=\"text\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<label class=\"form-control w-full\" for=\"run\"><div class=\"label font-bold\"><span class=\"label-text\">Team code</span></div><input id=\"run\" name=\"run\" type=\"text\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

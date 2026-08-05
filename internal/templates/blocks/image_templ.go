@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) templ.Component {
+func imagePlayer(_ models.QuestSettings, block blocks.ImageBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -270,7 +270,7 @@ func imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) templ.Compo
 	})
 }
 
-func imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) templ.Component {
+func imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

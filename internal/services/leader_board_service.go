@@ -18,7 +18,7 @@ func NewLeaderBoardService() *LeaderBoardService {
 // GetLeaderBoardData returns sorted and ranked leaderboard data.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
-	teams []models.Team,
+	teams []models.Run,
 	locationCount int,
 	rankingScheme string,
 	sortField string,
@@ -49,8 +49,8 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 	return leaderBoardData, nil
 }
 
-// convertTeamToLeaderBoardData converts a models.Team to LeaderBoardTeamData.
-func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Team, locationCount int) LeaderBoardTeamData {
+// convertTeamToLeaderBoardData converts a models.Run to LeaderBoardTeamData.
+func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Run, locationCount int) LeaderBoardTeamData {
 	checkInCount := len(team.CheckIns)
 
 	// Find the most recent check-in time for accurate tiebreaker
@@ -83,7 +83,7 @@ func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Team, loca
 }
 
 // determineTeamStatus determines the current status of a team.
-func (s *LeaderBoardService) determineTeamStatus(team models.Team, locationCount int) TeamStatus {
+func (s *LeaderBoardService) determineTeamStatus(team models.Run, locationCount int) TeamStatus {
 	if team.MustCheckOut != "" {
 		return StatusOnsite
 	}

@@ -17,7 +17,7 @@ import (
 )
 
 type NextParams struct {
-	Team models.Team
+	Run  models.Run
 	View *services.PlayerNavigationView
 }
 
@@ -118,7 +118,7 @@ func Next(data NextParams) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = footer(data.Team).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = footer(data.Run).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -131,7 +131,7 @@ func Next(data NextParams) templ.Component {
 }
 
 type navViewData struct {
-	Settings            models.InstanceSettings
+	Settings            models.QuestSettings
 	LocationsWithBlocks []locationWithBlocks
 }
 

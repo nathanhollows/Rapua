@@ -11,7 +11,7 @@ import (
 )
 
 // getTeamStatus calculates the status of a team based on its current state
-func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
+func getTeamStatus(team models.Run, totalLocations int) services.TeamStatus {
 	if team.MustCheckOut != "" {
 		return services.StatusOnsite
 	} else if len(team.CheckIns) == totalLocations && totalLocations > 0 {
@@ -25,7 +25,7 @@ func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
 }
 
 // countActiveTeams counts teams that have started
-func countActiveTeams(teams []models.Team) int {
+func countActiveTeams(teams []models.Run) int {
 	count := 0
 	for _, team := range teams {
 		if team.HasStarted {
@@ -36,7 +36,7 @@ func countActiveTeams(teams []models.Team) int {
 }
 
 // countTeamsByStatus counts teams in each status category
-func countTeamsByStatus(teams []models.Team, totalLocations int) (inTransit, checkedIn int) {
+func countTeamsByStatus(teams []models.Run, totalLocations int) (inTransit, checkedIn int) {
 	for _, team := range teams {
 		if !team.HasStarted {
 			continue
@@ -84,14 +84,14 @@ templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string)
 	}
 }
 
-templ ActivityTracker(instance models.Instance) {
+templ ActivityTracker(quest models.Quest) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Activity
 		</h1>
-		@ActivityStatusBadge(instance)
+		@ActivityStatusBadge(quest)
 		<div class="flex gap-3">
-			@GameScheduleStatus(instance)
+			@GameScheduleStatus(quest)
 			<button
 				class="btn btn-secondary tooltip"
 				data-tip="Send an announcement to all teams"
@@ -116,18 +116,18 @@ templ ActivityTracker(instance models.Instance) {
 		</div>
 	</div>
 	<div class="px-5 mb-5">
-		@ActivityStats(instance)
+		@ActivityStats(quest)
 	</div>
 	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
 		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-			@LocationOverviewCard(instance)
+			@LocationOverviewCard(quest)
 		</div>
 		<div class="w-full flex-1 min-w-0 overflow-x-hidden">
 			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
 				<div class="card-body p-6">
 					<div class="flex items-center justify-between mb-4">
 						<h2 class="card-title text-lg flex items-center gap-2">
-							if instance.Settings.EnablePoints {
+							if quest.Settings.EnablePoints {
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy w-5 h-5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
 								Leaderboard
 							} else {
@@ -180,7 +180,7 @@ templ ActivityTracker(instance models.Instance) {
 						<table
 							id="team-activity"
 							class="overflow-hidden table table-sm md:table-md table-zebra w-full h-auto self-start"
-							hx-get="/admin/activity/teams"
+							hx-get="/admin/activity/runs"
 							hx-target="#team-activity"
 							hx-swap="outerHTML"
 							hx-trigger="load"
@@ -190,7 +190,7 @@ templ ActivityTracker(instance models.Instance) {
 			</div>
 		</div>
 	</div>
-	@scheduleModal(instance)
+	@scheduleModal(quest)
 	@announcementModal()
 	@teamModal()
 }
@@ -209,12 +209,12 @@ templ teamModal() {
 	</script>
 }
 
-templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
+templ ActivityTeamsTable(settings models.QuestSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
 	<div class="overflow-x-auto">
 		<table
 			id="team-activity"
 			class="overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start"
-			hx-get={ fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder) }
+			hx-get={ fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", currentSortField, currentSortOrder) }
 			hx-target="#team-activity"
 			hx-swap="outerHTML"
 			hx-trigger="every 30s"
@@ -256,7 +256,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 				for _, teamData := range leaderboardData {
 					<tr
 						class="team-activity-row hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
-						hx-get={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) }
+						hx-get={ templ.URL(fmt.Sprintf("/admin/runs/%s", teamData.Code)) }
 						hx-target="body"
 						hx-swap="outerHTML"
 						hx-push-url="true"
@@ -313,10 +313,10 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 	</div>
 }
 
-templ ActivityStatusBadge(instance models.Instance) {
+templ ActivityStatusBadge(quest models.Quest) {
 	<div id="activity-status-badge" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
 		<div class="inline-grid *:[grid-area:1/1]">
-			switch instance.GetStatus() {
+			switch quest.GetStatus() {
 				case models.Active:
 					<div class="status status-lg status-success"></div>
 					<div class="status status-lg status-success"></div>
@@ -326,14 +326,14 @@ templ ActivityStatusBadge(instance models.Instance) {
 					<div class="status status-lg"></div>
 			}
 		</div>
-		{ instance.GetStatus().String() }
+		{ quest.GetStatus().String() }
 	</div>
 }
 
-templ ActivityStatusBadgeOOB(instance models.Instance) {
+templ ActivityStatusBadgeOOB(quest models.Quest) {
 	<div id="activity-status-badge" hx-swap-oob="true" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
 		<div class="inline-grid *:[grid-area:1/1]">
-			switch instance.GetStatus() {
+			switch quest.GetStatus() {
 				case models.Active:
 					<div class="status status-lg status-success animate-ping"></div>
 					<div class="status status-lg status-success"></div>
@@ -343,16 +343,16 @@ templ ActivityStatusBadgeOOB(instance models.Instance) {
 					<div class="status status-lg"></div>
 			}
 		</div>
-		{ instance.GetStatus().String() }
+		{ quest.GetStatus().String() }
 	</div>
 }
 
-templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
+templ GameScheduleStatus(quest models.Quest, messages ...flash.Message) {
 	for _, msg := range messages {
 		@Toast(msg)
 	}
 	<div id="schedule-status" class="flex flex-row gap-3">
-		switch instance.GetStatus() {
+		switch quest.GetStatus() {
 			case models.Active:
 				<a
 					hx-get="/admin/schedule/stop"
@@ -363,7 +363,7 @@ templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-octagon-x w-5 h-5"><path d="m15 9-6 6"></path><path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"></path><path d="m9 9 6 6"></path></svg>
 					Stop
 				</a>
-				@scheduleButton(instance.EndTime.After(instance.StartTime.Time), instance.EndTime)
+				@scheduleButton(quest.EndTime.After(quest.StartTime.Time), quest.EndTime)
 			case models.Scheduled:
 				<a
 					hx-get="/admin/schedule/start"
@@ -374,13 +374,13 @@ templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-5 h-5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
 					Start now
 				</a>
-				@scheduleButton(true, instance.StartTime)
+				@scheduleButton(true, quest.StartTime)
 			case models.Closed:
 				<a hx-get="/admin/schedule/start" hx-target="#schedule-status" class="btn btn-primary flex join-item tooltip" data-tip="Start the game">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-5 h-5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
 					Start
 				</a>
-				@scheduleButton(false, instance.StartTime)
+				@scheduleButton(false, quest.StartTime)
 		}
 	</div>
 }
@@ -525,7 +525,7 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 	}
 }
 
-templ TeamActivity(settings models.InstanceSettings, team models.Team, notifications []models.Notification, nextLocations []models.Location) {
+templ RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, nextLocations []models.Location) {
 	<h3 class="text-lg font-bold">
 		{ team.Code }
 		if team.Name != "" {
@@ -627,7 +627,7 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 	</form>
 }
 
-templ scheduleModal(instance models.Instance) {
+templ scheduleModal(quest models.Quest) {
 	<dialog id="schedule_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box">
 			<h3 class="text-lg font-bold">Schedule a Game</h3>
@@ -639,7 +639,7 @@ templ scheduleModal(instance models.Instance) {
 					<div class="form-control">
 						<label class="label cursor-pointer flex gap-3">
 							Scheduled Start
-							if instance.StartTime.Time.IsZero() {
+							if quest.StartTime.Time.IsZero() {
 								<input type="checkbox" name="set_start" class="checkbox"/>
 							} else {
 								<input type="checkbox" name="set_start" class="checkbox" checked/>
@@ -647,7 +647,7 @@ templ scheduleModal(instance models.Instance) {
 						</label>
 					</div>
 				</div>
-				<div id="utc-start-time" class="join flex justify-center pb-5" data-start={ instance.StartTime.Format("2006-01-02 15:04") }>
+				<div id="utc-start-time" class="join flex justify-center pb-5" data-start={ quest.StartTime.Format("2006-01-02 15:04") }>
 					<input
 						id="start_date"
 						type="date"
@@ -665,7 +665,7 @@ templ scheduleModal(instance models.Instance) {
 					<div class="form-control">
 						<label class="label cursor-pointer flex gap-3">
 							Scheduled End
-							if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
+							if !quest.EndTime.IsZero() && quest.EndTime.After(quest.StartTime.Time) {
 								<input type="checkbox" name="set_end" class="checkbox" checked/>
 							} else {
 								<input type="checkbox" name="set_end" class="checkbox"/>
@@ -673,7 +673,7 @@ templ scheduleModal(instance models.Instance) {
 						</label>
 					</div>
 				</div>
-				<div id="utc-end-time" class="join flex justify-center" data-end={ instance.EndTime.Format("2006-01-02 15:04") }>
+				<div id="utc-end-time" class="join flex justify-center" data-end={ quest.EndTime.Format("2006-01-02 15:04") }>
 					<input
 						id="end_date"
 						type="date"
@@ -878,7 +878,7 @@ func getSortURL(field string, currentSortField string, currentSortOrder string) 
 			newOrder = "desc"
 		}
 	}
-	return fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", field, newOrder)
+	return fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", field, newOrder)
 }
 
 func getSortTooltip(field string, currentSortField string, currentSortOrder string) string {
@@ -906,7 +906,7 @@ type LocationVisitStats struct {
 }
 
 // getLocationVisitStats returns visit statistics for all locations
-func getLocationVisitStats(locations []models.Location, teams []models.Team, mustCheckOut bool) []LocationVisitStats {
+func getLocationVisitStats(locations []models.Location, teams []models.Run, mustCheckOut bool) []LocationVisitStats {
 	stats := make([]LocationVisitStats, len(locations))
 
 	for i, location := range locations {
@@ -924,7 +924,7 @@ func getLocationVisitStats(locations []models.Location, teams []models.Team, mus
 	return stats
 }
 
-templ ActivityStats(instance models.Instance) {
+templ ActivityStats(quest models.Quest) {
 	<div
 		id="activity-stats"
 		hx-get="/admin/activity/stats"
@@ -935,31 +935,31 @@ templ ActivityStats(instance models.Instance) {
 	>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
 			<div class="stat-title">Active teams</div>
-			<div class="stat-value">{ fmt.Sprint(countActiveTeams(instance.Teams)) }</div>
-			<div class="stat-desc">of { fmt.Sprint(len(instance.Teams)) } total</div>
+			<div class="stat-value">{ fmt.Sprint(countActiveTeams(quest.Runs)) }</div>
+			<div class="stat-desc">of { fmt.Sprint(len(quest.Runs)) } total</div>
 		</div>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
 			<div class="stat-title">In transit</div>
 			<div class="stat-value">
-				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations)); return inTransit }()) }
+				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(quest.Runs, len(quest.Locations)); return inTransit }()) }
 			</div>
 			<div class="stat-desc">Moving between locations</div>
 		</div>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
 			<div class="stat-title">Checked in</div>
 			<div class="stat-value">
-				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations)); return checkedIn }()) }
+				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(quest.Runs, len(quest.Locations)); return checkedIn }()) }
 			</div>
 			<div class="stat-desc">Currently at locations</div>
 		</div>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
 			<div class="stat-title">Average progress</div>
 			<div class="stat-value">
-				if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
+				if len(quest.Locations) > 0 && len(quest.Runs) > 0 {
 					{ fmt.Sprintf("%.0f%%", func() float64 {
 						total := 0
 						activeCount := 0
-						for _, team := range instance.Teams {
+						for _, team := range quest.Runs {
 							if team.HasStarted {
 								total += len(team.CheckIns)
 								activeCount++
@@ -968,7 +968,7 @@ templ ActivityStats(instance models.Instance) {
 						if activeCount == 0 {
 							return 0
 						}
-						return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
+						return (float64(total) / float64(activeCount)) / float64(len(quest.Locations)) * 100
 					}()) }
 				} else {
 					0%
@@ -979,15 +979,15 @@ templ ActivityStats(instance models.Instance) {
 		<div class="stat place-items-center col-span-2 md:col-span-1">
 			<div class="stat-title">Completion rate</div>
 			<div class="stat-value">
-				if len(instance.Teams) > 0 {
+				if len(quest.Runs) > 0 {
 					{ fmt.Sprintf("%.0f%%", func() float64 {
 						finishedCount := 0
-						for _, team := range instance.Teams {
-							if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
+						for _, team := range quest.Runs {
+							if len(quest.Locations) > 0 && len(team.CheckIns) == len(quest.Locations) {
 								finishedCount++
 							}
 						}
-						return (float64(finishedCount) / float64(len(instance.Teams))) * 100
+						return (float64(finishedCount) / float64(len(quest.Runs))) * 100
 					}()) }
 				} else {
 					0%
@@ -998,8 +998,8 @@ templ ActivityStats(instance models.Instance) {
 	</div>
 }
 
-templ LocationOverviewList(instance models.Instance) {
-	if len(instance.Locations) > 0 {
+templ LocationOverviewList(quest models.Quest) {
+	if len(quest.Locations) > 0 {
 		<ul
 			id="location-overview-list"
 			class="list max-h-96 overflow-y-auto overflow-x-hidden"
@@ -1010,15 +1010,15 @@ templ LocationOverviewList(instance models.Instance) {
 			hx-disinherit="*"
 			_="init send input to #search-locations"
 		>
-			for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
+			for i, stat := range getLocationVisitStats(quest.Locations, quest.Runs, quest.Settings.MustCheckOut) {
 				<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
 					<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
 						<div class="flex flex-col gap-2 min-w-0 flex-1">
-							<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.Slug)) } class="text-sm font-medium truncate hover:underline">
+							<a href={ templ.URL(fmt.Sprintf("/admin/objective/%s", stat.Location.Slug)) } class="text-sm font-medium truncate hover:underline">
 								{ stat.Location.Name }
 							</a>
 							if func() bool {
-								for _, t := range instance.Teams {
+								for _, t := range quest.Runs {
 									if t.MustCheckOut == stat.Location.ID {
 										return true
 									}
@@ -1026,10 +1026,10 @@ templ LocationOverviewList(instance models.Instance) {
 								return false
 							}() {
 								<div class="flex gap-2 flex-wrap">
-									for _, t := range instance.Teams {
+									for _, t := range quest.Runs {
 										if t.MustCheckOut == stat.Location.ID {
 											<a
-												href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
+												href={ templ.URL(fmt.Sprintf("/admin/runs/%s", t.Code)) }
 												class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
 											>
 												{ t.Code }
@@ -1046,7 +1046,7 @@ templ LocationOverviewList(instance models.Instance) {
 									<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
 								</div>
 							</div>
-							if instance.Settings.MustCheckOut {
+							if quest.Settings.MustCheckOut {
 								<div class="tooltip tooltip-left" data-tip="Avg time spent">
 									<div class="flex items-center gap-1">
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
@@ -1081,7 +1081,7 @@ templ LocationOverviewList(instance models.Instance) {
 	}
 }
 
-templ LocationOverviewCard(instance models.Instance) {
+templ LocationOverviewCard(quest models.Quest) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
 		<div class="card-body p-6 pb-4">
 			<div class="flex flex-col gap-4 mb-2">
@@ -1131,6 +1131,6 @@ templ LocationOverviewCard(instance models.Instance) {
 				</label>
 			</div>
 		</div>
-		@LocationOverviewList(instance)
+		@LocationOverviewList(quest)
 	</div>
 }

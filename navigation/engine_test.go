@@ -269,11 +269,11 @@ func TestGetAvailableLocationIDs_RandomWithReplacement(t *testing.T) {
 		},
 	}
 
-	teamCode := "TEAM1"
+	runCode := "TEAM1"
 
 	// Get initial random order (no locations completed)
 	completed := []string{}
-	round1 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, teamCode)
+	round1 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, runCode)
 	assert.Len(t, round1, 3)
 
 	// Record the IDs in order
@@ -281,7 +281,7 @@ func TestGetAvailableLocationIDs_RandomWithReplacement(t *testing.T) {
 
 	// Complete the first location from round 1
 	completed = []string{round1[0]}
-	round2 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, teamCode)
+	round2 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, runCode)
 	assert.Len(t, round2, 3)
 
 	// The first element should now be what was second in round1
@@ -290,7 +290,7 @@ func TestGetAvailableLocationIDs_RandomWithReplacement(t *testing.T) {
 
 	// Complete the second location (first from round2)
 	completed = []string{round1[0], round2[0]}
-	round3 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, teamCode)
+	round3 := navigation.GetAvailableLocationIDs(structure, "random-group", completed, runCode)
 	assert.Len(t, round3, 3)
 
 	// The first element should be what was third in round1
@@ -298,7 +298,7 @@ func TestGetAvailableLocationIDs_RandomWithReplacement(t *testing.T) {
 
 	// Verify the shuffle is deterministic - same team code produces same order
 	completedEmpty := []string{}
-	verifyRound1 := navigation.GetAvailableLocationIDs(structure, "random-group", completedEmpty, teamCode)
+	verifyRound1 := navigation.GetAvailableLocationIDs(structure, "random-group", completedEmpty, runCode)
 	assert.Equal(t, order1[0], verifyRound1[0], "Shuffle should be deterministic")
 	assert.Equal(t, order1[1], verifyRound1[1], "Shuffle should be deterministic")
 	assert.Equal(t, order1[2], verifyRound1[2], "Shuffle should be deterministic")

@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) templ.Component {
+func photoPlayer(settings models.QuestSettings, block blocks.PhotoBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -350,7 +350,7 @@ func photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data
 	})
 }
 
-func photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) templ.Component {
+func photoPlayerUpdate(settings models.QuestSettings, block blocks.PhotoBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -386,7 +386,7 @@ var photoTextarea = TextareaParams{
 	Markdown:    true,
 }
 
-func photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) templ.Component {
+func photoAdmin(settings models.QuestSettings, block blocks.PhotoBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

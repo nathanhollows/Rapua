@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChangerBlock) templ.Component {
+func teamNameChangerPlayer(_ models.QuestSettings, block blocks.TeamNameChangerBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -520,7 +520,7 @@ var teamNamePromptText = TextInputParams{
 	ExtraClasses: "w-full",
 }
 
-func teamNameChangerAdmin(settings models.InstanceSettings, block blocks.TeamNameChangerBlock) templ.Component {
+func teamNameChangerAdmin(settings models.QuestSettings, block blocks.TeamNameChangerBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

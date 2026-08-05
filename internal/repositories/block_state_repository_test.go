@@ -41,8 +41,8 @@ func TestBlockStateRepository(t *testing.T) {
 			name: "Create new player state",
 			setup: func() (blocks.PlayerState, error) {
 				blockID := createTestBlock(t, dbc, parents.LocationID)
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
-				return repo.NewBlockState(context.Background(), blockID, teamCode)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
+				return repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
 				return repo.Create(context.Background(), state)
@@ -52,7 +52,7 @@ func TestBlockStateRepository(t *testing.T) {
 				assert.NotNil(t, result)
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
-				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
+				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID)
 				require.NoError(t, err)
 			},
 		},
@@ -60,19 +60,21 @@ func TestBlockStateRepository(t *testing.T) {
 			name: "Get player state by block and team",
 			setup: func() (blocks.PlayerState, error) {
 				blockID := createTestBlock(t, dbc, parents.LocationID)
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
-				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				return repo.Create(context.Background(), state)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
-				return repo.GetByBlockAndTeam(context.Background(), state.GetBlockID(), state.GetPlayerID())
+				return repo.GetByBlockAndRun(
+					context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID,
+				)
 			},
 			assertion: func(result any, err error) {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
-				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
+				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID)
 				require.NoError(t, err)
 			},
 		},
@@ -80,8 +82,8 @@ func TestBlockStateRepository(t *testing.T) {
 			name: "Update player state",
 			setup: func() (blocks.PlayerState, error) {
 				blockID := createTestBlock(t, dbc, parents.LocationID)
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
-				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				createdState, _ := repo.Create(context.Background(), state)
 				return createdState, nil
 			},
@@ -98,7 +100,7 @@ func TestBlockStateRepository(t *testing.T) {
 				assert.Equal(t, 100, updatedState.GetPointsAwarded())
 			},
 			cleanupFunc: func(state blocks.PlayerState) {
-				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
+				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID)
 				require.NoError(t, err)
 			},
 		},
@@ -106,12 +108,12 @@ func TestBlockStateRepository(t *testing.T) {
 			name: "Delete player state",
 			setup: func() (blocks.PlayerState, error) {
 				blockID := createTestBlock(t, dbc, parents.LocationID)
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
-				state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
+				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				return repo.Create(context.Background(), state)
 			},
 			action: func(state blocks.PlayerState) (any, error) {
-				return nil, repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID())
+				return nil, repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID)
 			},
 			assertion: func(_ any, err error) {
 				require.NoError(t, err)
@@ -133,9 +135,9 @@ func TestBlockStateRepository(t *testing.T) {
 	}
 }
 
-func verifyStatesDeleted(repo repositories.BlockStateRepository, states []blocks.PlayerState) error {
+func verifyStatesDeleted(repo repositories.BlockStateRepository, states []blocks.PlayerState, questID string) error {
 	for _, s := range states {
-		_, getErr := repo.GetByBlockAndTeam(context.Background(), s.GetBlockID(), s.GetPlayerID())
+		_, getErr := repo.GetByBlockAndRun(context.Background(), s.GetBlockID(), s.GetPlayerID(), questID)
 		if getErr.Error() != "sql: no rows in result set" {
 			return getErr
 		}
@@ -162,8 +164,8 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 				blockID := createTestBlock(t, dbc, parents.LocationID)
 				playerStates := make([]blocks.PlayerState, 3)
 				for i := range 3 {
-					teamCode := createTestTeam(t, dbc, parents.InstanceID)
-					state, _ := repo.NewBlockState(context.Background(), blockID, teamCode)
+					runCode := createTestTeam(t, dbc, parents.QuestID)
+					state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 					ps, err := repo.Create(context.Background(), state)
 					playerStates[i] = ps
 					if err != nil {
@@ -190,7 +192,7 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 					return nil, commitErr
 				}
 
-				if verifyErr := verifyStatesDeleted(repo, state); verifyErr != nil {
+				if verifyErr := verifyStatesDeleted(repo, state, parents.QuestID); verifyErr != nil {
 					return nil, verifyErr
 				}
 

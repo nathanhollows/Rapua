@@ -30,10 +30,10 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	token := models.FacilitatorToken{
-		Token:      "jsonTest123",
-		InstanceID: parents.InstanceID,
-		Locations:  []string{parents.LocationID},
-		ExpiresAt:  time.Now().Add(24 * time.Hour),
+		Token:     "jsonTest123",
+		QuestID:   parents.QuestID,
+		Locations: []string{parents.LocationID},
+		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
 	// Save token
@@ -45,6 +45,6 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, retrieved)
 	assert.Equal(t, token.Token, retrieved.Token)
-	assert.Equal(t, token.InstanceID, retrieved.InstanceID)
+	assert.Equal(t, token.QuestID, retrieved.QuestID)
 	assert.ElementsMatch(t, token.Locations, retrieved.Locations) // JSON-safe comparison
 }

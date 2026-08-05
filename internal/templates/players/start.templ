@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ TeamID(team models.Team, oob bool) {
+templ TeamID(team models.Run, oob bool) {
 	<div
 		id="team-id"
 		class="flex gap-3 justify-center not-prose"
@@ -29,7 +29,7 @@ templ TeamID(team models.Team, oob bool) {
 	</div>
 }
 
-templ Start(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
+templ Start(team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) {
 	<div hx-get="/start" hx-swap="none" hx-trigger="every 20s, timer" hx-boost="true"></div>
 	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
 		for _, block := range pageBlocks {
@@ -37,7 +37,7 @@ templ Start(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]b
 				class="block-view"
 				id={ fmt.Sprint("preview-block-", block.GetID()) }
 			>
-				@templates.RenderPlayerView(team.Instance.Settings, block, blockStates[block.GetID()])
+				@templates.RenderPlayerView(team.Quest.Settings, block, blockStates[block.GetID()])
 			</div>
 		}
 	</div>
@@ -156,7 +156,7 @@ templ instructions() {
 	</div>
 }
 
-templ TeamNameForm(team models.Team) {
+templ TeamNameForm(team models.Run) {
 	<div class="card bg-base-200">
 		<div class="card-body">
 			<h3 class="card-title">Choose a team name</h3>
@@ -193,7 +193,7 @@ templ TeamNameForm(team models.Team) {
 	</div>
 }
 
-templ TeamNameComplete(team models.Team, blockID string) {
+templ TeamNameComplete(team models.Run, blockID string) {
 	<div id={ fmt.Sprintf("player-block-%s", blockID) } class="indicator w-full">
 		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
 		<div class="card prose p-5 bg-base-200 shadow-lg w-full">

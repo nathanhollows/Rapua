@@ -14,62 +14,62 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupInstanceSettingsRepo(t *testing.T) (repositories.InstanceSettingsRepository, db.Transactor, *bun.DB, func()) {
+func setupQuestSettingsRepo(t *testing.T) (repositories.QuestSettingsRepository, db.Transactor, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
 
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	return instanceSettingsRepo, transactor, dbc, cleanup
 }
 
-func TestInstanceSettingsRepository(t *testing.T) {
-	repo, _, dbc, cleanup := setupInstanceSettingsRepo(t)
+func TestQuestSettingsRepository(t *testing.T) {
+	repo, _, dbc, cleanup := setupQuestSettingsRepo(t)
 	defer cleanup()
 
 	tests := []struct {
 		name   string
-		setup  func() *models.InstanceSettings
-		action func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error
-		verify func(ctx context.Context, t *testing.T, settings *models.InstanceSettings, err error)
+		setup  func() *models.QuestSettings
+		action func(ctx context.Context, repo repositories.QuestSettingsRepository, settings *models.QuestSettings) error
+		verify func(ctx context.Context, t *testing.T, settings *models.QuestSettings, err error)
 	}{
 		{
 			name: "Create instance settings successfully",
-			setup: func() *models.InstanceSettings {
+			setup: func() *models.QuestSettings {
 				parents := createTestParents(t, dbc)
-				return &models.InstanceSettings{
-					InstanceID:      parents.InstanceID,
+				return &models.QuestSettings{
+					QuestID:         parents.QuestID,
 					MustCheckOut:    gofakeit.Bool(),
 					EnablePoints:    gofakeit.Bool(),
 					ShowLeaderboard: gofakeit.Bool(),
 				}
 			},
-			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
+			action: func(ctx context.Context, repo repositories.QuestSettingsRepository, settings *models.QuestSettings) error {
 				return repo.Create(ctx, settings)
 			},
-			verify: func(_ context.Context, t *testing.T, settings *models.InstanceSettings, err error) {
+			verify: func(_ context.Context, t *testing.T, settings *models.QuestSettings, err error) {
 				require.NoError(t, err)
-				assert.NotEmpty(t, settings.InstanceID)
+				assert.NotEmpty(t, settings.QuestID)
 			},
 		},
 		{
 			name: "Update instance settings successfully",
-			setup: func() *models.InstanceSettings {
+			setup: func() *models.QuestSettings {
 				parents := createTestParents(t, dbc)
-				return &models.InstanceSettings{
-					InstanceID:      parents.InstanceID,
+				return &models.QuestSettings{
+					QuestID:         parents.QuestID,
 					MustCheckOut:    gofakeit.Bool(),
 					EnablePoints:    gofakeit.Bool(),
 					ShowLeaderboard: gofakeit.Bool(),
 				}
 			},
-			action: func(ctx context.Context, repo repositories.InstanceSettingsRepository, settings *models.InstanceSettings) error {
+			action: func(ctx context.Context, repo repositories.QuestSettingsRepository, settings *models.QuestSettings) error {
 				// Simulate creation
 				_ = repo.Create(ctx, settings)
 				return repo.Update(ctx, settings)
 			},
-			verify: func(_ context.Context, t *testing.T, _ *models.InstanceSettings, err error) {
+			verify: func(_ context.Context, t *testing.T, _ *models.QuestSettings, err error) {
 				require.NoError(t, err)
 			},
 		},
@@ -90,9 +90,9 @@ func TestInstanceSettingsRepository(t *testing.T) {
 	}
 }
 
-func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
+func TestQuestSettingsRepository_GetByQuestID(t *testing.T) {
 	// Setup test database
-	repo, _, dbc, cleanup := setupInstanceSettingsRepo(t)
+	repo, _, dbc, cleanup := setupQuestSettingsRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -101,8 +101,8 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	// Create test settings
-	settings := &models.InstanceSettings{
-		InstanceID:      parents.InstanceID,
+	settings := &models.QuestSettings{
+		QuestID:         parents.QuestID,
 		MustCheckOut:    gofakeit.Bool(),
 		ShowTeamCount:   gofakeit.Bool(),
 		EnablePoints:    true,
@@ -115,25 +115,25 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		instanceID  string
+		questID     string
 		expectError bool
 		expectNil   bool
 	}{
 		{
 			name:        "Get existing settings",
-			instanceID:  settings.InstanceID,
+			questID:     settings.QuestID,
 			expectError: false,
 			expectNil:   false,
 		},
 		{
 			name:        "Get non-existent settings",
-			instanceID:  gofakeit.UUID(),
+			questID:     gofakeit.UUID(),
 			expectError: true,
 			expectNil:   true,
 		},
 		{
 			name:        "Empty instance ID",
-			instanceID:  "",
+			questID:     "",
 			expectError: true,
 			expectNil:   true,
 		},
@@ -141,7 +141,7 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, getErr := repo.GetByInstanceID(ctx, tt.instanceID)
+			result, getErr := repo.GetByQuestID(ctx, tt.questID)
 
 			if tt.expectError {
 				require.Error(t, getErr)
@@ -153,15 +153,15 @@ func TestInstanceSettingsRepository_GetByInstanceID(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				assert.NotNil(t, result)
-				assert.Equal(t, settings.InstanceID, result.InstanceID)
+				assert.Equal(t, settings.QuestID, result.QuestID)
 				assert.Equal(t, settings.EnablePoints, result.EnablePoints)
 			}
 		})
 	}
 }
 
-func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
-	repo, transactor, dbc, cleanup := setupInstanceSettingsRepo(t)
+func TestQuestSettingsRepository_CreateTx(t *testing.T) {
+	repo, transactor, dbc, cleanup := setupQuestSettingsRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -173,8 +173,8 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 		defer tx.Rollback()
 
-		settings := &models.InstanceSettings{
-			InstanceID:      parents.InstanceID,
+		settings := &models.QuestSettings{
+			QuestID:         parents.QuestID,
 			EnablePoints:    true,
 			ShowLeaderboard: true,
 		}
@@ -186,9 +186,9 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify settings were created
-		found, err := repo.GetByInstanceID(ctx, parents.InstanceID)
+		found, err := repo.GetByQuestID(ctx, parents.QuestID)
 		require.NoError(t, err)
-		assert.Equal(t, settings.InstanceID, found.InstanceID)
+		assert.Equal(t, settings.QuestID, found.QuestID)
 		assert.Equal(t, settings.EnablePoints, found.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, found.ShowLeaderboard)
 	})
@@ -199,8 +199,8 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID:   parents.InstanceID,
+		settings := &models.QuestSettings{
+			QuestID:      parents.QuestID,
 			EnablePoints: false,
 		}
 
@@ -212,7 +212,7 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify settings were NOT created
-		_, err = repo.GetByInstanceID(ctx, parents.InstanceID)
+		_, err = repo.GetByQuestID(ctx, parents.QuestID)
 		require.Error(t, err)
 	})
 
@@ -221,8 +221,8 @@ func TestInstanceSettingsRepository_CreateTx(t *testing.T) {
 		require.NoError(t, err)
 		defer tx.Rollback()
 
-		settings := &models.InstanceSettings{
-			// Missing InstanceID
+		settings := &models.QuestSettings{
+			// Missing QuestID
 			EnablePoints: true,
 		}
 

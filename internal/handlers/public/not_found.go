@@ -16,6 +16,6 @@ func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	err := templates.PublicLayout(c, "Not Found", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering NotFound page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering NotFound page", "err", err)
 	}
 }

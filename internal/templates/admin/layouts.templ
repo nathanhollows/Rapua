@@ -16,8 +16,8 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 				<div class="toast toast-center z-50" id="alerts"></div>
 				<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 				<main class="max-w-7xl m-auto pb-8">
-					if user.CurrentInstanceID != "" {
-						@QuickstartBar(user.CurrentInstance)
+					if user.CurrentQuestID != "" {
+						@QuickstartBar(user.CurrentQuest)
 					}
 					@contents
 				</main>
@@ -110,57 +110,68 @@ templ nav(user models.User, section string) {
 									<svg class="w-6 h-6 stroke-base-content fill-base-content" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 									<span class="-mt-1">Rapua</span>
 								</li>
-								if user.CurrentInstanceID != "" {
-								<li>
-									<a
-										href="/admin/"
-										if section == "Activity" {
-											class="menu-active"
-										}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path> </svg>
-										Activity
-									</a>
-								</li>
-								<li>
-									<a
-										href="/admin/locations"
-										if section == "Locations" {
-											class="menu-active"
-										}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle> </svg>
-										Locations
-									</a>
-								</li>
-								<li>
-									<a
-										href="/admin/teams"
-										if section == "Teams" {
-											class="menu-active"
-										}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path> <circle cx="9" cy="7" r="4"></circle> <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path> <path d="M16 3.13a4 4 0 0 1 0 7.75"></path> </svg>
-										Teams
-									</a>
-								</li>
-								<li>
-									<a
-										href="/admin/experience"
-										if section == "Experience" {
-											class="menu-active"
-										}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
-										Experience
-									</a>
-								</li>
+								if user.CurrentQuestID != "" {
+									<li>
+										<a
+											href="/admin/"
+											if section == "Activity" {
+												class="menu-active"
+											}
+										>
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path> </svg>
+											Activity
+										</a>
+									</li>
+									<li>
+										<a
+											href="/admin/quest"
+											if section == "Quest" {
+												class="menu-active"
+											}
+										>
+											@icon("waypoints", templ.Attributes{})
+											Quest
+										</a>
+									</li>
+									<li>
+										<a
+											href="/admin/spaces"
+											if section == "Spaces" {
+												class="menu-active"
+											}
+										>
+											@icon("map-pin", templ.Attributes{})
+											Spaces
+										</a>
+									</li>
+									<li>
+										<a
+											href="/admin/runs"
+											if section == "Teams" {
+												class="menu-active"
+											}
+										>
+											@icon("footprints", templ.Attributes{})
+											Runs
+										</a>
+									</li>
+									<li>
+										<a
+											href="/admin/experience"
+											if section == "Experience" {
+												class="menu-active"
+											}
+										>
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+											Experience
+										</a>
+									</li>
 								}
 							</ul>
 							<ul class="menu p-0 w-full">
 								<li>
 									<a
-										href="/admin/instances"
+										href="/admin/quests"
 										if section == "Games and Instances" {
 											class="menu-active"
 										}
@@ -209,51 +220,62 @@ templ nav(user models.User, section string) {
 				<ul
 					class="menu menu-horizontal px-1 gap-x-1 font-bold"
 				>
-					if user.CurrentInstanceID != "" {
-					<li>
-						<a
-							href="/admin/"
-							if section == "Activity" {
-								class="menu-active"
-							}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path> </svg>
-							Activity
-						</a>
-					</li>
-					<li>
-						<a
-							href="/admin/locations"
-							if section == "Locations" {
-								class="menu-active"
-							}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path> <circle cx="12" cy="10" r="3"></circle> </svg>
-							Locations
-						</a>
-					</li>
-					<li>
-						<a
-							href="/admin/teams"
-							if section == "Teams" {
-								class="menu-active"
-							}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path> <circle cx="9" cy="7" r="4"></circle> <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path> <path d="M16 3.13a4 4 0 0 1 0 7.75"></path> </svg>
-							Teams
-						</a>
-					</li>
-					<li>
-						<a
-							href="/admin/experience"
-							if section == "Experience" {
-								class="menu-active"
-							}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
-							Experience
-						</a>
-					</li>
+					if user.CurrentQuestID != "" {
+						<li>
+							<a
+								href="/admin/"
+								if section == "Activity" {
+									class="menu-active"
+								}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path> </svg>
+								Activity
+							</a>
+						</li>
+						<li>
+							<a
+								href="/admin/quest"
+								if section == "Quest" {
+									class="menu-active"
+								}
+							>
+								@icon("waypoints", templ.Attributes{})
+								Quest
+							</a>
+						</li>
+						<li>
+							<a
+								href="/admin/spaces"
+								if section == "Spaces" {
+									class="menu-active"
+								}
+							>
+								@icon("signpost", templ.Attributes{})
+								Spaces
+							</a>
+						</li>
+						<li>
+							<a
+								href="/admin/runs"
+								if section == "Teams" {
+									class="menu-active"
+								}
+							>
+								@icon("footprints", templ.Attributes{})
+								Runs
+							</a>
+						</li>
+						<li>
+							<a
+								href="/admin/experience"
+								if section == "Experience" {
+									class="menu-active"
+								}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+								Experience
+							</a>
+						</li>
 					}
 				</ul>
 			</div>
@@ -269,8 +291,8 @@ templ nav(user models.User, section string) {
 						data-tip="Change instance"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><circle cx="12" cy="12" r="10"></circle> <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-						if user.CurrentInstance.ID != "" {
-							{ user.CurrentInstance.Name }
+						if user.CurrentQuest.ID != "" {
+							{ user.CurrentQuest.Name }
 						} else {
 							Select instance
 						}
@@ -280,22 +302,22 @@ templ nav(user models.User, section string) {
 						tabindex="0"
 						class="font-normal menu dropdown-content border border-base-300 bg-base-200 rounded-box z-[1] mt-3 w-64 p-2 shadow-xl"
 					>
-						if len(user.Instances) > 0 {
+						if len(user.Quests) > 0 {
 							<li>
 								<h2 class="menu-title">Switch games</h2>
 								<ul hx-boost="true">
-									for _, instance := range user.Instances {
+									for _, quest := range user.Quests {
 										<li>
-											if instance.ID == user.CurrentInstance.ID {
+											if quest.ID == user.CurrentQuest.ID {
 												<a>
-													{ instance.Name }
+													{ quest.Name }
 													<span class="badge badge-primary badge-sm">
 														<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"></path></svg>
 													</span>
 												</a>
 											} else {
-												<a href={ templ.URL(fmt.Sprintf("/admin/instances/%s/switch", instance.ID)) }>
-													{ instance.Name }
+												<a href={ templ.URL(fmt.Sprintf("/admin/quests/%s/switch", quest.ID)) }>
+													{ quest.Name }
 												</a>
 											}
 										</li>
@@ -305,7 +327,7 @@ templ nav(user models.User, section string) {
 							<div class="divider m-1"></div>
 						}
 						<li>
-							<a href="/admin/instances">
+							<a href="/admin/quests">
 								Manage games and templates
 							</a>
 						</li>

@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
+templ imagePlayer(_ models.QuestSettings, block blocks.ImageBlock) {
 	<figure
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		if block.FullWidth {
@@ -58,7 +58,7 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 	</figure>
 }
 
-templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
+templ imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s-upload", block.ID) }
 		class="hidden"

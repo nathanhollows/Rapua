@@ -7,8 +7,8 @@ import (
 type CheckIn struct {
 	baseModel
 
-	InstanceID      string    `bun:"instance_id,notnull"`
-	TeamID          string    `bun:"team_code,pk,type:string"`
+	QuestID         string    `bun:"quest_id,notnull"`
+	RunID           string    `bun:"run_code,pk,type:string"`
 	LocationID      string    `bun:"location_id,pk,type:string"`
 	TimeIn          time.Time `bun:"time_in,type:datetime"`
 	TimeOut         time.Time `bun:"time_out,type:datetime"`

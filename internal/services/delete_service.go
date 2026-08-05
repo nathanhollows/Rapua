@@ -26,10 +26,10 @@ import (
 // and denormalized data updates.
 type DeleteService struct {
 	transactor   db.Transactor
-	instanceRepo repositories.InstanceRepository
+	instanceRepo repositories.QuestRepository
 	locationRepo repositories.LocationRepository
 	markerRepo   repositories.MarkerRepository
-	teamRepo     repositories.TeamRepository
+	teamRepo     repositories.RunRepository
 	uploadsRepo  repositories.UploadsRepository
 	db           *bun.DB
 	uploadsDir   string
@@ -39,10 +39,10 @@ type DeleteService struct {
 // NewDeleteService creates a new DeleteService with the provided dependencies.
 func NewDeleteService(
 	transactor db.Transactor,
-	instanceRepo repositories.InstanceRepository,
+	instanceRepo repositories.QuestRepository,
 	locationRepo repositories.LocationRepository,
 	markerRepo repositories.MarkerRepository,
-	teamRepo repositories.TeamRepository,
+	teamRepo repositories.RunRepository,
 	uploadsRepo repositories.UploadsRepository,
 	db *bun.DB,
 	uploadsDir string,
@@ -74,7 +74,7 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	var uploads []*models.Upload
 	for _, inst := range instances {
 		iu, uploadErr := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
-			"instance_id": inst.ID,
+			"quest_id": inst.ID,
 		})
 		if uploadErr != nil {
 			return fmt.Errorf("fetching uploads for instance %s: %w", inst.ID, uploadErr)
@@ -94,16 +94,16 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	}()
 
 	// blocks.owner_id has no FK; delete blocks for all locations owned by
-	// this user's instances, then delete the instance-level (start/finish) blocks.
+	// this user's quests, then delete the quest-level (start/finish) blocks.
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id IN (SELECT l.id FROM locations l JOIN instances i ON l.instance_id = i.id WHERE i.user_id = ?)", userID).
+		Where("owner_id IN (SELECT l.id FROM locations l JOIN quests q ON l.quest_id = q.id WHERE q.user_id = ?)", userID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting location blocks for user: %w", err)
 	}
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID).
+		Where("owner_id IN (SELECT id FROM quests WHERE user_id = ?)", userID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -187,19 +187,19 @@ func (s *DeleteService) DeleteBlock(ctx context.Context, blockID string) error {
 	return nil
 }
 
-// DeleteInstance deletes an instance and all its content.
+// DeleteQuest deletes an instance and all its content.
 // Returns ErrUserNotAuthenticated if userID doesn't own the instance.
 // Blocks are deleted explicitly because owner_id is polymorphic.
-func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID string) error {
+func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string) error {
 	if userID == "" {
 		return ErrUserNotAuthenticated
 	}
-	if instanceID == "" {
-		return errors.New("instanceID cannot be empty")
+	if questID == "" {
+		return errors.New("questID cannot be empty")
 	}
 
 	// Auth check
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return fmt.Errorf("finding instance: %w", err)
 	}
@@ -209,10 +209,10 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 
 	// Collect upload file paths before the transaction deletes the rows.
 	uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
-		"instance_id": instanceID,
+		"quest_id": questID,
 	})
 	if err != nil {
-		return fmt.Errorf("fetching uploads for instance %s: %w", instanceID, err)
+		return fmt.Errorf("fetching uploads for instance %s: %w", questID, err)
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -229,14 +229,14 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 	// Delete location-owned blocks then instance-owned (start/finish) blocks.
 	// blocks.owner_id has no FK so they won't be cascade-deleted automatically.
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id IN (SELECT id FROM locations WHERE instance_id = ?)", instanceID).
+		Where("owner_id IN (SELECT id FROM locations WHERE quest_id = ?)", questID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting location blocks: %w", err)
 	}
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id = ?", instanceID).
+		Where("owner_id = ?", questID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -245,8 +245,8 @@ func (s *DeleteService) DeleteInstance(ctx context.Context, userID, instanceID s
 
 	// Delete instance — cascade handles everything else
 	_, err = tx.NewDelete().
-		Model((*models.Instance)(nil)).
-		Where("id = ?", instanceID).
+		Model((*models.Quest)(nil)).
+		Where("id = ?", questID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -278,7 +278,7 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 		}
 	}()
 
-	// Delete blocks first — cascade handles team_block_states
+	// Delete blocks first — cascade handles run_block_states
 	_, err = tx.NewDelete().
 		Model((*models.Block)(nil)).
 		Where("owner_id = ?", locationID).
@@ -310,18 +310,18 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 
 // ResetTeams clears team progress while preserving the teams themselves.
 // Cannot use cascade — teams are preserved, only children are deleted.
-func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCodes []string) error {
 	if len(teamCodes) == 0 {
 		return nil
 	}
 	// Collect upload file paths before deleting records
 	var allUploads []*models.Upload
-	for _, teamCode := range teamCodes {
+	for _, runCode := range teamCodes {
 		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
-			"team_code": teamCode,
+			"run_code": runCode,
 		})
 		if err != nil {
-			return fmt.Errorf("fetching uploads for team %s: %w", teamCode, err)
+			return fmt.Errorf("fetching uploads for team %s: %w", runCode, err)
 		}
 		allUploads = append(allUploads, uploads...)
 	}
@@ -338,7 +338,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 	}()
 
 	// Reset team fields (preserve the team row)
-	err = s.teamRepo.Reset(ctx, tx, instanceID, teamCodes)
+	err = s.teamRepo.Reset(ctx, tx, questID, teamCodes)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("resetting teams: %w", err)
@@ -347,8 +347,8 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 	// Delete child records explicitly (can't cascade since teams are preserved)
 	_, err = tx.NewDelete().
 		Model((*models.CheckIn)(nil)).
-		Where("instance_id = ?", instanceID).
-		Where("team_code IN (?)", bun.In(teamCodes)).
+		Where("quest_id = ?", questID).
+		Where("run_code IN (?)", bun.In(teamCodes)).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -356,8 +356,8 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 	}
 
 	_, err = tx.NewDelete().
-		Model((*models.TeamBlockState)(nil)).
-		Where("team_code IN (?)", bun.In(teamCodes)).
+		Model((*models.RunBlockState)(nil)).
+		Where("run_code IN (?)", bun.In(teamCodes)).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -366,7 +366,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 
 	_, err = tx.NewDelete().
 		Model((*models.Upload)(nil)).
-		Where("team_code IN (?)", bun.In(teamCodes)).
+		Where("run_code IN (?)", bun.In(teamCodes)).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -374,15 +374,15 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 	}
 
 	_, err = tx.NewDelete().
-		Model((*models.TeamVarState)(nil)).
-		Where("team_code IN (?)", bun.In(teamCodes)).
+		Model((*models.RunVarState)(nil)).
+		Where("run_code IN (?)", bun.In(teamCodes)).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting team var states: %w", err)
 	}
 
-	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
+	err = s.locationRepo.UpdateStatistics(ctx, tx, questID)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("updating location statistics: %w", err)
@@ -401,18 +401,18 @@ func (s *DeleteService) ResetTeams(ctx context.Context, instanceID string, teamC
 
 // DeleteTeams deletes teams and their associated progress data.
 // Cascade handles check-ins, block states, uploads, and notifications.
-func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, teamCodes []string) error {
+func (s *DeleteService) DeleteTeams(ctx context.Context, questID string, teamCodes []string) error {
 	if len(teamCodes) == 0 {
 		return nil
 	}
 	// Collect upload file paths before cascade deletes the rows
 	var allUploads []*models.Upload
-	for _, teamCode := range teamCodes {
+	for _, runCode := range teamCodes {
 		uploads, err := s.uploadsRepo.SearchByCriteria(ctx, map[string]string{
-			"team_code": teamCode,
+			"run_code": runCode,
 		})
 		if err != nil {
-			return fmt.Errorf("fetching uploads for team %s: %w", teamCode, err)
+			return fmt.Errorf("fetching uploads for team %s: %w", runCode, err)
 		}
 		allUploads = append(allUploads, uploads...)
 	}
@@ -430,8 +430,8 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 
 	// Delete teams — cascade handles check-ins, block states, notifications, uploads
 	_, err = tx.NewDelete().
-		Model((*models.Team)(nil)).
-		Where("instance_id = ?", instanceID).
+		Model((*models.Run)(nil)).
+		Where("quest_id = ?", questID).
 		Where("code IN (?)", bun.In(teamCodes)).
 		Exec(ctx)
 	if err != nil {
@@ -440,7 +440,7 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, instanceID string, team
 	}
 
 	// Update denormalized location statistics
-	err = s.locationRepo.UpdateStatistics(ctx, tx, instanceID)
+	err = s.locationRepo.UpdateStatistics(ctx, tx, questID)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("updating location statistics: %w", err)

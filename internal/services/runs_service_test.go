@@ -24,20 +24,20 @@ const (
 	baseTime = "2024-01-15T10:00:00Z"
 )
 
-func setupTeamsService(t *testing.T) (services.TeamService, *bun.DB, func()) {
+func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
 
 	checkinRepo := repositories.NewCheckInRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
+	teamRepo := repositories.NewRunRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
-	varStateRepo := repositories.NewTeamVarStateRepository(dbc)
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, nil)
-	teamService := services.NewTeamService(
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
+	varStateRepo := repositories.NewRunVarStateRepository(dbc)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
+	runService := services.NewRunService(
 		transactor,
 		teamRepo,
 		checkinRepo,
@@ -47,7 +47,7 @@ func setupTeamsService(t *testing.T) (services.TeamService, *bun.DB, func()) {
 		varStateRepo,
 	)
 
-	return *teamService, dbc, cleanup
+	return *runService, dbc, cleanup
 }
 
 // getBaseTime returns a fixed time for deterministic testing.
@@ -56,70 +56,70 @@ func getBaseTime() time.Time {
 	return t
 }
 
-func TestTeamService_AddTeams(t *testing.T) {
-	teamService, dbc, cleanup := setupTeamsService(t)
+func TestRunService_AddTeams(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	// Create FK-valid instances for each test case
 	mkInstance := func() string {
 		p := createTestParents(t, dbc)
-		return p.InstanceID
+		return p.QuestID
 	}
 
 	tests := []struct {
-		name       string
-		instanceID string
-		count      int
-		wantCount  int
-		wantErr    bool
+		name      string
+		questID   string
+		count     int
+		wantCount int
+		wantErr   bool
 	}{
 		{
-			name:       "add teams successfully",
-			instanceID: mkInstance(),
-			count:      3,
-			wantCount:  3,
-			wantErr:    false,
+			name:      "add teams successfully",
+			questID:   mkInstance(),
+			count:     3,
+			wantCount: 3,
+			wantErr:   false,
 		},
 		{
-			name:       "add single team",
-			instanceID: mkInstance(),
-			count:      1,
-			wantCount:  1,
-			wantErr:    false,
+			name:      "add single team",
+			questID:   mkInstance(),
+			count:     1,
+			wantCount: 1,
+			wantErr:   false,
 		},
 		{
-			name:       "add many teams",
-			instanceID: mkInstance(),
-			count:      10,
-			wantCount:  10,
-			wantErr:    false,
+			name:      "add many teams",
+			questID:   mkInstance(),
+			count:     10,
+			wantCount: 10,
+			wantErr:   false,
 		},
 		{
-			name:       "zero count should create no teams",
-			instanceID: mkInstance(),
-			count:      0,
-			wantCount:  0,
-			wantErr:    false,
+			name:      "zero count should create no teams",
+			questID:   mkInstance(),
+			count:     0,
+			wantCount: 0,
+			wantErr:   false,
 		},
 		{
-			name:       "negative count should create no teams",
-			instanceID: mkInstance(),
-			count:      -1,
-			wantCount:  0,
-			wantErr:    false,
+			name:      "negative count should create no teams",
+			questID:   mkInstance(),
+			count:     -1,
+			wantCount: 0,
+			wantErr:   false,
 		},
 		{
-			name:       "empty instance ID fails with FK constraint",
-			instanceID: "",
-			count:      3,
-			wantCount:  0,
-			wantErr:    true,
+			name:      "empty instance ID fails with FK constraint",
+			questID:   "",
+			count:     3,
+			wantCount: 0,
+			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := teamService.AddTeams(context.Background(), tt.instanceID, tt.count)
+			result, err := runService.AddTeams(context.Background(), tt.questID, tt.count)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -132,63 +132,63 @@ func TestTeamService_AddTeams(t *testing.T) {
 			// Verify each team has proper values
 			for _, team := range result {
 				assert.NotEmpty(t, team.Code, "team code should not be empty")
-				assert.Equal(t, tt.instanceID, team.InstanceID, "instance ID should match")
+				assert.Equal(t, tt.questID, team.QuestID, "instance ID should match")
 			}
 		})
 	}
 }
 
-func TestTeamService_FindAll(t *testing.T) {
-	teamService, dbc, cleanup := setupTeamsService(t)
+func TestRunService_FindAll(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	// Create FK-valid instances for each test case
 	mkInstance := func() string {
 		p := createTestParents(t, dbc)
-		return p.InstanceID
+		return p.QuestID
 	}
 
 	tests := []struct {
-		name       string
-		setupTeams int
-		instanceID string
-		wantCount  int
-		wantErr    bool
+		name      string
+		setupRuns int
+		questID   string
+		wantCount int
+		wantErr   bool
 	}{
 		{
-			name:       "find all teams for instance",
-			setupTeams: 5,
-			instanceID: mkInstance(),
-			wantCount:  5,
-			wantErr:    false,
+			name:      "find all teams for instance",
+			setupRuns: 5,
+			questID:   mkInstance(),
+			wantCount: 5,
+			wantErr:   false,
 		},
 		{
-			name:       "find no teams for empty instance",
-			setupTeams: 0,
-			instanceID: mkInstance(),
-			wantCount:  0,
-			wantErr:    false,
+			name:      "find no teams for empty instance",
+			setupRuns: 0,
+			questID:   mkInstance(),
+			wantCount: 0,
+			wantErr:   false,
 		},
 		{
-			name:       "find teams with special characters in instance ID",
-			setupTeams: 3,
-			instanceID: mkInstance(),
-			wantCount:  3,
-			wantErr:    false,
+			name:      "find teams with special characters in instance ID",
+			setupRuns: 3,
+			questID:   mkInstance(),
+			wantCount: 3,
+			wantErr:   false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup: Create teams for this instance
-			if tt.setupTeams > 0 {
-				teams, err := teamService.AddTeams(context.Background(), tt.instanceID, tt.setupTeams)
+			if tt.setupRuns > 0 {
+				teams, err := runService.AddTeams(context.Background(), tt.questID, tt.setupRuns)
 				require.NoError(t, err)
-				require.Len(t, teams, tt.setupTeams, "setup should create expected number of teams")
+				require.Len(t, teams, tt.setupRuns, "setup should create expected number of teams")
 			}
 
 			// Test: Find all teams
-			result, err := teamService.FindAll(context.Background(), tt.instanceID)
+			result, err := runService.FindAll(context.Background(), tt.questID)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -200,62 +200,62 @@ func TestTeamService_FindAll(t *testing.T) {
 
 			// Verify all teams belong to correct instance
 			for _, team := range result {
-				assert.Equal(t, tt.instanceID, team.InstanceID)
+				assert.Equal(t, tt.questID, team.QuestID)
 			}
 		})
 	}
 }
 
-func TestTeamService_FindTeamByCode(t *testing.T) {
-	teamService, dbc, cleanup := setupTeamsService(t)
+func TestRunService_FindTeamByCode(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	t.Run("find existing team by code", func(t *testing.T) {
 		p := createTestParents(t, dbc)
-		instanceID := p.InstanceID
-		teams, err := teamService.AddTeams(context.Background(), instanceID, 1)
+		questID := p.QuestID
+		teams, err := runService.AddTeams(context.Background(), questID, 1)
 		require.NoError(t, err)
 		require.Len(t, teams, 1)
 
-		team, err := teamService.GetTeamByCode(context.Background(), teams[0].Code)
+		team, err := runService.GetRunByCode(context.Background(), teams[0].Code)
 		require.NoError(t, err)
 		assert.Equal(t, teams[0].Code, team.Code)
-		assert.Equal(t, instanceID, team.InstanceID)
+		assert.Equal(t, questID, team.QuestID)
 	})
 
 	t.Run("return error for non-existent code", func(t *testing.T) {
 		nonExistentCode := gofakeit.LetterN(6)
 
-		team, err := teamService.GetTeamByCode(context.Background(), nonExistentCode)
+		team, err := runService.GetRunByCode(context.Background(), nonExistentCode)
 		require.Error(t, err, "should return error for non-existent code")
 		assert.Nil(t, team, "team should be nil when not found")
 	})
 
 	t.Run("return error for empty code", func(t *testing.T) {
-		team, err := teamService.GetTeamByCode(context.Background(), "")
+		team, err := runService.GetRunByCode(context.Background(), "")
 		require.Error(t, err, "should return error for empty code")
 		assert.Nil(t, team, "team should be nil for empty code")
 	})
 
 	t.Run("find correct team among multiple teams", func(t *testing.T) {
 		p := createTestParents(t, dbc)
-		instanceID := p.InstanceID
-		teams, err := teamService.AddTeams(context.Background(), instanceID, 5)
+		questID := p.QuestID
+		teams, err := runService.AddTeams(context.Background(), questID, 5)
 		require.NoError(t, err)
 		require.Len(t, teams, 5)
 
 		// Test finding each team
 		for _, expectedTeam := range teams {
-			foundTeam, err := teamService.GetTeamByCode(context.Background(), expectedTeam.Code)
+			foundRun, err := runService.GetRunByCode(context.Background(), expectedTeam.Code)
 			require.NoError(t, err)
-			assert.Equal(t, expectedTeam.Code, foundTeam.Code)
-			assert.Equal(t, expectedTeam.InstanceID, foundTeam.InstanceID)
+			assert.Equal(t, expectedTeam.Code, foundRun.Code)
+			assert.Equal(t, expectedTeam.QuestID, foundRun.QuestID)
 		}
 	})
 }
 
-func TestTeamService_BuildLocationGroupMap(t *testing.T) {
-	teamService, _, cleanup := setupTeamsService(t)
+func TestRunService_BuildLocationGroupMap(t *testing.T) {
+	runService, _, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -368,14 +368,14 @@ func TestTeamService_BuildLocationGroupMap(t *testing.T) {
 				}
 			}
 
-			got := teamService.BuildLocationGroupMap(tt.structure)
+			got := runService.BuildLocationGroupMap(tt.structure)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestTeamService_BuildGroupOrder(t *testing.T) {
-	teamService, _, cleanup := setupTeamsService(t)
+func TestRunService_BuildGroupOrder(t *testing.T) {
+	runService, _, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	tests := []struct {
@@ -465,14 +465,14 @@ func TestTeamService_BuildGroupOrder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := teamService.BuildGroupOrder(tt.structure)
+			got := runService.BuildGroupOrder(tt.structure)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestTeamService_GroupCheckInsByGroup(t *testing.T) {
-	teamService, _, cleanup := setupTeamsService(t)
+func TestRunService_GroupCheckInsByGroup(t *testing.T) {
+	runService, _, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	// Helper to create check-ins with deterministic times relative to base time
@@ -667,7 +667,7 @@ func TestTeamService_GroupCheckInsByGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := teamService.GroupCheckInsByGroup(tt.checkIns, tt.locationGroups, tt.groupOrder)
+			got := runService.GroupCheckInsByGroup(tt.checkIns, tt.locationGroups, tt.groupOrder)
 			assert.Len(t, got, tt.wantGroupCount)
 			if tt.validate != nil {
 				tt.validate(t, got)

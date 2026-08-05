@@ -12,53 +12,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupInstanceSettingsService(t *testing.T) (*services.InstanceSettingsService, func()) {
+func setupQuestSettingsService(t *testing.T) (*services.QuestSettingsService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
+	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
 
 	return instanceSettingsService, cleanup
 }
 
-func createTestInstanceSettings(t *testing.T) *models.InstanceSettings {
+func createTestQuestSettings(t *testing.T) *models.QuestSettings {
 	t.Helper()
 
-	return &models.InstanceSettings{
-		InstanceID:    gofakeit.UUID(),
+	return &models.QuestSettings{
+		QuestID:       gofakeit.UUID(),
 		MustCheckOut:  gofakeit.Bool(),
 		ShowTeamCount: false,
 		EnablePoints:  true,
 	}
 }
 
-func TestInstanceSettingsService_GetInstanceSettings(t *testing.T) {
-	service, cleanup := setupInstanceSettingsService(t)
+func TestQuestSettingsService_GetQuestSettings(t *testing.T) {
+	service, cleanup := setupQuestSettingsService(t)
 	defer cleanup()
 
 	t.Run("Get existing settings", func(t *testing.T) {
 		// This test would require creating settings in the database first
 		// For now, we'll test the error cases
-		settings, err := service.GetInstanceSettings(context.Background(), "nonexistent-id")
+		settings, err := service.GetQuestSettings(context.Background(), "nonexistent-id")
 		require.Error(t, err)
 		assert.Nil(t, settings)
 	})
 
 	t.Run("Empty instance ID", func(t *testing.T) {
-		settings, err := service.GetInstanceSettings(context.Background(), "")
+		settings, err := service.GetQuestSettings(context.Background(), "")
 		require.Error(t, err)
 		assert.Nil(t, settings)
 		assert.Contains(t, err.Error(), "instance ID cannot be empty")
 	})
 }
 
-func TestInstanceSettingsService_SaveSettings(t *testing.T) {
-	service, cleanup := setupInstanceSettingsService(t)
+func TestQuestSettingsService_SaveSettings(t *testing.T) {
+	service, cleanup := setupQuestSettingsService(t)
 	defer cleanup()
 
 	t.Run("Save valid settings", func(t *testing.T) {
-		settings := createTestInstanceSettings(t)
+		settings := createTestQuestSettings(t)
 
 		err := service.SaveSettings(context.Background(), settings)
 		// Validation should pass - may succeed or fail depending on database state
@@ -78,17 +78,17 @@ func TestInstanceSettingsService_SaveSettings(t *testing.T) {
 	t.Run("Save settings with boolean flags", func(t *testing.T) {
 		testCases := []struct {
 			name   string
-			modify func(*models.InstanceSettings)
+			modify func(*models.QuestSettings)
 		}{
-			{"ShowTeamCount true", func(s *models.InstanceSettings) { s.ShowTeamCount = true }},
-			{"ShowTeamCount false", func(s *models.InstanceSettings) { s.ShowTeamCount = false }},
-			{"EnablePoints true", func(s *models.InstanceSettings) { s.EnablePoints = true }},
-			{"EnablePoints false", func(s *models.InstanceSettings) { s.EnablePoints = false }},
+			{"ShowTeamCount true", func(s *models.QuestSettings) { s.ShowTeamCount = true }},
+			{"ShowTeamCount false", func(s *models.QuestSettings) { s.ShowTeamCount = false }},
+			{"EnablePoints true", func(s *models.QuestSettings) { s.EnablePoints = true }},
+			{"EnablePoints false", func(s *models.QuestSettings) { s.EnablePoints = false }},
 		}
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				settings := createTestInstanceSettings(t)
+				settings := createTestQuestSettings(t)
 				tc.modify(settings)
 
 				err := service.SaveSettings(context.Background(), settings)

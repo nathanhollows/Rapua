@@ -13,16 +13,16 @@ import (
 
 // ExportService converts a live instance into a GameDoc.
 type ExportService struct {
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
 	blockRepo            repositories.BlockRepository
 }
 
 // NewExportService creates a new ExportService with the provided dependencies.
 func NewExportService(
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
 	blockRepo repositories.BlockRepository,
 ) *ExportService {
@@ -35,28 +35,28 @@ func NewExportService(
 }
 
 // ExportInstance serialises a live instance to a v7 GameDoc.
-func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (*game.GameDoc, error) {
+func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, error) {
 	// 1. Load Instance (includes GameStructure JSON column)
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("export: load instance: %w", err)
 	}
 
-	// 2. Load InstanceSettings
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	// 2. Load QuestSettings
+	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("export: load settings: %w", err)
 	}
 
 	// 3. Load all Locations with Marker relation
-	locations, err := s.locationRepo.FindByInstance(ctx, instanceID)
+	locations, err := s.locationRepo.FindByInstance(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("export: load locations: %w", err)
 	}
 
 	// 4. Collect all owner IDs: instance itself (start/finish) + all location IDs
 	ownerIDs := make([]string, 0, len(locations)+1)
-	ownerIDs = append(ownerIDs, instanceID)
+	ownerIDs = append(ownerIDs, questID)
 	for i := range locations {
 		ownerIDs = append(ownerIDs, locations[i].ID)
 	}
@@ -80,7 +80,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (
 	}
 
 	// 7. Build start/finish from instance-level blocks
-	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[instanceID])
+	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
 
 	// 8. Walk GameStructure recursively to build the children tree
 	children := s.walkStructure(instance.GameStructure, locationByID, blocksByOwner)
@@ -88,7 +88,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (
 	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
 		Rapua: "v7",
-		ID:    instanceID,
+		ID:    questID,
 		Name:  instance.Name,
 		Settings: game.SettingsDoc{
 			MustCheckOut:    settings.MustCheckOut,

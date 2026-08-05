@@ -3,6 +3,7 @@ package repositories_test
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -16,7 +17,7 @@ import (
 // testParents holds IDs for a full FK-valid parent chain: user → instance → marker → location.
 type testParents struct {
 	UserID     string
-	InstanceID string
+	QuestID    string
 	MarkerCode string
 	LocationID string
 }
@@ -33,7 +34,7 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 		t.Fatalf("createTestParents: insert user: %v", err)
 	}
 
-	inst := &models.Instance{ID: gofakeit.UUID(), UserID: user.ID, Name: "test-instance"}
+	inst := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "test-instance"}
 	_, err = dbc.NewInsert().Model(inst).Exec(ctx)
 	if err != nil {
 		t.Fatalf("createTestParents: insert instance: %v", err)
@@ -46,7 +47,7 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 		t.Fatalf("createTestParents: insert marker: %v", err)
 	}
 
-	loc := &models.Location{ID: gofakeit.UUID(), InstanceID: inst.ID, MarkerID: markerCode, Name: "test-location"}
+	loc := &models.Location{ID: gofakeit.UUID(), QuestID: inst.ID, MarkerID: markerCode, Name: "test-location"}
 	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
 	if err != nil {
 		t.Fatalf("createTestParents: insert location: %v", err)
@@ -54,21 +55,22 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 
 	return testParents{
 		UserID:     user.ID,
-		InstanceID: inst.ID,
+		QuestID:    inst.ID,
 		MarkerCode: markerCode,
 		LocationID: loc.ID,
 	}
 }
 
-// createTestTeam inserts a team for the given instanceID and returns its code.
-func createTestTeam(t *testing.T, dbc *bun.DB, instanceID string) string {
+// createTestTeam inserts a team for the given questID and returns its code.
+// Codes are upper-cased because GetByCode upper-cases before querying.
+func createTestTeam(t *testing.T, dbc *bun.DB, questID string) string {
 	t.Helper()
-	code := gofakeit.LetterN(6)
-	team := &models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       code,
-		Name:       gofakeit.Name(),
-		InstanceID: instanceID,
+	code := strings.ToUpper(gofakeit.LetterN(6))
+	team := &models.Run{
+		ID:      gofakeit.UUID(),
+		Code:    code,
+		Name:    gofakeit.Name(),
+		QuestID: questID,
 	}
 	_, err := dbc.NewInsert().Model(team).Exec(context.Background())
 	if err != nil {

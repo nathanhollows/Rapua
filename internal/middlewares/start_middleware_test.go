@@ -86,7 +86,7 @@ func TestStartMiddleware_InvalidTeamType(t *testing.T) {
 
 	// Create a request with wrong team type in context
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, "not a team object")
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, "not a team object")
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -119,8 +119,8 @@ func TestStartMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 
 	// Create a request with team having empty code
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
-	team := &models.Team{Code: ""}
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	team := &models.Run{Code: ""}
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -155,13 +155,13 @@ func TestStartMiddleware_ScheduledGameRedirectsToStart(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
 
 	// Mock instance with non-active status
-	instance := models.Instance{Status: models.Scheduled}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	instance := models.Quest{Status: models.Scheduled}
+	team := &models.Run{
+		Code:  "team123",
+		Quest: instance,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -196,13 +196,13 @@ func TestStartMiddleware_AlreadyInStart(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/start", nil)
 
 	// Mock instance with non-active status
-	instance := models.Instance{Status: models.Scheduled}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	instance := models.Quest{Status: models.Scheduled}
+	team := &models.Run{
+		Code:  "team123",
+		Quest: instance,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -233,16 +233,16 @@ func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
 
 	// Mock instance with active status
-	instance := models.Instance{
+	instance := models.Quest{
 		StartTime: schema.NullTime{Time: time.Now()},
 		EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
 	}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	team := &models.Run{
+		Code:  "team123",
+		Quest: instance,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()

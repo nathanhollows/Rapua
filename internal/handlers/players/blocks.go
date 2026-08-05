@@ -15,9 +15,9 @@ import (
 func (h *PlayerHandler) GetTeamNameBlock(w http.ResponseWriter, r *http.Request) {
 	blockID := chi.URLParam(r, "id")
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to get team from context for team name block",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -61,11 +61,13 @@ func (h *PlayerHandler) GetTeamNameBlock(w http.ResponseWriter, r *http.Request)
 		err = templates.TeamNameChangerForm(*teamNameBlock, "").Render(r.Context(), w)
 	} else {
 		// Name is set - show complete state (or editable if AllowChanging is true)
-		err = templates.TeamNameChangerComplete(*teamNameBlock, team.Name, teamNameBlock.AllowChanging).Render(r.Context(), w)
+		err = templates.TeamNameChangerComplete(
+			*teamNameBlock, team.Name, teamNameBlock.AllowChanging,
+		).Render(r.Context(), w)
 	}
 
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to render team name block template",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -79,9 +81,9 @@ func (h *PlayerHandler) GetTeamNameBlock(w http.ResponseWriter, r *http.Request)
 func (h *PlayerHandler) GetGameStatusAlertBlock(w http.ResponseWriter, r *http.Request) {
 	blockID := chi.URLParam(r, "id")
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to get team from context for game status alert block",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -105,12 +107,12 @@ func (h *PlayerHandler) GetGameStatusAlertBlock(w http.ResponseWriter, r *http.R
 	}
 
 	// Determine which template to render based on instance status
-	status := team.Instance.GetStatus()
+	status := team.Quest.GetStatus()
 	switch status {
 	case models.Closed:
 		err = templates.GameStatusAlertClosed(*gameStatusBlock).Render(r.Context(), w)
 	case models.Scheduled:
-		err = templates.GameStatusAlertScheduled(*gameStatusBlock, team.Instance.StartTime.Time).Render(r.Context(), w)
+		err = templates.GameStatusAlertScheduled(*gameStatusBlock, team.Quest.StartTime.Time).Render(r.Context(), w)
 	case models.Active:
 		err = templates.GameStatusAlertActive(*gameStatusBlock).Render(r.Context(), w)
 	default:
@@ -118,7 +120,7 @@ func (h *PlayerHandler) GetGameStatusAlertBlock(w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to render game status alert block template",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -131,9 +133,9 @@ func (h *PlayerHandler) GetGameStatusAlertBlock(w http.ResponseWriter, r *http.R
 func (h *PlayerHandler) GetStartGameButtonBlock(w http.ResponseWriter, r *http.Request) {
 	blockID := chi.URLParam(r, "id")
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to get team from context for start game button block",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -157,7 +159,7 @@ func (h *PlayerHandler) GetStartGameButtonBlock(w http.ResponseWriter, r *http.R
 	}
 
 	// Determine which template to render based on instance status
-	status := team.Instance.GetStatus()
+	status := team.Quest.GetStatus()
 	switch status {
 	case models.Closed:
 		err = templates.StartGameButtonClosed(*startButtonBlock).Render(r.Context(), w)
@@ -170,7 +172,7 @@ func (h *PlayerHandler) GetStartGameButtonBlock(w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"failed to render start game button block template",
 			"error", err.Error(),
 			"block_id", blockID,
@@ -181,7 +183,7 @@ func (h *PlayerHandler) GetStartGameButtonBlock(w http.ResponseWriter, r *http.R
 
 // ValidateBlock runs input validation on the block.
 func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.handleError(w, r, "validateBlock: getting team from context", "Something went wrong!")
 		return
@@ -201,7 +203,7 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		if block != nil {
 			blockID = block.GetID()
 		}
-		h.logger.Error(
+		h.logger.ErrorContext(r.Context(),
 			"validateBlock: validating and updating block state",
 			"Something went wrong. Please try again.",
 			err,
@@ -219,7 +221,7 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Hx-Trigger", "varsChanged")
 	}
 
-	err = templates.RenderPlayerUpdate(team.Instance.Settings, block, state).Render(r.Context(), w)
+	err = templates.RenderPlayerUpdate(team.Quest.Settings, block, state).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, fmt.Errorf("validateBlock: rendering template: %w", err).Error(), "Something went wrong!")
 		return

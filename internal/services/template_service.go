@@ -13,15 +13,15 @@ import (
 
 type TemplateService struct {
 	duplicationService   *DuplicationService
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
 	shareLinkRepo        repositories.ShareLinkRepository
 }
 
 func NewTemplateService(
 	duplicationService *DuplicationService,
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
 	shareLinkRepo repositories.ShareLinkRepository,
 ) TemplateService {
 	return TemplateService{
@@ -35,14 +35,14 @@ func NewTemplateService(
 // CreateFromInstance creates a new template from an existing instance.
 func (s *TemplateService) CreateFromInstance(
 	ctx context.Context,
-	userID, instanceID, name string,
-) (*models.Instance, error) {
+	userID, questID, name string,
+) (*models.Quest, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
 
-	if instanceID == "" {
-		return nil, errors.New("instanceID cannot be empty")
+	if questID == "" {
+		return nil, errors.New("questID cannot be empty")
 	}
 	if name == "" {
 		return nil, errors.New("name cannot be empty")
@@ -52,7 +52,7 @@ func (s *TemplateService) CreateFromInstance(
 	user := &models.User{ID: userID}
 
 	// Use duplication service to create template
-	newTemplate, err := s.duplicationService.CreateTemplateFromInstance(ctx, user, instanceID, name)
+	newTemplate, err := s.duplicationService.CreateTemplateFromQuest(ctx, user, questID, name)
 	if err != nil {
 		return nil, errors.New("creating template from instance: " + err.Error())
 	}
@@ -65,7 +65,7 @@ func (s *TemplateService) LaunchInstance(
 	ctx context.Context,
 	userID, templateID, name string,
 	_ bool, // TODO: regen marker IDs. This prevents sharing IDs.
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
@@ -77,12 +77,12 @@ func (s *TemplateService) LaunchInstance(
 	user := &models.User{ID: userID}
 
 	// Use duplication service to create instance from template
-	newInstance, err := s.duplicationService.CreateInstanceFromTemplate(ctx, user, templateID, name)
+	newQuest, err := s.duplicationService.CreateQuestFromTemplate(ctx, user, templateID, name)
 	if err != nil {
 		return nil, errors.New("creating instance from template: " + err.Error())
 	}
 
-	return newInstance, nil
+	return newQuest, nil
 }
 
 // LaunchInstanceFromShareLink creates a new instance from a share link.
@@ -91,7 +91,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 	userID, shareLinkID string,
 	name string,
 	_ bool, // TODO: regen marker IDs. This prevents sharing IDs.
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
@@ -128,7 +128,7 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 
 	// Use duplication service with shared template method (bypasses ownership check)
 	user := &models.User{ID: userID}
-	newInstance, err := s.duplicationService.CreateInstanceFromSharedTemplate(ctx, user, shareLink.TemplateID, name)
+	newQuest, err := s.duplicationService.CreateQuestFromSharedTemplate(ctx, user, shareLink.TemplateID, name)
 	if err != nil {
 		return nil, errors.New("creating instance from shared template: " + err.Error())
 	}
@@ -141,11 +141,11 @@ func (s *TemplateService) LaunchInstanceFromShareLink(
 		return nil, errors.New("updating share link: " + err.Error())
 	}
 
-	return newInstance, nil
+	return newQuest, nil
 }
 
 // GetByID retrieves a template by ID.
-func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Instance, error) {
+func (s *TemplateService) GetByID(ctx context.Context, id string) (*models.Quest, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, errors.New("finding instance: " + err.Error())
@@ -166,7 +166,7 @@ func (s *TemplateService) GetShareLink(ctx context.Context, id string) (*models.
 }
 
 // Find retrieves all templates.
-func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Instance, error) {
+func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Quest, error) {
 	if userID == "" {
 		return nil, errors.New("userID cannot be empty")
 	}
@@ -178,7 +178,7 @@ func (s *TemplateService) Find(ctx context.Context, userID string) ([]models.Ins
 }
 
 // Update updates a template.
-func (s *TemplateService) Update(ctx context.Context, instance *models.Instance) error {
+func (s *TemplateService) Update(ctx context.Context, instance *models.Quest) error {
 	if instance == nil {
 		return errors.New("instance cannot be empty")
 	}
@@ -209,7 +209,7 @@ func (s *TemplateService) CreateShareLink(ctx context.Context, userID string, da
 		return "", errors.New("userID cannot be empty")
 	}
 	if data.TemplateID == "" {
-		return "", errors.New("data.InstanceID cannot be empty")
+		return "", errors.New("data.QuestID cannot be empty")
 	}
 
 	instance, err := s.instanceRepo.GetByID(ctx, data.TemplateID)

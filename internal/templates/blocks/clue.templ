@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ cluePlayer(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) {
+templ cluePlayer(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) {
 	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full">
 		@pointsBadge(settings.EnablePoints, block.GetPoints())
 		@completionBadge(data)
@@ -53,7 +53,7 @@ templ cluePlayer(settings models.InstanceSettings, block blocks.ClueBlock, data 
 	</div>
 }
 
-templ cluePlayerUpdate(settings models.InstanceSettings, block blocks.ClueBlock, data blocks.PlayerState) {
+templ cluePlayerUpdate(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) {
 	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full" hx-swap-oob="true">
 		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
 		@completionBadge(data)
@@ -88,7 +88,7 @@ var clueButtonTextInput = TextInputParams{
 	HyperScript:  "",
 }
 
-templ clueAdmin(settings models.InstanceSettings, block blocks.ClueBlock) {
+templ clueAdmin(settings models.QuestSettings, block blocks.ClueBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

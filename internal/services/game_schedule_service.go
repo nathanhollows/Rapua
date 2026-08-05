@@ -20,24 +20,24 @@ var (
 )
 
 type GameScheduleService struct {
-	instanceRepo repositories.InstanceRepository
+	instanceRepo repositories.QuestRepository
 }
 
-func NewGameScheduleService(instanceRepo repositories.InstanceRepository) *GameScheduleService {
+func NewGameScheduleService(instanceRepo repositories.QuestRepository) *GameScheduleService {
 	return &GameScheduleService{
 		instanceRepo: instanceRepo,
 	}
 }
 
-func (s *GameScheduleService) Start(ctx context.Context, instance *models.Instance) error {
+func (s *GameScheduleService) Start(ctx context.Context, instance *models.Quest) error {
 	return s.SetStartTime(ctx, instance, time.Now())
 }
 
-func (s *GameScheduleService) Stop(ctx context.Context, instance *models.Instance) error {
+func (s *GameScheduleService) Stop(ctx context.Context, instance *models.Quest) error {
 	return s.SetEndTime(ctx, instance, time.Now())
 }
 
-func (s *GameScheduleService) SetStartTime(ctx context.Context, instance *models.Instance, start time.Time) error {
+func (s *GameScheduleService) SetStartTime(ctx context.Context, instance *models.Quest, start time.Time) error {
 	if instance.GetStatus() == models.Active {
 		return ErrGameAlreadyActive
 	}
@@ -54,7 +54,7 @@ func (s *GameScheduleService) SetStartTime(ctx context.Context, instance *models
 	return nil
 }
 
-func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.Instance, end time.Time) error {
+func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.Quest, end time.Time) error {
 	if instance.GetStatus() == models.Closed {
 		return ErrGameAlreadyClosed
 	}
@@ -73,7 +73,7 @@ func (s *GameScheduleService) SetEndTime(ctx context.Context, instance *models.I
 
 func (s *GameScheduleService) ScheduleGame(
 	ctx context.Context,
-	instance *models.Instance,
+	instance *models.Quest,
 	start time.Time,
 	endTime time.Time,
 ) error {

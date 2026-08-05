@@ -27,11 +27,11 @@ func setupStripeService(
 	transactor := db.NewTransactor(dbc)
 
 	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	purchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, purchaseRepo, userRepo, newTLogger(t))
 
 	return stripeService, userRepo, purchaseRepo, transactor, creditRepo, cleanup

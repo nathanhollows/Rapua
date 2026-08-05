@@ -19,8 +19,8 @@ import (
 
 func setupExportService(t *testing.T) (
 	*services.ExportService,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
 	repositories.LocationRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -31,8 +31,8 @@ func setupExportService(t *testing.T) (
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 
 	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
@@ -64,7 +64,7 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{
+	inst := &models.Quest{
 		Name:   "My Game",
 		UserID: userID,
 		GameStructure: models.GameStructure{
@@ -77,8 +77,8 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 		},
 	}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:      inst.ID,
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{
+		QuestID:         inst.ID,
 		EnablePoints:    true,
 		ShowLeaderboard: true,
 	}))
@@ -109,16 +109,16 @@ func TestExportService_ExportInstance_WithLocationsAndBlocks(t *testing.T) {
 	markerCode := gofakeit.LetterN(5)
 	insertTestMarker(t, dbc, markerCode)
 
-	inst := &models.Instance{Name: "Export Test", UserID: userID}
+	inst := &models.Quest{Name: "Export Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Park",
-		Slug:       "park",
-		Points:     10,
+		QuestID:  inst.ID,
+		MarkerID: markerCode,
+		Name:     "Park",
+		Slug:     "park",
+		Points:   10,
 	}
 	require.NoError(t, locationRepo.Create(ctx, loc))
 
@@ -163,9 +163,9 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "Start Finish Test", UserID: userID}
+	inst := &models.Quest{Name: "Start Finish Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	transactor := db.NewTransactor(dbc)
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -206,15 +206,15 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 	markerCode := gofakeit.LetterN(5)
 	insertTestMarker(t, dbc, markerCode)
 
-	inst := &models.Instance{Name: "Grouped Game", UserID: userID}
+	inst := &models.Quest{Name: "Grouped Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Spot",
-		Slug:       "spot",
+		QuestID:  inst.ID,
+		MarkerID: markerCode,
+		Name:     "Spot",
+		Slug:     "spot",
 	}
 	require.NoError(t, locationRepo.Create(ctx, loc))
 
@@ -263,17 +263,17 @@ func TestExportService_LocationWhenRoundTrip(t *testing.T) {
 	markerCode := gofakeit.LetterN(5)
 	insertTestMarker(t, dbc, markerCode)
 
-	inst := &models.Instance{Name: "When Test", UserID: userID}
+	inst := &models.Quest{Name: "When Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
 	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Gated Spot",
-		Slug:       "gated",
-		When:       when,
+		QuestID:  inst.ID,
+		MarkerID: markerCode,
+		Name:     "Gated Spot",
+		Slug:     "gated",
+		When:     when,
 	}
 	require.NoError(t, locationRepo.Create(ctx, loc))
 
@@ -307,15 +307,15 @@ func TestExportService_GroupWhenRoundTrip(t *testing.T) {
 	markerCode := gofakeit.LetterN(5)
 	insertTestMarker(t, dbc, markerCode)
 
-	inst := &models.Instance{Name: "Group When Test", UserID: userID}
+	inst := &models.Quest{Name: "Group When Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Inner Spot",
-		Slug:       "inner",
+		QuestID:  inst.ID,
+		MarkerID: markerCode,
+		Name:     "Inner Spot",
+		Slug:     "inner",
 	}
 	require.NoError(t, locationRepo.Create(ctx, loc))
 

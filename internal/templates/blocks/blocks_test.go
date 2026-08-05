@@ -9,7 +9,7 @@ import (
 )
 
 func TestBlocks_MethodsExist(t *testing.T) {
-	instanceSettings := models.InstanceSettings{}
+	instanceSettings := models.QuestSettings{}
 	// This tests that all blocks have matching views
 	// This does *not* test for correctness of the views
 	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {

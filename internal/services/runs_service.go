@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -16,13 +17,16 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type TeamCreditService interface {
-	DeductCreditForTeamStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, instanceID string) error
+type RunCreditService interface {
+	DeductCreditForRunStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, questID string) error
 }
 
 const (
-	teamCodeLength = 4
-	batchSize      = 100
+	runCodeLength = 4
+	batchSize     = 100
+	// maxBatchRetries bounds how many times a batch is regenerated after a code
+	// collision, so an exhausted code space fails loudly instead of hanging.
+	maxBatchRetries = 10
 )
 
 // LocationGroupInfo holds group information for a location.
@@ -37,28 +41,28 @@ type GroupedCheckIns struct {
 	CheckIns  []models.CheckIn
 }
 
-type TeamService struct {
+type RunService struct {
 	transactor     db.Transactor
-	teamRepo       repositories.TeamRepository
+	teamRepo       repositories.RunRepository
 	checkInRepo    repositories.CheckInRepository
-	creditService  TeamCreditService
+	creditService  RunCreditService
 	blockStateRepo repositories.BlockStateRepository
 	locationRepo   repositories.LocationRepository
-	varStateRepo   repositories.TeamVarStateRepository
+	varStateRepo   repositories.RunVarStateRepository
 	batchSize      int
 }
 
-// NewTeamService creates a new TeamService.
-func NewTeamService(
+// NewRunService creates a new RunService.
+func NewRunService(
 	transactor db.Transactor,
-	tr repositories.TeamRepository,
+	tr repositories.RunRepository,
 	ci repositories.CheckInRepository,
-	creditService TeamCreditService,
+	creditService RunCreditService,
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
-	varStateRepo repositories.TeamVarStateRepository,
-) *TeamService {
-	return &TeamService{
+	varStateRepo repositories.RunVarStateRepository,
+) *RunService {
+	return &RunService{
 		transactor:     transactor,
 		teamRepo:       tr,
 		checkInRepo:    ci,
@@ -70,8 +74,8 @@ func NewTeamService(
 	}
 }
 
-type TeamActivity struct {
-	Team      models.Team
+type RunActivity struct {
+	Team      models.Run
 	Locations []LocationActivity
 }
 
@@ -85,7 +89,7 @@ type LocationActivity struct {
 }
 
 // Helper function to check for code uniqueness within a batch.
-func (s *TeamService) containsCode(teams []models.Team, code string) bool {
+func (s *RunService) containsCode(teams []models.Run, code string) bool {
 	for _, team := range teams {
 		if team.Code == code {
 			return true
@@ -94,76 +98,85 @@ func (s *TeamService) containsCode(teams []models.Team, code string) bool {
 	return false
 }
 
-// AddTeams generates and inserts teams in batches, retrying if unique constraint errors occur.
-func (s *TeamService) AddTeams(ctx context.Context, instanceID string, count int) ([]models.Team, error) {
-	var newTeams []models.Team
+// generateRuns builds size runs for the quest, with codes unique within the batch.
+func (s *RunService) generateRuns(questID string, size int) []models.Run {
+	teams := make([]models.Run, 0, size)
+	for range size {
+		for {
+			code := newCode(runCodeLength)
+			if !s.containsCode(teams, code) {
+				teams = append(teams, models.Run{Code: code, QuestID: questID})
+				break
+			}
+		}
+	}
+	return teams
+}
+
+// AddTeams generates and inserts teams in batches, retrying with fresh codes if
+// a batch collides with codes already in the database.
+func (s *RunService) AddTeams(ctx context.Context, questID string, count int) ([]models.Run, error) {
+	var newTeams []models.Run
 	for i := 0; i < count; i += s.batchSize {
 		size := min(s.batchSize, count-i)
-		teams := make([]models.Team, 0, size)
 
-		for range size {
-			var team models.Team
-			for {
-				// TODO: Remove magic number
-				code := newCode(teamCodeLength)
-				team = models.Team{
-					Code:       code,
-					InstanceID: instanceID,
-				}
+		inserted := false
+		for range maxBatchRetries {
+			teams := s.generateRuns(questID, size)
 
-				// Ensure code uniqueness within the current batch
-				if !s.containsCode(teams, code) {
-					teams = append(teams, team)
-					break
-				}
+			err := s.teamRepo.InsertBatch(ctx, teams)
+			if err == nil {
+				newTeams = append(newTeams, teams...)
+				inserted = true
+				break
+			}
+			// Any error other than a code collision is not worth retrying.
+			if !errors.Is(err, repositories.ErrUniqueConstraint) {
+				return nil, err
 			}
 		}
 
-		// Insert the batch and retry if there's a unique constraint error
-		err := s.teamRepo.InsertBatch(ctx, teams)
-		if err != nil {
-			if errors.Is(err, errors.New("unique constraint error")) {
-				i -= s.batchSize // Retry this batch
-				continue
-			}
-			return nil, err
+		if !inserted {
+			return nil, fmt.Errorf(
+				"generating %d unique run codes for quest %s: still colliding after %d attempts",
+				size, questID, maxBatchRetries,
+			)
 		}
-		newTeams = append(newTeams, teams...)
 	}
 
 	return newTeams, nil
 }
 
 // FindAll returns all teams for an instance.
-func (s *TeamService) FindAll(ctx context.Context, instanceID string) ([]models.Team, error) {
-	return s.teamRepo.FindAll(ctx, instanceID)
+func (s *RunService) FindAll(ctx context.Context, questID string) ([]models.Run, error) {
+	return s.teamRepo.FindAll(ctx, questID)
 }
 
-// GetTeamByCode returns a team by code.
-func (s *TeamService) GetTeamByCode(ctx context.Context, code string) (*models.Team, error) {
+// GetRunByCode returns a team by code.
+func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	return s.teamRepo.GetByCode(ctx, code)
 }
 
-// GetTeamActivityOverview returns a list of teams and their activity.
-func (s *TeamService) GetTeamActivityOverview(
+// GetRunActivityOverview returns a list of teams and their activity.
+func (s *RunService) GetRunActivityOverview(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	locations []models.Location,
-) ([]TeamActivity, error) {
-	teams, err := s.teamRepo.FindAll(ctx, instanceID)
+) ([]RunActivity, error) {
+	teams, err := s.teamRepo.FindAll(ctx, questID)
 	if err != nil {
 		return nil, err
 	}
 
-	var activity []TeamActivity
+	var activity []RunActivity
 
 	for _, team := range teams {
 		if !team.HasStarted {
 			continue
 		}
 
-		teamActivity := TeamActivity{
+		teamActivity := RunActivity{
 			Team:      team,
 			Locations: make([]LocationActivity, len(locations)),
 		}
@@ -203,40 +216,43 @@ func (s *TeamService) GetTeamActivityOverview(
 }
 
 // Update updates a team in the database.
-func (s *TeamService) Update(ctx context.Context, team *models.Team) error {
+func (s *RunService) Update(ctx context.Context, team *models.Run) error {
 	return s.teamRepo.Update(ctx, team)
 }
 
 // AwardPoints awards points to a team.
-func (s *TeamService) AwardPoints(ctx context.Context, team *models.Team, points int) error {
+func (s *RunService) AwardPoints(ctx context.Context, team *models.Run, points int) error {
 	team.Points += points
 	return s.teamRepo.Update(ctx, team)
 }
 
-// LoadRelation loads the specified relation for a team.
-// Relations can be "Instance", "Scans", "BlockingLocation", or "Messages".
-func (s *TeamService) LoadRelation(ctx context.Context, team *models.Team, relation string) error {
-	switch relation {
-	case "Instance":
-		return s.teamRepo.LoadInstance(ctx, team)
-	case "Scans":
-		return s.teamRepo.LoadCheckIns(ctx, team)
-	case "BlockingLocation":
-		return s.teamRepo.LoadBlockingLocation(ctx, team)
-	case "Messages":
-		return s.teamRepo.LoadMessages(ctx, team)
-	default:
-		return errors.New("unknown relation")
-	}
+// LoadQuest loads the run's quest, along with its settings and locations.
+func (s *RunService) LoadQuest(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadQuest(ctx, team)
+}
+
+// LoadCheckIns loads the run's check-ins, most recent first.
+func (s *RunService) LoadCheckIns(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadCheckIns(ctx, team)
+}
+
+// LoadBlockingLocation loads the location the run must check out of, if any.
+func (s *RunService) LoadBlockingLocation(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadBlockingLocation(ctx, team)
+}
+
+// LoadMessages loads the run's notifications, most recent first.
+func (s *RunService) LoadMessages(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadMessages(ctx, team)
 }
 
 // LoadRelations loads all relations for a team.
-func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) error {
+func (s *RunService) LoadRelations(ctx context.Context, team *models.Run) error {
 	if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
 		return err
 	}
 
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
 		return err
 	}
@@ -245,10 +261,10 @@ func (s *TeamService) LoadRelations(ctx context.Context, team *models.Team) erro
 	return nil
 }
 
-func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
-	teamCode = strings.TrimSpace(strings.ToUpper(teamCode))
+func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
+	runCode = strings.TrimSpace(strings.ToUpper(runCode))
 
-	team, err := s.GetTeamByCode(ctx, teamCode)
+	team, err := s.GetRunByCode(ctx, runCode)
 	if err != nil {
 		return ErrTeamNotFound
 	}
@@ -257,7 +273,7 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 		return nil
 	}
 
-	userID, err := s.teamRepo.GetUserIDByCode(ctx, teamCode)
+	userID, err := s.teamRepo.GetUserIDByCode(ctx, runCode)
 	if err != nil {
 		return errors.New("getting user ID for team: " + err.Error())
 	}
@@ -277,7 +293,7 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 		}
 	}()
 
-	err = s.creditService.DeductCreditForTeamStartWithTx(ctx, tx, userID, team.ID, team.InstanceID)
+	err = s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID)
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {
@@ -299,13 +315,13 @@ func (s *TeamService) StartPlaying(ctx context.Context, teamCode string) error {
 }
 
 // BuildLocationGroupMap creates a map from location ID to group info.
-func (s *TeamService) BuildLocationGroupMap(structure *models.GameStructure) map[string]LocationGroupInfo {
+func (s *RunService) BuildLocationGroupMap(structure *models.GameStructure) map[string]LocationGroupInfo {
 	result := make(map[string]LocationGroupInfo)
 	s.buildLocationGroupMapRecursive(structure, result)
 	return result
 }
 
-func (s *TeamService) buildLocationGroupMapRecursive(group *models.GameStructure, result map[string]LocationGroupInfo) {
+func (s *RunService) buildLocationGroupMapRecursive(group *models.GameStructure, result map[string]LocationGroupInfo) {
 	// Skip root group (has no name/color)
 	if !group.IsRoot {
 		info := LocationGroupInfo{
@@ -324,14 +340,14 @@ func (s *TeamService) buildLocationGroupMapRecursive(group *models.GameStructure
 }
 
 // BuildGroupOrder creates a map from group name to its order in the game structure.
-func (s *TeamService) BuildGroupOrder(structure *models.GameStructure) map[string]int {
+func (s *RunService) BuildGroupOrder(structure *models.GameStructure) map[string]int {
 	result := make(map[string]int)
 	order := 0
 	s.buildGroupOrderRecursive(structure, result, &order)
 	return result
 }
 
-func (s *TeamService) buildGroupOrderRecursive(group *models.GameStructure, result map[string]int, order *int) {
+func (s *RunService) buildGroupOrderRecursive(group *models.GameStructure, result map[string]int, order *int) {
 	// Skip root group (has no name)
 	if !group.IsRoot {
 		result[group.Name] = *order
@@ -395,7 +411,7 @@ func sortGroupsByOrder(groupMap map[string]*GroupedCheckIns, groupOrder map[stri
 
 // GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order.
 // Optimized to minimize passes over the data by sorting during grouping.
-func (s *TeamService) GroupCheckInsByGroup(
+func (s *RunService) GroupCheckInsByGroup(
 	checkIns []models.CheckIn,
 	locationGroups map[string]LocationGroupInfo,
 	groupOrder map[string]int,

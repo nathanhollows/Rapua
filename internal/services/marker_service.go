@@ -57,21 +57,21 @@ func (s *MarkerService) GetMarkerByCode(ctx context.Context, locationCode string
 	return *marker, nil
 }
 
-// FindMarkersNotInInstance finds all markers that are not in the given instance.
-func (s *MarkerService) FindMarkersNotInInstance(
+// FindMarkersNotInQuest finds all markers that are not in the given instance.
+func (s *MarkerService) FindMarkersNotInQuest(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	otherInstances []string,
 ) ([]models.Marker, error) {
-	if instanceID == "" {
-		return nil, errors.New("instanceID cannot be empty")
+	if questID == "" {
+		return nil, errors.New("questID cannot be empty")
 	}
 
 	if len(otherInstances) == 0 {
 		return nil, errors.New("otherInstances cannot be empty")
 	}
 
-	markers, err := s.markerRepo.FindNotInInstance(ctx, instanceID, otherInstances)
+	markers, err := s.markerRepo.FindNotInInstance(ctx, questID, otherInstances)
 	if err != nil {
 		return nil, fmt.Errorf("finding markers not in instance: %w", err)
 	}

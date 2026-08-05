@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-func SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.TeamStartSummary) templ.Component {
+func SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.RunStartSummary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -254,7 +254,7 @@ func CreditTopupModal() templ.Component {
 	})
 }
 
-func CreditUsageWeek(usage []services.TeamStartSummary, period string) templ.Component {
+func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -472,7 +472,7 @@ func CreditUsageWeek(usage []services.TeamStartSummary, period string) templ.Com
 	})
 }
 
-func CreditUsageChart(usage []services.TeamStartSummary, period string) templ.Component {
+func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -679,7 +679,7 @@ func CreditUsageChart(usage []services.TeamStartSummary, period string) templ.Co
 	})
 }
 
-func CreditUsageYear(usage []services.TeamStartSummary) templ.Component {
+func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

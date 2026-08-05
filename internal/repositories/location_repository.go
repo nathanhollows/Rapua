@@ -22,25 +22,25 @@ type LocationRepository interface {
 	// GetByID finds a location by ID
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
 	// FindByIDs finds multiple locations by their IDs
-	FindByIDs(ctx context.Context, instanceID string, locationIDs []string) ([]*models.Location, error)
+	FindByIDs(ctx context.Context, questID string, locationIDs []string) ([]*models.Location, error)
 	// FindByInstance finds a location by instance and code
-	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
+	GetByInstanceAndCode(ctx context.Context, questID string, code string) (*models.Location, error)
 	// GetByInstanceAndSlug finds a location by instance ID and slug
-	GetByInstanceAndSlug(ctx context.Context, instanceID string, slug string) (*models.Location, error)
+	GetByInstanceAndSlug(ctx context.Context, questID string, slug string) (*models.Location, error)
 	// Find all locations for an instance
-	FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error)
+	FindByInstance(ctx context.Context, questID string) ([]models.Location, error)
 	// FindLocationsByMarkerID finds all locations by marker ID
 	FindLocationsByMarkerID(ctx context.Context, markerID string) ([]models.Location, error)
 
 	// UpdateStatistics updates the statistics for an instance
-	UpdateStatistics(ctx context.Context, tx *bun.Tx, instanceID string) error
+	UpdateStatistics(ctx context.Context, tx *bun.Tx, questID string) error
 
 	// Delete deletes a location from the database
 	// Requires a transaction as related data will also need to be deleted
 	Delete(ctx context.Context, tx *bun.Tx, locationID string) error
 	// DeleteByInstance deletes all locations for an instance
 	// Requires a transaction as related data will also need to be deleted
-	DeleteByInstance(ctx context.Context, tx *bun.Tx, instanceID string) error
+	DeleteByInstance(ctx context.Context, tx *bun.Tx, questID string) error
 
 	// LoadRelations loads all relations for a location
 	LoadRelations(ctx context.Context, location *models.Location) error
@@ -111,7 +111,7 @@ func (r *locationRepository) GetByID(ctx context.Context, locationID string) (*m
 // FindByIDs finds multiple locations by their IDs.
 func (r *locationRepository) FindByIDs(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	locationIDs []string,
 ) ([]*models.Location, error) {
 	if len(locationIDs) == 0 {
@@ -121,7 +121,7 @@ func (r *locationRepository) FindByIDs(
 	var locations []*models.Location
 	err := r.db.NewSelect().
 		Model(&locations).
-		Where("instance_id = ?", instanceID).
+		Where("quest_id = ?", questID).
 		Where("id IN (?)", bun.In(locationIDs)).
 		Scan(ctx)
 	if err != nil {
@@ -133,14 +133,14 @@ func (r *locationRepository) FindByIDs(
 // FindByInstance finds a location by instance and code.
 func (r *locationRepository) GetByInstanceAndCode(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	code string,
 ) (*models.Location, error) {
 	var location models.Location
 	err := r.db.
 		NewSelect().
 		Model(&location).
-		Where("instance_id = ? AND marker_id = ?", instanceID, code).
+		Where("quest_id = ? AND marker_id = ?", questID, code).
 		Relation("Marker").
 		Scan(ctx)
 	if err != nil {
@@ -150,12 +150,12 @@ func (r *locationRepository) GetByInstanceAndCode(
 }
 
 // Find all locations for an instance.
-func (r *locationRepository) FindByInstance(ctx context.Context, instanceID string) ([]models.Location, error) {
+func (r *locationRepository) FindByInstance(ctx context.Context, questID string) ([]models.Location, error) {
 	var locations []models.Location
 	err := r.db.
 		NewSelect().
 		Model(&locations).
-		Where("instance_id = ?", instanceID).
+		Where("quest_id = ?", questID).
 		Relation("Marker").
 		Scan(ctx)
 	if err != nil {
@@ -166,12 +166,12 @@ func (r *locationRepository) FindByInstance(ctx context.Context, instanceID stri
 
 // GetByInstanceAndSlug finds a location by instance ID and slug.
 func (r *locationRepository) GetByInstanceAndSlug(
-	ctx context.Context, instanceID string, slug string,
+	ctx context.Context, questID string, slug string,
 ) (*models.Location, error) {
 	var location models.Location
 	err := r.db.NewSelect().
 		Model(&location).
-		Where("instance_id = ? AND slug = ?", instanceID, slug).
+		Where("quest_id = ? AND slug = ?", questID, slug).
 		Relation("Marker").
 		Scan(ctx)
 	if err != nil {
@@ -191,20 +191,20 @@ func (r *locationRepository) FindLocationsByMarkerID(ctx context.Context, marker
 }
 
 // UpdateStatistics updates the statistics for a location.
-func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, instanceID string) error {
+func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, questID string) error {
 	// Subquery: Count unique teams for each location
 	totalVisitsSubquery := tx.NewSelect().
 		Model(&models.CheckIn{}).
-		ColumnExpr("COUNT(DISTINCT team_code)").
+		ColumnExpr("COUNT(DISTINCT run_code)").
 		Where("check_in.location_id = location.id").
-		Where("check_in.instance_id = location.instance_id")
+		Where("check_in.quest_id = location.quest_id")
 
 	// Subquery: Count currently checked-in teams
 	currentCountSubquery := tx.NewSelect().
 		Model(&models.CheckIn{}).
 		ColumnExpr("COUNT(*)").
 		Where("check_in.location_id = location.id").
-		Where("check_in.instance_id = location.instance_id").
+		Where("check_in.quest_id = location.quest_id").
 		Where("check_in.time_out IS NULL")
 
 	// Subquery: Compute average duration in seconds (ignoring zero time_out values)
@@ -214,7 +214,7 @@ func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, i
 		Model(&models.CheckIn{}).
 		ColumnExpr("COALESCE(AVG((julianday(time_out) - julianday(time_in)) * 86400), 0)").
 		Where("check_in.location_id = location.id").
-		Where("check_in.instance_id = location.instance_id").
+		Where("check_in.quest_id = location.quest_id").
 		Where("strftime('%Y', check_in.time_out) > '1000'") // Ignore zero time values
 
 	query := tx.NewUpdate().
@@ -222,7 +222,7 @@ func (r *locationRepository) UpdateStatistics(ctx context.Context, tx *bun.Tx, i
 		Set("total_visits = (?)", totalVisitsSubquery).
 		Set("current_count = (?)", currentCountSubquery).
 		Set("avg_duration = (?)", avgDurationSubquery).
-		Where("instance_id = ?", instanceID)
+		Where("quest_id = ?", questID)
 
 	_, err := query.Exec(ctx)
 
@@ -236,14 +236,14 @@ func (r *locationRepository) Delete(ctx context.Context, tx *bun.Tx, locationID 
 }
 
 // DeleteByInstance deletes all locations for an instance.
-func (r *locationRepository) DeleteByInstance(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	_, err := tx.NewDelete().Model(&models.Location{}).Where("instance_id = ?", instanceID).Exec(ctx)
+func (r *locationRepository) DeleteByInstance(ctx context.Context, tx *bun.Tx, questID string) error {
+	_, err := tx.NewDelete().Model(&models.Location{}).Where("quest_id = ?", questID).Exec(ctx)
 	return err
 }
 
 // DeleteByInstanceWithTransaction deletes all locations for an instance with a transaction.
-func (r *locationRepository) DeleteByInstanceWithTransaction(ctx context.Context, tx *bun.Tx, instanceID string) error {
-	_, err := tx.NewDelete().Model(&models.Location{}).Where("instance_id = ?", instanceID).Exec(ctx)
+func (r *locationRepository) DeleteByInstanceWithTransaction(ctx context.Context, tx *bun.Tx, questID string) error {
+	_, err := tx.NewDelete().Model(&models.Location{}).Where("quest_id = ?", questID).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("deleting locations by instance ID: %w", err)
 	}
@@ -254,8 +254,8 @@ func (r *locationRepository) DeleteByInstanceWithTransaction(ctx context.Context
 func (r *locationRepository) LoadRelations(ctx context.Context, location *models.Location) error {
 	err := r.db.NewSelect().
 		Model(location).
-		Relation("Instance").
-		Relation("Instance.Settings").
+		Relation("Quest").
+		Relation("Quest.Settings").
 		Relation("Marker").
 		Relation("Blocks").
 		WherePK().
@@ -284,7 +284,7 @@ func (r *locationRepository) LoadInstance(ctx context.Context, location *models.
 	err := r.db.NewSelect().
 		Model(location).
 		WherePK().
-		Relation("Instance").
+		Relation("Quest").
 		Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("loading instance for location: %w", err)

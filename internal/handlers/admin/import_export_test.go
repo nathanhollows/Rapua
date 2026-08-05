@@ -3,7 +3,6 @@ package admin
 import (
 	"bytes"
 	"context"
-	"io"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -29,7 +28,7 @@ func withImportUser(r *http.Request) *http.Request {
 
 func newImportHandler() *Handler {
 	return &Handler{
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		logger: slog.New(slog.DiscardHandler),
 	}
 }
 
@@ -93,7 +92,7 @@ func TestParseUploadedDoc_MultipartMissingFile(t *testing.T) {
 
 func TestImportCheck_MalformedUpload(t *testing.T) {
 	h := newImportHandler()
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)
@@ -110,7 +109,7 @@ func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 	h := newImportHandler()
 	// Missing required "name" field → lint error
 	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)
@@ -124,9 +123,9 @@ func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 }
 
 func TestImportCheck_ValidDoc_NoDocID(t *testing.T) {
-	// A valid doc without an ID — skips the instanceService lookup entirely.
+	// A valid doc without an ID — skips the questService lookup entirely.
 	h := newImportHandler()
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(validImportDocJSON()))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)

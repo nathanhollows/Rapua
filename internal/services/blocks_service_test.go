@@ -79,8 +79,8 @@ func TestBlockService_NewBlockState(t *testing.T) {
 
 	// Create parent chain for valid team codes (user -> instance -> team)
 	parents := createTestParents(t, dbc)
-	insertTestTeam(t, dbc, "TEAM1", parents.InstanceID)
-	insertTestTeam(t, dbc, "TEAM2", parents.InstanceID)
+	insertTestTeam(t, dbc, "TEAM1", parents.QuestID)
+	insertTestTeam(t, dbc, "TEAM2", parents.QuestID)
 
 	// Create real blocks so block IDs satisfy FK constraints
 	validBlock, err := svc.NewBlockWithOwnerAndContext(
@@ -100,41 +100,41 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		name     string
-		blockID  string
-		teamCode string
-		wantErr  bool
+		name    string
+		blockID string
+		runCode string
+		wantErr bool
 	}{
 		{
-			name:     "Valid block state",
-			blockID:  validBlock.GetID(),
-			teamCode: "TEAM1",
-			wantErr:  false,
+			name:    "Valid block state",
+			blockID: validBlock.GetID(),
+			runCode: "TEAM1",
+			wantErr: false,
 		},
 		{
-			name:     "Missing blockID",
-			blockID:  "",
-			teamCode: "TEAM2",
-			wantErr:  true,
+			name:    "Missing blockID",
+			blockID: "",
+			runCode: "TEAM2",
+			wantErr: true,
 		},
 		{
-			name:     "Missing teamCode",
-			blockID:  validBlock2.GetID(),
-			teamCode: "",
-			wantErr:  true,
+			name:    "Missing runCode",
+			blockID: validBlock2.GetID(),
+			runCode: "",
+			wantErr: true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			state, err := svc.NewBlockState(context.Background(), tc.blockID, tc.teamCode)
+			state, err := svc.NewBlockState(context.Background(), tc.blockID, tc.runCode, parents.QuestID)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, state.GetBlockID())
 				assert.Equal(t, tc.blockID, state.GetBlockID())
-				assert.Equal(t, tc.teamCode, state.GetPlayerID())
+				assert.Equal(t, tc.runCode, state.GetPlayerID())
 			}
 		})
 	}
@@ -142,28 +142,28 @@ func TestBlockService_NewBlockState(t *testing.T) {
 
 func TestBlockService_NewMockBlockState(t *testing.T) {
 	testCases := []struct {
-		name     string
-		blockID  string
-		teamCode string
-		wantErr  bool
+		name    string
+		blockID string
+		runCode string
+		wantErr bool
 	}{
 		{
-			name:     "Valid mock block state",
-			blockID:  gofakeit.UUID(),
-			teamCode: "MOCKTEAM",
-			wantErr:  false,
+			name:    "Valid mock block state",
+			blockID: gofakeit.UUID(),
+			runCode: "MOCKTEAM",
+			wantErr: false,
 		},
 		{
-			name:     "No block ID",
-			blockID:  "",
-			teamCode: "TEAMX",
-			wantErr:  true,
+			name:    "No block ID",
+			blockID: "",
+			runCode: "TEAMX",
+			wantErr: true,
 		},
 		{
-			name:     "No team code",
-			blockID:  gofakeit.UUID(),
-			teamCode: "",
-			wantErr:  false, // This is for admin use, so we expect no team code
+			name:    "No team code",
+			blockID: gofakeit.UUID(),
+			runCode: "",
+			wantErr: false, // This is for admin use, so we expect no team code
 		},
 	}
 
@@ -171,7 +171,7 @@ func TestBlockService_NewMockBlockState(t *testing.T) {
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			state, err := svc.NewMockBlockState(context.Background(), tc.blockID, tc.teamCode)
+			state, err := svc.NewMockBlockState(context.Background(), tc.blockID, tc.runCode, "test-quest")
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
@@ -236,10 +236,10 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 	}
 }
 
-func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
+func TestBlockService_GetBlockWithStateByBlockIDAndRunCode(t *testing.T) {
 	testCases := []struct {
 		name    string
-		setupFn func(svc services.BlockService) (string, string, error) // (blockID, teamCode)
+		setupFn func(svc services.BlockService) (string, string, error) // (blockID, runCode)
 		wantErr bool
 	}{
 		{
@@ -256,7 +256,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 					return "", "", err
 				}
 				// 2) Create block state
-				st, err := svc.NewBlockState(context.Background(), blk.GetID(), "TEAM123")
+				st, err := svc.NewBlockState(context.Background(), blk.GetID(), "TEAM123", "test-quest")
 				if err != nil {
 					return "", "", err
 				}
@@ -291,19 +291,21 @@ func TestBlockService_GetBlockWithStateByBlockIDAndTeamCode(t *testing.T) {
 
 			// Create parent chain for team codes used in block states
 			parents := createTestParents(t, dbc)
-			insertTestTeam(t, dbc, "TEAM123", parents.InstanceID)
-			insertTestTeam(t, dbc, "NOSUCHTEAM", parents.InstanceID)
+			insertTestTeam(t, dbc, "TEAM123", parents.QuestID)
+			insertTestTeam(t, dbc, "NOSUCHTEAM", parents.QuestID)
 
-			blockID, teamCode, err := tc.setupFn(svc)
+			blockID, runCode, err := tc.setupFn(svc)
 			require.NoError(t, err, "setup should succeed")
 
-			blk, st, err := svc.GetBlockWithStateByBlockIDAndTeamCode(context.Background(), blockID, teamCode)
+			blk, st, err := svc.GetBlockWithStateByBlockIDAndRunCode(
+				context.Background(), blockID, runCode, "test-quest",
+			)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, blockID, blk.GetID())
-				assert.Equal(t, teamCode, st.GetPlayerID())
+				assert.Equal(t, runCode, st.GetPlayerID())
 			}
 		})
 	}
@@ -364,11 +366,11 @@ func TestBlockService_FindByOwnerID(t *testing.T) {
 	}
 }
 
-func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
+func TestBlockService_FindByOwnerIDAndRunCodeWithState(t *testing.T) {
 	testCases := []struct {
 		name         string
 		locationID   string
-		teamCode     string
+		runCode      string
 		blockCount   int
 		stateCreated bool
 		wantErr      bool
@@ -376,7 +378,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 		{
 			name:         "Blocks with matching state",
 			locationID:   gofakeit.UUID(),
-			teamCode:     gofakeit.Password(false, true, false, false, false, 5),
+			runCode:      gofakeit.Password(false, true, false, false, false, 5),
 			blockCount:   2,
 			stateCreated: true,
 			wantErr:      false,
@@ -384,7 +386,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 		{
 			name:       "Empty location ID",
 			locationID: "",
-			teamCode:   gofakeit.Password(false, true, false, false, false, 5),
+			runCode:    gofakeit.Password(false, true, false, false, false, 5),
 			wantErr:    true,
 		},
 	}
@@ -395,9 +397,9 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 			defer cleanup()
 
 			// Create parent chain for team codes used in block states
-			if tc.teamCode != "" && tc.stateCreated {
+			if tc.runCode != "" && tc.stateCreated {
 				parents := createTestParents(t, dbc)
-				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+				insertTestTeam(t, dbc, tc.runCode, parents.QuestID)
 			}
 
 			if tc.locationID != "" {
@@ -411,16 +413,17 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithState(t *testing.T) {
 					)
 					require.NoError(t, err)
 					if tc.stateCreated {
-						_, createErr := svc.NewBlockState(context.Background(), blk.GetID(), tc.teamCode)
+						_, createErr := svc.NewBlockState(context.Background(), blk.GetID(), tc.runCode, "test-quest")
 						require.NoError(t, createErr)
 					}
 				}
 			}
 
-			blocksFound, states, err := svc.FindByOwnerIDAndTeamCodeWithState(
+			blocksFound, states, err := svc.FindByOwnerIDAndRunCodeWithState(
 				context.Background(),
 				tc.locationID,
-				tc.teamCode,
+				tc.runCode,
+				"test-quest",
 			)
 			if tc.wantErr {
 				require.Error(t, err)
@@ -461,7 +464,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 					return nil, err
 				}
 				// Create state
-				st, err := svc.NewBlockState(context.Background(), blk.GetID(), "TEAMUP")
+				st, err := svc.NewBlockState(context.Background(), blk.GetID(), "TEAMUP", "test-quest")
 				if err != nil {
 					return nil, err
 				}
@@ -480,7 +483,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 
 			// Create parent chain for team code "TEAMUP"
 			parents := createTestParents(t, dbc)
-			insertTestTeam(t, dbc, "TEAMUP", parents.InstanceID)
+			insertTestTeam(t, dbc, "TEAMUP", parents.QuestID)
 
 			initialState, err := tc.setupFn(svc)
 			require.NoError(t, err, "setup should not fail")
@@ -625,7 +628,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 	testCases := []struct {
 		name       string
 		locationID string
-		teamCode   string
+		runCode    string
 		setupFn    func(svc services.BlockService, locID, team string) error
 		wantErr    bool
 		wantVal    bool
@@ -633,7 +636,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 		{
 			name:       "Validation required",
 			locationID: "LOC-CHIN-1",
-			teamCode:   "TEAMCHK",
+			runCode:    "TEAMCHK",
 			setupFn: func(svc services.BlockService, locID, team string) error {
 				// Create block that needs validation
 				blk, err := svc.NewBlockWithOwnerAndContext(
@@ -646,7 +649,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 					return err
 				}
 				// Create block state that isn't validated
-				_, err = svc.NewBlockState(context.Background(), blk.GetID(), team)
+				_, err = svc.NewBlockState(context.Background(), blk.GetID(), team, "test-quest")
 				return err
 			},
 			wantVal: true,
@@ -654,7 +657,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 		{
 			name:       "No validation needed",
 			locationID: "LOC-CHIN-2",
-			teamCode:   "TEAMCHK2",
+			runCode:    "TEAMCHK2",
 			setupFn: func(svc services.BlockService, locID, _ string) error {
 				// Maybe a block that doesn't require validation at all
 				_, err := svc.NewBlockWithOwnerAndContext(
@@ -670,7 +673,7 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 		{
 			name:       "Empty location or team code",
 			locationID: "",
-			teamCode:   "",
+			runCode:    "",
 			setupFn:    func(_ services.BlockService, _, _ string) error { return nil },
 			wantErr:    true,
 		},
@@ -682,15 +685,17 @@ func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
 			defer cleanup()
 
 			// Create parent chain and team for tests that use NewBlockState
-			if tc.teamCode != "" {
+			if tc.runCode != "" {
 				parents := createTestParents(t, dbc)
-				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+				insertTestTeam(t, dbc, tc.runCode, parents.QuestID)
 			}
 
-			err := tc.setupFn(svc, tc.locationID, tc.teamCode)
+			err := tc.setupFn(svc, tc.locationID, tc.runCode)
 			require.NoError(t, err, "setup should not fail")
 
-			valRequired, err := svc.CheckValidationRequiredForCheckIn(context.Background(), tc.locationID, tc.teamCode)
+			valRequired, err := svc.CheckValidationRequiredForCheckIn(
+				context.Background(), tc.locationID, tc.runCode, "test-quest",
+			)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
@@ -767,11 +772,11 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 	}
 }
 
-func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) {
+func TestBlockService_FindByOwnerIDAndRunCodeWithStateAndContext(t *testing.T) {
 	testCases := []struct {
 		name         string
 		locationID   string
-		teamCode     string
+		runCode      string
 		context      blocks.BlockContext
 		blockCount   int
 		stateCreated bool
@@ -780,7 +785,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 		{
 			name:         "Find blocks with context and states",
 			locationID:   gofakeit.UUID(),
-			teamCode:     gofakeit.Password(false, true, false, false, false, 5),
+			runCode:      gofakeit.Password(false, true, false, false, false, 5),
 			context:      blocks.ContextLocationContent,
 			blockCount:   2,
 			stateCreated: true,
@@ -789,7 +794,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 		{
 			name:       "Empty location ID",
 			locationID: "",
-			teamCode:   gofakeit.Password(false, true, false, false, false, 5),
+			runCode:    gofakeit.Password(false, true, false, false, false, 5),
 			context:    blocks.ContextLocationContent,
 			wantErr:    true,
 		},
@@ -798,7 +803,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 			// Blocks should still be returned with in-memory mock states.
 			name:         "Empty team code returns blocks with mock states",
 			locationID:   gofakeit.UUID(),
-			teamCode:     "",
+			runCode:      "",
 			context:      blocks.ContextStart,
 			blockCount:   2,
 			stateCreated: false,
@@ -812,9 +817,9 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 			defer cleanup()
 
 			// Create parent chain and team for tests that use NewBlockState
-			if tc.teamCode != "" && tc.stateCreated {
+			if tc.runCode != "" && tc.stateCreated {
 				parents := createTestParents(t, dbc)
-				insertTestTeam(t, dbc, tc.teamCode, parents.InstanceID)
+				insertTestTeam(t, dbc, tc.runCode, parents.QuestID)
 			}
 
 			if tc.locationID != "" {
@@ -828,7 +833,7 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 					)
 					require.NoError(t, err)
 					if tc.stateCreated {
-						_, stateErr := svc.NewBlockState(context.Background(), blk.GetID(), tc.teamCode)
+						_, stateErr := svc.NewBlockState(context.Background(), blk.GetID(), tc.runCode, "test-quest")
 						require.NoError(t, stateErr)
 					}
 				}
@@ -843,10 +848,11 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 				require.NoError(t, err)
 			}
 
-			blocksFound, states, err := svc.FindByOwnerIDAndTeamCodeWithStateAndContext(
+			blocksFound, states, err := svc.FindByOwnerIDAndRunCodeWithStateAndContext(
 				context.Background(),
 				tc.locationID,
-				tc.teamCode,
+				tc.runCode,
+				"test-quest",
 				tc.context,
 			)
 			if tc.wantErr {
@@ -856,9 +862,9 @@ func TestBlockService_FindByOwnerIDAndTeamCodeWithStateAndContext(t *testing.T) 
 			} else {
 				require.NoError(t, err)
 				assert.Len(t, blocksFound, tc.blockCount)
-				if tc.stateCreated || tc.teamCode == "" {
+				if tc.stateCreated || tc.runCode == "" {
 					// stateCreated: states were persisted before the call.
-					// teamCode == "": preview path — mock states must still be returned for every block.
+					// runCode == "": preview path — mock states must still be returned for every block.
 					assert.Len(t, states, tc.blockCount)
 				}
 			}

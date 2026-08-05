@@ -4,24 +4,16 @@ import (
 	"net/http"
 
 	admin "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
 )
 
 // Experience shows the game settings page.
 func (h *Handler) Experience(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	locations, err := h.locationService.FindByInstance(r.Context(), user.CurrentInstanceID)
+	c := admin.Experience(user.CurrentQuest.Settings)
+	err := admin.Layout(c, *user, "Experience", "Experience").Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "Experience: getting locations", "Error getting locations", "error", err)
-		return
-	}
-
-	c := admin.Experience(user.CurrentInstance.Settings, len(locations))
-	err = admin.Layout(c, *user, "Experience", "Experience").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering navigation page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering navigation page", "error", err.Error())
 	}
 }
 
@@ -36,60 +28,23 @@ func (h *Handler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 
 	// Parse the completion method
 	if r.Form.Has("mustCheckOut") {
-		user.CurrentInstance.Settings.MustCheckOut = true
+		user.CurrentQuest.Settings.MustCheckOut = true
 	} else {
-		user.CurrentInstance.Settings.MustCheckOut = false
+		user.CurrentQuest.Settings.MustCheckOut = false
 	}
 
 	// Parse whether to show the team count
-	user.CurrentInstance.Settings.ShowTeamCount = r.Form.Has("showTeamCount") && r.Form.Get("showTeamCount") == "on"
+	user.CurrentQuest.Settings.ShowTeamCount = r.Form.Has("showTeamCount") && r.Form.Get("showTeamCount") == "on"
 
 	// Parse points
-	user.CurrentInstance.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
+	user.CurrentQuest.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
 
 	// Update the navigation settings
-	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentInstance.Settings)
+	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentQuest.Settings)
 	if err != nil {
 		h.handleError(w, r, "updating instance settings", "Error updating instance settings", "error", err)
 		return
 	}
 
 	h.handleSuccess(w, r, "Settings updated")
-}
-
-// ExperiencePreview shows a preview of the next locations based on the current settings.
-func (h *Handler) ExperiencePreview(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "Error parsing form", "Error parsing form", "error", err)
-		return
-	}
-
-	if r.Form.Has("showTeamCount") {
-		user.CurrentInstance.Settings.ShowTeamCount = r.Form.Get("showTeamCount") == "on"
-	}
-
-	team := models.Team{
-		Code:       "preview",
-		InstanceID: user.CurrentInstanceID,
-		Instance:   user.CurrentInstance,
-	}
-
-	// Get complete navigation view from service
-	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), &team)
-	if err != nil {
-		h.handleError(w, r, "Next: getting navigation view", "Error loading navigation", "Could not load data", err)
-		return
-	}
-
-	nextData := templates.NextParams{
-		Team: team,
-		View: view,
-	}
-
-	err = templates.Next(nextData).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("rendering template", "error", err)
-	}
 }

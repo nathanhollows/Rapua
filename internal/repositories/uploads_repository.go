@@ -41,7 +41,7 @@ func (r *UploadsRepository) SearchByCriteria(
 
 	for key, value := range criteria {
 		switch key {
-		case "id", "location_id", "instance_id", "team_code", "block_id", "storage", "type":
+		case "id", "location_id", "quest_id", "run_code", "block_id", "storage", "type":
 			if value == "NULL" {
 				query = query.Where("? IS NULL", bun.Ident(key))
 			} else {

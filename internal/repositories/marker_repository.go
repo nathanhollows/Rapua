@@ -23,7 +23,7 @@ type MarkerRepository interface {
 	// GetByCode finds a marker by its code
 	GetByCode(ctx context.Context, code string) (*models.Marker, error)
 	// FindNotInInstance finds markers that are not in an instance
-	FindNotInInstance(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
+	FindNotInInstance(ctx context.Context, questID string, otherInstances []string) ([]models.Marker, error)
 
 	// Update updates a marker in the database
 	Update(ctx context.Context, marker *models.Marker) error
@@ -135,16 +135,16 @@ func (r *markerRepository) GetByCode(ctx context.Context, code string) (*models.
 
 func (r *markerRepository) FindNotInInstance(
 	ctx context.Context,
-	instanceID string,
+	questID string,
 	otherInstances []string,
 ) ([]models.Marker, error) {
 	var markers []models.Marker
 	err := r.db.NewSelect().
 		Model(&markers).
-		Where("code IN (SELECT marker_id FROM locations WHERE instance_id IN (?))", bun.In(otherInstances)).
+		Where("code IN (SELECT marker_id FROM locations WHERE quest_id IN (?))", bun.In(otherInstances)).
 		// Markers used by otherInstances
-		Where("code NOT IN (SELECT marker_id FROM locations WHERE instance_id = ?)", instanceID).
-		// Exclude markers used by instanceID
+		Where("code NOT IN (SELECT marker_id FROM locations WHERE quest_id = ?)", questID).
+		// Exclude markers used by questID
 		Order("name ASC").
 		Scan(ctx)
 	return markers, err
@@ -198,9 +198,9 @@ func (r *markerRepository) UserOwnsMarker(ctx context.Context, userID, _ string)
 	var count int
 	count, err := r.db.
 		NewSelect().
-		Model(&models.Instance{}).
-		Join("JOIN locations ON locations.instance_id = instance.id").
-		Where("instance.user_id = ?", userID).
+		Model(&models.Quest{}).
+		Join("JOIN locations ON locations.quest_id = quest.id").
+		Where("quest.user_id = ?", userID).
 		Count(ctx)
 	if err != nil {
 		return false, err

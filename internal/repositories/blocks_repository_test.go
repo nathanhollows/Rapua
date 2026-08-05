@@ -297,7 +297,7 @@ func TestBlockRepository_Create_NewLocationID(t *testing.T) {
 	assert.NotEqual(t, block.GetOwnerID(), newBlock.GetOwnerID())
 }
 
-func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
+func TestBlockRepository_GetBlockAndStateByBlockIDAndRunCode(t *testing.T) {
 	repo, blockStateRepo, transactor, dbc, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -313,7 +313,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 			name: "Get block and existing state",
 			setupFn: func() (string, string, error) {
 				ownerID := gofakeit.UUID()
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
 
 				block, err := repo.Create(
 					context.Background(),
@@ -331,7 +331,9 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 
 				// Create state
 				// Use blockStateRepo from setup
-				state, err := blockStateRepo.NewBlockState(context.Background(), block.GetID(), teamCode)
+				state, err := blockStateRepo.NewBlockState(
+					context.Background(), block.GetID(), runCode, parents.QuestID,
+				)
 				if err != nil {
 					return "", "", err
 				}
@@ -340,7 +342,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 					return "", "", err
 				}
 
-				return block.GetID(), teamCode, nil
+				return block.GetID(), runCode, nil
 			},
 			wantErr: false,
 			cleanupFunc: func(blockID string) {
@@ -353,7 +355,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 			name: "Get block and create missing state",
 			setupFn: func() (string, string, error) {
 				ownerID := gofakeit.UUID()
-				teamCode := createTestTeam(t, dbc, parents.InstanceID)
+				runCode := createTestTeam(t, dbc, parents.QuestID)
 
 				block, err := repo.Create(
 					context.Background(),
@@ -369,7 +371,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 					return "", "", err
 				}
 
-				return block.GetID(), teamCode, nil
+				return block.GetID(), runCode, nil
 			},
 			wantErr: false,
 			cleanupFunc: func(blockID string) {
@@ -382,13 +384,14 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			blockID, teamCode, err := tt.setupFn()
+			blockID, runCode, err := tt.setupFn()
 			require.NoError(t, err)
 
-			block, state, err := repo.GetBlockAndStateByBlockIDAndTeamCode(
+			block, state, err := repo.GetBlockAndStateByBlockIDAndRunCode(
 				context.Background(),
 				blockID,
-				teamCode,
+				runCode,
+				parents.QuestID,
 			)
 
 			if tt.wantErr {
@@ -398,7 +401,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndTeamCode(t *testing.T) {
 				assert.NotNil(t, block)
 				assert.NotNil(t, state)
 				assert.Equal(t, blockID, block.GetID())
-				assert.Equal(t, teamCode, state.GetPlayerID())
+				assert.Equal(t, runCode, state.GetPlayerID())
 			}
 
 			tt.cleanupFunc(blockID)
@@ -575,11 +578,11 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		// Create start block
 		block, err := repo.Create(ctx, blocks.NewHeaderBlock(
 			blocks.BaseBlock{
-				OwnerID: parents.InstanceID,
+				OwnerID: parents.QuestID,
 				Type:    "header",
 				Points:  0,
 			},
-		), parents.InstanceID, blocks.ContextStart)
+		), parents.QuestID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		// Check ownership
@@ -615,11 +618,11 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		// Create block owned by other user's instance
 		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
-				OwnerID: otherParents.InstanceID,
+				OwnerID: otherParents.QuestID,
 				Type:    "text",
 				Points:  0,
 			},
-		), otherParents.InstanceID, blocks.ContextStart)
+		), otherParents.QuestID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		// Check ownership with wrong user
@@ -642,11 +645,11 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 
 		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
 			blocks.BaseBlock{
-				OwnerID: parents.InstanceID,
+				OwnerID: parents.QuestID,
 				Type:    "text",
 				Points:  0,
 			},
-		), parents.InstanceID, blocks.ContextStart)
+		), parents.QuestID, blocks.ContextStart)
 		require.NoError(t, err)
 
 		owns, err := repo.UserOwnsBlock(ctx, "", block.GetID())

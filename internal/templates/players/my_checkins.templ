@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ MyCheckins(team models.Team, view *services.PlayerNavigationView) {
+templ MyCheckins(team models.Run, view *services.PlayerNavigationView) {
 	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check-inside w-16 h-16 m-auto"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><path d="m9 10 2 2 4-4"></path></svg>
 		<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
@@ -37,7 +37,7 @@ templ MyCheckins(team models.Team, view *services.PlayerNavigationView) {
 							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
 						}
 					>
-						if team.Instance.Settings.MustCheckOut {
+						if team.Quest.Settings.MustCheckOut {
 							if team.MustCheckOut == scan.Location.ID {
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dashed inline-block mr-2 min-w-5 h-5"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"></path><path d="M13.9 21.818a10 10 0 0 1-3.8 0"></path><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7"></path><path d="M2.182 13.9a10 10 0 0 1 0-3.8"></path><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69"></path><path d="M21.818 10.1a10 10 0 0 1 0 3.8"></path><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"></path><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7"></path></svg>
 							} else {
@@ -47,7 +47,7 @@ templ MyCheckins(team models.Team, view *services.PlayerNavigationView) {
 						<span class="break-after-auto wrap-break-word grow">
 							{ scan.Location.Name }
 						</span>
-						if team.Instance.Settings.EnablePoints {
+						if team.Quest.Settings.EnablePoints {
 							<div class="badge badge-soft badge-sm min-w-max">{ fmt.Sprint(scan.Points) } pts</div>
 						}
 					</a>

@@ -25,11 +25,11 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	// Create a valid instance to satisfy FK constraint: facilitator_tokens.instance_id → instances.id
+	// Create a valid instance to satisfy FK constraint: facilitator_tokens.quest_id → instances.id
 	parents := createTestParents(t, dbc)
 
 	// Create a new facilitator token
-	token, err := service.CreateFacilitatorToken(ctx, parents.InstanceID, []string{"Park", "Tower"}, 24*time.Hour)
+	token, err := service.CreateFacilitatorToken(ctx, parents.QuestID, []string{"Park", "Tower"}, 24*time.Hour)
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
@@ -37,7 +37,7 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	facToken, err := service.ValidateToken(ctx, token)
 	require.NoError(t, err)
 	assert.NotNil(t, facToken)
-	assert.Equal(t, parents.InstanceID, facToken.InstanceID)
+	assert.Equal(t, parents.QuestID, facToken.QuestID)
 	assert.ElementsMatch(t, []string{"Park", "Tower"}, facToken.Locations)
 }
 
@@ -49,7 +49,7 @@ func TestFacilitatorService_ExpiredToken(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	// Create a token that expires immediately
-	token, err := service.CreateFacilitatorToken(ctx, parents.InstanceID, []string{"Lab"}, -1*time.Second)
+	token, err := service.CreateFacilitatorToken(ctx, parents.QuestID, []string{"Lab"}, -1*time.Second)
 	require.NoError(t, err)
 
 	// Validate expired token
@@ -67,12 +67,12 @@ func TestFacilitatorService_CleanupExpiredTokens(t *testing.T) {
 	parentsY := createTestParents(t, dbc)
 
 	// Create expired token
-	token, err := service.CreateFacilitatorToken(ctx, parentsX.InstanceID, []string{"Castle"}, -24*time.Hour)
+	token, err := service.CreateFacilitatorToken(ctx, parentsX.QuestID, []string{"Castle"}, -24*time.Hour)
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
 	// Create valid token
-	validToken, _ := service.CreateFacilitatorToken(ctx, parentsY.InstanceID, []string{"Castle"}, 24*time.Hour)
+	validToken, _ := service.CreateFacilitatorToken(ctx, parentsY.QuestID, []string{"Castle"}, 24*time.Hour)
 
 	// Cleanup expired tokens
 	err = service.CleanupExpiredTokens(ctx)

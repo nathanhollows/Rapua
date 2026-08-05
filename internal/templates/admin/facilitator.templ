@@ -78,7 +78,7 @@ templ FacilitatorLinkCopyModal(url string) {
 	</div>
 }
 
-templ FacilitatorDashboard(locations []models.Location, activity []services.TeamActivity) {
+templ FacilitatorDashboard(locations []models.Location, activity []services.RunActivity) {
 	<script>
 	window.setTimeout( function() {
 		window.location.reload();
@@ -116,7 +116,7 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users inline-block w-8 h-8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 							<span>No locations available</span>
 							<div>
-								<a href="/admin/locations/new" class="btn btn-sm btn-secondary">Add a location</a>
+								<a href="/admin/quest/new" class="btn btn-sm btn-secondary">Add a location</a>
 							</div>
 						</div>
 					}
@@ -151,13 +151,13 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 												<span class="badge badge-success whitespace-nowrap">
 													Complete!
 												</span>
-												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+												if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
 													<span class="badge badge-info whitespace-nowrap">
 														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
 													</span>
 												}
 											} else {
-												if location.Instance.Settings.MustCheckOut {
+												if location.Quest.Settings.MustCheckOut {
 													if location.CurrentCount > 0 {
 														<span class="badge badge-accent whitespace-nowrap">
 															{ fmt.Sprintf("%d", location.CurrentCount) } Currently Visiting
@@ -167,7 +167,7 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.Team
 												<span class="badge badge-secondary whitespace-nowrap">
 													{ fmt.Sprintf("%d / %d", location.TotalVisits, len(activity)) } Visited
 												</span>
-												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+												if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
 													<span class="badge badge-info whitespace-nowrap">
 														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
 													</span>

@@ -17,15 +17,15 @@ const (
 
 // Start is where teams wait for the game to begin.
 func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
 	}
 
-	err = h.teamService.LoadRelations(r.Context(), team)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.logger.Error("loading check ins", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -38,14 +38,15 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		teamCode = ""
 	}
-	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
-		team.InstanceID,
+		team.QuestID,
 		teamCode,
+		team.QuestID,
 		blocks.ContextStart,
 	)
 	if err != nil {
-		h.logger.Error("getting start blocks", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting start blocks", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -58,13 +59,13 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering start", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering start", "error", err.Error())
 	}
 }
 
 // GetTeamNameValue returns just the team name value for auto-population.
 func (h *PlayerHandler) GetTeamNameValue(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -73,13 +74,13 @@ func (h *PlayerHandler) GetTeamNameValue(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "text/plain")
 	_, err = w.Write([]byte(team.Name))
 	if err != nil {
-		h.logger.Error("writing team name value", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "writing team name value", "error", err.Error())
 	}
 }
 
 // GetTeamNameForm returns the team name form fragment.
 func (h *PlayerHandler) GetTeamNameForm(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -87,13 +88,13 @@ func (h *PlayerHandler) GetTeamNameForm(w http.ResponseWriter, r *http.Request) 
 
 	err = templates.TeamNameForm(*team).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering team name form", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering team name form", "error", err.Error())
 	}
 }
 
 // SetTeamName sets the team name and returns completion status.
 func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -146,7 +147,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	team.Name = teamName
-	err = h.teamService.Update(r.Context(), team)
+	err = h.runService.Update(r.Context(), team)
 	if err != nil {
 		h.handleError(w, r, "Error updating team", "Error updating team", "error", err)
 		return
@@ -156,6 +157,6 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	err = blockstemplates.TeamNameChangerComplete(*teamNameBlock, team.Name, teamNameBlock.AllowChanging).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering team name complete", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering team name complete", "error", err.Error())
 	}
 }

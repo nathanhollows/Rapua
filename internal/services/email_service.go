@@ -71,7 +71,7 @@ func buildEmailMessage(msg emailMessage, smtpHost string) ([]byte, error) {
 
 	// Write headers in order
 	for _, h := range headers {
-		buf.WriteString(fmt.Sprintf("%s: %s\r\n", h.key, h.value))
+		fmt.Fprintf(&buf, "%s: %s\r\n", h.key, h.value)
 	}
 	buf.WriteString("\r\n")
 

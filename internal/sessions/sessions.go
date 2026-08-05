@@ -58,13 +58,13 @@ func Get(r *http.Request, name string) (*sessions.Session, error) {
 }
 
 // NewFromTeam session for the given request and team.
-func NewFromTeam(r *http.Request, team models.Team) (*sessions.Session, error) {
+func NewFromTeam(r *http.Request, team models.Run) (*sessions.Session, error) {
 	session, err := store.Get(r, playerSession)
 	if err != nil {
 		return nil, err
 	}
 
-	session.Values["team"] = team.Code
+	session.Values["run"] = team.Code
 	session.Options.HttpOnly = true
 	session.Options.Secure = true
 	session.Options.SameSite = http.SameSiteLaxMode

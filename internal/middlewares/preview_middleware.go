@@ -13,20 +13,21 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
-type teamService interface {
-	LoadRelation(context.Context, *models.Team, string) error
-	GetTeamByCode(context.Context, string) (*models.Team, error)
+type runService interface {
+	LoadQuest(context.Context, *models.Run) error
+	GetRunByCode(context.Context, string) (*models.Run, error)
 }
 
-type instanceService interface {
-	GetInstanceSettings(context.Context, string) (*models.InstanceSettings, error)
-	GetByID(context.Context, string) (*models.Instance, error)
+type questService interface {
+	GetQuestSettings(context.Context, string) (*models.QuestSettings, error)
+	GetByID(context.Context, string) (*models.Quest, error)
 }
 
 // PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
 func PreviewMiddleware(
-	_ teamService,
-	instanceService instanceService,
+	logger *slog.Logger,
+	_ runService,
+	questService questService,
 	identityService AuthenticatedUserGetter,
 	next http.Handler,
 ) http.Handler {
@@ -38,25 +39,41 @@ func PreviewMiddleware(
 
 		err := r.ParseForm()
 		if err != nil {
-			slog.Error("preview middleware: unable to parse form", "err", err, "ctx", r.Context(), "url", r.URL)
+			logger.ErrorContext(
+				r.Context(),
+				"preview middleware: unable to parse form",
+				"err",
+				err,
+				"ctx",
+				r.Context(),
+				"url",
+				r.URL,
+			)
 		}
 
-		team := models.Team{
-			Code:       "preview",
-			Name:       "Preview",
-			InstanceID: extractInstanceID(r),
+		team := models.Run{
+			Code:    "preview",
+			Name:    "Preview",
+			QuestID: extractInstanceID(r),
 		}
 
-		if team.InstanceID == "" {
-			slog.Error("preview middleware: instance ID is empty")
+		if team.QuestID == "" {
+			logger.ErrorContext(r.Context(), "preview middleware: instance ID is empty")
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		// Fetch instance to check ownership/template status
-		instance, err := instanceService.GetByID(r.Context(), team.InstanceID)
+		instance, err := questService.GetByID(r.Context(), team.QuestID)
 		if err != nil {
-			slog.Error("preview middleware: failed to get instance", "err", err, "instanceID", team.InstanceID)
+			logger.ErrorContext(
+				r.Context(),
+				"preview middleware: failed to get instance",
+				"err",
+				err,
+				"questID",
+				team.QuestID,
+			)
 			http.Error(w, "Instance not found", http.StatusNotFound)
 			return
 		}
@@ -67,8 +84,8 @@ func PreviewMiddleware(
 			var user *models.User
 			user, err = identityService.GetAuthenticatedUser(r)
 			if err != nil || user.ID != instance.UserID {
-				slog.Warn("preview middleware: unauthorized access attempt",
-					"instanceID", team.InstanceID,
+				logger.WarnContext(r.Context(), "preview middleware: unauthorized access attempt",
+					"questID", team.QuestID,
 					"isAuthenticated", err == nil)
 				http.Error(w, "Access denied", http.StatusForbidden)
 				return
@@ -76,30 +93,30 @@ func PreviewMiddleware(
 		}
 
 		// Load the instance settings separately to avoid team-related queries
-		settings, err := instanceService.GetInstanceSettings(r.Context(), team.InstanceID)
+		settings, err := questService.GetQuestSettings(r.Context(), team.QuestID)
 		if err != nil {
-			slog.Error(
+			logger.ErrorContext(r.Context(),
 				"preview middleware: failed to load instance settings",
 				"err",
 				err,
-				"instanceID",
-				team.InstanceID,
+				"questID",
+				team.QuestID,
 			)
 			// Fall back to default settings if loading fails
-			settings = &models.InstanceSettings{
-				InstanceID:   team.InstanceID,
+			settings = &models.QuestSettings{
+				QuestID:      team.QuestID,
 				EnablePoints: true, // Default to enabled for preview
 			}
 		}
 
-		team.Instance = models.Instance{
-			ID:        team.InstanceID,
+		team.Quest = models.Quest{
+			ID:        team.QuestID,
 			StartTime: schema.NullTime{Time: time.Now()},
 			EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
 			Settings:  *settings,
 		}
 
-		ctx := context.WithValue(r.Context(), contextkeys.TeamKey, &team)
+		ctx := context.WithValue(r.Context(), contextkeys.RunKey, &team)
 		ctx = context.WithValue(ctx, contextkeys.PreviewKey, true)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -123,5 +140,5 @@ func extractInstanceID(r *http.Request) string {
 	if err := r.ParseForm(); err != nil {
 		return ""
 	}
-	return r.Form.Get("instanceID")
+	return r.Form.Get("questID")
 }

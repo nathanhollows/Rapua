@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,39 +15,39 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-// dummyTeamService is a stub implementation of teamService.
+// dummyTeamService is a stub implementation of runService.
 type dummyTeamService struct{}
 
-func (d *dummyTeamService) LoadRelation(_ context.Context, _ *models.Team, _ string) error {
+func (d *dummyTeamService) LoadQuest(_ context.Context, _ *models.Run) error {
 	return nil
 }
 
-func (d *dummyTeamService) GetTeamByCode(_ context.Context, _ string) (*models.Team, error) {
+func (d *dummyTeamService) GetRunByCode(_ context.Context, _ string) (*models.Run, error) {
 	return nil, errors.New("team not found")
 }
 
-// dummyInstanceService is a stub implementation of instanceService.
+// dummyInstanceService is a stub implementation of questService.
 type dummyInstanceService struct {
 	isTemplate bool
 	userID     string
 }
 
-func (d *dummyInstanceService) GetInstanceSettings(
+func (d *dummyInstanceService) GetQuestSettings(
 	_ context.Context,
-	instanceID string,
-) (*models.InstanceSettings, error) {
-	return &models.InstanceSettings{
-		InstanceID:   instanceID,
+	questID string,
+) (*models.QuestSettings, error) {
+	return &models.QuestSettings{
+		QuestID:      questID,
 		EnablePoints: true,
 	}, nil
 }
 
 func (d *dummyInstanceService) GetByID(
 	_ context.Context,
-	instanceID string,
-) (*models.Instance, error) {
-	return &models.Instance{
-		ID:         instanceID,
+	questID string,
+) (*models.Quest, error) {
+	return &models.Quest{
+		ID:         questID,
 		IsTemplate: d.isTemplate,
 		UserID:     d.userID,
 	}, nil
@@ -76,7 +77,9 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 	dummyTeamService := &dummyTeamService{}
 	dummyInstanceService := &dummyInstanceService{}
 	dummyIdentityService := &dummyIdentityService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
+	middleware := PreviewMiddleware(
+		slog.Default(), dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler,
+	)
 
 	// Create a request without preview headers.
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/", nil)
@@ -90,14 +93,14 @@ func TestPreviewMiddleware_NonPreview(t *testing.T) {
 	if receivedCtx.Value(contextkeys.PreviewKey) != nil {
 		t.Error("expected PreviewKey not set in context")
 	}
-	if receivedCtx.Value(contextkeys.TeamKey) != nil {
-		t.Error("expected TeamKey not set in context")
+	if receivedCtx.Value(contextkeys.RunKey) != nil {
+		t.Error("expected RunKey not set in context")
 	}
 }
 
-// TestPreviewMiddleware_PreviewWithoutInstanceID verifies that if the preview request
-// does not include an instanceID in its form data, the middleware does not add preview context.
-func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
+// TestPreviewMiddleware_PreviewWithoutQuestID verifies that if the preview request
+// does not include an questID in its form data, the middleware does not add preview context.
+func TestPreviewMiddleware_PreviewWithoutQuestID(t *testing.T) {
 	nextCalled := false
 	var receivedCtx context.Context
 
@@ -110,10 +113,12 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 	dummyTeamService := &dummyTeamService{}
 	dummyInstanceService := &dummyInstanceService{}
 	dummyIdentityService := &dummyIdentityService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
+	middleware := PreviewMiddleware(
+		slog.Default(), dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler,
+	)
 
 	// Create a preview request (HX-Request header is "true" and referer starts with "/templates")
-	// but without an "instanceID" form value.
+	// but without an "questID" form value.
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/templates/some", strings.NewReader(""))
 	req.Header.Set("Hx-Request", "true")
 	req.Header.Set("Referer", "http://example.com/templates/some")
@@ -124,18 +129,18 @@ func TestPreviewMiddleware_PreviewWithoutInstanceID(t *testing.T) {
 	if !nextCalled {
 		t.Error("expected next handler to be called")
 	}
-	// Since instanceID is empty, no preview context should be set.
+	// Since questID is empty, no preview context should be set.
 	if receivedCtx.Value(contextkeys.PreviewKey) != nil {
-		t.Error("expected PreviewKey not set in context due to missing instanceID")
+		t.Error("expected PreviewKey not set in context due to missing questID")
 	}
-	if receivedCtx.Value(contextkeys.TeamKey) != nil {
-		t.Error("expected TeamKey not set in context due to missing instanceID")
+	if receivedCtx.Value(contextkeys.RunKey) != nil {
+		t.Error("expected RunKey not set in context due to missing questID")
 	}
 }
 
-// TestPreviewMiddleware_PreviewWithInstanceID ensures that for a valid preview request with an instanceID,
+// TestPreviewMiddleware_PreviewWithQuestID ensures that for a valid preview request with an questID,
 // the middleware injects a team with the expected properties into the context.
-func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
+func TestPreviewMiddleware_PreviewWithQuestID(t *testing.T) {
 	nextCalled := false
 	var receivedCtx context.Context
 
@@ -149,11 +154,13 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 	// Use a template so auth is not required
 	dummyInstanceService := &dummyInstanceService{isTemplate: true}
 	dummyIdentityService := &dummyIdentityService{}
-	middleware := PreviewMiddleware(dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler)
+	middleware := PreviewMiddleware(
+		slog.Default(), dummyTeamService, dummyInstanceService, dummyIdentityService, nextHandler,
+	)
 
-	// Create a preview request with a valid instanceID.
+	// Create a preview request with a valid questID.
 	form := url.Values{}
-	form.Set("instanceID", "instance123")
+	form.Set("questID", "instance123")
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/dashboard", strings.NewReader(form.Encode()))
 	req.Header.Set("Hx-Request", "true")
 	req.Header.Set("Referer", "http://example.com/admin/dashboard")
@@ -169,14 +176,14 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 		t.Error("expected PreviewKey to be set in context")
 	}
 
-	// Check that TeamKey is set and that its data is as expected.
-	teamVal := receivedCtx.Value(contextkeys.TeamKey)
+	// Check that RunKey is set and that its data is as expected.
+	teamVal := receivedCtx.Value(contextkeys.RunKey)
 	if teamVal == nil {
-		t.Fatal("expected TeamKey to be set in context")
+		t.Fatal("expected RunKey to be set in context")
 	}
-	team, ok := teamVal.(*models.Team)
+	team, ok := teamVal.(*models.Run)
 	if !ok {
-		t.Fatal("TeamKey value is not of type *models.Team")
+		t.Fatal("RunKey value is not of type *models.Run")
 	}
 	if team.Code != "preview" {
 		t.Errorf("expected team.Code to be 'preview', got %q", team.Code)
@@ -184,19 +191,19 @@ func TestPreviewMiddleware_PreviewWithInstanceID(t *testing.T) {
 	if team.Name != "Preview" {
 		t.Errorf("expected team.Name to be 'Preview', got %q", team.Name)
 	}
-	if team.InstanceID != "instance123" {
-		t.Errorf("expected team.InstanceID to be 'instance123', got %q", team.InstanceID)
+	if team.QuestID != "instance123" {
+		t.Errorf("expected team.QuestID to be 'instance123', got %q", team.QuestID)
 	}
 
 	// Validate instance start and end times are set roughly as expected.
 	now := time.Now()
 	delta := time.Minute
-	start := team.Instance.StartTime.Time
-	end := team.Instance.EndTime.Time
+	start := team.Quest.StartTime.Time
+	end := team.Quest.EndTime.Time
 	if start.Before(now.Add(-delta)) || start.After(now.Add(delta)) {
-		t.Error("team.Instance.StartTime is not within the expected range")
+		t.Error("team.Quest.StartTime is not within the expected range")
 	}
 	if end.Before(now.Add(time.Hour-delta)) || end.After(now.Add(time.Hour+delta)) {
-		t.Error("team.Instance.EndTime is not within the expected range")
+		t.Error("team.Quest.EndTime is not within the expected range")
 	}
 }

@@ -12,16 +12,16 @@ import (
 
 // Play shows the player the first page of the game.
 func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
-	team, _ := h.getTeamFromContext(r.Context())
+	team, _ := h.getRunFromContext(r.Context())
 
 	if team == nil {
-		team = &models.Team{}
+		team = &models.Run{}
 	}
 
 	c := templates.Home(*team)
 	err := templates.Layout(c, "Home", nil).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Home: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Home: rendering template", "error", err)
 	}
 }
 
@@ -34,7 +34,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	}
 	teamCode := r.FormValue("team")
 
-	err = h.teamService.StartPlaying(r.Context(), teamCode)
+	err = h.runService.StartPlaying(r.Context(), teamCode)
 	if err != nil {
 		if errors.Is(err, services.ErrTeamNotFound) {
 			h.handleError(
@@ -53,7 +53,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 			err = templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).
 				Render(r.Context(), w)
 			if err != nil {
-				h.logger.Error("rendering template", "error", err)
+				h.logger.ErrorContext(r.Context(), "rendering template", "error", err)
 			}
 			return
 		}

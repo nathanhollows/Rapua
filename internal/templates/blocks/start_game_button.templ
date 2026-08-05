@@ -7,7 +7,7 @@ import (
 )
 
 // Initial loading template - renders placeholder and triggers HTMX load
-templ startGameButtonPlayer(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+templ startGameButtonPlayer(_ models.QuestSettings, block blocks.StartGameButtonBlock) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
 		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
@@ -73,7 +73,7 @@ templ StartGameButtonClosed(block blocks.StartGameButtonBlock) {
 }
 
 // Admin configuration form
-templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+templ startGameButtonAdmin(_ models.QuestSettings, block blocks.StartGameButtonBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

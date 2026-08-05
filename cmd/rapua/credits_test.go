@@ -49,11 +49,11 @@ func setupCreditsTest(t *testing.T) (*services.CreditService, repositories.UserR
 	dbc, cleanup := setupTestDB(t)
 
 	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	transactor := db.NewTransactor(dbc)
 
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 
 	return creditService, userRepo, cleanup
 }

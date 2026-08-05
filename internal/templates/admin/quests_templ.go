@@ -13,7 +13,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func Instances(instances []models.Instance, currentInstance models.Instance, templates []models.Instance) templ.Component {
+func Instances(quests []models.Quest, currentQuest models.Quest, templates []models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,25 +34,25 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Games<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Games</h2><p>Games are the core of your event. They contain all the locations, content, teams, and settings for your event.</p><p>Your active game is the one you are currently managing. You can switch between games at any time.</p><p>You can run multiple games at the same time, but only one can be active in the admin panel.</p></div></div></div></h1><span class=\"flex gap-2\"><button class=\"btn btn-ghost\" onclick=\"import_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-upload w-5 h-5\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"></line></svg> Import</button> <button class=\"btn btn-secondary\" onclick=\"new_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus w-5 h-5\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Create a new game</button></span></div><div class=\"px-5\"><div id=\"instance-list\" class=\"join join-vertical w-full rounded-lg border border-base-300\"><div class=\"flex flex-row items-center gap-3 bg-base-200/80 rounded p-3 py-4 join-item\"><span class=\"font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap\"><span id=\"instance-count\" _=\"on htmx:afterSettle from body or keyup from #search-instances\n\t\t\t\t\t\tset my textContent to <.instance-item:not( [style*='display: none'] )/>'s length\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Games<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4 lucide lucide-info\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Games</h2><p>Games are the core of your event. They contain all the locations, content, teams, and settings for your event.</p><p>Your active game is the one you are currently managing. You can switch between games at any time.</p><p>You can run multiple games at the same time, but only one can be active in the admin panel.</p></div></div></div></h1><span class=\"flex gap-2\"><button class=\"btn btn-ghost\" onclick=\"import_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-upload w-5 h-5\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"></line></svg> Import</button> <button class=\"btn btn-secondary\" onclick=\"new_modal.showModal()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus w-5 h-5\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Create a new game</button></span></div><div class=\"px-5\"><div id=\"instance-list\" class=\"join join-vertical w-full rounded-lg border border-base-300\"><div class=\"flex flex-row items-center gap-3 bg-base-200/80 rounded p-3 py-4 join-item\"><span class=\"font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap\"><span id=\"instance-count\" _=\"on htmx:afterSettle from body or keyup from #search-quests\n\t\t\t\t\t\tset my textContent to <.instance-item:not( [style*='display: none'] )/>'s length\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(instances)))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(quests)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 50, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 50, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> games</span> <span class=\"flex-grow\"></span><div id=\"instance-filters\" class=\"flex flex-row justify-between\"><div class=\"flex flex-row gap-2\"><!-- Search --><label class=\"input input-sm flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-instances\" type=\"text\" class=\"grow\" placeholder=\"Search Games\" _=\"on input \n\t\t\t\t\t\t\t\tshow .instance-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> games</span> <span class=\"flex-grow\"></span><div id=\"instance-filters\" class=\"flex flex-row justify-between\"><div class=\"flex flex-row gap-2\"><!-- Search --><label class=\"input input-sm flex items-center gap-2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-quests\" type=\"text\" class=\"grow\" placeholder=\"Search Games\" _=\"on input \n\t\t\t\t\t\t\t\tshow .instance-item\n\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, instance := range instances {
-			templ_7745c5c3_Err = instanceItem(instance, instance.ID == currentInstance.ID, currentInstance.ID != "").Render(ctx, templ_7745c5c3_Buffer)
+		for _, quest := range quests {
+			templ_7745c5c3_Err = instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -61,7 +61,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if len(instances) == 0 {
+		if len(quests) == 0 {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " class=\"no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -88,7 +88,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dialog id=\"confirm_duplicate_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Duplicate a game</h3><p class=\"pt-4\">You are about to duplicate a game including its:</p><ul class=\"mt-0\"><li>locations and content</li><li>settings</li></ul><p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p><form hx-post=\"/admin/instances/duplicate\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New game name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_duplicate_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Duplicate</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a game</h3><p class=\"pt-4\">You are about to delete a game. Doing this will delete its:</p><ul><li>locations and content</li><li>teams and check-ins</li><li>settings</li></ul><p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id=\"instance_name\">instance</code></p><form hx-post=\"/admin/instances/delete\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Game name</legend> <input type=\"text\" class=\"input w-full\" name=\"confirmname\" autocomplete=\"off\" required></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"new_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><form hx-post=\"/admin/instances/new\" hx-swap=\"none\"><h3 class=\"text-lg font-bold\">Create a new game</h3><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">Game name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"new_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n  const { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Instance ID is required');\n\t\treturn;\n\t}\n  const modal = document.getElementById(modalId);\n  const form = modal.querySelector('form');\n  const input = form.querySelector('input[name=\"name\"]');\n  const hidden = form.querySelector('input[name=\"id\"]');\n\n  if (showInstanceName) {\n    document.getElementById(nameFieldId).textContent = name;\n  }\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n  hidden.value = id;\n\n  modal.showModal();\n}\n\nfunction confirmDeleteInstance() {\n  handleModalAction('confirm_delete_modal', 'instance_name', '', true);\n}\n\nfunction confirmDeleteTemplate() {\n  handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction confirmDuplicate() {\n  handleModalAction('confirm_duplicate_modal', '', '(copy)');\n}\n\nfunction createTemplate() {\n  handleModalAction('create_template_modal', 'template-modal-instance-name', '', true);\n}\n\nfunction shareTemplate() {\n\thandleModalAction('share_template_modal');\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n\nfunction submitImportTo(url) {\n\tconst form = document.getElementById('import-form');\n\tform.setAttribute('hx-post', url);\n\thtmx.process(form);\n\thtmx.trigger(form, 'submit');\n}\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dialog id=\"confirm_duplicate_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Duplicate a game</h3><p class=\"pt-4\">You are about to duplicate a game including its:</p><ul class=\"mt-0\"><li>locations and content</li><li>settings</li></ul><p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p><form hx-post=\"/admin/quests/duplicate\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New game name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_duplicate_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Duplicate</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a game</h3><p class=\"pt-4\">You are about to delete a game. Doing this will delete its:</p><ul><li>locations and content</li><li>teams and check-ins</li><li>settings</li></ul><p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id=\"instance_name\">instance</code></p><form hx-post=\"/admin/quests/delete\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Game name</legend> <input type=\"text\" class=\"input w-full\" name=\"confirmname\" autocomplete=\"off\" required></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog> <dialog id=\"new_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box\"><form hx-post=\"/admin/quests/new\" hx-swap=\"none\"><h3 class=\"text-lg font-bold\">Create a new game</h3><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">Game name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"new_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n  const { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Instance ID is required');\n\t\treturn;\n\t}\n  const modal = document.getElementById(modalId);\n  const form = modal.querySelector('form');\n  const input = form.querySelector('input[name=\"name\"]');\n  const hidden = form.querySelector('input[name=\"id\"]');\n\n  if (showInstanceName) {\n    document.getElementById(nameFieldId).textContent = name;\n  }\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n  hidden.value = id;\n\n  modal.showModal();\n}\n\nfunction confirmDeleteInstance() {\n  handleModalAction('confirm_delete_modal', 'instance_name', '', true);\n}\n\nfunction confirmDeleteTemplate() {\n  handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction confirmDuplicate() {\n  handleModalAction('confirm_duplicate_modal', '', '(copy)');\n}\n\nfunction createTemplate() {\n  handleModalAction('create_template_modal', 'template-modal-instance-name', '', true);\n}\n\nfunction shareTemplate() {\n\thandleModalAction('share_template_modal');\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n\nfunction submitImportTo(url) {\n\tconst form = document.getElementById('import-form');\n\tform.setAttribute('hx-post', url);\n\thtmx.process(form);\n\thtmx.trigger(form, 'submit');\n}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -96,7 +96,7 @@ func Instances(instances []models.Instance, currentInstance models.Instance, tem
 	})
 }
 
-func InstanceName(instance models.Instance, active bool) templ.Component {
+func InstanceName(quest models.Quest, active bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -122,9 +122,9 @@ func InstanceName(instance models.Instance, active bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/instances/", instance.ID, "/edit/name"))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/quests/", quest.ID, "/edit/name"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 265, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 265, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -135,9 +135,9 @@ func InstanceName(instance models.Instance, active bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", instance.ID))
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 266, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 266, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -148,9 +148,9 @@ func InstanceName(instance models.Instance, active bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(instance.Name)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(quest.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 270, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 270, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func InstanceName(instance models.Instance, active bool) templ.Component {
 	})
 }
 
-func InstanceNameEdit(instance models.Instance) templ.Component {
+func InstanceNameEdit(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -200,9 +200,9 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/instances/", instance.ID, "/edit/name"))
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/quests/", quest.ID, "/edit/name"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 281, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 281, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -213,9 +213,9 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", instance.ID))
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 282, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 282, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -226,9 +226,9 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.Name)
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 296, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 296, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
@@ -239,9 +239,9 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/instances/", instance.ID, "/name"))
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/quests/", quest.ID, "/name"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 301, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 301, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
@@ -252,9 +252,9 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", instance.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("#name-", quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 302, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 302, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func InstanceNameEdit(instance models.Instance) templ.Component {
 	})
 }
 
-func instanceItem(instance models.Instance, active bool, anyActive bool) templ.Component {
+func instanceItem(quest models.Quest, active bool, anyActive bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -294,9 +294,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.GetStatus().Description())
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.GetStatus().Description())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 325, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 325, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -306,7 +306,7 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		switch instance.GetStatus() {
+		switch quest.GetStatus() {
 		case models.Active:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"status status-lg status-success animate-ping\"></div><div class=\"status status-lg status-success\"></div>")
 			if templ_7745c5c3_Err != nil {
@@ -328,9 +328,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("name-", instance.ID))
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("name-", quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 338, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 338, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -340,7 +340,7 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = InstanceName(instance, active).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = InstanceName(quest, active).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -354,9 +354,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 templ.SafeURL
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")))
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 348, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 348, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -392,9 +392,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 templ.SafeURL
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/instances/", fmt.Sprint(instance.ID), "/switch")))
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 371, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 371, Col: 92}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -415,9 +415,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(instance.ID))
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 388, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 388, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
@@ -428,9 +428,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.Name)
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 389, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 389, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -441,9 +441,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(instance.ID))
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(quest.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 399, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 399, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
@@ -454,9 +454,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.Name)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 400, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 400, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -467,9 +467,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 templ.SafeURL
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/instances/%s/export", instance.ID)))
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", quest.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 409, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 409, Col: 80}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -490,9 +490,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(instance.ID))
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(quest.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 433, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 433, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 			if templ_7745c5c3_Err != nil {
@@ -503,9 +503,9 @@ func instanceItem(instance models.Instance, active bool, anyActive bool) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var24 string
-			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(instance.Name)
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/instances.templ`, Line: 434, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/quests.templ`, Line: 434, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 			if templ_7745c5c3_Err != nil {

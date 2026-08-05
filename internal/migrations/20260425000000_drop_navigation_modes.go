@@ -130,7 +130,8 @@ func init() {
 					switch mode {
 					case "custom", "":
 						// Keep location_clues → rename to navigation; delete task blocks.
-						if _, err := db.ExecContext(ctx,
+						if _, err := db.ExecContext(
+							ctx,
 							`UPDATE blocks SET context = 'navigation' WHERE owner_id = ? AND context = 'location_clues'`,
 							locID,
 						); err != nil {

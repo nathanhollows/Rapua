@@ -27,16 +27,16 @@ var (
 const minPasswordLength = 8
 
 type UserService struct {
-	instanceRepo repositories.InstanceRepository
+	instanceRepo repositories.QuestRepository
 	userRepo     repositories.UserRepository
 }
 
 func NewUserService(
 	userRepository repositories.UserRepository,
-	instanceRepository repositories.InstanceRepository,
+	questRepository repositories.QuestRepository,
 ) *UserService {
 	return &UserService{
-		instanceRepo: instanceRepository,
+		instanceRepo: questRepository,
 		userRepo:     userRepository,
 	}
 }
@@ -207,13 +207,13 @@ func (s *UserService) ResetPassword(
 	return nil
 }
 
-// SwitchInstance implements InstanceService.
-func (s *UserService) SwitchInstance(ctx context.Context, user *models.User, instanceID string) error {
+// SwitchQuest implements QuestService.
+func (s *UserService) SwitchQuest(ctx context.Context, user *models.User, questID string) error {
 	if user == nil {
 		return ErrUserNotAuthenticated
 	}
 
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return errors.New("instance not found")
 	}

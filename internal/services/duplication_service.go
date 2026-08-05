@@ -16,22 +16,25 @@ import (
 
 // DuplicationService coordinates cascading duplications across related entities.
 type DuplicationService struct {
+	logger               *slog.Logger
 	transactor           db.Transactor
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
 	blockRepo            repositories.BlockRepository
 }
 
 // NewDuplicationService creates a new DuplicationService with the provided dependencies.
 func NewDuplicationService(
+	logger *slog.Logger,
 	transactor db.Transactor,
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
 	blockRepo repositories.BlockRepository,
 ) *DuplicationService {
 	return &DuplicationService{
+		logger:               logger,
 		transactor:           transactor,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
@@ -40,27 +43,27 @@ func NewDuplicationService(
 	}
 }
 
-// DuplicateInstance duplicates a non-template instance and all its content with transaction safety.
+// DuplicateQuest duplicates a non-template instance and all its content with transaction safety.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is a template (use CreateTemplateFromInstance instead).
-func (s *DuplicationService) DuplicateInstance(
+func (s *DuplicationService) DuplicateQuest(
 	ctx context.Context,
 	user *models.User,
 	sourceInstanceID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.duplicateInstanceOrCreateTemplate(ctx, user, sourceInstanceID, name, false)
 }
 
-// CreateTemplateFromInstance creates a template from an existing non-template instance.
+// CreateTemplateFromQuest creates a template from an existing non-template instance.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is already a template.
-func (s *DuplicationService) CreateTemplateFromInstance(
+func (s *DuplicationService) CreateTemplateFromQuest(
 	ctx context.Context,
 	user *models.User,
 	sourceInstanceID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.duplicateInstanceOrCreateTemplate(ctx, user, sourceInstanceID, name, true)
 }
 
@@ -71,7 +74,7 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	sourceInstanceID string,
 	name string,
 	asTemplate bool,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if user == nil {
 		return nil, ErrUserNotAuthenticated
 	}
@@ -110,7 +113,7 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	defer func() {
 		if p := recover(); p != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
+				s.logger.ErrorContext(ctx, "transaction rollback after panic", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -137,26 +140,26 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	return newInstance, nil
 }
 
-// CreateInstanceFromTemplate creates a regular instance from a template.
+// CreateQuestFromTemplate creates a regular instance from a template.
 // Returns error if source is not a template.
-func (s *DuplicationService) CreateInstanceFromTemplate(
+func (s *DuplicationService) CreateQuestFromTemplate(
 	ctx context.Context,
 	user *models.User,
 	templateID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
-// CreateInstanceFromSharedTemplate creates a regular instance from a shared template.
+// CreateQuestFromSharedTemplate creates a regular instance from a shared template.
 // Bypasses ownership check for share link scenarios.
 // Returns error if source is not a template.
-func (s *DuplicationService) CreateInstanceFromSharedTemplate(
+func (s *DuplicationService) CreateQuestFromSharedTemplate(
 	ctx context.Context,
 	user *models.User,
 	templateID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
@@ -167,7 +170,7 @@ func (s *DuplicationService) createInstanceFromTemplate(
 	templateID string,
 	name string,
 	checkOwnership bool,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if user == nil {
 		return nil, ErrUserNotAuthenticated
 	}
@@ -204,7 +207,7 @@ func (s *DuplicationService) createInstanceFromTemplate(
 	defer func() {
 		if p := recover(); p != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
+				s.logger.ErrorContext(ctx, "transaction rollback after panic", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -249,7 +252,7 @@ func (s *DuplicationService) DuplicateLocation(
 	defer func() {
 		if p := recover(); p != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
+				s.logger.ErrorContext(ctx, "transaction rollback after panic", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -275,13 +278,13 @@ func (s *DuplicationService) DuplicateLocation(
 func (s *DuplicationService) duplicateInstance(
 	ctx context.Context,
 	tx *bun.Tx,
-	sourceInstance *models.Instance,
+	sourceInstance *models.Quest,
 	userID string,
 	name string,
 	asTemplate bool,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	// Create new instance with copied game structure
-	newInstance := &models.Instance{
+	newInstance := &models.Quest{
 		Name:                  name,
 		UserID:                userID,
 		IsTemplate:            asTemplate,
@@ -295,7 +298,7 @@ func (s *DuplicationService) duplicateInstance(
 
 	// Duplicate settings
 	settings := sourceInstance.Settings
-	settings.InstanceID = newInstance.ID // InstanceID is the primary key
+	settings.QuestID = newInstance.ID // QuestID is the primary key
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, &settings); err != nil {
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
@@ -345,10 +348,10 @@ func (s *DuplicationService) duplicateLocation(
 	sourceLocation models.Location,
 	newInstanceID string,
 ) (*models.Location, error) {
-	// Create new location (copy all fields except ID and InstanceID)
+	// Create new location (copy all fields except ID and QuestID)
 	newLocation := sourceLocation
 	newLocation.ID = "" // Reset ID so a new one is generated
-	newLocation.InstanceID = newInstanceID
+	newLocation.QuestID = newInstanceID
 
 	err := s.locationRepo.CreateTx(ctx, tx, &newLocation)
 	if err != nil {

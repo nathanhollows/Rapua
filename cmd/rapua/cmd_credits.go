@@ -109,10 +109,10 @@ func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 
 					ctx := c.Context
 					creditRepo := repositories.NewCreditRepository(dbc)
-					teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+					runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 					userRepo := repositories.NewUserRepository(dbc)
 					transactor := db.NewTransactor(dbc)
-					creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+					creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 
 					params := addCreditsParams{
 						Email:        email,

@@ -109,8 +109,8 @@ func TestUploadService_Search(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name:      "Search by InstanceID and TeamID",
-			filters:   map[string]string{"instance_id": "789", "team_code": "team1"},
+			name:      "Search by QuestID and RunID",
+			filters:   map[string]string{"quest_id": "789", "run_code": "team1"},
 			expectErr: false,
 		},
 		{

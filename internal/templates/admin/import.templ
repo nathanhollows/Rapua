@@ -22,7 +22,7 @@ templ ImportModal() {
 			</p>
 			<form
 				id="import-form"
-				hx-post="/admin/instances/import/check"
+				hx-post="/admin/quests/import/check"
 				hx-target="#import-result"
 				hx-swap="innerHTML"
 				hx-encoding="multipart/form-data"
@@ -47,7 +47,7 @@ templ ImportModal() {
 }
 
 // ImportCheckResult is the HTMX fragment returned after validating an uploaded JSON file.
-templ ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Instance, docName string) {
+templ ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Quest, docName string) {
 	if !lintResult.IsValid() {
 		<div role="alert" class="alert alert-error">
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -86,7 +86,7 @@ templ ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Inst
 				if matchedInstance != nil {
 					<button
 						class="btn btn-warning w-full"
-						data-url={ fmt.Sprintf("/admin/instances/%s/import", matchedInstance.ID) }
+						data-url={ fmt.Sprintf("/admin/quests/%s/import", matchedInstance.ID) }
 						onclick="submitImportTo(this.dataset.url)"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
@@ -95,7 +95,7 @@ templ ImportCheckResult(lintResult game.LintResult, matchedInstance *models.Inst
 				}
 				<button
 					class="btn btn-primary w-full"
-					onclick="submitImportTo('/admin/instances/import')"
+					onclick="submitImportTo('/admin/quests/import')"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
 					Import as new game

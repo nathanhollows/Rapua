@@ -6,8 +6,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Instance represents an entire game state.
-type Instance struct {
+// Quest represents an entire game state.
+type Quest struct {
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 
@@ -22,26 +22,26 @@ type Instance struct {
 	IsQuickStartDismissed bool          `bun:"is_quick_start_dismissed,type:bool"`
 	GameStructure         GameStructure `bun:"game_structure,type:string"`
 
-	Teams      []Team           `bun:"rel:has-many,join:id=instance_id"`
-	Locations  []Location       `bun:"rel:has-many,join:id=instance_id"`
-	Settings   InstanceSettings `bun:"rel:has-one,join:id=instance_id"`
-	ShareLinks []ShareLink      `bun:"rel:has-many,join:id=template_id"`
+	Runs       []Run         `bun:"rel:has-many,join:id=quest_id"`
+	Locations  []Location    `bun:"rel:has-many,join:id=quest_id"`
+	Settings   QuestSettings `bun:"rel:has-one,join:id=quest_id"`
+	ShareLinks []ShareLink   `bun:"rel:has-many,join:id=template_id"`
 }
 
-// GetStatus returns the status of the instance.
-func (i *Instance) GetStatus() GameStatus {
+// GetStatus returns the status of the quest.
+func (q *Quest) GetStatus() GameStatus {
 	// If the start time is null, the game is closed
-	if i.StartTime.Time.IsZero() {
+	if q.StartTime.Time.IsZero() {
 		return Closed
 	}
 
 	// If the start time is in the future, the game is scheduled
-	if i.StartTime.Time.UTC().After(time.Now().UTC()) {
+	if q.StartTime.Time.UTC().After(time.Now().UTC()) {
 		return Scheduled
 	}
 
 	// If the end time is in the past, the game is closed
-	if !i.EndTime.Time.IsZero() && i.EndTime.Time.Before(time.Now().UTC()) {
+	if !q.EndTime.Time.IsZero() && q.EndTime.Time.Before(time.Now().UTC()) {
 		return Closed
 	}
 

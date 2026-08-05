@@ -9,7 +9,7 @@ import (
 )
 
 type NextParams struct {
-	Team models.Team
+	Run models.Run
 	View *services.PlayerNavigationView
 }
 
@@ -60,12 +60,12 @@ templ Next(data NextParams) {
 				My Check-ins
 			</a>
 		</div>
-		@footer(data.Team)
+		@footer(data.Run)
 	</div>
 }
 
 type navViewData struct {
-	Settings            models.InstanceSettings
+	Settings            models.QuestSettings
 	LocationsWithBlocks []locationWithBlocks
 }
 

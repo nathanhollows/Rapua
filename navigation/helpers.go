@@ -98,7 +98,7 @@ func findMinOrderID(locationIDs []string, completedIDs []string) string {
 func deterministicShuffleIDs(
 	allLocationIDs []string,
 	completedIDs []string,
-	teamCode string,
+	runCode string,
 	maxNext int,
 ) []string {
 	if len(allLocationIDs) == 0 {
@@ -107,7 +107,7 @@ func deterministicShuffleIDs(
 
 	// Create deterministic seed from team code
 	seed := uint64(0)
-	for _, c := range teamCode {
+	for _, c := range runCode {
 		seed += uint64(c)
 	}
 

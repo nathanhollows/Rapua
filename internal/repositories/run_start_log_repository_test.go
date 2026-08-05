@@ -14,34 +14,34 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupTeamStartLogRepo(t *testing.T) (*repositories.TeamStartLogRepository, *bun.DB, func()) {
+func setupRunStartLogRepo(t *testing.T) (*repositories.RunStartLogRepository, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 
-	return teamStartLogRepo, dbc, cleanup
+	return runStartLogRepo, dbc, cleanup
 }
 
-func createTestTeamStartLog(
+func createTestRunStartLog(
 	t *testing.T,
 	db *bun.DB,
 	userID,
 	teamID,
-	instanceID string,
+	questID string,
 	createdAt time.Time,
-) models.TeamStartLog {
+) models.RunStartLog {
 	t.Helper()
 
-	// Ensure the referenced user exists (team_start_logs.user_id FK).
+	// Ensure the referenced user exists (run_start_logs.user_id FK).
 	insertUserWithID(t, db, userID)
 
-	log := models.TeamStartLog{
-		ID:         gofakeit.UUID(),
-		UserID:     userID,
-		TeamID:     teamID,
-		InstanceID: instanceID,
-		CreatedAt:  createdAt,
+	log := models.RunStartLog{
+		ID:        gofakeit.UUID(),
+		UserID:    userID,
+		RunID:     teamID,
+		QuestID:   questID,
+		CreatedAt: createdAt,
 	}
 
 	// Insert log directly into database for testing
@@ -53,8 +53,8 @@ func createTestTeamStartLog(
 	return log
 }
 
-func TestTeamStartLogRepo_CreateWithTx(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_CreateWithTx(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -64,12 +64,12 @@ func TestTeamStartLogRepo_CreateWithTx(t *testing.T) {
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	log := &models.TeamStartLog{
-		ID:         gofakeit.UUID(),
-		UserID:     gofakeit.UUID(),
-		TeamID:     gofakeit.UUID(),
-		InstanceID: gofakeit.UUID(),
-		CreatedAt:  time.Now(),
+	log := &models.RunStartLog{
+		ID:        gofakeit.UUID(),
+		UserID:    gofakeit.UUID(),
+		RunID:     gofakeit.UUID(),
+		QuestID:   gofakeit.UUID(),
+		CreatedAt: time.Now(),
 	}
 	insertUserWithID(t, db, log.UserID)
 
@@ -82,7 +82,7 @@ func TestTeamStartLogRepo_CreateWithTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify log was created
-	var createdLog models.TeamStartLog
+	var createdLog models.RunStartLog
 	err = db.NewSelect().
 		Model(&createdLog).
 		Where("id = ?", log.ID).
@@ -90,12 +90,12 @@ func TestTeamStartLogRepo_CreateWithTx(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, log.UserID, createdLog.UserID)
-	assert.Equal(t, log.TeamID, createdLog.TeamID)
-	assert.Equal(t, log.InstanceID, createdLog.InstanceID)
+	assert.Equal(t, log.RunID, createdLog.RunID)
+	assert.Equal(t, log.QuestID, createdLog.QuestID)
 }
 
-func TestTeamStartLogRepo_CreateWithTx_Rollback(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_CreateWithTx_Rollback(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -104,12 +104,12 @@ func TestTeamStartLogRepo_CreateWithTx_Rollback(t *testing.T) {
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
 
-	log := &models.TeamStartLog{
-		ID:         gofakeit.UUID(),
-		UserID:     gofakeit.UUID(),
-		TeamID:     gofakeit.UUID(),
-		InstanceID: gofakeit.UUID(),
-		CreatedAt:  time.Now(),
+	log := &models.RunStartLog{
+		ID:        gofakeit.UUID(),
+		UserID:    gofakeit.UUID(),
+		RunID:     gofakeit.UUID(),
+		QuestID:   gofakeit.UUID(),
+		CreatedAt: time.Now(),
 	}
 	insertUserWithID(t, db, log.UserID)
 
@@ -123,15 +123,15 @@ func TestTeamStartLogRepo_CreateWithTx_Rollback(t *testing.T) {
 
 	// Verify log was not created (due to rollback)
 	count, err := db.NewSelect().
-		Model(&models.TeamStartLog{}).
+		Model(&models.RunStartLog{}).
 		Where("id = ?", log.ID).
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count)
 }
 
-func TestTeamStartLogRepo_GetByUserID(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_GetByUserID(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -139,9 +139,9 @@ func TestTeamStartLogRepo_GetByUserID(t *testing.T) {
 
 	// Create test logs
 	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1", "instance-1", now.Add(-2*time.Hour))
-	log2 := createTestTeamStartLog(t, db, userID, "team-2", "instance-1", now.Add(-1*time.Hour))
-	log3 := createTestTeamStartLog(t, db, "other-user", "team-3", "instance-1", now)
+	log1 := createTestRunStartLog(t, db, userID, "team-1", "instance-1", now.Add(-2*time.Hour))
+	log2 := createTestRunStartLog(t, db, userID, "team-2", "instance-1", now.Add(-1*time.Hour))
+	log3 := createTestRunStartLog(t, db, "other-user", "team-3", "instance-1", now)
 
 	// Get logs for user
 	logs, err := repo.GetByUserID(ctx, userID)
@@ -158,8 +158,8 @@ func TestTeamStartLogRepo_GetByUserID(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_GetByUserIDWithTimeframe(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_GetByUserIDWithTimeframe(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -167,9 +167,9 @@ func TestTeamStartLogRepo_GetByUserIDWithTimeframe(t *testing.T) {
 
 	// Create test logs with different timestamps
 	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1", "instance-1", now.Add(-3*time.Hour))    // Outside timeframe
-	log2 := createTestTeamStartLog(t, db, userID, "team-2", "instance-1", now.Add(-1*time.Hour))    // Inside timeframe
-	log3 := createTestTeamStartLog(t, db, userID, "team-3", "instance-1", now.Add(-30*time.Minute)) // Inside timeframe
+	log1 := createTestRunStartLog(t, db, userID, "team-1", "instance-1", now.Add(-3*time.Hour))    // Outside timeframe
+	log2 := createTestRunStartLog(t, db, userID, "team-2", "instance-1", now.Add(-1*time.Hour))    // Inside timeframe
+	log3 := createTestRunStartLog(t, db, userID, "team-3", "instance-1", now.Add(-30*time.Minute)) // Inside timeframe
 
 	// Define timeframe (last 2 hours)
 	startTime := now.Add(-2 * time.Hour)
@@ -190,22 +190,22 @@ func TestTeamStartLogRepo_GetByUserIDWithTimeframe(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_GetByUserIDAndInstanceID(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_GetByUserIDAndQuestID(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
-	instanceID := gofakeit.UUID()
+	questID := gofakeit.UUID()
 
 	// Create test logs
 	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1", instanceID, now.Add(-2*time.Hour))
-	log2 := createTestTeamStartLog(t, db, userID, "team-2", instanceID, now.Add(-1*time.Hour))
-	log3 := createTestTeamStartLog(t, db, userID, "team-3", "other-instance", now) // Different instance
+	log1 := createTestRunStartLog(t, db, userID, "team-1", questID, now.Add(-2*time.Hour))
+	log2 := createTestRunStartLog(t, db, userID, "team-2", questID, now.Add(-1*time.Hour))
+	log3 := createTestRunStartLog(t, db, userID, "team-3", "other-instance", now) // Different instance
 
 	// Get logs for user and instance
-	logs, err := repo.GetByUserIDAndInstanceID(ctx, userID, instanceID)
+	logs, err := repo.GetByUserIDAndQuestID(ctx, userID, questID)
 	require.NoError(t, err)
 
 	// Should get 2 logs for the user and instance, in descending order
@@ -219,23 +219,23 @@ func TestTeamStartLogRepo_GetByUserIDAndInstanceID(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_GetByUserIDAndInstanceIDWithTimeframe(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_GetByUserIDAndQuestIDWithTimeframe(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
-	instanceID := gofakeit.UUID()
+	questID := gofakeit.UUID()
 
 	// Create test logs
 	now := time.Now()
-	log1 := createTestTeamStartLog(t, db, userID, "team-1",
-		instanceID, now.Add(-3*time.Hour)) // Outside timeframe
-	log2 := createTestTeamStartLog(t, db, userID, "team-2",
-		instanceID, now.Add(-1*time.Hour)) // Inside timeframe
-	log3 := createTestTeamStartLog(t, db, userID, "team-3",
-		instanceID, now.Add(-30*time.Minute)) // Inside timeframe
-	log4 := createTestTeamStartLog(t, db, userID, "team-4",
+	log1 := createTestRunStartLog(t, db, userID, "team-1",
+		questID, now.Add(-3*time.Hour)) // Outside timeframe
+	log2 := createTestRunStartLog(t, db, userID, "team-2",
+		questID, now.Add(-1*time.Hour)) // Inside timeframe
+	log3 := createTestRunStartLog(t, db, userID, "team-3",
+		questID, now.Add(-30*time.Minute)) // Inside timeframe
+	log4 := createTestRunStartLog(t, db, userID, "team-4",
 		"other-instance", now.Add(-45*time.Minute)) // Different instance
 
 	// Define timeframe (last 2 hours)
@@ -243,7 +243,7 @@ func TestTeamStartLogRepo_GetByUserIDAndInstanceIDWithTimeframe(t *testing.T) {
 	endTime := now
 
 	// Get logs for user, instance, and timeframe
-	logs, err := repo.GetByUserIDAndInstanceIDWithTimeframe(ctx, userID, instanceID, startTime, endTime)
+	logs, err := repo.GetByUserIDAndQuestIDWithTimeframe(ctx, userID, questID, startTime, endTime)
 	require.NoError(t, err)
 
 	// Should get 2 logs within criteria, in descending order
@@ -258,8 +258,8 @@ func TestTeamStartLogRepo_GetByUserIDAndInstanceIDWithTimeframe(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_EmptyResults(t *testing.T) {
-	repo, _, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_EmptyResults(t *testing.T) {
+	repo, _, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -267,30 +267,30 @@ func TestTeamStartLogRepo_EmptyResults(t *testing.T) {
 
 	tests := []struct {
 		name string
-		fn   func() ([]models.TeamStartLog, error)
+		fn   func() ([]models.RunStartLog, error)
 	}{
 		{
 			name: "GetByUserID with non-existent user",
-			fn: func() ([]models.TeamStartLog, error) {
+			fn: func() ([]models.RunStartLog, error) {
 				return repo.GetByUserID(ctx, nonExistentUserID)
 			},
 		},
 		{
 			name: "GetByUserIDWithTimeframe with non-existent user",
-			fn: func() ([]models.TeamStartLog, error) {
+			fn: func() ([]models.RunStartLog, error) {
 				return repo.GetByUserIDWithTimeframe(ctx, nonExistentUserID, time.Now().Add(-1*time.Hour), time.Now())
 			},
 		},
 		{
-			name: "GetByUserIDAndInstanceID with non-existent user",
-			fn: func() ([]models.TeamStartLog, error) {
-				return repo.GetByUserIDAndInstanceID(ctx, nonExistentUserID, gofakeit.UUID())
+			name: "GetByUserIDAndQuestID with non-existent user",
+			fn: func() ([]models.RunStartLog, error) {
+				return repo.GetByUserIDAndQuestID(ctx, nonExistentUserID, gofakeit.UUID())
 			},
 		},
 		{
-			name: "GetByUserIDAndInstanceIDWithTimeframe with non-existent user",
-			fn: func() ([]models.TeamStartLog, error) {
-				return repo.GetByUserIDAndInstanceIDWithTimeframe(
+			name: "GetByUserIDAndQuestIDWithTimeframe with non-existent user",
+			fn: func() ([]models.RunStartLog, error) {
+				return repo.GetByUserIDAndQuestIDWithTimeframe(
 					ctx,
 					nonExistentUserID,
 					gofakeit.UUID(),
@@ -310,8 +310,8 @@ func TestTeamStartLogRepo_EmptyResults(t *testing.T) {
 	}
 }
 
-func TestTeamStartLogRepo_OrderingConsistency(t *testing.T) {
-	repo, db, cleanup := setupTeamStartLogRepo(t)
+func TestRunStartLogRepo_OrderingConsistency(t *testing.T) {
+	repo, db, cleanup := setupRunStartLogRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -329,7 +329,7 @@ func TestTeamStartLogRepo_OrderingConsistency(t *testing.T) {
 
 	var expectedOrder []string
 	for i, ts := range timestamps {
-		log := createTestTeamStartLog(t, db, userID, fmt.Sprintf("team-%d", i), "instance-1", ts)
+		log := createTestRunStartLog(t, db, userID, fmt.Sprintf("team-%d", i), "instance-1", ts)
 		expectedOrder = append(expectedOrder, log.ID)
 	}
 

@@ -22,17 +22,17 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 
 	slug := chi.URLParam(r, "slug")
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		h.logger.Error("loading team", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "loading team", "error", err.Error())
 		http.Redirect(w, r, "/play", http.StatusFound)
 		return
 	}
 
 	var index int
-	err = h.teamService.LoadRelations(r.Context(), team)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.logger.Error("loading team relations", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "loading team relations", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -51,10 +51,11 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	contentBlocks, blockStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
 		team.CheckIns[index].Location.ID,
 		team.Code,
+		team.QuestID,
 		blocks.ContextLocationContent,
 	)
 	if err != nil {
@@ -90,11 +91,11 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
 		// Continue without view if it fails
-		h.logger.Error("getting navigation view", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting navigation view", "error", err.Error())
 	}
 
 	data := templates.CheckInViewData{
-		Settings: team.Instance.Settings,
+		Settings: team.Quest.Settings,
 		Scan:     team.CheckIns[index],
 		Blocks:   visibleBlocks,
 		States:   visibleStates,
@@ -104,7 +105,7 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 	c := templates.CheckInView(data)
 	err = templates.Layout(c, team.CheckIns[index].Location.Name, team.Messages).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering checkin view", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering checkin view", "error", err.Error())
 	}
 }
 
@@ -112,21 +113,21 @@ func (h *PlayerHandler) CheckInView(w http.ResponseWriter, r *http.Request) {
 func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.handleError(w, r, "LocationPreview: getting team", "Error getting team", "error", err)
 		return
 	}
 
-	err = h.teamService.LoadRelation(r.Context(), team, "Instance")
+	err = h.runService.LoadQuest(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "LocationPreview: loading instance", "Error loading instance", "error", err)
+		h.handleError(w, r, "LocationPreview: loading quest", "Error loading quest", "error", err)
 		return
 	}
 
 	var location models.Location
 	found := false
-	for _, loc := range team.Instance.Locations {
+	for _, loc := range team.Quest.Locations {
 		if loc.Slug == slug {
 			location = loc
 			found = true
@@ -154,7 +155,7 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 
 	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
 	for _, block := range contentBlocks {
-		blockStates[block.GetID()], err = h.blockService.NewMockBlockState(r.Context(), block.GetID(), "")
+		blockStates[block.GetID()], err = h.blockService.NewMockBlockState(r.Context(), block.GetID(), "", "")
 		if err != nil {
 			h.handleError(w, r, "LocationPreview: creating block state", "Error creating block state", "error", err)
 			return
@@ -162,7 +163,7 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := templates.CheckInViewData{
-		Settings: team.Instance.Settings,
+		Settings: team.Quest.Settings,
 		Scan:     scan,
 		Blocks:   contentBlocks,
 		States:   blockStates,
@@ -171,6 +172,6 @@ func (h *PlayerHandler) checkInPreview(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.CheckInView(data).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("LocationPreview: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "LocationPreview: rendering template", "error", err)
 	}
 }

@@ -13,7 +13,7 @@ import (
 func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	docsService, err := services.NewDocsService("./docs")
 	if err != nil {
-		h.logger.Error("Docs: creating docs service", "error", err)
+		h.logger.ErrorContext(r.Context(), "Docs: creating docs service", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -44,6 +44,6 @@ func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err = templates.PublicLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Contact: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 	}
 }

@@ -30,7 +30,7 @@ func TestLocationStatsService_IncrementVisitors(t *testing.T) {
 		location := &models.Location{
 			ID:           gofakeit.UUID(),
 			Name:         gofakeit.Name(),
-			InstanceID:   gofakeit.UUID(),
+			QuestID:      gofakeit.UUID(),
 			MarkerID:     gofakeit.UUID(),
 			Points:       gofakeit.Number(0, 100),
 			TotalVisits:  5,
@@ -53,7 +53,7 @@ func TestLocationStatsService_IncrementVisitors(t *testing.T) {
 		location := &models.Location{
 			ID:           gofakeit.UUID(),
 			Name:         gofakeit.Name(),
-			InstanceID:   gofakeit.UUID(),
+			QuestID:      gofakeit.UUID(),
 			MarkerID:     gofakeit.UUID(),
 			Points:       gofakeit.Number(0, 100),
 			TotalVisits:  0,
@@ -75,7 +75,7 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		location := &models.Location{
 			ID:           gofakeit.UUID(),
 			Name:         gofakeit.Name(),
-			InstanceID:   gofakeit.UUID(),
+			QuestID:      gofakeit.UUID(),
 			MarkerID:     gofakeit.UUID(),
 			Points:       gofakeit.Number(0, 100),
 			TotalVisits:  5,
@@ -98,7 +98,7 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		location := &models.Location{
 			ID:           gofakeit.UUID(),
 			Name:         gofakeit.Name(),
-			InstanceID:   gofakeit.UUID(),
+			QuestID:      gofakeit.UUID(),
 			MarkerID:     gofakeit.UUID(),
 			Points:       gofakeit.Number(0, 100),
 			TotalVisits:  5,
@@ -115,7 +115,7 @@ func TestLocationStatsService_DecrementVisitors(t *testing.T) {
 		location := &models.Location{
 			ID:           gofakeit.UUID(),
 			Name:         gofakeit.Name(),
-			InstanceID:   gofakeit.UUID(),
+			QuestID:      gofakeit.UUID(),
 			MarkerID:     gofakeit.UUID(),
 			Points:       gofakeit.Number(0, 100),
 			TotalVisits:  5,

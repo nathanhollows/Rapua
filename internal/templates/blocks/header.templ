@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ headerPlayer(_ models.InstanceSettings, block blocks.HeaderBlock) {
+templ headerPlayer(_ models.QuestSettings, block blocks.HeaderBlock) {
 	if block.TitleText != "" || block.Icon != "" {
 		<header class="w-full my-4 mx-auto">
 			<div class="flex flex-col gap-4 items-center">
@@ -46,7 +46,7 @@ var headerTitleText = TextInputParams{
 	ExtraClasses: "w-full",
 }
 
-templ headerAdmin(_ models.InstanceSettings, block blocks.HeaderBlock) {
+templ headerAdmin(_ models.QuestSettings, block blocks.HeaderBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

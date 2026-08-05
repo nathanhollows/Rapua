@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ toggleTextPlayer(_ models.InstanceSettings, block blocks.ToggleTextBlock) {
+templ toggleTextPlayer(_ models.QuestSettings, block blocks.ToggleTextBlock) {
 	if block.Title != "" || block.Content != "" {
 		<details
 			if block.Small {
@@ -32,7 +32,7 @@ var toggleTextContentTextarea = TextareaParams{
 	Required:     true,
 }
 
-templ toggleTextAdmin(_ models.InstanceSettings, block blocks.ToggleTextBlock) {
+templ toggleTextAdmin(_ models.QuestSettings, block blocks.ToggleTextBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

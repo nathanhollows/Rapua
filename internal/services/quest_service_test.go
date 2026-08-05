@@ -12,30 +12,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupInstanceService(t *testing.T) (services.InstanceService, services.UserService, func()) {
+func setupQuestService(t *testing.T) (services.QuestService, services.UserService, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 
 	// Initialize repositories
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, instanceRepo)
-	instanceService := services.NewInstanceService(
+	questService := services.NewQuestService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 
-	return *instanceService, *userService, cleanup
+	return *questService, *userService, cleanup
 }
 
-func setupInstanceServiceWithBlockRepo(
+func setupQuestServiceWithBlockRepo(
 	t *testing.T,
 ) (
-	services.InstanceService,
+	services.QuestService,
 	services.UserService,
 	repositories.BlockRepository,
 	func(),
@@ -44,30 +44,30 @@ func setupInstanceServiceWithBlockRepo(
 	dbc, cleanup := setupDB(t)
 
 	// Initialize repositories
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, instanceRepo)
-	instanceService := services.NewInstanceService(
+	questService := services.NewQuestService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 
-	return *instanceService, *userService, blockRepo, cleanup
+	return *questService, *userService, blockRepo, cleanup
 }
 
-func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
-	svc, userService, blockRepo, cleanup := setupInstanceServiceWithBlockRepo(t)
+func TestQuestService_CreateInstance_DefaultBlocks(t *testing.T) {
+	svc, userService, blockRepo, cleanup := setupQuestServiceWithBlockRepo(t)
 	defer cleanup()
 
 	user := &models.User{Email: "blockstest@example.com", Password: "password"}
 	err := userService.CreateUser(context.Background(), user, "password")
 	require.NoError(t, err)
 
-	instance, err := svc.CreateInstance(context.Background(), "Test Game", user)
+	instance, err := svc.CreateQuest(context.Background(), "Test Game", user)
 	require.NoError(t, err)
 	require.NotNil(t, instance)
 
@@ -132,16 +132,16 @@ func TestInstanceService_CreateInstance_DefaultBlocks(t *testing.T) {
 	})
 }
 
-func TestInstanceService(t *testing.T) {
-	svc, userService, cleanup := setupInstanceService(t)
+func TestQuestService(t *testing.T) {
+	svc, userService, cleanup := setupQuestService(t)
 	defer cleanup()
 
-	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentInstanceID: "instance123"}
+	user := &models.User{Email: "instancetest@example.com", Password: "password", CurrentQuestID: "instance123"}
 	createErr := userService.CreateUser(context.Background(), user, "password")
 	require.NoError(t, createErr)
 	assert.NotEmpty(t, user.ID)
 
-	t.Run("CreateInstance", func(t *testing.T) {
+	t.Run("CreateQuest", func(t *testing.T) {
 		tests := []struct {
 			name         string
 			instanceName string
@@ -155,7 +155,7 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				instance, instanceErr := svc.CreateInstance(context.Background(), tc.instanceName, tc.user)
+				instance, instanceErr := svc.CreateQuest(context.Background(), tc.instanceName, tc.user)
 				if tc.wantErr {
 					require.Error(t, instanceErr)
 					assert.Nil(t, instance)
@@ -170,9 +170,9 @@ func TestInstanceService(t *testing.T) {
 
 	// DuplicateInstance tests moved to duplication_service_test.go
 
-	t.Run("FindInstanceIDsForUser", func(t *testing.T) {
-		_, _ = svc.CreateInstance(context.Background(), "GameA", user)
-		_, _ = svc.CreateInstance(context.Background(), "GameB", user)
+	t.Run("FindQuestIDsForUser", func(t *testing.T) {
+		_, _ = svc.CreateQuest(context.Background(), "GameA", user)
+		_, _ = svc.CreateQuest(context.Background(), "GameB", user)
 
 		tests := []struct {
 			name    string
@@ -185,7 +185,7 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				ids, findErr := svc.FindInstanceIDsForUser(context.Background(), tc.userID)
+				ids, findErr := svc.FindQuestIDsForUser(context.Background(), tc.userID)
 				if tc.wantErr {
 					require.Error(t, findErr)
 					assert.Nil(t, ids)
@@ -195,8 +195,8 @@ func TestInstanceService(t *testing.T) {
 	})
 
 	t.Run("FindByUserID", func(t *testing.T) {
-		_, _ = svc.CreateInstance(context.Background(), "Game1", user)
-		_, _ = svc.CreateInstance(context.Background(), "Game2", user)
+		_, _ = svc.CreateQuest(context.Background(), "Game1", user)
+		_, _ = svc.CreateQuest(context.Background(), "Game2", user)
 
 		tests := []struct {
 			name    string
@@ -219,13 +219,13 @@ func TestInstanceService(t *testing.T) {
 	})
 
 	t.Run("GetByID", func(t *testing.T) {
-		instance, err := svc.CreateInstance(context.Background(), "TestGetByID", user)
+		instance, err := svc.CreateQuest(context.Background(), "TestGetByID", user)
 		require.NoError(t, err)
 
 		tests := []struct {
-			name       string
-			instanceID string
-			wantErr    bool
+			name    string
+			questID string
+			wantErr bool
 		}{
 			{"Valid Instance ID", instance.ID, false},
 			{"Invalid Instance ID", "non-existent", true},
@@ -234,7 +234,7 @@ func TestInstanceService(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				retrieved, getErr := svc.GetByID(context.Background(), tc.instanceID)
+				retrieved, getErr := svc.GetByID(context.Background(), tc.questID)
 				if tc.wantErr {
 					require.Error(t, getErr)
 					assert.Nil(t, retrieved)
@@ -249,21 +249,21 @@ func TestInstanceService(t *testing.T) {
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		instance, err := svc.CreateInstance(context.Background(), "OriginalName", user)
+		instance, err := svc.CreateQuest(context.Background(), "OriginalName", user)
 		require.NoError(t, err)
 
 		t.Run("Valid Update", func(t *testing.T) {
 			// Get the full instance first
-			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			fullQuest, getErr := svc.GetByID(context.Background(), instance.ID)
 			require.NoError(t, getErr)
 
 			// Update the name
-			fullInstance.Name = "UpdatedName"
-			updateErr := svc.Update(context.Background(), fullInstance)
+			fullQuest.Name = "UpdatedName"
+			updateErr := svc.Update(context.Background(), fullQuest)
 			require.NoError(t, updateErr)
 
 			// Verify the update persisted
-			updated, getErr := svc.GetByID(context.Background(), fullInstance.ID)
+			updated, getErr := svc.GetByID(context.Background(), fullQuest.ID)
 			require.NoError(t, getErr)
 			assert.Equal(t, "UpdatedName", updated.Name)
 		})
@@ -274,11 +274,11 @@ func TestInstanceService(t *testing.T) {
 		})
 
 		t.Run("Empty Name", func(t *testing.T) {
-			fullInstance, getErr := svc.GetByID(context.Background(), instance.ID)
+			fullQuest, getErr := svc.GetByID(context.Background(), instance.ID)
 			require.NoError(t, getErr)
 
-			fullInstance.Name = ""
-			updateErr := svc.Update(context.Background(), fullInstance)
+			fullQuest.Name = ""
+			updateErr := svc.Update(context.Background(), fullQuest)
 			require.Error(t, updateErr)
 		})
 	})

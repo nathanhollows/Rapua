@@ -85,7 +85,7 @@ func FacilitatorLinkCopyModal(url string) templ.Component {
 	})
 }
 
-func FacilitatorDashboard(locations []models.Location, activity []services.TeamActivity) templ.Component {
+func FacilitatorDashboard(locations []models.Location, activity []services.RunActivity) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -137,7 +137,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 			return templ_7745c5c3_Err
 		}
 		if len(locations) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div role=\"alert\" class=\"alert\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-users inline-block w-8 h-8\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"></path><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"></path></svg> <span>No locations available</span><div><a href=\"/admin/locations/new\" class=\"btn btn-sm btn-secondary\">Add a location</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div role=\"alert\" class=\"alert\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-users inline-block w-8 h-8\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"></path><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"></path></svg> <span>No locations available</span><div><a href=\"/admin/quest/new\" class=\"btn btn-sm btn-secondary\">Add a location</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -175,7 +175,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+					if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
 						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"badge badge-info whitespace-nowrap\">Avg: ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
@@ -195,7 +195,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 						}
 					}
 				} else {
-					if location.Instance.Settings.MustCheckOut {
+					if location.Quest.Settings.MustCheckOut {
 						if location.CurrentCount > 0 {
 							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"badge badge-accent whitespace-nowrap\">")
 							if templ_7745c5c3_Err != nil {
@@ -233,7 +233,7 @@ func FacilitatorDashboard(locations []models.Location, activity []services.TeamA
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
+					if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
 						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"badge badge-info whitespace-nowrap\">Avg: ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err

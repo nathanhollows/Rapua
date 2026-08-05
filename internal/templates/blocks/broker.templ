@@ -7,7 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
+templ brokerPlayer(settings models.QuestSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
@@ -52,7 +52,7 @@ templ brokerPlayer(settings models.InstanceSettings, block blocks.BrokerBlock, d
 	</div>
 }
 
-templ brokerPlayerUpdate(settings models.InstanceSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
+templ brokerPlayerUpdate(settings models.QuestSettings, block blocks.BrokerBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
@@ -129,7 +129,7 @@ var brokerInformationTierTextarea = TextareaParams{
 	`,
 }
 
-templ brokerAdmin(settings models.InstanceSettings, block blocks.BrokerBlock) {
+templ brokerAdmin(settings models.QuestSettings, block blocks.BrokerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

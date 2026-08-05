@@ -12,7 +12,7 @@ func (h *Handler) Contact(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err := templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Contact: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 	}
 }
 
@@ -42,6 +42,6 @@ func (h *Handler) ContactPost(w http.ResponseWriter, r *http.Request) {
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
 	err = templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ContactPost: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ContactPost: rendering template", "error", err)
 	}
 }

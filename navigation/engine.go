@@ -224,7 +224,7 @@ func GetAvailableLocationIDs(
 	structure *models.GameStructure,
 	groupID string,
 	completedLocationIDs []string,
-	teamCode string,
+	runCode string,
 ) []string {
 	group := FindGroupByID(structure, groupID)
 	if group == nil || len(group.LocationIDs) == 0 {
@@ -250,7 +250,7 @@ func GetAvailableLocationIDs(
 
 	case models.RouteStrategyRandomised:
 		// Return up to maxNext randomly selected location IDs (deterministic per team)
-		return deterministicShuffleIDs(group.LocationIDs, completedLocationIDs, teamCode, group.MaxNext)
+		return deterministicShuffleIDs(group.LocationIDs, completedLocationIDs, runCode, group.MaxNext)
 
 	case models.RouteStrategyFreeRoam:
 		// Return all unvisited location IDs

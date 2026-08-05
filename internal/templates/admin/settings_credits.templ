@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.TeamStartSummary) {
+templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.RunStartSummary) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-4 mt-12">
 		<div class="grid h-fit flex-grow">
 			<div class="stats">
@@ -190,7 +190,7 @@ templ CreditTopupModal() {
 	</dialog>
 }
 
-templ CreditUsageWeek(usage []services.TeamStartSummary, period string) {
+templ CreditUsageWeek(usage []services.RunStartSummary, period string) {
 	<table class="charts-css column show-labels data-spacing-5 data-center">
 		<caption>Team Starts by Day</caption>
 		<thead>
@@ -254,7 +254,7 @@ templ CreditUsageWeek(usage []services.TeamStartSummary, period string) {
 	</table>
 }
 
-templ CreditUsageChart(usage []services.TeamStartSummary, period string) {
+templ CreditUsageChart(usage []services.RunStartSummary, period string) {
 	<table class="charts-css column show-labels data-spacing-5 data-center">
 		<caption>Team Starts by Day</caption>
 		<thead>
@@ -317,7 +317,7 @@ templ CreditUsageChart(usage []services.TeamStartSummary, period string) {
 	</table>
 }
 
-templ CreditUsageYear(usage []services.TeamStartSummary) {
+templ CreditUsageYear(usage []services.RunStartSummary) {
 	<table class="charts-css column show-labels data-spacing-5 data-center">
 		<caption>Team Starts by Day</caption>
 		<thead>

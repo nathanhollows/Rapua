@@ -9,7 +9,7 @@ import (
 
 
 type EditLocationData struct {
-	Settings         models.InstanceSettings
+	Settings         models.QuestSettings
 	Location         models.Location
 	ContentBlocks    blocks.Blocks
 	NavigationBlocks blocks.Blocks
@@ -32,7 +32,7 @@ templ EditLocation(data EditLocationData) {
 						<ul>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/poster/", data.Location.MarkerID, ".pdf")) }
+									href={ templ.SafeURL(fmt.Sprint("/admin/quest/poster/", data.Location.MarkerID, ".pdf")) }
 								>
 									Default (PDF)
 								</a>
@@ -44,13 +44,13 @@ templ EditLocation(data EditLocationData) {
 						<ul>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", data.Location.MarkerID, ".png")) }
+									href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/in/", data.Location.MarkerID, ".png")) }
 									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
 								>PNG</a>
 							</li>
 							<li>
 								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/in/", data.Location.MarkerID, ".svg")) }
+									href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/in/", data.Location.MarkerID, ".svg")) }
 									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
 								>SVG</a>
 							</li>
@@ -62,13 +62,13 @@ templ EditLocation(data EditLocationData) {
 							<ul>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", data.Location.MarkerID, ".png")) }
+										href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/out/", data.Location.MarkerID, ".png")) }
 										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
 									>QR Code (PNG)</a>
 								</li>
 								<li>
 									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/locations/qr/out/", data.Location.MarkerID, ".svg")) }
+										href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/out/", data.Location.MarkerID, ".svg")) }
 										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
 									>QR Code (SVG)</a>
 								</li>
@@ -83,7 +83,7 @@ templ EditLocation(data EditLocationData) {
 			</button>
 			<form
 				id="edit-location"
-				hx-post={ fmt.Sprint("/admin/locations/", data.Location.Slug) }
+				hx-post={ fmt.Sprint("/admin/objective/", data.Location.Slug) }
 				hx-trigger="click, savelocation delay:500ms, keyup from:[form=edit-location] delay:500ms"
 				hx-swap="none"
 			>
@@ -209,7 +209,7 @@ templ EditLocation(data EditLocationData) {
 						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
 						hx-get={ fmt.Sprint("/checkins/", data.Location.Slug) }
 						hx-trigger={ fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-location-btn, htmx:afterRequest from:#delete-block-btn") }
-						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
+						hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
 						hx-swap="innerHTML"
 						_="on changePreviewPage from <body/> 
 					set @hx-get to event.detail.sender.dataset.url
@@ -235,7 +235,7 @@ templ EditLocation(data EditLocationData) {
 				<button
 					type="button"
 					class="btn btn-error"
-					hx-delete={ fmt.Sprint("/admin/locations/", data.Location.Slug) }
+					hx-delete={ fmt.Sprint("/admin/objective/", data.Location.Slug) }
 					hx-trigger="click"
 					onclick="confirm_delete_modal.close()"
 				>Delete</button>

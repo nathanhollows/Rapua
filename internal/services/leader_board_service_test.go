@@ -15,10 +15,10 @@ func setupLeaderboardService(t *testing.T) *services.LeaderBoardService {
 }
 
 // Helper function to create test teams with various states.
-func createTestTeams() []models.Team {
+func createTestTeams() []models.Run {
 	baseTime := time.Now().Add(-time.Hour * 2)
 
-	return []models.Team{
+	return []models.Run{
 		{
 			ID:         "team1",
 			Code:       "T001",
@@ -192,7 +192,7 @@ func TestLeaderBoardService_TeamStatus(t *testing.T) {
 	locationCount := 3
 
 	testCases := []struct {
-		teamCode       string
+		runCode        string
 		expectedStatus services.TeamStatus
 	}{
 		{"T001", services.StatusTransit},  // Has check-ins but not finished
@@ -210,16 +210,16 @@ func TestLeaderBoardService_TeamStatus(t *testing.T) {
 	for _, tc := range testCases {
 		found := false
 		for _, team := range result {
-			if team.Code == tc.teamCode {
+			if team.Code == tc.runCode {
 				found = true
 				if team.Status != tc.expectedStatus {
-					t.Errorf("Expected team %s to have status %s, got %s", tc.teamCode, tc.expectedStatus, team.Status)
+					t.Errorf("Expected team %s to have status %s, got %s", tc.runCode, tc.expectedStatus, team.Status)
 				}
 				break
 			}
 		}
 		if !found {
-			t.Errorf("Team %s not found in results", tc.teamCode)
+			t.Errorf("Team %s not found in results", tc.runCode)
 		}
 	}
 }
@@ -370,7 +370,7 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 
 	// Create a team with specific check-in times
 	baseTime := time.Now().Add(-time.Hour * 3)
-	teams := []models.Team{
+	teams := []models.Run{
 		{
 			ID:         "team1",
 			Code:       "T001",
@@ -406,7 +406,7 @@ func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	service := setupLeaderboardService(t)
 
 	ctx := context.Background()
-	teams := []models.Team{}
+	teams := []models.Run{}
 
 	result, err := service.GetLeaderBoardData(ctx, teams, 3, "progress", "rank", "asc")
 	if err != nil {
@@ -425,7 +425,7 @@ func TestLeaderBoardService_TieBreaker(t *testing.T) {
 	baseTime := time.Now().Add(-time.Hour)
 
 	// Create teams with same progress but different last seen times
-	teams := []models.Team{
+	teams := []models.Run{
 		{
 			ID:         "team1",
 			Code:       "T001",

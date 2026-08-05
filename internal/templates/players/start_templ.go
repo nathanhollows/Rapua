@@ -15,7 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-func TeamID(team models.Team, oob bool) templ.Component {
+func TeamID(team models.Run, oob bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -95,7 +95,7 @@ func TeamID(team models.Team, oob bool) templ.Component {
 	})
 }
 
-func Start(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) templ.Component {
+func Start(team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -138,7 +138,7 @@ func Start(team models.Team, pageBlocks blocks.Blocks, blockStates map[string]bl
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templates.RenderPlayerView(team.Instance.Settings, block, blockStates[block.GetID()]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templates.RenderPlayerView(team.Quest.Settings, block, blockStates[block.GetID()]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -184,7 +184,7 @@ func instructions() templ.Component {
 	})
 }
 
-func TeamNameForm(team models.Team) templ.Component {
+func TeamNameForm(team models.Run) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -226,7 +226,7 @@ func TeamNameForm(team models.Team) templ.Component {
 	})
 }
 
-func TeamNameComplete(team models.Team, blockID string) templ.Component {
+func TeamNameComplete(team models.Run, blockID string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

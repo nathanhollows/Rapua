@@ -165,7 +165,7 @@ func deterministicShuffle(items []string, seed string) []string {
 	return result
 }
 
-func sortingPlayer(settings models.InstanceSettings, block blocks.SortingBlock, data blocks.PlayerState) templ.Component {
+func sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, data blocks.PlayerState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -619,7 +619,7 @@ Sort the items below in the correct order.`,
 	Required: true,
 }
 
-func sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) templ.Component {
+func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

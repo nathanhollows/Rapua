@@ -54,9 +54,9 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 							<form
 								hx-swap="innerHTML"
 								hx-target="#preview"
-								hx-vals={ fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`) }
+								hx-vals={ fmt.Sprint(`{"questID": "`, link.TemplateID, `"}`) }
 							>
-								<input type="hidden" name="instanceID" value={ link.TemplateID }/>
+								<input type="hidden" name="questID" value={ link.TemplateID }/>
 								<select
 									id="pages"
 									class="select select-sm w-56 md:w-96 mx-auto text-ellipsis"
@@ -145,7 +145,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						<div
 							id="preview"
 							class="overflow-scroll py-12 px-4"
-							hx-vals={ fmt.Sprint(`{"instanceID": "`, link.TemplateID, `"}`) }
+							hx-vals={ fmt.Sprint(`{"questID": "`, link.TemplateID, `"}`) }
 						>
 							<span class="loading loading-spinner loading-lg"></span>
 						</div>

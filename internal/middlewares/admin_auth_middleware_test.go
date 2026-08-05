@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -31,11 +32,11 @@ func (m *MockAuthService) GetAuthenticatedUser(_ *http.Request) (*models.User, e
 
 // MockInstanceLoader is a mock implementation of InstanceLoader.
 type MockInstanceLoader struct {
-	instance *models.Instance
+	instance *models.Quest
 	err      error
 }
 
-func (m *MockInstanceLoader) GetByIDWithRelations(_ context.Context, _ string) (*models.Instance, error) {
+func (m *MockInstanceLoader) GetByIDWithRelations(_ context.Context, _ string) (*models.Quest, error) {
 	return m.instance, m.err
 }
 
@@ -107,7 +108,7 @@ func TestAdminAuthMiddleware(t *testing.T) {
 
 			// Create the middleware handler
 			mockInstanceLoader := &MockInstanceLoader{}
-			handler := AdminAuthMiddleware(mockAuthService, mockInstanceLoader, dummyHandler())
+			handler := AdminAuthMiddleware(slog.Default(), mockAuthService, mockInstanceLoader, dummyHandler())
 
 			// Call the middleware
 			handler.ServeHTTP(w, req)
@@ -132,37 +133,37 @@ func TestAdminAuthMiddleware(t *testing.T) {
 
 func TestAdminAuthMiddleware_InstanceFromSession(t *testing.T) {
 	userID := "user-123"
-	instanceID := "instance-456"
+	questID := "instance-456"
 
 	testCases := []struct {
-		name               string
-		sessionInstanceID  string
-		instance           *models.Instance
-		instanceErr        error
-		expectedInstanceID string
+		name            string
+		sessionQuestID  string
+		instance        *models.Quest
+		instanceErr     error
+		expectedQuestID string
 	}{
 		{
-			name:               "Valid instance in session",
-			sessionInstanceID:  instanceID,
-			instance:           &models.Instance{ID: instanceID, UserID: userID},
-			expectedInstanceID: instanceID,
+			name:            "Valid instance in session",
+			sessionQuestID:  questID,
+			instance:        &models.Quest{ID: questID, UserID: userID},
+			expectedQuestID: questID,
 		},
 		{
-			name:               "Instance belongs to different user",
-			sessionInstanceID:  instanceID,
-			instance:           &models.Instance{ID: instanceID, UserID: "other-user"},
-			expectedInstanceID: "",
+			name:            "Instance belongs to different user",
+			sessionQuestID:  questID,
+			instance:        &models.Quest{ID: questID, UserID: "other-user"},
+			expectedQuestID: "",
 		},
 		{
-			name:               "Instance not found",
-			sessionInstanceID:  "nonexistent",
-			instanceErr:        http.ErrNoCookie, // any error
-			expectedInstanceID: "",
+			name:            "Instance not found",
+			sessionQuestID:  "nonexistent",
+			instanceErr:     http.ErrNoCookie, // any error
+			expectedQuestID: "",
 		},
 		{
-			name:               "No instance in session",
-			sessionInstanceID:  "",
-			expectedInstanceID: "",
+			name:            "No instance in session",
+			sessionQuestID:  "",
+			expectedQuestID: "",
 		},
 	}
 
@@ -184,18 +185,18 @@ func TestAdminAuthMiddleware_InstanceFromSession(t *testing.T) {
 				capturedUser = r.Context().Value(contextkeys.UserKey).(*models.User)
 			})
 
-			handler := AdminAuthMiddleware(mockAuth, mockLoader, inner)
+			handler := AdminAuthMiddleware(slog.Default(), mockAuth, mockLoader, inner)
 
 			req := httptest.NewRequest(http.MethodGet, "/admin/dashboard", nil)
 			w := httptest.NewRecorder()
 
 			// Set instance ID in session before the request
-			if tc.sessionInstanceID != "" {
+			if tc.sessionQuestID != "" {
 				session, err := sessions.Get(req, "admin")
 				if err != nil {
 					t.Fatalf("getting session: %v", err)
 				}
-				session.Values["current_instance"] = tc.sessionInstanceID
+				session.Values["current_instance"] = tc.sessionQuestID
 				if err := session.Save(req, w); err != nil {
 					t.Fatalf("saving session: %v", err)
 				}
@@ -212,9 +213,9 @@ func TestAdminAuthMiddleware_InstanceFromSession(t *testing.T) {
 			if capturedUser == nil {
 				t.Fatal("expected user in context")
 			}
-			if capturedUser.CurrentInstanceID != tc.expectedInstanceID {
-				t.Errorf("expected CurrentInstanceID %q, got %q",
-					tc.expectedInstanceID, capturedUser.CurrentInstanceID)
+			if capturedUser.CurrentQuestID != tc.expectedQuestID {
+				t.Errorf("expected CurrentQuestID %q, got %q",
+					tc.expectedQuestID, capturedUser.CurrentQuestID)
 			}
 		})
 	}
@@ -232,7 +233,7 @@ func TestAdminCheckInstanceMiddleware(t *testing.T) {
 			name: "User with Instance on Non-Instances Page",
 			path: "/admin/dashboard",
 			user: &models.User{
-				CurrentInstanceID: "instance-123",
+				CurrentQuestID: "instance-123",
 			},
 			expectedStatusCode: http.StatusOK,
 			expectedLocation:   "",
@@ -241,16 +242,16 @@ func TestAdminCheckInstanceMiddleware(t *testing.T) {
 			name: "User without Instance on Non-Instances Page",
 			path: "/admin/dashboard",
 			user: &models.User{
-				CurrentInstanceID: "",
+				CurrentQuestID: "",
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLocation:   "/admin/instances",
+			expectedLocation:   "/admin/quests",
 		},
 		{
 			name: "User on Instances Page",
-			path: "/admin/instances",
+			path: "/admin/quests",
 			user: &models.User{
-				CurrentInstanceID: "",
+				CurrentQuestID: "",
 			},
 			expectedStatusCode: http.StatusOK,
 			expectedLocation:   "",

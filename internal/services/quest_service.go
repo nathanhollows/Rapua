@@ -11,30 +11,30 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-type InstanceService struct {
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
+type QuestService struct {
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
 	blockRepo            repositories.BlockRepository
 }
 
-func NewInstanceService(
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
+func NewQuestService(
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
 	blockRepo repositories.BlockRepository,
-) *InstanceService {
-	return &InstanceService{
+) *QuestService {
+	return &QuestService{
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		blockRepo:            blockRepo,
 	}
 }
 
-// CreateInstance implements InstanceService.
-func (s *InstanceService) CreateInstance(
+// CreateQuest implements QuestService.
+func (s *QuestService) CreateQuest(
 	ctx context.Context,
 	name string,
 	user *models.User,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if name == "" {
 		return nil, errors.New("name cannot be empty")
 	}
@@ -43,7 +43,7 @@ func (s *InstanceService) CreateInstance(
 		return nil, ErrUserNotAuthenticated
 	}
 
-	instance := &models.Instance{
+	instance := &models.Quest{
 		Name:       name,
 		UserID:     user.ID,
 		IsTemplate: false,
@@ -76,8 +76,8 @@ func (s *InstanceService) CreateInstance(
 		return nil, fmt.Errorf("creating instance: %w", err)
 	}
 
-	settings := &models.InstanceSettings{
-		InstanceID: instance.ID,
+	settings := &models.QuestSettings{
+		QuestID: instance.ID,
 	}
 	if err := s.instanceSettingsRepo.Create(ctx, settings); err != nil {
 		return nil, fmt.Errorf("creating instance settings: %w", err)
@@ -96,8 +96,8 @@ func (s *InstanceService) CreateInstance(
 	return instance, nil
 }
 
-// FindByUserID implements InstanceService.
-func (s *InstanceService) FindByUserID(ctx context.Context, userID string) ([]models.Instance, error) {
+// FindByUserID implements QuestService.
+func (s *QuestService) FindByUserID(ctx context.Context, userID string) ([]models.Quest, error) {
 	instances, err := s.instanceRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("finding instances for user: %w", err)
@@ -105,8 +105,8 @@ func (s *InstanceService) FindByUserID(ctx context.Context, userID string) ([]mo
 	return instances, nil
 }
 
-// FindInstanceIDsForUser implements InstanceService.
-func (s *InstanceService) FindInstanceIDsForUser(ctx context.Context, userID string) ([]string, error) {
+// FindQuestIDsForUser implements QuestService.
+func (s *QuestService) FindQuestIDsForUser(ctx context.Context, userID string) ([]string, error) {
 	instances, err := s.instanceRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("finding instances for user: %w", err)
@@ -120,7 +120,7 @@ func (s *InstanceService) FindInstanceIDsForUser(ctx context.Context, userID str
 }
 
 // GetByID finds an instance by ID.
-func (s *InstanceService) GetByID(ctx context.Context, id string) (*models.Instance, error) {
+func (s *QuestService) GetByID(ctx context.Context, id string) (*models.Quest, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("getting instance by ID: %w", err)
@@ -128,12 +128,12 @@ func (s *InstanceService) GetByID(ctx context.Context, id string) (*models.Insta
 	return instance, nil
 }
 
-// GetInstanceSettings returns the settings for an instance.
-func (s *InstanceService) GetInstanceSettings(
+// GetQuestSettings returns the settings for an instance.
+func (s *QuestService) GetQuestSettings(
 	ctx context.Context,
-	instanceID string,
-) (*models.InstanceSettings, error) {
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	questID string,
+) (*models.QuestSettings, error) {
+	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("getting instance settings: %w", err)
 	}
@@ -141,7 +141,7 @@ func (s *InstanceService) GetInstanceSettings(
 }
 
 // Update updates an instance.
-func (s *InstanceService) Update(ctx context.Context, instance *models.Instance) error {
+func (s *QuestService) Update(ctx context.Context, instance *models.Quest) error {
 	if instance == nil {
 		return errors.New("instance cannot be nil")
 	}
@@ -166,7 +166,7 @@ const startInstructionsContent = `- Navigate to each location using the clues, m
 const finishCongratulationsContent = `You’ve wrapped up the entire route. Thanks for being part of the adventure.`
 
 // createDefaultStartBlocks creates the default blocks for an instance's start page.
-func (s *InstanceService) createDefaultStartBlocks(ctx context.Context, instance *models.Instance) error {
+func (s *QuestService) createDefaultStartBlocks(ctx context.Context, instance *models.Quest) error {
 	startBlocks := []blocks.Block{
 		// 1. Header block
 		&blocks.HeaderBlock{
@@ -216,7 +216,7 @@ func (s *InstanceService) createDefaultStartBlocks(ctx context.Context, instance
 }
 
 // createDefaultFinishBlocks creates the default blocks for an instance's finish page.
-func (s *InstanceService) createDefaultFinishBlocks(ctx context.Context, instance *models.Instance) error {
+func (s *QuestService) createDefaultFinishBlocks(ctx context.Context, instance *models.Quest) error {
 	finishBlocks := []blocks.Block{
 		// 1. Header block
 		&blocks.HeaderBlock{

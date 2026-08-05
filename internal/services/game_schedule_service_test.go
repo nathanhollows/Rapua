@@ -17,21 +17,21 @@ import (
 func setupGameScheduleService(t *testing.T) (*services.GameScheduleService, func()) {
 	dbc, cleanup := setupDB(t)
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 
 	return gameScheduleService, cleanup
 }
 
-func createTestInstance(t *testing.T, dbc *bun.DB) *models.Instance {
+func createTestInstance(t *testing.T, dbc *bun.DB) *models.Quest {
 	t.Helper()
 
 	// Insert a valid user to satisfy FK constraint: instances.user_id → users.id
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:        gofakeit.UUID(),
 		UserID:    userID,
 		Name:      gofakeit.Name(),
@@ -39,7 +39,7 @@ func createTestInstance(t *testing.T, dbc *bun.DB) *models.Instance {
 		EndTime:   bun.NullTime{},
 	}
 
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 	err := instanceRepo.Create(context.Background(), instance)
 	require.NoError(t, err)
 
@@ -49,24 +49,24 @@ func createTestInstance(t *testing.T, dbc *bun.DB) *models.Instance {
 func TestGameScheduleService_Start(t *testing.T) {
 	testCases := []struct {
 		name         string
-		setupFn      func(dbc *bun.DB) *models.Instance
+		setupFn      func(dbc *bun.DB) *models.Quest
 		wantErr      bool
 		expectedName string
 	}{
 		{
 			name: "Start inactive game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			wantErr: false,
 		},
 		{
 			name: "Start already active game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				// Set start time to make it active
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -107,16 +107,16 @@ func TestGameScheduleService_Start(t *testing.T) {
 func TestGameScheduleService_Stop(t *testing.T) {
 	testCases := []struct {
 		name         string
-		setupFn      func(dbc *bun.DB) *models.Instance
+		setupFn      func(dbc *bun.DB) *models.Quest
 		wantErr      bool
 		expectedName string
 	}{
 		{
 			name: "Stop active game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -125,12 +125,12 @@ func TestGameScheduleService_Stop(t *testing.T) {
 		},
 		{
 			name: "Stop already closed game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				// Set both start and end time to make it closed
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-2 * time.Hour)}
 				instance.EndTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -170,14 +170,14 @@ func TestGameScheduleService_Stop(t *testing.T) {
 func TestGameScheduleService_SetStartTime(t *testing.T) {
 	testCases := []struct {
 		name         string
-		setupFn      func(dbc *bun.DB) *models.Instance
+		setupFn      func(dbc *bun.DB) *models.Quest
 		startTime    time.Time
 		wantErr      bool
 		expectedName string
 	}{
 		{
 			name: "Set start time for inactive game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			startTime: time.Now().Add(1 * time.Hour),
@@ -185,10 +185,10 @@ func TestGameScheduleService_SetStartTime(t *testing.T) {
 		},
 		{
 			name: "Set start time for already active game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -199,10 +199,10 @@ func TestGameScheduleService_SetStartTime(t *testing.T) {
 		},
 		{
 			name: "Set start time after existing end time - should clear end time",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.EndTime = bun.NullTime{Time: time.Now().Add(1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -246,17 +246,17 @@ func TestGameScheduleService_SetStartTime(t *testing.T) {
 func TestGameScheduleService_SetEndTime(t *testing.T) {
 	testCases := []struct {
 		name         string
-		setupFn      func(dbc *bun.DB) *models.Instance
+		setupFn      func(dbc *bun.DB) *models.Quest
 		endTime      time.Time
 		wantErr      bool
 		expectedName string
 	}{
 		{
 			name: "Set end time for active game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -266,11 +266,11 @@ func TestGameScheduleService_SetEndTime(t *testing.T) {
 		},
 		{
 			name: "Set end time for already closed game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-2 * time.Hour)}
 				instance.EndTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -281,10 +281,10 @@ func TestGameScheduleService_SetEndTime(t *testing.T) {
 		},
 		{
 			name: "Set end time before start time",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(2 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -295,7 +295,7 @@ func TestGameScheduleService_SetEndTime(t *testing.T) {
 		},
 		{
 			name: "Set end time for game without start time",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			endTime:      time.Now().Add(1 * time.Hour),
@@ -332,7 +332,7 @@ func TestGameScheduleService_SetEndTime(t *testing.T) {
 func TestGameScheduleService_ScheduleGame(t *testing.T) {
 	testCases := []struct {
 		name         string
-		setupFn      func(dbc *bun.DB) *models.Instance
+		setupFn      func(dbc *bun.DB) *models.Quest
 		startTime    time.Time
 		endTime      time.Time
 		wantErr      bool
@@ -340,7 +340,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 	}{
 		{
 			name: "Schedule game with valid times",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			startTime: time.Now().Add(1 * time.Hour),
@@ -349,7 +349,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 		},
 		{
 			name: "Schedule game with start time after end time",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			startTime:    time.Now().Add(3 * time.Hour),
@@ -359,7 +359,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 		},
 		{
 			name: "Schedule game with same start and end time",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			startTime: time.Now().Add(1 * time.Hour),
@@ -368,11 +368,11 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 		},
 		{
 			name: "Reschedule existing game",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				instance := createTestInstance(t, dbc)
 				instance.StartTime = bun.NullTime{Time: time.Now().Add(-1 * time.Hour)}
 				instance.EndTime = bun.NullTime{Time: time.Now().Add(1 * time.Hour)}
-				instanceRepo := repositories.NewInstanceRepository(dbc)
+				instanceRepo := repositories.NewQuestRepository(dbc)
 				err := instanceRepo.Update(context.Background(), instance)
 				require.NoError(t, err)
 				return instance
@@ -383,7 +383,7 @@ func TestGameScheduleService_ScheduleGame(t *testing.T) {
 		},
 		{
 			name: "Schedule game with zero end time (end time not set)",
-			setupFn: func(dbc *bun.DB) *models.Instance {
+			setupFn: func(dbc *bun.DB) *models.Quest {
 				return createTestInstance(t, dbc)
 			},
 			startTime: time.Now().Add(1 * time.Hour),
@@ -470,7 +470,7 @@ func TestGameScheduleService_Integration_DatabasePersistence(t *testing.T) {
 	defer dbCleanup()
 
 	instance := createTestInstance(t, dbc)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
 
 	// Schedule a game
 	startTime := time.Now().Add(1 * time.Hour)

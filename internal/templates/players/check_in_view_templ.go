@@ -17,7 +17,7 @@ import (
 )
 
 type CheckInViewData struct {
-	Settings models.InstanceSettings
+	Settings models.QuestSettings
 	Scan     models.CheckIn
 	Blocks   blocks.Blocks
 	States   map[string]blocks.PlayerState
@@ -96,9 +96,9 @@ func CheckInView(data CheckInViewData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"team": "%s"}`, data.Scan.TeamID))
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"run": "%s"}`, data.Scan.RunID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_view.templ`, Line: 35, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/check_in_view.templ`, Line: 35, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 				if templ_7745c5c3_Err != nil {

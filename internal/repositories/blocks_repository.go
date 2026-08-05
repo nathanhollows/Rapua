@@ -22,11 +22,9 @@ type BlockRepository interface {
 
 	// GetByID fetches a block by its ID
 	GetByID(ctx context.Context, blockID string) (blocks.Block, error)
-	// GetBlockAndStateByBlockIDAndTeamCode fetches a block and its state by block ID and team code
-	GetBlockAndStateByBlockIDAndTeamCode(
-		ctx context.Context,
-		blockID string,
-		teamCode string,
+	// GetBlockAndStateByBlockIDAndRunCode fetches a block and its state by block ID and team code
+	GetBlockAndStateByBlockIDAndRunCode(
+		ctx context.Context, blockID, runCode, questID string,
 	) (blocks.Block, blocks.PlayerState, error)
 	// UserOwnsBlock checks if a user owns a block
 	UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error)
@@ -38,17 +36,17 @@ type BlockRepository interface {
 		ownerID string,
 		blockContext blocks.BlockContext,
 	) (blocks.Blocks, error)
-	// FindBlocksAndStatesByOwnerIDAndTeamCode fetches blocks and their states by owner and team code
-	FindBlocksAndStatesByOwnerIDAndTeamCode(
+	// FindBlocksAndStatesByOwnerIDAndRunCode fetches blocks and their states by owner and team code
+	FindBlocksAndStatesByOwnerIDAndRunCode(
 		ctx context.Context,
 		ownerID string,
-		teamCode string,
+		runCode string,
 	) ([]blocks.Block, []blocks.PlayerState, error)
-	// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks and their states by owner, team code, and context
-	FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+	// FindBlocksAndStatesByOwnerIDAndRunCodeWithContext fetches blocks and their states by owner, team code, and context
+	FindBlocksAndStatesByOwnerIDAndRunCodeWithContext(
 		ctx context.Context,
 		ownerID string,
-		teamCode string,
+		runCode string,
 		blockContext blocks.BlockContext,
 	) ([]blocks.Block, []blocks.PlayerState, error)
 
@@ -66,7 +64,7 @@ type BlockRepository interface {
 		tx *bun.Tx,
 		ownerID string,
 		preserveIDs []string,
-	) ([]*models.TeamBlockState, error)
+	) ([]*models.RunBlockState, error)
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
@@ -172,7 +170,7 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 // UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
 func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	// Query to check block ownership through instances
-	// For start/complete blocks: owner_id IS the instance_id
+	// For start/complete blocks: owner_id IS the quest_id
 	// For location blocks: owner_id IS the location_id, which belongs to an instance
 	count, err := r.db.NewSelect().
 		Model((*models.Block)(nil)).
@@ -187,13 +185,13 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 							"context IN (?)",
 							bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish}),
 						).
-						Where("owner_id IN (SELECT id FROM instances WHERE user_id = ?)", userID)
+						Where("owner_id IN (SELECT id FROM quests WHERE user_id = ?)", userID)
 				}).
 				// Location-owned blocks (all other contexts)
 				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
 					return q.
 						Where("context NOT IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
-						Where("owner_id IN (SELECT id FROM locations WHERE instance_id IN (SELECT id FROM instances WHERE user_id = ?))", userID)
+						Where("owner_id IN (SELECT id FROM locations WHERE quest_id IN (SELECT id FROM quests WHERE user_id = ?))", userID)
 				})
 		}).
 		Limit(1).
@@ -363,10 +361,10 @@ func (r *blockRepository) DeleteByOwnerIDPreservingStates(
 	tx *bun.Tx,
 	ownerID string,
 	preserveIDs []string,
-) ([]*models.TeamBlockState, error) {
+) ([]*models.RunBlockState, error) {
 	// Save states for blocks that will be recreated with the same IDs.
 	// Cascade will wipe them when the blocks are deleted; the caller re-inserts them.
-	var savedStates []*models.TeamBlockState
+	var savedStates []*models.RunBlockState
 	if len(preserveIDs) > 0 {
 		err := tx.NewSelect().
 			Model(&savedStates).
@@ -406,19 +404,19 @@ func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error 
 	return err
 }
 
-// FindBlocksAndStatesByOwnerIDAndTeamCode fetches all blocks for an owner with their existing player states.
+// FindBlocksAndStatesByOwnerIDAndRunCode fetches all blocks for an owner with their existing player states.
 // Does not create missing states - that's the service layer's responsibility.
-func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
+func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndRunCode(
 	ctx context.Context,
 	ownerID string,
-	teamCode string,
+	runCode string,
 ) ([]blocks.Block, []blocks.PlayerState, error) {
-	if teamCode == "" {
+	if runCode == "" {
 		return nil, nil, errors.New("team code must be set")
 	}
 
 	modelBlocks := []models.Block{}
-	states := []models.TeamBlockState{}
+	states := []models.RunBlockState{}
 
 	err := r.db.NewSelect().
 		Model(&modelBlocks).
@@ -432,7 +430,7 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 	err = r.db.NewSelect().
 		Model(&states).
 		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ?", ownerID)).
-		Where("team_code = ?", teamCode).
+		Where("run_code = ?", runCode).
 		Scan(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -451,20 +449,20 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCode(
 	return foundBlocks, playerStates, nil
 }
 
-// FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext fetches blocks for an owner with specific context and their existing player states.
+// FindBlocksAndStatesByOwnerIDAndRunCodeWithContext fetches blocks for an owner with specific context and their existing player states.
 // Does not create missing states - that's the service layer's responsibility.
-func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
+func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndRunCodeWithContext(
 	ctx context.Context,
 	ownerID string,
-	teamCode string,
+	runCode string,
 	blockContext blocks.BlockContext,
 ) ([]blocks.Block, []blocks.PlayerState, error) {
-	if teamCode == "" {
+	if runCode == "" {
 		return nil, nil, errors.New("team code must be set")
 	}
 
 	modelBlocks := []models.Block{}
-	states := []models.TeamBlockState{}
+	states := []models.RunBlockState{}
 
 	err := r.db.NewSelect().
 		Model(&modelBlocks).
@@ -478,7 +476,7 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
 	err = r.db.NewSelect().
 		Model(&states).
 		Where("block_id IN (?)", r.db.NewSelect().Model((*models.Block)(nil)).Column("id").Where("owner_id = ? AND context = ?", ownerID, blockContext)).
-		Where("team_code = ?", teamCode).
+		Where("run_code = ?", runCode).
 		Scan(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -497,11 +495,10 @@ func (r *blockRepository) FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(
 	return foundBlocks, playerStates, nil
 }
 
-// GetBlockAndStateByBlockIDAndTeamCode fetches a block by its ID with the player state for a given team.
-func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(
+// GetBlockAndStateByBlockIDAndRunCode fetches a block by its ID with the player state for a given team.
+func (r *blockRepository) GetBlockAndStateByBlockIDAndRunCode(
 	ctx context.Context,
-	blockID string,
-	teamCode string,
+	blockID, runCode, questID string,
 ) (blocks.Block, blocks.PlayerState, error) {
 	modelBlock := models.Block{}
 	err := r.db.NewSelect().
@@ -512,11 +509,11 @@ func (r *blockRepository) GetBlockAndStateByBlockIDAndTeamCode(
 		return nil, nil, err
 	}
 
-	state, err := r.stateRepo.GetByBlockAndTeam(ctx, blockID, teamCode)
+	state, err := r.stateRepo.GetByBlockAndRun(ctx, blockID, runCode, questID)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		return nil, nil, err
 	} else if err != nil {
-		state, err = r.stateRepo.NewBlockState(ctx, blockID, teamCode)
+		state, err = r.stateRepo.NewBlockState(ctx, blockID, runCode, questID)
 		if err != nil {
 			return nil, nil, err
 		}

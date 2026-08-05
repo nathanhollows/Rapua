@@ -34,13 +34,13 @@ templ CheckIn(marker models.Marker, teamCode string, blocking models.Location) {
 							</span>
 						</div>
 					}
-					<label class="form-control w-full" for="team">
+					<label class="form-control w-full" for="run">
 						<div class="label font-bold">
 							<span class="label-text">Team code</span>
 						</div>
 						<input
-							id="team"
-							name="team"
+							id="run"
+							name="run"
 							type="text"
 							if blocking.ID != "" {
 								disabled
@@ -120,13 +120,13 @@ templ CheckOut(marker models.Marker, teamCode string, blocking models.Location) 
 							</span>
 						</div>
 					}
-					<label class="form-control w-full" for="team">
+					<label class="form-control w-full" for="run">
 						<div class="label font-bold">
 							<span class="label-text">Team code</span>
 						</div>
 						<input
-							id="team"
-							name="team"
+							id="run"
+							name="run"
 							type="text"
 							if teamCode != "" && blocking.MarkerID != marker.Code {
 								disabled

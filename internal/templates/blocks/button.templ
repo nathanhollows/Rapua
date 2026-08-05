@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ buttonPlayer(_ models.InstanceSettings, block blocks.ButtonBlock) {
+templ buttonPlayer(_ models.QuestSettings, block blocks.ButtonBlock) {
 	if block.Link != "" && block.Text != "" {
 		<div class="text-center">
 			<a
@@ -30,7 +30,7 @@ var buttonTextInput = TextInputParams{
 	ExtraClasses: "w-full",
 }
 
-templ buttonAdmin(_ models.InstanceSettings, block blocks.ButtonBlock) {
+templ buttonAdmin(_ models.QuestSettings, block blocks.ButtonBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

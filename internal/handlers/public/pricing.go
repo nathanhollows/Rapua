@@ -14,6 +14,6 @@ func (h *Handler) Pricing(w http.ResponseWriter, r *http.Request) {
 	err := templates.PublicLayout(c, "Pricing", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering Pricing page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering Pricing page", "err", err)
 	}
 }

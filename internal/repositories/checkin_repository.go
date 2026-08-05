@@ -12,18 +12,18 @@ import (
 
 type CheckInRepository interface {
 	// FindCheckInByTeamAndLocation finds a check-in by team and location
-	FindCheckInByTeamAndLocation(ctx context.Context, teamCode string, locationID string) (*models.CheckIn, error)
+	FindCheckInByTeamAndLocation(ctx context.Context, runCode string, locationID string) (*models.CheckIn, error)
 
 	// LogCheckIn logs a new check-in for a team at a location
 	LogCheckIn(
 		ctx context.Context,
-		team models.Team,
+		team models.Run,
 		location models.Location,
 		mustCheckOut bool,
 		validationRequired bool,
 	) (models.CheckIn, error)
 	// LogCheckOut checks out a team from a location
-	LogCheckOut(ctx context.Context, team *models.Team, location *models.Location) (models.CheckIn, error)
+	LogCheckOut(ctx context.Context, team *models.Run, location *models.Location) (models.CheckIn, error)
 
 	// Update updates an existing check-in
 	Update(ctx context.Context, checkIn *models.CheckIn) error
@@ -41,11 +41,11 @@ func NewCheckInRepository(db *bun.DB) CheckInRepository {
 
 func (r *checkInRepository) FindCheckInByTeamAndLocation(
 	ctx context.Context,
-	teamCode string,
+	runCode string,
 	locationID string,
 ) (*models.CheckIn, error) {
 	var checkIn models.CheckIn
-	err := r.db.NewSelect().Model(&checkIn).Where("team_code = ? AND location_id = ?", teamCode, locationID).Scan(ctx)
+	err := r.db.NewSelect().Model(&checkIn).Where("run_code = ? AND location_id = ?", runCode, locationID).Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("finding check in by team and location: %w", err)
 	}
@@ -60,15 +60,15 @@ func (r *checkInRepository) Update(ctx context.Context, checkIn *models.CheckIn)
 // LogCheckIn logs a check in for a team at a location.
 func (r *checkInRepository) LogCheckIn(
 	ctx context.Context,
-	team models.Team,
+	team models.Run,
 	location models.Location,
 	mustCheckOut bool,
 	validationRequired bool,
 ) (models.CheckIn, error) {
 	scan := &models.CheckIn{
-		TeamID:          team.Code,
+		RunID:           team.Code,
 		LocationID:      location.ID,
-		InstanceID:      team.InstanceID,
+		QuestID:         team.QuestID,
 		TimeIn:          time.Now().UTC(),
 		MustCheckOut:    mustCheckOut,
 		Points:          location.Points,
@@ -90,7 +90,7 @@ func (r *checkInRepository) LogCheckIn(
 // LogCheckOut logs a check out for a team at a location.
 func (r *checkInRepository) LogCheckOut(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 	location *models.Location,
 ) (models.CheckIn, error) {
 	if team == nil {

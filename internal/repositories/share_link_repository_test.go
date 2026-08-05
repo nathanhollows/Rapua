@@ -36,7 +36,7 @@ func TestShareLinkRepository_Create(t *testing.T) {
 		{
 			name: "Valid ShareLink",
 			link: &models.ShareLink{
-				TemplateID: parents.InstanceID,
+				TemplateID: parents.QuestID,
 				ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 			},
 			expectErr: false,
@@ -77,7 +77,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 			name: "Valid ShareLink",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: parents.InstanceID,
+					TemplateID: parents.QuestID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -105,7 +105,7 @@ func TestShareLinkRepository_GetByID(t *testing.T) {
 			name: "Expired ShareLink",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: parents.InstanceID,
+					TemplateID: parents.QuestID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -149,7 +149,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 			name: "Use once",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: parents.InstanceID,
+					TemplateID: parents.QuestID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)
@@ -174,7 +174,7 @@ func TestShareLinkRepository_Use(t *testing.T) {
 			name: "Expired link",
 			setup: func() *models.ShareLink {
 				link := &models.ShareLink{
-					TemplateID: parents.InstanceID,
+					TemplateID: parents.QuestID,
 					ExpiresAt:  bun.NullTime{Time: time.Now().Add(-time.Hour)},
 				}
 				err := repo.Create(context.Background(), link)

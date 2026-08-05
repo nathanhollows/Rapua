@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ randomCluePlayer(_ models.InstanceSettings, block blocks.RandomClueBlock, state blocks.PlayerState) {
+templ randomCluePlayer(_ models.QuestSettings, block blocks.RandomClueBlock, state blocks.PlayerState) {
 	if len(block.Clues) > 0 {
 		<div class="prose">
 			@templ.Raw(stringToMarkdown(block.GetClue(state.GetPlayerID())))
@@ -14,7 +14,7 @@ templ randomCluePlayer(_ models.InstanceSettings, block blocks.RandomClueBlock, 
 	}
 }
 
-templ randomClueAdmin(_ models.InstanceSettings, block blocks.RandomClueBlock) {
+templ randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

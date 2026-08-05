@@ -28,15 +28,15 @@ func (h *PlayerHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Get team from context
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.handleError(w, r, "UploadImage", "Failed to get team", "error", err)
 		return
 	}
 
 	metadata := services.UploadMetadata{
-		InstanceID: team.InstanceID,
-		TeamID:     team.Code,
+		QuestID:    team.QuestID,
+		RunID:      team.Code,
 		BlockID:    r.Form.Get("block_id"),
 		LocationID: r.Form.Get("location_id"),
 	}

@@ -52,7 +52,7 @@ func getColorForIcon(iconName string) string {
 	return "primary"
 }
 
-templ taskPlayer(_ models.InstanceSettings, block blocks.TaskBlock, state blocks.PlayerState) {
+templ taskPlayer(_ models.QuestSettings, block blocks.TaskBlock, state blocks.PlayerState) {
 	<a
 		if block.LinkThrough {
 			href={ templ.URL(fmt.Sprintf("/l/%s", block.OwnerID)) }
@@ -97,7 +97,7 @@ var taskTitleText = TextInputParams{
 	ExtraClasses: "w-full",
 }
 
-templ taskAdmin(_ models.InstanceSettings, block blocks.TaskBlock) {
+templ taskAdmin(_ models.QuestSettings, block blocks.TaskBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

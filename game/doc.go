@@ -13,7 +13,7 @@ type GameDoc struct {
 	Structure StructureDoc `json:"structure"`
 }
 
-// SettingsDoc mirrors InstanceSettings fields.
+// SettingsDoc mirrors QuestSettings fields.
 type SettingsDoc struct {
 	MustCheckOut    bool `json:"must_check_out"`
 	ShowTeamCount   bool `json:"show_team_count"`

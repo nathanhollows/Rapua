@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -162,19 +163,19 @@ func TestMarkerService_CreateMarker(t *testing.T) {
 	})
 }
 
-func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
+func TestMarkerService_FindMarkersNotInQuest(t *testing.T) {
 	service, cleanup := setupMarkerService(t)
 	defer cleanup()
 
 	t.Run("Find markers with valid parameters", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		questID := gofakeit.UUID()
 		otherInstances := []string{gofakeit.UUID(), gofakeit.UUID()}
 
-		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
+		_, err := service.FindMarkersNotInQuest(context.Background(), questID, otherInstances)
 
 		// May succeed or fail depending on database state, but validation should pass
 		if err != nil {
-			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
+			assert.NotContains(t, err.Error(), "questID cannot be empty")
 			assert.NotContains(t, err.Error(), "otherInstances cannot be empty")
 		}
 		// If no error, validation passed and database operation succeeded
@@ -183,48 +184,48 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 	t.Run("Find markers with empty instance ID", func(t *testing.T) {
 		otherInstances := []string{gofakeit.UUID(), gofakeit.UUID()}
 
-		markers, err := service.FindMarkersNotInInstance(context.Background(), "", otherInstances)
+		markers, err := service.FindMarkersNotInQuest(context.Background(), "", otherInstances)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "instanceID cannot be empty")
+		assert.Contains(t, err.Error(), "questID cannot be empty")
 		assert.Nil(t, markers)
 	})
 
 	t.Run("Find markers with empty other instances", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		questID := gofakeit.UUID()
 		otherInstances := []string{}
 
-		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
+		markers, err := service.FindMarkersNotInQuest(context.Background(), questID, otherInstances)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})
 
 	t.Run("Find markers with nil other instances", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		questID := gofakeit.UUID()
 		var otherInstances []string
 
-		markers, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
+		markers, err := service.FindMarkersNotInQuest(context.Background(), questID, otherInstances)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "otherInstances cannot be empty")
 		assert.Nil(t, markers)
 	})
 
 	t.Run("Find markers with single other instance", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		questID := gofakeit.UUID()
 		otherInstances := []string{gofakeit.UUID()}
 
-		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
+		_, err := service.FindMarkersNotInQuest(context.Background(), questID, otherInstances)
 
 		// Should pass validation
 		if err != nil {
-			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
+			assert.NotContains(t, err.Error(), "questID cannot be empty")
 			assert.NotContains(t, err.Error(), "otherInstances cannot be empty")
 		}
 		// If no error, validation passed and database operation succeeded
 	})
 
 	t.Run("Find markers with multiple other instances", func(t *testing.T) {
-		instanceID := gofakeit.UUID()
+		questID := gofakeit.UUID()
 		otherInstances := []string{
 			gofakeit.UUID(),
 			gofakeit.UUID(),
@@ -232,11 +233,11 @@ func TestMarkerService_FindMarkersNotInInstance(t *testing.T) {
 			gofakeit.UUID(),
 		}
 
-		_, err := service.FindMarkersNotInInstance(context.Background(), instanceID, otherInstances)
+		_, err := service.FindMarkersNotInQuest(context.Background(), questID, otherInstances)
 
 		// Should pass validation
 		if err != nil {
-			assert.NotContains(t, err.Error(), "instanceID cannot be empty")
+			assert.NotContains(t, err.Error(), "questID cannot be empty")
 			assert.NotContains(t, err.Error(), "otherInstances cannot be empty")
 		}
 		// If no error, validation passed and database operation succeeded
@@ -280,9 +281,11 @@ func TestMarkerService_ValidationEdgeCases(t *testing.T) {
 	t.Run("Very long marker name", func(t *testing.T) {
 		// Test with a very long name
 		longName := ""
+		var longNameSb283 strings.Builder
 		for range 1000 {
-			longName += "a"
+			longNameSb283.WriteString("a")
 		}
+		longName += longNameSb283.String()
 		lat := gofakeit.Latitude()
 		lng := gofakeit.Longitude()
 

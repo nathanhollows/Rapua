@@ -9,7 +9,7 @@ import (
 )
 
 // StartMiddleware redirects to the start if the game is scheduled to start.
-func StartMiddleware(_ teamService, next http.Handler) http.Handler {
+func StartMiddleware(_ runService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Preview requests should pass through
 		if r.Context().Value(contextkeys.PreviewKey) != nil {
@@ -18,14 +18,14 @@ func StartMiddleware(_ teamService, next http.Handler) http.Handler {
 		}
 
 		// Check if team exists in context
-		team := r.Context().Value(contextkeys.TeamKey)
+		team := r.Context().Value(contextkeys.RunKey)
 		if team == nil {
 			http.Redirect(w, r, "/play", http.StatusFound)
 			return
 		}
 
 		// Type assertion
-		foundTeam, ok := team.(*models.Team)
+		foundTeam, ok := team.(*models.Run)
 		if !ok || foundTeam == nil || foundTeam.Code == "" {
 			http.Redirect(w, r, "/play", http.StatusFound)
 			return
@@ -38,7 +38,7 @@ func StartMiddleware(_ teamService, next http.Handler) http.Handler {
 				strings.HasSuffix(r.URL.Path, "/game-status-alert") ||
 				strings.HasSuffix(r.URL.Path, "/start-game-button"))
 
-		if foundTeam.Instance.GetStatus() != models.Active &&
+		if foundTeam.Quest.GetStatus() != models.Active &&
 			!strings.HasPrefix(r.URL.Path, "/start") &&
 			!isBlockStateEndpoint {
 			http.Redirect(w, r, "/start", http.StatusFound)

@@ -83,15 +83,15 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	creditRepo := repositories.NewCreditRepository(dbc)
 	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
-	teamVarStateRepo := repositories.NewTeamVarStateRepository(dbc)
+	teamRepo := repositories.NewRunRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
+	teamVarStateRepo := repositories.NewRunVarStateRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
@@ -110,14 +110,14 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		teamRepo, uploadRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	emailService := services.NewEmailService()
-	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
+	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 
 	gameStructureService.SetRelationLoader(locationService)
@@ -139,19 +139,19 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo, logger)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
 	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(uploadRepo, logger, uploadsDir)
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
-	teamService := services.NewTeamService(
+	runService := services.NewRunService(
 		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo, teamVarStateRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo, blockRepo)
+	questService := services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
 	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
 	importService := services.NewImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
 	)
 
 	sessions.Start()
@@ -182,16 +182,16 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		&templateService, userService, magicTokenService,
 	)
 	playerHandler := players.NewPlayerHandler(
-		logger, blockService, checkInService, instanceService, locationService,
-		markerService, navigationService, notificationService, teamService, uploadService,
+		logger, blockService, checkInService, questService, locationService,
+		markerService, navigationService, notificationService, runService, uploadService,
 	)
 	adminHandler := admin.NewAdminHandler(
 		logger, accessService, assetGenerator, identityService, blockService,
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
-		gameStructureService, instanceRepo, instanceService, instanceSettingsService,
+		gameStructureService, instanceRepo, questService, instanceSettingsService,
 		locationService, markerService, navigationService, notificationService,
-		teamService, templateService, uploadService, userService, quickstartService,
+		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,
 	)
 

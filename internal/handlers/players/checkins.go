@@ -19,14 +19,14 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 
 	marker, err := h.markerService.GetMarkerByCode(r.Context(), code)
 	if err != nil {
-		h.logger.Error("CheckIn: getting marker by code", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "CheckIn: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")
 		return
 	}
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil || team == nil {
-		h.renderCheckInForm(w, r, marker, &models.Team{})
+		h.renderCheckInForm(w, r, marker, &models.Run{})
 		return
 	}
 
@@ -35,19 +35,19 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.teamService.LoadRelations(r.Context(), team); err != nil {
-		h.logger.Error("CheckIn: loading team relations", "err", err)
-		h.renderCheckInForm(w, r, marker, &models.Team{})
+	if err = h.runService.LoadRelations(r.Context(), team); err != nil {
+		h.logger.ErrorContext(r.Context(), "CheckIn: loading team relations", "err", err)
+		h.renderCheckInForm(w, r, marker, &models.Run{})
 		return
 	}
 
-	if team.Instance.GetStatus() != models.Active {
+	if team.Quest.GetStatus() != models.Active {
 		h.renderCheckInForm(w, r, marker, team)
 		return
 	}
 
 	if team.MustCheckOut != "" {
-		_ = h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
+		_ = h.runService.LoadBlockingLocation(r.Context(), team)
 		if team.BlockingLocation.ID != "" && team.BlockingLocation.MarkerID != code {
 			h.renderCheckInForm(w, r, marker, team)
 			return
@@ -57,23 +57,32 @@ func (h *PlayerHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	err = h.checkInService.CheckIn(r.Context(), team, code)
 	if err != nil {
 		if errors.Is(err, services.ErrAlreadyCheckedIn) {
-			url, urlErr := h.checkinURL(r.Context(), team.InstanceID, code)
+			url, urlErr := h.checkinURL(r.Context(), team.QuestID, code)
 			if urlErr != nil {
-				h.logger.Error("CheckIn: resolving slug", "error", urlErr, "code", code)
+				h.logger.ErrorContext(r.Context(), "CheckIn: resolving slug", "error", urlErr, "code", code)
 				h.renderCheckInForm(w, r, marker, team)
 				return
 			}
 			h.redirect(w, r, url)
 			return
 		}
-		h.logger.Error("CheckIn: auto check-in failed", "error", err.Error(), "team", team.Code, "location", code)
+		h.logger.ErrorContext(
+			r.Context(),
+			"CheckIn: auto check-in failed",
+			"error",
+			err.Error(),
+			"run",
+			team.Code,
+			"location",
+			code,
+		)
 		h.renderCheckInForm(w, r, marker, team)
 		return
 	}
 
-	url, urlErr := h.checkinURL(r.Context(), team.InstanceID, code)
+	url, urlErr := h.checkinURL(r.Context(), team.QuestID, code)
 	if urlErr != nil {
-		h.logger.Error("CheckIn: resolving slug", "error", urlErr, "code", code)
+		h.logger.ErrorContext(r.Context(), "CheckIn: resolving slug", "error", urlErr, "code", code)
 		h.renderCheckInForm(w, r, marker, team)
 		return
 	}
@@ -95,11 +104,11 @@ func (h *PlayerHandler) renderCheckInForm(
 	w http.ResponseWriter,
 	r *http.Request,
 	marker models.Marker,
-	team *models.Team,
+	team *models.Run,
 ) {
 	c := templates.CheckIn(marker, team.Code, team.BlockingLocation)
 	if err := templates.Layout(c, "Check In: "+marker.Name, team.Messages).Render(r.Context(), w); err != nil {
-		h.logger.Error("rendering checkin", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering checkin", "error", err.Error())
 	}
 }
 
@@ -115,9 +124,9 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 
 	// Get the team from the context
 	// Or start a new session if the provided team code is valid
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		team, err = h.teamService.GetTeamByCode(r.Context(), r.FormValue("team"))
+		team, err = h.runService.GetRunByCode(r.Context(), r.FormValue("run"))
 		if err != nil {
 			h.handleError(
 				w,
@@ -126,8 +135,8 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 				"Error finding team. Please double check your team code.",
 				"error",
 				err,
-				"team",
-				r.FormValue("team"),
+				"run",
+				r.FormValue("run"),
 			)
 			return
 		}
@@ -140,7 +149,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 				"Error starting session. Please try again.",
 				"error",
 				err,
-				"team",
+				"run",
 				team.Code,
 			)
 			return
@@ -157,7 +166,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 				"Location not found. Please try again.",
 				"error",
 				err,
-				"team",
+				"run",
 				team.Code,
 				"location",
 				locationCode,
@@ -172,7 +181,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 				"You have already checked in here.",
 				"error",
 				err,
-				"team",
+				"run",
 				team.Code,
 				"location",
 				locationCode,
@@ -186,7 +195,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 			"Error checking in",
 			"error",
 			err,
-			"team",
+			"run",
 			team.Code,
 			"location",
 			locationCode,
@@ -194,7 +203,7 @@ func (h *PlayerHandler) CheckInPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, urlErr := h.checkinURL(r.Context(), team.InstanceID, locationCode)
+	url, urlErr := h.checkinURL(r.Context(), team.QuestID, locationCode)
 	if urlErr != nil {
 		h.handleError(w, r, "CheckInPost: resolving slug", "Error checking in",
 			"error", urlErr, "location", locationCode)
@@ -208,14 +217,14 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 
 	marker, err := h.markerService.GetMarkerByCode(r.Context(), code)
 	if err != nil {
-		h.logger.Error("CheckOut: getting marker by code", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "CheckOut: getting marker by code", "error", err.Error())
 		h.redirect(w, r, "/404")
 		return
 	}
 
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil || team == nil {
-		h.renderCheckOutForm(w, r, marker, &models.Team{})
+		h.renderCheckOutForm(w, r, marker, &models.Run{})
 		return
 	}
 
@@ -225,7 +234,7 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if team.MustCheckOut != "" {
-		_ = h.teamService.LoadRelation(r.Context(), team, "BlockingLocation")
+		_ = h.runService.LoadBlockingLocation(r.Context(), team)
 	}
 
 	if team.MustCheckOut == "" {
@@ -235,7 +244,7 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 
 	location, err := h.locationService.GetByID(r.Context(), team.MustCheckOut)
 	if err != nil {
-		h.logger.Error("CheckOut: getting location", "err", err)
+		h.logger.ErrorContext(r.Context(), "CheckOut: getting location", "err", err)
 		h.renderCheckOutForm(w, r, marker, team)
 		return
 	}
@@ -248,7 +257,16 @@ func (h *PlayerHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	err = h.checkInService.CheckOut(r.Context(), team, code)
 	if err != nil {
 		if !errors.Is(err, services.ErrUnfinishedCheckIn) {
-			h.logger.Error("CheckOut: auto check-out failed", "error", err.Error(), "team", team.Code, "location", code)
+			h.logger.ErrorContext(
+				r.Context(),
+				"CheckOut: auto check-out failed",
+				"error",
+				err.Error(),
+				"run",
+				team.Code,
+				"location",
+				code,
+			)
 		}
 		h.renderCheckOutForm(w, r, marker, team)
 		return
@@ -261,11 +279,11 @@ func (h *PlayerHandler) renderCheckOutForm(
 	w http.ResponseWriter,
 	r *http.Request,
 	marker models.Marker,
-	team *models.Team,
+	team *models.Run,
 ) {
 	c := templates.CheckOut(marker, team.Code, team.BlockingLocation)
 	if err := templates.Layout(c, "Check Out: "+marker.Name, team.Messages).Render(r.Context(), w); err != nil {
-		h.logger.Error("rendering checkout", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering checkout", "error", err.Error())
 	}
 }
 
@@ -280,9 +298,9 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 
 	// Get the team from the context
 	// Or start a new session if the provided team code is valid
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		team, err = h.teamService.GetTeamByCode(r.Context(), r.FormValue("team"))
+		team, err = h.runService.GetRunByCode(r.Context(), r.FormValue("run"))
 		if err != nil {
 			h.handleError(
 				w,
@@ -291,8 +309,8 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 				"Error finding team. Please double check your team code.",
 				"error",
 				err,
-				"team",
-				r.FormValue("team"),
+				"run",
+				r.FormValue("run"),
 			)
 			return
 		}
@@ -305,7 +323,7 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 				"Error starting session. Please try again.",
 				"error",
 				err,
-				"team",
+				"run",
 				team.Code,
 			)
 			return
@@ -327,7 +345,7 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 			message = flash.NewWarning("Try completing all activities first!")
 		default:
 			message = flash.NewError("Error checking out. Please try again.")
-			h.logger.Error("Check Out post", "err", err.Error())
+			h.logger.ErrorContext(r.Context(), "Check Out post", "err", err.Error())
 		}
 		err = templates.Toast(*message).Render(r.Context(), w)
 		if err != nil {
@@ -338,7 +356,7 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 				"Error checking out",
 				"error",
 				err,
-				"team",
+				"run",
 				team.Code,
 				"location",
 				locationCode,
@@ -352,15 +370,15 @@ func (h *PlayerHandler) CheckOutPost(w http.ResponseWriter, r *http.Request) {
 
 // MyCheckins shows the found locations page.
 func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil || team == nil {
 		http.Redirect(w, r, "/play", http.StatusFound)
 		return
 	}
 
-	err = h.teamService.LoadRelations(r.Context(), team)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.logger.Error("loading check ins", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -369,11 +387,11 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 	view, err := h.navigationService.GetPlayerNavigationView(r.Context(), team)
 	if err != nil {
 		// If navigation view fails, fall back to basic rendering without view
-		h.logger.Error("getting navigation view", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting navigation view", "error", err.Error())
 		c := templates.MyCheckins(*team, nil)
 		err = templates.Layout(c, "My Check-ins", team.Messages).Render(r.Context(), w)
 		if err != nil {
-			h.logger.Error("rendering checkins", "error", err.Error())
+			h.logger.ErrorContext(r.Context(), "rendering checkins", "error", err.Error())
 		}
 		return
 	}
@@ -381,6 +399,6 @@ func (h *PlayerHandler) MyCheckins(w http.ResponseWriter, r *http.Request) {
 	c := templates.MyCheckins(*team, view)
 	err = templates.Layout(c, "My Check-ins", team.Messages).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering checkins", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering checkins", "error", err.Error())
 	}
 }

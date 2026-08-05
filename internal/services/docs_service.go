@@ -49,7 +49,7 @@ type DocsService struct {
 	Redirects    map[string]string
 }
 
-// NewDocsService creates a new instance of DocsService.
+// NewDocsService creates a DocsService.
 func NewDocsService(docsDir string) (*DocsService, error) {
 	service := &DocsService{
 		DocsDir:      docsDir,

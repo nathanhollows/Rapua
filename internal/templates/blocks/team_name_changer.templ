@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ teamNameChangerPlayer(_ models.InstanceSettings, block blocks.TeamNameChangerBlock) {
+templ teamNameChangerPlayer(_ models.QuestSettings, block blocks.TeamNameChangerBlock) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
 		hx-get={ fmt.Sprintf("/blocks/%s/team-name-block", block.GetID()) }
@@ -158,7 +158,7 @@ var teamNamePromptText = TextInputParams{
 	ExtraClasses: "w-full",
 }
 
-templ teamNameChangerAdmin(settings models.InstanceSettings, block blocks.TeamNameChangerBlock) {
+templ teamNameChangerAdmin(settings models.QuestSettings, block blocks.TeamNameChangerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.GetID()) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.GetID()) }

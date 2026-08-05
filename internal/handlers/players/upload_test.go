@@ -47,8 +47,8 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 		returnUpload: &models.Upload{
 			ID:          "upload-123",
 			OriginalURL: "https://example.com/uploads/test.jpg",
-			InstanceID:  "instance-123",
-			TeamCode:    "TEAM1",
+			QuestID:     "instance-123",
+			RunCode:     "TEAM1",
 			BlockID:     "block-456",
 			LocationID:  "location-789",
 		},
@@ -61,9 +61,9 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	}
 
 	// Create a test team
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data
@@ -90,7 +90,7 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Add team to context
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	// Create response recorder
@@ -109,8 +109,8 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	assert.Equal(t, "https://example.com/uploads/test.jpg", response["url"])
 
 	// Verify metadata was passed correctly
-	assert.Equal(t, "instance-123", mockService.uploadedMetadata.InstanceID)
-	assert.Equal(t, "TEAM1", mockService.uploadedMetadata.TeamID)
+	assert.Equal(t, "instance-123", mockService.uploadedMetadata.QuestID)
+	assert.Equal(t, "TEAM1", mockService.uploadedMetadata.RunID)
 	assert.Equal(t, "block-456", mockService.uploadedMetadata.BlockID)
 	assert.Equal(t, "location-789", mockService.uploadedMetadata.LocationID)
 }
@@ -122,9 +122,9 @@ func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 		uploadService: mockService,
 	}
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data without file
@@ -135,7 +135,7 @@ func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()
@@ -192,9 +192,9 @@ func TestPlayerHandler_UploadImage_ServiceError(t *testing.T) {
 		uploadService: mockService,
 	}
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data
@@ -209,7 +209,7 @@ func TestPlayerHandler_UploadImage_ServiceError(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()
@@ -229,8 +229,8 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 		returnUpload: &models.Upload{
 			ID:          "upload-123",
 			OriginalURL: "https://example.com/uploads/test.jpg",
-			InstanceID:  "instance-123",
-			TeamCode:    "TEAM1",
+			QuestID:     "instance-123",
+			RunCode:     "TEAM1",
 		},
 	}
 
@@ -239,9 +239,9 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 		uploadService: mockService,
 	}
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data without block_id
@@ -256,7 +256,7 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()

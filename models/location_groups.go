@@ -148,12 +148,12 @@ type GameContext struct {
 // GameStructureServiceInterface defines the methods needed by GameContext.
 type GameStructureServiceInterface interface {
 	// Loading methods
-	Load(ctx context.Context, instanceID string, group *GameStructure, recursive bool) error
-	LoadByLocationID(ctx context.Context, instanceID string, locationID string) (*GameStructure, error)
+	Load(ctx context.Context, questID string, group *GameStructure, recursive bool) error
+	LoadByLocationID(ctx context.Context, questID string, locationID string) (*GameStructure, error)
 
 	// Validation and persistence
-	Validate(group *GameStructure, instanceID string) error
-	Save(ctx context.Context, instanceID string, group *GameStructure) error
+	Validate(group *GameStructure, questID string) error
+	Save(ctx context.Context, questID string, group *GameStructure) error
 
 	// Navigation methods
 	FindGroupByID(gameStructure *GameStructure, groupID string) *GameStructure

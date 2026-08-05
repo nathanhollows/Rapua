@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -590,10 +591,14 @@ func TestIdentityService_ValidationEdgeCases(t *testing.T) {
 	t.Run("Very long email and password", func(t *testing.T) {
 		longEmail := ""
 		longPassword := ""
+		var longEmailSb593 strings.Builder
+		var longPasswordSb593 strings.Builder
 		for range 1000 {
-			longEmail += "a"
-			longPassword += "b"
+			longEmailSb593.WriteString("a")
+			longPasswordSb593.WriteString("b")
 		}
+		longEmail += longEmailSb593.String()
+		longPassword += longPasswordSb593.String()
 		longEmail += "@example.com"
 
 		user, err := service.AuthenticateUser(context.Background(), longEmail, longPassword)

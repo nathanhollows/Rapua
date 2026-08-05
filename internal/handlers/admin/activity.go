@@ -14,16 +14,16 @@ import (
 func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	for i := range user.CurrentInstance.Teams {
-		if user.CurrentInstance.Teams[i].Code == "" {
+	for i := range user.CurrentQuest.Runs {
+		if user.CurrentQuest.Runs[i].Code == "" {
 			continue // Skip teams without a code
 		}
-		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
 		if err != nil {
 			h.handleError(
 				w,
 				r,
-				"ActivityTeamsOverview: loading team relations",
+				"ActivityRunsOverview: loading team relations",
 				"Error loading team relations",
 				"Could not load data",
 				err,
@@ -32,26 +32,26 @@ func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	c := templates.ActivityTracker(user.CurrentInstance)
+	c := templates.ActivityTracker(user.CurrentQuest)
 	err := templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Activity: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
 	}
 }
 
-// ActivityTeamsOverview displays the activity tracker page.
-func (h *Handler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) {
+// ActivityRunsOverview displays the activity tracker page.
+func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	teams := filterTeamsStarted(user.CurrentInstance.Teams)
+	teams := filterTeamsStarted(user.CurrentQuest.Runs)
 
 	for i := range teams {
-		err := h.teamService.LoadRelation(r.Context(), &teams[i], "Scans")
+		err := h.runService.LoadCheckIns(r.Context(), &teams[i])
 		if err != nil {
 			h.handleError(
 				w,
 				r,
-				"ActivityTeamsOverview: loading team relations",
+				"ActivityRunsOverview: loading team relations",
 				"Error loading team relations",
 				"Could not load data",
 				err,
@@ -77,7 +77,7 @@ func (h *Handler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) 
 	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(
 		r.Context(),
 		teams,
-		len(user.CurrentInstance.Locations),
+		len(user.CurrentQuest.Locations),
 		rankingScheme,
 		sortField,
 		sortOrder,
@@ -86,7 +86,7 @@ func (h *Handler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) 
 		h.handleError(
 			w,
 			r,
-			"ActivityTeamsOverview: getting leaderboard data",
+			"ActivityRunsOverview: getting leaderboard data",
 			"Error getting leaderboard data",
 			"Could not load data",
 			err,
@@ -94,15 +94,15 @@ func (h *Handler) ActivityTeamsOverview(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = templates.ActivityTeamsTable(user.CurrentInstance.Settings, len(user.CurrentInstance.Locations), leaderboardData, sortField, sortOrder).
+	err = templates.ActivityTeamsTable(user.CurrentQuest.Settings, len(user.CurrentQuest.Locations), leaderboardData, sortField, sortOrder).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ActivityTeamsOverview: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ActivityRunsOverview: rendering template", "error", err)
 	}
 }
 
-func filterTeamsStarted(teams []models.Team) []models.Team {
-	var filtered []models.Team
+func filterTeamsStarted(teams []models.Run) []models.Run {
+	var filtered []models.Run
 	for _, team := range teams {
 		if team.HasStarted {
 			filtered = append(filtered, team)
@@ -115,20 +115,20 @@ func filterTeamsStarted(teams []models.Team) []models.Team {
 func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	for i := range user.CurrentInstance.Teams {
-		if user.CurrentInstance.Teams[i].Code == "" {
+	for i := range user.CurrentQuest.Runs {
+		if user.CurrentQuest.Runs[i].Code == "" {
 			continue
 		}
-		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
 		if err != nil {
-			h.logger.Error("ActivityStats: loading team relations", "error", err)
+			h.logger.ErrorContext(r.Context(), "ActivityStats: loading team relations", "error", err)
 			return
 		}
 	}
 
-	err := templates.ActivityStats(user.CurrentInstance).Render(r.Context(), w)
+	err := templates.ActivityStats(user.CurrentQuest).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ActivityStats: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ActivityStats: rendering template", "error", err)
 	}
 }
 
@@ -136,39 +136,39 @@ func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ActivityLocations(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	for i := range user.CurrentInstance.Teams {
-		if user.CurrentInstance.Teams[i].Code == "" {
+	for i := range user.CurrentQuest.Runs {
+		if user.CurrentQuest.Runs[i].Code == "" {
 			continue
 		}
-		err := h.teamService.LoadRelation(r.Context(), &user.CurrentInstance.Teams[i], "Scans")
+		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
 		if err != nil {
-			h.logger.Error("ActivityLocations: loading team relations", "error", err)
+			h.logger.ErrorContext(r.Context(), "ActivityLocations: loading team relations", "error", err)
 			return
 		}
 	}
 
-	err := templates.LocationOverviewList(user.CurrentInstance).Render(r.Context(), w)
+	err := templates.LocationOverviewList(user.CurrentQuest).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ActivityLocations: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ActivityLocations: rendering template", "error", err)
 	}
 }
 
-// TeamActivity displays the activity tracker page.
+// RunActivity displays the activity tracker page.
 // It accepts HTMX requests to update the team activity.
-func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RunActivity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	teamCode := chi.URLParam(r, "teamCode")
+	runCode := chi.URLParam(r, "runCode")
 
-	team, err := h.teamService.GetTeamByCode(r.Context(), teamCode)
-	if err != nil || team.InstanceID != user.CurrentInstanceID {
-		h.handleError(w, r, "TeamActivity: getting team", "Error getting team", "Could not load data", err)
+	team, err := h.runService.GetRunByCode(r.Context(), runCode)
+	if err != nil || team.QuestID != user.CurrentQuestID {
+		h.handleError(w, r, "RunActivity: getting team", "Error getting team", "Could not load data", err)
 		return
 	}
 
-	err = h.teamService.LoadRelations(r.Context(), team)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "TeamActivity: loading scans", "Error loading data", "Could not load data", err)
+		h.handleError(w, r, "RunActivity: loading scans", "Error loading data", "Could not load data", err)
 		return
 	}
 
@@ -178,7 +178,7 @@ func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 			h.handleError(
 				w,
 				r,
-				"TeamActivity: getting next locations",
+				"RunActivity: getting next locations",
 				"Error getting next locations",
 				"Could not load data",
 				err,
@@ -192,7 +192,7 @@ func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 		h.handleError(
 			w,
 			r,
-			"TeamActivity: getting notifications",
+			"RunActivity: getting notifications",
 			"Error getting notifications",
 			"Could not load data",
 			err,
@@ -200,8 +200,8 @@ func (h *Handler) TeamActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.TeamActivity(user.CurrentInstance.Settings, *team, notifications, locations).Render(r.Context(), w)
+	err = templates.RunActivity(user.CurrentQuest.Settings, *team, notifications, locations).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("TeamActivity: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "RunActivity: rendering template", "error", err)
 	}
 }

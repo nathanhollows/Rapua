@@ -6,7 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v7/models"
 )
 
-templ checklistPlayer(settings models.InstanceSettings, block blocks.ChecklistBlock, data blocks.PlayerState) {
+templ checklistPlayer(settings models.QuestSettings, block blocks.ChecklistBlock, data blocks.PlayerState) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
 		class="indicator w-full"
@@ -77,7 +77,7 @@ var checklistInstructionsTextarea = TextareaParams{
 	Required:    true,
 }
 
-templ checklistAdmin(settings models.InstanceSettings, block blocks.ChecklistBlock) {
+templ checklistAdmin(settings models.QuestSettings, block blocks.ChecklistBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

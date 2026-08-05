@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func setupTemplateService(t *testing.T) (services.TemplateService, services.InstanceService, *bun.DB, func()) {
+func setupTemplateService(t *testing.T) (services.TemplateService, services.QuestService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
 	transactor := db.NewTransactor(dbc)
@@ -24,19 +25,20 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 	locationRepo := repositories.NewLocationRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 
 	// Initialize services
 	duplicationService := services.NewDuplicationService(
+		slog.Default(),
 		transactor,
 		instanceRepo,
 		instanceSettingsRepo,
 		locationRepo,
 		blockRepo,
 	)
-	instanceService := services.NewInstanceService(
+	questService := services.NewQuestService(
 		instanceRepo, instanceSettingsRepo, blockRepo,
 	)
 
@@ -46,16 +48,16 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Inst
 		instanceSettingsRepo,
 		shareLinkRepo,
 	)
-	return templateService, *instanceService, dbc, cleanup
+	return templateService, *questService, dbc, cleanup
 }
 
 func TestTemplateService_CreateFromInstance(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 	assert.NotEmpty(t, user.ID)
 
@@ -63,7 +65,7 @@ func TestTemplateService_CreateFromInstance(t *testing.T) {
 		tests := []struct {
 			name         string
 			templateName string
-			instanceID   string
+			questID      string
 			userID       string
 			wantErr      bool
 		}{
@@ -75,7 +77,7 @@ func TestTemplateService_CreateFromInstance(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, createErr := svc.CreateFromInstance(context.Background(), tt.userID, tt.instanceID, tt.templateName)
+				_, createErr := svc.CreateFromInstance(context.Background(), tt.userID, tt.questID, tt.templateName)
 				if tt.wantErr {
 					require.Error(t, createErr)
 				} else {
@@ -87,12 +89,12 @@ func TestTemplateService_CreateFromInstance(t *testing.T) {
 }
 
 func TestTemplateService_LaunchInstance(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 	assert.NotEmpty(t, user.ID)
 
@@ -149,12 +151,12 @@ func TestTemplateService_LaunchInstance(t *testing.T) {
 }
 
 func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 
 	template, err := svc.CreateFromInstance(context.Background(), user.ID, instance.ID, "Template1")
@@ -209,12 +211,12 @@ func TestTemplateService_LaunchInstanceFromShareLink(t *testing.T) {
 }
 
 func TestTemplateService_GetByID(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 
 	template, err := svc.CreateFromInstance(context.Background(), user.ID, instance.ID, "Template1")
@@ -248,12 +250,12 @@ func TestTemplateService_GetByID(t *testing.T) {
 }
 
 func TestTemplateService_GetShareLink(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 
 	template, err := svc.CreateFromInstance(context.Background(), user.ID, instance.ID, "Template1")
@@ -304,12 +306,12 @@ func TestTemplateService_GetShareLink(t *testing.T) {
 // The Find functionality is tested in other template service tests
 
 func TestTemplateService_Update(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 
 	template, err := svc.CreateFromInstance(context.Background(), user.ID, instance.ID, "Template1")
@@ -318,12 +320,12 @@ func TestTemplateService_Update(t *testing.T) {
 	t.Run("Update", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			instance *models.Instance
+			instance *models.Quest
 			wantErr  bool
 		}{
 			{
 				"Valid Update",
-				&models.Instance{
+				&models.Quest{
 					ID:         template.ID,
 					CreatedAt:  time.Now(),
 					UpdatedAt:  time.Now(),
@@ -335,12 +337,12 @@ func TestTemplateService_Update(t *testing.T) {
 			},
 			{
 				"Empty Name",
-				&models.Instance{ID: template.ID, Name: "", UserID: user.ID, IsTemplate: true},
+				&models.Quest{ID: template.ID, Name: "", UserID: user.ID, IsTemplate: true},
 				true,
 			},
 			{
 				"Empty ID",
-				&models.Instance{ID: "", Name: "Updated Template", UserID: user.ID, IsTemplate: true},
+				&models.Quest{ID: "", Name: "Updated Template", UserID: user.ID, IsTemplate: true},
 				true,
 			},
 			{
@@ -369,12 +371,12 @@ func TestTemplateService_Update(t *testing.T) {
 }
 
 func TestTemplateService_CreateShareLink(t *testing.T) {
-	svc, instanceService, dbc, cleanup := setupTemplateService(t)
+	svc, questService, dbc, cleanup := setupTemplateService(t)
 	defer cleanup()
 
 	insertTestUser(t, dbc, "user123")
-	user := &models.User{ID: "user123", Password: "password", CurrentInstanceID: "instance123"}
-	instance, err := instanceService.CreateInstance(context.Background(), "Game1", user)
+	user := &models.User{ID: "user123", Password: "password", CurrentQuestID: "instance123"}
+	instance, err := questService.CreateQuest(context.Background(), "Game1", user)
 	require.NoError(t, err)
 
 	template, err := svc.CreateFromInstance(context.Background(), user.ID, instance.ID, "Template1")

@@ -72,18 +72,18 @@ templ Messages(messages []models.Notification) {
 	}
 }
 
-templ footer(team models.Team) {
+templ footer(team models.Run) {
 	<footer class="text-center text-sm text-gray-500 mt-8">
 		<div class="mt-4">
 			<p>
-				{ team.Instance.Name }
+				{ team.Quest.Name }
 			</p>
 			<p>
 				<a href="/start" class="link">Rules</a> · { team.Code }
 				if team.Name != "" {
 					· { team.Name }
 				}
-				if team.Instance.Settings.EnablePoints {
+				if team.Quest.Settings.EnablePoints {
 					· { fmt.Sprint(team.Points) } pts
 				}
 			</p>

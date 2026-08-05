@@ -63,7 +63,7 @@ func TestCreditService_ConcurrentTeamStarts_100Users(t *testing.T) {
 			defer tx.Rollback()
 
 			teamID := gofakeit.UUID()
-			deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, teamID, gofakeit.UUID())
+			deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, teamID, gofakeit.UUID())
 			if deductErr != nil {
 				results <- deductErr
 				failureCount.Add(1)
@@ -136,7 +136,7 @@ func TestCreditService_PerformanceUnder50ms(t *testing.T) {
 		require.NoError(t, txErr)
 
 		start := time.Now()
-		deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+		deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 		elapsed := time.Since(start)
 
 		require.NoError(t, deductErr)
@@ -193,7 +193,7 @@ func TestCreditService_EdgeCase_ExactlyZeroCredits(t *testing.T) {
 	tx, err = transactor.BeginTx(ctx, nil)
 	require.NoError(t, err)
 
-	err = svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+	err = svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 	if err == nil {
 		_ = tx.Commit()
 	} else {
@@ -270,7 +270,7 @@ func TestCreditService_ConcurrentMixedOperations(t *testing.T) {
 			}
 			defer tx.Rollback()
 
-			deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+			deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 			if deductErr != nil {
 				t.Logf("Deduct failed (op %d): %v", n, deductErr)
 				return
@@ -345,7 +345,7 @@ func TestCreditService_StressTest_250Operations(t *testing.T) {
 			}
 			defer tx.Rollback()
 
-			deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+			deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 			if deductErr != nil {
 				failureCount.Add(1)
 				return
@@ -414,7 +414,7 @@ func TestCreditService_RaceCondition_SingleCredit(t *testing.T) {
 				}
 				defer tx.Rollback()
 
-				deductErr := svc.DeductCreditForTeamStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
+				deductErr := svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 				if deductErr == nil {
 					commitErr := tx.Commit()
 					if commitErr == nil {

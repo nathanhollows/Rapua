@@ -55,7 +55,7 @@ func (h *Handler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Requ
 		locations = append(locations, r.Form.Get("locations"))
 	}
 
-	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentInstanceID, locations, duration)
+	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentQuestID, locations, duration)
 	if err != nil {
 		h.handleError(w, r, "creating facilitator token", "Error creating facilitator token")
 		return
@@ -121,7 +121,7 @@ func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch locations
-	locations, err := h.locationService.FindByInstance(r.Context(), facToken.InstanceID)
+	locations, err := h.locationService.FindByInstance(r.Context(), facToken.QuestID)
 	if err != nil {
 		h.handleError(w, r, "fetching locations", "Error fetching locations", "error", err)
 		return
@@ -130,7 +130,7 @@ func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 	filteredLocations := h.filterLocationsForToken(locations, facToken)
 
 	// Team activity overview
-	overview, err := h.teamService.GetTeamActivityOverview(r.Context(), facToken.InstanceID, filteredLocations)
+	overview, err := h.runService.GetRunActivityOverview(r.Context(), facToken.QuestID, filteredLocations)
 	if err != nil {
 		h.handleError(w, r, "fetching team activity overview", "Error fetching team activity overview", "error", err)
 		return
@@ -140,7 +140,7 @@ func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 	c := templates.FacilitatorDashboard(locations, overview)
 	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Activity: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
 	}
 }
 

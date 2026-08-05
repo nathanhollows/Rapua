@@ -18,11 +18,11 @@ var emptyGroupData = models.GameStructure{
 	IsRoot:          false,
 }
 
-templ LocationGroupList(settings models.InstanceSettings, groups models.GameStructure) {
+templ LocationGroupList(settings models.QuestSettings, groups models.GameStructure) {
 	<!-- Header -->
 	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
-			Locations
+			Quest
 			<span class="htmx-indicator loading loading-dots loading-md text-info">Updating</span>
 		</h1>
 		<span class="flex md:flex-row flex-wrap justify-center gap-3">
@@ -90,7 +90,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 				<ul tabindex="-1" class="dropdown-content menu bg-base-200 rounded-box z-1 w-52 p-2 shadow-sm">
 					<li>
 						<a
-							href="/admin/locations/qr-codes.zip"
+							href="/admin/quest/qr-codes.zip"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-qr-code-icon lucide-qr-code w-4"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>
 							QR codes
@@ -98,7 +98,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 					</li>
 					<li>
 						<a
-							href="/admin/locations/posters.pdf"
+							href="/admin/quest/posters.pdf"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-image-icon lucide-file-image w-4"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><circle cx="10" cy="12" r="2"></circle><path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"></path></svg>
 							Posters
@@ -107,7 +107,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 				</ul>
 			</div>
 			<a
-				href="/admin/locations/new"
+				href="/admin/quest/new"
 				hx-boost="true"
 				class="btn btn-secondary"
 			>
@@ -123,7 +123,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 	@startLink()
 	<form
 		id="structure-form"
-		hx-post="/admin/locations/structure"
+		hx-post="/admin/quest/structure"
 		hx-trigger="submit delay:100ms"
 		hx-swap="none"
 		hx-indicator=".htmx-indicator"
@@ -137,7 +137,7 @@ templ LocationGroupList(settings models.InstanceSettings, groups models.GameStru
 	@sortableScript()
 }
 
-templ locationGroup(group models.GameStructure, settings models.InstanceSettings) {
+templ locationGroup(group models.GameStructure, settings models.QuestSettings) {
 	if group.IsRoot {
 		<!-- Root groups area -->
 		<div class="groups-area space-y-6" data-group-id={ group.ID }>
@@ -195,13 +195,13 @@ templ locationGroup(group models.GameStructure, settings models.InstanceSettings
 					"
 				>
 					if len(group.Locations) > 0 {
-						@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s&beforeLocationId=%s", group.ID, group.Locations[0].ID))
+						@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s&beforeLocationId=%s", group.ID, group.Locations[0].ID))
 						for _, location := range group.Locations {
 							@locationItem(*location, settings, group.ID)
-							@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s&afterLocationId=%s", group.ID, location.ID))
+							@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s&afterLocationId=%s", group.ID, location.ID))
 						}
 					} else {
-						@locationInsertZone(fmt.Sprintf("/admin/locations/new?groupId=%s", group.ID))
+						@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s", group.ID))
 					}
 				</div>
 				<!-- Subgroups area within group - always show -->
@@ -228,7 +228,7 @@ templ groupInsertZone() {
 	</div>
 }
 
-templ locationItem(location models.Location, settings models.InstanceSettings, groupID string) {
+templ locationItem(location models.Location, settings models.QuestSettings, groupID string) {
 	<div
 		class="location-item relative bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30"
 		data-location-id={ location.ID }
@@ -265,7 +265,7 @@ templ locationItem(location models.Location, settings models.InstanceSettings, g
 				</span>
 			}
 			<a
-				href={ templ.URL(fmt.Sprintf("/admin/locations/%s", location.Slug)) }
+				href={ templ.URL(fmt.Sprintf("/admin/objective/%s", location.Slug)) }
 				class="link link-hover font-medium"
 				hx-boost="true"
 			>{ location.Name }</a>
@@ -290,7 +290,7 @@ templ startLink() {
 					data-tip="Automatically included in game"
 				>System Page</span>
 				<a
-					href="/admin/locations/start"
+					href="/admin/quest/start"
 					class="link link-hover font-medium text-sm"
 					hx-boost="true"
 				>Start</a>
@@ -315,7 +315,7 @@ templ completeLink() {
 					data-tip="Automatically included in game"
 				>System Page</span>
 				<a
-					href="/admin/locations/complete"
+					href="/admin/quest/complete"
 					class="link link-hover font-medium text-sm"
 					hx-boost="true"
 				>Complete</a>
@@ -1065,18 +1065,18 @@ templ sortableScript() {
 			const items = container.querySelectorAll(':scope > .location-item');
 			if (items.length === 0) {
 				// Empty group: single zone
-				const zone = createInsertZone('/admin/locations/new?groupId=' + groupId);
+				const zone = createInsertZone('/admin/quest/new?groupId=' + groupId);
 				container.appendChild(zone);
 				return;
 			}
 
 			// Zone before first item
-			const firstZone = createInsertZone('/admin/locations/new?groupId=' + groupId + '&beforeLocationId=' + items[0].dataset.locationId);
+			const firstZone = createInsertZone('/admin/quest/new?groupId=' + groupId + '&beforeLocationId=' + items[0].dataset.locationId);
 			container.insertBefore(firstZone, items[0]);
 
 			// Zone after each item
 			items.forEach(function(item, i) {
-				const zone = createInsertZone('/admin/locations/new?groupId=' + groupId + '&afterLocationId=' + item.dataset.locationId);
+				const zone = createInsertZone('/admin/quest/new?groupId=' + groupId + '&afterLocationId=' + item.dataset.locationId);
 				if (item.nextSibling) {
 					container.insertBefore(zone, item.nextSibling);
 				} else {
@@ -1331,7 +1331,7 @@ templ sortableScript() {
 
 		// Re-initialize after browser back/forward navigation (htmx history restore)
 		document.addEventListener('htmx:historyRestore', function(evt) {
-			// Clear existing sortable instances since they're stale after history restore
+			// Clear existing sortable quests since they're stale after history restore
 			document.querySelectorAll('.locations-area, .groups-area').forEach(function(el) {
 				if (el.sortableInstance) {
 					el.sortableInstance.destroy();

@@ -22,8 +22,8 @@ var (
 
 type NavigationService struct {
 	locationRepo         repositories.LocationRepository
-	teamRepo             repositories.TeamRepository
-	varStateRepo         repositories.TeamVarStateRepository
+	teamRepo             repositories.RunRepository
+	varStateRepo         repositories.RunVarStateRepository
 	gameStructureService *GameStructureService
 	blockService         *BlockService
 	logger               *slog.Logger
@@ -32,7 +32,7 @@ type NavigationService struct {
 // PlayerNavigationView contains all data needed to render the player navigation UI.
 type PlayerNavigationView struct {
 	// Settings
-	Settings models.InstanceSettings // Global instance settings
+	Settings models.QuestSettings // Global instance settings
 
 	// Current state
 	CurrentGroup     *models.GameStructure // Current group
@@ -48,11 +48,11 @@ type PlayerNavigationView struct {
 	BlockStates map[string]blocks.PlayerState // States for navigation blocks
 }
 
-// NewNavigationService creates a new instance of NavigationService.
+// NewNavigationService creates a NavigationService.
 func NewNavigationService(
 	locationRepo repositories.LocationRepository,
-	teamRepo repositories.TeamRepository,
-	varStateRepo repositories.TeamVarStateRepository,
+	teamRepo repositories.RunRepository,
+	varStateRepo repositories.RunVarStateRepository,
 	gameStructureService *GameStructureService,
 	blockService *BlockService,
 	logger *slog.Logger,
@@ -120,7 +120,7 @@ func filterLocationsByWhen(locs []models.Location, resolver game.VarResolver) []
 // controls visibility (whether the location appears in the player's list), not access.
 // A team who physically finds a QR code for a condition-gated location should still be
 // able to check in. Use navigation routing mode (ordered, etc.) to restrict access.
-func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error) {
+func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Run, markerID string) (bool, error) {
 	if err := s.validateTeamState(team); err != nil {
 		return false, err
 	}
@@ -155,7 +155,7 @@ func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Te
 }
 
 // GetNextLocations returns the next locations for the team to visit with full relations loaded.
-func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.Run) ([]models.Location, error) {
 	// Load team relations if not already loaded
 	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
 		return nil, fmt.Errorf("loading team relations: %w", err)
@@ -180,7 +180,7 @@ func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.T
 // GetPlayerNavigationView returns a complete view of navigation data for the player UI.
 func (s *NavigationService) GetPlayerNavigationView(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 ) (*PlayerNavigationView, error) {
 	// Load team relations if not already loaded
 	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
@@ -188,27 +188,27 @@ func (s *NavigationService) GetPlayerNavigationView(
 	}
 
 	view := &PlayerNavigationView{
-		Settings:    team.Instance.Settings,
+		Settings:    team.Quest.Settings,
 		Blocks:      make([]blocks.Block, 0),
 		BlockStates: make(map[string]blocks.PlayerState),
 	}
 
 	// Build resolver for visibility evaluation.
 	// team_count requires an extra query; failure is non-fatal but logged.
-	teamCount, countErr := s.teamRepo.CountByInstance(ctx, team.InstanceID)
+	runCount, countErr := s.teamRepo.CountByInstance(ctx, team.QuestID)
 	if countErr != nil {
-		teamCount = 0
+		runCount = 0
 		s.logger.WarnContext(ctx, "getting team count for visibility resolver",
-			"instance_id", team.InstanceID, "error", countErr)
+			"instance_id", team.QuestID, "error", countErr)
 	}
-	resolver := NewPlayerVarResolver(team, team.VarStates).WithTeamCount(teamCount)
+	resolver := NewPlayerVarResolver(team, team.VarStates).WithRunCount(runCount)
 
 	// Build set of location IDs that are hidden by their when clause.
-	// team.Instance.Locations is populated by LoadRelations and includes when_clause.
+	// team.Quest.Locations is populated by LoadRelations and includes when_clause.
 	// Note: filterLocationsByWhen also evaluates When on locations fetched from the
 	// repo later; both use the same resolver so they will always agree.
 	hiddenLocationIDs := make(map[string]bool)
-	for _, loc := range team.Instance.Locations {
+	for _, loc := range team.Quest.Locations {
 		if !game.EvaluateWhen(loc.When, resolver) {
 			hiddenLocationIDs[loc.ID] = true
 		}
@@ -219,12 +219,12 @@ func (s *NavigationService) GetPlayerNavigationView(
 	// team is never modified, which avoids data races if the team is ever accessed
 	// concurrently and makes the control flow easier to reason about.
 	navTeam := team
-	if team.Instance.GameStructure.ID != "" {
-		navInstance := team.Instance
-		navInstance.GameStructure = filterGameStructure(team.Instance.GameStructure, resolver, hiddenLocationIDs)
-		navTeam = &models.Team{}
+	if team.Quest.GameStructure.ID != "" {
+		navInstance := team.Quest
+		navInstance.GameStructure = filterGameStructure(team.Quest.GameStructure, resolver, hiddenLocationIDs)
+		navTeam = &models.Run{}
 		*navTeam = *team
-		navTeam.Instance = navInstance
+		navTeam.Quest = navInstance
 	}
 
 	// Check if team is blocked (must check out)
@@ -243,17 +243,17 @@ func (s *NavigationService) GetPlayerNavigationView(
 
 	// Get current group (if using GameStructure)
 	var currentGroup *models.GameStructure
-	if navTeam.Instance.GameStructure.ID != "" {
+	if navTeam.Quest.GameStructure.ID != "" {
 		// Compute current group from completed locations
 		completedIDs := s.getCompletedLocationIDs(navTeam.CheckIns)
 		currentGroupID := navigation.ComputeCurrentGroup(
-			&navTeam.Instance.GameStructure,
+			&navTeam.Quest.GameStructure,
 			completedIDs,
 			navTeam.SkippedGroupIDs,
 		)
 
 		if currentGroupID != "" {
-			currentGroup = navigation.FindGroupByID(&navTeam.Instance.GameStructure, currentGroupID)
+			currentGroup = navigation.FindGroupByID(&navTeam.Quest.GameStructure, currentGroupID)
 		}
 		view.CurrentGroup = currentGroup
 
@@ -279,10 +279,10 @@ func (s *NavigationService) GetPlayerNavigationView(
 
 	// Load navigation blocks for all next locations
 	for _, location := range locations {
-		locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+		locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 			ctx,
 			location.ID,
-			team.Code,
+			team.Code, team.QuestID,
 			blocks.ContextNavigation,
 		)
 		if blockErr != nil {
@@ -296,7 +296,7 @@ func (s *NavigationService) GetPlayerNavigationView(
 }
 
 // determineNextLocations is the core logic for finding next locations without relation loading.
-func (s *NavigationService) determineNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
+func (s *NavigationService) determineNextLocations(ctx context.Context, team *models.Run) ([]models.Location, error) {
 	if err := s.validateTeamState(team); err != nil {
 		return nil, err
 	}
@@ -306,11 +306,11 @@ func (s *NavigationService) determineNextLocations(ctx context.Context, team *mo
 }
 
 // validateTeamState checks if team has required relations loaded.
-func (s *NavigationService) validateTeamState(team *models.Team) error {
-	if team.Instance.ID == "" {
+func (s *NavigationService) validateTeamState(team *models.Run) error {
+	if team.Quest.ID == "" {
 		return ErrInstanceNotFound
 	}
-	if team.Instance.Settings.InstanceID == "" {
+	if team.Quest.Settings.QuestID == "" {
 		return ErrInstanceSettingsNotFound
 	}
 	// Note: Locations are no longer required here since all games use GameStructure
@@ -319,15 +319,15 @@ func (s *NavigationService) validateTeamState(team *models.Team) error {
 }
 
 // ensureTeamRelationsLoaded loads team relations (including VarStates) if not already loaded.
-func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team *models.Team) error {
-	if team.Instance.ID == "" || len(team.CheckIns) == 0 {
+func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team *models.Run) error {
+	if team.Quest.ID == "" || len(team.CheckIns) == 0 {
 		if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
 			return err
 		}
 	}
 	// Always reload VarStates: they change when blocks fire `sets` triggers and must
 	// be fresh for `when` evaluation on locations/groups to work correctly.
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.InstanceID)
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
 		return fmt.Errorf("loading var states: %w", err)
 	}
@@ -370,7 +370,7 @@ func (s *NavigationService) normalizeMarkerID(markerID string) string {
 // getValidLocationsFromGameStructure determines valid locations using the GameStructure system.
 func (s *NavigationService) getValidLocationsFromGameStructure(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 ) ([]models.Location, error) {
 	// 1. Check if team is locked at a location (MustCheckOut)
 	// Use existing Team.MustCheckOut field (single source of truth)
@@ -382,7 +382,7 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
 
 	// 3. Compute current group from completed locations (pure function, deterministic)
-	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
+	currentGroupID := navigation.ComputeCurrentGroup(&team.Quest.GameStructure, completedIDs, team.SkippedGroupIDs)
 
 	if currentGroupID == "" {
 		// No valid group (either no groups configured or all completed)
@@ -391,7 +391,7 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 
 	// 4. Get available location IDs using navigation package
 	locationIDs := navigation.GetAvailableLocationIDs(
-		&team.Instance.GameStructure,
+		&team.Quest.GameStructure,
 		currentGroupID,
 		completedIDs,
 		team.Code,
@@ -399,7 +399,7 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 
 	if len(locationIDs) == 0 {
 		// Check if game is complete (no next group to advance to)
-		_, shouldAdvance, _ := navigation.GetNextGroup(&team.Instance.GameStructure, currentGroupID, completedIDs)
+		_, shouldAdvance, _ := navigation.GetNextGroup(&team.Quest.GameStructure, currentGroupID, completedIDs)
 		if !shouldAdvance {
 			return []models.Location{}, ErrAllLocationsVisited
 		}
@@ -423,7 +423,7 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 // the specified location within its containing group for preview mode.
 func (s *NavigationService) GetPreviewNavigationView(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 	locationID string,
 ) (*PlayerNavigationView, error) {
 	// Load team relations if not already loaded
@@ -432,7 +432,7 @@ func (s *NavigationService) GetPreviewNavigationView(
 	}
 
 	// Find the group containing this location
-	group := navigation.FindGroupContainingLocation(&team.Instance.GameStructure, locationID)
+	group := navigation.FindGroupContainingLocation(&team.Quest.GameStructure, locationID)
 	if group == nil {
 		return nil, errors.New("location not found in game structure")
 	}
@@ -450,7 +450,7 @@ func (s *NavigationService) GetPreviewNavigationView(
 	}
 
 	view := &PlayerNavigationView{
-		Settings:        team.Instance.Settings,
+		Settings:        team.Quest.Settings,
 		CurrentGroup:    group,
 		NextLocations:   []models.Location{*location},
 		MustCheckOut:    false,
@@ -460,10 +460,10 @@ func (s *NavigationService) GetPreviewNavigationView(
 	}
 
 	// Load navigation blocks for the location
-	locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		ctx,
 		location.ID,
-		team.Code,
+		team.Code, team.QuestID,
 		blocks.ContextNavigation,
 	)
 	if blockErr != nil {
@@ -491,7 +491,7 @@ func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) [
 // Secret locations are never displayed to players but are valid for check-in via QR code, link, or GPS.
 func (s *NavigationService) getAccessibleSecretLocations(
 	ctx context.Context,
-	team *models.Team,
+	team *models.Run,
 ) ([]models.Location, error) {
 	if err := s.validateTeamState(team); err != nil {
 		return nil, err
@@ -501,14 +501,14 @@ func (s *NavigationService) getAccessibleSecretLocations(
 	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
 
 	// Compute current group
-	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
+	currentGroupID := navigation.ComputeCurrentGroup(&team.Quest.GameStructure, completedIDs, team.SkippedGroupIDs)
 	if currentGroupID == "" {
 		return []models.Location{}, nil
 	}
 
 	// Get accessible secret location IDs from navigation package
 	secretLocationIDs := navigation.GetAccessibleSecretLocationIDs(
-		&team.Instance.GameStructure,
+		&team.Quest.GameStructure,
 		currentGroupID,
 		completedIDs,
 	)

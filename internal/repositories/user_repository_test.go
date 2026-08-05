@@ -87,7 +87,7 @@ func TestUserRepository_Update(t *testing.T) {
 	// "email_token_expiry",
 	// "email_verified",
 	// "password",
-	// "current_instance_id",
+	// "current_quest_id",
 	// "updated_at").
 
 	newName := gofakeit.Name()
