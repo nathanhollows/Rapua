@@ -73,7 +73,7 @@ templ Docs(page *services.DocPage, sidebar []*services.DocPage) {
 			<input id="my-drawer" type="checkbox" class="drawer-toggle"/>
 			<div class="drawer-side z-20">
 				<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-				<ul hx-boost="true" class="menu bg-base-200 w-80 min-h-full overflow-y-scroll">
+				<ul hx-boost="true" class="menu bg-base-200 w-80 min-h-full overflow-y-scroll [&_a]:whitespace-normal">
 					<li>
 						<a href="/about"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open w-4 h-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> About</a>
 					</li>
@@ -89,7 +89,7 @@ templ Docs(page *services.DocPage, sidebar []*services.DocPage) {
 		</div>
 		<div class="flex flex-col md:flex-row w-full gap-8 p-5">
 			<div class="md:w-min-content hidden lg:block">
-				<ul hx-boost="true" class="menu rounded-box w-full md:w-72">
+				<ul hx-boost="true" class="menu rounded-box w-full md:w-72 [&_a]:whitespace-normal">
 					for _, item := range sidebar {
 						@recursiveSidebar(page, item, sidebar, false)
 					}
