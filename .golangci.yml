@@ -486,6 +486,10 @@ linters:
       - path: 'internal/templates/blocks/task_test\.go'
         linters:
           - testpackage
+      # docs_links_test.go calls setupRouter, which is unexported.
+      - path: 'internal/server/docs_links_test\.go'
+        linters:
+          - testpackage
       - path: 'game/doc\.go'
         text: 'stutters'
         linters:
