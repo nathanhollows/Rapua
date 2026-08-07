@@ -21,73 +21,59 @@ templ Templates(templates []models.Quest) {
 			<h1 class="text-2xl font-bold">
 				Templates
 				<div class="dropdown dropdown-hover">
-					<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="m12 16v-4"></path><path d="m12 8h.01"></path></svg></div>
+					<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})</div>
 					<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
 						<div tabindex="0" class="card-body">
 							<h2 class="card-title">Templates</h2>
 							<p>
-								Templates are blueprints that you can use to launch new games quickly.
+								Templates are blueprints that you can use to launch new quests quickly.
 							</p>
 							<p>
-								They contain all the settings, locations, and content of a game, but do not include any teams or history.
+								They contain all the settings, locations, and content of a quest, but do not include any teams or history.
 							</p>
 							<p>
-								Templates may not be edited once created, but you can create a new template from an existing game at any time.
+								Templates may not be edited once created, but you can create a new template from an existing quest at any time.
 							</p>
 						</div>
 					</div>
 				</div>
 			</h1>
-			<button
-				class="btn btn-ghost btn-sm"
-				onclick="import_modal.showModal()"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-				Import
-			</button>
+		</div>
+		<div class="flex items-center gap-2 mb-3">
+			<span class="text-sm opacity-50">
+				<span
+					id="template-count"
+					_="on htmx:afterSettle from body or keyup from #search-templates
+					set my textContent to <.template-item:not( [style*='display: none'] )/>'s length"
+				>{ fmt.Sprint(len(templates)) }</span> templates
+			</span>
+			<label class="input input-sm flex items-center gap-2 ml-auto w-56">
+				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
+				<input
+					id="search-templates"
+					type="text"
+					class="grow"
+					placeholder="Search templates"
+					_="on input
+					show .template-item
+						when its textContent.toLowerCase().normalize('NFD')
+						contains my value.toLowerCase().normalize('NFD')"
+				/>
+			</label>
 		</div>
 		<!-- Templates list -->
-		<div id="template-list" class="join join-vertical w-full rounded-lg border border-base-300">
-			<div class="flex flex-row items-center gap-3 bg-base-200/80 rounded p-3 py-4 join-item">
-				<span class="font-bold text-base-content text-sm overflow-hidden text-ellipsis whitespace-nowrap">
-					<span
-						id="template-count"
-						_="on htmx:afterSettle from body or keyup from #search-templates
-						set my textContent to <.template-item:not( [style*='display: none'] )/>'s length"
-					>
-						{ fmt.Sprint(len(templates)) }
-					</span> templates
-				</span>
-				<span class="flex-grow"></span>
-				<div id="template-filters" class="flex flex-row justify-between">
-					<div class="flex flex-row gap-2">
-						<!-- Search -->
-						<label class="input input-sm flex items-center gap-2">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-							<input
-								id="search-templates"
-								type="text"
-								class="grow"
-								placeholder="Search Templates"
-								_="on input 
-							show .template-item
-								when its textContent.toLowerCase().normalize('NFD')
-								contains my value.toLowerCase().normalize('NFD')"
-							/>
-						</label>
-					</div>
-				</div>
-			</div>
-			for _, template := range templates {
-				@templateItem(template)
-			}
-			<div
-				if len(templates) == 0 {
-					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
-				} else {
-					class="no-teams flex flex-row justify-between items-center gap-3 border border-base-300 hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors hidden"
+		<div id="template-list" class="card bg-base-200 border border-base-300">
+			<div class="card-body p-0 gap-0 divide-y divide-base-300">
+				for i, template := range templates {
+					@templateItem(template, i == 0, i == len(templates)-1)
 				}
-				_="on htmx:afterSettle from body
+				<div
+					if len(templates) == 0 {
+						class="no-teams flex items-center gap-3 px-4 py-3"
+					} else {
+						class="no-teams flex items-center gap-3 px-4 py-3 hidden"
+					}
+					_="on htmx:afterSettle from body
 				if <.template-item/>'s length == 0
 					remove .hidden from me
 				else
@@ -107,9 +93,10 @@ templ Templates(templates []models.Quest) {
 						No templates found. You can create new templates from existing games.
 					</p>
 				</div>
-			</div>
+					</div>
 		</div>
 	</div>
+</div>
 }
 
 templ TemplateName(template models.Quest) {
@@ -140,6 +127,7 @@ templ TemplateNameEdit(template models.Quest) {
 		hx-target={ fmt.Sprint("#name-", template.ID) }
 		hx-swap="innerHTML"
 		hx-trigger="submit"
+		_="on keyup[key is 'Escape'] from <input/> in me halt then js(me.querySelector(\button[type=button]\).click()) end"
 	>
 		<label class="input gap-2">
 			<input
@@ -152,7 +140,7 @@ templ TemplateNameEdit(template models.Quest) {
 				autoFocus
 				tabIndex="0"
 				value={ template.Name }
-				_="on keyup[key == 'Escape'] send closeNameEdit"
+				onkeydown="if(event.key==='Escape'){this.closest('form').querySelector('button[type=button]').click();return false}"
 			/>
 			<button
 				type="button"
@@ -162,21 +150,21 @@ templ TemplateNameEdit(template models.Quest) {
 				class="btn btn-xs btn-circle"
 				hx-trigger="click, closeNameEdit from:body"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+				@icon("x", templ.Attributes{"class": "w-4 h-4"})
 			</button>
 			<button
 				type="submit"
 				class="btn btn-xs btn-circle"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-4 h-4"><path d="M20 6 9 17l-5-5"></path></svg>
+				@icon("check", templ.Attributes{"class": "w-4 h-4"})
 			</button>
 		</label>
 	</form>
 }
 
-templ templateItem(template models.Quest) {
+templ templateItem(template models.Quest, first bool, last bool) {
 	<div
-		class="template-item flex flex-row justify-between items-center gap-3 border-t border-base-300 border-collapse hover:bg-base-300 rounded-lg p-3 join-item bg-transparent transition-colors"
+		class={ "template-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("rounded-t-lg", first), templ.KV("rounded-b-lg", last) }
 	>
 		<!-- Template name -->
 		<div
