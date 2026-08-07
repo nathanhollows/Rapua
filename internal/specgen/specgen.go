@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 // interactiveBlockTypes is the set of block types that support the `sets` field.

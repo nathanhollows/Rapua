@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // ExportQuest exports a quest as a v7 JSON document download.

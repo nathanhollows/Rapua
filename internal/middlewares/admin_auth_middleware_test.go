@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func TestMain(m *testing.M) {

@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 )
 
 // AuthChecker is an interface for checking user authentication.

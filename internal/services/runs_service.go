@@ -11,9 +11,9 @@ import (
 
 	"math/rand/v2"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 

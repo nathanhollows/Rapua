@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/render"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 )
 
 // PreviewMarkdown takes markdown from a form and renders it for htmx.

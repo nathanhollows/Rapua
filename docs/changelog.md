@@ -7,6 +7,8 @@ tag: updated
 
 # Changelog
 
+## 8.0.0
+
 ## 7.0.0
 
 v7.0.0 introduces games as code which lets me do fancy things like static game analysis (finding bugs in games without playing them), have AI write games using a [game specification](/docs/developer/game-spec), and store game templates with the code. 

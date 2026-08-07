@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // Quests shows admin the quests.

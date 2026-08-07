@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stripe/stripe-go/v83"
 )
 

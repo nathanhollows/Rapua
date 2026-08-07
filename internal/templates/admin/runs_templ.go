@@ -11,9 +11,9 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func TeamsTable(teams []models.Run) templ.Component {

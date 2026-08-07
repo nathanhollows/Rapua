@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 )
 
 // blockAddButton renders a dropdown for adding blocks to a container

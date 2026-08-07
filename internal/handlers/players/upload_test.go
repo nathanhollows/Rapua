@@ -11,9 +11,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

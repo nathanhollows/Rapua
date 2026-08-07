@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 // Block re-exports game.Block; see game package for full documentation.

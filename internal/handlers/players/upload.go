@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 )
 
 const maxUploadSize = 25 << 20 // 25MB

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/render"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
 )
 
 var cssVersion string

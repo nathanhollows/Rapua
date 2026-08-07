@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/specgen"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/specgen"
 )
 
 // TestSpecStaleness ensures every JSON-tagged field on each block struct has a

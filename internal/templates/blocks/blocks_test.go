@@ -3,9 +3,9 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func TestBlocks_MethodsExist(t *testing.T) {

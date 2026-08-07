@@ -1,6 +1,6 @@
 package blocks
 
-import "github.com/nathanhollows/Rapua/v7/game"
+import "github.com/nathanhollows/Rapua/v8/game"
 
 // GetSpec implementations for all block types.
 // These satisfy game.SpecProvider and are used by internal/specgen.

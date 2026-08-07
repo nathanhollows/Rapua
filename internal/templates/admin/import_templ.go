@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // ImportModal is the dialog for importing a game from a JSON file.

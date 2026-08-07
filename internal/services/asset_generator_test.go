@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 )
 
 func TestCreateQRCodeImage(t *testing.T) {

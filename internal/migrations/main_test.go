@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/migrations"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/migrations"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun/migrate"
 )

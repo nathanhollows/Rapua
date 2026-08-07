@@ -7,8 +7,8 @@ import (
 	"slices"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 )
 
 // BlockCreate creates a new block using query parameters.

@@ -10,9 +10,9 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	bTemplates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type EditPageData struct {

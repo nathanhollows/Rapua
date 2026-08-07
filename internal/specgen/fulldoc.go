@@ -1,6 +1,6 @@
 package specgen
 
-import "github.com/nathanhollows/Rapua/v7/game"
+import "github.com/nathanhollows/Rapua/v8/game"
 
 // FullSpec is the complete machine-readable specification for the v8 game format.
 type FullSpec struct {

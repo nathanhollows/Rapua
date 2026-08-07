@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type LocationStatsService interface {

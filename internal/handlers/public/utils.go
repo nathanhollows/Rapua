@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/markbates/goth"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type DeleteService interface {

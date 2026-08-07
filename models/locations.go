@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 type Location struct {

@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 const (

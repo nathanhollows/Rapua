@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nathanhollows/Rapua/v7/internal/specgen"
+	"github.com/nathanhollows/Rapua/v8/internal/specgen"
 	"github.com/urfave/cli/v2"
 )
 

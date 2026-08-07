@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v8/internal/scheduler"
 	"github.com/stretchr/testify/assert"
 )
 

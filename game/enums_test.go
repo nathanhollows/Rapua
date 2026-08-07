@@ -3,7 +3,7 @@ package game_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

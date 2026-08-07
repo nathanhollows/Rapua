@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // Play shows the player the first page of the game.

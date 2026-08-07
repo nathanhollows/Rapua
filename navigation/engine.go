@@ -1,7 +1,7 @@
 package navigation
 
 import (
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // AdvanceReason explains why GetNextGroup made a particular decision.

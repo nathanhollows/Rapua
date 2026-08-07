@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/uptrace/bun"
 )
 

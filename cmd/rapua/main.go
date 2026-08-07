@@ -8,17 +8,17 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v7/internal/migrations"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v7/internal/server"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	"github.com/nathanhollows/Rapua/v7/internal/storage"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	admin "github.com/nathanhollows/Rapua/v8/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v8/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v8/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v8/internal/migrations"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v8/internal/server"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	"github.com/nathanhollows/Rapua/v8/internal/storage"
 	console "github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	version    = "v7.0.0"
+	version    = "v8.0.0"
 	uploadsDir = "static/uploads/"
 )
 

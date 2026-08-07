@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/migrations"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/migrations"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 )

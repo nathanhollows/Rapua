@@ -5,7 +5,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/kaugesaar/lucide-go"
-	"github.com/nathanhollows/Rapua/v7/internal/render"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
 )
 
 func stringToMarkdown(s string) template.HTML {

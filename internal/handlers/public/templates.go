@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 func (h *Handler) TemplatesPreview(w http.ResponseWriter, r *http.Request) {

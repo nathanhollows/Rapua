@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	blockstemplates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	blockstemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 )
 
 const (

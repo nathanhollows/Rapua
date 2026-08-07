@@ -3,8 +3,8 @@ package services_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 )
 

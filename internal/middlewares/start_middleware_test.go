@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun/schema"
 )
 

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/specgen"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/specgen"
 )
 
 // SpecJSON serves the generated game spec as JSON.

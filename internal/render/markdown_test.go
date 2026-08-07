@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/render"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
 )
 
 func TestSanitizeHTML(t *testing.T) {

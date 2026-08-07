@@ -10,9 +10,9 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func Complete(team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState) templ.Component {

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // ExportService converts a live instance into a GameDoc.

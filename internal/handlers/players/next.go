@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 )
 
 func (h *PlayerHandler) Next(w http.ResponseWriter, r *http.Request) {

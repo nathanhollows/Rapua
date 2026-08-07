@@ -8,13 +8,13 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type BlockService interface {

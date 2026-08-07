@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // LeaderBoardService handles team ranking and leaderboard logic.

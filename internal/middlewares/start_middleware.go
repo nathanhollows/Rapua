@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // StartMiddleware redirects to the start if the game is scheduled to start.

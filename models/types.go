@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 //nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface

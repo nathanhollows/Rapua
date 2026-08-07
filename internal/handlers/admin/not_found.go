@@ -3,7 +3,7 @@ package admin
 import (
 	"net/http"
 
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 )
 
 // NotFound shows the not found page.

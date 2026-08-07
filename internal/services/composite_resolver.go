@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // PlayerVarResolver implements game.VarResolver by composing two state layers:
