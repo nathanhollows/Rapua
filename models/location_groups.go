@@ -128,6 +128,29 @@ func (gs GameStructure) Value() (driver.Value, error) {
 	return string(data), nil
 }
 
+// Reports whether anything was removed, so callers can skip a needless write.
+func (gs *GameStructure) RemoveLocationID(locationID string) bool {
+	removed := false
+
+	kept := make([]string, 0, len(gs.LocationIDs))
+	for _, id := range gs.LocationIDs {
+		if id == locationID {
+			removed = true
+			continue
+		}
+		kept = append(kept, id)
+	}
+	gs.LocationIDs = kept
+
+	for i := range gs.SubGroups {
+		if gs.SubGroups[i].RemoveLocationID(locationID) {
+			removed = true
+		}
+	}
+
+	return removed
+}
+
 // IsPopulated returns whether this group has been populated with location data.
 func (gs *GameStructure) IsPopulated() bool {
 	return gs.populated
