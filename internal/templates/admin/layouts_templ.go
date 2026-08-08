@@ -240,7 +240,7 @@ func nav(user models.User, section string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if section == "Teams" {
+			if section == "Runs" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " class=\"menu-active\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -334,7 +334,7 @@ func nav(user models.User, section string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if section == "Teams" {
+			if section == "Runs" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, " class=\"menu-active\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

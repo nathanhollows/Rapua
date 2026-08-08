@@ -15,7 +15,7 @@ func (h *Handler) Runs(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	c := admin.Teams(user.CurrentQuest.Runs, user.FreeCredits+user.PaidCredits)
-	err := admin.Layout(c, *user, "Teams", "Teams").Render(r.Context(), w)
+	err := admin.Layout(c, *user, "Runs", "Runs").Render(r.Context(), w)
 
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering teams page", "error", err.Error())
@@ -168,7 +168,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		GroupedHistory: groupedHistory,
 	}
 	c := admin.TeamOverview(data)
-	err = admin.Layout(c, *user, "Teams", "Team Overview").Render(r.Context(), w)
+	err = admin.Layout(c, *user, "Runs", "Run overview").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
 			w,
