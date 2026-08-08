@@ -366,7 +366,7 @@ func templateItem(template models.Quest, first bool, last bool) templ.Component 
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var17 = []any{"template-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("rounded-t-lg", first), templ.KV("rounded-b-lg", last)}
+		var templ_7745c5c3_Var17 = []any{"template-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

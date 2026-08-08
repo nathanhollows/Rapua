@@ -35,23 +35,6 @@ func countActiveTeams(teams []models.Run) int {
 	return count
 }
 
-// countTeamsByStatus counts teams in each status category
-func countTeamsByStatus(teams []models.Run, totalLocations int) (inTransit, checkedIn int) {
-	for _, team := range teams {
-		if !team.HasStarted {
-			continue
-		}
-		status := getTeamStatus(team, totalLocations)
-		switch status {
-		case services.StatusOnsite:
-			checkedIn++
-		case services.StatusTransit, services.StatusStarted:
-			inTransit++
-		}
-	}
-	return
-}
-
 // TeamStatusBadge renders a status badge for a team with optional tooltip and size
 templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) {
 	switch status {
@@ -931,69 +914,29 @@ templ ActivityStats(quest models.Quest) {
 		hx-target="#activity-stats"
 		hx-swap="outerHTML"
 		hx-trigger="every 30s"
-		class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden"
+		class="grid grid-cols-2 md:grid-cols-4 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden"
 	>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Active teams</div>
+			<div class="stat-title">Running</div>
 			<div class="stat-value">{ fmt.Sprint(countActiveTeams(quest.Runs)) }</div>
-			<div class="stat-desc">of { fmt.Sprint(len(quest.Runs)) } total</div>
+			<div class="stat-desc">of { fmt.Sprint(len(quest.Runs)) } runs</div>
 		</div>
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">In transit</div>
-			<div class="stat-value">
-				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(quest.Runs, len(quest.Locations)); return inTransit }()) }
-			</div>
-			<div class="stat-desc">Moving between locations</div>
+			<div class="stat-title">Not started</div>
+			<div class="stat-value">{ fmt.Sprint(countNotStarted(quest.Runs)) }</div>
+			<div class="stat-desc">Codes not yet used</div>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Checked in</div>
+		<div class="stat place-items-center md:border-r border-info/20">
+			<div class="stat-title">Median progress</div>
 			<div class="stat-value">
-				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(quest.Runs, len(quest.Locations)); return checkedIn }()) }
+				{ fmt.Sprint(medianProgress(quest.Runs)) }<span class="text-base opacity-50">∕{ fmt.Sprint(len(quest.Locations)) }</span>
 			</div>
-			<div class="stat-desc">Currently at locations</div>
+			<div class="stat-desc">Across started runs</div>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Average progress</div>
-			<div class="stat-value">
-				if len(quest.Locations) > 0 && len(quest.Runs) > 0 {
-					{ fmt.Sprintf("%.0f%%", func() float64 {
-						total := 0
-						activeCount := 0
-						for _, team := range quest.Runs {
-							if team.HasStarted {
-								total += len(team.CheckIns)
-								activeCount++
-							}
-						}
-						if activeCount == 0 {
-							return 0
-						}
-						return (float64(total) / float64(activeCount)) / float64(len(quest.Locations)) * 100
-					}()) }
-				} else {
-					0%
-				}
-			</div>
-			<div class="stat-desc">Across active teams</div>
-		</div>
-		<div class="stat place-items-center col-span-2 md:col-span-1">
-			<div class="stat-title">Completion rate</div>
-			<div class="stat-value">
-				if len(quest.Runs) > 0 {
-					{ fmt.Sprintf("%.0f%%", func() float64 {
-						finishedCount := 0
-						for _, team := range quest.Runs {
-							if len(quest.Locations) > 0 && len(team.CheckIns) == len(quest.Locations) {
-								finishedCount++
-							}
-						}
-						return (float64(finishedCount) / float64(len(quest.Runs))) * 100
-					}()) }
-				} else {
-					0%
-				}
-			</div>
-			<div class="stat-desc">Teams finished</div>
+		<div class="stat place-items-center">
+			<div class="stat-title">Finished</div>
+			<div class="stat-value">{ fmt.Sprint(countFinished(quest.Runs, len(quest.Locations))) }</div>
+			<div class="stat-desc">Completed every objective</div>
 		</div>
 	</div>
 }

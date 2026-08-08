@@ -68,8 +68,8 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 		</div>
 		<div id="instance-list" class="card bg-base-200 border border-base-300">
 			<div class="card-body p-0 gap-0 divide-y divide-base-300">
-				for _, quest := range quests {
-					@instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "")
+				for i, quest := range quests {
+					@instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "", i == 0, i == len(quests)-1)
 				}
 				<div
 					if len(quests) == 0 {
@@ -333,8 +333,8 @@ templ InstanceNameEdit(quest models.Quest) {
 	</form>
 }
 
-templ instanceItem(quest models.Quest, active bool, anyActive bool) {
-	<div class={ "instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active) }>
+templ instanceItem(quest models.Quest, active bool, anyActive bool, first bool, last bool) {
+	<div class={ "instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active), templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last) }>
 		<div class="flex items-center gap-3 grow">
 			<!-- Play Status -->
 			<div class="tooltip tooltip-right shrink-0" data-tip={ quest.GetStatus().Description() }>

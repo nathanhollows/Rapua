@@ -84,8 +84,8 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, quest := range quests {
-			templ_7745c5c3_Err = instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "").Render(ctx, templ_7745c5c3_Buffer)
+		for i, quest := range quests {
+			templ_7745c5c3_Err = instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "", i == 0, i == len(quests)-1).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -424,7 +424,7 @@ func InstanceNameEdit(quest models.Quest) templ.Component {
 	})
 }
 
-func instanceItem(quest models.Quest, active bool, anyActive bool) templ.Component {
+func instanceItem(quest models.Quest, active bool, anyActive bool, first bool, last bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -445,7 +445,7 @@ func instanceItem(quest models.Quest, active bool, anyActive bool) templ.Compone
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var23 = []any{"instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active)}
+		var templ_7745c5c3_Var23 = []any{"instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active), templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var23...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
