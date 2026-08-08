@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -411,6 +412,11 @@ func (s *NavigationService) getValidLocationsFromGameStructure(
 	for _, id := range locationIDs {
 		location, err := s.locationRepo.GetByID(ctx, id)
 		if err != nil {
+			// Quests deleted before DeleteLocation pruned the structure still
+			// carry dead IDs; skipping keeps those pages loadable.
+			if errors.Is(err, sql.ErrNoRows) {
+				continue
+			}
 			return nil, fmt.Errorf("failed to load location %s: %w", id, err)
 		}
 		locations = append(locations, *location)

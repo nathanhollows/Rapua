@@ -278,6 +278,12 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 		}
 	}()
 
+	// GameStructure is a JSON blob with no FK, so nothing else drops the ID.
+	if err := s.pruneLocationFromStructure(ctx, tx, locationID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
 	// Delete blocks first — cascade handles run_block_states
 	_, err = tx.NewDelete().
 		Model((*models.Block)(nil)).
@@ -306,6 +312,54 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 	}
 
 	return tx.Commit()
+}
+
+// pruneLocationFromStructure tolerates a missing location or quest so that
+// DeleteLocation stays idempotent.
+func (s *DeleteService) pruneLocationFromStructure(
+	ctx context.Context,
+	tx *bun.Tx,
+	locationID string,
+) error {
+	var location models.Location
+	err := tx.NewSelect().
+		Model(&location).
+		Column("id", "quest_id").
+		Where("id = ?", locationID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("loading location for structure prune: %w", err)
+	}
+
+	var quest models.Quest
+	err = tx.NewSelect().
+		Model(&quest).
+		Where("id = ?", location.QuestID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("loading quest for structure prune: %w", err)
+	}
+
+	if !quest.GameStructure.RemoveLocationID(locationID) {
+		return nil
+	}
+
+	_, err = tx.NewUpdate().
+		Model(&quest).
+		Column("game_structure").
+		WherePK().
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("saving pruned structure: %w", err)
+	}
+
+	return nil
 }
 
 // ResetTeams clears team progress while preserving the teams themselves.
