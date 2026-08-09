@@ -19,8 +19,8 @@ func TestCompositeResolver_Points(t *testing.T) {
 	assert.Equal(t, "42", val)
 }
 
-func TestCompositeResolver_ObjectiveStub(t *testing.T) {
-	// objective.<slug> is recognised but always "" until objectives ship (Stage C).
+func TestCompositeResolver_ObjectiveResolvesEmpty(t *testing.T) {
+	// Any objective.<slug> resolves, so a creator var cannot shadow the namespace.
 	r := services.NewPlayerVarResolver(makeTeam(0), nil)
 
 	val, ok := r.ResolveVar("objective.find-maisie")

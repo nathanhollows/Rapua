@@ -319,7 +319,7 @@ func builtInVarSpecs() []BuiltInVarSpec {
 		{
 			Var:         "objective.<slug>",
 			Type:        "string",
-			Description: "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise. (Not yet implemented — always returns empty string until objectives ship in Stage C.)",
+			Description: "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise.",
 		},
 		{
 			Var:         "game.team_count",

@@ -1011,7 +1011,7 @@ func TestLintJSON_UnknownFieldInLocation(t *testing.T) {
 			"completion": "all",
 			"children": [{
 				"group": {
-					"name": "Stage 1",
+					"name": "Group A",
 					"routing": "free_roam",
 					"completion": "all",
 					"children": [{
@@ -1047,7 +1047,7 @@ func TestLintJSON_UnknownFieldInGroup(t *testing.T) {
 			"completion": "all",
 			"children": [{
 				"group": {
-					"name": "Stage 1",
+					"name": "Group A",
 					"routing": "free_roam",
 					"completion": "all",
 					"children": [],

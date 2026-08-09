@@ -40,7 +40,6 @@ func TestIsBuiltInVar_CanonicalSet(t *testing.T) {
 		"",
 		"something.else",
 		"points.something",
-		"player.badges", // Stage 2 — not implemented yet
 		"run.finished_at",
 		"objective.",
 	}

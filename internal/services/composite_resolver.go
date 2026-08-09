@@ -60,7 +60,7 @@ func (r *PlayerVarResolver) resolveBuiltIn(name string) (string, bool) {
 	case "game.team_count":
 		return strconv.Itoa(r.runCount), true
 	}
-	// objective.<slug> — recognized but always "" until objectives ship (Stage C).
+	// Claimed by the built-in namespace so a creator var cannot shadow it.
 	if after, ok := strings.CutPrefix(name, "objective."); ok && len(after) > 0 {
 		return "", true
 	}

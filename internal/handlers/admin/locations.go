@@ -444,16 +444,6 @@ func (h *Handler) addLocationToRootGroup(ctx context.Context, questID, locationI
 	return nil
 }
 
-// Spaces shows a placeholder page for the Spaces feature (not yet implemented).
-func (h *Handler) Spaces(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	c := templates.SpacesPage()
-	err := templates.Layout(c, *user, "Spaces", "Spaces").Render(r.Context(), w)
-	if err != nil {
-		h.logger.ErrorContext(r.Context(), "Spaces: rendering template", "error", err)
-	}
-}
-
 // StartPageEdit shows the start page editor.
 func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())

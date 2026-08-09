@@ -421,12 +421,12 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	when := &game.WhenClause{AllOf: []game.Condition{{Var: "phase2"}}}
+	when := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
 	doc := minimalValidDoc("Group When Game")
 	doc.Structure.Children = []game.ChildDoc{
 		{
 			Group: &game.GroupDoc{
-				Name:       "Phase 2 Group",
+				Name:       "Hidden Group",
 				Color:      "primary",
 				Routing:    game.RouteStrategyOrdered,
 				Completion: game.CompletionAll,
@@ -445,7 +445,7 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 	subGroup := inst.GameStructure.SubGroups[0]
 	require.NotNil(t, subGroup.When)
 	require.Len(t, subGroup.When.AllOf, 1)
-	assert.Equal(t, "phase2", subGroup.When.AllOf[0].Var)
+	assert.Equal(t, "unlocked", subGroup.When.AllOf[0].Var)
 }
 
 func TestImportService_ImportUpdate_LocationWhenUpdated(t *testing.T) {

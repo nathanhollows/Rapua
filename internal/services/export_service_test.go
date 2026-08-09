@@ -319,7 +319,7 @@ func TestExportService_GroupWhenRoundTrip(t *testing.T) {
 	}
 	require.NoError(t, locationRepo.Create(ctx, loc))
 
-	groupWhen := &game.WhenClause{AllOf: []game.Condition{{Var: "phase2"}}}
+	groupWhen := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
 	inst.GameStructure = models.GameStructure{
 		ID:          gofakeit.UUID(),
 		IsRoot:      true,
@@ -327,7 +327,7 @@ func TestExportService_GroupWhenRoundTrip(t *testing.T) {
 		SubGroups: []models.GameStructure{
 			{
 				ID:          gofakeit.UUID(),
-				Name:        "Phase 2",
+				Name:        "Hidden Group",
 				Color:       "secondary",
 				When:        groupWhen,
 				LocationIDs: []string{loc.ID},
@@ -345,5 +345,5 @@ func TestExportService_GroupWhenRoundTrip(t *testing.T) {
 	require.NotNil(t, groupDoc)
 	require.NotNil(t, groupDoc.When)
 	require.Len(t, groupDoc.When.AllOf, 1)
-	assert.Equal(t, "phase2", groupDoc.When.AllOf[0].Var)
+	assert.Equal(t, "unlocked", groupDoc.When.AllOf[0].Var)
 }

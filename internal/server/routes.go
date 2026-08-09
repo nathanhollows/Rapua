@@ -381,7 +381,14 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
 		})
 
-		r.Get("/spaces", adminHandler.Spaces)
+		r.Route("/spaces", func(r chi.Router) {
+			r.Get("/", adminHandler.Spaces)
+			r.Get("/new", adminHandler.SpaceNew)
+			r.Post("/", adminHandler.SpaceCreate)
+			r.Get("/{id}", adminHandler.SpaceEdit)
+			r.Post("/{id}", adminHandler.SpaceEditPost)
+			r.Delete("/{id}", adminHandler.SpaceDelete)
+		})
 
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
