@@ -26,6 +26,12 @@ func TestSlugify(t *testing.T) {
 		{"", ""},
 		{"   ", ""},
 		{"Citrus Collection", "citrus-collection"},
+		{"Ōtākou Whakaihu Waka", "otakou-whakaihu-waka"},
+		{"Tāwhaki Pou Whenua", "tawhaki-pou-whenua"},
+		{"Te Rangihīroa College", "te-rangihiroa-college"},
+		{"Café Crème", "cafe-creme"},
+		{"Peñíscola", "peniscola"},
+		{"Ångström", "angstrom"},
 		{"Old Government Buildings", "old-government-buildings"},
 	}
 

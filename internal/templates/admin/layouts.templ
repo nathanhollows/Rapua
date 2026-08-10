@@ -135,17 +135,6 @@ templ nav(user models.User, section string) {
 									</li>
 									<li>
 										<a
-											href="/admin/spaces"
-											if section == "Spaces" {
-												class="menu-active"
-											}
-										>
-											@icon("map-pin", templ.Attributes{})
-											Spaces
-										</a>
-									</li>
-									<li>
-										<a
 											href="/admin/runs"
 											if section == "Runs" {
 												class="menu-active"
@@ -241,17 +230,6 @@ templ nav(user models.User, section string) {
 							>
 								@icon("waypoints", templ.Attributes{})
 								Quest
-							</a>
-						</li>
-						<li>
-							<a
-								href="/admin/spaces"
-								if section == "Spaces" {
-									class="menu-active"
-								}
-							>
-								@icon("signpost", templ.Attributes{})
-								Spaces
 							</a>
 						</li>
 						<li>

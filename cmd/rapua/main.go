@@ -87,7 +87,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
-	spaceRepo := repositories.NewSpaceRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
@@ -146,7 +145,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo, teamVarStateRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	spaceService := services.NewSpaceService(spaceRepo)
 	questService := services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
@@ -193,7 +191,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		exportService, importService, facilitatorService, gameScheduleService,
 		gameStructureService, instanceRepo, questService, instanceSettingsService,
 		locationService, markerService, navigationService, notificationService,
-		runService, spaceService, templateService, uploadService, userService, quickstartService,
+		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,
 	)
 

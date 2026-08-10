@@ -300,7 +300,6 @@ type Handler struct {
 	navigationService       NavigationService
 	notificationService     NotificationService
 	runService              RunService
-	spaceService            *services.SpaceService
 	templateService         services.TemplateService
 	uploadService           UploadService
 	userService             UserService
@@ -332,7 +331,6 @@ func NewAdminHandler(
 	navigationService NavigationService,
 	notificationService NotificationService,
 	runService RunService,
-	spaceService *services.SpaceService,
 	templateService services.TemplateService,
 	uploadService UploadService,
 	userService UserService,
@@ -363,7 +361,6 @@ func NewAdminHandler(
 		navigationService:       navigationService,
 		notificationService:     notificationService,
 		runService:              runService,
-		spaceService:            spaceService,
 		templateService:         templateService,
 		uploadService:           uploadService,
 		userService:             userService,

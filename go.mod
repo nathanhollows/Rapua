@@ -6,6 +6,7 @@ require (
 	github.com/SerhiiCho/timeago/v3 v3.3.1
 	github.com/a-h/templ v0.3.1020
 	github.com/brianvoe/gofakeit/v7 v7.1.1
+	github.com/disintegration/imaging v1.6.2
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/csrf v1.7.3
@@ -21,6 +22,7 @@ require (
 	github.com/yuin/goldmark v1.7.4
 	golang.org/x/crypto v0.48.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
+	golang.org/x/text v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -30,7 +32,6 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -39,7 +40,6 @@ require (
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
