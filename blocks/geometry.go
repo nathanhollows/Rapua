@@ -17,6 +17,10 @@ const (
 	GeometryPolygon GeometryType = "Polygon"
 )
 
+func (t GeometryType) known() bool {
+	return t == GeometryCircle || t == GeometryPolygon
+}
+
 // Malformed geometry only. Whether a shape suits its use is the caller's call.
 var (
 	ErrGeometryType        = errors.New("geometry must be a circle or a Polygon")
@@ -68,7 +72,7 @@ func (p *Position) UnmarshalJSON(data []byte) error {
 // LinearRing is a polygon boundary whose last position repeats the first.
 type LinearRing []Position
 
-// Geometry answers one question — is the player inside? A circle is a centre and
+// Geometry answers one question: is the player inside? A circle is a centre and
 // a radius in metres; an area is a GeoJSON Polygon, kept verbatim so a map draw
 // control round-trips it untouched. There is no bare point, because a position
 // with no extent cannot answer that question.
@@ -105,6 +109,11 @@ type geometryWire struct {
 }
 
 func (g Geometry) MarshalJSON() ([]byte, error) {
+	// Checked before IsZero, which reports true for an unrecognised type and
+	// would write a broken shape away as null while reporting success.
+	if g.Type != "" && !g.Type.known() {
+		return nil, fmt.Errorf("marshalling geometry: %w", ErrGeometryType)
+	}
 	if g.IsZero() {
 		return []byte("null"), nil
 	}
@@ -217,14 +226,16 @@ func validatePosition(p Position) error {
 	return nil
 }
 
-// Value stores empty geometry as SQL NULL rather than an empty object.
+// Value stores empty geometry as SQL NULL rather than an empty object. It defers
+// to MarshalJSON rather than testing IsZero itself, so both write paths agree on
+// what counts as nothing and neither can swallow an unrecognised type.
 func (g *Geometry) Value() (driver.Value, error) {
-	if g.IsZero() {
-		return nil, nil //nolint:nilnil // nil driver.Value = SQL NULL; nil error = no failure
-	}
 	data, err := json.Marshal(g)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling Geometry: %w", err)
+	}
+	if string(data) == "null" {
+		return nil, nil //nolint:nilnil // nil driver.Value = SQL NULL; nil error = no failure
 	}
 	return string(data), nil
 }

@@ -103,6 +103,24 @@ func TestGeometry_UnmarshalUnknownType(t *testing.T) {
 	require.ErrorIs(t, err, blocks.ErrGeometryType)
 }
 
+// IsZero reports true for a type it does not recognise, so neither write path
+// may use it as the only gate. A broken shape would be stored as NULL and
+// reported as success. The read path already errors; the write path is where the
+// loss would happen.
+func TestGeometry_UnknownTypeIsNotWrittenAsNull(t *testing.T) {
+	g := blocks.Geometry{
+		Type:   blocks.GeometryType("LineString"),
+		Center: blocks.NewPosition(-41.2865, 174.7762),
+		Radius: 20,
+	}
+
+	_, err := json.Marshal(&g)
+	require.ErrorIs(t, err, blocks.ErrGeometryType)
+
+	_, err = g.Value()
+	require.ErrorIs(t, err, blocks.ErrGeometryType)
+}
+
 func TestGeometry_IsZero(t *testing.T) {
 	var nilGeom *blocks.Geometry
 	assert.True(t, nilGeom.IsZero(), "nil geometry")

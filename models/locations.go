@@ -44,7 +44,7 @@ func Slugify(s string) string {
 }
 
 // Folds "Ōtākou" to "Otakou" so the sweep above does not take the vowel along
-// with the macron. Letters that do not decompose — ø, ł, ß — still fall to it.
+// with the macron. Letters that do not decompose (ø, ł, ß) still fall to it.
 // Built per call because a transform.Chain holds state.
 func foldCombiningMarks(s string) string {
 	folded, _, err := transform.String(
