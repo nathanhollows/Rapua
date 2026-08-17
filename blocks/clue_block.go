@@ -91,7 +91,8 @@ func (b *ClueBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
-func (b *ClueBlock) RequiresValidation() bool { return true }
+func (b *ClueBlock) SupportsVariableSets() bool { return true }
+func (b *ClueBlock) RequiresValidation() bool   { return true }
 
 func (b *ClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
 	newState := state
