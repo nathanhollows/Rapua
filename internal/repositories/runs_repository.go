@@ -174,7 +174,7 @@ func (r *teamRepository) GetUserIDByCode(ctx context.Context, code string) (stri
 	q := r.db.NewSelect().
 		Model(&quest).
 		Column("quest.user_id").
-		Join("JOIN runs ON runs.quest_id = quest.id").
+		Join("JOIN runs AS run ON run.quest_id = quest.id").
 		Where("run.code = ?", code)
 	err := q.Scan(ctx)
 	if err != nil {

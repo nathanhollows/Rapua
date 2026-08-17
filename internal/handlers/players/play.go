@@ -32,20 +32,20 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		h.handleError(w, r, "PlayPost: parsing form", "Error parsing form", "error", err)
 		return
 	}
-	teamCode := r.FormValue("team")
+	runCode := r.FormValue("run")
 
-	err = h.runService.StartPlaying(r.Context(), teamCode)
+	err = h.runService.StartPlaying(r.Context(), runCode)
 	if err != nil {
 		if errors.Is(err, services.ErrTeamNotFound) {
 			h.handleError(
 				w,
 				r,
 				"PlayPost: starting game",
-				"Team not found: "+teamCode,
+				"Team not found: "+runCode,
 				"Cannot start game with this team code",
 				err,
 				"teamCode",
-				teamCode,
+				runCode,
 			)
 			return
 		}
@@ -65,12 +65,12 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 			"Could not start game",
 			err,
 			"teamCode",
-			teamCode,
+			runCode,
 		)
 		return
 	}
 
-	err = h.startSession(w, r, teamCode)
+	err = h.startSession(w, r, runCode)
 	if err != nil {
 		h.handleError(
 			w,
@@ -80,7 +80,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 			"error",
 			err,
 			"team",
-			teamCode,
+			runCode,
 		)
 		return
 	}
