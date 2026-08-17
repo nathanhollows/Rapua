@@ -232,12 +232,13 @@ func TestGenerateBlockSpecs_WhenOnAll(t *testing.T) {
 	}
 }
 
-// TestGenerateBlockSpecs_SetsOnInteractiveOnly verifies "sets" appears in shared_fields
-// on interactive block types and not on content-only block types.
-func TestGenerateBlockSpecs_SetsOnInteractiveOnly(t *testing.T) {
-	interactiveTypes := map[string]bool{
-		"quiz": true, "password": true, "pincode": true, "broker": true,
-		"sorting": true, "photo": true, "checklist": true, "rating": true, "free_text": true,
+// TestGenerateBlockSpecs_SetsMatchesTheBlock checks the published spec against the
+// block itself. A list kept here would be another copy to forget to update, which
+// is how choice and scan came to advertise no "sets" while the runtime honoured it.
+func TestGenerateBlockSpecs_SetsMatchesTheBlock(t *testing.T) {
+	supportsSets := make(map[string]bool)
+	for _, reg := range blocks.GetRegisteredBlocks() {
+		supportsSets[reg.BlockType] = reg.Prototype.SupportsVariableSets()
 	}
 
 	for _, spec := range specgen.GenerateBlockSpecs() {
@@ -248,11 +249,8 @@ func TestGenerateBlockSpecs_SetsOnInteractiveOnly(t *testing.T) {
 				break
 			}
 		}
-		if interactiveTypes[spec.Type] && !hasSets {
-			t.Errorf("interactive block %q: missing \"sets\" in shared_fields", spec.Type)
-		}
-		if !interactiveTypes[spec.Type] && hasSets {
-			t.Errorf("content block %q: should not have \"sets\" in shared_fields", spec.Type)
+		if want := supportsSets[spec.Type]; hasSets != want {
+			t.Errorf("block %q: spec advertises sets=%v, block reports %v", spec.Type, hasSets, want)
 		}
 	}
 }

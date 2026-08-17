@@ -11,22 +11,6 @@ import (
 	"github.com/nathanhollows/Rapua/v8/game"
 )
 
-// interactiveBlockTypes is the set of block types that support the `sets` field.
-// Content-only blocks (text, alert, image, etc.) do not support sets. Never mutated after init.
-//
-//nolint:gochecknoglobals // lookup table initialised once, never written after init
-var interactiveBlockTypes = map[string]bool{
-	"quiz":      true,
-	"password":  true,
-	"pincode":   true,
-	"broker":    true,
-	"sorting":   true,
-	"photo":     true,
-	"checklist": true,
-	"rating":    true,
-	"free_text": true,
-}
-
 // GenerateBlockSpecs returns the BlockSpec for every registered block type, sorted by type name.
 // All block specs receive a `when` field. Interactive block specs also receive a `sets` field.
 func GenerateBlockSpecs() []game.BlockSpec {
@@ -37,7 +21,9 @@ func GenerateBlockSpecs() []game.BlockSpec {
 		if sp, ok := reg.Prototype.(game.SpecProvider); ok {
 			spec := sp.GetSpec()
 			spec.SharedFields = []string{"when"}
-			if interactiveBlockTypes[spec.Type] {
+			// Asked of the block rather than listed here, so a new interactive
+			// block cannot ship with the spec hiding a field the runtime honours.
+			if reg.Prototype.SupportsVariableSets() {
 				spec.SharedFields = append(spec.SharedFields, "sets")
 			}
 			specs = append(specs, spec)
