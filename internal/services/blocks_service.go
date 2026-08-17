@@ -8,6 +8,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -268,8 +269,12 @@ func (s *BlockService) createStateForBlock(
 	block blocks.Block,
 	runCode, questID string,
 ) (blocks.PlayerState, error) {
+	// A preview carries the run code "preview", which has no row in runs, so
+	// persisting against it trips the foreign key.
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+
 	// Create new state based on block validation requirements
-	if block.RequiresValidation() && runCode != "" {
+	if block.RequiresValidation() && runCode != "" && !isPreview {
 		// Persist state for validation-required blocks
 		newState, err := s.NewBlockState(ctx, block.GetID(), runCode, questID)
 		if err != nil {

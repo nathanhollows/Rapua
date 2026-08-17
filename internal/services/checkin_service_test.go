@@ -1,10 +1,15 @@
 package services_test
 
 import (
+	"context"
+	"database/sql"
 	"testing"
 	"time"
 
+	services "github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRollingAverageDuration tests the rolling average calculation formula
@@ -155,5 +160,76 @@ func TestRollingAverageDuration(t *testing.T) {
 		// The correct average of [300, 420] is 360, not 340
 		expectedAvg := (300.0 + 420.0) / 2.0
 		assert.InDelta(t, expectedAvg, correctAvg, 0.01, "Correct formula matches expected average")
+	})
+}
+
+// fakeCheckInRepo records whether Update was called, so CompleteBlocks tests can
+// assert on the update behaviour rather than the DB round trips.
+type fakeCheckInRepo struct {
+	checkIn     *models.CheckIn
+	findErr     error
+	updateCalls int
+}
+
+func (f *fakeCheckInRepo) FindCheckInByTeamAndLocation(_ context.Context, _, _ string) (*models.CheckIn, error) {
+	return f.checkIn, f.findErr
+}
+
+func (f *fakeCheckInRepo) LogCheckIn(
+	_ context.Context,
+	_ models.Run,
+	_ models.Location,
+	_ bool,
+	_ bool,
+) (models.CheckIn, error) {
+	return models.CheckIn{}, nil
+}
+
+func (f *fakeCheckInRepo) LogCheckOut(_ context.Context, _ *models.Run, _ *models.Location) (models.CheckIn, error) {
+	return models.CheckIn{}, nil
+}
+
+func (f *fakeCheckInRepo) Update(_ context.Context, _ *models.CheckIn) error {
+	f.updateCalls++
+	return nil
+}
+
+// TestCompleteBlocks covers the three ways CompleteBlocks can end: no check-in
+// row, an already-complete check-in, and an incomplete one that must be marked.
+func TestCompleteBlocks(t *testing.T) {
+	newService := func(repo *fakeCheckInRepo) *services.CheckInService {
+		return services.NewCheckInService(repo, nil, nil, nil, nil, nil, nil)
+	}
+
+	// Passed through rather than absorbed, so a caller that did not expect it
+	// still sees it. Whether it is benign depends on the block's context, which
+	// only the caller knows.
+	t.Run("no check-in yet", func(t *testing.T) {
+		repo := &fakeCheckInRepo{findErr: sql.ErrNoRows}
+		err := newService(repo).CompleteBlocks(context.Background(), "RUN1", "loc-1")
+		require.ErrorIs(t, err, sql.ErrNoRows)
+		assert.Equal(t, 0, repo.updateCalls, "no update should be attempted")
+	})
+
+	t.Run("already complete", func(t *testing.T) {
+		repo := &fakeCheckInRepo{checkIn: &models.CheckIn{BlocksCompleted: true}}
+		err := newService(repo).CompleteBlocks(context.Background(), "RUN1", "loc-1")
+		require.NoError(t, err)
+		assert.Equal(t, 0, repo.updateCalls, "no update should be attempted")
+	})
+
+	t.Run("incomplete check-in marked complete", func(t *testing.T) {
+		repo := &fakeCheckInRepo{checkIn: &models.CheckIn{BlocksCompleted: false}}
+		err := newService(repo).CompleteBlocks(context.Background(), "RUN1", "loc-1")
+		require.NoError(t, err)
+		assert.Equal(t, 1, repo.updateCalls)
+		assert.True(t, repo.checkIn.BlocksCompleted, "check-in should be marked complete")
+	})
+
+	t.Run("database errors still surface", func(t *testing.T) {
+		repo := &fakeCheckInRepo{findErr: context.DeadlineExceeded}
+		err := newService(repo).CompleteBlocks(context.Background(), "RUN1", "loc-1")
+		require.Error(t, err)
+		assert.Equal(t, 0, repo.updateCalls)
 	})
 }
