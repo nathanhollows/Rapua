@@ -96,6 +96,7 @@ func init() {
 	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent})
+	registerBlock(&ScanBlock{}, []BlockContext{ContextLocationContent, ContextNavigation})
 	registerBlock(&RatingBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent})
 	registerBlock(&ChoiceBlock{}, []BlockContext{ContextLocationContent})
@@ -238,6 +239,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewAlertBlock(baseBlock), nil
 	case "password":
 		return NewAnswerBlock(baseBlock), nil
+	case scanBlockType:
+		return NewScanBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
 	case checklistBlockType:
@@ -300,6 +303,12 @@ func NewDividerBlock(base BaseBlock) *DividerBlock {
 
 func NewAlertBlock(base BaseBlock) *AlertBlock {
 	return &AlertBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewScanBlock(base BaseBlock) *ScanBlock {
+	return &ScanBlock{
 		BaseBlock: base,
 	}
 }

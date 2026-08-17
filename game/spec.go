@@ -1,5 +1,10 @@
 package game
 
+// CodeMinter is implemented by blocks offering codes to print.
+type CodeMinter interface {
+	MintedCodes() []string
+}
+
 // SpecProvider is implemented by block types that provide field-level metadata.
 type SpecProvider interface {
 	GetSpec() BlockSpec

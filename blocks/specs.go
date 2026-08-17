@@ -187,6 +187,37 @@ func (b *PasswordBlock) GetSpec() game.BlockSpec {
 	}
 }
 
+func (b *ScanBlock) GetSpec() game.BlockSpec {
+	return game.BlockSpec{
+		Type:        "scan",
+		Name:        "Scan",
+		Description: "Players scan a QR code or barcode to proceed.",
+		Contexts:    []string{"location_content", "navigation"},
+		Fields: []game.FieldSpec{
+			{Name: "prompt", Type: "string", Description: "Instruction shown to the player"},
+			{
+				Name: "codes", Type: "array",
+				Description: "Values that satisfy the block; any one counts. " +
+					"A block with none can never be passed",
+				Fields: []game.FieldSpec{
+					{Name: "value", Type: "string", Required: true, Description: "The value the code carries"},
+					{
+						Name: "generate", Type: "bool", Default: "false",
+						Description: "Render as a printable QR. Off for codes already in the world, like an ISBN",
+					},
+				},
+			},
+			{
+				Name: "match", Type: "string", Default: "exact",
+				Enum: []string{"exact", "ci", "contains"},
+				Description: "How a scan is compared: exact is byte-for-byte, ci ignores case, " +
+					"contains accepts a value carrying the code and ignores case too, " +
+					"such as a QR encoding a URL",
+			},
+		},
+	}
+}
+
 func (b *PhotoBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "photo",
