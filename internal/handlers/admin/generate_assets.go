@@ -12,6 +12,8 @@ import (
 const (
 	pngExtension = "png"
 	svgExtension = "svg"
+	// A QR code tops out well before this; beyond it the encoder fails anyway.
+	maxCodeLength = 2048
 )
 
 // QRCode handles the generation of QR codes for the current instance.

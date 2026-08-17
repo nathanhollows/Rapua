@@ -79,6 +79,9 @@ type AssetGenerator interface {
 	// - WithForeground(color string), where color is a hex color code
 	// - WithBackground(color string), where color is a hex color code
 	CreateQRCodeImage(path string, content string, options ...QRCodeOption) (err error)
+	// WriteQRCode renders a QR code to the writer, taking the same options.
+	// Nothing is written to disk, so an arbitrary code cannot leave a file behind.
+	WriteQRCode(w io.Writer, content string, options ...QRCodeOption) (err error)
 	// WithQRFormat sets the format of the QR code
 	// Supported formats are "png" and "svg"
 	WithQRFormat(format string) QRCodeOption
@@ -144,6 +147,32 @@ func (s *assetGenerator) CreateQRCodeImage(
 	}
 
 	return nil
+}
+
+func (s *assetGenerator) WriteQRCode(w io.Writer, content string, options ...QRCodeOption) error {
+	opts := &QRCodeOptions{
+		format:     pngFormat,
+		foreground: "#000000",
+		background: "#ffffff",
+	}
+	for _, o := range options {
+		o(opts)
+	}
+
+	qr, err := go_qr.EncodeText(content, go_qr.Medium)
+	if err != nil {
+		return fmt.Errorf("encoding text: %w", err)
+	}
+	config := go_qr.NewQrCodeImgConfig(qrCodeScale, qrCodeBorder)
+
+	switch opts.format {
+	case svgFormat:
+		return qr.WriteAsSVG(config, w, opts.background, opts.foreground)
+	case pngFormat:
+		return qr.WriteAsPNG(config, w)
+	default:
+		return fmt.Errorf("unsupported format: %s", opts.format)
+	}
 }
 
 func (s *assetGenerator) CreateArchive(paths []string) (string, error) {

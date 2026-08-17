@@ -361,6 +361,10 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/locations", adminHandler.ActivityLocations)
 		})
 
+		// Wildcard rather than {code}.{ext} so a code carrying a dot or a slash
+		// still resolves; the extension is split off the end here.
+		r.Get("/qr/*", adminHandler.CodeQRCode)
+
 		r.Route("/quest", func(r chi.Router) {
 			r.Get("/", adminHandler.Locations)
 			r.Post("/reorder", adminHandler.ReorderLocations)
