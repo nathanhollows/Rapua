@@ -28,6 +28,9 @@ func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Co
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordAdmin(settings, *b)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanAdmin(settings, *b)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodeAdmin(settings, *b)
@@ -109,6 +112,9 @@ func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state b
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayer(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayer(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayer(settings, *b, state)
@@ -190,6 +196,9 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayerUpdate(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayerUpdate(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayerUpdate(settings, *b, state)
@@ -285,7 +294,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("block-", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 254, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 263, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -298,7 +307,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 256, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 265, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -311,7 +320,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetType())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 257, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 266, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -338,7 +347,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 310, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 319, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -371,7 +380,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(block.GetPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 325, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 334, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -389,7 +398,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetOwnerID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 332, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 341, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -402,7 +411,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 333, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 342, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -415,7 +424,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/reorder"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 343, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 352, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -428,7 +437,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 344, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 353, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
@@ -441,7 +450,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 347, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 356, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
@@ -454,7 +463,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/reorder"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 356, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 365, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
@@ -467,7 +476,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 357, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 366, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -480,7 +489,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 360, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 369, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -493,7 +502,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 366, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 375, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -581,7 +590,7 @@ func pointsBadge(enablePoints bool, points int) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(-points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 385, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 394, Col: 105}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -599,7 +608,7 @@ func pointsBadge(enablePoints bool, points int) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 387, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 396, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {

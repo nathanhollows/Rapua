@@ -1,0 +1,292 @@
+package blocks
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Matches the wildcard route at /admin/qr/*, which splits the extension off the end.
+func scanQRHref(code string) templ.SafeURL {
+	return templ.SafeURL("/admin/qr/" + url.PathEscape(strings.TrimSpace(code)) + ".png")
+}
+
+templ scanPlayer(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full">
+		@scanCard(settings, block, data, false)
+	</div>
+}
+
+// Re-rendered after an attempt, so an incomplete block here means the code was
+// wrong. Without that distinction a failed scan looks like a dropped request.
+templ scanPlayerUpdate(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full" hx-swap-oob="true">
+		@scanCard(settings, block, data, true)
+	</div>
+}
+
+templ scanCard(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState, attempted bool) {
+	if settings.EnablePoints && block.Points > 0 {
+		<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
+	}
+	@completionBadge(data)
+	<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+		if block.Prompt != "" {
+			@templ.Raw(stringToMarkdown(block.Prompt))
+		}
+		if data.IsComplete() {
+			<p class="text-success">Scanned.</p>
+		} else {
+			if attempted {
+				<p class="text-error text-sm not-prose">That's not the right code. Have another look.</p>
+			}
+			@scanForm(block, attempted)
+		}
+	</div>
+}
+
+// The camera posts "scanned" and the box posts "code" so the server can tell a
+// scan from a code someone was told.
+templ scanForm(block blocks.ScanBlock, attempted bool) {
+	<form
+		id={ fmt.Sprintf("scan-form-%s", block.ID) }
+		hx-post="/blocks/validate"
+		hx-swap="none"
+	>
+		<input type="hidden" name="block" value={ block.ID }/>
+		<input type="hidden" name="scanned" value=""/>
+		<div
+			class={ "flex flex-col gap-3",
+				templ.KV("animate-[wobble_1s_ease-in-out]", attempted) }
+		>
+			<button
+				type="button"
+				class="btn btn-primary"
+				data-scan-open={ block.ID }
+			>
+				@icon("scan-qr-code", templ.Attributes{"class": "w-5 h-5"})
+				Scan a code
+			</button>
+			<div id={ fmt.Sprintf("scan-viewport-%s", block.ID) } class="hidden">
+				<div class="relative rounded-box overflow-hidden bg-base-300">
+					<video id={ fmt.Sprintf("scan-video-%s", block.ID) } class="w-full" muted autoplay playsinline></video>
+					<button
+						type="button"
+						class="btn btn-sm btn-neutral absolute top-2 right-2"
+						data-scan-close={ block.ID }
+					>
+						Stop
+					</button>
+				</div>
+			</div>
+			<p id={ fmt.Sprintf("scan-status-%s", block.ID) } class="text-sm text-center opacity-70 hidden"></p>
+			<div class="divider text-xs">or type it</div>
+			<div class="join w-full">
+				<input
+					id={ fmt.Sprintf("code-%s", block.ID) }
+					name="code"
+					type="text"
+					placeholder="Code"
+					class="input input-primary join-item w-full max-w-xs"
+					autocomplete="off"
+					required
+				/>
+				<button type="submit" class="btn btn-primary btn-outline join-item rounded-r-full">Check</button>
+			</div>
+		</div>
+	</form>
+}
+
+var scanPromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Find the sign by the totara",
+	Markdown:    true,
+}
+
+templ scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		if settings.EnablePoints {
+			@adminPointsField(block.Points)
+		}
+		@TextareaField(scanPromptTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset">
+			<div class="w-full">
+				<div class="grid grid-cols-[1fr_7rem_3.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content">
+					<span class="px-4 py-2">Code</span>
+					<span class="px-4 py-2">QR</span>
+					<span class="px-4 py-2"></span>
+				</div>
+				<div
+					id={ fmt.Sprintf("scan-codes-%s", block.ID) }
+					class="divide-y divide-base-300 [&>div:first-child>input:first-of-type]:rounded-tl-lg [&>div:last-child>input:first-of-type]:rounded-bl-lg"
+				>
+					if len(block.Codes) == 0 {
+						@scanCodeRow(0, blocks.ScanCode{})
+					} else {
+						for i, code := range block.Codes {
+							@scanCodeRow(i, code)
+						}
+					}
+				</div>
+			</div>
+			<p class="fieldset-label">
+				Any one of these passes. Tick QR for codes Rapua should turn into printable images; leave it off for codes already in the world, like an ISBN or a product barcode.
+			</p>
+			<div class="flex justify-end gap-2">
+				<button class="btn btn-outline btn-xs" type="button" data-target={ fmt.Sprintf("scan-codes-%s", block.ID) } onclick="mintScanCode(event)">
+					@icon("scan-qr-code", templ.Attributes{"class": "w-4 h-4"})
+					Mint a QR
+				</button>
+				<button class="btn btn-outline btn-xs" type="button" data-target={ fmt.Sprintf("scan-codes-%s", block.ID) } onclick="addScanCode(event)">
+					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
+					Add a code
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Matching</legend>
+			<select name="match" class="select w-full">
+				<option value="exact" selected?={ block.Match == blocks.MatchExact || block.Match == "" }>Exact</option>
+				<option value="ci" selected?={ block.Match == blocks.MatchCaseInsensitive }>Ignore case</option>
+				<option value="contains" selected?={ block.Match == blocks.MatchContains }>
+					Contains the code
+				</option>
+			</select>
+			<p class="fieldset-label">Contains suits a QR that encodes a URL with the code inside it.</p>
+		</fieldset>
+	</form>
+	<script>
+		// The checkbox carries its row index because an unticked box posts nothing,
+		// so every add or remove has to renumber the rows that shifted.
+		function renumberScanCodes(container) {
+			container.querySelectorAll('.scan-code-item').forEach(function (row, i) {
+				const box = row.querySelector('input[name="generate"]');
+				if (box) box.value = i;
+			});
+		}
+		// The QR is only meaningful once the row has a value and is marked for one,
+		// and the author can change either without the block re-rendering.
+		function syncScanQRLink(row) {
+			const link = row.querySelector('[data-qr-link]');
+			if (!link) return;
+			const code = row.querySelector('input[name="code"]').value.trim();
+			const wanted = row.querySelector('input[name="generate"]').checked && code !== '';
+			link.classList.toggle('hidden', !wanted);
+			if (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';
+		}
+		if (!window.__scanQRBound) {
+			window.__scanQRBound = true;
+			['input', 'change'].forEach(function (name) {
+				document.addEventListener(name, function (event) {
+					const row = event.target.closest && event.target.closest('.scan-code-item');
+					if (row) syncScanQRLink(row);
+				});
+			});
+		}
+		function mintScanCodeValue() {
+			const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+			let out = '';
+			for (let i = 0; i < 8; i++) {
+				if (i === 4) out += '-';
+				out += alphabet[Math.floor(Math.random() * alphabet.length)];
+			}
+			return out;
+		}
+		function appendScanCode(event, value, generate) {
+			event.preventDefault();
+			const btn = event.target.closest('button');
+			const container = document.getElementById(btn.dataset.target);
+			const item = document.createElement('div');
+			item.classList.add('scan-code-item', 'grid', 'grid-cols-[1fr_7rem_3.5rem]', 'hover:bg-base-200/30', 'transition-colors');
+			item.innerHTML =
+				'<input type="text" name="code" placeholder="ABCDE" class="input input-sm rounded-none h-10 w-full font-mono" autocomplete="off" />' +
+				'<div class="flex items-center justify-center gap-1 h-10 bg-base-100">' +
+					'<label class="flex items-center cursor-pointer">' +
+						'<input type="checkbox" name="generate" value="0" class="checkbox checkbox-sm" />' +
+					'</label>' +
+					'<a data-qr-link target="_blank" rel="noopener" class="btn btn-ghost btn-xs hidden" aria-label="Open the printable QR code">' +
+						'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M17 12v4a1 1 0 0 1-1 1h-4"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M17 8V7"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M7 17h.01"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>' +
+					'</a>' +
+				'</div>' +
+				'<div class="flex items-center justify-center h-10 bg-base-100">' +
+					'<button type="button" class="btn btn-xs btn-circle hover:btn-error" aria-label="Delete" onclick="removeScanCode(event)">' +
+						'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>' +
+					'</button>' +
+				'</div>';
+			container.appendChild(item);
+			item.querySelector('input[name="code"]').value = value;
+			item.querySelector('input[name="generate"]').checked = generate;
+			renumberScanCodes(container);
+			syncScanQRLink(item);
+			if (value) {
+				btn.closest('form').dispatchEvent(new Event('change'));
+			} else {
+				item.querySelector('input[name="code"]').focus();
+			}
+		}
+		function addScanCode(event) {
+			appendScanCode(event, '', false);
+		}
+		function mintScanCode(event) {
+			appendScanCode(event, mintScanCodeValue(), true);
+		}
+		function removeScanCode(event) {
+			event.preventDefault();
+			const form = event.target.closest('form');
+			const container = event.target.closest('.scan-code-item').parentNode;
+			event.target.closest('.scan-code-item').remove();
+			renumberScanCodes(container);
+			form.dispatchEvent(new Event('change'));
+		}
+	</script>
+}
+
+// The checkbox carries the row index because an unticked box posts nothing.
+templ scanCodeRow(index int, code blocks.ScanCode) {
+	<div class="scan-code-item grid grid-cols-[1fr_7rem_3.5rem] hover:bg-base-200/30 transition-colors">
+		<input
+			type="text"
+			name="code"
+			value={ code.Value }
+			placeholder="ABCDE"
+			class="input input-sm rounded-none h-10 w-full font-mono"
+			autocomplete="off"
+		/>
+		<div class="flex items-center justify-center gap-1 h-10 bg-base-100">
+			<label class="flex items-center cursor-pointer">
+				<input
+					type="checkbox"
+					name="generate"
+					value={ fmt.Sprint(index) }
+					class="checkbox checkbox-sm"
+					checked?={ code.Generate }
+				/>
+			</label>
+			<a
+				data-qr-link
+				href={ scanQRHref(code.Value) }
+				target="_blank"
+				rel="noopener"
+				class={ "btn btn-ghost btn-xs",
+					templ.KV("hidden", !code.Generate || strings.TrimSpace(code.Value) == "") }
+				aria-label="Open the printable QR code"
+			>
+				@icon("scan-qr-code", templ.Attributes{"class": "w-4 h-4"})
+			</a>
+		</div>
+		<div class="flex items-center justify-center h-10 bg-base-100">
+			<button type="button" class="btn btn-xs btn-circle hover:btn-error" aria-label="Delete" onclick="removeScanCode(event)">
+				@icon("trash-2", templ.Attributes{"class": "w-3 h-3"})
+			</button>
+		</div>
+	</div>
+}

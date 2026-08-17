@@ -28,6 +28,7 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 			<script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous" defer></script>
 			<script src="/static/js/csrf.js"></script>
 			<script src="/static/js/mapbox-satellite-view.js"></script>
+			<script src="/static/js/scan.js" defer></script>
 			<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
 		</head>
 		<body class="h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>

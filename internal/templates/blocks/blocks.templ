@@ -20,6 +20,9 @@ func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Co
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordAdmin(settings, *b)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanAdmin(settings, *b)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodeAdmin(settings, *b)
@@ -101,6 +104,9 @@ func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state b
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayer(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayer(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayer(settings, *b, state)
@@ -182,6 +188,9 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayerUpdate(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayerUpdate(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayerUpdate(settings, *b, state)
