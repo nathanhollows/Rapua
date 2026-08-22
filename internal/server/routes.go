@@ -118,6 +118,7 @@ func setupPlayerRoutes(
 
 		r.Get("/", playerHandler.Play)
 		r.Post("/", playerHandler.PlayPost)
+		r.Get("/{code}", playerHandler.PlayWithCode)
 	})
 
 	// Show the next available locations

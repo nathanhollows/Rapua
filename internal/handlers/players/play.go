@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/internal/flash"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
@@ -23,6 +24,27 @@ func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Home: rendering template", "error", err)
 	}
+}
+
+// PlayWithCode is a GET shortcut onto PlayPost's flow, for a run code shared as
+// a link rather than typed into the form. It never creates a run.
+func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
+	runCode := chi.URLParam(r, "code")
+
+	err := h.runService.StartPlaying(r.Context(), runCode)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "PlayWithCode: starting game", "error", err, "runCode", runCode)
+		h.redirect(w, r, "/404")
+		return
+	}
+
+	if err = h.startSession(w, r, runCode); err != nil {
+		h.logger.ErrorContext(r.Context(), "PlayWithCode: starting session", "error", err, "runCode", runCode)
+		h.redirect(w, r, "/404")
+		return
+	}
+
+	h.redirect(w, r, "/next")
 }
 
 // PlayPost is the handler for the play form submission.

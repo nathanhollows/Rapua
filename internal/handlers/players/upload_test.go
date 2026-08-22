@@ -1,17 +1,16 @@
-//nolint:testpackage // Test requires access to internal members
-package players
+package players_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
@@ -54,11 +53,7 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 		},
 	}
 
-	// Create handler with mock service
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	// Create a test team
 	team := &models.Run{
@@ -117,10 +112,7 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 
 func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 	mockService := &mockUploadService{}
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	team := &models.Run{
 		Code:    "TEAM1",
@@ -152,10 +144,7 @@ func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 
 func TestPlayerHandler_UploadImage_NoTeamInContext(t *testing.T) {
 	mockService := &mockUploadService{}
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	// Create multipart form data
 	body := &bytes.Buffer{}
@@ -187,10 +176,7 @@ func TestPlayerHandler_UploadImage_ServiceError(t *testing.T) {
 		returnError: assert.AnError,
 	}
 
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	team := &models.Run{
 		Code:    "TEAM1",
@@ -234,10 +220,7 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 		},
 	}
 
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	team := &models.Run{
 		Code:    "TEAM1",
