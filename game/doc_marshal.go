@@ -8,10 +8,19 @@ import (
 	"sort"
 )
 
-// MarshalJSON serializes ChildDoc as {"location": ...} or {"group": ...}.
 func (c ChildDoc) MarshalJSON() ([]byte, error) {
-	if c.Location != nil && c.Group != nil {
-		return nil, errors.New("ChildDoc: both Location and Group are set")
+	set := 0
+	if c.Location != nil {
+		set++
+	}
+	if c.Group != nil {
+		set++
+	}
+	if c.Objective != nil {
+		set++
+	}
+	if set > 1 {
+		return nil, errors.New("ChildDoc: more than one of Location, Group, Objective is set")
 	}
 	if c.Location != nil {
 		return json.Marshal(map[string]any{"location": c.Location})
@@ -19,14 +28,26 @@ func (c ChildDoc) MarshalJSON() ([]byte, error) {
 	if c.Group != nil {
 		return json.Marshal(map[string]any{"group": c.Group})
 	}
-	return nil, errors.New("ChildDoc: neither Location nor Group is set")
+	if c.Objective != nil {
+		return json.Marshal(map[string]any{"objective": c.Objective})
+	}
+	return nil, errors.New("ChildDoc: none of Location, Group, Objective is set")
 }
 
-// UnmarshalJSON deserializes {"location": ...} or {"group": ...} into ChildDoc.
 func (c *ChildDoc) UnmarshalJSON(data []byte) error {
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
+	}
+
+	known := 0
+	for _, key := range []string{"location", "group", "objective"} {
+		if _, ok := raw[key]; ok {
+			known++
+		}
+	}
+	if known > 1 {
+		return fmt.Errorf("ChildDoc: expected exactly one of \"location\", \"group\", \"objective\", got %v", keysOf(raw))
 	}
 
 	if locRaw, ok := raw["location"]; ok {
@@ -39,13 +60,15 @@ func (c *ChildDoc) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(grpRaw, c.Group)
 	}
 
-	return fmt.Errorf("ChildDoc: expected key \"location\" or \"group\", got %v", keysOf(raw))
+	if objRaw, ok := raw["objective"]; ok {
+		c.Objective = &ObjectiveDoc{}
+		return json.Unmarshal(objRaw, c.Objective)
+	}
+
+	return fmt.Errorf("ChildDoc: expected key \"location\", \"group\", or \"objective\", got %v", keysOf(raw))
 }
 
-// MarshalJSON serializes BlockDoc with "type" first, "id" second (if present),
-// then remaining keys in alphabetical order.
 func (b BlockDoc) MarshalJSON() ([]byte, error) {
-	// Collect and sort the remaining keys
 	rest := make([]string, 0, len(b))
 	for k := range b {
 		if k == "type" || k == "id" {

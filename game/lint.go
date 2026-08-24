@@ -46,13 +46,15 @@ func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
 }
 
 type linter struct {
-	doc         *GameDoc
-	registry    BlockRegistry
-	result      LintResult
-	slugs       map[string]bool
-	blockIDs    map[string]bool
-	definedVars map[string]bool // all variable names set by any block in the doc
-	usedVars    map[string]bool // all variable names referenced in any when clause
+	doc          *GameDoc
+	registry     BlockRegistry
+	result       LintResult
+	slugs        map[string]bool
+	blockIDs     map[string]bool
+	definedVars  map[string]bool // all variable names set by any block in the doc.
+	usedVars     map[string]bool // all variable names referenced in any when clause.
+	sawLocation  bool
+	sawObjective bool
 }
 
 func (l *linter) run() {
@@ -84,6 +86,11 @@ func (l *linter) checkSchema() {
 		l.errorf("name", "MISSING_NAME", "game name is required")
 	}
 	l.checkStructureDoc("structure", l.doc.Structure)
+	if l.sawLocation && l.sawObjective {
+		l.errorf("structure", "MIXED_LOCATION_OBJECTIVE",
+			"structure mixes Location and Objective children; objectives replace locations: "+
+				"migrate the whole quest rather than mixing the two")
+	}
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
 	}
@@ -131,12 +138,54 @@ func (l *linter) checkChildDoc(path string, child ChildDoc) {
 		l.checkLocationDoc(path+".location", *child.Location)
 	case child.Group != nil:
 		l.checkGroupDoc(path+".group", *child.Group)
+	case child.Objective != nil:
+		l.checkObjectiveDoc(path+".objective", *child.Objective)
 	default:
-		l.errorf(path, "EMPTY_CHILD", "child has neither location nor group")
+		l.errorf(path, "EMPTY_CHILD", "child has neither location, group, nor objective")
+	}
+}
+
+// checkObjectiveDoc applies the proof-context composition rule: a non-empty
+// proof context must contain at least one interactive block, or it gates nothing.
+func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc) {
+	l.sawObjective = true
+	if obj.Slug == "" {
+		l.errorf(path+".slug", "MISSING_SLUG", "objective slug is required")
+	} else if !slugPattern.MatchString(obj.Slug) {
+		l.errorf(path+".slug", "SLUG_INVALID_FORMAT",
+			"slug %q must contain only lowercase letters, digits, and hyphens (no leading/trailing hyphens)", obj.Slug)
+	}
+	if obj.Title == "" {
+		l.errorf(path+".title", "MISSING_OBJECTIVE_TITLE", "objective title is required")
+	}
+
+	l.checkObjectiveContextDoc(path+".proof", obj.Proof, ContextObjectiveProof)
+	l.checkObjectiveContextDoc(path+".reveal", obj.Reveal, ContextObjectiveReveal)
+
+	if len(obj.Proof.Blocks) == 0 || l.registry == nil {
+		return
+	}
+	for _, b := range obj.Proof.Blocks {
+		typStr, ok := b["type"].(string)
+		if ok && l.registry.IsInteractive(typStr) {
+			return
+		}
+	}
+	l.errorf(path+".proof", "PROOF_CONTEXT_NO_INTERACTIVE_BLOCK",
+		"a non-empty proof context must contain at least one interactive block, or it gates nothing")
+}
+
+func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDoc, ctx BlockContext) {
+	for i, b := range objCtx.Blocks {
+		l.checkBlockDoc(fmt.Sprintf("%s.blocks[%d]", path, i), b, ctx)
+	}
+	for name := range objCtx.Sets {
+		l.checkReservedVarName(path+".sets", name)
 	}
 }
 
 func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
+	l.sawLocation = true
 	if loc.Slug == "" {
 		l.errorf(path+".slug", "MISSING_SLUG", "location slug is required")
 	} else if !slugPattern.MatchString(loc.Slug) {
@@ -280,7 +329,8 @@ func (l *linter) checkSemantic() {
 func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			slug := child.Location.Slug
 			if slug != "" {
 				if l.slugs[slug] {
@@ -290,7 +340,17 @@ func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc
 				l.slugs[slug] = true
 			}
 			l.checkLocationContexts(childPath+".location", *child.Location)
-		} else if child.Group != nil {
+		case child.Objective != nil:
+			slug := child.Objective.Slug
+			if slug != "" {
+				if l.slugs[slug] {
+					l.errorf(childPath+".objective.slug", "SLUG_DUPLICATE",
+						"duplicate slug %q", slug)
+				}
+				l.slugs[slug] = true
+			}
+			l.checkObjectiveContexts(childPath+".objective", *child.Objective)
+		case child.Group != nil:
 			l.collectAndCheckSlugsInChildren(childPath+".group", child.Group.Children)
 		}
 	}
@@ -301,6 +361,13 @@ func (l *linter) checkLocationContexts(path string, loc LocationDoc) {
 	l.checkBlockContexts(path+".navigation", loc.Navigation, ContextNavigation)
 	l.trackBlockIDs(path+".content", loc.Content)
 	l.trackBlockIDs(path+".navigation", loc.Navigation)
+}
+
+func (l *linter) checkObjectiveContexts(path string, obj ObjectiveDoc) {
+	l.checkBlockContexts(path+".proof.blocks", obj.Proof.Blocks, ContextObjectiveProof)
+	l.checkBlockContexts(path+".reveal.blocks", obj.Reveal.Blocks, ContextObjectiveReveal)
+	l.trackBlockIDs(path+".proof.blocks", obj.Proof.Blocks)
+	l.trackBlockIDs(path+".reveal.blocks", obj.Reveal.Blocks)
 }
 
 func (l *linter) checkBlockContexts(path string, blocks []BlockDoc, ctx BlockContext) {
@@ -343,10 +410,15 @@ func (l *linter) trackBlockIDs(path string, blocks []BlockDoc) {
 
 func (l *linter) checkStructural() {
 	for i, child := range l.doc.Structure.Children {
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			l.warnf(fmt.Sprintf("structure.children[%d].location", i), "ROOT_LOCATION_HIDDEN",
 				"location %q is a direct child of the root structure and will not be shown; wrap it in a group",
 				child.Location.Name)
+		case child.Objective != nil:
+			l.warnf(fmt.Sprintf("structure.children[%d].objective", i), "ROOT_OBJECTIVE_HIDDEN",
+				"objective %q is a direct child of the root structure and will not be shown; wrap it in a group",
+				child.Objective.Title)
 		}
 	}
 	l.checkStructuralChildren("structure", l.doc.Structure.Children)
@@ -419,7 +491,8 @@ func (l *linter) warnBlocksWithPoints(path string, blocks []BlockDoc) {
 func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			loc := *child.Location
 			if loc.Points > 0 {
 				l.warnf(childPath+".location.points", "POINTS_DISABLED",
@@ -427,7 +500,12 @@ func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
 			}
 			l.warnBlocksWithPoints(childPath+".location.content", loc.Content)
 			l.warnBlocksWithPoints(childPath+".location.navigation", loc.Navigation)
-		} else if child.Group != nil {
+		case child.Objective != nil:
+			// Objectives have no points field of their own; points are block-level only.
+			obj := *child.Objective
+			l.warnBlocksWithPoints(childPath+".objective.proof.blocks", obj.Proof.Blocks)
+			l.warnBlocksWithPoints(childPath+".objective.reveal.blocks", obj.Reveal.Blocks)
+		case child.Group != nil:
 			l.warnChildrenBlockPoints(childPath+".group", child.Group.Children)
 		}
 	}
@@ -471,7 +549,8 @@ func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
 
 func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[string]bool) {
 	for _, child := range children {
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			for _, b := range child.Location.Content {
 				for _, v := range l.blockDocSetsVars(b) {
 					vars[v] = true
@@ -482,10 +561,40 @@ func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[st
 					vars[v] = true
 				}
 			}
-		} else if child.Group != nil {
+		case child.Objective != nil:
+			l.collectVarsFromObjectiveContext(child.Objective.Proof, vars)
+			l.collectVarsFromObjectiveContext(child.Objective.Reveal, vars)
+		case child.Group != nil:
 			l.collectVarsFromChildrenIntoSet(child.Group.Children, vars)
 		}
 	}
+}
+
+// collectVarsFromObjectiveContext records vars set by an objective context's
+// blocks and by the context's own Sets field, which fires directly (not via a
+// block) when every block in the context completes.
+func (l *linter) collectVarsFromObjectiveContext(objCtx ObjectiveContextDoc, vars map[string]bool) {
+	for _, v := range l.objectiveContextSelfVars(objCtx) {
+		vars[v] = true
+	}
+}
+
+func (l *linter) blockDocsSetsVars(blocks []BlockDoc) []string {
+	var vars []string
+	for _, b := range blocks {
+		vars = append(vars, l.blockDocSetsVars(b)...)
+	}
+	return vars
+}
+
+// objectiveContextSelfVars returns every var name an objective context defines:
+// its blocks' sets and the context's own Sets field.
+func (l *linter) objectiveContextSelfVars(objCtx ObjectiveContextDoc) []string {
+	vars := l.blockDocsSetsVars(objCtx.Blocks)
+	for name := range objCtx.Sets {
+		vars = append(vars, name)
+	}
+	return vars
 }
 
 // checkWhenClausesInDoc checks that every Condition.Var in every when clause
@@ -531,13 +640,20 @@ func (l *linter) checkUnusedVars() {
 func (l *linter) checkWhenInChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			loc := child.Location
 			locPath := childPath + ".location"
 			l.checkWhenClause(locPath+".when", loc.When)
 			l.checkWhenInBlocks(locPath+".content", loc.Content)
 			l.checkWhenInBlocks(locPath+".navigation", loc.Navigation)
-		} else if child.Group != nil {
+		case child.Objective != nil:
+			obj := child.Objective
+			objPath := childPath + ".objective"
+			l.checkWhenClause(objPath+".when", obj.When)
+			l.checkWhenInBlocks(objPath+".proof.blocks", obj.Proof.Blocks)
+			l.checkWhenInBlocks(objPath+".reveal.blocks", obj.Reveal.Blocks)
+		case child.Group != nil:
 			l.checkWhenClause(childPath+".group.when", child.Group.When)
 			l.checkWhenInChildren(childPath+".group", child.Group.Children)
 		}
@@ -562,7 +678,7 @@ func (l *linter) checkWhenClause(path string, wc *WhenClause) {
 	}
 	if len(wc.AllOf) == 0 && len(wc.AnyOf) == 0 {
 		l.warnf(path, "WHEN_VACUOUS",
-			"when clause has no conditions; it is always true and has no effect — omit it or add conditions")
+			"when clause has no conditions; it is always true and has no effect; omit it or add conditions")
 		return
 	}
 	for i, cond := range wc.AllOf {
@@ -613,7 +729,8 @@ func (l *linter) checkGroupMinOneAutoAdvance(path string, g GroupDoc) {
 func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc, groupVars map[string]bool) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
+		switch {
+		case child.Location != nil:
 			loc := child.Location
 			locPath := childPath + ".location"
 			// Location-level when: check against full groupVars.
@@ -621,18 +738,48 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 			// a circular dependency (location hidden until x set, x only set inside it).
 			l.checkGroupScopedWhen(locPath+".when", loc.When, groupVars)
 			// Block-level when: exclude vars set by this location's own blocks.
-			// "Self-reveal" — block B sets x, block C on the same location has when:{var:x} —
+			// "Self-reveal" (block B sets x, block C on the same location has when:{var:x}).
 			// is valid; the sequence B→x→C plays out within a single location visit.
 			crossVars := l.groupVarsExcludingSelf(groupVars, loc.Content, loc.Navigation)
 			for j, b := range loc.Content {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
 				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, crossVars)
 			}
 			for j, b := range loc.Navigation {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
 				l.checkGroupScopedWhen(fmt.Sprintf("%s.navigation[%d].when", locPath, j), wc, crossVars)
 			}
-		} else if child.Group != nil {
+		case child.Objective != nil:
+			obj := child.Objective
+			objPath := childPath + ".objective"
+			// Objective-level when: check against full groupVars, same reasoning as location.
+			l.checkGroupScopedWhen(objPath+".when", obj.When, groupVars)
+
+			// A proof block is still rendering while its own context hasn't finished,
+			// so only other proof blocks' vars are legitimately already-set (the
+			// self-reveal pattern, within proof). Proof's own context Sets fires once
+			// every proof block completes, so referencing it from within a proof
+			// block's when is genuinely unreachable: not excluded here.
+			proofBlockVars := l.blockDocsSetsVars(obj.Proof.Blocks)
+			proofCross := excludingVars(groupVars, proofBlockVars)
+			for j, b := range obj.Proof.Blocks {
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.proof.blocks[%d].when", objPath, j), wc, proofCross)
+			}
+
+			// A reveal block only ever renders once proof has fully cleared (the
+			// proof-to-reveal transition is one-way), so everything proof sets - its
+			// blocks' vars and its context Sets - is legitimately already set by the
+			// time reveal renders. Reveal's own context Sets is still dead for the
+			// same reason proof's is dead for proof blocks above: it only fires once
+			// every reveal block completes.
+			revealBlockVars := l.blockDocsSetsVars(obj.Reveal.Blocks)
+			revealCross := excludingVars(groupVars, append(l.objectiveContextSelfVars(obj.Proof), revealBlockVars...))
+			for j, b := range obj.Reveal.Blocks {
+				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
+				l.checkGroupScopedWhen(fmt.Sprintf("%s.reveal.blocks[%d].when", objPath, j), wc, revealCross)
+			}
+		case child.Group != nil:
 			l.checkGroupScopedWhenInChildren(childPath+".group", child.Group.Children, groupVars)
 		}
 	}
@@ -648,6 +795,13 @@ func (l *linter) groupVarsExcludingSelf(groupVars map[string]bool, blockSlices .
 			selfVars = append(selfVars, l.blockDocSetsVars(b)...)
 		}
 	}
+	return excludingVars(groupVars, selfVars)
+}
+
+// excludingVars returns a copy of groupVars with the named vars removed, or
+// groupVars itself (no copy) when selfVars is empty. Callers must not mutate
+// the returned map when selfVars might be empty, since it may alias groupVars.
+func excludingVars(groupVars map[string]bool, selfVars []string) map[string]bool {
 	if len(selfVars) == 0 {
 		return groupVars
 	}
@@ -727,7 +881,7 @@ func (l *linter) checkRegistrySetsReserved(typStr string, b BlockDoc, path strin
 func (l *linter) checkReservedVarName(path string, name string) {
 	if IsReservedVarName(name) {
 		l.errorf(path, "SETS_RESERVED_NAMESPACE",
-			`cannot write to reserved namespace: %q — this var is set automatically by the runtime`, name)
+			`cannot write to reserved namespace: %q; this var is set automatically by the runtime`, name)
 	}
 }
 
@@ -791,7 +945,7 @@ func isBuiltInVar(name string) bool {
 }
 
 // reservedVarPrefix marks namespace prefixes owned by the runtime.
-// Blocks must not write to these — the runtime sets them automatically.
+// Blocks must not write to these: the runtime sets them automatically.
 const reservedVarPrefix = "objective."
 
 // IsReservedVarName reports whether name belongs to a runtime-owned namespace.

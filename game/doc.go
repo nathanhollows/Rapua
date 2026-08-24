@@ -1,8 +1,8 @@
 package game
 
 // GameDoc is the top-level v8 JSON game document.
-// The DB is source of truth; this document is a complete lossless projection.
-// Export reads from DB; import writes to DB; round-trips are lossless.
+// The DB is the source of truth; this document is a lossless projection.
+// Export reads from DB; import writes to it. Round-trips are lossless.
 type GameDoc struct {
 	Rapua     string       `json:"rapua"`
 	ID        string       `json:"id,omitempty"`
@@ -21,7 +21,6 @@ type SettingsDoc struct {
 	ShowLeaderboard bool `json:"show_leaderboard"`
 }
 
-// StructureDoc represents the root group of the game structure.
 type StructureDoc struct {
 	Routing         RouteStrategy  `json:"routing"`
 	Completion      CompletionType `json:"completion"`
@@ -29,9 +28,8 @@ type StructureDoc struct {
 	Children        []ChildDoc     `json:"children"`
 }
 
-// GroupDoc represents a named group within the structure tree.
-// AutoAdvance defaults to true when omitted — set explicitly to false to keep players in the group
-// after the completion criteria are met.
+// GroupDoc: AutoAdvance defaults to true when omitted. Set it to false to keep
+// players in the group after its completion criteria are met.
 type GroupDoc struct {
 	ID              string         `json:"id,omitempty"`
 	Name            string         `json:"name"`
@@ -44,7 +42,6 @@ type GroupDoc struct {
 	Children        []ChildDoc     `json:"children"`
 }
 
-// LocationDoc represents a single game location with its blocks.
 type LocationDoc struct {
 	ID         string      `json:"id,omitempty"`
 	Slug       string      `json:"slug"`
@@ -56,20 +53,38 @@ type LocationDoc struct {
 	Navigation []BlockDoc  `json:"navigation,omitempty"`
 }
 
-// MarkerDoc holds geographic coordinates for a location.
 type MarkerDoc struct {
 	Lat float64 `json:"lat"`
 	Lng float64 `json:"lng"`
 }
 
-// ChildDoc is a tagged union — exactly one of Location or Group is set.
+// ObjectiveDoc renders one fixed design rather than the freeform block canvas a
+// Location uses: exactly two contexts, proof then reveal, no pre-proof context.
+type ObjectiveDoc struct {
+	ID     string              `json:"id,omitempty"`
+	Slug   string              `json:"slug"`
+	Title  string              `json:"title"`
+	When   *WhenClause         `json:"when,omitempty"`
+	Proof  ObjectiveContextDoc `json:"proof"`
+	Reveal ObjectiveContextDoc `json:"reveal"`
+}
+
+// ObjectiveContextDoc is one of an objective's two contexts (proof or reveal).
+// Its Sets fire once, the moment every block in the context completes.
+type ObjectiveContextDoc struct {
+	Blocks []BlockDoc `json:"blocks,omitempty"`
+	Sets   SetsField  `json:"sets,omitempty"`
+}
+
+// ChildDoc is a tagged union: exactly one of Location, Group, or Objective is set.
 // Custom marshal/unmarshal is in doc_marshal.go.
 type ChildDoc struct {
-	Location *LocationDoc
-	Group    *GroupDoc
+	Location  *LocationDoc
+	Group     *GroupDoc
+	Objective *ObjectiveDoc
 }
 
 // BlockDoc is a flat map with a "type" discriminator plus all block-specific fields.
-// The "id" and "points" keys are promoted alongside block-specific fields.
-// On export, "id" is included. On create-import, "id" is omitted so new UUIDs are generated.
+// "id" and "points" are promoted to the top level.
+// Export includes "id"; create-import omits it so new UUIDs are generated.
 type BlockDoc map[string]any
