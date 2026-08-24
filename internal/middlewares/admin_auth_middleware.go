@@ -20,8 +20,6 @@ type InstanceLoader interface {
 	GetByIDWithRelations(ctx context.Context, id string) (*models.Quest, error)
 }
 
-// AdminAuthMiddleware ensures the user is authenticated and has verified their email.
-// It also loads the current instance from a cookie and populates the user struct.
 func AdminAuthMiddleware(
 	logger *slog.Logger,
 	authService AuthenticatedUserGetter,
@@ -29,21 +27,18 @@ func AdminAuthMiddleware(
 	next http.Handler,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Make sure the user is authenticated
 		user, err := authService.GetAuthenticatedUser(r)
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
-		// Redirect to verify email if the user hasn't verified their email
-		// and they didn't sign up with OAuth
+		// OAuth signups skip email verification.
 		if !user.EmailVerified && user.Provider == "" {
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 			return
 		}
 
-		// Load current instance from session
 		if session, err := sessions.Get(r, "admin"); err != nil {
 			logger.ErrorContext(r.Context(), "AdminAuthMiddleware: getting session", "error", err)
 		} else {
@@ -53,18 +48,16 @@ func AdminAuthMiddleware(
 					user.CurrentQuestID = instance.ID
 					user.CurrentQuest = *instance
 				}
-				// Invalid/unauthorized instance ID is silently ignored;
-				// AdminCheckInstanceMiddleware will redirect to /admin/quests
+				// Invalid or unauthorized instance IDs are silently ignored;
+				// AdminCheckInstanceMiddleware redirects to /admin/quests.
 			}
 		}
 
-		// Add the user to the context
 		ctx := context.WithValue(r.Context(), contextkeys.UserKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// AdminCheckInstanceMiddleware ensures the user has an instance selected.
 func AdminCheckInstanceMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(contextkeys.UserKey).(*models.User)
@@ -73,7 +66,6 @@ func AdminCheckInstanceMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check if the route contains /admin/quests
 		reg := regexp.MustCompile(`/admin/quests/?`)
 		if reg.MatchString(r.URL.Path) {
 			next.ServeHTTP(w, r)
@@ -81,11 +73,6 @@ func AdminCheckInstanceMiddleware(next http.Handler) http.Handler {
 		}
 
 		if user.CurrentQuestID == "" {
-			// flash.Message{
-			// 	Title:   "Error",
-			// 	Message: "Please select an instance to continue",
-			// 	Style:   flash.Error,
-			// }.Save(w, r)
 			http.Redirect(w, r, "/admin/quests", http.StatusSeeOther)
 			return
 		}

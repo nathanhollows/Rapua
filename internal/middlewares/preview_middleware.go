@@ -23,7 +23,6 @@ type questService interface {
 	GetByID(context.Context, string) (*models.Quest, error)
 }
 
-// PreviewMiddleware sets up a team instance for previewing the game and sets the Preview flag in the context.
 func PreviewMiddleware(
 	logger *slog.Logger,
 	_ runService,
@@ -63,7 +62,6 @@ func PreviewMiddleware(
 			return
 		}
 
-		// Fetch instance to check ownership/template status
 		instance, err := questService.GetByID(r.Context(), team.QuestID)
 		if err != nil {
 			logger.ErrorContext(
@@ -78,9 +76,8 @@ func PreviewMiddleware(
 			return
 		}
 
-		// Templates are public - allow without auth
+		// Templates are public; regular instances require auth and ownership.
 		if !instance.IsTemplate {
-			// Regular instance - require auth + ownership
 			var user *models.User
 			user, err = identityService.GetAuthenticatedUser(r)
 			if err != nil || user.ID != instance.UserID {

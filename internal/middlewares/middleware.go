@@ -12,9 +12,6 @@ func TextHTMLMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// HtmxOnlyMiddleware ensures that a handler is only accessible via HTMX requests.
-// If the request is not an HTMX request, it will be redirected to the provided path.
-// This is useful for handlers that should only be accessed via HTMX, such as partial templates.
 func HtmxOnlyMiddleware(logger *slog.Logger, redirectPath string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Hx-Request") != "true" {
