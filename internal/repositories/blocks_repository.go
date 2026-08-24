@@ -22,6 +22,7 @@ type BlockRepository interface {
 
 	// GetByID fetches a block by its ID
 	GetByID(ctx context.Context, blockID string) (blocks.Block, error)
+	GetContext(ctx context.Context, blockID string) (blocks.BlockContext, error)
 	// GetBlockAndStateByBlockIDAndRunCode fetches a block and its state by block ID and run code
 	GetBlockAndStateByBlockIDAndRunCode(
 		ctx context.Context, blockID, runCode, questID string,
@@ -165,6 +166,19 @@ func (r *blockRepository) GetByID(ctx context.Context, blockID string) (blocks.B
 		return nil, err
 	}
 	return convertModelToBlock(modelBlock)
+}
+
+func (r *blockRepository) GetContext(ctx context.Context, blockID string) (blocks.BlockContext, error) {
+	modelBlock := &models.Block{}
+	err := r.db.NewSelect().
+		Model(modelBlock).
+		Column("context").
+		Where("id = ?", blockID).
+		Scan(ctx)
+	if err != nil {
+		return "", err
+	}
+	return modelBlock.Context, nil
 }
 
 // UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).

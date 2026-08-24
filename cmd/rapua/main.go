@@ -88,6 +88,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
@@ -133,6 +135,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	checkInService := services.NewCheckInService(
 		checkInRepo, locationRepo, teamRepo,
 		locationStatsService, navigationService, blockService, teamVarStateRepo,
+		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)

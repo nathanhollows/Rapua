@@ -33,6 +33,10 @@ func (s *BlockService) GetByBlockID(ctx context.Context, blockID string) (blocks
 	return s.blockRepo.GetByID(ctx, blockID)
 }
 
+func (s *BlockService) GetBlockContext(ctx context.Context, blockID string) (blocks.BlockContext, error) {
+	return s.blockRepo.GetContext(ctx, blockID)
+}
+
 // FindByOwnerID fetches all content blocks for an owner (context agnostic).
 func (s *BlockService) FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error) {
 	if ownerID == "" {
@@ -340,22 +344,25 @@ func (s *BlockService) CheckValidationRequiredForCheckIn(
 	ctx context.Context,
 	locationID, runCode, questID string,
 ) (bool, error) {
-	return s.checkValidationRequiredForCheckIn(ctx, locationID, runCode, questID, nil)
+	return s.checkValidationRequiredForCheckIn(ctx, locationID, runCode, questID, game.ContextLocationContent, nil)
 }
 
-// checkValidationRequiredForCheckIn is the internal implementation. When resolver is non-nil,
-// blocks whose when-clause evaluates to false are skipped (they are hidden from the player).
+// checkValidationRequiredForCheckIn is the internal implementation, generalised to any owner
+// and context (a location's content, or one of an objective's proof/reveal contexts). When
+// resolver is non-nil, blocks whose when-clause evaluates to false are skipped (hidden from
+// the player).
 func (s *BlockService) checkValidationRequiredForCheckIn(
 	ctx context.Context,
-	locationID, runCode, questID string,
+	ownerID, runCode, questID string,
+	blockContext game.BlockContext,
 	resolver game.VarResolver,
 ) (bool, error) {
 	blocks, state, err := s.FindByOwnerIDAndRunCodeWithStateAndContext(
 		ctx,
-		locationID,
+		ownerID,
 		runCode,
 		questID,
-		game.ContextLocationContent,
+		blockContext,
 	)
 	if err != nil {
 		return false, err

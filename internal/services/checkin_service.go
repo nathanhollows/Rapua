@@ -19,13 +19,15 @@ type LocationStatsService interface {
 }
 
 type CheckInService struct {
-	checkInRepo          repositories.CheckInRepository
-	locationRepo         repositories.LocationRepository
-	teamRepo             repositories.RunRepository
-	blockService         *BlockService
-	locationStatsService LocationStatsService
-	navigationService    *NavigationService
-	varStateRepo         repositories.RunVarStateRepository
+	checkInRepo                    repositories.CheckInRepository
+	locationRepo                   repositories.LocationRepository
+	teamRepo                       repositories.RunRepository
+	blockService                   *BlockService
+	locationStatsService           LocationStatsService
+	navigationService              *NavigationService
+	varStateRepo                   repositories.RunVarStateRepository
+	objectiveRepo                  repositories.ObjectiveRepository
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 }
 
 func NewCheckInService(
@@ -36,15 +38,19 @@ func NewCheckInService(
 	navigationService *NavigationService,
 	blockService *BlockService,
 	varStateRepo repositories.RunVarStateRepository,
+	objectiveRepo repositories.ObjectiveRepository,
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 ) *CheckInService {
 	return &CheckInService{
-		checkInRepo:          checkInRepo,
-		locationRepo:         locationRepo,
-		teamRepo:             teamRepo,
-		locationStatsService: locationStatsService,
-		navigationService:    navigationService,
-		blockService:         blockService,
-		varStateRepo:         varStateRepo,
+		checkInRepo:                    checkInRepo,
+		locationRepo:                   locationRepo,
+		teamRepo:                       teamRepo,
+		locationStatsService:           locationStatsService,
+		navigationService:              navigationService,
+		blockService:                   blockService,
+		varStateRepo:                   varStateRepo,
+		objectiveRepo:                  objectiveRepo,
+		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 	}
 }
 
@@ -160,7 +166,7 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locatio
 	}
 	resolver := NewPlayerVarResolver(team, varStates)
 	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, location.ID, team.Code, team.QuestID, resolver,
+		ctx, location.ID, team.Code, team.QuestID, game.ContextLocationContent, resolver,
 	)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)
@@ -339,7 +345,11 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 
 	// Only award points and update check-ins in regular mode, not preview mode
 	if !isPreview && state.IsComplete() {
-		if err = s.awardPointsAndComplete(ctx, &team, block); err != nil {
+		blockContext, err := s.blockService.GetBlockContext(ctx, blockID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getting block context: %w", err)
+		}
+		if err = s.awardPointsAndComplete(ctx, &team, block, blockContext); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -380,19 +390,28 @@ func (s *CheckInService) writeSetsVars(
 	return nil
 }
 
-// awardPointsAndComplete awards points and marks check-in complete when all visible blocks are done.
-func (s *CheckInService) awardPointsAndComplete(ctx context.Context, team *models.Run, block blocks.Block) error {
+// awardPointsAndComplete awards points, then dispatches to whichever owner-kind's completion
+// logic applies: objective context completion for proof/reveal blocks, or the existing
+// location check-in completion for everything else.
+func (s *CheckInService) awardPointsAndComplete(
+	ctx context.Context, team *models.Run, block blocks.Block, blockContext game.BlockContext,
+) error {
 	team.Points += block.GetPoints()
 	if err := s.teamRepo.Update(ctx, team); err != nil {
 		return fmt.Errorf("awarding points: %w", err)
 	}
+
+	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
+		return s.completeObjectiveContext(ctx, team, block.GetOwnerID(), blockContext)
+	}
+
 	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
 		return fmt.Errorf("loading var states: %w", err)
 	}
 	blockResolver := NewPlayerVarResolver(team, varStates)
 	unfinished, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, block.GetOwnerID(), team.Code, team.QuestID, blockResolver,
+		ctx, block.GetOwnerID(), team.Code, team.QuestID, game.ContextLocationContent, blockResolver,
 	)
 	if err != nil {
 		return fmt.Errorf("checking if validation is required: %w", err)
@@ -404,6 +423,57 @@ func (s *CheckInService) awardPointsAndComplete(ctx context.Context, team *model
 		if err = s.CompleteBlocks(ctx, team.Code, block.GetOwnerID()); err != nil &&
 			!errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("completing blocks: %w", err)
+		}
+	}
+	return nil
+}
+
+// completeObjectiveContext logs the completion and applies the context's sets once
+// every block in the context is done. Logging is unconditional even when the context
+// defines no sets. The ObjectiveContextCompletion INSERT is the idempotency guard:
+// only the call that wins the race applies sets.
+func (s *CheckInService) completeObjectiveContext(
+	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
+) error {
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	if err != nil {
+		return fmt.Errorf("loading var states: %w", err)
+	}
+	resolver := NewPlayerVarResolver(team, varStates)
+
+	stillRequired, err := s.blockService.checkValidationRequiredForCheckIn(
+		ctx, objectiveID, team.Code, team.QuestID, blockContext, resolver,
+	)
+	if err != nil {
+		return fmt.Errorf("checking if objective context is complete: %w", err)
+	}
+	if stillRequired {
+		return nil
+	}
+
+	inserted, err := s.objectiveContextCompletionRepo.Insert(ctx, team.Code, objectiveID, blockContext)
+	if err != nil {
+		return fmt.Errorf("logging objective context completion: %w", err)
+	}
+	if !inserted {
+		// Already logged by an earlier call; its sets were applied then.
+		return nil
+	}
+
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
+	if err != nil {
+		return fmt.Errorf("loading objective: %w", err)
+	}
+	sets := objective.ProofSets
+	if blockContext == game.ContextObjectiveReveal {
+		sets = objective.RevealSets
+	}
+	for varName, val := range sets {
+		if game.IsReservedVarName(varName) {
+			continue
+		}
+		if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
+			return fmt.Errorf("writing context sets var %q: %w", varName, err)
 		}
 	}
 	return nil

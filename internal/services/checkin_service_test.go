@@ -198,7 +198,7 @@ func (f *fakeCheckInRepo) Update(_ context.Context, _ *models.CheckIn) error {
 // row, an already-complete check-in, and an incomplete one that must be marked.
 func TestCompleteBlocks(t *testing.T) {
 	newService := func(repo *fakeCheckInRepo) *services.CheckInService {
-		return services.NewCheckInService(repo, nil, nil, nil, nil, nil, nil)
+		return services.NewCheckInService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
 	}
 
 	// Passed through rather than absorbed, so a caller that did not expect it
