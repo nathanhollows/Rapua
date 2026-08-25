@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockRegistry implements game.BlockRegistry for testing.
 type mockRegistry struct {
 	validTypes  map[string]bool
 	contexts    map[string][]game.BlockContext
@@ -214,7 +213,7 @@ func TestLint_DuplicateSlugs(t *testing.T) {
 
 func TestLint_InvalidContext(t *testing.T) {
 	doc := validDoc()
-	// quiz can't be in start context
+	// quiz can't be in start context.
 	doc.Start = append(doc.Start, game.BlockDoc{"type": "quiz"})
 	result := game.Lint(doc, newTestRegistry())
 	require.Len(t, result.Errors, 1)
@@ -575,7 +574,7 @@ func TestLint_PointsDisabledInNestedGroup(t *testing.T) {
 	})
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
-	// POINTS_DISABLED for deep-station.points
+	// POINTS_DISABLED for deep-station.points.
 	require.Len(t, result.Warnings, 1)
 	assert.Equal(t, "POINTS_DISABLED", result.Warnings[0].Code)
 }
@@ -616,7 +615,7 @@ func TestLint_RootHasNoGroups(t *testing.T) {
 	}
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
-	// One ROOT_LOCATION_HIDDEN per bare location
+	// One ROOT_LOCATION_HIDDEN per bare location.
 	require.Len(t, result.Warnings, 2)
 	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[0].Code)
 	assert.Equal(t, "ROOT_LOCATION_HIDDEN", result.Warnings[1].Code)
@@ -710,17 +709,17 @@ func TestLint_DefinedVar_NoWarning(t *testing.T) {
 func TestLint_WhenUnreachableVar_Min1AutoAdvance(t *testing.T) {
 	autoAdvanceTrue := true
 	doc := validDoc()
-	// Group with completion=minimum, min=1, auto_advance=true
+	// Group with completion=minimum, min=1, auto_advance=true.
 	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
 	doc.Structure.Children[0].Group.MinimumRequired = 1
 	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
 
 	loc := doc.Structure.Children[0].Group.Children[0].Location
-	// First location sets "visited_loc1"
+	// First location sets "visited_loc1".
 	loc.Content = []game.BlockDoc{
 		{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}},
 	}
-	// Add a second location that depends on "visited_loc1" being set
+	// Add a second location that depends on "visited_loc1" being set.
 	secondLoc := &game.LocationDoc{
 		Slug: "loc2",
 		Name: "Location 2",
@@ -776,7 +775,7 @@ func TestLint_UnusedVar(t *testing.T) {
 	doc.Structure.Children[0].Group.Children[0].Location.Content = []game.BlockDoc{
 		{"type": "quiz", "sets": map[string]any{"score": "true"}},
 	}
-	// "score" is set but no when clause references it
+	// "score" is set but no when clause references it.
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
@@ -1149,7 +1148,7 @@ func TestLint_MinimumRequiredExceedsChildren_Group(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
 	doc.Structure.Children[0].Group.MinimumRequired = 5
-	// Group has 1 child
+	// Group has 1 child.
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Errors))
 	for i, e := range result.Errors {
@@ -1162,7 +1161,7 @@ func TestLint_MinimumRequiredExceedsChildren_Structure(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Completion = game.CompletionMinimum
 	doc.Structure.MinimumRequired = 99
-	// Structure has 1 child
+	// Structure has 1 child.
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Errors))
 	for i, e := range result.Errors {
@@ -1553,6 +1552,37 @@ func TestLint_RootObjectiveHidden(t *testing.T) {
 		codes[i] = w.Code
 	}
 	assert.Contains(t, codes, "ROOT_OBJECTIVE_HIDDEN")
+}
+
+// TestLint_ObjectiveVarReference_UnknownSlug_Warning proves a typo'd
+// objective.<slug> reference is caught: previously any non-empty suffix passed
+// as a built-in, so a mistyped slug silently never matched at runtime.
+func TestLint_ObjectiveVarReference_UnknownSlug_Warning(t *testing.T) {
+	doc := objectiveOnlyDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{
+		AllOf: []game.Condition{{Var: "objective.does-not-exist"}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	codes := make([]string, len(result.Warnings))
+	for i, w := range result.Warnings {
+		codes[i] = w.Code
+	}
+	assert.Contains(t, codes, "UNDEFINED_OBJECTIVE_VAR")
+}
+
+func TestLint_ObjectiveVarReference_KnownSlug_NoWarning(t *testing.T) {
+	doc := objectiveOnlyDoc()
+	doc.Structure.Children = append(doc.Structure.Children, game.ChildDoc{
+		Objective: &game.ObjectiveDoc{
+			Slug:  "unlock-door",
+			Title: "Unlock the door",
+			When:  &game.WhenClause{AllOf: []game.Condition{{Var: "objective.find-the-key"}}},
+		},
+	})
+	result := game.Lint(doc, newTestRegistry())
+	for _, w := range result.Warnings {
+		assert.NotEqual(t, "UNDEFINED_OBJECTIVE_VAR", w.Code, w.Message)
+	}
 }
 
 func TestLint_WhenOnStartBlock_NoWhenClause_NoWarning(t *testing.T) {

@@ -9,25 +9,21 @@ import (
 
 var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
 
-// LintResult holds errors and warnings from linting a GameDoc.
 type LintResult struct {
 	Errors   []LintDiag `json:"errors"`   // Must fix before importing
 	Warnings []LintDiag `json:"warnings"` // Should fix but won't block import
 }
 
-// LintDiag is a single diagnostic message with a path and code.
 type LintDiag struct {
 	Path    string `json:"path"` // e.g. "structure.children[0].location.content[1]"
 	Code    string `json:"code"` // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
 	Message string `json:"message"`
 }
 
-// IsValid returns true if there are no errors (warnings are acceptable).
 func (r LintResult) IsValid() bool {
 	return len(r.Errors) == 0
 }
 
-// HasError returns true if any error in the result has the given code.
 func (r LintResult) HasError(code string) bool {
 	for _, e := range r.Errors {
 		if e.Code == code {
@@ -46,19 +42,21 @@ func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
 }
 
 type linter struct {
-	doc          *GameDoc
-	registry     BlockRegistry
-	result       LintResult
-	slugs        map[string]bool
-	blockIDs     map[string]bool
-	definedVars  map[string]bool // all variable names set by any block in the doc.
-	usedVars     map[string]bool // all variable names referenced in any when clause.
-	sawLocation  bool
-	sawObjective bool
+	doc            *GameDoc
+	registry       BlockRegistry
+	result         LintResult
+	slugs          map[string]bool
+	objectiveSlugs map[string]bool // slugs of objectives specifically, a subset of slugs.
+	blockIDs       map[string]bool
+	definedVars    map[string]bool // all variable names set by any block in the doc.
+	usedVars       map[string]bool // all variable names referenced in any when clause.
+	sawLocation    bool
+	sawObjective   bool
 }
 
 func (l *linter) run() {
 	l.slugs = make(map[string]bool)
+	l.objectiveSlugs = make(map[string]bool)
 	l.blockIDs = make(map[string]bool)
 	l.definedVars = make(map[string]bool)
 	l.usedVars = make(map[string]bool)
@@ -251,7 +249,6 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 			}
 		}
 	}
-	// Warn about unrecognised field names using the block's spec.
 	if l.registry != nil {
 		known := l.registry.KnownFields(typStr)
 		if known != nil {
@@ -272,7 +269,7 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 				}
 			}
 		}
-		// sets is only valid on interactive blocks (those that require player input).
+		// sets is only valid on interactive blocks.
 		if _, hasSets := b["sets"]; hasSets && !l.registry.IsInteractive(typStr) {
 			l.warnf(
 				path+".sets",
@@ -281,7 +278,6 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 				typStr,
 			)
 		}
-		// Block-type-specific structural validation.
 		errs, warns := l.registry.ValidateBlock(typStr, path, b)
 		l.result.Errors = append(l.result.Errors, errs...)
 		l.result.Warnings = append(l.result.Warnings, warns...)
@@ -291,7 +287,7 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 func (l *linter) checkRouting(path string, r RouteStrategy) {
 	switch r {
 	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered, RouteStrategySecret:
-		// valid
+		// valid.
 	default:
 		l.errorf(path, "INVALID_ROUTING", "invalid routing value %q", r)
 	}
@@ -300,7 +296,7 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 func (l *linter) checkCompletion(path string, c CompletionType, minRequired int) {
 	switch c {
 	case CompletionAll, CompletionMinimum:
-		// valid
+		// valid.
 	default:
 		l.errorf(path+".completion", "INVALID_COMPLETION", "invalid completion value %q", c)
 		return
@@ -348,6 +344,7 @@ func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc
 						"duplicate slug %q", slug)
 				}
 				l.slugs[slug] = true
+				l.objectiveSlugs[slug] = true
 			}
 			l.checkObjectiveContexts(childPath+".objective", *child.Objective)
 		case child.Group != nil:
@@ -423,7 +420,6 @@ func (l *linter) checkStructural() {
 	}
 	l.checkStructuralChildren("structure", l.doc.Structure.Children)
 
-	// Warn if start page has no start_button
 	hasStartButton := false
 	for _, b := range l.doc.Start {
 		if t, ok := b["type"].(string); ok && t == "start_button" {
@@ -436,7 +432,6 @@ func (l *linter) checkStructural() {
 			"start page has no start_button block; players won't be able to start the game")
 	}
 
-	// Warn if blocks have points but enable_points is false
 	if !l.doc.Settings.EnablePoints {
 		l.warnBlocksWithPoints("start", l.doc.Start)
 		l.warnBlocksWithPoints("finish", l.doc.Finish)
@@ -531,8 +526,8 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 
 // --- When / variable resolution checks ---
 
-// collectAllDefinedVars walks the entire doc and records every variable name
-// that any block can set (via the "sets" field). Called before semantic checks.
+// collectAllDefinedVars records every var any block can set (via "sets").
+// Must run before semantic checks.
 func (l *linter) collectAllDefinedVars() {
 	l.collectVarsFromBlocks(l.doc.Start)
 	l.collectVarsFromBlocks(l.doc.Finish)
@@ -597,9 +592,6 @@ func (l *linter) objectiveContextSelfVars(objCtx ObjectiveContextDoc) []string {
 	return vars
 }
 
-// checkWhenClausesInDoc checks that every Condition.Var in every when clause
-// (on blocks, locations, and groups) refers to a variable that is actually set
-// somewhere in the game.
 func (l *linter) checkWhenClausesInDoc() {
 	l.checkWhenInFixedContextBlocks("start", l.doc.Start)
 	l.checkWhenInFixedContextBlocks("finish", l.doc.Finish)
@@ -607,9 +599,9 @@ func (l *linter) checkWhenClausesInDoc() {
 	l.checkUnusedVars()
 }
 
-// checkWhenInFixedContextBlocks warns when blocks in start/finish carry a when
-// clause. The start and finish pages have no variable resolver and render all
-// blocks unconditionally, so when clauses there are silently ignored.
+// checkWhenInFixedContextBlocks warns on when clauses in start/finish: those
+// pages have no variable resolver and render all blocks unconditionally, so
+// the clauses are silently ignored.
 func (l *linter) checkWhenInFixedContextBlocks(path string, blks []BlockDoc) {
 	for i, b := range blks {
 		blockPath := fmt.Sprintf("%s[%d]", path, i)
@@ -686,20 +678,32 @@ func (l *linter) checkWhenClause(path string, wc *WhenClause) {
 			continue
 		}
 		l.usedVars[cond.Var] = true
-		if !l.definedVars[cond.Var] && !isBuiltInVar(cond.Var) {
-			l.warnf(fmt.Sprintf("%s.all_of[%d].var", path, i), "UNDEFINED_VAR",
-				"condition references variable %q which is never set by any block in this game", cond.Var)
-		}
+		l.checkVarReference(fmt.Sprintf("%s.all_of[%d].var", path, i), cond.Var)
 	}
 	for i, cond := range wc.AnyOf {
 		if cond.Var == "" {
 			continue
 		}
 		l.usedVars[cond.Var] = true
-		if !l.definedVars[cond.Var] && !isBuiltInVar(cond.Var) {
-			l.warnf(fmt.Sprintf("%s.any_of[%d].var", path, i), "UNDEFINED_VAR",
-				"condition references variable %q which is never set by any block in this game", cond.Var)
+		l.checkVarReference(fmt.Sprintf("%s.any_of[%d].var", path, i), cond.Var)
+	}
+}
+
+// checkVarReference validates a single when-clause variable reference. An
+// objective.<slug> reference is checked against known objective slugs
+// specifically: isBuiltInVar accepts any non-empty suffix, so without this a
+// typo'd slug would silently never match at runtime instead of being caught here.
+func (l *linter) checkVarReference(path, varName string) {
+	if slug, ok := strings.CutPrefix(varName, "objective."); ok && slug != "" {
+		if !l.objectiveSlugs[slug] {
+			l.warnf(path, "UNDEFINED_OBJECTIVE_VAR",
+				"condition references objective %q, which does not exist in this game", slug)
 		}
+		return
+	}
+	if !l.definedVars[varName] && !isBuiltInVar(varName) {
+		l.warnf(path, "UNDEFINED_VAR",
+			"condition references variable %q which is never set by any block in this game", varName)
 	}
 }
 
@@ -712,7 +716,7 @@ func (l *linter) checkGroupMinOneAutoAdvance(path string, g GroupDoc) {
 	if g.Completion != CompletionMinimum || g.MinimumRequired != 1 {
 		return
 	}
-	// nil defaults to true (matches import logic: g.AutoAdvance == nil || *g.AutoAdvance)
+	// nil defaults to true (matches import logic: g.AutoAdvance == nil || *g.AutoAdvance).
 	if g.AutoAdvance != nil && !*g.AutoAdvance {
 		return
 	}
@@ -768,11 +772,10 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 			}
 
 			// A reveal block only ever renders once proof has fully cleared (the
-			// proof-to-reveal transition is one-way), so everything proof sets - its
-			// blocks' vars and its context Sets - is legitimately already set by the
-			// time reveal renders. Reveal's own context Sets is still dead for the
-			// same reason proof's is dead for proof blocks above: it only fires once
-			// every reveal block completes.
+			// proof-to-reveal transition is one-way), so everything proof sets (its
+			// blocks' vars and its context Sets) is legitimately already set by the
+			// time reveal renders. Reveal's own context Sets is dead for the same
+			// reason as proof's: it fires only once every reveal block completes.
 			revealBlockVars := l.blockDocsSetsVars(obj.Reveal.Blocks)
 			revealCross := excludingVars(groupVars, append(l.objectiveContextSelfVars(obj.Proof), revealBlockVars...))
 			for j, b := range obj.Reveal.Blocks {
@@ -835,9 +838,8 @@ func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map
 	}
 }
 
-// blockDocSetsVars returns all variable names that the given block doc defines.
-// It reads from the standard top-level "sets" map and, via the registry,
-// from block-type-specific sub-fields (e.g. options[*].sets on a choice block).
+// blockDocSetsVars reads from the standard top-level "sets" map and, via the
+// registry, from block-type-specific sub-fields (e.g. options[*].sets).
 func (l *linter) blockDocSetsVars(b BlockDoc) []string {
 	vars := collectSetsFromBlockDoc(b)
 	if l.registry != nil {
@@ -876,8 +878,6 @@ func (l *linter) checkRegistrySetsReserved(typStr string, b BlockDoc, path strin
 	}
 }
 
-// checkReservedVarName reports a SETS_RESERVED_NAMESPACE error if name belongs
-// to a runtime-owned namespace.
 func (l *linter) checkReservedVarName(path string, name string) {
 	if IsReservedVarName(name) {
 		l.errorf(path, "SETS_RESERVED_NAMESPACE",
@@ -885,9 +885,8 @@ func (l *linter) checkReservedVarName(path string, name string) {
 	}
 }
 
-// collectSetsFromBlockDoc extracts variable names from the "sets" key of a block doc.
-// "sets" is a map[string]any of {name: value}; any other shape is reported by
-// checkSetsShape and contributes no vars.
+// collectSetsFromBlockDoc: malformed "sets" shapes are reported by
+// checkSetsShape and contribute no vars.
 func collectSetsFromBlockDoc(b BlockDoc) []string {
 	raw, ok := b["sets"]
 	if !ok {
@@ -933,6 +932,12 @@ func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 //
 //	player.points (legacy spelling: points), run.started_at, game.team_count
 //	objective.<slug>
+//
+// checkVarReference validates objective.<slug> against real objective slugs
+// before ever consulting this function, so its objective.* branch is presently
+// unreachable from that caller. Kept as the canonical definition of the
+// built-in namespace shape (see TestIsBuiltInVar_CanonicalSet) rather than
+// narrowed to what one caller currently needs.
 func isBuiltInVar(name string) bool {
 	switch name {
 	case "player.points", "points", "run.started_at", "game.team_count":
@@ -944,12 +949,11 @@ func isBuiltInVar(name string) bool {
 	return false
 }
 
-// reservedVarPrefix marks namespace prefixes owned by the runtime.
-// Blocks must not write to these: the runtime sets them automatically.
+// reservedVarPrefix: runtime-owned namespaces. Blocks must not write to
+// these: the runtime sets them automatically.
 const reservedVarPrefix = "objective."
 
-// IsReservedVarName reports whether name belongs to a runtime-owned namespace.
-// Blocks that attempt to sets or trigger a reserved var should be rejected.
+// IsReservedVarName: blocks that set or trigger a reserved var are rejected.
 func IsReservedVarName(name string) bool {
 	after, ok := strings.CutPrefix(name, reservedVarPrefix)
 	return ok && len(after) > 0
