@@ -33,7 +33,6 @@ type BlockService interface {
 }
 
 type CheckInService interface {
-	CheckIn(ctx context.Context, team *models.Run, locationCode string) error
 	CheckOut(ctx context.Context, team *models.Run, locationCode string) error
 	ValidateAndUpdateBlockState(
 		ctx context.Context,
@@ -63,7 +62,6 @@ type NavigationService interface {
 
 type LocationService interface {
 	GetByID(ctx context.Context, locationID string) (*models.Location, error)
-	GetByInstanceAndCode(ctx context.Context, questID string, code string) (*models.Location, error)
 	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
@@ -175,14 +173,6 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	}
 
 	return nil
-}
-
-func (h PlayerHandler) checkinURL(ctx context.Context, questID, markerCode string) (string, error) {
-	loc, err := h.locationService.GetByInstanceAndCode(ctx, questID, markerCode)
-	if err != nil {
-		return "", fmt.Errorf("resolving slug for marker %s: %w", markerCode, err)
-	}
-	return "/checkins/" + loc.Slug, nil
 }
 
 func (h *PlayerHandler) handleError(

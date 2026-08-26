@@ -207,35 +207,6 @@ func setupPlayerRoutes(
 		r.Get("/", playerHandler.Complete)
 	})
 
-	// Check in to a location using a marker code
-	router.Route("/s", func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(
-				logger,
-				playerHandler.GetRunService(),
-				playerHandler.GetQuestService(),
-				adminHandler.GetIdentityService(),
-				middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next),
-			)
-		})
-		r.Get("/{code:[A-z]{5}}", playerHandler.CheckIn)
-		r.Post("/{code:[A-z]{5}}", playerHandler.CheckInPost)
-	})
-
-	// Check in to a location using a location UUID (for task blocks)
-	router.Route("/l", func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(
-				logger,
-				playerHandler.GetRunService(),
-				playerHandler.GetQuestService(),
-				adminHandler.GetIdentityService(),
-				middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next),
-			)
-		})
-		r.Get("/{id}", playerHandler.CheckInByLocationID)
-	})
-
 	// Check out of a location
 	router.Route("/o", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
@@ -373,11 +344,6 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/new", adminHandler.LocationNew)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
-			// Assets
-			r.Get("/qr/{action}/{id}.{extension}", adminHandler.QRCode)
-			r.Get("/qr-codes.zip", adminHandler.GenerateQRCodeArchive)
-			r.Get("/poster/{id}.pdf", adminHandler.GeneratePoster)
-			r.Get("/posters.pdf", adminHandler.GeneratePosters)
 		})
 
 		r.Route("/objective", func(r chi.Router) {

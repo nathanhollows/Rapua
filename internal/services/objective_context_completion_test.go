@@ -157,3 +157,60 @@ func TestCheckInService_ObjectiveContext_NoSetsDefined_StillLogsCompletion(t *te
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "completion logs regardless of whether the context defines any sets")
 }
+
+// TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly: a
+// content-only context has nothing a player can POST to, so this proves a
+// direct call, with no prior block validation, logs completion and applies
+// sets.
+func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	runCode := gofakeit.LetterN(6)
+	insertTestTeam(t, dbc, runCode, parents.QuestID)
+
+	objective := &models.Objective{
+		ID:         gofakeit.UUID(),
+		QuestID:    parents.QuestID,
+		Slug:       "flavour-text",
+		Title:      "Flavour text",
+		RevealSets: game.SetsField{"story_seen": "true"},
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockService := services.NewBlockService(repositories.NewBlockRepository(dbc, blockStateRepo), blockStateRepo)
+	// Content block only: RequiresValidation()==false, so no POST ever completes it.
+	_, err = blockService.NewBlockWithOwnerAndContext(ctx, objective.ID, blocks.ContextObjectiveReveal, "text")
+	require.NoError(t, err)
+
+	team := &models.Run{Code: runCode, QuestID: parents.QuestID}
+
+	// No block validation call anywhere before this: simulates a bare page view.
+	err = svc.CompleteObjectiveContext(ctx, team, objective.ID, blocks.ContextObjectiveReveal)
+	require.NoError(t, err)
+
+	count, err := dbc.NewSelect().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Where("objective_id = ? AND context = ?", objective.ID, blocks.ContextObjectiveReveal).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "viewing a content-only context must be enough to complete it")
+
+	vars, err := repositories.NewRunVarStateRepository(dbc).GetAll(ctx, runCode, parents.QuestID)
+	require.NoError(t, err)
+	assert.Equal(t, "true", vars["story_seen"])
+
+	// Calling it again (e.g. a second page view) must not duplicate the log row or re-apply sets.
+	err = svc.CompleteObjectiveContext(ctx, team, objective.ID, blocks.ContextObjectiveReveal)
+	require.NoError(t, err)
+	count, err = dbc.NewSelect().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Where("objective_id = ? AND context = ?", objective.ID, blocks.ContextObjectiveReveal).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "repeat views must not duplicate the completion log")
+}

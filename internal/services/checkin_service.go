@@ -54,93 +54,6 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) CheckIn(
-	ctx context.Context,
-	team *models.Run,
-	locationCode string,
-) error {
-	// Load team relations
-	err := s.teamRepo.LoadRelations(ctx, team)
-	if err != nil {
-		return fmt.Errorf("loading relations: %w", err)
-	}
-
-	// A team may not check in if they must check out at a different location
-	if team.MustCheckOut != "" && locationCode != team.MustCheckOut {
-		return ErrAlreadyCheckedIn
-	}
-
-	// Find the location
-	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.QuestID, locationCode)
-	if err != nil {
-		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
-	}
-
-	// A team may not check in if they have previously checked in at this location
-	scanned := false
-	for _, s := range team.CheckIns {
-		if s.LocationID == location.ID {
-			scanned = true
-			break
-		}
-	}
-	if scanned {
-		return ErrAlreadyCheckedIn
-	}
-
-	valid, err := s.navigationService.IsValidLocation(ctx, team, locationCode)
-	if err != nil {
-		return fmt.Errorf("checking if location is valid: %w", err)
-	}
-	if !valid {
-		return errors.New("location not valid for team")
-	}
-
-	// Check if any blocks require validation (e.g. a checklist)
-	validationRequired, err := s.blockService.CheckValidationRequiredForLocation(ctx, location.ID)
-	if err != nil {
-		return fmt.Errorf("checking if validation is required: %w", err)
-	}
-
-	// Calculate the points to award
-	var pointsForCheckInRecord int
-
-	if team.Quest.Settings.MustCheckOut {
-		// Check-in-and-out mode: base points awarded on checkout completion
-		pointsForCheckInRecord = 0
-
-		team.MustCheckOut = location.ID
-	} else {
-		// Check-in-only mode: full points awarded immediately
-		pointsForCheckInRecord = location.Points
-
-		// Award full points to team immediately
-		team.Points += pointsForCheckInRecord
-	}
-
-	// Create a copy of the location with the calculated points for the CheckIn record
-	locationForCheckIn := *location
-	locationForCheckIn.Points = pointsForCheckInRecord
-
-	// Log the check in with the correct points
-	_, err = s.checkIn(ctx, *team, locationForCheckIn, team.Quest.Settings.MustCheckOut, validationRequired)
-	if err != nil {
-		return fmt.Errorf("logging scan: %w", err)
-	}
-
-	err = s.locationStatsService.IncrementVisitors(ctx, location)
-	if err != nil {
-		return fmt.Errorf("incrementing visitor stats: %w", err)
-	}
-
-	err = s.teamRepo.Update(ctx, team)
-	if err != nil {
-		return fmt.Errorf("updating team: %w", err)
-	}
-
-	return nil
-}
-
 func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locationCode string) error {
 	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.QuestID, locationCode)
 	if err != nil {
@@ -223,21 +136,6 @@ func (s *CheckInService) CompleteBlocks(ctx context.Context, runCode string, loc
 	}
 
 	return nil
-}
-
-// CheckIn logs a check in for a team at a location.
-func (s *CheckInService) checkIn(
-	ctx context.Context,
-	team models.Run,
-	location models.Location,
-	mustCheckOut bool,
-	validationRequired bool,
-) (models.CheckIn, error) {
-	scan, err := s.checkInRepo.LogCheckIn(ctx, team, location, mustCheckOut, validationRequired)
-	if err != nil {
-		return models.CheckIn{}, fmt.Errorf("logging check in: %w", err)
-	}
-	return scan, nil
 }
 
 // CheckOut logs a check out for a team at a location.
@@ -402,7 +300,7 @@ func (s *CheckInService) awardPointsAndComplete(
 	}
 
 	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
-		return s.completeObjectiveContext(ctx, team, block.GetOwnerID(), blockContext)
+		return s.CompleteObjectiveContext(ctx, team, block.GetOwnerID(), blockContext)
 	}
 
 	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
@@ -428,11 +326,13 @@ func (s *CheckInService) awardPointsAndComplete(
 	return nil
 }
 
-// completeObjectiveContext logs the completion and applies the context's sets once
-// every block in the context is done. Logging is unconditional even when the context
-// defines no sets. The ObjectiveContextCompletion INSERT is the idempotency guard:
-// only the call that wins the race applies sets.
-func (s *CheckInService) completeObjectiveContext(
+// CompleteObjectiveContext logs the completion and applies the context's sets
+// once every block in the context is done. Logging is unconditional even when
+// the context defines no sets. Exported because a content-only context has
+// nothing a player can POST to, so it needs a direct caller outside the
+// POST/validate path. Safe to call unconditionally: the idempotency guard
+// makes a context that is not done, or already logged, a harmless no-op.
+func (s *CheckInService) CompleteObjectiveContext(
 	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
 ) error {
 	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
