@@ -79,21 +79,6 @@ func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, loca
 	return false, nil
 }
 
-// CanAdminAccessMarker checks if the user can access the marker in the given instance.
-func (s *AccessService) CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error) {
-	if userID == "" {
-		return false, errors.New("user ID cannot be empty")
-	}
-	if markerID == "" {
-		return false, errors.New("marker ID cannot be empty")
-	}
-	access, err := s.markerRepo.UserOwnsMarker(ctx, userID, markerID)
-	if err != nil {
-		return false, err
-	}
-	return access, nil
-}
-
 // CanAdminAccessBlock checks if the user can access the block in the given instance.
 func (s *AccessService) CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	if userID == "" {

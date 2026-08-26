@@ -203,8 +203,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 func initialiseFolders(logger *slog.Logger) {
 	folders := []string{
-		"assets/", "assets/codes/", "assets/codes/png/", "assets/codes/svg/",
-		"assets/fonts/", "assets/posters/",
+		"assets/",
 	}
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {

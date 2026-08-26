@@ -18,7 +18,6 @@ type AccessService interface {
 	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
 	CanAdminAccessQuest(ctx context.Context, userID, questID string) (bool, error)
 	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
-	CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error)
 }
 
 func setupAccessService(t *testing.T) (AccessService, func()) {
@@ -204,81 +203,6 @@ func TestAccessService_CanAdminAccessLocation(t *testing.T) {
 	})
 }
 
-func TestAccessService_CanAdminAccessMarker(t *testing.T) {
-	service, cleanup := setupAccessService(t)
-	defer cleanup()
-
-	t.Run("Valid user and marker access", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		markerID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, markerID)
-
-		// Should not error with valid inputs
-		require.NoError(t, err)
-		assert.False(t, canAccess) // Expected false since no markers exist for user
-	})
-
-	t.Run("Empty user ID", func(t *testing.T) {
-		markerID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), "", markerID)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Empty marker ID", func(t *testing.T) {
-		userID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, "")
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "marker ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Both empty user and marker ID", func(t *testing.T) {
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), "", "")
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Non-existent marker", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		markerID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, markerID)
-
-		// Should not error - UserOwnsMarker should return false for non-existent marker
-		require.NoError(t, err)
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Whitespace in user ID", func(t *testing.T) {
-		markerID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), "   ", markerID)
-
-		// Should pass validation (non-empty string)
-		require.NoError(t, err)
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Whitespace in marker ID", func(t *testing.T) {
-		userID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessMarker(context.Background(), userID, "   ")
-
-		// Should pass validation (non-empty string)
-		require.NoError(t, err)
-		assert.False(t, canAccess)
-	})
-}
-
 func TestAccessService_CanAdminAccessBlock(t *testing.T) {
 	service, cleanup := setupAccessService(t)
 	defer cleanup()
@@ -390,11 +314,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		}
 		assert.False(t, canAccess)
 
-		// Test with very long marker ID
-		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, longID)
-		require.NoError(t, err)
-		assert.False(t, canAccess)
-
 		// Test with very long block ID
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, longID)
 		if err != nil {
@@ -418,10 +337,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		}
 		assert.False(t, canAccess)
 
-		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, specialID)
-		require.NoError(t, err)
-		assert.False(t, canAccess)
-
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, specialID)
 		if err != nil {
 			require.NotContains(t, err.Error(), "block ID cannot be empty")
@@ -442,10 +357,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		if err != nil {
 			require.NotContains(t, err.Error(), "location ID cannot be empty")
 		}
-		assert.False(t, canAccess)
-
-		canAccess, err = service.CanAdminAccessMarker(context.Background(), userID, unicodeID)
-		require.NoError(t, err)
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, unicodeID)

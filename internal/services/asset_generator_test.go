@@ -1,7 +1,6 @@
 package services_test
 
 import (
-	"archive/zip"
 	"os"
 	"testing"
 
@@ -77,121 +76,6 @@ func TestCreateQRCodeImage(t *testing.T) {
 				t.Fatalf("Expected error: %v, got: %v", tt.expectErr, err)
 			}
 
-			if tt.cleanupFn != nil {
-				tt.cleanupFn()
-			}
-		})
-	}
-}
-func createTestFile(path, content string) error {
-	_, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(content), 0600)
-}
-
-func cleanupTestFiles(files ...string) {
-	for _, file := range files {
-		os.Remove(file)
-	}
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-func TestCreateArchive(t *testing.T) {
-	assetGen := services.NewAssetGenerator()
-
-	tests := []struct {
-		name      string
-		files     []string
-		expectErr bool
-		cleanupFn func()
-	}{
-		{
-			name: "Successful archive creation",
-			files: []string{
-				"test1.txt",
-				"test2.txt",
-			},
-			expectErr: false,
-			cleanupFn: func() {
-				cleanupTestFiles("test1.txt", "test2.txt")
-			},
-		},
-		{
-			name:      "Non-existent file",
-			files:     []string{"non_existent.txt"},
-			expectErr: true,
-			cleanupFn: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			if tt.name == "Successful archive creation" {
-				for _, file := range tt.files {
-					if err := createTestFile(file, "content"); err != nil {
-						t.Fatalf("Setup failed: %v", err)
-					}
-				}
-			}
-
-			// Execute
-			err := os.MkdirAll("assets/codes", 0755)
-			if err != nil {
-				t.Fatalf("Failed to create assets directory: %v", err)
-			}
-			archivePath, err := assetGen.CreateArchive(tt.files)
-
-			// Check expectation
-			if (err != nil) != tt.expectErr {
-				t.Fatalf("Expected error: %v, got: %v", tt.expectErr, err)
-			}
-
-			if !tt.expectErr && archivePath == "" {
-				t.Fatalf("Expected valid archive path, got empty")
-			}
-
-			// Verify archive content if successful
-			if !tt.expectErr {
-				if archivePath != "" && !fileExists(archivePath) {
-					t.Fatalf("Archive file not created: %s", archivePath)
-				}
-
-				// Open the zip file for verification
-				r, zipErr := zip.OpenReader(archivePath)
-				if zipErr != nil {
-					t.Fatalf("Failed to open archive: %v", zipErr)
-				}
-				defer r.Close()
-
-				expectedFiles := make(map[string]bool)
-				for _, f := range tt.files {
-					expectedFiles[f] = false
-				}
-
-				// Check the files in the archive
-				for _, f := range r.File {
-					if _, ok := expectedFiles[f.Name]; ok {
-						expectedFiles[f.Name] = true
-					}
-				}
-
-				for fileName, found := range expectedFiles {
-					if !found {
-						t.Errorf("File %s not found in archive", fileName)
-					}
-				}
-			}
-
-			// Cleanup
-			os.Remove(archivePath)
-			os.RemoveAll("assets")
 			if tt.cleanupFn != nil {
 				tt.cleanupFn()
 			}

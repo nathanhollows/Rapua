@@ -20,63 +20,6 @@ templ EditLocation(data EditLocationData) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 id="location-name" class="text-2xl font-bold">{ data.Location.Name }</h1>
 		<div class="flex gap-3">
-			<div class="dropdown dropdown-center">
-				<div tabindex="0" role="button" class="btn">
-					@icon("download", templ.Attributes{"class": "w-5"})
-					Download
-					@icon("chevron-down", templ.Attributes{"class": "w-4"})
-				</div>
-				<ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-52 p-2 shadow">
-					<h2 class="menu-title">Posters</h2>
-					<li>
-						<ul>
-							<li>
-								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/quest/poster/", data.Location.MarkerID, ".pdf")) }
-								>
-									Default (PDF)
-								</a>
-							</li>
-						</ul>
-					</li>
-					<h2 class="menu-title">QR Codes</h2>
-					<li>
-						<ul>
-							<li>
-								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/in/", data.Location.MarkerID, ".png")) }
-									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
-								>PNG</a>
-							</li>
-							<li>
-								<a
-									href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/in/", data.Location.MarkerID, ".svg")) }
-									download={ fmt.Sprint("Check In ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
-								>SVG</a>
-							</li>
-						</ul>
-					</li>
-					if data.Settings.MustCheckOut {
-						<h2 class="menu-title">Check-Out</h2>
-						<li>
-							<ul>
-								<li>
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/out/", data.Location.MarkerID, ".png")) }
-										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".png") }
-									>QR Code (PNG)</a>
-								</li>
-								<li>
-									<a
-										href={ templ.SafeURL(fmt.Sprint("/admin/quest/qr/out/", data.Location.MarkerID, ".svg")) }
-										download={ fmt.Sprint("Check Out ", data.Location.MarkerID, " ", data.Location.Name, ".svg") }
-									>QR Code (SVG)</a>
-								</li>
-							</ul>
-						</li>
-					}
-				</ul>
-			</div>
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
 				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
 				Delete

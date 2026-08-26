@@ -8,6 +8,13 @@ import (
 	"github.com/go-chi/chi"
 )
 
+const (
+	pngExtension = "png"
+	svgExtension = "svg"
+	// A QR code tops out well before this; beyond it the encoder fails anyway.
+	maxCodeLength = 2048
+)
+
 // CodeQRCode renders any code as a QR image, served at /admin/qr/{code}.{ext} so
 // an <img> can embed it and an <a download> takes its filename from the path. The
 // image encodes the code itself, because that is what a scan is compared against.

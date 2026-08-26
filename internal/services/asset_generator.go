@@ -1,50 +1,20 @@
 package services
 
 import (
-	"archive/zip"
 	"fmt"
 	"io"
-	"os"
-	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/go-pdf/fpdf"
 	go_qr "github.com/piglig/go-qr"
 )
 
 const (
-	base10 = 10
-
 	svgFormat string = "svg"
 	pngFormat string = "png"
-
-	pageWidth        = 210.0
-	pageHeight       = 297.0
-	randomCodeLength = 10
-
-	locationNameFontSize = 20.0
-	gameNameFontSize     = 28.0
 
 	qrCodeScale  = 20
 	qrCodeBorder = 2
 )
-
-type PDFPage struct {
-	LocationName string
-	URL          string
-	ImagePath    string
-	// []int{R, G, B}
-	Background []int
-}
-
-type PDFPages []PDFPage
-
-type PDFData struct {
-	InstanceName string
-	Pages        PDFPages
-}
 
 type QRCodeOptions struct {
 	format     string
@@ -89,17 +59,6 @@ type AssetGenerator interface {
 	WithQRForeground(color string) QRCodeOption
 	// WithQRBackground sets the background color of the QR code
 	WithQRBackground(color string) QRCodeOption
-
-	// CreateArchive creates a zip archive from the given paths
-	// Returns the path to the archive
-	// Accepts a list of paths to files to add to the archive
-	// Accepts an optional list of filenames to use for the files in the archive
-	CreateArchive(paths []string) (path string, err error)
-	// CreatePDF creates a PDF document from the given data
-	// Returns the path to the PDF
-	CreatePDF(data PDFData) (string, error)
-	// GetQRCodePathAndContent returns the path and content for a QR code
-	GetQRCodePathAndContent(action, id, name, extension string) (string, string)
 }
 
 type assetGenerator struct{}
@@ -173,137 +132,4 @@ func (s *assetGenerator) WriteQRCode(w io.Writer, content string, options ...QRC
 	default:
 		return fmt.Errorf("unsupported format: %s", opts.format)
 	}
-}
-
-func (s *assetGenerator) CreateArchive(paths []string) (string, error) {
-	// Create the file
-	path := "assets/codes/" + newCode(
-		randomCodeLength,
-	) + "-" + strconv.FormatInt(
-		time.Now().UnixNano(),
-
-		base10,
-	) + ".zip"
-	archive, err := os.Create(path)
-	if err != nil {
-		return "", fmt.Errorf("could not create archive: %w", err)
-	}
-	defer archive.Close()
-
-	zipWriter := zip.NewWriter(archive)
-	defer zipWriter.Close()
-
-	// Add each file to the zip
-	for _, filePath := range paths {
-		var file *os.File
-		file, err = os.Open(filePath)
-		if err != nil {
-			return "", err
-		}
-		defer file.Close()
-
-		var info os.FileInfo
-		info, err = file.Stat()
-		if err != nil {
-			return "", err
-		}
-
-		var header *zip.FileHeader
-		header, err = zip.FileInfoHeader(info)
-		if err != nil {
-			return "", err
-		}
-
-		header.Name = strings.TrimPrefix(filePath, "assets/codes/")
-		var writer io.Writer
-		writer, err = zipWriter.CreateHeader(header)
-		if err != nil {
-			return "", err
-		}
-
-		_, err = io.Copy(writer, file)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return path, nil
-}
-
-func (s *assetGenerator) CreatePDF(data PDFData) (string, error) {
-	// Set up the document
-	pdf := fpdf.New(fpdf.OrientationPortrait, fpdf.UnitMillimeter, fpdf.PageSizeA4, "")
-	pdf.AddUTF8Font("ArchivoBlack", "", "./assets/fonts/ArchivoBlack-Regular.ttf")
-	pdf.AddUTF8Font("OpenSans", "", "./assets/fonts/OpenSans.ttf")
-
-	// Add pages
-	for _, page := range data.Pages {
-		s.addPage(pdf, page, data.InstanceName)
-	}
-
-	path := "assets/codes/" + newCode(
-		randomCodeLength,
-	) + "-" + strconv.FormatInt(
-		time.Now().UnixNano(),
-		base10,
-	) + ".pdf"
-	err := pdf.OutputFileAndClose(path)
-	if err != nil {
-		return "", err
-	}
-
-	return path, nil
-}
-
-func (s *assetGenerator) addPage(pdf *fpdf.Fpdf, page PDFPage, instanceName string) {
-	pdf.AddPage()
-	// Set the background color
-	const rgbComponents = 3
-	if len(page.Background) == rgbComponents {
-		pdf.SetFillColor(page.Background[0], page.Background[1], page.Background[2])
-		pdf.Rect(0, 0, pageWidth, pageHeight, "F")
-	}
-
-	// Add the instance name
-	pdf.SetFont("ArchivoBlack", "", gameNameFontSize)
-	title := strings.ToUpper(instanceName)
-	pdf.SetY(32)                                          //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.SetX((pageWidth - pdf.GetStringWidth(title)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.Cell(130, 32, title)                              //nolint:mnd // PDF layout: A4 page cell dimensions
-
-	// Add the location name
-	pdf.SetFont("OpenSans", "", locationNameFontSize)
-	pdf.SetY(40)                                                      //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.SetX((pageWidth - pdf.GetStringWidth(page.LocationName)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.Cell(
-		40, //nolint:mnd // PDF layout: A4 page cell width
-		70, //nolint:mnd // PDF layout: A4 page cell height
-		page.LocationName,
-	)
-
-	// Add the QR code
-	if page.ImagePath[len(page.ImagePath)-3:] == pngFormat {
-		//nolint:mnd // PDF layout: QR code position and size on A4 page
-		pdf.Image(page.ImagePath, 50, 90, 110, 110, false, "", 0, "")
-	}
-
-	// Render the URL
-	scanText := page.URL
-	scanText = strings.ReplaceAll(scanText, "https://", "")
-	scanText = strings.ReplaceAll(scanText, "http://", "")
-	scanText = strings.ReplaceAll(scanText, "www.", "")
-	pdf.SetY(180)                                            //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.SetX((pageWidth - pdf.GetStringWidth(scanText)) / 2) //nolint:mnd // PDF layout: A4 page coordinates
-	pdf.Cell(40, 70, scanText)                               //nolint:mnd // PDF layout: A4 page cell dimensions
-}
-
-func (s *assetGenerator) GetQRCodePathAndContent(_, id, name, extension string) (string, string) {
-	content := os.Getenv("SITE_URL")
-	path := "assets/codes/"
-	name = strings.Trim(name, " ")
-	re := regexp.MustCompile(`[^\d\p{Latin} -]`)
-	name = re.ReplaceAllString(name, "")
-	content = content + "/s/" + id
-	path = path + extension + "/" + id + " " + name + "." + extension
-	return path, content
 }
