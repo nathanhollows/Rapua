@@ -334,20 +334,6 @@ func (b *StartGameButtonBlock) GetSpec() game.BlockSpec {
 	}
 }
 
-func (b *TaskBlock) GetSpec() game.BlockSpec {
-	return game.BlockSpec{
-		Type:        "task",
-		Name:        "Task",
-		Description: "A single task item in a scavenger hunt task list.",
-		Contexts:    []string{"navigation"},
-		Fields: []game.FieldSpec{
-			{Name: "task", Type: "string", Required: true, Description: "Task description shown to players"},
-			{Name: "icon", Type: "string", Description: "Icon name (Lucide icon)"},
-			{Name: "link_through", Type: "bool", Description: "If true, tapping takes the player to the task location"},
-		},
-	}
-}
-
 func (b *TeamNameChangerBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "team_name",

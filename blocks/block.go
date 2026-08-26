@@ -152,8 +152,6 @@ func init() {
 	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
 	registerBlock(&ChoiceBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
 
-	registerBlock(&TaskBlock{}, []BlockContext{ContextNavigation})
-
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
 	registerBlock(&StartGameButtonBlock{}, []BlockContext{ContextStart})
@@ -324,8 +322,6 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewGameStatusAlertBlock(baseBlock), nil
 	case "start_button":
 		return NewStartGameButtonBlock(baseBlock), nil
-	case "task":
-		return NewTaskBlock(baseBlock), nil
 	case "rating":
 		return NewRatingBlock(baseBlock), nil
 	case "toggle_text":
@@ -458,13 +454,6 @@ func NewGameStatusAlertBlock(base BaseBlock) *GameStatusAlertBlock {
 func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
 	return &StartGameButtonBlock{
 		BaseBlock: base,
-	}
-}
-
-func NewTaskBlock(base BaseBlock) *TaskBlock {
-	return &TaskBlock{
-		BaseBlock:   base,
-		LinkThrough: true,
 	}
 }
 

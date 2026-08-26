@@ -71,13 +71,8 @@ type navViewData struct {
 
 type locationWithBlocks struct {
 	Location models.Location
-	Runs     []blockRun
-}
-
-type blockRun struct {
-	IsTask bool
-	Blocks []blocks.Block
-	States map[string]blocks.PlayerState
+	Blocks   []blocks.Block
+	States   map[string]blocks.PlayerState
 }
 
 func prepareNavViewData(data NextParams) navViewData {
@@ -99,33 +94,16 @@ func prepareNavViewData(data NextParams) navViewData {
 			}
 		}
 
-		runs := groupByTaskRuns(locationBlocks, states)
 		locationsWithBlocks = append(locationsWithBlocks, locationWithBlocks{
 			Location: location,
-			Runs:     runs,
+			Blocks:   locationBlocks,
+			States:   states,
 		})
 	}
 	return navViewData{
 		Settings:            data.View.Settings,
 		LocationsWithBlocks: locationsWithBlocks,
 	}
-}
-
-func groupByTaskRuns(blks []blocks.Block, states map[string]blocks.PlayerState) []blockRun {
-	runs := make([]blockRun, 0)
-	for _, block := range blks {
-		_, isTask := block.(*blocks.TaskBlock)
-		if len(runs) == 0 || runs[len(runs)-1].IsTask != isTask {
-			runs = append(runs, blockRun{
-				IsTask: isTask,
-				Blocks: []blocks.Block{block},
-				States: states,
-			})
-		} else {
-			runs[len(runs)-1].Blocks = append(runs[len(runs)-1].Blocks, block)
-		}
-	}
-	return runs
 }
 
 templ showNavigation(data navViewData) {
@@ -135,7 +113,7 @@ templ showNavigation(data navViewData) {
 				You may choose any of the following locations. Use the clues below to help
 				find where you want to go.
 			</p>
-		} else if len(data.LocationsWithBlocks) == 1 && len(data.LocationsWithBlocks[0].Runs) > 0 {
+		} else if len(data.LocationsWithBlocks) == 1 && len(data.LocationsWithBlocks[0].Blocks) > 0 {
 			<p class="text-center pb-5">
 				Use the clues below to find your next location.
 			</p>
@@ -146,7 +124,7 @@ templ showNavigation(data navViewData) {
 			if len(data.LocationsWithBlocks) > 1 {
 				<div class="divider my-8 m-auto w-1/2">{ i + 1 }</div>
 			}
-			if len(locWithBlocks.Runs) == 0 {
+			if len(locWithBlocks.Blocks) == 0 {
 				<div class="alert alert-success my-3">
 					<span>
 						<strong>Freebie!</strong> The admin hasn't added any clues to <strong><em>{ locWithBlocks.Location.Name }</em></strong> so we'll just tell you where it is!
@@ -154,28 +132,13 @@ templ showNavigation(data navViewData) {
 				</div>
 			} else {
 				<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
-					for _, run := range locWithBlocks.Runs {
-						if run.IsTask {
-							<div class="join join-vertical w-full">
-								for _, block := range run.Blocks {
-									<div
-										class="block-view"
-										id={ fmt.Sprint("preview-block-", block.GetID()) }
-									>
-										@templates.RenderPlayerView(data.Settings, block, run.States[block.GetID()])
-									</div>
-								}
-							</div>
-						} else {
-							for _, block := range run.Blocks {
-								<div
-									class="block-view"
-									id={ fmt.Sprint("preview-block-", block.GetID()) }
-								>
-									@templates.RenderPlayerView(data.Settings, block, run.States[block.GetID()])
-								</div>
-							}
-						}
+					for _, block := range locWithBlocks.Blocks {
+						<div
+							class="block-view"
+							id={ fmt.Sprint("preview-block-", block.GetID()) }
+						>
+							@templates.RenderPlayerView(data.Settings, block, locWithBlocks.States[block.GetID()])
+						</div>
 					}
 				</div>
 			}

@@ -130,7 +130,7 @@ func TestWriteGameSpec_AllRegisteredBlocksPresent(t *testing.T) {
 	knownTypes := []string{
 		"alert", "broker", "button", "checklist", "clue", "divider",
 		"game_status", "header", "image", "password", "photo", "pincode",
-		"quiz", "random_clue", "rating", "sorting", "start_button", "task",
+		"quiz", "random_clue", "rating", "sorting", "start_button",
 		"team_name", "text", "toggle_text", "youtube",
 	}
 	for _, bt := range knownTypes {

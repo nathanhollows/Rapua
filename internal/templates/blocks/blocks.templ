@@ -71,9 +71,6 @@ func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Co
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonAdmin(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskAdmin(settings, *b)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingAdmin(settings, *b)
@@ -155,9 +152,6 @@ func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state b
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskPlayer(settings, *b, state)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayer(settings, *b, state)
@@ -239,9 +233,6 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskPlayer(settings, *b, state)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayerUpdate(settings, *b, state)
