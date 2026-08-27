@@ -7,7 +7,7 @@ import (
 
 // LintJSON validates a raw JSON game document.
 // It checks for unknown fields at the structural level (GameDoc, SettingsDoc,
-// StructureDoc, GroupDoc, LocationDoc) that are silently dropped by the JSON
+// StructureDoc, GroupDoc, ObjectiveDoc) that are silently dropped by the JSON
 // parser, then runs the full Lint pass on the parsed document.
 func LintJSON(data []byte, registry BlockRegistry) LintResult {
 	rawWarnings := checkUnknownFieldsRaw(data)
@@ -45,12 +45,12 @@ var (
 		"completion": true, "minimum_required": true, "auto_advance": true,
 		"when": true, "children": true,
 	}
-	knownLocationDocFields = map[string]bool{
-		"id": true, "slug": true, "name": true, "points": true,
-		"when": true, "marker": true, "content": true, "navigation": true,
+	knownObjectiveDocFields = map[string]bool{
+		"id": true, "slug": true, "title": true, "when": true,
+		"proof": true, "reveal": true,
 	}
-	knownMarkerDocFields = map[string]bool{"lat": true, "lng": true}
-	knownChildDocFields  = map[string]bool{"location": true, "group": true}
+	knownObjectiveContextDocFields = map[string]bool{"blocks": true, "sets": true}
+	knownChildDocFields            = map[string]bool{"group": true, "objective": true}
 )
 
 func checkUnknownFieldsRaw(data []byte) []LintDiag {
@@ -80,11 +80,14 @@ func checkUnknownChild(path string, child any, diags *[]LintDiag) {
 		return
 	}
 	warnUnknown(path, m, knownChildDocFields, diags)
-	if loc, ok := m["location"].(map[string]any); ok {
-		locPath := path + ".location"
-		warnUnknown(locPath, loc, knownLocationDocFields, diags)
-		if marker, ok := loc["marker"].(map[string]any); ok {
-			warnUnknown(locPath+".marker", marker, knownMarkerDocFields, diags)
+	if obj, ok := m["objective"].(map[string]any); ok {
+		objPath := path + ".objective"
+		warnUnknown(objPath, obj, knownObjectiveDocFields, diags)
+		if proof, ok := obj["proof"].(map[string]any); ok {
+			warnUnknown(objPath+".proof", proof, knownObjectiveContextDocFields, diags)
+		}
+		if reveal, ok := obj["reveal"].(map[string]any); ok {
+			warnUnknown(objPath+".reveal", reveal, knownObjectiveContextDocFields, diags)
 		}
 	}
 	if grp, ok := m["group"].(map[string]any); ok {

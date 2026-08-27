@@ -37,10 +37,9 @@ func setupImportService(t *testing.T) (
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 
 	svc := services.NewImportService(
-		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, markerRepo,
+		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
 	return svc, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
@@ -61,24 +60,6 @@ func minimalValidDoc(name string) *game.GameDoc {
 			Children:   []game.ChildDoc{},
 		},
 	}
-}
-
-// docWithLocation returns a GameDoc with a single location containing a text content block.
-func docWithLocation(gameName, slug, locName string) *game.GameDoc {
-	doc := minimalValidDoc(gameName)
-	doc.Structure.Children = []game.ChildDoc{
-		{
-			Location: &game.LocationDoc{
-				Slug:   slug,
-				Name:   locName,
-				Points: 5,
-				Content: []game.BlockDoc{
-					{"type": "text", "content": "Hello, world!"},
-				},
-			},
-		},
-	}
-	return doc
 }
 
 // docWithObjective returns a GameDoc with a single objective: an interactive
@@ -144,34 +125,6 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 	settings, err := settingsRepo.GetByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
-}
-
-func TestImportService_ImportCreate_WithLocationsAndBlocks(t *testing.T) {
-	svc, _, _, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	doc := docWithLocation("Hunt", "park", "City Park")
-	result, err := svc.ImportCreate(ctx, userID, doc)
-	require.NoError(t, err)
-
-	assert.Equal(t, 1, result.Created.Locations)
-	assert.Equal(t, 1, result.Created.Blocks)
-
-	locations, err := locationRepo.FindByInstance(ctx, result.QuestID)
-	require.NoError(t, err)
-	require.Len(t, locations, 1)
-	assert.Equal(t, "park", locations[0].Slug)
-	assert.Equal(t, "City Park", locations[0].Name)
-	assert.Equal(t, 5, locations[0].Points)
-
-	contentBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, locations[0].ID, game.ContextLocationContent)
-	require.NoError(t, err)
-	require.Len(t, contentBlocks, 1)
-	assert.Equal(t, "text", contentBlocks[0].GetType())
 }
 
 func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
@@ -275,7 +228,7 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_WithGroup(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -292,10 +245,9 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 				Completion: game.CompletionAll,
 				Children: []game.ChildDoc{
 					{
-						Location: &game.LocationDoc{
-							Slug:    "checkpoint-a",
-							Name:    "Checkpoint A",
-							Content: []game.BlockDoc{},
+						Objective: &game.ObjectiveDoc{
+							Slug:  "checkpoint-a",
+							Title: "Checkpoint A",
 						},
 					},
 				},
@@ -306,17 +258,17 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 	assert.Equal(t, 1, result.Created.Groups)
-	assert.Equal(t, 1, result.Created.Locations)
+	assert.Equal(t, 1, result.Created.Objectives)
 
 	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, inst.GameStructure.SubGroups, 1)
 	assert.Equal(t, "Wave 1", inst.GameStructure.SubGroups[0].Name)
 
-	locations, err := locationRepo.FindByInstance(ctx, result.QuestID)
+	objectives, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
-	require.Len(t, locations, 1)
-	assert.Equal(t, "checkpoint-a", locations[0].Slug)
+	require.Len(t, objectives, 1)
+	assert.Equal(t, "checkpoint-a", objectives[0].Slug)
 }
 
 func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
@@ -387,7 +339,13 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	assert.True(t, settings.ShowLeaderboard)
 }
 
-func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
+// TestImportService_ImportUpdate_LocationsNeverDeleted: Location can no
+// longer appear in a doc at all, so a naive orphan-deletion pass would delete
+// every location on every update. That pass was deliberately removed:
+// Location/Marker rows are left alone by import, same as by the Location ->
+// Objective migration. An update-import must leave existing locations and
+// their blocks untouched.
+func TestImportService_ImportUpdate_LocationsNeverDeleted(t *testing.T) {
 	svc, instanceRepo, settingsRepo, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
@@ -395,113 +353,48 @@ func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	// Create instance with a location that won't be in the update doc
 	inst := &models.Quest{Name: "Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
 	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
-	orphanLocID := insertTestLocation(t, dbc, inst.ID)
+	locID := insertTestLocation(t, dbc, inst.ID)
 
 	transactor := db.NewTransactor(dbc)
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	require.NoError(t, err)
-	_, err = blockRepo.CreateTx(ctx, tx, newTextBlock(orphanLocID), orphanLocID, game.ContextLocationContent)
+	_, err = blockRepo.CreateTx(ctx, tx, newTextBlock(locID), locID, game.ContextLocationContent)
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit())
 
-	// GameStructure references the orphan
 	inst.GameStructure = models.GameStructure{
 		ID:             gofakeit.UUID(),
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
 		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{orphanLocID},
+		LocationIDs:    []string{locID},
 		SubGroups:      []models.GameStructure{},
 	}
 	require.NoError(t, instanceRepo.Update(ctx, inst))
 
-	// Update doc has no locations
+	// The update doc can never reference the location; the spec has no
+	// representation for it any more.
 	doc := minimalValidDoc("Game")
 	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
 	require.NoError(t, err)
-	assert.Equal(t, 1, result.Deleted.Locations)
+	assert.Equal(t, 0, result.Deleted.Objectives, "nothing to delete: the doc had no objectives to begin with")
 
 	locations, err := locationRepo.FindByInstance(ctx, inst.ID)
 	require.NoError(t, err)
-	assert.Empty(t, locations)
+	require.Len(t, locations, 1, "the location must survive an update-import")
+	assert.Equal(t, locID, locations[0].ID)
 
-	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, orphanLocID)
+	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, locID)
 	require.NoError(t, err)
-	assert.Empty(t, remainingBlocks, "the orphan's blocks must not be left behind — owner_id has no FK to cascade them")
+	assert.Len(t, remainingBlocks, 1, "the location's blocks must survive too")
 }
 
-func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	// Create via ImportCreate so we have real IDs
-	createDoc := docWithLocation("My Hunt", "base", "Base Camp")
-	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
-	require.NoError(t, err)
-
-	locs, err := locationRepo.FindByInstance(ctx, createResult.QuestID)
-	require.NoError(t, err)
-	require.Len(t, locs, 1)
-	existingLocID := locs[0].ID
-
-	// Build export doc that references existing location by ID, plus a new one
-	updateDoc := minimalValidDoc("My Hunt")
-	updateDoc.Structure.Children = []game.ChildDoc{
-		{
-			Location: &game.LocationDoc{
-				ID:      existingLocID,
-				Slug:    "base",
-				Name:    "Base Camp Updated",
-				Points:  20,
-				Content: []game.BlockDoc{},
-			},
-		},
-		{
-			Location: &game.LocationDoc{
-				Slug:    "new-spot",
-				Name:    "New Spot",
-				Content: []game.BlockDoc{},
-			},
-		},
-	}
-
-	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
-	require.NoError(t, err)
-
-	result, err := svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
-	require.NoError(t, err)
-	assert.Equal(t, 1, result.Updated.Locations)
-	assert.Equal(t, 1, result.Created.Locations)
-
-	updatedLocs, err := locationRepo.FindByInstance(ctx, inst.ID)
-	require.NoError(t, err)
-	require.Len(t, updatedLocs, 2)
-
-	// Find updated location by ID
-	var updatedLoc *models.Location
-	for i := range updatedLocs {
-		if updatedLocs[i].ID == existingLocID {
-			updatedLoc = &updatedLocs[i]
-		}
-	}
-	require.NotNil(t, updatedLoc)
-	assert.Equal(t, "Base Camp Updated", updatedLoc.Name)
-	assert.Equal(t, 20, updatedLoc.Points)
-
-	_ = blockRepo
-}
-
-func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
-	svc, _, _, locationRepo, _, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
+	svc, _, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -509,14 +402,13 @@ func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	when := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
-	doc := minimalValidDoc("When Location Game")
+	doc := minimalValidDoc("When Objective Game")
 	doc.Structure.Children = []game.ChildDoc{
 		{
-			Location: &game.LocationDoc{
-				Slug:    "secret",
-				Name:    "Secret Spot",
-				When:    when,
-				Content: []game.BlockDoc{},
+			Objective: &game.ObjectiveDoc{
+				Slug:  "secret",
+				Title: "Secret Spot",
+				When:  when,
 			},
 		},
 	}
@@ -524,12 +416,12 @@ func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, result.QuestID)
+	objs, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
-	require.Len(t, locs, 1)
-	require.NotNil(t, locs[0].When)
-	require.Len(t, locs[0].When.AllOf, 1)
-	assert.Equal(t, "unlocked", locs[0].When.AllOf[0].Var)
+	require.Len(t, objs, 1)
+	require.NotNil(t, objs[0].When)
+	require.Len(t, objs[0].When.AllOf, 1)
+	assert.Equal(t, "unlocked", objs[0].When.AllOf[0].Var)
 }
 
 func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
@@ -567,51 +459,41 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 	assert.Equal(t, "unlocked", subGroup.When.AllOf[0].Var)
 }
 
-func TestImportService_ImportUpdate_LocationWhenUpdated(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportUpdate_ObjectiveWhenUpdated(t *testing.T) {
+	svc, instanceRepo, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	// Set up existing instance with a location (no when clause)
-	createDoc := docWithLocation("When Update Game", "spot", "The Spot")
+	// Set up existing instance with an objective (no when clause).
+	createDoc := docWithObjective("When Update Game", "spot", "The Spot")
 	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, createResult.QuestID)
+	objs, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
 	require.NoError(t, err)
-	require.Len(t, locs, 1)
-	assert.Nil(t, locs[0].When)
+	require.Len(t, objs, 1)
+	assert.Nil(t, objs[0].When)
 
 	// Load instance for update
 	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
 	require.NoError(t, err)
-	_ = settingsRepo
 
-	// Update doc: add when clause to same location (matched by slug)
+	// Update doc: add when clause to same objective (matched by slug).
 	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
-	updateDoc := minimalValidDoc("When Update Game")
-	updateDoc.Structure.Children = []game.ChildDoc{
-		{
-			Location: &game.LocationDoc{
-				ID:      locs[0].ID,
-				Slug:    "spot",
-				Name:    "The Spot",
-				When:    when,
-				Content: []game.BlockDoc{},
-			},
-		},
-	}
+	updateDoc := docWithObjective("When Update Game", "spot", "The Spot")
+	updateDoc.Structure.Children[0].Objective.ID = objs[0].ID
+	updateDoc.Structure.Children[0].Objective.When = when
 
 	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
 	require.NoError(t, err)
 
-	updatedLocs, err := locationRepo.FindByInstance(ctx, inst.ID)
+	updatedObjs, err := objectiveRepo.FindByQuestID(ctx, inst.ID)
 	require.NoError(t, err)
-	require.Len(t, updatedLocs, 1)
-	require.NotNil(t, updatedLocs[0].When)
-	require.Len(t, updatedLocs[0].When.AllOf, 1)
-	assert.Equal(t, "gate", updatedLocs[0].When.AllOf[0].Var)
+	require.Len(t, updatedObjs, 1)
+	require.NotNil(t, updatedObjs[0].When)
+	require.Len(t, updatedObjs[0].When.AllOf, 1)
+	assert.Equal(t, "gate", updatedObjs[0].When.AllOf[0].Var)
 }

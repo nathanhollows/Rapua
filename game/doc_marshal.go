@@ -10,9 +10,6 @@ import (
 
 func (c ChildDoc) MarshalJSON() ([]byte, error) {
 	set := 0
-	if c.Location != nil {
-		set++
-	}
 	if c.Group != nil {
 		set++
 	}
@@ -20,10 +17,7 @@ func (c ChildDoc) MarshalJSON() ([]byte, error) {
 		set++
 	}
 	if set > 1 {
-		return nil, errors.New("ChildDoc: more than one of Location, Group, Objective is set")
-	}
-	if c.Location != nil {
-		return json.Marshal(map[string]any{"location": c.Location})
+		return nil, errors.New("ChildDoc: more than one of Group, Objective is set")
 	}
 	if c.Group != nil {
 		return json.Marshal(map[string]any{"group": c.Group})
@@ -31,7 +25,7 @@ func (c ChildDoc) MarshalJSON() ([]byte, error) {
 	if c.Objective != nil {
 		return json.Marshal(map[string]any{"objective": c.Objective})
 	}
-	return nil, errors.New("ChildDoc: none of Location, Group, Objective is set")
+	return nil, errors.New("ChildDoc: none of Group, Objective is set")
 }
 
 func (c *ChildDoc) UnmarshalJSON(data []byte) error {
@@ -41,18 +35,13 @@ func (c *ChildDoc) UnmarshalJSON(data []byte) error {
 	}
 
 	known := 0
-	for _, key := range []string{"location", "group", "objective"} {
+	for _, key := range []string{"group", "objective"} {
 		if _, ok := raw[key]; ok {
 			known++
 		}
 	}
 	if known > 1 {
-		return fmt.Errorf("ChildDoc: expected exactly one of \"location\", \"group\", \"objective\", got %v", keysOf(raw))
-	}
-
-	if locRaw, ok := raw["location"]; ok {
-		c.Location = &LocationDoc{}
-		return json.Unmarshal(locRaw, c.Location)
+		return fmt.Errorf("ChildDoc: expected exactly one of \"group\", \"objective\", got %v", keysOf(raw))
 	}
 
 	if grpRaw, ok := raw["group"]; ok {
@@ -65,7 +54,7 @@ func (c *ChildDoc) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(objRaw, c.Objective)
 	}
 
-	return fmt.Errorf("ChildDoc: expected key \"location\", \"group\", or \"objective\", got %v", keysOf(raw))
+	return fmt.Errorf("ChildDoc: expected key \"group\", or \"objective\", got %v", keysOf(raw))
 }
 
 func (b BlockDoc) MarshalJSON() ([]byte, error) {

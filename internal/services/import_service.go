@@ -28,7 +28,6 @@ type ImportResult struct {
 
 // ImportStats counts entities affected by an import operation.
 type ImportStats struct {
-	Locations  int
 	Objectives int
 	Blocks     int
 	Groups     int
@@ -40,10 +39,8 @@ type ImportService struct {
 	transactor           db.Transactor
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
-	locationRepo         repositories.LocationRepository
 	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
-	markerRepo           repositories.MarkerRepository
 }
 
 // NewImportService creates a new ImportService with the provided dependencies.
@@ -52,20 +49,16 @@ func NewImportService(
 	transactor db.Transactor,
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
-	locationRepo repositories.LocationRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
-	markerRepo repositories.MarkerRepository,
 ) *ImportService {
 	return &ImportService{
 		logger:               logger,
 		transactor:           transactor,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
-		locationRepo:         locationRepo,
 		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
-		markerRepo:           markerRepo,
 	}
 }
 
@@ -145,20 +138,13 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 		return nil, ErrUserNotAuthenticated
 	}
 
-	existingLocations, err := s.locationRepo.FindByInstance(ctx, questID)
-	if err != nil {
-		return nil, fmt.Errorf("import update: load locations: %w", err)
-	}
 	existingObjectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("import update: load objectives: %w", err)
 	}
 
-	existingOwnerIDs := make([]string, 0, len(existingLocations)+len(existingObjectives)+1)
+	existingOwnerIDs := make([]string, 0, len(existingObjectives)+1)
 	existingOwnerIDs = append(existingOwnerIDs, questID)
-	for i := range existingLocations {
-		existingOwnerIDs = append(existingOwnerIDs, existingLocations[i].ID)
-	}
 	for i := range existingObjectives {
 		existingOwnerIDs = append(existingOwnerIDs, existingObjectives[i].ID)
 	}
@@ -168,12 +154,6 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 	}
 
 	// Build indexes for reconciliation
-	locByID := make(map[string]*models.Location, len(existingLocations))
-	locBySlug := make(map[string]*models.Location, len(existingLocations))
-	for i := range existingLocations {
-		locByID[existingLocations[i].ID] = &existingLocations[i]
-		locBySlug[existingLocations[i].Slug] = &existingLocations[i]
-	}
 	objByID := make(map[string]*models.Objective, len(existingObjectives))
 	objBySlug := make(map[string]*models.Objective, len(existingObjectives))
 	for i := range existingObjectives {
@@ -199,7 +179,7 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 		}
 	}()
 
-	importResult, err := s.importUpdate(ctx, tx, existing, doc, locByID, locBySlug, objByID, objBySlug, blockByID)
+	importResult, err := s.importUpdate(ctx, tx, existing, doc, objByID, objBySlug, blockByID)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return nil, fmt.Errorf("import update: %w; rollback failed: %w", err, rbErr)
@@ -302,15 +282,7 @@ func (s *ImportService) walkCreateChildren(
 	stats *ImportStats,
 ) error {
 	for _, child := range children {
-		if child.Location != nil {
-			locID, blockCount, err := s.createLocation(ctx, tx, questID, *child.Location)
-			if err != nil {
-				return err
-			}
-			parentGS.LocationIDs = append(parentGS.LocationIDs, locID)
-			stats.Locations++
-			stats.Blocks += blockCount
-		} else if child.Objective != nil {
+		if child.Objective != nil {
 			objID, blockCount, err := s.createObjective(ctx, tx, questID, *child.Objective)
 			if err != nil {
 				return err
@@ -341,56 +313,6 @@ func (s *ImportService) walkCreateChildren(
 		}
 	}
 	return nil
-}
-
-// createLocation creates a marker (if coords given), a location, and all its blocks.
-// Returns the new location ID and the total number of blocks created.
-func (s *ImportService) createLocation(
-	ctx context.Context,
-	tx *bun.Tx,
-	questID string,
-	locDoc game.LocationDoc,
-) (string, int, error) {
-	// Create marker
-	marker := &models.Marker{Name: locDoc.Name}
-	if locDoc.Marker != nil {
-		marker.Lat = locDoc.Marker.Lat
-		marker.Lng = locDoc.Marker.Lng
-	}
-	if err := s.markerRepo.CreateTx(ctx, tx, marker); err != nil {
-		return "", 0, fmt.Errorf("create marker for %q: %w", locDoc.Slug, err)
-	}
-
-	// Create location
-	loc := &models.Location{
-		QuestID:  questID,
-		Slug:     locDoc.Slug,
-		Name:     locDoc.Name,
-		Points:   locDoc.Points,
-		When:     locDoc.When,
-		MarkerID: marker.Code,
-	}
-	if err := s.locationRepo.CreateTx(ctx, tx, loc); err != nil {
-		return "", 0, fmt.Errorf("create location %q: %w", locDoc.Slug, err)
-	}
-
-	// Create blocks per context
-	count := 0
-	for _, pair := range []struct {
-		docs []game.BlockDoc
-		ctx  game.BlockContext
-	}{
-		{locDoc.Content, game.ContextLocationContent},
-		{locDoc.Navigation, game.ContextNavigation},
-	} {
-		n, err := s.createBlockDocs(ctx, tx, loc.ID, pair.docs, pair.ctx)
-		if err != nil {
-			return "", 0, fmt.Errorf("create blocks for %q context %q: %w", locDoc.Slug, pair.ctx, err)
-		}
-		count += n
-	}
-
-	return loc.ID, count, nil
 }
 
 func (s *ImportService) createObjective(
@@ -456,8 +378,6 @@ func (s *ImportService) importUpdate(
 	tx *bun.Tx,
 	existing *models.Quest,
 	doc *game.GameDoc,
-	locByID map[string]*models.Location,
-	locBySlug map[string]*models.Location,
 	objByID map[string]*models.Objective,
 	objBySlug map[string]*models.Objective,
 	blockByID map[string]models.Block,
@@ -483,8 +403,10 @@ func (s *ImportService) importUpdate(
 		return nil, fmt.Errorf("update settings: %w", err)
 	}
 
-	// Track which existing locations/objectives appeared in the doc (to find orphans).
-	seenLocIDs := make(map[string]bool)
+	// Track which existing objectives appeared in the doc (to find orphans).
+	// Location rows are deliberately left alone by import: Location has no
+	// representation in the doc at all, so there is no seenLocIDs tracking or
+	// orphan-deletion pass to mirror this one.
 	seenObjIDs := make(map[string]bool)
 
 	// Build new GameStructure
@@ -500,7 +422,7 @@ func (s *ImportService) importUpdate(
 	}
 
 	if err := s.walkUpdateChildren(ctx, tx, existing.ID, doc.Structure.Children, gs,
-		locByID, locBySlug, objByID, objBySlug, blockByID, seenLocIDs, seenObjIDs, result); err != nil {
+		objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
 		return nil, err
 	}
 
@@ -526,22 +448,6 @@ func (s *ImportService) importUpdate(
 		result,
 	); err != nil {
 		return nil, err
-	}
-
-	// Delete locations not seen in the doc
-	for locID, loc := range locByID {
-		if !seenLocIDs[locID] {
-			// blocks.owner_id has no FK, so the row delete below would not cascade.
-			if _, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, locID, nil); err != nil {
-				return nil, fmt.Errorf("delete blocks for orphan location %q: %w", loc.Slug, err)
-			}
-			if err := s.locationRepo.Delete(ctx, tx, locID); err != nil {
-				return nil, fmt.Errorf("delete orphan location %q: %w", loc.Slug, err)
-			}
-			result.Deleted.Locations++
-			result.Warnings = append(result.Warnings,
-				fmt.Sprintf("location %q (id=%s) was in DB but not in document; deleted", loc.Slug, locID))
-		}
 	}
 
 	for objID, obj := range objByID {
@@ -578,24 +484,14 @@ func (s *ImportService) walkUpdateChildren(
 	questID string,
 	children []game.ChildDoc,
 	parentGS *models.GameStructure,
-	locByID map[string]*models.Location,
-	locBySlug map[string]*models.Location,
 	objByID map[string]*models.Objective,
 	objBySlug map[string]*models.Objective,
 	blockByID map[string]models.Block,
-	seenLocIDs map[string]bool,
 	seenObjIDs map[string]bool,
 	result *ImportResult,
 ) error {
 	for _, child := range children {
-		if child.Location != nil {
-			locID, err := s.reconcileLocation(ctx, tx, questID, *child.Location,
-				locByID, locBySlug, blockByID, seenLocIDs, result)
-			if err != nil {
-				return err
-			}
-			parentGS.LocationIDs = append(parentGS.LocationIDs, locID)
-		} else if child.Objective != nil {
+		if child.Objective != nil {
 			objID, err := s.reconcileObjective(ctx, tx, questID, *child.Objective,
 				objByID, objBySlug, blockByID, seenObjIDs, result)
 			if err != nil {
@@ -622,83 +518,13 @@ func (s *ImportService) walkUpdateChildren(
 				SubGroups:       []models.GameStructure{},
 			}
 			if err := s.walkUpdateChildren(ctx, tx, questID, g.Children, &subGS,
-				locByID, locBySlug, objByID, objBySlug, blockByID, seenLocIDs, seenObjIDs, result); err != nil {
+				objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
 				return err
 			}
 			parentGS.SubGroups = append(parentGS.SubGroups, subGS)
 		}
 	}
 	return nil
-}
-
-// reconcileLocation matches a LocationDoc to an existing location (by ID or slug),
-// updates it, or creates a new one if no match is found.
-func (s *ImportService) reconcileLocation(
-	ctx context.Context,
-	tx *bun.Tx,
-	questID string,
-	locDoc game.LocationDoc,
-	locByID map[string]*models.Location,
-	locBySlug map[string]*models.Location,
-	blockByID map[string]models.Block,
-	seenLocIDs map[string]bool,
-	result *ImportResult,
-) (string, error) {
-	// Try to match existing location
-	var existingLoc *models.Location
-	if locDoc.ID != "" {
-		existingLoc = locByID[locDoc.ID]
-	}
-	if existingLoc == nil && locDoc.Slug != "" {
-		existingLoc = locBySlug[locDoc.Slug]
-	}
-
-	if existingLoc == nil {
-		// Create new location
-		newLocID, blockCount, err := s.createLocation(ctx, tx, questID, locDoc)
-		if err != nil {
-			return "", err
-		}
-		result.Created.Locations++
-		result.Created.Blocks += blockCount
-		return newLocID, nil
-	}
-
-	// Update existing location
-	seenLocIDs[existingLoc.ID] = true
-	existingLoc.Name = locDoc.Name
-	existingLoc.Slug = locDoc.Slug
-	existingLoc.Points = locDoc.Points
-	existingLoc.When = locDoc.When
-
-	if err := s.locationRepo.UpdateTx(ctx, tx, existingLoc); err != nil {
-		return "", fmt.Errorf("update location %q: %w", locDoc.Slug, err)
-	}
-
-	// Update marker coordinates if provided
-	if locDoc.Marker != nil {
-		if err := s.markerRepo.UpdateCoordsTx(ctx, tx,
-			&models.Marker{Code: existingLoc.MarkerID},
-			locDoc.Marker.Lat, locDoc.Marker.Lng); err != nil {
-			return "", fmt.Errorf("update marker for %q: %w", locDoc.Slug, err)
-		}
-	}
-
-	// Reconcile blocks per context
-	for _, pair := range []struct {
-		docs []game.BlockDoc
-		ctx  game.BlockContext
-	}{
-		{locDoc.Content, game.ContextLocationContent},
-		{locDoc.Navigation, game.ContextNavigation},
-	} {
-		if err := s.reconcileBlocks(ctx, tx, existingLoc.ID, pair.docs, pair.ctx, blockByID, result); err != nil {
-			return "", err
-		}
-	}
-
-	result.Updated.Locations++
-	return existingLoc.ID, nil
 }
 
 // reconcileObjective matches an ObjectiveDoc to an existing objective by ID or

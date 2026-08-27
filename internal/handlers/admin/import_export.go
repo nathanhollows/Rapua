@@ -27,7 +27,7 @@ func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.exportService.ExportInstance(r.Context(), questID)
+	doc, warnings, err := h.exportService.ExportInstance(r.Context(), questID)
 	if err != nil {
 		h.handleError(
 			w,
@@ -40,6 +40,9 @@ func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {
 			questID,
 		)
 		return
+	}
+	for _, warning := range warnings {
+		h.logger.WarnContext(r.Context(), "ExportQuest: "+warning, "quest_id", questID)
 	}
 
 	data, err := json.MarshalIndent(doc, "", "  ")

@@ -11,11 +11,11 @@ import (
 
 // --- ChildDoc marshal / unmarshal ---
 
-func TestChildDoc_MarshalJSON_Location(t *testing.T) {
+func TestChildDoc_MarshalJSON_Objective(t *testing.T) {
 	c := game.ChildDoc{
-		Location: &game.LocationDoc{
-			Slug: "lobby",
-			Name: "The Lobby",
+		Objective: &game.ObjectiveDoc{
+			Slug:  "lobby",
+			Title: "The Lobby",
 		},
 	}
 	data, err := json.Marshal(c)
@@ -23,7 +23,7 @@ func TestChildDoc_MarshalJSON_Location(t *testing.T) {
 
 	var raw map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(data, &raw))
-	assert.Contains(t, raw, "location")
+	assert.Contains(t, raw, "objective")
 	assert.NotContains(t, raw, "group")
 }
 
@@ -40,7 +40,7 @@ func TestChildDoc_MarshalJSON_Group(t *testing.T) {
 	var raw map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(data, &raw))
 	assert.Contains(t, raw, "group")
-	assert.NotContains(t, raw, "location")
+	assert.NotContains(t, raw, "objective")
 }
 
 func TestChildDoc_MarshalJSON_Neither_Error(t *testing.T) {
@@ -49,12 +49,12 @@ func TestChildDoc_MarshalJSON_Neither_Error(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestChildDoc_UnmarshalJSON_Location(t *testing.T) {
-	input := `{"location":{"slug":"lobby","name":"The Lobby","content":[],"clues":[],"tasks":[],"checkpoint":[]}}`
+func TestChildDoc_UnmarshalJSON_Objective(t *testing.T) {
+	input := `{"objective":{"slug":"lobby","title":"The Lobby","proof":{},"reveal":{}}}`
 	var c game.ChildDoc
 	require.NoError(t, json.Unmarshal([]byte(input), &c))
-	require.NotNil(t, c.Location)
-	assert.Equal(t, "lobby", c.Location.Slug)
+	require.NotNil(t, c.Objective)
+	assert.Equal(t, "lobby", c.Objective.Slug)
 	assert.Nil(t, c.Group)
 }
 
@@ -64,7 +64,7 @@ func TestChildDoc_UnmarshalJSON_Group(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(input), &c))
 	require.NotNil(t, c.Group)
 	assert.Equal(t, "My Group", c.Group.Name)
-	assert.Nil(t, c.Location)
+	assert.Nil(t, c.Objective)
 }
 
 func TestChildDoc_UnmarshalJSON_InvalidJSON(t *testing.T) {
@@ -81,9 +81,9 @@ func TestChildDoc_UnmarshalJSON_NeitherKey(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestChildDoc_UnmarshalJSON_MalformedLocation(t *testing.T) {
+func TestChildDoc_UnmarshalJSON_MalformedObjective(t *testing.T) {
 	var c game.ChildDoc
-	err := json.Unmarshal([]byte(`{"location":"not-an-object"}`), &c)
+	err := json.Unmarshal([]byte(`{"objective":"not-an-object"}`), &c)
 	assert.Error(t, err)
 }
 
@@ -187,10 +187,12 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 			Routing:    game.RouteStrategyFreeRoam,
 			Completion: game.CompletionAll,
 			Children: []game.ChildDoc{
-				{Location: &game.LocationDoc{
-					Slug:    "lobby",
-					Name:    "The Lobby",
-					Content: []game.BlockDoc{{"type": "text", "content": "Hello"}},
+				{Objective: &game.ObjectiveDoc{
+					Slug:  "lobby",
+					Title: "The Lobby",
+					Proof: game.ObjectiveContextDoc{
+						Blocks: []game.BlockDoc{{"type": "text", "content": "Hello"}},
+					},
 				}},
 				{Group: &game.GroupDoc{
 					Name:       "East Wing",
@@ -198,10 +200,9 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 					Routing:    game.RouteStrategyFreeRoam,
 					Completion: game.CompletionAll,
 					Children: []game.ChildDoc{
-						{Location: &game.LocationDoc{
-							Slug:    "room-a",
-							Name:    "Room A",
-							Content: []game.BlockDoc{},
+						{Objective: &game.ObjectiveDoc{
+							Slug:  "room-a",
+							Title: "Room A",
 						}},
 					},
 				}},
@@ -219,16 +220,16 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 	assert.Equal(t, "Round Trip Game", out.Name)
 	require.Len(t, out.Structure.Children, 2)
 
-	// First child is a location
-	require.NotNil(t, out.Structure.Children[0].Location)
-	assert.Equal(t, "lobby", out.Structure.Children[0].Location.Slug)
+	// First child is an objective.
+	require.NotNil(t, out.Structure.Children[0].Objective)
+	assert.Equal(t, "lobby", out.Structure.Children[0].Objective.Slug)
 
 	// Second child is a group
 	require.NotNil(t, out.Structure.Children[1].Group)
 	assert.Equal(t, "East Wing", out.Structure.Children[1].Group.Name)
 	require.Len(t, out.Structure.Children[1].Group.Children, 1)
-	require.NotNil(t, out.Structure.Children[1].Group.Children[0].Location)
-	assert.Equal(t, "room-a", out.Structure.Children[1].Group.Children[0].Location.Slug)
+	require.NotNil(t, out.Structure.Children[1].Group.Children[0].Objective)
+	assert.Equal(t, "room-a", out.Structure.Children[1].Group.Children[0].Objective.Slug)
 }
 
 // findFieldIdx returns the index of the first occurrence of key in the JSON string.

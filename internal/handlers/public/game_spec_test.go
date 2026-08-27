@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// validSpecDoc returns a minimal valid v7 game document as JSON.
 func validSpecDoc() string {
 	return `{
 		"rapua":"v8",
@@ -31,10 +30,11 @@ func validSpecDoc() string {
 					"routing":"free_roam",
 					"completion":"all",
 					"children":[{
-						"location":{
-							"slug":"loc-a",
-							"name":"Location A",
-							"content":[]
+						"objective":{
+							"slug":"obj-a",
+							"title":"Objective A",
+							"proof":{},
+							"reveal":{}
 						}
 					}]
 				}

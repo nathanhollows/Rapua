@@ -15,7 +15,6 @@ import (
 type ExportService struct {
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
-	locationRepo         repositories.LocationRepository
 	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 }
@@ -24,51 +23,51 @@ type ExportService struct {
 func NewExportService(
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
-	locationRepo repositories.LocationRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 ) *ExportService {
 	return &ExportService{
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
-		locationRepo:         locationRepo,
 		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 	}
 }
 
-// ExportInstance serialises a live instance to a v8 GameDoc.
-func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, error) {
+// ExportInstance serialises a live instance to a v8 GameDoc. The returned
+// warnings are non-fatal: a quest whose structure still references
+// unconverted Locations (see countLocationIDs) exports successfully, minus
+// that content, rather than failing outright.
+func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, []string, error) {
 	// 1. Load Instance (includes GameStructure JSON column)
 	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load instance: %w", err)
+		return nil, nil, fmt.Errorf("export: load instance: %w", err)
 	}
 
-	// 2. Load QuestSettings
+	var warnings []string
+	if n := countLocationIDs(instance.GameStructure); n > 0 {
+		warnings = append(warnings, fmt.Sprintf(
+			"%d location(s) in this quest's structure have no representation in the exported document; their content is omitted",
+			n,
+		))
+	}
+
+	// 2. Load QuestSettings.
 	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load settings: %w", err)
+		return nil, nil, fmt.Errorf("export: load settings: %w", err)
 	}
 
-	// 3. Load all Locations with Marker relation
-	locations, err := s.locationRepo.FindByInstance(ctx, questID)
-	if err != nil {
-		return nil, fmt.Errorf("export: load locations: %w", err)
-	}
-
-	// 3b. Load all Objectives.
+	// 3. Load all Objectives.
 	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load objectives: %w", err)
+		return nil, nil, fmt.Errorf("export: load objectives: %w", err)
 	}
 
-	// 4. Collect all owner IDs: instance itself (start/finish) + all location and objective IDs.
-	ownerIDs := make([]string, 0, len(locations)+len(objectives)+1)
+	// 4. Collect all owner IDs: instance itself (start/finish) + all objective IDs.
+	ownerIDs := make([]string, 0, len(objectives)+1)
 	ownerIDs = append(ownerIDs, questID)
-	for i := range locations {
-		ownerIDs = append(ownerIDs, locations[i].ID)
-	}
 	for i := range objectives {
 		ownerIDs = append(ownerIDs, objectives[i].ID)
 	}
@@ -76,14 +75,10 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	// 5. Load all raw blocks in one query
 	rawBlocks, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
 	if err != nil {
-		return nil, fmt.Errorf("export: load blocks: %w", err)
+		return nil, nil, fmt.Errorf("export: load blocks: %w", err)
 	}
 
-	// 6. Build maps for fast lookup
-	locationByID := make(map[string]*models.Location, len(locations))
-	for i := range locations {
-		locationByID[locations[i].ID] = &locations[i]
-	}
+	// 6. Build map for fast lookup.
 	objectiveByID := make(map[string]*models.Objective, len(objectives))
 	for i := range objectives {
 		objectiveByID[objectives[i].ID] = &objectives[i]
@@ -99,7 +94,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
 
 	// 8. Walk GameStructure recursively to build the children tree
-	children := s.walkStructure(instance.GameStructure, locationByID, objectiveByID, blocksByOwner)
+	children := s.walkStructure(instance.GameStructure, objectiveByID, blocksByOwner)
 
 	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
@@ -122,7 +117,18 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		},
 	}
 
-	return doc, nil
+	return doc, warnings, nil
+}
+
+// countLocationIDs sums LocationIDs across a GameStructure tree. Location has
+// no representation in the exported doc, so a non-zero result means that many
+// locations' content is silently omitted from ExportInstance's output.
+func countLocationIDs(gs models.GameStructure) int {
+	count := len(gs.LocationIDs)
+	for _, sub := range gs.SubGroups {
+		count += countLocationIDs(sub)
+	}
+	return count
 }
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.
@@ -154,20 +160,10 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 // walkStructure recursively converts a GameStructure node into []game.ChildDoc.
 func (s *ExportService) walkStructure(
 	gs models.GameStructure,
-	locationByID map[string]*models.Location,
 	objectiveByID map[string]*models.Objective,
 	blocksByOwner map[string][]models.Block,
 ) []game.ChildDoc {
 	children := make([]game.ChildDoc, 0)
-
-	for _, locID := range gs.LocationIDs {
-		loc, ok := locationByID[locID]
-		if !ok {
-			continue
-		}
-		locDoc := s.buildLocationDoc(loc, blocksByOwner[locID])
-		children = append(children, game.ChildDoc{Location: &locDoc})
-	}
 
 	for _, objID := range gs.ObjectiveIDs {
 		obj, ok := objectiveByID[objID]
@@ -179,7 +175,7 @@ func (s *ExportService) walkStructure(
 	}
 
 	for _, subGroup := range gs.SubGroups {
-		groupChildren := s.walkStructure(subGroup, locationByID, objectiveByID, blocksByOwner)
+		groupChildren := s.walkStructure(subGroup, objectiveByID, blocksByOwner)
 		groupDoc := game.GroupDoc{
 			ID:              subGroup.ID,
 			Name:            subGroup.Name,
@@ -195,48 +191,6 @@ func (s *ExportService) walkStructure(
 	}
 
 	return children
-}
-
-// buildLocationDoc converts a Location model + its blocks into a LocationDoc.
-func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []models.Block) game.LocationDoc {
-	// Sort by ordering
-	sort.Slice(locBlocks, func(i, j int) bool {
-		return locBlocks[i].Ordering < locBlocks[j].Ordering
-	})
-
-	content := []game.BlockDoc{}
-	var navigation []game.BlockDoc
-
-	for _, b := range locBlocks {
-		doc := modelBlockToDoc(b, true)
-		switch b.Context {
-		case game.ContextLocationContent:
-			content = append(content, doc)
-		case game.ContextNavigation:
-			navigation = append(navigation, doc)
-		case game.ContextStart, game.ContextFinish:
-			// not valid for location blocks; skip
-		}
-	}
-
-	locDoc := game.LocationDoc{
-		ID:         loc.ID,
-		Slug:       loc.Slug,
-		Name:       loc.Name,
-		Points:     loc.Points,
-		When:       loc.When,
-		Content:    content,
-		Navigation: navigation,
-	}
-
-	if loc.Marker.IsMapped() {
-		locDoc.Marker = &game.MarkerDoc{
-			Lat: loc.Marker.Lat,
-			Lng: loc.Marker.Lng,
-		}
-	}
-
-	return locDoc
 }
 
 func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {

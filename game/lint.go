@@ -50,8 +50,6 @@ type linter struct {
 	blockIDs       map[string]bool
 	definedVars    map[string]bool // all variable names set by any block in the doc.
 	usedVars       map[string]bool // all variable names referenced in any when clause.
-	sawLocation    bool
-	sawObjective   bool
 }
 
 func (l *linter) run() {
@@ -84,11 +82,6 @@ func (l *linter) checkSchema() {
 		l.errorf("name", "MISSING_NAME", "game name is required")
 	}
 	l.checkStructureDoc("structure", l.doc.Structure)
-	if l.sawLocation && l.sawObjective {
-		l.errorf("structure", "MIXED_LOCATION_OBJECTIVE",
-			"structure mixes Location and Objective children; objectives replace locations: "+
-				"migrate the whole quest rather than mixing the two")
-	}
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
 	}
@@ -132,21 +125,18 @@ func (l *linter) checkGroupDoc(path string, g GroupDoc) {
 
 func (l *linter) checkChildDoc(path string, child ChildDoc) {
 	switch {
-	case child.Location != nil:
-		l.checkLocationDoc(path+".location", *child.Location)
 	case child.Group != nil:
 		l.checkGroupDoc(path+".group", *child.Group)
 	case child.Objective != nil:
 		l.checkObjectiveDoc(path+".objective", *child.Objective)
 	default:
-		l.errorf(path, "EMPTY_CHILD", "child has neither location, group, nor objective")
+		l.errorf(path, "EMPTY_CHILD", "child has neither group nor objective")
 	}
 }
 
 // checkObjectiveDoc applies the proof-context composition rule: a non-empty
 // proof context must contain at least one interactive block, or it gates nothing.
 func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc) {
-	l.sawObjective = true
 	if obj.Slug == "" {
 		l.errorf(path+".slug", "MISSING_SLUG", "objective slug is required")
 	} else if !slugPattern.MatchString(obj.Slug) {
@@ -179,37 +169,6 @@ func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDo
 	}
 	for name := range objCtx.Sets {
 		l.checkReservedVarName(path+".sets", name)
-	}
-}
-
-func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
-	l.sawLocation = true
-	if loc.Slug == "" {
-		l.errorf(path+".slug", "MISSING_SLUG", "location slug is required")
-	} else if !slugPattern.MatchString(loc.Slug) {
-		l.errorf(path+".slug", "SLUG_INVALID_FORMAT",
-			"slug %q must contain only lowercase letters, digits, and hyphens (no leading/trailing hyphens)", loc.Slug)
-	}
-	if loc.Name == "" {
-		l.errorf(path+".name", "MISSING_LOCATION_NAME", "location name is required")
-	}
-	if loc.Points < 0 {
-		l.errorf(path+".points", "INVALID_POINTS", "points must be non-negative")
-	}
-	if loc.Marker != nil {
-		if loc.Marker.Lat == 0 && loc.Marker.Lng == 0 {
-			l.warnf(
-				path+".marker",
-				"ZERO_COORDINATES",
-				"marker has zero coordinates; omit marker if location has no map pin",
-			)
-		}
-	}
-	for i, b := range loc.Content {
-		l.checkBlockDoc(fmt.Sprintf("%s.content[%d]", path, i), b, ContextLocationContent)
-	}
-	for i, b := range loc.Navigation {
-		l.checkBlockDoc(fmt.Sprintf("%s.navigation[%d]", path, i), b, ContextNavigation)
 	}
 }
 
@@ -326,16 +285,6 @@ func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
 		switch {
-		case child.Location != nil:
-			slug := child.Location.Slug
-			if slug != "" {
-				if l.slugs[slug] {
-					l.errorf(childPath+".location.slug", "SLUG_DUPLICATE",
-						"duplicate slug %q", slug)
-				}
-				l.slugs[slug] = true
-			}
-			l.checkLocationContexts(childPath+".location", *child.Location)
 		case child.Objective != nil:
 			slug := child.Objective.Slug
 			if slug != "" {
@@ -351,13 +300,6 @@ func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc
 			l.collectAndCheckSlugsInChildren(childPath+".group", child.Group.Children)
 		}
 	}
-}
-
-func (l *linter) checkLocationContexts(path string, loc LocationDoc) {
-	l.checkBlockContexts(path+".content", loc.Content, ContextLocationContent)
-	l.checkBlockContexts(path+".navigation", loc.Navigation, ContextNavigation)
-	l.trackBlockIDs(path+".content", loc.Content)
-	l.trackBlockIDs(path+".navigation", loc.Navigation)
 }
 
 func (l *linter) checkObjectiveContexts(path string, obj ObjectiveDoc) {
@@ -407,12 +349,7 @@ func (l *linter) trackBlockIDs(path string, blocks []BlockDoc) {
 
 func (l *linter) checkStructural() {
 	for i, child := range l.doc.Structure.Children {
-		switch {
-		case child.Location != nil:
-			l.warnf(fmt.Sprintf("structure.children[%d].location", i), "ROOT_LOCATION_HIDDEN",
-				"location %q is a direct child of the root structure and will not be shown; wrap it in a group",
-				child.Location.Name)
-		case child.Objective != nil:
+		if child.Objective != nil {
 			l.warnf(fmt.Sprintf("structure.children[%d].objective", i), "ROOT_OBJECTIVE_HIDDEN",
 				"objective %q is a direct child of the root structure and will not be shown; wrap it in a group",
 				child.Objective.Title)
@@ -442,19 +379,7 @@ func (l *linter) checkStructural() {
 func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
-			loc := child.Location
-			if len(loc.Navigation) == 0 {
-				l.warnf(childPath+".location.navigation", "NO_NAVIGATION_BLOCKS",
-					"location %q has no navigation blocks; players will see no clues to find it",
-					loc.Name)
-			}
-			if len(loc.Content) == 0 {
-				l.warnf(childPath+".location.content", "NO_CONTENT_BLOCKS",
-					"location %q has no content blocks; players will see an empty page on check-in",
-					loc.Name)
-			}
-		} else if child.Group != nil {
+		if child.Group != nil {
 			if len(child.Group.Children) == 0 {
 				l.warnf(childPath+".group", "EMPTY_GROUP",
 					"group %q has no children", child.Group.Name)
@@ -487,14 +412,6 @@ func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
 		switch {
-		case child.Location != nil:
-			loc := *child.Location
-			if loc.Points > 0 {
-				l.warnf(childPath+".location.points", "POINTS_DISABLED",
-					"location has points but enable_points is false")
-			}
-			l.warnBlocksWithPoints(childPath+".location.content", loc.Content)
-			l.warnBlocksWithPoints(childPath+".location.navigation", loc.Navigation)
 		case child.Objective != nil:
 			// Objectives have no points field of their own; points are block-level only.
 			obj := *child.Objective
@@ -545,17 +462,6 @@ func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
 func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[string]bool) {
 	for _, child := range children {
 		switch {
-		case child.Location != nil:
-			for _, b := range child.Location.Content {
-				for _, v := range l.blockDocSetsVars(b) {
-					vars[v] = true
-				}
-			}
-			for _, b := range child.Location.Navigation {
-				for _, v := range l.blockDocSetsVars(b) {
-					vars[v] = true
-				}
-			}
 		case child.Objective != nil:
 			l.collectVarsFromObjectiveContext(child.Objective.Proof, vars)
 			l.collectVarsFromObjectiveContext(child.Objective.Reveal, vars)
@@ -633,12 +539,6 @@ func (l *linter) checkWhenInChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
 		switch {
-		case child.Location != nil:
-			loc := child.Location
-			locPath := childPath + ".location"
-			l.checkWhenClause(locPath+".when", loc.When)
-			l.checkWhenInBlocks(locPath+".content", loc.Content)
-			l.checkWhenInBlocks(locPath+".navigation", loc.Navigation)
 		case child.Objective != nil:
 			obj := child.Objective
 			objPath := childPath + ".objective"
@@ -734,25 +634,6 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
 		switch {
-		case child.Location != nil:
-			loc := child.Location
-			locPath := childPath + ".location"
-			// Location-level when: check against full groupVars.
-			// A location whose own blocks set x, but whose when also references x, is
-			// a circular dependency (location hidden until x set, x only set inside it).
-			l.checkGroupScopedWhen(locPath+".when", loc.When, groupVars)
-			// Block-level when: exclude vars set by this location's own blocks.
-			// "Self-reveal" (block B sets x, block C on the same location has when:{var:x}).
-			// is valid; the sequence B→x→C plays out within a single location visit.
-			crossVars := l.groupVarsExcludingSelf(groupVars, loc.Content, loc.Navigation)
-			for j, b := range loc.Content {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.content[%d].when", locPath, j), wc, crossVars)
-			}
-			for j, b := range loc.Navigation {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.navigation[%d].when", locPath, j), wc, crossVars)
-			}
 		case child.Objective != nil:
 			obj := child.Objective
 			objPath := childPath + ".objective"
@@ -786,19 +667,6 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 			l.checkGroupScopedWhenInChildren(childPath+".group", child.Group.Children, groupVars)
 		}
 	}
-}
-
-// groupVarsExcludingSelf returns a copy of groupVars with vars set by the given
-// block slices removed. Used so that same-location setter+reference pairs do not
-// trigger WHEN_UNREACHABLE_VAR (the self-reveal pattern is valid within one location visit).
-func (l *linter) groupVarsExcludingSelf(groupVars map[string]bool, blockSlices ...[]BlockDoc) map[string]bool {
-	var selfVars []string
-	for _, slice := range blockSlices {
-		for _, b := range slice {
-			selfVars = append(selfVars, l.blockDocSetsVars(b)...)
-		}
-	}
-	return excludingVars(groupVars, selfVars)
 }
 
 // excludingVars returns a copy of groupVars with the named vars removed, or

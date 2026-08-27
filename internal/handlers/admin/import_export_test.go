@@ -16,9 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// validImportDocJSON returns a minimal valid v7 game document as JSON.
 func validImportDocJSON() string {
-	return `{"rapua":"v8","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
+	return `{"rapua":"v8","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"objective":{"slug":"a","title":"A","proof":{},"reveal":{}}}]}}]}}`
 }
 
 func withImportUser(r *http.Request) *http.Request {

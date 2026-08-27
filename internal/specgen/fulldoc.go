@@ -150,12 +150,12 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Description: "Number of locations required when completion is \"minimum\".",
 		},
 		whenFieldSpec(),
-		{Name: "children", Type: "list", Required: true, Description: "Ordered list of location or group children.",
+		{Name: "children", Type: "list", Required: true, Description: "Ordered list of objective or group children.",
 			Items: &game.FieldSpec{
 				Type:        "object",
-				Description: "Tagged union: set exactly one of \"location\" or \"group\".",
+				Description: "Tagged union: set exactly one of \"objective\" or \"group\".",
 				Fields: []game.FieldSpec{
-					{Name: "location", Type: "object", Description: "A single game location. See location schema."},
+					{Name: "objective", Type: "object", Description: "A single game objective. See objective schema."},
 					{
 						Name:        "group",
 						Type:        "object",
@@ -165,36 +165,43 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			}},
 	}
 
-	locationFields := []game.FieldSpec{
+	objectiveContextFields := []game.FieldSpec{
+		{
+			Name:        "blocks",
+			Type:        "list",
+			Description: "Blocks shown to players while this context is active.",
+		},
+		setsFieldSpec(),
+	}
+
+	objectiveFields := []game.FieldSpec{
 		{
 			Name:        "id",
 			Type:        "string",
-			Description: "Location UUID. Present on export; omit on create-import to generate a new UUID.",
+			Description: "Objective UUID. Present on export; omit on create-import to generate a new UUID.",
 		},
 		{
 			Name:        "slug",
 			Type:        "string",
 			Required:    true,
-			Description: "Short alphanumeric code used in QR/URLs. Must be unique within the game.",
+			Description: "Short alphanumeric code referenced by objective.<slug> when clauses. Must be unique within the game.",
 		},
-		{Name: "name", Type: "string", Required: true, Description: "Display name shown to players."},
-		{Name: "points", Type: "int", Description: "Points awarded on check-in (requires enable_points in settings)."},
-		{Name: "marker", Type: "object", Description: "Geographic map pin. Omit if the location has no map position.",
-			Fields: []game.FieldSpec{
-				{Name: "lat", Type: "float", Required: true, Description: "Latitude in decimal degrees."},
-				{Name: "lng", Type: "float", Required: true, Description: "Longitude in decimal degrees."},
-			}},
+		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
 		whenFieldSpec(),
 		{
-			Name:        "content",
-			Type:        "list",
-			Required:    true,
-			Description: "Blocks shown to players after check-in. Always present, even if empty.",
+			Name:     "proof",
+			Type:     "object",
+			Required: true,
+			Description: "Blocks and sets shown/fired while the objective is unproven. A non-empty proof " +
+				"must contain at least one interactive block, or it gates nothing.",
+			Fields: objectiveContextFields,
 		},
 		{
-			Name:        "navigation",
-			Type:        "list",
-			Description: "Blocks shown on the /next page to help players find this location.",
+			Name:        "reveal",
+			Type:        "object",
+			Required:    true,
+			Description: "Blocks and sets shown/fired once proof completes.",
+			Fields:      objectiveContextFields,
 		},
 	}
 
@@ -244,10 +251,10 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Fields:      structureFields,
 			},
 			{
-				Name:        "location",
+				Name:        "objective",
 				Type:        "object",
-				Description: "Schema for location objects within structure.children.",
-				Fields:      locationFields,
+				Description: "Schema for objective objects within structure.children.",
+				Fields:      objectiveFields,
 			},
 		},
 	}

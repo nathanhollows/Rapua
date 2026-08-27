@@ -269,18 +269,17 @@ func TestGenerateFullSpec_BlockSharedFields(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_WhenOnLocationAndGroup verifies the location and structure (group)
 // schemas both contain a "when" field.
-func TestGenerateFullSpec_WhenOnLocationAndGroup(t *testing.T) {
+func TestGenerateFullSpec_WhenOnObjectiveAndGroup(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 
-	// Find location schema
-	var locationFields []game.FieldSpec
+	// Find objective schema.
+	var objectiveFields []game.FieldSpec
 	var structureFields []game.FieldSpec
 	for _, f := range spec.Document.Fields {
 		switch f.Name {
-		case "location":
-			locationFields = f.Fields
+		case "objective":
+			objectiveFields = f.Fields
 		case "structure":
 			structureFields = f.Fields
 		}
@@ -295,8 +294,8 @@ func TestGenerateFullSpec_WhenOnLocationAndGroup(t *testing.T) {
 		return false
 	}
 
-	if !hasWhen(locationFields) {
-		t.Error("location schema missing \"when\" field")
+	if !hasWhen(objectiveFields) {
+		t.Error("objective schema missing \"when\" field")
 	}
 	if !hasWhen(structureFields) {
 		t.Error("structure (group) schema missing \"when\" field")

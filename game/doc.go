@@ -42,22 +42,6 @@ type GroupDoc struct {
 	Children        []ChildDoc     `json:"children"`
 }
 
-type LocationDoc struct {
-	ID         string      `json:"id,omitempty"`
-	Slug       string      `json:"slug"`
-	Name       string      `json:"name"`
-	Points     int         `json:"points,omitempty"`
-	When       *WhenClause `json:"when,omitempty"`
-	Marker     *MarkerDoc  `json:"marker,omitempty"`
-	Content    []BlockDoc  `json:"content"`
-	Navigation []BlockDoc  `json:"navigation,omitempty"`
-}
-
-type MarkerDoc struct {
-	Lat float64 `json:"lat"`
-	Lng float64 `json:"lng"`
-}
-
 // ObjectiveDoc renders one fixed design rather than the freeform block canvas a
 // Location uses: exactly two contexts, proof then reveal, no pre-proof context.
 type ObjectiveDoc struct {
@@ -76,10 +60,9 @@ type ObjectiveContextDoc struct {
 	Sets   SetsField  `json:"sets,omitempty"`
 }
 
-// ChildDoc is a tagged union: exactly one of Location, Group, or Objective is set.
+// ChildDoc is a tagged union: exactly one of Group or Objective is set.
 // Custom marshal/unmarshal is in doc_marshal.go.
 type ChildDoc struct {
-	Location  *LocationDoc
 	Group     *GroupDoc
 	Objective *ObjectiveDoc
 }

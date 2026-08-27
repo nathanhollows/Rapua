@@ -98,12 +98,14 @@ func init() {
 // objective at all. A location that never gets a marker is retried and
 // skipped every run, harmlessly, until it does.
 //
-// A quest is deliberately left transitional and doc-invalid: LocationIDs stays
-// untouched alongside the new ObjectiveIDs, so ExportInstance emits both
-// Location and Objective children and the doc fails MIXED_LOCATION_OBJECTIVE.
-// Old data is kept on purpose, and the spec removal step that strips
-// LocationIDs is a hard dependency of this migration being useful, not an
-// optional follow-up.
+// LocationIDs stays untouched alongside the new ObjectiveIDs: old data is kept
+// on purpose. At the time this migration was written, that left a migrated
+// quest transitional and doc-invalid (ExportInstance emitted both Location and
+// Objective children, and the doc failed MIXED_LOCATION_OBJECTIVE) until spec
+// removal landed. Spec removal has since shipped: Location has no
+// representation in the doc at all now, MIXED_LOCATION_OBJECTIVE no longer
+// exists, and ExportInstance silently omits any quest's still-unconverted
+// LocationIDs rather than failing on them.
 func m20260827_up(ctx context.Context, db *bun.DB) error {
 	var quests []m20260827_quest
 	if err := db.NewSelect().Model(&quests).Scan(ctx); err != nil {

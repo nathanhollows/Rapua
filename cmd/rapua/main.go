@@ -152,9 +152,9 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
-	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo)
+	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo)
 	importService := services.NewImportService(
-		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, markerRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
 
 	sessions.Start()
