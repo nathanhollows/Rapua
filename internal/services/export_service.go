@@ -16,6 +16,7 @@ type ExportService struct {
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
+	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 }
 
@@ -24,12 +25,14 @@ func NewExportService(
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 ) *ExportService {
 	return &ExportService{
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		locationRepo:         locationRepo,
+		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 	}
 }
@@ -54,11 +57,20 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		return nil, fmt.Errorf("export: load locations: %w", err)
 	}
 
-	// 4. Collect all owner IDs: instance itself (start/finish) + all location IDs
-	ownerIDs := make([]string, 0, len(locations)+1)
+	// 3b. Load all Objectives.
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("export: load objectives: %w", err)
+	}
+
+	// 4. Collect all owner IDs: instance itself (start/finish) + all location and objective IDs.
+	ownerIDs := make([]string, 0, len(locations)+len(objectives)+1)
 	ownerIDs = append(ownerIDs, questID)
 	for i := range locations {
 		ownerIDs = append(ownerIDs, locations[i].ID)
+	}
+	for i := range objectives {
+		ownerIDs = append(ownerIDs, objectives[i].ID)
 	}
 
 	// 5. Load all raw blocks in one query
@@ -72,6 +84,10 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	for i := range locations {
 		locationByID[locations[i].ID] = &locations[i]
 	}
+	objectiveByID := make(map[string]*models.Objective, len(objectives))
+	for i := range objectives {
+		objectiveByID[objectives[i].ID] = &objectives[i]
+	}
 
 	// Group blocks by ownerID, preserving ordering
 	blocksByOwner := make(map[string][]models.Block)
@@ -83,7 +99,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
 
 	// 8. Walk GameStructure recursively to build the children tree
-	children := s.walkStructure(instance.GameStructure, locationByID, blocksByOwner)
+	children := s.walkStructure(instance.GameStructure, locationByID, objectiveByID, blocksByOwner)
 
 	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
@@ -139,6 +155,7 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 func (s *ExportService) walkStructure(
 	gs models.GameStructure,
 	locationByID map[string]*models.Location,
+	objectiveByID map[string]*models.Objective,
 	blocksByOwner map[string][]models.Block,
 ) []game.ChildDoc {
 	children := make([]game.ChildDoc, 0)
@@ -152,8 +169,17 @@ func (s *ExportService) walkStructure(
 		children = append(children, game.ChildDoc{Location: &locDoc})
 	}
 
+	for _, objID := range gs.ObjectiveIDs {
+		obj, ok := objectiveByID[objID]
+		if !ok {
+			continue
+		}
+		objDoc := s.buildObjectiveDoc(obj, blocksByOwner[objID])
+		children = append(children, game.ChildDoc{Objective: &objDoc})
+	}
+
 	for _, subGroup := range gs.SubGroups {
-		groupChildren := s.walkStructure(subGroup, locationByID, blocksByOwner)
+		groupChildren := s.walkStructure(subGroup, locationByID, objectiveByID, blocksByOwner)
 		groupDoc := game.GroupDoc{
 			ID:              subGroup.ID,
 			Name:            subGroup.Name,
@@ -211,6 +237,42 @@ func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []model
 	}
 
 	return locDoc
+}
+
+func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {
+	sort.Slice(objBlocks, func(i, j int) bool {
+		return objBlocks[i].Ordering < objBlocks[j].Ordering
+	})
+
+	proof := []game.BlockDoc{}
+	reveal := []game.BlockDoc{}
+
+	for _, b := range objBlocks {
+		doc := modelBlockToDoc(b, true)
+		switch b.Context {
+		case game.ContextObjectiveProof:
+			proof = append(proof, doc)
+		case game.ContextObjectiveReveal:
+			reveal = append(reveal, doc)
+		case game.ContextLocationContent, game.ContextNavigation, game.ContextStart, game.ContextFinish:
+			// not valid for objective blocks: skip.
+		}
+	}
+
+	return game.ObjectiveDoc{
+		ID:    obj.ID,
+		Slug:  obj.Slug,
+		Title: obj.Title,
+		When:  obj.When,
+		Proof: game.ObjectiveContextDoc{
+			Blocks: proof,
+			Sets:   obj.ProofSets,
+		},
+		Reveal: game.ObjectiveContextDoc{
+			Blocks: reveal,
+			Sets:   obj.RevealSets,
+		},
+	}
 }
 
 // modelBlockToDoc converts a models.Block to a game.BlockDoc.

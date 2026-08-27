@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"testing"
 
@@ -21,6 +22,7 @@ func setupImportService(t *testing.T) (
 	repositories.QuestRepository,
 	repositories.QuestSettingsRepository,
 	repositories.LocationRepository,
+	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
 	func(),
@@ -34,12 +36,13 @@ func setupImportService(t *testing.T) (
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
 
 	svc := services.NewImportService(
-		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, markerRepo,
 	)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
+	return svc, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
 
 // minimalValidDoc returns a valid GameDoc with no locations and no blocks.
@@ -78,8 +81,35 @@ func docWithLocation(gameName, slug, locName string) *game.GameDoc {
 	return doc
 }
 
+// docWithObjective returns a GameDoc with a single objective: an interactive
+// proof block (satisfies PROOF_CONTEXT_NO_INTERACTIVE_BLOCK) and a content
+// reveal block.
+func docWithObjective(gameName, slug, title string) *game.GameDoc {
+	doc := minimalValidDoc(gameName)
+	doc.Structure.Children = []game.ChildDoc{
+		{
+			Objective: &game.ObjectiveDoc{
+				Slug:  slug,
+				Title: title,
+				Proof: game.ObjectiveContextDoc{
+					Blocks: []game.BlockDoc{
+						{"type": "free_text", "prompt": "What is the answer?"},
+					},
+					Sets: game.SetsField{"door_unlocked": "true"},
+				},
+				Reveal: game.ObjectiveContextDoc{
+					Blocks: []game.BlockDoc{
+						{"type": "text", "content": "You found it!"},
+					},
+				},
+			},
+		},
+	}
+	return doc
+}
+
 func TestImportService_ImportCreate_InvalidDoc(t *testing.T) {
-	svc, _, _, _, _, _, cleanup := setupImportService(t)
+	svc, _, _, _, _, _, _, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -92,7 +122,7 @@ func TestImportService_ImportCreate_InvalidDoc(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -117,7 +147,7 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_WithLocationsAndBlocks(t *testing.T) {
-	svc, _, _, locationRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	svc, _, _, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -144,8 +174,86 @@ func TestImportService_ImportCreate_WithLocationsAndBlocks(t *testing.T) {
 	assert.Equal(t, "text", contentBlocks[0].GetType())
 }
 
+func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
+	svc, _, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := docWithObjective("Hunt", "find-the-key", "Find the key")
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, result.Created.Objectives)
+	assert.Equal(t, 2, result.Created.Blocks)
+
+	objectives, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
+	require.NoError(t, err)
+	require.Len(t, objectives, 1)
+	assert.Equal(t, "find-the-key", objectives[0].Slug)
+	assert.Equal(t, "Find the key", objectives[0].Title)
+	assert.Equal(t, "true", objectives[0].ProofSets["door_unlocked"])
+
+	proofBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives[0].ID, game.ContextObjectiveProof)
+	require.NoError(t, err)
+	require.Len(t, proofBlocks, 1)
+	assert.Equal(t, "free_text", proofBlocks[0].GetType())
+
+	revealBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives[0].ID, game.ContextObjectiveReveal)
+	require.NoError(t, err)
+	require.Len(t, revealBlocks, 1)
+	assert.Equal(t, "text", revealBlocks[0].GetType())
+}
+
+func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
+	svc, _, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := docWithObjective("Hunt", "find-the-key", "Find the key")
+	createResult, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	objectivesBefore, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
+	require.NoError(t, err)
+	require.Len(t, objectivesBefore, 1)
+
+	// Re-import the same slug with a changed title: must update, not duplicate.
+	updateDoc := docWithObjective("Hunt", "find-the-key", "Find the hidden key")
+	updateResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
+	require.NoError(t, err)
+	assert.Equal(t, 1, updateResult.Updated.Objectives)
+	assert.Equal(t, 0, updateResult.Created.Objectives)
+
+	objectivesAfter, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
+	require.NoError(t, err)
+	require.Len(t, objectivesAfter, 1)
+	assert.Equal(t, objectivesBefore[0].ID, objectivesAfter[0].ID, "same objective, not a new row")
+	assert.Equal(t, "Find the hidden key", objectivesAfter[0].Title)
+
+	// Re-import with no objectives at all: the orphan must be deleted.
+	orphanObjID := objectivesAfter[0].ID
+	emptyDoc := minimalValidDoc("Hunt")
+	finalResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, emptyDoc)
+	require.NoError(t, err)
+	assert.Equal(t, 1, finalResult.Deleted.Objectives)
+
+	objectivesFinal, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
+	require.NoError(t, err)
+	assert.Empty(t, objectivesFinal)
+
+	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, orphanObjID)
+	require.NoError(t, err)
+	assert.Empty(t, remainingBlocks, "the orphan's blocks must not be left behind — owner_id has no FK to cascade them")
+}
+
 func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
-	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -167,7 +275,7 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_WithGroup(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, locationRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -212,7 +320,7 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -230,7 +338,7 @@ func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -247,7 +355,7 @@ func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -280,7 +388,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -293,6 +401,13 @@ func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
 	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	orphanLocID := insertTestLocation(t, dbc, inst.ID)
+
+	transactor := db.NewTransactor(dbc)
+	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+	require.NoError(t, err)
+	_, err = blockRepo.CreateTx(ctx, tx, newTextBlock(orphanLocID), orphanLocID, game.ContextLocationContent)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	// GameStructure references the orphan
 	inst.GameStructure = models.GameStructure{
@@ -314,10 +429,14 @@ func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
 	locations, err := locationRepo.FindByInstance(ctx, inst.ID)
 	require.NoError(t, err)
 	assert.Empty(t, locations)
+
+	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, orphanLocID)
+	require.NoError(t, err)
+	assert.Empty(t, remainingBlocks, "the orphan's blocks must not be left behind — owner_id has no FK to cascade them")
 }
 
 func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -382,7 +501,7 @@ func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
-	svc, _, _, locationRepo, _, dbc, cleanup := setupImportService(t)
+	svc, _, _, locationRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -414,7 +533,7 @@ func TestImportService_ImportCreate_LocationWhen(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
-	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -449,7 +568,7 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_LocationWhenUpdated(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()

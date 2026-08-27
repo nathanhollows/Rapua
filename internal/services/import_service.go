@@ -28,9 +28,10 @@ type ImportResult struct {
 
 // ImportStats counts entities affected by an import operation.
 type ImportStats struct {
-	Locations int
-	Blocks    int
-	Groups    int
+	Locations  int
+	Objectives int
+	Blocks     int
+	Groups     int
 }
 
 // ImportService creates or updates instances from a GameDoc.
@@ -40,6 +41,7 @@ type ImportService struct {
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
+	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 	markerRepo           repositories.MarkerRepository
 }
@@ -51,6 +53,7 @@ func NewImportService(
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 	markerRepo repositories.MarkerRepository,
 ) *ImportService {
@@ -60,6 +63,7 @@ func NewImportService(
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		locationRepo:         locationRepo,
+		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 		markerRepo:           markerRepo,
 	}
@@ -141,16 +145,22 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 		return nil, ErrUserNotAuthenticated
 	}
 
-	// Load all existing locations and their raw blocks
 	existingLocations, err := s.locationRepo.FindByInstance(ctx, questID)
 	if err != nil {
 		return nil, fmt.Errorf("import update: load locations: %w", err)
 	}
+	existingObjectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("import update: load objectives: %w", err)
+	}
 
-	existingOwnerIDs := make([]string, 0, len(existingLocations)+1)
+	existingOwnerIDs := make([]string, 0, len(existingLocations)+len(existingObjectives)+1)
 	existingOwnerIDs = append(existingOwnerIDs, questID)
 	for i := range existingLocations {
 		existingOwnerIDs = append(existingOwnerIDs, existingLocations[i].ID)
+	}
+	for i := range existingObjectives {
+		existingOwnerIDs = append(existingOwnerIDs, existingObjectives[i].ID)
 	}
 	existingBlocks, err := s.blockRepo.FindModelsByOwnerIDs(ctx, existingOwnerIDs)
 	if err != nil {
@@ -163,6 +173,12 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 	for i := range existingLocations {
 		locByID[existingLocations[i].ID] = &existingLocations[i]
 		locBySlug[existingLocations[i].Slug] = &existingLocations[i]
+	}
+	objByID := make(map[string]*models.Objective, len(existingObjectives))
+	objBySlug := make(map[string]*models.Objective, len(existingObjectives))
+	for i := range existingObjectives {
+		objByID[existingObjectives[i].ID] = &existingObjectives[i]
+		objBySlug[existingObjectives[i].Slug] = &existingObjectives[i]
 	}
 	blockByID := make(map[string]models.Block, len(existingBlocks))
 	for _, b := range existingBlocks {
@@ -183,7 +199,7 @@ func (s *ImportService) ImportUpdate( //nolint:gocognit
 		}
 	}()
 
-	importResult, err := s.importUpdate(ctx, tx, existing, doc, locByID, locBySlug, blockByID)
+	importResult, err := s.importUpdate(ctx, tx, existing, doc, locByID, locBySlug, objByID, objBySlug, blockByID)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return nil, fmt.Errorf("import update: %w; rollback failed: %w", err, rbErr)
@@ -237,7 +253,6 @@ func (s *ImportService) importCreate(
 		return nil, fmt.Errorf("create settings: %w", err)
 	}
 
-	// Walk structure, creating locations and groups
 	stats := ImportStats{}
 	gs := &models.GameStructure{
 		ID:              uuid.New().String(),
@@ -246,6 +261,7 @@ func (s *ImportService) importCreate(
 		CompletionType:  doc.Structure.Completion,
 		MinimumRequired: doc.Structure.MinimumRequired,
 		LocationIDs:     []string{},
+		ObjectiveIDs:    []string{},
 		SubGroups:       []models.GameStructure{},
 	}
 
@@ -294,6 +310,14 @@ func (s *ImportService) walkCreateChildren(
 			parentGS.LocationIDs = append(parentGS.LocationIDs, locID)
 			stats.Locations++
 			stats.Blocks += blockCount
+		} else if child.Objective != nil {
+			objID, blockCount, err := s.createObjective(ctx, tx, questID, *child.Objective)
+			if err != nil {
+				return err
+			}
+			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
+			stats.Objectives++
+			stats.Blocks += blockCount
 		} else if child.Group != nil {
 			g := child.Group
 			subGS := models.GameStructure{
@@ -306,6 +330,7 @@ func (s *ImportService) walkCreateChildren(
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
 				When:            g.When,
 				LocationIDs:     []string{},
+				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}
 			if err := s.walkCreateChildren(ctx, tx, questID, g.Children, &subGS, stats); err != nil {
@@ -368,6 +393,42 @@ func (s *ImportService) createLocation(
 	return loc.ID, count, nil
 }
 
+func (s *ImportService) createObjective(
+	ctx context.Context,
+	tx *bun.Tx,
+	questID string,
+	objDoc game.ObjectiveDoc,
+) (string, int, error) {
+	obj := &models.Objective{
+		QuestID:    questID,
+		Slug:       objDoc.Slug,
+		Title:      objDoc.Title,
+		When:       objDoc.When,
+		ProofSets:  objDoc.Proof.Sets,
+		RevealSets: objDoc.Reveal.Sets,
+	}
+	if err := s.objectiveRepo.CreateTx(ctx, tx, obj); err != nil {
+		return "", 0, fmt.Errorf("create objective %q: %w", objDoc.Slug, err)
+	}
+
+	count := 0
+	for _, pair := range []struct {
+		docs []game.BlockDoc
+		ctx  game.BlockContext
+	}{
+		{objDoc.Proof.Blocks, game.ContextObjectiveProof},
+		{objDoc.Reveal.Blocks, game.ContextObjectiveReveal},
+	} {
+		n, err := s.createBlockDocs(ctx, tx, obj.ID, pair.docs, pair.ctx)
+		if err != nil {
+			return "", 0, fmt.Errorf("create blocks for %q context %q: %w", objDoc.Slug, pair.ctx, err)
+		}
+		count += n
+	}
+
+	return obj.ID, count, nil
+}
+
 // createBlockDocs creates all blocks from a slice of BlockDoc for the given owner+context.
 func (s *ImportService) createBlockDocs(
 	ctx context.Context,
@@ -397,6 +458,8 @@ func (s *ImportService) importUpdate(
 	doc *game.GameDoc,
 	locByID map[string]*models.Location,
 	locBySlug map[string]*models.Location,
+	objByID map[string]*models.Objective,
+	objBySlug map[string]*models.Objective,
 	blockByID map[string]models.Block,
 ) (*ImportResult, error) {
 	result := &ImportResult{QuestID: existing.ID}
@@ -420,8 +483,9 @@ func (s *ImportService) importUpdate(
 		return nil, fmt.Errorf("update settings: %w", err)
 	}
 
-	// Track which existing locations appeared in the doc (to find orphans)
+	// Track which existing locations/objectives appeared in the doc (to find orphans).
 	seenLocIDs := make(map[string]bool)
+	seenObjIDs := make(map[string]bool)
 
 	// Build new GameStructure
 	gs := &models.GameStructure{
@@ -431,11 +495,12 @@ func (s *ImportService) importUpdate(
 		CompletionType:  doc.Structure.Completion,
 		MinimumRequired: doc.Structure.MinimumRequired,
 		LocationIDs:     []string{},
+		ObjectiveIDs:    []string{},
 		SubGroups:       []models.GameStructure{},
 	}
 
 	if err := s.walkUpdateChildren(ctx, tx, existing.ID, doc.Structure.Children, gs,
-		locByID, locBySlug, blockByID, seenLocIDs, result); err != nil {
+		locByID, locBySlug, objByID, objBySlug, blockByID, seenLocIDs, seenObjIDs, result); err != nil {
 		return nil, err
 	}
 
@@ -466,12 +531,31 @@ func (s *ImportService) importUpdate(
 	// Delete locations not seen in the doc
 	for locID, loc := range locByID {
 		if !seenLocIDs[locID] {
+			// blocks.owner_id has no FK, so the row delete below would not cascade.
+			if _, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, locID, nil); err != nil {
+				return nil, fmt.Errorf("delete blocks for orphan location %q: %w", loc.Slug, err)
+			}
 			if err := s.locationRepo.Delete(ctx, tx, locID); err != nil {
 				return nil, fmt.Errorf("delete orphan location %q: %w", loc.Slug, err)
 			}
 			result.Deleted.Locations++
 			result.Warnings = append(result.Warnings,
 				fmt.Sprintf("location %q (id=%s) was in DB but not in document; deleted", loc.Slug, locID))
+		}
+	}
+
+	for objID, obj := range objByID {
+		if !seenObjIDs[objID] {
+			// blocks.owner_id has no FK, so the row delete below would not cascade.
+			if _, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, objID, nil); err != nil {
+				return nil, fmt.Errorf("delete blocks for orphan objective %q: %w", obj.Slug, err)
+			}
+			if err := s.objectiveRepo.Delete(ctx, tx, objID); err != nil {
+				return nil, fmt.Errorf("delete orphan objective %q: %w", obj.Slug, err)
+			}
+			result.Deleted.Objectives++
+			result.Warnings = append(result.Warnings,
+				fmt.Sprintf("objective %q (id=%s) was in DB but not in document; deleted", obj.Slug, objID))
 		}
 	}
 
@@ -496,8 +580,11 @@ func (s *ImportService) walkUpdateChildren(
 	parentGS *models.GameStructure,
 	locByID map[string]*models.Location,
 	locBySlug map[string]*models.Location,
+	objByID map[string]*models.Objective,
+	objBySlug map[string]*models.Objective,
 	blockByID map[string]models.Block,
 	seenLocIDs map[string]bool,
+	seenObjIDs map[string]bool,
 	result *ImportResult,
 ) error {
 	for _, child := range children {
@@ -508,6 +595,13 @@ func (s *ImportService) walkUpdateChildren(
 				return err
 			}
 			parentGS.LocationIDs = append(parentGS.LocationIDs, locID)
+		} else if child.Objective != nil {
+			objID, err := s.reconcileObjective(ctx, tx, questID, *child.Objective,
+				objByID, objBySlug, blockByID, seenObjIDs, result)
+			if err != nil {
+				return err
+			}
+			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
 		} else if child.Group != nil {
 			g := child.Group
 			groupID := g.ID
@@ -524,10 +618,11 @@ func (s *ImportService) walkUpdateChildren(
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
 				When:            g.When,
 				LocationIDs:     []string{},
+				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}
 			if err := s.walkUpdateChildren(ctx, tx, questID, g.Children, &subGS,
-				locByID, locBySlug, blockByID, seenLocIDs, result); err != nil {
+				locByID, locBySlug, objByID, objBySlug, blockByID, seenLocIDs, seenObjIDs, result); err != nil {
 				return err
 			}
 			parentGS.SubGroups = append(parentGS.SubGroups, subGS)
@@ -604,6 +699,64 @@ func (s *ImportService) reconcileLocation(
 
 	result.Updated.Locations++
 	return existingLoc.ID, nil
+}
+
+// reconcileObjective matches an ObjectiveDoc to an existing objective by ID or
+// slug; creates one when there is no match.
+func (s *ImportService) reconcileObjective(
+	ctx context.Context,
+	tx *bun.Tx,
+	questID string,
+	objDoc game.ObjectiveDoc,
+	objByID map[string]*models.Objective,
+	objBySlug map[string]*models.Objective,
+	blockByID map[string]models.Block,
+	seenObjIDs map[string]bool,
+	result *ImportResult,
+) (string, error) {
+	var existingObj *models.Objective
+	if objDoc.ID != "" {
+		existingObj = objByID[objDoc.ID]
+	}
+	if existingObj == nil && objDoc.Slug != "" {
+		existingObj = objBySlug[objDoc.Slug]
+	}
+
+	if existingObj == nil {
+		newObjID, blockCount, err := s.createObjective(ctx, tx, questID, objDoc)
+		if err != nil {
+			return "", err
+		}
+		result.Created.Objectives++
+		result.Created.Blocks += blockCount
+		return newObjID, nil
+	}
+
+	seenObjIDs[existingObj.ID] = true
+	existingObj.Title = objDoc.Title
+	existingObj.Slug = objDoc.Slug
+	existingObj.When = objDoc.When
+	existingObj.ProofSets = objDoc.Proof.Sets
+	existingObj.RevealSets = objDoc.Reveal.Sets
+
+	if err := s.objectiveRepo.UpdateTx(ctx, tx, existingObj); err != nil {
+		return "", fmt.Errorf("update objective %q: %w", objDoc.Slug, err)
+	}
+
+	for _, pair := range []struct {
+		docs []game.BlockDoc
+		ctx  game.BlockContext
+	}{
+		{objDoc.Proof.Blocks, game.ContextObjectiveProof},
+		{objDoc.Reveal.Blocks, game.ContextObjectiveReveal},
+	} {
+		if err := s.reconcileBlocks(ctx, tx, existingObj.ID, pair.docs, pair.ctx, blockByID, result); err != nil {
+			return "", err
+		}
+	}
+
+	result.Updated.Objectives++
+	return existingObj.ID, nil
 }
 
 // reconcileBlocks reconciles blocks for a given owner+context.

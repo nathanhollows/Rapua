@@ -65,12 +65,17 @@ type GameStructure struct {
 	When            *game.WhenClause `json:"when,omitempty"`             // Visibility condition; nil = always visible. No migration needed: stored inside the JSON blob in instances.game_structure.
 
 	// Storage: locations first, then subgroups - order preserved in arrays
-	LocationIDs []string        `json:"location_ids"` // Ordered list of location IDs
-	SubGroups   []GameStructure `json:"sub_groups"`   // Ordered list of nested groups
+	LocationIDs []string `json:"location_ids"` // Ordered list of location IDs.
+	// ObjectiveIDs is the Objective-model equivalent of LocationIDs. Both can
+	// exist in the structure tree; a quest is fully one or the other in practice
+	// (MIXED_LOCATION_OBJECTIVE forbids mixing at the game-doc level).
+	ObjectiveIDs []string        `json:"objective_ids,omitempty"`
+	SubGroups    []GameStructure `json:"sub_groups"` // Ordered list of nested groups.
 
 	// Runtime fields - populated by GameStructureService
-	Locations []*Location `json:"-"` // Loaded location pointers
-	populated bool        `json:"-"` // Private field to track if locations are loaded
+	Locations  []*Location  `json:"-"`
+	Objectives []*Objective `json:"-"`
+	populated  bool         `json:"-"` // Set when GameStructureService has loaded Locations.
 }
 
 // Scan implements the sql.Scanner interface for database unmarshalling.
@@ -104,11 +109,17 @@ func (gs *GameStructure) Scan(value any) error {
 	if gs.LocationIDs == nil {
 		gs.LocationIDs = []string{}
 	}
+	if gs.ObjectiveIDs == nil {
+		gs.ObjectiveIDs = []string{}
+	}
 	if gs.SubGroups == nil {
 		gs.SubGroups = []GameStructure{}
 	}
 	if gs.Locations == nil {
 		gs.Locations = []*Location{}
+	}
+	if gs.Objectives == nil {
+		gs.Objectives = []*Objective{}
 	}
 
 	return nil

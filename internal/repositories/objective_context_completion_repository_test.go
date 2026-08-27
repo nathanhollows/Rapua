@@ -22,6 +22,10 @@ func TestObjectiveContextCompletionRepository_Insert_Idempotent(t *testing.T) {
 	require.NoError(t, err)
 
 	runCode := gofakeit.LetterN(6)
+	run := &models.Run{ID: gofakeit.UUID(), Code: runCode, Name: "test-run", QuestID: parents.QuestID}
+	_, err = dbc.NewInsert().Model(run).Exec(context.Background())
+	require.NoError(t, err)
+
 	repo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
 	inserted, err := repo.Insert(context.Background(), runCode, objective.ID, blocks.ContextObjectiveProof)
@@ -50,6 +54,10 @@ func TestObjectiveContextCompletionRepository_Insert_DistinctContextsDoNotCollid
 	require.NoError(t, err)
 
 	runCode := gofakeit.LetterN(6)
+	run := &models.Run{ID: gofakeit.UUID(), Code: runCode, Name: "test-run", QuestID: parents.QuestID}
+	_, err = dbc.NewInsert().Model(run).Exec(context.Background())
+	require.NoError(t, err)
+
 	repo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
 	proofInserted, err := repo.Insert(context.Background(), runCode, objective.ID, blocks.ContextObjectiveProof)

@@ -22,6 +22,7 @@ func setupExportService(t *testing.T) (
 	repositories.QuestRepository,
 	repositories.QuestSettingsRepository,
 	repositories.LocationRepository,
+	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
 	func(),
@@ -34,9 +35,10 @@ func setupExportService(t *testing.T) (
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
+	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo)
+	return svc, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
 
 // newTextBlock creates a MarkdownBlock for use in tests.
@@ -49,7 +51,7 @@ func newTextBlock(ownerID string) blocks.Block {
 }
 
 func TestExportService_ExportInstance_NotFound(t *testing.T) {
-	svc, _, _, _, _, _, cleanup := setupExportService(t)
+	svc, _, _, _, _, _, _, cleanup := setupExportService(t)
 	defer cleanup()
 
 	_, err := svc.ExportInstance(context.Background(), "does-not-exist")
@@ -57,7 +59,7 @@ func TestExportService_ExportInstance_NotFound(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -99,7 +101,7 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_WithLocationsAndBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, blockRepo, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -155,8 +157,69 @@ func TestExportService_ExportInstance_WithLocationsAndBlocks(t *testing.T) {
 	assert.Equal(t, createdBlock.GetID(), child.Location.Content[0]["id"])
 }
 
+func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, _, blockRepo, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Objective Export Test", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	obj := &models.Objective{
+		ID:         gofakeit.UUID(),
+		QuestID:    inst.ID,
+		Slug:       "find-the-key",
+		Title:      "Find the key",
+		ProofSets:  game.SetsField{"door_unlocked": "true"},
+		RevealSets: game.SetsField{"story_seen": "true"},
+	}
+	_, err := dbc.NewInsert().Model(obj).Exec(ctx)
+	require.NoError(t, err)
+
+	transactor := db.NewTransactor(dbc)
+	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+	require.NoError(t, err)
+	proofBlock, err := blockRepo.CreateTx(ctx, tx, newTextBlock(obj.ID), obj.ID, game.ContextObjectiveProof)
+	require.NoError(t, err)
+	revealBlock, err := blockRepo.CreateTx(ctx, tx, newTextBlock(obj.ID), obj.ID, game.ContextObjectiveReveal)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+
+	inst.GameStructure = models.GameStructure{
+		ID:             gofakeit.UUID(),
+		IsRoot:         true,
+		Routing:        game.RouteStrategyFreeRoam,
+		CompletionType: game.CompletionAll,
+		ObjectiveIDs:   []string{obj.ID},
+		SubGroups:      []models.GameStructure{},
+	}
+	require.NoError(t, instanceRepo.Update(ctx, inst))
+
+	doc, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 1)
+	child := doc.Structure.Children[0]
+	require.NotNil(t, child.Objective)
+	assert.Equal(t, obj.ID, child.Objective.ID)
+	assert.Equal(t, "find-the-key", child.Objective.Slug)
+	assert.Equal(t, "Find the key", child.Objective.Title)
+
+	require.Len(t, child.Objective.Proof.Blocks, 1)
+	assert.Equal(t, proofBlock.GetID(), child.Objective.Proof.Blocks[0]["id"])
+	assert.Equal(t, "true", child.Objective.Proof.Sets["door_unlocked"])
+
+	require.Len(t, child.Objective.Reveal.Blocks, 1)
+	assert.Equal(t, revealBlock.GetID(), child.Objective.Reveal.Blocks[0]["id"])
+	assert.Equal(t, "true", child.Objective.Reveal.Sets["story_seen"])
+}
+
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -196,7 +259,7 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -253,7 +316,7 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 }
 
 func TestExportService_LocationWhenRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -297,7 +360,7 @@ func TestExportService_LocationWhenRoundTrip(t *testing.T) {
 }
 
 func TestExportService_GroupWhenRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, locationRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
