@@ -112,7 +112,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		teamRepo, uploadRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
-		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()

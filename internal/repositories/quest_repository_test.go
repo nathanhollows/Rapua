@@ -396,6 +396,38 @@ func TestQuestRepository_Delete(t *testing.T) {
 	}
 }
 
+func TestQuestRepository_Delete_CascadesObjectives(t *testing.T) {
+	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	inst := models.Quest{
+		ID:     gofakeit.UUID(),
+		Name:   gofakeit.Word(),
+		UserID: gofakeit.UUID(),
+	}
+	insertUserWithID(t, dbc, inst.UserID)
+	require.NoError(t, repo.Create(ctx, &inst))
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: inst.ID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	tx, err := transactor.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	require.NoError(t, repo.Delete(ctx, tx, inst.ID))
+	require.NoError(t, tx.Commit())
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).Where("id = ?", objective.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "objective should be deleted when its quest is deleted")
+}
+
 func TestQuestRepository_DeleteByUser(t *testing.T) {
 	testCases := []struct {
 		name    string

@@ -643,7 +643,7 @@ func (s *GameStructureService) InsertObjectiveIntoGroup(
 func (s *GameStructureService) IsCompleted(group *models.GameStructure, completedCount int) bool {
 	switch group.CompletionType {
 	case models.CompletionAll:
-		totalItems := len(group.LocationIDs) + len(group.SubGroups)
+		totalItems := len(group.LocationIDs) + len(group.ObjectiveIDs) + len(group.SubGroups)
 		return completedCount >= totalItems
 	case models.CompletionMinimum:
 		return completedCount >= group.MinimumRequired

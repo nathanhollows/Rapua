@@ -24,6 +24,7 @@ type Quest struct {
 
 	Runs       []Run         `bun:"rel:has-many,join:id=quest_id"`
 	Locations  []Location    `bun:"rel:has-many,join:id=quest_id"`
+	Objectives []Objective   `bun:"rel:has-many,join:id=quest_id"`
 	Settings   QuestSettings `bun:"rel:has-one,join:id=quest_id"`
 	ShareLinks []ShareLink   `bun:"rel:has-many,join:id=template_id"`
 }

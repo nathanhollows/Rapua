@@ -115,6 +115,7 @@ func (r *questRepository) GetByID(ctx context.Context, id string) (*models.Quest
 		Model(instance).
 		Where("id = ?", id).
 		Relation("Locations").
+		Relation("Objectives").
 		Relation("Settings").
 		Relation("ShareLinks").
 		Scan(ctx)
@@ -168,6 +169,11 @@ func (r *questRepository) Delete(ctx context.Context, tx *bun.Tx, id string) err
 		return err
 	}
 
+	_, err = tx.NewDelete().Model(&models.Objective{}).Where("quest_id = ?", id).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Delete ShareLinks
 	_, err = tx.NewDelete().Model(&models.ShareLink{}).Where("template_id = ?", id).Exec(ctx)
 	if err != nil {
@@ -203,6 +209,7 @@ func (r *questRepository) GetByIDWithRelations(ctx context.Context, id string) (
 			return q.Order("order ASC")
 		}).
 		Relation("Locations.Marker").
+		Relation("Objectives").
 		Scan(ctx)
 	if err != nil {
 		return nil, err

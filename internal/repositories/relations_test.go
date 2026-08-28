@@ -23,12 +23,13 @@ import (
 // quest, whose quest has settings, a marker, a location with a block, and a run
 // with a check-in and a notification.
 type relationGraph struct {
-	UserID     string
-	QuestID    string
-	MarkerCode string
-	LocationID string
-	BlockID    string
-	RunCode    string
+	UserID      string
+	QuestID     string
+	MarkerCode  string
+	LocationID  string
+	BlockID     string
+	RunCode     string
+	ObjectiveID string
 }
 
 // seedRelationGraph inserts one of every row needed to make all relations
@@ -45,6 +46,15 @@ func seedRelationGraph(t *testing.T, dbc *bun.DB) relationGraph {
 
 	blockID := createTestBlock(t, dbc, parents.LocationID)
 	runCode := createTestTeam(t, dbc, parents.QuestID)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err, "seed objective")
 
 	checkIn := &models.CheckIn{
 		QuestID:    parents.QuestID,
@@ -64,12 +74,13 @@ func seedRelationGraph(t *testing.T, dbc *bun.DB) relationGraph {
 	require.NoError(t, err, "seed notification")
 
 	return relationGraph{
-		UserID:     parents.UserID,
-		QuestID:    parents.QuestID,
-		MarkerCode: parents.MarkerCode,
-		LocationID: parents.LocationID,
-		BlockID:    blockID,
-		RunCode:    runCode,
+		UserID:      parents.UserID,
+		QuestID:     parents.QuestID,
+		MarkerCode:  parents.MarkerCode,
+		LocationID:  parents.LocationID,
+		BlockID:     blockID,
+		RunCode:     runCode,
+		ObjectiveID: objective.ID,
 	}
 }
 
@@ -252,4 +263,21 @@ func TestQuestRepository_GetByIDWithRelations(t *testing.T) {
 	assert.Equal(t, graph.MarkerCode, quest.Locations[0].Marker.Code, "nested location markers should be loaded")
 	require.Len(t, quest.Runs, 1, "runs should be loaded")
 	assert.Equal(t, graph.RunCode, quest.Runs[0].Code)
+	require.Len(t, quest.Objectives, 1, "objectives should be loaded")
+	assert.Equal(t, graph.ObjectiveID, quest.Objectives[0].ID)
+}
+
+func TestQuestRepository_GetByID_LoadsObjectives(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	repo := repositories.NewQuestRepository(dbc)
+	graph := seedRelationGraph(t, dbc)
+
+	quest, err := repo.GetByID(ctx, graph.QuestID)
+	require.NoError(t, err)
+
+	require.Len(t, quest.Objectives, 1, "objectives should be loaded")
+	assert.Equal(t, graph.ObjectiveID, quest.Objectives[0].ID)
 }

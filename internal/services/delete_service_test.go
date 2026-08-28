@@ -885,6 +885,88 @@ func TestDeleteService_DeleteQuest_WithUploads(t *testing.T) {
 	assert.Equal(t, 0, count, "All uploads should be deleted after instance deletion")
 }
 
+// Objective blocks are polymorphic (owner_id has no FK), so DeleteQuest must
+// delete them explicitly, the same as it does for location and instance blocks.
+func TestDeleteService_DeleteQuest_DeletesObjectiveBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	block := &models.Block{
+		ID:      gofakeit.UUID(),
+		OwnerID: objective.ID,
+		Type:    "markdown",
+		Data:    json.RawMessage(`{}`),
+	}
+	_, err = dbc.NewInsert().Model(block).Exec(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.DeleteQuest(ctx, user.ID, instance.ID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).Where("owner_id = ?", objective.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "objective blocks should be deleted when the owning quest is deleted")
+}
+
+// Same gap as DeleteQuest: objective blocks are polymorphic and must be
+// deleted explicitly when a user (and all their quests) is deleted.
+func TestDeleteService_DeleteUser_DeletesObjectiveBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	block := &models.Block{
+		ID:      gofakeit.UUID(),
+		OwnerID: objective.ID,
+		Type:    "markdown",
+		Data:    json.RawMessage(`{}`),
+	}
+	_, err = dbc.NewInsert().Model(block).Exec(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.DeleteUser(ctx, user.ID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).Where("owner_id = ?", objective.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "objective blocks should be deleted when the owning user is deleted")
+}
+
 // deleteLocationFixture creates a quest whose GameStructure references two
 // locations in a nested group, and returns the quest plus both location IDs.
 func deleteLocationFixture(t *testing.T, dbc *bun.DB) (*models.Quest, string, string) {
@@ -1016,5 +1098,126 @@ func TestDeleteService_DeleteLocation_UnknownIDIsNoOp(t *testing.T) {
 
 	assert.Equal(t, []string{survivorID},
 		reloadStructure(t, dbc, quest.ID).LocationIDs,
+		"structure untouched when the ID matched nothing")
+}
+
+// deleteObjectiveFixture creates a quest whose GameStructure references two
+// objectives in a nested group, and returns the quest plus both objective IDs.
+func deleteObjectiveFixture(t *testing.T, dbc *bun.DB) (*models.Quest, string, string) {
+	t.Helper()
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	doomedID, survivorID := gofakeit.UUID(), gofakeit.UUID()
+
+	quest := &models.Quest{
+		ID:     gofakeit.UUID(),
+		UserID: user.ID,
+		Name:   "Structure prune",
+		GameStructure: models.GameStructure{
+			ID:           "root",
+			IsRoot:       true,
+			ObjectiveIDs: []string{survivorID},
+			SubGroups: []models.GameStructure{
+				{ID: "nested", Name: "Nested", ObjectiveIDs: []string{doomedID}},
+			},
+		},
+	}
+	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
+	require.NoError(t, err)
+
+	for _, id := range []string{doomedID, survivorID} {
+		objective := &models.Objective{
+			ID:      id,
+			QuestID: quest.ID,
+			Slug:    gofakeit.Word() + "-" + id[:4],
+			Title:   gofakeit.Sentence(3),
+		}
+		_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	return quest, doomedID, survivorID
+}
+
+func TestDeleteService_DeleteObjective_PrunesStructure(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	quest, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+
+	require.NoError(t, svc.DeleteObjective(context.Background(), doomedID))
+
+	structure := reloadStructure(t, dbc, quest.ID)
+	assert.Empty(t, structure.SubGroups[0].ObjectiveIDs,
+		"deleted objective must not linger in the structure")
+	assert.Equal(t, []string{survivorID}, structure.ObjectiveIDs,
+		"sibling groups untouched")
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("id = ?", doomedID).Count(context.Background())
+	require.NoError(t, err)
+	assert.Zero(t, count)
+}
+
+func TestDeleteService_DeleteObjective_LeavesOtherObjectivesAlone(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	_, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+
+	require.NoError(t, svc.DeleteObjective(context.Background(), doomedID))
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("id = ?", survivorID).Count(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
+}
+
+func TestDeleteService_DeleteObjective_DeletesBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	_, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+
+	for _, ownerID := range []string{doomedID, survivorID} {
+		block := &models.Block{
+			ID:      gofakeit.UUID(),
+			OwnerID: ownerID,
+			Type:    "markdown",
+			Data:    json.RawMessage(`{}`),
+		}
+		_, err := dbc.NewInsert().Model(block).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, svc.DeleteObjective(ctx, doomedID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).
+		Where("owner_id = ?", doomedID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count)
+
+	count, err = dbc.NewSelect().Model((*models.Block)(nil)).
+		Where("owner_id = ?", survivorID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "blocks belonging to other objectives survive")
+}
+
+// Re-deleting must not error, so a retry after a partial failure is safe.
+func TestDeleteService_DeleteObjective_UnknownIDIsNoOp(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	quest, _, survivorID := deleteObjectiveFixture(t, dbc)
+
+	require.NoError(t, svc.DeleteObjective(context.Background(), gofakeit.UUID()))
+
+	assert.Equal(t, []string{survivorID},
+		reloadStructure(t, dbc, quest.ID).ObjectiveIDs,
 		"structure untouched when the ID matched nothing")
 }

@@ -93,14 +93,21 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 		}
 	}()
 
-	// blocks.owner_id has no FK; delete blocks for all locations owned by
-	// this user's quests, then delete the quest-level (start/finish) blocks.
+	// blocks.owner_id has no FK; delete blocks for all locations and objectives
+	// owned by this user's quests, then delete the quest-level (start/finish) blocks.
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id IN (SELECT l.id FROM locations l JOIN quests q ON l.quest_id = q.id WHERE q.user_id = ?)", userID).
 		Exec(ctx)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting location blocks for user: %w", err)
+	}
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id IN (SELECT o.id FROM objectives o JOIN quests q ON o.quest_id = q.id WHERE q.user_id = ?)", userID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting objective blocks for user: %w", err)
 	}
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id IN (SELECT id FROM quests WHERE user_id = ?)", userID).
@@ -226,7 +233,7 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 		}
 	}()
 
-	// Delete location-owned blocks then instance-owned (start/finish) blocks.
+	// Delete location-owned, objective-owned, then instance-owned (start/finish) blocks.
 	// blocks.owner_id has no FK so they won't be cascade-deleted automatically.
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id IN (SELECT id FROM locations WHERE quest_id = ?)", questID).
@@ -234,6 +241,13 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting location blocks: %w", err)
+	}
+	_, err = tx.NewDelete().Model((*models.Block)(nil)).
+		Where("owner_id IN (SELECT id FROM objectives WHERE quest_id = ?)", questID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting objective blocks: %w", err)
 	}
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id = ?", questID).
@@ -284,7 +298,7 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 		return err
 	}
 
-	// Delete blocks first — cascade handles run_block_states
+	// Delete blocks first: cascade handles run_block_states.
 	_, err = tx.NewDelete().
 		Model((*models.Block)(nil)).
 		Where("owner_id = ?", locationID).
@@ -312,6 +326,97 @@ func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) e
 	}
 
 	return tx.Commit()
+}
+
+// DeleteObjective: blocks.owner_id has no FK, so blocks are deleted
+// explicitly.
+func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string) error {
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+
+	// GameStructure is a JSON blob with no FK, so nothing else drops the ID.
+	if err := s.pruneObjectiveFromStructure(ctx, tx, objectiveID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	// Delete blocks first: cascade handles run_block_states.
+	_, err = tx.NewDelete().
+		Model((*models.Block)(nil)).
+		Where("owner_id = ?", objectiveID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting blocks for objective: %w", err)
+	}
+
+	// Delete objective: cascade handles any remaining children.
+	_, err = tx.NewDelete().
+		Model((*models.Objective)(nil)).
+		Where("id = ?", objectiveID).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting objective: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+// pruneObjectiveFromStructure tolerates a missing objective or quest so that
+// DeleteObjective stays idempotent.
+func (s *DeleteService) pruneObjectiveFromStructure(
+	ctx context.Context,
+	tx *bun.Tx,
+	objectiveID string,
+) error {
+	var objective models.Objective
+	err := tx.NewSelect().
+		Model(&objective).
+		Column("id", "quest_id").
+		Where("id = ?", objectiveID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("loading objective for structure prune: %w", err)
+	}
+
+	var quest models.Quest
+	err = tx.NewSelect().
+		Model(&quest).
+		Where("id = ?", objective.QuestID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("loading quest for structure prune: %w", err)
+	}
+
+	if !quest.GameStructure.RemoveObjectiveID(objectiveID) {
+		return nil
+	}
+
+	_, err = tx.NewUpdate().
+		Model(&quest).
+		Column("game_structure").
+		WherePK().
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("saving pruned structure: %w", err)
+	}
+
+	return nil
 }
 
 // pruneLocationFromStructure tolerates a missing location or quest so that

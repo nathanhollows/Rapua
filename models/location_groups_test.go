@@ -81,6 +81,56 @@ func TestGameStructure_ScanValue_RoundTrip(t *testing.T) {
 	assert.Equal(t, models.RouteStrategySecret, scanned.SubGroups[0].Routing)
 }
 
+func TestGameStructure_RemoveObjectiveID(t *testing.T) {
+	t.Run("removes from root and reports true", func(t *testing.T) {
+		gs := models.GameStructure{
+			ID:           "root",
+			IsRoot:       true,
+			ObjectiveIDs: []string{"obj-1", "obj-2"},
+			SubGroups:    []models.GameStructure{},
+		}
+
+		removed := gs.RemoveObjectiveID("obj-1")
+
+		assert.True(t, removed)
+		assert.Equal(t, []string{"obj-2"}, gs.ObjectiveIDs)
+	})
+
+	t.Run("removes from nested subgroup and reports true", func(t *testing.T) {
+		gs := models.GameStructure{
+			ID:           "root",
+			IsRoot:       true,
+			ObjectiveIDs: []string{},
+			SubGroups: []models.GameStructure{
+				{
+					ID:           "group-1",
+					ObjectiveIDs: []string{"obj-1", "obj-2"},
+					SubGroups:    []models.GameStructure{},
+				},
+			},
+		}
+
+		removed := gs.RemoveObjectiveID("obj-2")
+
+		assert.True(t, removed)
+		assert.Equal(t, []string{"obj-1"}, gs.SubGroups[0].ObjectiveIDs)
+	})
+
+	t.Run("unknown ID reports false and leaves structure untouched", func(t *testing.T) {
+		gs := models.GameStructure{
+			ID:           "root",
+			IsRoot:       true,
+			ObjectiveIDs: []string{"obj-1"},
+			SubGroups:    []models.GameStructure{},
+		}
+
+		removed := gs.RemoveObjectiveID("does-not-exist")
+
+		assert.False(t, removed)
+		assert.Equal(t, []string{"obj-1"}, gs.ObjectiveIDs)
+	})
+}
+
 func TestGameStructure_AllRouteStrategies_Serialize(t *testing.T) {
 	for _, rs := range models.GetRouteStrategies() {
 		gs := models.GameStructure{

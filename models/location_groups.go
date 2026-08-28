@@ -162,6 +162,30 @@ func (gs *GameStructure) RemoveLocationID(locationID string) bool {
 	return removed
 }
 
+// RemoveObjectiveID reports whether anything was removed, so callers can skip
+// a needless write.
+func (gs *GameStructure) RemoveObjectiveID(objectiveID string) bool {
+	removed := false
+
+	kept := make([]string, 0, len(gs.ObjectiveIDs))
+	for _, id := range gs.ObjectiveIDs {
+		if id == objectiveID {
+			removed = true
+			continue
+		}
+		kept = append(kept, id)
+	}
+	gs.ObjectiveIDs = kept
+
+	for i := range gs.SubGroups {
+		if gs.SubGroups[i].RemoveObjectiveID(objectiveID) {
+			removed = true
+		}
+	}
+
+	return removed
+}
+
 // IsPopulated returns whether this group has been populated with location data.
 func (gs *GameStructure) IsPopulated() bool {
 	return gs.populated

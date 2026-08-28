@@ -21,6 +21,7 @@ type DuplicationService struct {
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
 	locationRepo         repositories.LocationRepository
+	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 }
 
@@ -31,6 +32,7 @@ func NewDuplicationService(
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
 	locationRepo repositories.LocationRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 ) *DuplicationService {
 	return &DuplicationService{
@@ -39,6 +41,7 @@ func NewDuplicationService(
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		locationRepo:         locationRepo,
+		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 	}
 }
@@ -319,14 +322,28 @@ func (s *DuplicationService) duplicateInstance(
 		locationIDMap[location.ID] = newLocation.ID
 	}
 
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, sourceInstance.ID)
+	if err != nil {
+		return nil, fmt.Errorf("finding objectives: %w", err)
+	}
+
+	objectiveIDMap := make(map[string]string, len(objectives))
+	for _, objective := range objectives {
+		newObjective, dupErr := s.duplicateObjective(ctx, tx, objective, newInstance.ID)
+		if dupErr != nil {
+			return nil, fmt.Errorf("duplicating objective %s: %w", objective.ID, dupErr)
+		}
+		objectiveIDMap[objective.ID] = newObjective.ID
+	}
+
 	// Duplicate blocks that belong directly to the instance (e.g., ContextStart and ContextFinish)
 	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceInstance.ID, newInstance.ID)
 	if err != nil {
 		return nil, fmt.Errorf("duplicating instance blocks: %w", err)
 	}
 
-	// Remap location IDs in the game structure
 	s.remapLocationIDs(&newInstance.GameStructure, locationIDMap)
+	s.remapObjectiveIDs(&newInstance.GameStructure, objectiveIDMap)
 
 	// Update the instance with the remapped game structure
 	_, err = tx.NewUpdate().
@@ -380,5 +397,42 @@ func (s *DuplicationService) remapLocationIDs(group *models.GameStructure, idMap
 	// Recursively remap in subgroups
 	for i := range group.SubGroups {
 		s.remapLocationIDs(&group.SubGroups[i], idMap)
+	}
+}
+
+// duplicateObjective runs within a transaction.
+func (s *DuplicationService) duplicateObjective(
+	ctx context.Context,
+	tx *bun.Tx,
+	sourceObjective models.Objective,
+	newInstanceID string,
+) (*models.Objective, error) {
+	// Create new objective (copy all fields except ID and QuestID).
+	newObjective := sourceObjective
+	newObjective.ID = "" // Reset ID so a new one is generated.
+	newObjective.QuestID = newInstanceID
+
+	err := s.objectiveRepo.CreateTx(ctx, tx, &newObjective)
+	if err != nil {
+		return nil, fmt.Errorf("creating objective: %w", err)
+	}
+
+	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceObjective.ID, newObjective.ID)
+	if err != nil {
+		return nil, fmt.Errorf("duplicating blocks: %w", err)
+	}
+
+	return &newObjective, nil
+}
+
+func (s *DuplicationService) remapObjectiveIDs(group *models.GameStructure, idMap map[string]string) {
+	for i, oldID := range group.ObjectiveIDs {
+		if newID, exists := idMap[oldID]; exists {
+			group.ObjectiveIDs[i] = newID
+		}
+	}
+
+	for i := range group.SubGroups {
+		s.remapObjectiveIDs(&group.SubGroups[i], idMap)
 	}
 }

@@ -52,6 +52,8 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		blocks.ContextNavigation,
 		blocks.ContextStart,
 		blocks.ContextFinish,
+		blocks.ContextObjectiveProof,
+		blocks.ContextObjectiveReveal,
 	}
 	blockContext := blocks.BlockContext(contextParam)
 	isValidContext := slices.Contains(validContexts, blocks.BlockContext(contextParam))

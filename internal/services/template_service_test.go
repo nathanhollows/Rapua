@@ -23,6 +23,7 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Ques
 
 	// Initialize repositories
 	locationRepo := repositories.NewLocationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
@@ -36,6 +37,7 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Ques
 		instanceRepo,
 		instanceSettingsRepo,
 		locationRepo,
+		objectiveRepo,
 		blockRepo,
 	)
 	questService := services.NewQuestService(
