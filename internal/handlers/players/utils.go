@@ -19,6 +19,7 @@ import (
 
 type BlockService interface {
 	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
+	GetBlockContext(ctx context.Context, blockID string) (blocks.BlockContext, error)
 	NewMockBlockState(ctx context.Context, blockID, runCode, questID string) (blocks.PlayerState, error)
 	FindByOwnerIDAndContext(
 		ctx context.Context,
@@ -39,6 +40,19 @@ type CheckInService interface {
 		team models.Run,
 		data map[string][]string,
 	) (blocks.PlayerState, blocks.Block, error)
+	GetObjectiveByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	IsObjectiveContextPending(
+		ctx context.Context,
+		team *models.Run,
+		objectiveID string,
+		blockContext blocks.BlockContext,
+	) (bool, error)
+	CompleteObjectiveContext(
+		ctx context.Context,
+		team *models.Run,
+		objectiveID string,
+		blockContext blocks.BlockContext,
+	) error
 }
 
 type QuestService interface {

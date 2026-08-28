@@ -264,7 +264,7 @@ func (s *CheckInService) writeSetsVars(
 ) error {
 	if setter, ok := block.(blocks.ChoiceVarSetter); ok {
 		// GetTriggeredVars already filters to the options the player chose, so
-		// every returned value is written — matching the GetSets path below.
+		// every returned value is written: matching the GetSets path below.
 		for varName, val := range setter.GetTriggeredVars(state) {
 			if game.IsReservedVarName(varName) {
 				continue
@@ -335,11 +335,10 @@ func (s *CheckInService) awardPointsAndComplete(
 func (s *CheckInService) CompleteObjectiveContext(
 	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
 ) error {
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	resolver, err := s.newTeamResolver(ctx, team)
 	if err != nil {
-		return fmt.Errorf("loading var states: %w", err)
+		return err
 	}
-	resolver := NewPlayerVarResolver(team, varStates)
 
 	stillRequired, err := s.blockService.checkValidationRequiredForCheckIn(
 		ctx, objectiveID, team.Code, team.QuestID, blockContext, resolver,
@@ -377,4 +376,36 @@ func (s *CheckInService) CompleteObjectiveContext(
 		}
 	}
 	return nil
+}
+
+// newTeamResolver: shared by CompleteObjectiveContext and IsObjectiveContextPending
+// so both resolve when-clauses against identical, freshly-loaded var state.
+func (s *CheckInService) newTeamResolver(ctx context.Context, team *models.Run) (game.VarResolver, error) {
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	if err != nil {
+		return nil, fmt.Errorf("loading var states: %w", err)
+	}
+	return NewPlayerVarResolver(team, varStates), nil
+}
+
+// IsObjectiveContextPending reports whether an objective's proof or reveal
+// context still has unvalidated required blocks for this team: the same check
+// CompleteObjectiveContext uses internally, exposed for callers (the objective
+// view handler) that need to decide which zone to render before completing anything.
+func (s *CheckInService) IsObjectiveContextPending(
+	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
+) (bool, error) {
+	resolver, err := s.newTeamResolver(ctx, team)
+	if err != nil {
+		return false, err
+	}
+	return s.blockService.checkValidationRequiredForCheckIn(
+		ctx, objectiveID, team.Code, team.QuestID, blockContext, resolver,
+	)
+}
+
+func (s *CheckInService) GetObjectiveByQuestIDAndSlug(
+	ctx context.Context, questID, slug string,
+) (*models.Objective, error) {
+	return s.objectiveRepo.GetByQuestIDAndSlug(ctx, questID, slug)
 }

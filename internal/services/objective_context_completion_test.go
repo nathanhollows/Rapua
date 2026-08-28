@@ -214,3 +214,75 @@ func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *t
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "repeat views must not duplicate the completion log")
 }
+
+// TestCheckInService_IsObjectiveContextPending exercises the objective view
+// handler's decision path: pending while a required block is unvalidated,
+// no longer pending once it is.
+func TestCheckInService_IsObjectiveContextPending(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	runCode := gofakeit.LetterN(6)
+	insertTestTeam(t, dbc, runCode, parents.QuestID)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "find-the-key",
+		Title:   "Find the key",
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockService := services.NewBlockService(repositories.NewBlockRepository(dbc, blockStateRepo), blockStateRepo)
+	block, err := blockService.NewBlockWithOwnerAndContext(ctx, objective.ID, blocks.ContextObjectiveProof, "free_text")
+	require.NoError(t, err)
+
+	// Seed the block's state row the way a page view would; see the comment on
+	// the two-block test above.
+	_, _, err = blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
+		ctx, objective.ID, runCode, parents.QuestID, blocks.ContextObjectiveProof,
+	)
+	require.NoError(t, err)
+
+	team := &models.Run{Code: runCode, QuestID: parents.QuestID}
+
+	pending, err := svc.IsObjectiveContextPending(ctx, team, objective.ID, blocks.ContextObjectiveProof)
+	require.NoError(t, err)
+	assert.True(t, pending, "unvalidated required block: still pending")
+
+	_, _, err = svc.ValidateAndUpdateBlockState(ctx, *team, map[string][]string{
+		"block": {block.GetID()}, "response": {"answer"},
+	})
+	require.NoError(t, err)
+
+	pending, err = svc.IsObjectiveContextPending(ctx, team, objective.ID, blocks.ContextObjectiveProof)
+	require.NoError(t, err)
+	assert.False(t, pending, "block validated: no longer pending")
+}
+
+func TestCheckInService_GetObjectiveByQuestIDAndSlug(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "find-the-key",
+		Title:   "Find the key",
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	got, err := svc.GetObjectiveByQuestIDAndSlug(ctx, parents.QuestID, "find-the-key")
+	require.NoError(t, err)
+	assert.Equal(t, objective.ID, got.ID)
+
+	_, err = svc.GetObjectiveByQuestIDAndSlug(ctx, parents.QuestID, "does-not-exist")
+	assert.Error(t, err)
+}

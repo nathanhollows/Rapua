@@ -11,6 +11,7 @@ import (
 
 type ObjectiveRepository interface {
 	GetByID(ctx context.Context, objectiveID string) (*models.Objective, error)
+	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
 	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
 	CreateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
 	UpdateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
@@ -31,6 +32,18 @@ func (r *objectiveRepository) GetByID(ctx context.Context, objectiveID string) (
 	err := r.db.NewSelect().
 		Model(&objective).
 		Where("id = ?", objectiveID).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("finding objective: %w", err)
+	}
+	return &objective, nil
+}
+
+func (r *objectiveRepository) GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error) {
+	var objective models.Objective
+	err := r.db.NewSelect().
+		Model(&objective).
+		Where("quest_id = ? AND slug = ?", questID, slug).
 		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("finding objective: %w", err)

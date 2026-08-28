@@ -1,0 +1,152 @@
+package players
+
+import (
+	"database/sql"
+	"errors"
+	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+)
+
+// ObjectiveView shows the page for a specific objective: proof content while
+// unproven, reveal content once proof completes.
+func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
+	if r.Context().Value(contextkeys.PreviewKey) != nil {
+		h.handleError(w, r, "ObjectiveView: preview mode is unavailable", "Objective preview is unavailable")
+		return
+	}
+
+	slug := chi.URLParam(r, "slug")
+
+	team, err := h.getRunFromContext(r.Context())
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "loading team", "error", err.Error())
+		http.Redirect(w, r, "/play", http.StatusFound)
+		return
+	}
+
+	err = h.runService.LoadRelations(r.Context(), team)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "loading team relations", "error", err.Error())
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+		return
+	}
+
+	objective, err := h.checkInService.GetObjectiveByQuestIDAndSlug(r.Context(), team.QuestID, slug)
+	if err != nil {
+		// A bad or stale slug is an expected outcome, unlike the errors below
+		// (real faults): this warns and redirects rather than rendering the
+		// bare error toast handleError produces, since full-page GET
+		// navigation needs a full page back, not a fragment with no layout.
+		// Any other error (DB outage, etc.) must not be downgraded to "not
+		// found" silently, so it still goes through handleError.
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.WarnContext(r.Context(), "ObjectiveView: objective not found", "team", team.Code, "objective", slug)
+			http.Redirect(w, r, "/next", http.StatusFound)
+			return
+		}
+		h.handleError(
+			w,
+			r,
+			"ObjectiveView: finding objective",
+			"Something went wrong",
+			"error",
+			err,
+			"team",
+			team.Code,
+			"objective",
+			slug,
+		)
+		return
+	}
+
+	pending, err := h.checkInService.IsObjectiveContextPending(r.Context(), team, objective.ID, blocks.ContextObjectiveProof)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"ObjectiveView: checking proof completion",
+			"Something went wrong",
+			"error",
+			err,
+			"team",
+			team.Code,
+			"objective",
+			slug,
+		)
+		return
+	}
+
+	zone := blocks.ContextObjectiveProof
+	if !pending {
+		// Content-only zones have nothing a player can POST to, so completion
+		// (sets, logging) for them is only ever triggered from here.
+		if err := h.checkInService.CompleteObjectiveContext(r.Context(), team, objective.ID, blocks.ContextObjectiveProof); err != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveView: completing proof context", "error", err.Error())
+		}
+		if err := h.checkInService.CompleteObjectiveContext(r.Context(), team, objective.ID, blocks.ContextObjectiveReveal); err != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveView: completing reveal context", "error", err.Error())
+		}
+		zone = blocks.ContextObjectiveReveal
+
+		// The two calls above may have just written new sets vars: reload so
+		// the when-clause filtering below sees them, not the pre-completion
+		// snapshot loaded earlier.
+		if err := h.runService.LoadRelations(r.Context(), team); err != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveView: reloading team relations", "error", err.Error())
+		}
+	}
+
+	contentBlocks, blockStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
+		r.Context(),
+		objective.ID,
+		team.Code,
+		team.QuestID,
+		zone,
+	)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"ObjectiveView: getting blocks",
+			"Error loading blocks",
+			"error",
+			err,
+			"team",
+			team.Code,
+			"objective",
+			slug,
+		)
+		return
+	}
+
+	resolver := services.NewPlayerVarResolver(team, team.VarStates)
+	visibleBlocks := make(blocks.Blocks, 0, len(contentBlocks))
+	visibleStates := make(map[string]blocks.PlayerState, len(blockStates))
+	for _, b := range contentBlocks {
+		if game.EvaluateWhen(b.GetWhen(), resolver) {
+			visibleBlocks = append(visibleBlocks, b)
+			if s, ok := blockStates[b.GetID()]; ok {
+				visibleStates[b.GetID()] = s
+			}
+		}
+	}
+
+	data := templates.ObjectiveViewData{
+		Settings: team.Quest.Settings,
+		Zone:     zone,
+		Blocks:   visibleBlocks,
+		States:   visibleStates,
+	}
+
+	c := templates.ObjectiveView(data)
+	err = templates.Layout(c, objective.Title, team.Messages).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "rendering objective view", "error", err.Error())
+	}
+}

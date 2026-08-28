@@ -84,7 +84,7 @@ func setupRouter(
 	router.Group(func(r chi.Router) {
 		r.Use(CSRF)
 		setupPublicRoutes(r, publicHandler)
-		setupPlayerRoutes(r, logger, playerHandler, adminHandler)
+		setupPlayerRoutes(r, logger, publicHandler, playerHandler, adminHandler)
 		setupAdminRoutes(r, logger, adminHandler)
 		setupFacilitatorRoutes(r, logger, adminHandler)
 	})
@@ -105,6 +105,7 @@ func setupRouter(
 func setupPlayerRoutes(
 	router chi.Router,
 	logger *slog.Logger,
+	publicHandler *public.Handler,
 	playerHandler *players.PlayerHandler,
 	adminHandler *admin.Handler,
 ) {
@@ -230,6 +231,24 @@ func setupPlayerRoutes(
 		})
 		r.Get("/", playerHandler.MyCheckins)
 		r.Get("/{slug:[a-z0-9-]+}", playerHandler.CheckInView)
+	})
+
+	router.Route("/objective", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
+				adminHandler.GetIdentityService(),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
+			)
+		})
+		r.Get("/{slug:[a-z0-9-]+}", playerHandler.ObjectiveView)
+		// Sub-routers get their own default NotFoundHandler unless set explicitly
+		// (chi does not fall back to the parent router's), which otherwise
+		// surfaces chi's bare, unstyled 404 instead of the site's own.
+		r.NotFound(publicHandler.NotFound)
 	})
 
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)

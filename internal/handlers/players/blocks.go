@@ -7,7 +7,10 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	playerTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -225,5 +228,74 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.handleError(w, r, fmt.Errorf("validateBlock: rendering template: %w", err).Error(), "Something went wrong!")
 		return
+	}
+
+	if state.IsComplete() {
+		h.renderObjectiveZoneSwapIfProofJustCompleted(w, r, team, block)
+	}
+}
+
+// renderObjectiveZoneSwapIfProofJustCompleted appends an out-of-band swap of
+// an objective's reveal zone to the response, when the block that just
+// completed was the last unvalidated block in that objective's proof
+// context. Reveal is a content-only zone as often as not (nothing for a
+// player to POST), so its completion is triggered here rather than by a
+// player action of its own.
+func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
+	w http.ResponseWriter, r *http.Request, team *models.Run, block blocks.Block,
+) {
+	blockContext, err := h.blockService.GetBlockContext(r.Context(), block.GetID())
+	if err != nil || blockContext != blocks.ContextObjectiveProof {
+		return
+	}
+
+	pending, err := h.checkInService.IsObjectiveContextPending(r.Context(), team, block.GetOwnerID(), blocks.ContextObjectiveProof)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: checking proof completion", "error", err.Error())
+		return
+	}
+	if pending {
+		return
+	}
+
+	if err := h.checkInService.CompleteObjectiveContext(r.Context(), team, block.GetOwnerID(), blocks.ContextObjectiveReveal); err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: completing reveal context", "error", err.Error())
+		return
+	}
+
+	revealBlocks, revealStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
+		r.Context(), block.GetOwnerID(), team.Code, team.QuestID, blocks.ContextObjectiveReveal,
+	)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: loading reveal blocks", "error", err.Error())
+		return
+	}
+
+	// Reload relations: writeSetsVars may have just written new vars this
+	// request, and they must be current for when-clause filtering below.
+	if err := h.runService.LoadRelations(r.Context(), team); err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: loading team relations", "error", err.Error())
+		return
+	}
+	resolver := services.NewPlayerVarResolver(team, team.VarStates)
+	visibleBlocks := make(blocks.Blocks, 0, len(revealBlocks))
+	visibleStates := make(map[string]blocks.PlayerState, len(revealStates))
+	for _, b := range revealBlocks {
+		if game.EvaluateWhen(b.GetWhen(), resolver) {
+			visibleBlocks = append(visibleBlocks, b)
+			if s, ok := revealStates[b.GetID()]; ok {
+				visibleStates[b.GetID()] = s
+			}
+		}
+	}
+
+	data := playerTemplates.ObjectiveViewData{
+		Settings: team.Quest.Settings,
+		Zone:     blocks.ContextObjectiveReveal,
+		Blocks:   visibleBlocks,
+		States:   visibleStates,
+	}
+	if err := playerTemplates.ObjectiveZoneUpdate(data).Render(r.Context(), w); err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal zone", "error", err.Error())
 	}
 }
