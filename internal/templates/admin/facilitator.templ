@@ -2,7 +2,6 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -78,7 +77,7 @@ templ FacilitatorLinkCopyModal(url string) {
 	</div>
 }
 
-templ FacilitatorDashboard(locations []models.Location, activity []services.RunActivity) {
+templ FacilitatorDashboard(objectives []models.Objective, startedTeams int) {
 	<script>
 	window.setTimeout( function() {
 		window.location.reload();
@@ -95,85 +94,48 @@ templ FacilitatorDashboard(locations []models.Location, activity []services.RunA
 				</div>
 				<div class="stat-title">Teams</div>
 				<div class="stat-value">
-					{ fmt.Sprintf("%d", len(activity)) }
+					{ fmt.Sprintf("%d", startedTeams) }
 				</div>
 			</div>
 			<div class="stat">
 				<div class="stat-figure text-primary">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin inline-block w-8 h-8"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+					@icon("target", templ.Attributes{"class": "inline-block w-8 h-8"})
 				</div>
-				<div class="stat-title">Locations</div>
+				<div class="stat-title">Objectives</div>
 				<div class="stat-value">
-					{ fmt.Sprint(len(locations)) }
+					{ fmt.Sprint(len(objectives)) }
 				</div>
 			</div>
 		</div>
 		<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
 			<div class="w-full">
 				<div class="join join-vertical w-full">
-					if len(locations) == 0 {
+					if len(objectives) == 0 {
 						<div role="alert" class="alert">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users inline-block w-8 h-8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-							<span>No locations available</span>
+							<span>No objectives available</span>
 							<div>
 								<a href="/admin/quest" class="btn btn-sm btn-secondary">Go to quest builder</a>
 							</div>
 						</div>
 					}
-					if len(locations) > 0 {
+					if len(objectives) > 0 {
 						<table class="table-pin-rows md:table-lg table w-full">
 							<thead>
 								<tr class="border-b-0">
 									<th class="bg-base-200 rounded-s-box flex items-center gap-2 lg:py-3 text-base-content">
 										<span>
-											Location
-										</span>
-									</th>
-									<th class="bg-base-200 lg:py-3 rounded-e-box text-end text-base-content">
-										<span class="mr-7">
-											Status
+											Objective
 										</span>
 									</th>
 								</tr>
 							</thead>
 							<tbody>
-								for _, location := range locations {
+								for _, objective := range objectives {
 									<tr>
 										<th class="font-normal">
-											{ location.Name }
+											{ objective.Title }
 										</th>
-										<td class="text-end flex flex-col gap-2 items-end">
-											if location.TotalVisits == 0 {
-												<span class="badge badge-ghost whitespace-nowrap">
-													No visits yet
-												</span>
-											} else if location.TotalVisits >= len(activity) && location.CurrentCount == 0 {
-												<span class="badge badge-success whitespace-nowrap">
-													Complete!
-												</span>
-												if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
-													<span class="badge badge-info whitespace-nowrap">
-														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
-													</span>
-												}
-											} else {
-												if location.Quest.Settings.MustCheckOut {
-													if location.CurrentCount > 0 {
-														<span class="badge badge-accent whitespace-nowrap">
-															{ fmt.Sprintf("%d", location.CurrentCount) } Currently Visiting
-														</span>
-													}
-												}
-												<span class="badge badge-secondary whitespace-nowrap">
-													{ fmt.Sprintf("%d / %d", location.TotalVisits, len(activity)) } Visited
-												</span>
-												if location.Quest.Settings.MustCheckOut && location.AvgDuration > 0 {
-													<span class="badge badge-info whitespace-nowrap">
-														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
-													</span>
-												}
-											}
-										</td>
 									</tr>
 								}
 							</tbody>

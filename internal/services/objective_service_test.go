@@ -165,3 +165,29 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 		assert.Equal(t, "New Title", reloaded.Title)
 	})
 }
+
+func TestObjectiveService_FindByQuestID(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	obj1, err := service.CreateObjective(ctx, questID, "Find the key")
+	require.NoError(t, err)
+	obj2, err := service.CreateObjective(ctx, questID, "Open the door")
+	require.NoError(t, err)
+
+	t.Run("returns all objectives for the quest", func(t *testing.T) {
+		objectives, findErr := service.FindByQuestID(ctx, questID)
+		require.NoError(t, findErr)
+		require.Len(t, objectives, 2)
+		ids := []string{objectives[0].ID, objectives[1].ID}
+		assert.ElementsMatch(t, []string{obj1.ID, obj2.ID}, ids)
+	})
+
+	t.Run("returns empty for a quest with no objectives", func(t *testing.T) {
+		objectives, findErr := service.FindByQuestID(ctx, validQuestID(t, dbc))
+		require.NoError(t, findErr)
+		assert.Empty(t, objectives)
+	})
+}

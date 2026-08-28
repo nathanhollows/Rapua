@@ -100,13 +100,16 @@ func countNotStarted(runs []models.Run) int {
 	return count
 }
 
-func countFinished(runs []models.Run, totalObjectives int) int {
+// countFinished counts runs that have completed every objective. completedCounts
+// is keyed by run code (see RunService.CountCompletedObjectivesByRun): run.CheckIns
+// is not used here since check-ins are never written once a quest is objective-built.
+func countFinished(runs []models.Run, totalObjectives int, completedCounts map[string]int) int {
 	if totalObjectives == 0 {
 		return 0
 	}
 	count := 0
 	for _, run := range runs {
-		if len(run.CheckIns) >= totalObjectives {
+		if completedCounts[run.Code] >= totalObjectives {
 			count++
 		}
 	}
@@ -114,11 +117,11 @@ func countFinished(runs []models.Run, totalObjectives int) int {
 }
 
 // Median, not mean: dormant runs drag an average down and mask a healthy event.
-func medianProgress(runs []models.Run) int {
+func medianProgress(runs []models.Run, completedCounts map[string]int) int {
 	progress := make([]int, 0, len(runs))
 	for _, run := range runs {
 		if run.HasStarted {
-			progress = append(progress, len(run.CheckIns))
+			progress = append(progress, completedCounts[run.Code])
 		}
 	}
 	if len(progress) == 0 {

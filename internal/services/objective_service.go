@@ -15,6 +15,7 @@ import (
 type ObjectiveService interface {
 	CreateObjective(ctx context.Context, questID, title string) (models.Objective, error)
 	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
 	UpdateObjective(ctx context.Context, objective *models.Objective, data ObjectiveUpdateData) error
 }
 
@@ -97,6 +98,14 @@ func (s objectiveService) GetByQuestIDAndSlug(ctx context.Context, questID, slug
 		return nil, fmt.Errorf("finding objective by slug: %w", err)
 	}
 	return objective, nil
+}
+
+func (s objectiveService) FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error) {
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("finding objectives: %w", err)
+	}
+	return objectives, nil
 }
 
 func (s objectiveService) UpdateObjective(

@@ -119,9 +119,12 @@ func setupRunService(t *testing.T) (*services.RunService, *bun.DB, func()) {
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
 	runService := services.NewRunService(
 		transactor, runRepo, checkinRepo, creditService, blockStateRepo, locationRepo, varStateRepo,
+		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	return runService, dbc, cleanup
 }

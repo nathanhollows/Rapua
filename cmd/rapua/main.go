@@ -147,6 +147,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
 	runService := services.NewRunService(
 		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo, teamVarStateRepo,
+		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
 	questService := services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo)
@@ -194,7 +195,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
 		gameStructureService, instanceRepo, questService, instanceSettingsService,
-		locationService, objectiveService, markerService, navigationService, notificationService,
+		locationService, objectiveService, markerService, notificationService,
 		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,
 	)

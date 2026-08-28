@@ -1,12 +1,10 @@
 package admin
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	admin "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -110,19 +108,17 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
+	incompleteObjectives, err := h.runService.GetIncompleteObjectives(r.Context(), user.CurrentQuestID, team.Code)
 	if err != nil {
-		if !errors.Is(err, services.ErrAllLocationsVisited) {
-			h.handleError(
-				w,
-				r,
-				"TeamOverview: getting next locations",
-				"Error getting next locations",
-				"Could not load data",
-				err,
-			)
-			return
-		}
+		h.handleError(
+			w,
+			r,
+			"TeamOverview: getting incomplete objectives",
+			"Error getting incomplete objectives",
+			"Could not load data",
+			err,
+		)
+		return
 	}
 
 	notifications, err := h.notificationService.GetNotifications(r.Context(), team.Code)
@@ -148,24 +144,16 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		uploads = []*models.Upload{}
 	}
 
-	// Build location to group mapping
-	locationGroups := h.runService.BuildLocationGroupMap(&user.CurrentQuest.GameStructure)
-
-	// Build group order mapping
-	groupOrder := h.runService.BuildGroupOrder(&user.CurrentQuest.GameStructure)
-
-	// Group check-ins by their location group
-	groupedHistory := h.runService.GroupCheckInsByGroup(team.CheckIns, locationGroups, groupOrder)
+	objectiveGroups := h.runService.BuildObjectiveGroupMap(&user.CurrentQuest.GameStructure)
 
 	data := admin.TeamOverviewData{
-		Quest:          user.CurrentQuest,
-		Run:            *team,
-		Notifications:  notifications,
-		NextLocations:  locations,
-		Uploads:        uploads,
-		TotalLocations: len(user.CurrentQuest.Locations),
-		LocationGroups: locationGroups,
-		GroupedHistory: groupedHistory,
+		Quest:                user.CurrentQuest,
+		Run:                  *team,
+		Notifications:        notifications,
+		IncompleteObjectives: incompleteObjectives,
+		Uploads:              uploads,
+		TotalObjectives:      len(user.CurrentQuest.Objectives),
+		ObjectiveGroups:      objectiveGroups,
 	}
 	c := admin.TeamOverview(data)
 	err = admin.Layout(c, *user, "Runs", "Run overview").Render(r.Context(), w)

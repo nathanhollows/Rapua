@@ -15,11 +15,15 @@ func NewLeaderBoardService() *LeaderBoardService {
 	return &LeaderBoardService{}
 }
 
-// GetLeaderBoardData returns sorted and ranked leaderboard data.
+// GetLeaderBoardData returns sorted and ranked leaderboard data. completedCounts
+// is keyed by run code and holds each team's completed-objective count: check-ins
+// are no longer written once a quest is objective-built, so team.CheckIns can't
+// be used as a progress source here.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
 	teams []models.Run,
-	locationCount int,
+	objectiveCount int,
+	completedCounts map[string]int,
 	rankingScheme string,
 	sortField string,
 	sortOrder string,
@@ -36,7 +40,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 			continue
 		}
 
-		teamData := s.convertTeamToLeaderBoardData(team, locationCount)
+		teamData := s.convertTeamToLeaderBoardData(team, objectiveCount, completedCounts[team.Code])
 		leaderBoardData = append(leaderBoardData, teamData)
 	}
 
@@ -50,7 +54,9 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 }
 
 // convertTeamToLeaderBoardData converts a models.Run to LeaderBoardTeamData.
-func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Run, locationCount int) LeaderBoardTeamData {
+func (s *LeaderBoardService) convertTeamToLeaderBoardData(
+	team models.Run, objectiveCount, completedCount int,
+) LeaderBoardTeamData {
 	checkInCount := len(team.CheckIns)
 
 	// Find the most recent check-in time for accurate tiebreaker
@@ -74,23 +80,21 @@ func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Run, locat
 		Name:         team.Name,
 		Points:       team.Points,
 		LastSeen:     lastSeen,
-		Progress:     checkInCount,
-		Status:       s.determineTeamStatus(team, locationCount),
+		Progress:     completedCount,
+		Status:       s.determineTeamStatus(team, objectiveCount, completedCount),
 		HasStarted:   team.HasStarted,
 		MustCheckOut: team.MustCheckOut,
 		CheckInCount: checkInCount,
 	}
 }
 
-// determineTeamStatus determines the current status of a team.
-func (s *LeaderBoardService) determineTeamStatus(team models.Run, locationCount int) TeamStatus {
+func (s *LeaderBoardService) determineTeamStatus(team models.Run, objectiveCount, completedCount int) TeamStatus {
 	if team.MustCheckOut != "" {
 		return StatusOnsite
 	}
 
-	checkInCount := len(team.CheckIns)
-	if checkInCount > 0 {
-		if locationCount > 0 && checkInCount == locationCount {
+	if completedCount > 0 {
+		if objectiveCount > 0 && completedCount == objectiveCount {
 			return StatusFinished
 		}
 		return StatusTransit

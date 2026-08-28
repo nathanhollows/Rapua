@@ -50,12 +50,12 @@ func (h *Handler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Requ
 		duration = hoursPerDay * time.Hour
 	}
 
-	var locations []string
-	if r.Form.Get("locations") != "" {
-		locations = append(locations, r.Form.Get("locations"))
+	var objectives []string
+	if r.Form.Get("objectives") != "" {
+		objectives = append(objectives, r.Form.Get("objectives"))
 	}
 
-	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentQuestID, locations, duration)
+	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentQuestID, objectives, duration)
 	if err != nil {
 		h.handleError(w, r, "creating facilitator token", "Error creating facilitator token")
 		return
@@ -120,44 +120,47 @@ func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch locations
-	locations, err := h.locationService.FindByInstance(r.Context(), facToken.QuestID)
+	objectives, err := h.objectiveService.FindByQuestID(r.Context(), facToken.QuestID)
 	if err != nil {
-		h.handleError(w, r, "fetching locations", "Error fetching locations", "error", err)
+		h.handleError(w, r, "fetching objectives", "Error fetching objectives", "error", err)
 		return
 	}
 
-	filteredLocations := h.filterLocationsForToken(locations, facToken)
+	filteredObjectives := h.filterObjectivesForToken(objectives, facToken)
 
-	// Team activity overview
-	overview, err := h.runService.GetRunActivityOverview(r.Context(), facToken.QuestID, filteredLocations)
+	teams, err := h.runService.FindAll(r.Context(), facToken.QuestID)
 	if err != nil {
-		h.handleError(w, r, "fetching team activity overview", "Error fetching team activity overview", "error", err)
+		h.handleError(w, r, "fetching teams", "Error fetching teams", "error", err)
 		return
+	}
+	startedTeams := 0
+	for _, team := range teams {
+		if team.HasStarted {
+			startedTeams++
+		}
 	}
 
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	c := templates.FacilitatorDashboard(locations, overview)
+	c := templates.FacilitatorDashboard(filteredObjectives, startedTeams)
 	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
 	}
 }
 
-// filterLocationsForToken filters locations based on the facilitator token permissions.
-func (h *Handler) filterLocationsForToken(
-	locations []models.Location,
+func (h *Handler) filterObjectivesForToken(
+	objectives []models.Objective,
 	token *models.FacilitatorToken,
-) []models.Location {
-	if len(token.Locations) == 0 {
-		return locations
+) []models.Objective {
+	if len(token.Objectives) == 0 {
+		return objectives
 	}
 
-	var filtered []models.Location
-	for _, allowedID := range token.Locations {
-		for _, loc := range locations {
-			if loc.ID == allowedID {
-				filtered = append(filtered, loc)
+	var filtered []models.Objective
+	for _, allowedID := range token.Objectives {
+		for _, obj := range objectives {
+			if obj.ID == allowedID {
+				filtered = append(filtered, obj)
 				break
 			}
 		}

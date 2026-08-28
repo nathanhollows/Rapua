@@ -143,7 +143,7 @@ type FacilitatorService interface {
 	CreateFacilitatorToken(
 		ctx context.Context,
 		instanceID string,
-		locations []string,
+		objectives []string,
 		duration time.Duration,
 	) (string, error)
 	ValidateToken(ctx context.Context, token string) (*models.FacilitatorToken, error)
@@ -195,11 +195,6 @@ type MarkerService interface {
 	FindMarkersNotInQuest(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
 }
 
-type NavigationService interface {
-	GetNextLocations(ctx context.Context, team *models.Run) ([]models.Location, error)
-	GetPlayerNavigationView(ctx context.Context, team *models.Run) (*services.PlayerNavigationView, error)
-}
-
 type NotificationService interface {
 	SendNotification(ctx context.Context, runCode string, content string) (models.Notification, error)
 	SendNotificationToAllTeams(ctx context.Context, instanceID string, content string) error
@@ -218,27 +213,14 @@ type RunService interface {
 	FindAll(ctx context.Context, instanceID string) ([]models.Run, error)
 	// GetRunByCode returns a run by code
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
-	// GetRunActivityOverview returns a list of runs and their activity
-	GetRunActivityOverview(
-		ctx context.Context,
-		instanceID string,
-		locations []models.Location,
-	) ([]services.RunActivity, error)
 
 	LoadCheckIns(ctx context.Context, team *models.Run) error
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Run) error
 
-	// BuildLocationGroupMap creates a map from location ID to group info
-	BuildLocationGroupMap(structure *models.GameStructure) map[string]services.LocationGroupInfo
-	// BuildGroupOrder creates a map from group name to its order in the game structure
-	BuildGroupOrder(structure *models.GameStructure) map[string]int
-	// GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order
-	GroupCheckInsByGroup(
-		checkIns []models.CheckIn,
-		locationGroups map[string]services.LocationGroupInfo,
-		groupOrder map[string]int,
-	) []services.GroupedCheckIns
+	BuildObjectiveGroupMap(structure *models.GameStructure) map[string]services.ObjectiveGroupInfo
+	GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
+	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 }
 
 type UploadService interface {
@@ -269,7 +251,8 @@ type LeaderBoardService interface {
 	GetLeaderBoardData(
 		ctx context.Context,
 		teams []models.Run,
-		locationCount int,
+		objectiveCount int,
+		completedCounts map[string]int,
 		rankingScheme string,
 		sortField string,
 		sortOrder string,
@@ -298,7 +281,6 @@ type Handler struct {
 	locationService         services.LocationService
 	objectiveService        services.ObjectiveService
 	markerService           MarkerService
-	navigationService       NavigationService
 	notificationService     NotificationService
 	runService              RunService
 	templateService         services.TemplateService
@@ -330,7 +312,6 @@ func NewAdminHandler(
 	locationService services.LocationService,
 	objectiveService services.ObjectiveService,
 	markerService MarkerService,
-	navigationService NavigationService,
 	notificationService NotificationService,
 	runService RunService,
 	templateService services.TemplateService,
@@ -361,7 +342,6 @@ func NewAdminHandler(
 		locationService:         locationService,
 		objectiveService:        objectiveService,
 		markerService:           markerService,
-		navigationService:       navigationService,
 		notificationService:     notificationService,
 		runService:              runService,
 		templateService:         templateService,

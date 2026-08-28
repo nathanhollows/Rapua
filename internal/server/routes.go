@@ -349,7 +349,6 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/runs", adminHandler.ActivityRunsOverview)
 			r.Get("/run/{runCode}", adminHandler.RunActivity)
 			r.Get("/stats", adminHandler.ActivityStats)
-			r.Get("/locations", adminHandler.ActivityLocations)
 		})
 
 		// Wildcard rather than {code}.{ext} so a code carrying a dot or a slash

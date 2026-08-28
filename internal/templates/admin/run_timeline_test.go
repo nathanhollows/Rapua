@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -126,12 +127,29 @@ func TestFormatDuration(t *testing.T) {
 	}
 }
 
+// runCodeCounter gives each runWith() fixture a unique Code, since countFinished
+// and medianProgress key their completedCounts lookup by run code rather than
+// reading run.CheckIns directly.
+var runCodeCounter int
+
 func runWith(started bool, checkIns int) models.Run {
-	run := models.Run{HasStarted: started}
+	runCodeCounter++
+	run := models.Run{HasStarted: started, Code: fmt.Sprintf("R%d", runCodeCounter)}
 	for i := 0; i < checkIns; i++ {
 		run.CheckIns = append(run.CheckIns, models.CheckIn{})
 	}
 	return run
+}
+
+// countsFromCheckIns bridges these fixtures (which encode progress via CheckIns
+// count, the pre-objective way) to the completedCounts map countFinished and
+// medianProgress expect, keyed by run code.
+func countsFromCheckIns(runs []models.Run) map[string]int {
+	counts := make(map[string]int, len(runs))
+	for _, run := range runs {
+		counts[run.Code] = len(run.CheckIns)
+	}
+	return counts
 }
 
 func TestCountNotStarted(t *testing.T) {
@@ -143,19 +161,19 @@ func TestCountNotStarted(t *testing.T) {
 func TestCountFinished(t *testing.T) {
 	runs := []models.Run{runWith(true, 7), runWith(true, 3), runWith(true, 8)}
 
-	assert.Equal(t, 2, countFinished(runs, 7), "7 of 7 and 8 of 7 both count as finished")
-	assert.Zero(t, countFinished(runs, 0), "no objectives means nothing can be finished")
+	assert.Equal(t, 2, countFinished(runs, 7, countsFromCheckIns(runs)), "7 of 7 and 8 of 7 both count as finished")
+	assert.Zero(t, countFinished(runs, 0, countsFromCheckIns(runs)), "no objectives means nothing can be finished")
 }
 
 func TestMedianProgress(t *testing.T) {
 	t.Run("odd count takes the middle", func(t *testing.T) {
 		runs := []models.Run{runWith(true, 1), runWith(true, 9), runWith(true, 5)}
-		assert.Equal(t, 5, medianProgress(runs))
+		assert.Equal(t, 5, medianProgress(runs, countsFromCheckIns(runs)))
 	})
 
 	t.Run("even count averages the two middles", func(t *testing.T) {
 		runs := []models.Run{runWith(true, 2), runWith(true, 4), runWith(true, 6), runWith(true, 8)}
-		assert.Equal(t, 5, medianProgress(runs))
+		assert.Equal(t, 5, medianProgress(runs, countsFromCheckIns(runs)))
 	})
 
 	t.Run("unstarted runs are excluded", func(t *testing.T) {
@@ -165,12 +183,13 @@ func TestMedianProgress(t *testing.T) {
 			runWith(false, 0), runWith(false, 0), runWith(false, 0),
 			runWith(true, 6), runWith(true, 6), runWith(true, 6),
 		}
-		assert.Equal(t, 6, medianProgress(runs))
+		assert.Equal(t, 6, medianProgress(runs, countsFromCheckIns(runs)))
 	})
 
 	t.Run("no started runs", func(t *testing.T) {
-		assert.Zero(t, medianProgress([]models.Run{runWith(false, 0)}))
-		assert.Zero(t, medianProgress(nil))
+		unstarted := []models.Run{runWith(false, 0)}
+		assert.Zero(t, medianProgress(unstarted, countsFromCheckIns(unstarted)))
+		assert.Zero(t, medianProgress(nil, nil))
 	})
 }
 

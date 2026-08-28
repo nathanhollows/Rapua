@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -15,14 +16,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-const (
-	// Default group constants used in grouping logic.
-	defaultUngroupedName  = "Other"
-	defaultUngroupedColor = "base-content"
-
-	// Test fixture base time for deterministic timestamps.
-	baseTime = "2024-01-15T10:00:00Z"
-)
+// Test fixture base time for deterministic timestamps.
+const baseTime = "2024-01-15T10:00:00Z"
 
 func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 	t.Helper()
@@ -37,6 +32,8 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	runService := services.NewRunService(
 		transactor,
 		teamRepo,
@@ -45,6 +42,8 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 		blockStateRepo,
 		locationRepo,
 		varStateRepo,
+		objectiveRepo,
+		objectiveContextCompletionRepo,
 	)
 
 	return *runService, dbc, cleanup
@@ -254,424 +253,147 @@ func TestRunService_FindTeamByCode(t *testing.T) {
 	})
 }
 
-func TestRunService_BuildLocationGroupMap(t *testing.T) {
+func TestRunService_BuildObjectiveGroupMap(t *testing.T) {
 	runService, _, cleanup := setupRunsService(t)
 	defer cleanup()
 
 	tests := []struct {
 		name      string
 		structure *models.GameStructure
-		want      map[string]services.LocationGroupInfo
+		want      map[string]services.ObjectiveGroupInfo
 	}{
 		{
 			name: "empty root structure",
 			structure: &models.GameStructure{
-				IsRoot:      true,
-				LocationIDs: []string{},
-				SubGroups:   []models.GameStructure{},
+				IsRoot:       true,
+				ObjectiveIDs: []string{},
+				SubGroups:    []models.GameStructure{},
 			},
-			want: map[string]services.LocationGroupInfo{},
+			want: map[string]services.ObjectiveGroupInfo{},
 		},
 		{
-			name: "root with locations only",
+			name: "root with objectives only",
 			structure: &models.GameStructure{
-				IsRoot:      true,
-				LocationIDs: []string{"loc1", "loc2"},
-				SubGroups:   []models.GameStructure{},
+				IsRoot:       true,
+				ObjectiveIDs: []string{"obj1", "obj2"},
+				SubGroups:    []models.GameStructure{},
 			},
-			want: map[string]services.LocationGroupInfo{},
+			want: map[string]services.ObjectiveGroupInfo{},
 		},
 		{
 			name: "single level with one group",
 			structure: &models.GameStructure{
-				IsRoot:      true,
-				LocationIDs: []string{},
+				IsRoot:       true,
+				ObjectiveIDs: []string{},
 				SubGroups: []models.GameStructure{
 					{
-						Name:        "Museum Tour",
-						Color:       "primary",
-						LocationIDs: []string{"loc1", "loc2"},
+						Name:         "Museum Tour",
+						Color:        "primary",
+						ObjectiveIDs: []string{"obj1", "obj2"},
 					},
 				},
 			},
-			want: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Museum Tour", GroupColor: "primary"},
-				"loc2": {GroupName: "Museum Tour", GroupColor: "primary"},
+			want: map[string]services.ObjectiveGroupInfo{
+				"obj1": {GroupName: "Museum Tour", GroupColor: "primary"},
+				"obj2": {GroupName: "Museum Tour", GroupColor: "primary"},
 			},
 		},
 		{
 			name: "nested groups",
 			structure: &models.GameStructure{
-				IsRoot:      true,
-				LocationIDs: []string{},
+				IsRoot:       true,
+				ObjectiveIDs: []string{},
 				SubGroups: []models.GameStructure{
 					{
-						Name:        "Zone A",
-						Color:       "primary",
-						LocationIDs: []string{"loc1"},
+						Name:         "Zone A",
+						Color:        "primary",
+						ObjectiveIDs: []string{"obj1"},
 						SubGroups: []models.GameStructure{
 							{
-								Name:        "Subzone A1",
-								Color:       "secondary",
-								LocationIDs: []string{"loc2", "loc3"},
+								Name:         "Subzone A1",
+								Color:        "secondary",
+								ObjectiveIDs: []string{"obj2", "obj3"},
 							},
 						},
 					},
 					{
-						Name:        "Zone B",
-						Color:       "accent",
-						LocationIDs: []string{"loc4"},
+						Name:         "Zone B",
+						Color:        "accent",
+						ObjectiveIDs: []string{"obj4"},
 					},
 				},
 			},
-			want: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Zone A", GroupColor: "primary"},
-				"loc2": {GroupName: "Subzone A1", GroupColor: "secondary"},
-				"loc3": {GroupName: "Subzone A1", GroupColor: "secondary"},
-				"loc4": {GroupName: "Zone B", GroupColor: "accent"},
-			},
-		},
-		{
-			name: "multiple locations in same group",
-			structure: &models.GameStructure{
-				IsRoot:      true,
-				LocationIDs: []string{},
-				SubGroups: []models.GameStructure{
-					{
-						Name:        gofakeit.Company(),
-						Color:       "primary",
-						LocationIDs: []string{"loc1", "loc2", "loc3", "loc4", "loc5"},
-					},
-				},
-			},
-			want: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: gofakeit.Company(), GroupColor: "primary"},
-				"loc2": {GroupName: gofakeit.Company(), GroupColor: "primary"},
-				"loc3": {GroupName: gofakeit.Company(), GroupColor: "primary"},
-				"loc4": {GroupName: gofakeit.Company(), GroupColor: "primary"},
-				"loc5": {GroupName: gofakeit.Company(), GroupColor: "primary"},
+			want: map[string]services.ObjectiveGroupInfo{
+				"obj1": {GroupName: "Zone A", GroupColor: "primary"},
+				"obj2": {GroupName: "Subzone A1", GroupColor: "secondary"},
+				"obj3": {GroupName: "Subzone A1", GroupColor: "secondary"},
+				"obj4": {GroupName: "Zone B", GroupColor: "accent"},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Handle dynamic gofakeit values for specific test
-			if tt.name == "multiple locations in same group" {
-				groupName := gofakeit.Company()
-				tt.structure.SubGroups[0].Name = groupName
-				for key := range tt.want {
-					tt.want[key] = services.LocationGroupInfo{
-						GroupName:  groupName,
-						GroupColor: "primary",
-					}
-				}
-			}
-
-			got := runService.BuildLocationGroupMap(tt.structure)
+			got := runService.BuildObjectiveGroupMap(tt.structure)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestRunService_BuildGroupOrder(t *testing.T) {
-	runService, _, cleanup := setupRunsService(t)
+func TestRunService_GetIncompleteObjectives(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
 	defer cleanup()
+	ctx := context.Background()
 
-	tests := []struct {
-		name      string
-		structure *models.GameStructure
-		want      map[string]int
-	}{
-		{
-			name: "empty root structure",
-			structure: &models.GameStructure{
-				IsRoot:    true,
-				SubGroups: []models.GameStructure{},
-			},
-			want: map[string]int{},
-		},
-		{
-			name: "single level groups",
-			structure: &models.GameStructure{
-				IsRoot: true,
-				SubGroups: []models.GameStructure{
-					{Name: "First Group"},
-					{Name: "Second Group"},
-					{Name: "Third Group"},
-				},
-			},
-			want: map[string]int{
-				"First Group":  0,
-				"Second Group": 1,
-				"Third Group":  2,
-			},
-		},
-		{
-			name: "nested groups preserve depth-first order",
-			structure: &models.GameStructure{
-				IsRoot: true,
-				SubGroups: []models.GameStructure{
-					{
-						Name: "Zone A",
-						SubGroups: []models.GameStructure{
-							{Name: "Subzone A1"},
-							{Name: "Subzone A2"},
-						},
-					},
-					{Name: "Zone B"},
-					{
-						Name: "Zone C",
-						SubGroups: []models.GameStructure{
-							{Name: "Subzone C1"},
-						},
-					},
-				},
-			},
-			want: map[string]int{
-				"Zone A":     0,
-				"Subzone A1": 1,
-				"Subzone A2": 2,
-				"Zone B":     3,
-				"Zone C":     4,
-				"Subzone C1": 5,
-			},
-		},
-		{
-			name: "deeply nested structure",
-			structure: &models.GameStructure{
-				IsRoot: true,
-				SubGroups: []models.GameStructure{
-					{
-						Name: "Level 1",
-						SubGroups: []models.GameStructure{
-							{
-								Name: "Level 2",
-								SubGroups: []models.GameStructure{
-									{Name: "Level 3"},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: map[string]int{
-				"Level 1": 0,
-				"Level 2": 1,
-				"Level 3": 2,
-			},
-		},
-	}
+	parents := createTestParents(t, dbc)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := runService.BuildGroupOrder(tt.structure)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
+	transactor := db.NewTransactor(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
+	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
-func TestRunService_GroupCheckInsByGroup(t *testing.T) {
-	runService, _, cleanup := setupRunsService(t)
-	defer cleanup()
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Find the key")
+	require.NoError(t, err)
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Open the door")
+	require.NoError(t, err)
 
-	// Helper to create check-ins with deterministic times relative to base time
-	makeCheckIn := func(locationID string, minutesAfterBase int, mustCheckOut bool) models.CheckIn {
-		checkIn := models.CheckIn{
-			LocationID:   locationID,
-			MustCheckOut: mustCheckOut,
-			Location: models.Location{
-				ID: locationID,
-			},
+	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
+	require.NoError(t, err)
+	require.Len(t, teams, 1)
+	runCode := teams[0].Code
+
+	t.Run("no completions yet: all objectives incomplete", func(t *testing.T) {
+		incomplete, err := runService.GetIncompleteObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+		assert.Len(t, incomplete, 2)
+	})
+
+	t.Run("one objective completed: only the other remains", func(t *testing.T) {
+		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveReveal)
+		require.NoError(t, err)
+
+		incomplete, err := runService.GetIncompleteObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+		require.Len(t, incomplete, 1)
+		assert.Equal(t, obj2.ID, incomplete[0].ID)
+	})
+
+	t.Run("proof completion alone does not mark an objective complete", func(t *testing.T) {
+		// Its own objective, not obj1/obj2: this subtest must hold on its own,
+		// independent of whether the earlier subtests ran or what they left behind.
+		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Escape the room")
+		require.NoError(t, err)
+
+		_, err = completionRepo.Insert(ctx, runCode, obj3.ID, game.ContextObjectiveProof)
+		require.NoError(t, err)
+
+		incomplete, err := runService.GetIncompleteObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+
+		ids := make([]string, len(incomplete))
+		for i, o := range incomplete {
+			ids[i] = o.ID
 		}
-		// Use deterministic base time instead of time.Now()
-		checkIn.CreatedAt = getBaseTime().Add(time.Duration(minutesAfterBase) * time.Minute)
-		return checkIn
-	}
-
-	tests := []struct {
-		name           string
-		checkIns       []models.CheckIn
-		locationGroups map[string]services.LocationGroupInfo
-		groupOrder     map[string]int
-		wantGroupCount int
-		validate       func(t *testing.T, result []services.GroupedCheckIns)
-	}{
-		{
-			name:           "empty check-ins",
-			checkIns:       []models.CheckIn{},
-			locationGroups: map[string]services.LocationGroupInfo{},
-			groupOrder:     map[string]int{},
-			wantGroupCount: 0,
-		},
-		{
-			name: "excludes check-ins with MustCheckOut true",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, true),
-				makeCheckIn("loc2", 5, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc2": {GroupName: "Group A", GroupColor: "primary"},
-			},
-			groupOrder:     map[string]int{"Group A": 0},
-			wantGroupCount: 1,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Len(t, result[0].CheckIns, 1, "should only have one check-in (MustCheckOut excluded)")
-				assert.Equal(t, "loc2", result[0].CheckIns[0].LocationID)
-			},
-		},
-		{
-			name: "groups by location group",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, false),
-				makeCheckIn("loc2", 5, false),
-				makeCheckIn("loc3", 3, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc2": {GroupName: "Group B", GroupColor: "secondary"},
-				"loc3": {GroupName: "Group A", GroupColor: "primary"},
-			},
-			groupOrder:     map[string]int{"Group A": 0, "Group B": 1},
-			wantGroupCount: 2,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Equal(t, "Group A", result[0].GroupInfo.GroupName)
-				assert.Len(t, result[0].CheckIns, 2, "Group A should have 2 check-ins")
-				assert.Equal(t, "Group B", result[1].GroupInfo.GroupName)
-				assert.Len(t, result[1].CheckIns, 1, "Group B should have 1 check-in")
-			},
-		},
-		{
-			name: "sorts check-ins within group by creation time",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 30, false), // Latest
-				makeCheckIn("loc2", 10, false), // Earliest
-				makeCheckIn("loc3", 20, false), // Middle
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc2": {GroupName: "Group A", GroupColor: "primary"},
-				"loc3": {GroupName: "Group A", GroupColor: "primary"},
-			},
-			groupOrder:     map[string]int{"Group A": 0},
-			wantGroupCount: 1,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Len(t, result[0].CheckIns, 3)
-				// Should be sorted by creation time (reverse chronological - latest to earliest)
-				assert.Equal(t, "loc1", result[0].CheckIns[0].LocationID, "latest should be first")
-				assert.Equal(t, "loc3", result[0].CheckIns[1].LocationID, "middle should be second")
-				assert.Equal(t, "loc2", result[0].CheckIns[2].LocationID, "earliest should be last")
-			},
-		},
-		{
-			name: "sorts groups by group order",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, false),
-				makeCheckIn("loc2", 10, false),
-				makeCheckIn("loc3", 10, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group C", GroupColor: "accent"},
-				"loc2": {GroupName: "Group A", GroupColor: "primary"},
-				"loc3": {GroupName: "Group B", GroupColor: "secondary"},
-			},
-			groupOrder:     map[string]int{"Group A": 0, "Group B": 1, "Group C": 2},
-			wantGroupCount: 3,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Equal(t, "Group A", result[0].GroupInfo.GroupName, "first by order")
-				assert.Equal(t, "Group B", result[1].GroupInfo.GroupName, "second by order")
-				assert.Equal(t, "Group C", result[2].GroupInfo.GroupName, "third by order")
-			},
-		},
-		{
-			name: "ungrouped locations added as Other group at end",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, false),
-				makeCheckIn("loc2", 5, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				// loc2 has no group mapping
-			},
-			groupOrder:     map[string]int{"Group A": 0},
-			wantGroupCount: 2,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Equal(t, "Group A", result[0].GroupInfo.GroupName)
-				assert.Equal(t, defaultUngroupedName, result[1].GroupInfo.GroupName, "ungrouped locations at end")
-				assert.Equal(t, defaultUngroupedColor, result[1].GroupInfo.GroupColor)
-				assert.Len(t, result[1].CheckIns, 1)
-				assert.Equal(t, "loc2", result[1].CheckIns[0].LocationID)
-			},
-		},
-		{
-			name: "groups without order come after groups with order",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, false),
-				makeCheckIn("loc2", 10, false),
-				makeCheckIn("loc3", 10, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc2": {GroupName: "Group B", GroupColor: "secondary"},
-				"loc3": {GroupName: "Group C", GroupColor: "accent"},
-			},
-			groupOrder:     map[string]int{"Group A": 0}, // Only Group A has order
-			wantGroupCount: 3,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Equal(t, "Group A", result[0].GroupInfo.GroupName, "ordered group comes first")
-				// Groups B and C don't have order, so order between them is stable but after A
-			},
-		},
-		{
-			name: "handles all check-ins with MustCheckOut true",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 10, true),
-				makeCheckIn("loc2", 5, true),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc2": {GroupName: "Group A", GroupColor: "primary"},
-			},
-			groupOrder:     map[string]int{"Group A": 0},
-			wantGroupCount: 0,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Empty(t, result, "should have no groups when all check-ins require checkout")
-			},
-		},
-		{
-			name: "handles mixed grouped and ungrouped locations",
-			checkIns: []models.CheckIn{
-				makeCheckIn("loc1", 5, false),
-				makeCheckIn("loc2", 10, false),
-				makeCheckIn("loc3", 15, false),
-				makeCheckIn("loc4", 20, false),
-			},
-			locationGroups: map[string]services.LocationGroupInfo{
-				"loc1": {GroupName: "Group A", GroupColor: "primary"},
-				"loc3": {GroupName: "Group B", GroupColor: "secondary"},
-				// loc2 and loc4 are ungrouped
-			},
-			groupOrder:     map[string]int{"Group A": 0, "Group B": 1},
-			wantGroupCount: 3,
-			validate: func(t *testing.T, result []services.GroupedCheckIns) {
-				assert.Equal(t, "Group A", result[0].GroupInfo.GroupName)
-				assert.Len(t, result[0].CheckIns, 1)
-				assert.Equal(t, "Group B", result[1].GroupInfo.GroupName)
-				assert.Len(t, result[1].CheckIns, 1)
-				assert.Equal(t, defaultUngroupedName, result[2].GroupInfo.GroupName)
-				assert.Len(t, result[2].CheckIns, 2, "should have 2 ungrouped check-ins")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := runService.GroupCheckInsByGroup(tt.checkIns, tt.locationGroups, tt.groupOrder)
-			assert.Len(t, got, tt.wantGroupCount)
-			if tt.validate != nil {
-				tt.validate(t, got)
-			}
-		})
-	}
+		assert.Contains(t, ids, obj3.ID)
+	})
 }

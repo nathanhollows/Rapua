@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
-	"time"
 
 	"math/rand/v2"
 
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -29,30 +28,24 @@ const (
 	maxBatchRetries = 10
 )
 
-// LocationGroupInfo holds group information for a location.
-type LocationGroupInfo struct {
+type ObjectiveGroupInfo struct {
 	GroupName  string
 	GroupColor string
 }
 
-// GroupedCheckIns represents check-ins grouped by location group.
-type GroupedCheckIns struct {
-	GroupInfo LocationGroupInfo
-	CheckIns  []models.CheckIn
-}
-
 type RunService struct {
-	transactor     db.Transactor
-	teamRepo       repositories.RunRepository
-	checkInRepo    repositories.CheckInRepository
-	creditService  RunCreditService
-	blockStateRepo repositories.BlockStateRepository
-	locationRepo   repositories.LocationRepository
-	varStateRepo   repositories.RunVarStateRepository
-	batchSize      int
+	transactor                     db.Transactor
+	teamRepo                       repositories.RunRepository
+	checkInRepo                    repositories.CheckInRepository
+	creditService                  RunCreditService
+	blockStateRepo                 repositories.BlockStateRepository
+	locationRepo                   repositories.LocationRepository
+	varStateRepo                   repositories.RunVarStateRepository
+	objectiveRepo                  repositories.ObjectiveRepository
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	batchSize                      int
 }
 
-// NewRunService creates a new RunService.
 func NewRunService(
 	transactor db.Transactor,
 	tr repositories.RunRepository,
@@ -61,34 +54,23 @@ func NewRunService(
 	bsr repositories.BlockStateRepository,
 	lr repositories.LocationRepository,
 	varStateRepo repositories.RunVarStateRepository,
+	objectiveRepo repositories.ObjectiveRepository,
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 ) *RunService {
 	return &RunService{
-		transactor:     transactor,
-		teamRepo:       tr,
-		checkInRepo:    ci,
-		creditService:  creditService,
-		blockStateRepo: bsr,
-		locationRepo:   lr,
-		varStateRepo:   varStateRepo,
-		batchSize:      batchSize,
+		transactor:                     transactor,
+		teamRepo:                       tr,
+		checkInRepo:                    ci,
+		creditService:                  creditService,
+		blockStateRepo:                 bsr,
+		locationRepo:                   lr,
+		varStateRepo:                   varStateRepo,
+		objectiveRepo:                  objectiveRepo,
+		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		batchSize:                      batchSize,
 	}
 }
 
-type RunActivity struct {
-	Team      models.Run
-	Locations []LocationActivity
-}
-
-type LocationActivity struct {
-	Location models.Location
-	Visited  bool
-	Visiting bool
-	Duration float64
-	TimeIn   time.Time
-	TimeOut  time.Time
-}
-
-// Helper function to check for code uniqueness within a batch.
 func (s *RunService) containsCode(teams []models.Run, code string) bool {
 	for _, team := range teams {
 		if team.Code == code {
@@ -156,63 +138,6 @@ func (s *RunService) FindAll(ctx context.Context, questID string) ([]models.Run,
 func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	return s.teamRepo.GetByCode(ctx, code)
-}
-
-// GetRunActivityOverview returns a list of runs and their activity.
-func (s *RunService) GetRunActivityOverview(
-	ctx context.Context,
-	questID string,
-	locations []models.Location,
-) ([]RunActivity, error) {
-	teams, err := s.teamRepo.FindAll(ctx, questID)
-	if err != nil {
-		return nil, err
-	}
-
-	var activity []RunActivity
-
-	for _, team := range teams {
-		if !team.HasStarted {
-			continue
-		}
-
-		teamActivity := RunActivity{
-			Team:      team,
-			Locations: make([]LocationActivity, len(locations)),
-		}
-
-		for i, location := range locations {
-			locationActivity := LocationActivity{
-				Location: location,
-				Visited:  false,
-				Visiting: false,
-				Duration: 0,
-				TimeIn:   time.Time{},
-				TimeOut:  time.Time{},
-			}
-
-			// Check if the team has visited the location
-			for _, checkin := range team.CheckIns {
-				if checkin.LocationID == location.Marker.Code {
-					locationActivity.Visited = true
-					locationActivity.TimeIn = checkin.TimeIn
-					if checkin.TimeOut.IsZero() {
-						locationActivity.Visiting = true
-					} else {
-						locationActivity.TimeOut = checkin.TimeOut
-						locationActivity.Duration = checkin.TimeOut.Sub(checkin.TimeIn).Seconds()
-					}
-					break
-				}
-			}
-
-			teamActivity.Locations[i] = locationActivity
-		}
-
-		activity = append(activity, teamActivity)
-	}
-
-	return activity, nil
 }
 
 // Update updates a team in the database.
@@ -314,152 +239,59 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 	return tx.Commit()
 }
 
-// BuildLocationGroupMap creates a map from location ID to group info.
-func (s *RunService) BuildLocationGroupMap(structure *models.GameStructure) map[string]LocationGroupInfo {
-	result := make(map[string]LocationGroupInfo)
-	s.buildLocationGroupMapRecursive(structure, result)
+func (s *RunService) BuildObjectiveGroupMap(structure *models.GameStructure) map[string]ObjectiveGroupInfo {
+	result := make(map[string]ObjectiveGroupInfo)
+	s.buildObjectiveGroupMapRecursive(structure, result)
 	return result
 }
 
-func (s *RunService) buildLocationGroupMapRecursive(group *models.GameStructure, result map[string]LocationGroupInfo) {
-	// Skip root group (has no name/color)
+func (s *RunService) buildObjectiveGroupMapRecursive(group *models.GameStructure, result map[string]ObjectiveGroupInfo) {
+	// Skip root group (has no name/color).
 	if !group.IsRoot {
-		info := LocationGroupInfo{
+		info := ObjectiveGroupInfo{
 			GroupName:  group.Name,
 			GroupColor: group.Color,
 		}
-		// Map all locations in this group
-		for _, locationID := range group.LocationIDs {
-			result[locationID] = info
+		for _, objectiveID := range group.ObjectiveIDs {
+			result[objectiveID] = info
 		}
 	}
-	// Recurse into subgroups
 	for i := range group.SubGroups {
-		s.buildLocationGroupMapRecursive(&group.SubGroups[i], result)
+		s.buildObjectiveGroupMapRecursive(&group.SubGroups[i], result)
 	}
 }
 
-// BuildGroupOrder creates a map from group name to its order in the game structure.
-func (s *RunService) BuildGroupOrder(structure *models.GameStructure) map[string]int {
-	result := make(map[string]int)
-	order := 0
-	s.buildGroupOrderRecursive(structure, result, &order)
-	return result
+// GetIncompleteObjectives returns the quest's reveal-context objectives still
+// incomplete for this run: an unordered "what's outstanding" list for admin
+// dashboards.
+func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("finding objectives: %w", err)
+	}
+
+	completedIDs, err := s.objectiveContextCompletionRepo.FindCompletedObjectiveIDs(ctx, runCode, game.ContextObjectiveReveal)
+	if err != nil {
+		return nil, fmt.Errorf("finding completed objectives: %w", err)
+	}
+	completed := make(map[string]bool, len(completedIDs))
+	for _, id := range completedIDs {
+		completed[id] = true
+	}
+
+	incomplete := make([]models.Objective, 0, len(objectives))
+	for _, objective := range objectives {
+		if !completed[objective.ID] {
+			incomplete = append(incomplete, objective)
+		}
+	}
+	return incomplete, nil
 }
 
-func (s *RunService) buildGroupOrderRecursive(group *models.GameStructure, result map[string]int, order *int) {
-	// Skip root group (has no name)
-	if !group.IsRoot {
-		result[group.Name] = *order
-		*order++
-	}
-	// Recurse into subgroups
-	for i := range group.SubGroups {
-		s.buildGroupOrderRecursive(&group.SubGroups[i], result, order)
-	}
-}
-
-// insertCheckInSorted inserts a check-in into the group's check-ins in sorted order by creation time.
-func insertCheckInSorted(group *GroupedCheckIns, checkIn models.CheckIn) {
-	insertPos := sort.Search(len(group.CheckIns), func(i int) bool {
-		return group.CheckIns[i].CreatedAt.Before(checkIn.CreatedAt)
-	})
-	// Efficient insertion: append and copy instead of double append
-	group.CheckIns = append(group.CheckIns, models.CheckIn{})
-	copy(group.CheckIns[insertPos+1:], group.CheckIns[insertPos:])
-	group.CheckIns[insertPos] = checkIn
-}
-
-// groupWithOrder tracks a group name and its order in the game structure.
-type groupWithOrder struct {
-	name  string
-	order int
-	found bool
-}
-
-// sortGroupsByOrder sorts groups by their order in the game structure.
-// Groups with defined order come before groups without order.
-func sortGroupsByOrder(groupMap map[string]*GroupedCheckIns, groupOrder map[string]int) []GroupedCheckIns {
-	groups := make([]groupWithOrder, 0, len(groupMap))
-	for name := range groupMap {
-		order, found := groupOrder[name]
-		groups = append(groups, groupWithOrder{name: name, order: order, found: found})
-	}
-
-	sort.Slice(groups, func(i, j int) bool {
-		// Groups with order come before those without
-		if groups[i].found && !groups[j].found {
-			return true
-		}
-		if !groups[i].found && groups[j].found {
-			return false
-		}
-		// If both have order, sort by order value
-		if groups[i].found && groups[j].found {
-			return groups[i].order < groups[j].order
-		}
-		// If neither has order, maintain stable order
-		return false
-	})
-
-	result := make([]GroupedCheckIns, 0, len(groupMap))
-	for _, g := range groups {
-		result = append(result, *groupMap[g.name])
-	}
-	return result
-}
-
-// GroupCheckInsByGroup groups check-ins by their location's group and sorts by game structure order.
-// Optimized to minimize passes over the data by sorting during grouping.
-func (s *RunService) GroupCheckInsByGroup(
-	checkIns []models.CheckIn,
-	locationGroups map[string]LocationGroupInfo,
-	groupOrder map[string]int,
-) []GroupedCheckIns {
-	groupMap := make(map[string]*GroupedCheckIns)
-	var ungrouped []models.CheckIn
-
-	// Single pass: group check-ins and insert in sorted order by creation time
-	for _, scan := range checkIns {
-		if scan.MustCheckOut {
-			continue
-		}
-
-		groupInfo, ok := locationGroups[scan.Location.ID]
-		if !ok {
-			ungrouped = append(ungrouped, scan)
-			continue
-		}
-
-		if _, exists := groupMap[groupInfo.GroupName]; !exists {
-			groupMap[groupInfo.GroupName] = &GroupedCheckIns{
-				GroupInfo: groupInfo,
-				CheckIns:  []models.CheckIn{},
-			}
-		}
-		insertCheckInSorted(groupMap[groupInfo.GroupName], scan)
-	}
-
-	// Sort ungrouped check-ins by creation time (reverse chronological)
-	sort.Slice(ungrouped, func(i, j int) bool {
-		return ungrouped[i].CreatedAt.After(ungrouped[j].CreatedAt)
-	})
-
-	// Build result slice in sorted order by group order
-	result := sortGroupsByOrder(groupMap, groupOrder)
-
-	// Add ungrouped locations as "Other" group at the end
-	if len(ungrouped) > 0 {
-		result = append(result, GroupedCheckIns{
-			GroupInfo: LocationGroupInfo{
-				GroupName:  "Other",
-				GroupColor: "base-content",
-			},
-			CheckIns: ungrouped,
-		})
-	}
-
-	return result
+// CountCompletedObjectivesByRun counts reveal-context completions, matching
+// GetIncompleteObjectives' definition of "complete".
+func (s *RunService) CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error) {
+	return s.objectiveContextCompletionRepo.CountCompletedObjectivesByRun(ctx, questID, game.ContextObjectiveReveal)
 }
 
 // newCode generates an alpha string of easily recognisable characters.

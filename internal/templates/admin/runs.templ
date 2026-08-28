@@ -493,14 +493,13 @@ templ Teams(teams []models.Run, credits int) {
 
 // TeamOverviewData contains all data needed to render the run overview page.
 type TeamOverviewData struct {
-	Quest          models.Quest
-	Run            models.Run
-	Notifications  []models.Notification
-	NextLocations  []models.Location
-	Uploads        []*models.Upload
-	TotalLocations int
-	LocationGroups map[string]services.LocationGroupInfo
-	GroupedHistory []services.GroupedCheckIns
+	Quest                models.Quest
+	Run                  models.Run
+	Notifications        []models.Notification
+	IncompleteObjectives []models.Objective
+	Uploads              []*models.Upload
+	TotalObjectives      int
+	ObjectiveGroups      map[string]services.ObjectiveGroupInfo
 }
 
 templ TeamOverview(data TeamOverviewData) {
@@ -541,12 +540,12 @@ templ TeamOverview(data TeamOverviewData) {
 			</div>
 		</div>
 		<div class="px-5 mb-5">
-			@RunStatsCard(data.Quest.Settings, data.Run, len(data.Run.CheckIns), data.TotalLocations)
+			@RunStatsCard(data.Quest.Settings, data.Run, data.TotalObjectives-len(data.IncompleteObjectives), data.TotalObjectives)
 		</div>
 		<div class="relative flex flex-col-reverse lg:flex-row px-5 gap-5">
 			<!-- Sidebar -->
 			<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-				@CurrentObjectivesCard(data.NextLocations, data.LocationGroups, data.Run, len(data.Run.CheckIns), data.TotalLocations)
+				@CurrentObjectivesCard(data.IncompleteObjectives, data.ObjectiveGroups, data.Run, data.TotalObjectives)
 				@MessagesCard(data.Run, data.Notifications)
 			</div>
 			<!-- Main -->
@@ -617,7 +616,7 @@ templ RunStatsCard(settings models.QuestSettings, run models.Run, completedObjec
 		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
 			<div class="stat-title">Status</div>
 			<div class="stat-value">
-				@TeamStatusBadge(getTeamStatus(run, totalObjectives), false, "lg")
+				@TeamStatusBadge(getTeamStatus(run, completedObjectives, totalObjectives), false, "lg")
 			</div>
 			<div class="stat-desc">
 				if at, ok := runLastSeen(run); ok {
@@ -673,7 +672,7 @@ templ RunStatsCard(settings models.QuestSettings, run models.Run, completedObjec
 	</div>
 }
 
-templ CurrentObjectivesCard(nextLocations []models.Location, locationGroups map[string]services.LocationGroupInfo, run models.Run, completedObjectives int, totalObjectives int) {
+templ CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveGroups map[string]services.ObjectiveGroupInfo, run models.Run, totalObjectives int) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
 		<div class="card-body p-6 pb-4">
 			<div class="flex items-center justify-between mb-2">
@@ -681,23 +680,23 @@ templ CurrentObjectivesCard(nextLocations []models.Location, locationGroups map[
 					@icon("target", templ.Attributes{"class": "w-5 h-5"})
 					Current objectives
 				</h2>
-				if len(nextLocations) > 0 {
-					<span class="badge badge-ghost badge-sm">{ fmt.Sprint(len(nextLocations)) }</span>
+				if len(incompleteObjectives) > 0 {
+					<span class="badge badge-ghost badge-sm">{ fmt.Sprint(len(incompleteObjectives)) }</span>
 				}
 			</div>
 		</div>
-		if len(nextLocations) > 0 {
+		if len(incompleteObjectives) > 0 {
 			<ul class="list">
-				for i, location := range nextLocations {
+				for i, objective := range incompleteObjectives {
 					<li class={ templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
 						<a
-							href={ templ.URL(fmt.Sprintf("/admin/objective/%s", location.Slug)) }
+							href={ templ.URL(fmt.Sprintf("/admin/objective/%s", objective.Slug)) }
 							class="px-6 py-4 flex items-start gap-3 w-full hover:bg-base-300 transition-colors"
 						>
 							<span class="status mt-1.5 shrink-0"></span>
 							<div class="min-w-0">
-								<p class="text-sm font-medium truncate">{ location.Name }</p>
-								if groupInfo, ok := locationGroups[location.ID]; ok {
+								<p class="text-sm font-medium truncate">{ objective.Title }</p>
+								if groupInfo, ok := objectiveGroups[objective.ID]; ok {
 									<p class="text-xs opacity-60">{ groupInfo.GroupName }</p>
 								}
 							</div>
@@ -718,28 +717,11 @@ templ CurrentObjectivesCard(nextLocations []models.Location, locationGroups map[
 						@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 						<span>This run hasn't started yet.</span>
 					</div>
-				} else if run.MustCheckOut != "" {
-					// getValidLocationsFromGameStructure returns nothing while a run
-					// is checked in — nothing is offered until they check out.
-					<div class="alert alert-info">
-						@icon("map-pin", templ.Attributes{"class": "w-5 h-5 shrink-0"})
-						<span>
-							Checked in at <strong>{ run.BlockingLocation.Name }</strong>.
-							<span class="opacity-70">Nothing new until they check out.</span>
-						</span>
-					</div>
-				} else if completedObjectives >= totalObjectives {
+				} else {
+					// incompleteObjectives is empty and totalObjectives > 0: everything's done.
 					<div class="alert alert-success">
 						@icon("circle-check", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 						<span>All objectives completed.</span>
-					</div>
-				} else {
-					<div class="alert alert-warning">
-						@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5 shrink-0"})
-						<span>
-							Nothing to offer, but only { fmt.Sprint(completedObjectives) } of { fmt.Sprint(totalObjectives) } objectives are done.
-							<span class="opacity-70">The group may be mid-advance, or the quest structure may be out of step with its objectives.</span>
-						</span>
 					</div>
 				}
 			</div>

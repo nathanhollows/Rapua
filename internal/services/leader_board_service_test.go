@@ -14,6 +14,17 @@ func setupLeaderboardService(t *testing.T) *services.LeaderBoardService {
 	return services.NewLeaderBoardService()
 }
 
+// completedCountsFromCheckIns bridges these fixtures (which encode team progress
+// via CheckIns, the pre-objective way) to GetLeaderBoardData's completedCounts
+// param: real callers source this from ObjectiveContextCompletion rows instead.
+func completedCountsFromCheckIns(teams []models.Run) map[string]int {
+	counts := make(map[string]int, len(teams))
+	for _, team := range teams {
+		counts[team.Code] = len(team.CheckIns)
+	}
+	return counts
+}
+
 // Helper function to create test teams with various states.
 func createTestTeams() []models.Run {
 	baseTime := time.Now().Add(-time.Hour * 2)
@@ -89,7 +100,9 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 	locationCount := 3
 
 	t.Run("RankByProgress", func(t *testing.T) {
-		result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "progress", "rank", "asc")
+		result, err := service.GetLeaderBoardData(
+			ctx, teams, locationCount, completedCountsFromCheckIns(teams), "progress", "rank", "asc",
+		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -117,7 +130,9 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 	})
 
 	t.Run("RankByPoints", func(t *testing.T) {
-		result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "points", "rank", "asc")
+		result, err := service.GetLeaderBoardData(
+			ctx, teams, locationCount, completedCountsFromCheckIns(teams), "points", "rank", "asc",
+		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -139,7 +154,9 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 	})
 
 	t.Run("RankByCompletion", func(t *testing.T) {
-		result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "completion", "rank", "asc")
+		result, err := service.GetLeaderBoardData(
+			ctx, teams, locationCount, completedCountsFromCheckIns(teams), "completion", "rank", "asc",
+		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -161,7 +178,9 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 	})
 
 	t.Run("SortByName", func(t *testing.T) {
-		result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "progress", "name", "asc")
+		result, err := service.GetLeaderBoardData(
+			ctx, teams, locationCount, completedCountsFromCheckIns(teams), "progress", "name", "asc",
+		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -173,7 +192,9 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 	})
 
 	t.Run("SortDescending", func(t *testing.T) {
-		result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "progress", "points", "desc")
+		result, err := service.GetLeaderBoardData(
+			ctx, teams, locationCount, completedCountsFromCheckIns(teams), "progress", "points", "desc",
+		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -202,7 +223,9 @@ func TestLeaderBoardService_TeamStatus(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	result, err := service.GetLeaderBoardData(ctx, teams, locationCount, "progress", "rank", "asc")
+	result, err := service.GetLeaderBoardData(
+		ctx, teams, locationCount, completedCountsFromCheckIns(teams), "progress", "rank", "asc",
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -386,7 +409,9 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 	// Set the UpdatedAt field after creating the struct
 	teams[0].UpdatedAt = baseTime
 
-	result, err := service.GetLeaderBoardData(ctx, teams, 3, "progress", "rank", "asc")
+	result, err := service.GetLeaderBoardData(
+		ctx, teams, 3, completedCountsFromCheckIns(teams), "progress", "rank", "asc",
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -408,7 +433,9 @@ func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	ctx := context.Background()
 	teams := []models.Run{}
 
-	result, err := service.GetLeaderBoardData(ctx, teams, 3, "progress", "rank", "asc")
+	result, err := service.GetLeaderBoardData(
+		ctx, teams, 3, completedCountsFromCheckIns(teams), "progress", "rank", "asc",
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -448,7 +475,9 @@ func TestLeaderBoardService_TieBreaker(t *testing.T) {
 		},
 	}
 
-	result, err := service.GetLeaderBoardData(ctx, teams, 3, "progress", "rank", "asc")
+	result, err := service.GetLeaderBoardData(
+		ctx, teams, 3, completedCountsFromCheckIns(teams), "progress", "rank", "asc",
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

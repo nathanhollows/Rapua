@@ -1,11 +1,9 @@
 package admin
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -32,8 +30,21 @@ func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	c := templates.ActivityTracker(user.CurrentQuest)
-	err := templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
+	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"Activity: counting completed objectives",
+			"Error loading team relations",
+			"Could not load data",
+			err,
+		)
+		return
+	}
+
+	c := templates.ActivityTracker(user.CurrentQuest, completedCounts)
+	err = templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
 	}
@@ -73,11 +84,25 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		sortOrder = "asc"
 	}
 
+	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"ActivityRunsOverview: counting completed objectives",
+			"Error getting leaderboard data",
+			"Could not load data",
+			err,
+		)
+		return
+	}
+
 	// Get leaderboard data using the new service
 	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(
 		r.Context(),
 		teams,
-		len(user.CurrentQuest.Locations),
+		len(user.CurrentQuest.Objectives),
+		completedCounts,
 		rankingScheme,
 		sortField,
 		sortOrder,
@@ -94,7 +119,7 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.ActivityTeamsTable(user.CurrentQuest.Settings, len(user.CurrentQuest.Locations), leaderboardData, sortField, sortOrder).
+	err = templates.ActivityTeamsTable(user.CurrentQuest.Settings, len(user.CurrentQuest.Objectives), leaderboardData, sortField, sortOrder).
 		Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ActivityRunsOverview: rendering template", "error", err)
@@ -109,6 +134,20 @@ func filterTeamsStarted(teams []models.Run) []models.Run {
 		}
 	}
 	return filtered
+}
+
+func subtractObjectivesByID(all, exclude []models.Objective) []models.Objective {
+	excludeIDs := make(map[string]bool, len(exclude))
+	for _, o := range exclude {
+		excludeIDs[o.ID] = true
+	}
+	remaining := make([]models.Objective, 0, len(all))
+	for _, o := range all {
+		if !excludeIDs[o.ID] {
+			remaining = append(remaining, o)
+		}
+	}
+	return remaining
 }
 
 // ActivityStats returns just the stats component for HTMX updates.
@@ -126,30 +165,15 @@ func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := templates.ActivityStats(user.CurrentQuest).Render(r.Context(), w)
+	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ActivityStats: counting completed objectives", "error", err)
+		return
+	}
+
+	err = templates.ActivityStats(user.CurrentQuest, completedCounts).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ActivityStats: rendering template", "error", err)
-	}
-}
-
-// ActivityLocations returns just the location overview list for HTMX updates.
-func (h *Handler) ActivityLocations(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	for i := range user.CurrentQuest.Runs {
-		if user.CurrentQuest.Runs[i].Code == "" {
-			continue
-		}
-		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
-		if err != nil {
-			h.logger.ErrorContext(r.Context(), "ActivityLocations: loading team relations", "error", err)
-			return
-		}
-	}
-
-	err := templates.LocationOverviewList(user.CurrentQuest).Render(r.Context(), w)
-	if err != nil {
-		h.logger.ErrorContext(r.Context(), "ActivityLocations: rendering template", "error", err)
 	}
 }
 
@@ -172,19 +196,17 @@ func (h *Handler) RunActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, err := h.navigationService.GetNextLocations(r.Context(), team)
+	incompleteObjectives, err := h.runService.GetIncompleteObjectives(r.Context(), user.CurrentQuestID, team.Code)
 	if err != nil {
-		if !errors.Is(err, services.ErrAllLocationsVisited) {
-			h.handleError(
-				w,
-				r,
-				"RunActivity: getting next locations",
-				"Error getting next locations",
-				"Could not load data",
-				err,
-			)
-			return
-		}
+		h.handleError(
+			w,
+			r,
+			"RunActivity: getting incomplete objectives",
+			"Error getting incomplete objectives",
+			"Could not load data",
+			err,
+		)
+		return
 	}
 
 	notifications, err := h.notificationService.GetNotifications(r.Context(), team.Code)
@@ -200,7 +222,11 @@ func (h *Handler) RunActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.RunActivity(user.CurrentQuest.Settings, *team, notifications, locations).Render(r.Context(), w)
+	completedObjectives := subtractObjectivesByID(user.CurrentQuest.Objectives, incompleteObjectives)
+
+	err = templates.RunActivity(
+		user.CurrentQuest.Settings, *team, notifications, incompleteObjectives, completedObjectives,
+	).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "RunActivity: rendering template", "error", err)
 	}

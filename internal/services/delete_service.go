@@ -514,6 +514,19 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		return fmt.Errorf("deleting check-ins: %w", err)
 	}
 
+	// Without this, a reset run keeps its old objective completions: the
+	// overview reports it as already finished, and re-proving an objective
+	// hits the insert's ON CONFLICT DO NOTHING idempotency guard, so it never
+	// re-fires.
+	_, err = tx.NewDelete().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Where("run_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting objective completions: %w", err)
+	}
+
 	_, err = tx.NewDelete().
 		Model((*models.RunBlockState)(nil)).
 		Where("run_code IN (?)", bun.In(teamCodes)).

@@ -10,13 +10,15 @@ import (
 	"time"
 )
 
-// getTeamStatus calculates the status of a team based on its current state
-func getTeamStatus(team models.Run, totalLocations int) services.TeamStatus {
+// getTeamStatus calculates the status of a team based on its current state.
+// completedObjectives, not team.CheckIns, drives it: check-ins are never
+// written once a quest is objective-built.
+func getTeamStatus(team models.Run, completedObjectives, totalObjectives int) services.TeamStatus {
 	if team.MustCheckOut != "" {
 		return services.StatusOnsite
-	} else if len(team.CheckIns) == totalLocations && totalLocations > 0 {
+	} else if completedObjectives == totalObjectives && totalObjectives > 0 {
 		return services.StatusFinished
-	} else if len(team.CheckIns) > 0 {
+	} else if completedObjectives > 0 {
 		return services.StatusTransit
 	} else if team.HasStarted {
 		return services.StatusStarted
@@ -67,7 +69,7 @@ templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string)
 	}
 }
 
-templ ActivityTracker(quest models.Quest) {
+templ ActivityTracker(quest models.Quest, completedCounts map[string]int) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
 		<h1 class="text-2xl font-bold">
 			Activity
@@ -99,13 +101,10 @@ templ ActivityTracker(quest models.Quest) {
 		</div>
 	</div>
 	<div class="px-5 mb-5">
-		@ActivityStats(quest)
+		@ActivityStats(quest, completedCounts)
 	</div>
-	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
-		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-			@LocationOverviewCard(quest)
-		</div>
-		<div class="w-full flex-1 min-w-0 overflow-x-hidden">
+	<div class="relative flex flex-col px-5 gap-5 overflow-x-hidden">
+		<div class="w-full min-w-0 overflow-x-hidden">
 			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
 				<div class="card-body p-6">
 					<div class="flex items-center justify-between mb-4">
@@ -508,7 +507,7 @@ templ scheduleButton(scheduled bool, t schema.NullTime) {
 	}
 }
 
-templ RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, nextLocations []models.Location) {
+templ RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, incompleteObjectives []models.Objective, completedObjectives []models.Objective) {
 	<h3 class="text-lg font-bold">
 		{ team.Code }
 		if team.Name != "" {
@@ -518,22 +517,15 @@ templ RunActivity(settings models.QuestSettings, team models.Run, notifications 
 			<span class="badge badge-info badge-sm">{ fmt.Sprint(team.Points) } pts</span>
 		}
 	</h3>
-	<!-- Current Location -->
-	if team.MustCheckOut != "" {
-		<div class="w-full">
-			<p class="py-3 font-bold divider divider-start">Current Location</p>
-			{ team.BlockingLocation.Name }
-		</div>
-	}
-	<!-- Next Locations -->
+	<!-- Outstanding objectives -->
 	<div class="w-full">
-		<p class="py-3 font-bold divider divider-start">Next Locations</p>
-		if len(nextLocations) > 0 {
+		<p class="py-3 font-bold divider divider-start">Outstanding objectives</p>
+		if len(incompleteObjectives) > 0 {
 			<div class="prose">
 				<ul>
-					for _, location := range nextLocations {
+					for _, objective := range incompleteObjectives {
 						<li>
-							{ location.Name }
+							{ objective.Title }
 						</li>
 					}
 				</ul>
@@ -542,26 +534,20 @@ templ RunActivity(settings models.QuestSettings, team models.Run, notifications 
 			<p>All done!</p>
 		}
 	</div>
-	<!-- Previous Locations -->
-	if len(team.CheckIns) > 0 {
+	<!-- Completed objectives -->
+	if len(completedObjectives) > 0 {
 		<div class="py-3 font-bold divider divider-start">
-			Previous Locations
+			Completed objectives
 		</div>
-		for _, scan := range team.CheckIns {
-			if !scan.MustCheckOut {
-				<div class="prose">
-					<ul>
-						<li>
-							{ scan.Location.Name }
-							<span class="convert-time badge badge-sm badge-ghost" data-datetime={ fmt.Sprint(scan.CreatedAt.UTC()) }></span>
-							if settings.EnablePoints && scan.Points > 0 {
-								<span class="badge badge-sm badge-info">+{ fmt.Sprint(scan.Points) } pts</span>
-							}
-						</li>
-					</ul>
-				</div>
-			}
-		}
+		<div class="prose">
+			<ul>
+				for _, objective := range completedObjectives {
+					<li>
+						{ objective.Title }
+					</li>
+				}
+			</ul>
+		</div>
 	}
 	<p class="py-3 font-bold divider divider-start">
 		Alerts
@@ -880,34 +866,7 @@ func getSortTooltip(field string, currentSortField string, currentSortOrder stri
 	}
 }
 
-// LocationVisitStats holds visit statistics for a location
-type LocationVisitStats struct {
-	Location        models.Location
-	TotalVisits     int
-	CurrentVisitors int
-	AvgTimeMinutes  float64
-}
-
-// getLocationVisitStats returns visit statistics for all locations
-func getLocationVisitStats(locations []models.Location, teams []models.Run, mustCheckOut bool) []LocationVisitStats {
-	stats := make([]LocationVisitStats, len(locations))
-
-	for i, location := range locations {
-		stats[i].Location = location
-		stats[i].TotalVisits = location.TotalVisits
-		stats[i].CurrentVisitors = location.CurrentCount
-
-		// Use AvgDuration from the location model if MustCheckOut is enabled
-		// AvgDuration is stored in seconds, convert to minutes
-		if mustCheckOut && location.AvgDuration > 0 {
-			stats[i].AvgTimeMinutes = location.AvgDuration / 60
-		}
-	}
-
-	return stats
-}
-
-templ ActivityStats(quest models.Quest) {
+templ ActivityStats(quest models.Quest, completedCounts map[string]int) {
 	<div
 		id="activity-stats"
 		hx-get="/admin/activity/stats"
@@ -929,151 +888,14 @@ templ ActivityStats(quest models.Quest) {
 		<div class="stat place-items-center md:border-r border-info/20">
 			<div class="stat-title">Median progress</div>
 			<div class="stat-value">
-				{ fmt.Sprint(medianProgress(quest.Runs)) }<span class="text-base opacity-50">∕{ fmt.Sprint(len(quest.Locations)) }</span>
+				{ fmt.Sprint(medianProgress(quest.Runs, completedCounts)) }<span class="text-base opacity-50">∕{ fmt.Sprint(len(quest.Objectives)) }</span>
 			</div>
 			<div class="stat-desc">Across started runs</div>
 		</div>
 		<div class="stat place-items-center">
 			<div class="stat-title">Finished</div>
-			<div class="stat-value">{ fmt.Sprint(countFinished(quest.Runs, len(quest.Locations))) }</div>
+			<div class="stat-value">{ fmt.Sprint(countFinished(quest.Runs, len(quest.Objectives), completedCounts)) }</div>
 			<div class="stat-desc">Completed every objective</div>
 		</div>
-	</div>
-}
-
-templ LocationOverviewList(quest models.Quest) {
-	if len(quest.Locations) > 0 {
-		<ul
-			id="location-overview-list"
-			class="list max-h-96 overflow-y-auto overflow-x-hidden"
-			hx-get="/admin/activity/locations"
-			hx-target="#location-overview-list"
-			hx-swap="outerHTML"
-			hx-trigger="every 30s"
-			hx-disinherit="*"
-			_="init send input to #search-locations"
-		>
-			for i, stat := range getLocationVisitStats(quest.Locations, quest.Runs, quest.Settings.MustCheckOut) {
-				<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
-					<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
-						<div class="flex flex-col gap-2 min-w-0 flex-1">
-							<a href={ templ.URL(fmt.Sprintf("/admin/objective/%s", stat.Location.Slug)) } class="text-sm font-medium truncate hover:underline">
-								{ stat.Location.Name }
-							</a>
-							if func() bool {
-								for _, t := range quest.Runs {
-									if t.MustCheckOut == stat.Location.ID {
-										return true
-									}
-								}
-								return false
-							}() {
-								<div class="flex gap-2 flex-wrap">
-									for _, t := range quest.Runs {
-										if t.MustCheckOut == stat.Location.ID {
-											<a
-												href={ templ.URL(fmt.Sprintf("/admin/runs/%s", t.Code)) }
-												class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
-											>
-												{ t.Code }
-											</a>
-										}
-									}
-								</div>
-							}
-						</div>
-						<div class="flex items-center gap-3 flex-shrink-0">
-							<div class="tooltip tooltip-left" data-tip="Total visits">
-								<div class="flex items-center gap-1">
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4 text-base-content/60"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
-									<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
-								</div>
-							</div>
-							if quest.Settings.MustCheckOut {
-								<div class="tooltip tooltip-left" data-tip="Avg time spent">
-									<div class="flex items-center gap-1">
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
-										<span class="font-bold text-sm text-info">
-											if stat.AvgTimeMinutes > 0 {
-												if stat.AvgTimeMinutes >= 60 {
-													{ fmt.Sprintf("%.0fh", stat.AvgTimeMinutes/60) }
-												} else {
-													{ fmt.Sprintf("%.0fm", stat.AvgTimeMinutes) }
-												}
-											} else {
-												-
-											}
-										</span>
-									</div>
-								</div>
-							}
-						</div>
-					</div>
-				</li>
-			}
-		</ul>
-	} else {
-		<ul id="location-overview-list" class="list">
-			<li>
-				<div class="text-center py-8 text-base-content/60">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-inbox w-12 h-12 mx-auto mb-2 opacity-50"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-					<p class="text-sm">No locations added yet</p>
-				</div>
-			</li>
-		</ul>
-	}
-}
-
-templ LocationOverviewCard(quest models.Quest) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-4">
-			<div class="flex flex-col gap-4 mb-2">
-				<h2 class="card-title text-lg flex items-center gap-2">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check w-5 h-5"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728"></path><circle cx="12" cy="10" r="3"></circle><path d="m16 18 2 2 4-4"></path></svg>
-					Location overview
-				</h2>
-				<label class="input input-sm flex items-center gap-2">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-					<input
-						id="search-locations"
-						type="text"
-						class="grow"
-						placeholder="Search locations"
-						_="
-						init send input to me
-						on input or load
-							show .location-row
-								when its textContent.toLowerCase().normalize('NFD')
-								contains my value.toLowerCase().normalize('NFD')
-							if my value's length > 0 then
-								remove .invisible from #clear-search-locations
-							else
-								add .invisible to #clear-search-locations
-							end
-						end
-						"
-					/>
-					<button
-						id="clear-search-locations"
-						role="button"
-						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
-						type="reset"
-						_="
-							init if #search-locations's value's length > 0 then
-								remove .invisible from me
-							end
-							on click
-								set #search-locations's value to ''
-								add .invisible to me
-								send input to #search-locations
-							end
-						"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-					</button>
-				</label>
-			</div>
-		</div>
-		@LocationOverviewList(quest)
 	</div>
 }

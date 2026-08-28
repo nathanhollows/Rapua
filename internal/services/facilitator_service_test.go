@@ -38,7 +38,7 @@ func TestFacilitatorService_CreateAndValidateToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, facToken)
 	assert.Equal(t, parents.QuestID, facToken.QuestID)
-	assert.ElementsMatch(t, []string{"Park", "Tower"}, facToken.Locations)
+	assert.ElementsMatch(t, []string{"Park", "Tower"}, facToken.Objectives)
 }
 
 func TestFacilitatorService_ExpiredToken(t *testing.T) {
