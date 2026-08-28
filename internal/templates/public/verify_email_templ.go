@@ -31,7 +31,7 @@ func VerifyEmail(user models.User) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"h-full flex flex-col justify-center items-center\"><div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div hx-trigger=\"every 15s\" hx-get=\"/verify-email/status\" class=\"\"></div><div class=\"flex flex-col gap-5 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Please verify your email</h1><p>You're almost there! We sent an email to <span class=\"font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"h-full flex flex-col justify-center items-center\"><div class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div hx-trigger=\"every 15s\" hx-get=\"/verify-email/status\" class=\"\"></div><div class=\"flex flex-col gap-5 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Please verify your email</h1><p>You're almost there! We sent an email to <span class=\"font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

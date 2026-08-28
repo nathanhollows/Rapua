@@ -144,7 +144,7 @@ For any questions regarding these Terms and Conditions, please contact us at **n
 `
 
 templ Terms() {
-	<section id="terms" class="container max-w-7xl mx-auto px-4 py-8">
+	<main id="main" class="container max-w-7xl mx-auto px-4 py-8">
 		<div class="prose mx-auto pb-5">
 			@templ.Raw(stringToMarkdown(terms))
 			<p class="text-sm opacity-50 mt-8">
@@ -152,7 +152,7 @@ templ Terms() {
 				{ lastUpdatedStr }
 			</p>
 		</div>
-	</section>
+	</main>
 	<style>
 		h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 			display: none;

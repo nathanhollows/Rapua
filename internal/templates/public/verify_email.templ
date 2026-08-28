@@ -3,7 +3,7 @@ package templates
 import "github.com/nathanhollows/Rapua/v8/models"
 
 templ VerifyEmail(user models.User) {
-	<main class="h-full flex flex-col justify-center items-center ">
+	<main id="main" class="h-full flex flex-col justify-center items-center ">
 		<div class="flex flex-col justify-center flex-1 px-3 lg:px-8">
 			<div class="mx-auto w-full max-w-sm">
 				<div hx-trigger="every 15s" hx-get="/verify-email/status" class=""></div>

@@ -11,14 +11,15 @@ templ AuthLayout(contents templ.Component, title string, authed bool) {
 				@authNav(title, authed)
 			}
 			<div id="alerts" class="toast toast-center"></div>
+			<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:btn focus:btn-primary">Skip to content</a>
 			@contents
 		</body>
 	</html>
 }
 
 templ authNav(title string, authed bool) {
-	<div class="bg-base-100" hx-boost="true">
-		<div class="navbar max-w-7xl font-bold m-auto">
+	<header class="bg-base-100" hx-boost="true">
+		<nav class="navbar max-w-7xl font-bold m-auto" aria-label="Main">
 			<div class="navbar-start">
 				<a href="/" class="btn btn-ghost text-xl">← Back to Rapua</a>
 			</div>
@@ -32,10 +33,10 @@ templ authNav(title string, authed bool) {
 				} else {
 					<a href="/admin" class="btn btn-sm btn-primary group">
 						Admin
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings2-icon lucide-settings-2 w-4 h-4"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>
+						<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings2-icon lucide-settings-2 w-4 h-4"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>
 					</a>
 				}
 			</div>
-		</div>
-	</div>
+		</nav>
+	</header>
 }

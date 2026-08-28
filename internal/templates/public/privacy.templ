@@ -1,7 +1,7 @@
 package templates
 
 templ Privacy() {
-	<section id="why" class="container max-w-7xl mx-auto px-4 py-8">
+	<main id="main" class="container max-w-7xl mx-auto px-4 py-8">
 		<div class="prose mx-auto pb-5">
 			<h1 id="privacy-policy">Privacy Policy</h1>
 			<h2>The short version:</h2>
@@ -17,7 +17,7 @@ templ Privacy() {
 			</ul>
 			<hr/>
 			<h2>The long version:</h2>
-			<h4 id="personal-information-we-collect">Personal Information We Collect</h4>
+			<h3 id="personal-information-we-collect">Personal Information We Collect</h3>
 			<p>We collect the following personal information from you:</p>
 			<ul>
 				<li>Name</li>
@@ -27,7 +27,7 @@ templ Privacy() {
 			</ul>
 			<p>This information is necessary for authentication, payment processing, and development purposes.</p>
 			<p><strong>Note</strong>: We do not store payment card information. Payment processing is handled by <strong>Stripe</strong>, and all sensitive payment data is processed securely on their platform. We only store your Stripe Customer ID to link your purchases to your account.</p>
-			<h4 id="purchase-and-credit-information">Purchase and Credit Information</h4>
+			<h3 id="purchase-and-credit-information">Purchase and Credit Information</h3>
 			<p>When you purchase credits, we store:</p>
 			<ul>
 				<li>Purchase records (amount, date, status)</li>
@@ -36,7 +36,7 @@ templ Privacy() {
 				<li>Team start logs (when credits are used)</li>
 			</ul>
 			<p>This information is necessary to manage your credit balance and provide purchase receipts.</p>
-			<h4 id="purpose-of-collecting-personal-information">Purpose of Collecting Personal Information</h4>
+			<h3 id="purpose-of-collecting-personal-information">Purpose of Collecting Personal Information</h3>
 			<p>We collect your personal information for the following purposes:</p>
 			<ul>
 				<li><strong>Authentication</strong>: To verify your identity and provide secure access to Rapua using <strong>Google Auth</strong>.</li>
@@ -44,7 +44,7 @@ templ Privacy() {
 				<li><strong>Communication</strong>: To notify you of important updates related to the game or your account.</li>
 			</ul>
 			<p>All personal data is provided explicitly by the user and is not collected without your consent.</p>
-			<h4 id="data-retention-and-deletion">Data Retention and Deletion</h4>
+			<h3 id="data-retention-and-deletion">Data Retention and Deletion</h3>
 			<p>Personal information is stored <strong>indefinitely</strong> unless you request deletion. Gameplay-specific data, such as team codes and check-ins, may be deleted after a period of inactivity to free up space.</p>
 			<p>Users can request to delete their account and personal data by contacting us at <strong>nathan@rapua.nz</strong>. We will respond to all requests for access, correction, or deletion of personal information as soon as reasonably practicable and within 20 working days, in compliance with the New Zealand <strong>Privacy Act 2020</strong>.</p>
 			<p><strong>Important</strong>: When you delete your account, <strong>all data is permanently deleted</strong>, including:</p>
@@ -55,18 +55,18 @@ templ Privacy() {
 				<li><strong>Credit purchase history and remaining credit balance</strong></li>
 			</ul>
 			<p><strong>Warning</strong>: Deleting your account means <strong>forfeiting any unused credits</strong>. Credits cannot be refunded or transferred after account deletion. Please ensure you have used all purchased credits before requesting account deletion.</p>
-			<h4 id="international-data-transfers">International Data Transfers</h4>
+			<h3 id="international-data-transfers">International Data Transfers</h3>
 			<p>Your personal information is stored on servers located in Australia. While this means your data is processed outside of New Zealand, we ensure that it is afforded the same level of protection as required under the New Zealand <strong>Privacy Act 2020</strong>.</p>
-			<h4 id="sharing-of-personal-information">Sharing of Personal Information</h4>
+			<h3 id="sharing-of-personal-information">Sharing of Personal Information</h3>
 			<p>We do not share your personal information with any third parties except for the following:</p>
 			<ul>
 				<li><strong>Google Auth</strong>: For authentication, with user consent.</li>
 				<li><strong>Stripe</strong>: For payment processing, with no sensitive payment information stored on our servers.</li>
 			</ul>
 			<p>No other third-party services or integrations are used.</p>
-			<h4 id="data-security">Data Security</h4>
+			<h3 id="data-security">Data Security</h3>
 			<p>We take all reasonable steps to protect your personal information from unauthorized access, misuse, or loss. Passwords are <strong>salted and hashed</strong> according to best practices, and all data is securely stored and processed.</p>
-			<h4 id="your-rights">Your Rights</h4>
+			<h3 id="your-rights">Your Rights</h3>
 			<p>You have the right to:</p>
 			<ul>
 				<li>Request a copy of any personal information we hold about you.</li>
@@ -74,17 +74,17 @@ templ Privacy() {
 				<li>Request the deletion of your personal data at any time.</li>
 			</ul>
 			<p>We will respond to these requests within <strong>20 working days</strong>, in compliance with the <strong>New Zealand Privacy Act 2020</strong>. Please contact <strong>nathan@rapua.nz</strong> { `for` } any requests or inquiries regarding your data.</p>
-			<h4 id="cookies">Cookies</h4>
+			<h3 id="cookies">Cookies</h3>
 			<p>We use cookies solely for:</p>
 			<ul>
 				<li><strong>Authentication</strong>: To manage your login session.</li>
 				<li><strong>Gameplay</strong>: To enhance your experience and manage in-game interactions.</li>
 			</ul>
 			<p>No third-party cookies are used for advertising or tracking purposes.</p>
-			<h4 id="future-changes-to-this-privacy-policy">Future Changes to This Privacy Policy</h4>
+			<h3 id="future-changes-to-this-privacy-policy">Future Changes to This Privacy Policy</h3>
 			<p>We may update this privacy policy to reflect changes in our practices. Users will be notified of any significant changes within the app, with at least <strong>30 days’ notice</strong> before the changes take effect. Please review the policy periodically for updates.</p>
-			<h4 id="contact-information">Contact Information</h4>
+			<h3 id="contact-information">Contact Information</h3>
 			<p>For any questions regarding this privacy policy, or if you’d like to request a copy of your personal information or have it corrected, please contact us at <strong>nathan@rapua.nz</strong>.</p>
 		</div>
-	</section>
+	</main>
 }

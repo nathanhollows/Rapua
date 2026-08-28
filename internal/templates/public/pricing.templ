@@ -10,7 +10,7 @@ templ Pricing() {
 	<div class="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 dark:bg-accent/10 rounded-full blur-3xl"></div>
 	<div class="absolute bottom-1/3 right-1/3 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
 	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-8 py-16 space-y-24">
+	<main id="main" class="max-w-7xl mx-auto px-8 py-16 space-y-24">
 		<!-- Hero Section -->
 		<section class="relative z-10 max-w-6xl mx-auto text-center px-8">
 			<h1 class="text-5xl md:text-6xl xl:text-7xl font-bold mb-8">
@@ -51,7 +51,7 @@ templ Pricing() {
 					<div class="space-y-2">
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
 									<path d="M20 6 9 17l-5-5"></path>
 								</svg>
 							</div>
@@ -59,13 +59,13 @@ templ Pricing() {
 						</div>
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
 							</div>
 							<span class="text-sm">All features included</span>
 						</div>
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
 							</div>
 							<span class="text-sm">No credit card required</span>
 						</div>
@@ -88,7 +88,7 @@ templ Pricing() {
 					<div class="space-y-2 mt-auto">
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
 									<path d="M20 6 9 17l-5-5"></path>
 								</svg>
 							</div>
@@ -96,7 +96,7 @@ templ Pricing() {
 						</div>
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
 									<path d="M20 6 9 17l-5-5"></path>
 								</svg>
 							</div>
@@ -104,7 +104,7 @@ templ Pricing() {
 						</div>
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
 									<path d="M20 6 9 17l-5-5"></path>
 								</svg>
 							</div>
@@ -117,27 +117,24 @@ templ Pricing() {
 		<section class="my-16">
 			<h2 class="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
 			<div class="grid grid-cols-1 space-y-3 max-w-xl mx-auto">
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">What is a credit?</div>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">What is a credit?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Think of a credit as a ticket for one team to join game. When the first player in a team enters their team code to start playing, the system deducts a credit from your account.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">When do my credits top up?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">When do my credits top up?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Free credits top-up on the first day of each month (NZT time).
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Do credits accrue over time?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">Do credits accrue over time?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Free credits don't accumulate. The system will only top up free credits based on what you actually used. So if you used 6 free credits this month, the system tops you back up by 6 back the next month.
@@ -146,28 +143,25 @@ templ Pricing() {
 							Paid credits, on the other hand, never expire and will stay in your account until you use them.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">How do I track my credits?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">How do I track my credits?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Check your <a href="/admin/runs" class="link">Teams</a> page for a quick look at your current balance (both free and paid credits). For the full picture, head to the <a href="/admin/settings/credits" class="link">Credits</a> page in settings - it shows your total, usage history, and when you topped up.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">What happens if I run out of credits?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">What happens if I run out of credits?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Teams can't start playing until you have credits again. Players will see a friendly error message, and the system will give you a heads up when you log in so you're not caught off guard.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">How do I qualify for educator credits?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">How do I qualify for educator credits?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Sign up with your work email address and Rapua will automatically detect if you're at an educational institution. If the system doesn't pick it up, <a href="/contact" class="link">get in touch</a> and I'll sort it out.
@@ -176,34 +170,31 @@ templ Pricing() {
 							Educators include anyone working at schools, museums, universities, zoos, or art galleries.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Why do educators get more free credits?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">Why do educators get more free credits?</summary>
 					<div class="collapse-content prose">
 						<p>
 							Because they do incredible work with limited time and resources. Plus, I'm hoping to do a PhD in informal game-based learning someday, so this is my way of supporting the field I love.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Is there a minimum purchase?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">Is there a minimum purchase?</summary>
 					<div class="collapse-content prose">
 						<p>
 							The minimum purchase is 3 credits (${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100*3) } NZD). This is so I don't lose money in transaction fees.
 						</p>
 					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Do you offer bulk discounts?</div>
+				</details>
+				<details class="collapse bg-base-200 border-base-300 border">
+					<summary class="collapse-title font-semibold">Do you offer bulk discounts?</summary>
 					<div class="collapse-content prose">
 						<p>
-							No. At ${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) } NZD per credit, it's already pretty fair. 
+							No. At ${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) } NZD per credit, it's already pretty fair.
 						</p>
 					</div>
-				</div>
+				</details>
 			</div>
 		</section>
 	</main>

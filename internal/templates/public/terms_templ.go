@@ -172,7 +172,7 @@ func Terms() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"terms\" class=\"container max-w-7xl mx-auto px-4 py-8\"><div class=\"prose mx-auto pb-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"container max-w-7xl mx-auto px-4 py-8\"><div class=\"prose mx-auto pb-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -193,7 +193,7 @@ func Terms() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p></div></section><style>\n\t\th1 a, h2 a, h3 a, h4 a, h5 a, h6 a {\n\t\t\tdisplay: none;\n\t\t}\n\t</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p></div></main><style>\n\t\th1 a, h2 a, h3 a, h4 a, h5 a, h6 a {\n\t\t\tdisplay: none;\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
