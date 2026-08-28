@@ -100,13 +100,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	transactor := db.NewTransactor(dbc)
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
-	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
 	locationStatsService := services.NewLocationStatsService(locationRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
+	gameStructureService := services.NewGameStructureService(locationRepo, objectiveRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor, instanceRepo, locationRepo, markerRepo,
 		teamRepo, uploadRepo, dbc, uploadsDir, logger,

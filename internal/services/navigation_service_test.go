@@ -28,6 +28,7 @@ func setupNavigationService(t *testing.T) (
 	dbc, cleanup := setupDB(t)
 
 	locationRepo := repositories.NewLocationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
 	checkInRepo := repositories.NewCheckInRepository(dbc)
 	instanceRepo := repositories.NewQuestRepository(dbc)
@@ -35,7 +36,7 @@ func setupNavigationService(t *testing.T) (
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 
-	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
+	gameStructureService := services.NewGameStructureService(locationRepo, objectiveRepo, instanceRepo)
 	markerService := services.NewMarkerService(markerRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)

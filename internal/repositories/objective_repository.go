@@ -12,7 +12,9 @@ import (
 type ObjectiveRepository interface {
 	GetByID(ctx context.Context, objectiveID string) (*models.Objective, error)
 	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	FindByIDs(ctx context.Context, questID string, objectiveIDs []string) ([]*models.Objective, error)
 	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
+	LoadBlocks(ctx context.Context, objective *models.Objective) error
 	CreateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
 	UpdateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
 	Delete(ctx context.Context, tx *bun.Tx, objectiveID string) error
@@ -51,6 +53,25 @@ func (r *objectiveRepository) GetByQuestIDAndSlug(ctx context.Context, questID, 
 	return &objective, nil
 }
 
+func (r *objectiveRepository) FindByIDs(
+	ctx context.Context, questID string, objectiveIDs []string,
+) ([]*models.Objective, error) {
+	if len(objectiveIDs) == 0 {
+		return []*models.Objective{}, nil
+	}
+
+	var objectives []*models.Objective
+	err := r.db.NewSelect().
+		Model(&objectives).
+		Where("quest_id = ?", questID).
+		Where("id IN (?)", bun.In(objectiveIDs)).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("finding objectives by IDs: %w", err)
+	}
+	return objectives, nil
+}
+
 // FindByQuestID: order comes from the structure tree's ObjectiveIDs array, not
 // this column: nothing writes Objective.Order (same as Location).
 func (r *objectiveRepository) FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error) {
@@ -63,6 +84,18 @@ func (r *objectiveRepository) FindByQuestID(ctx context.Context, questID string)
 		return nil, fmt.Errorf("finding objectives for quest: %w", err)
 	}
 	return objectives, nil
+}
+
+func (r *objectiveRepository) LoadBlocks(ctx context.Context, objective *models.Objective) error {
+	err := r.db.NewSelect().
+		Model(objective).
+		WherePK().
+		Relation("Blocks").
+		Scan(ctx)
+	if err != nil {
+		return fmt.Errorf("loading blocks for objective: %w", err)
+	}
+	return nil
 }
 
 func (r *objectiveRepository) CreateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error {

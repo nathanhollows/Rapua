@@ -98,3 +98,54 @@ func TestObjectiveRepository_GetByQuestIDAndSlug_WrongQuest(t *testing.T) {
 	_, err = repo.GetByQuestIDAndSlug(context.Background(), otherParents.QuestID, "find-the-key")
 	require.Error(t, err, "same slug under a different quest must not match")
 }
+
+func TestObjectiveRepository_FindByIDs(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	obj1 := &models.Objective{ID: gofakeit.UUID(), QuestID: parents.QuestID, Slug: "one", Title: "One"}
+	obj2 := &models.Objective{ID: gofakeit.UUID(), QuestID: parents.QuestID, Slug: "two", Title: "Two"}
+	obj3 := &models.Objective{ID: gofakeit.UUID(), QuestID: parents.QuestID, Slug: "three", Title: "Three"}
+	ctx := context.Background()
+	_, err := dbc.NewInsert().Model(obj1).Exec(ctx)
+	require.NoError(t, err)
+	_, err = dbc.NewInsert().Model(obj2).Exec(ctx)
+	require.NoError(t, err)
+	_, err = dbc.NewInsert().Model(obj3).Exec(ctx)
+	require.NoError(t, err)
+
+	repo := repositories.NewObjectiveRepository(dbc)
+	got, err := repo.FindByIDs(ctx, parents.QuestID, []string{obj1.ID, obj3.ID})
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	gotIDs := []string{got[0].ID, got[1].ID}
+	assert.ElementsMatch(t, []string{obj1.ID, obj3.ID}, gotIDs)
+}
+
+func TestObjectiveRepository_FindByIDs_Empty(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	repo := repositories.NewObjectiveRepository(dbc)
+	got, err := repo.FindByIDs(context.Background(), gofakeit.UUID(), nil)
+	require.NoError(t, err)
+	assert.Empty(t, got)
+}
+
+func TestObjectiveRepository_FindByIDs_WrongQuest(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	obj := &models.Objective{ID: gofakeit.UUID(), QuestID: parents.QuestID, Slug: "one", Title: "One"}
+	ctx := context.Background()
+	_, err := dbc.NewInsert().Model(obj).Exec(ctx)
+	require.NoError(t, err)
+
+	otherParents := createTestParents(t, dbc)
+	repo := repositories.NewObjectiveRepository(dbc)
+	got, err := repo.FindByIDs(ctx, otherParents.QuestID, []string{obj.ID})
+	require.NoError(t, err)
+	assert.Empty(t, got, "an objective ID from a different quest must not match")
+}

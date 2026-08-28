@@ -18,6 +18,7 @@ type AccessService interface {
 	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
 	CanAdminAccessQuest(ctx context.Context, userID, questID string) (bool, error)
 	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
+	CanAdminAccessObjective(ctx context.Context, userID, objectiveID string) (bool, error)
 }
 
 func setupAccessService(t *testing.T) (AccessService, func()) {
@@ -29,8 +30,9 @@ func setupAccessService(t *testing.T) (AccessService, func()) {
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
 
 	return accessService, cleanup
 }
@@ -428,8 +430,9 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	locationRepo := repositories.NewLocationRepository(dbc)
 	markerRepo := repositories.NewMarkerRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	service := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
+	service := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
 
 	ctx := context.Background()
 
@@ -508,6 +511,68 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
 		require.NoError(t, err)
 		assert.True(t, canAccess, "User should have access to locations in their own instance")
+	})
+
+	t.Run("Owner can access objective proof/reveal block through objective", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		questID := gofakeit.UUID()
+
+		insertTestUser(t, dbc, userID)
+
+		inst := &models.Quest{
+			ID:     questID,
+			Name:   gofakeit.Word(),
+			UserID: userID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		obj := &models.Objective{
+			ID:      gofakeit.UUID(),
+			QuestID: questID,
+			Slug:    gofakeit.LetterN(8),
+			Title:   gofakeit.Word(),
+		}
+		_, err = dbc.NewInsert().Model(obj).Exec(ctx)
+		require.NoError(t, err)
+
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, obj.ID, blocks.ContextObjectiveProof)
+		require.NoError(t, err)
+		assert.True(t, canAccess, "User should have access to objective proof blocks in their own instance")
+
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, obj.ID, blocks.ContextObjectiveReveal)
+		require.NoError(t, err)
+		assert.True(t, canAccess, "User should have access to objective reveal blocks in their own instance")
+	})
+
+	t.Run("Non-owner cannot access objective", func(t *testing.T) {
+		userID := gofakeit.UUID()
+		otherUserID := gofakeit.UUID()
+		questID := gofakeit.UUID()
+
+		insertTestUser(t, dbc, userID)
+		insertTestUser(t, dbc, otherUserID)
+
+		inst := &models.Quest{
+			ID:     questID,
+			Name:   gofakeit.Word(),
+			UserID: otherUserID,
+		}
+		err := instanceRepo.Create(ctx, inst)
+		require.NoError(t, err)
+
+		obj := &models.Objective{
+			ID:      gofakeit.UUID(),
+			QuestID: questID,
+			Slug:    gofakeit.LetterN(8),
+			Title:   gofakeit.Word(),
+		}
+		_, err = dbc.NewInsert().Model(obj).Exec(ctx)
+		require.NoError(t, err)
+
+		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, obj.ID, blocks.ContextObjectiveProof)
+		require.NoError(t, err)
+		assert.False(t, canAccess, "User should not have access to another user's objective")
 	})
 
 	t.Run("Non-owner cannot access instance", func(t *testing.T) {

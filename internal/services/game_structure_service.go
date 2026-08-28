@@ -20,6 +20,13 @@ type LocationRepository interface {
 	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
+// ObjectiveRepository defines the interface for objective data access.
+type ObjectiveRepository interface {
+	FindByIDs(ctx context.Context, questID string, objectiveIDs []string) ([]*models.Objective, error)
+	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
+	LoadBlocks(ctx context.Context, objective *models.Objective) error
+}
+
 // QuestRepository defines the interface for quest data access.
 type QuestRepository interface {
 	GetByID(ctx context.Context, id string) (*models.Quest, error)
@@ -29,14 +36,20 @@ type QuestRepository interface {
 // GameStructureService provides operations for loading, saving, and validating GameStructures.
 type GameStructureService struct {
 	locationRepo   LocationRepository
+	objectiveRepo  ObjectiveRepository
 	instanceRepo   QuestRepository
 	relationLoader LocationRelationLoader
 }
 
 // NewGameStructureService creates a new GameStructureService.
-func NewGameStructureService(locationRepo LocationRepository, instanceRepo QuestRepository) *GameStructureService {
+func NewGameStructureService(
+	locationRepo LocationRepository,
+	objectiveRepo ObjectiveRepository,
+	instanceRepo QuestRepository,
+) *GameStructureService {
 	return &GameStructureService{
 		locationRepo:   locationRepo,
+		objectiveRepo:  objectiveRepo,
 		instanceRepo:   instanceRepo,
 		relationLoader: nil, // Will be set via SetRelationLoader
 	}
@@ -82,6 +95,28 @@ func (s *GameStructureService) Load(
 		}
 	} else {
 		group.Locations = []*models.Location{}
+	}
+
+	if len(group.ObjectiveIDs) > 0 {
+		objectives, err := s.objectiveRepo.FindByIDs(ctx, questID, group.ObjectiveIDs)
+		if err != nil {
+			return fmt.Errorf("failed to load objectives for group %s: %w", group.ID, err)
+		}
+
+		objectiveMap := make(map[string]*models.Objective, len(objectives))
+		for _, obj := range objectives {
+			objectiveMap[obj.ID] = obj
+		}
+
+		// Maintain the order from ObjectiveIDs.
+		group.Objectives = make([]*models.Objective, 0, len(group.ObjectiveIDs))
+		for _, id := range group.ObjectiveIDs {
+			if obj, ok := objectiveMap[id]; ok {
+				group.Objectives = append(group.Objectives, obj)
+			}
+		}
+	} else {
+		group.Objectives = []*models.Objective{}
 	}
 
 	group.SetPopulated(true)
@@ -159,6 +194,13 @@ func (s *GameStructureService) LoadBlocksForStructure(
 		}
 	}
 
+	for i := range group.Objectives {
+		err := s.objectiveRepo.LoadBlocks(ctx, group.Objectives[i])
+		if err != nil {
+			return fmt.Errorf("failed to load blocks for objective %s: %w", group.Objectives[i].ID, err)
+		}
+	}
+
 	// Recursively load blocks for subgroups if requested
 	if recursive {
 		for i := range group.SubGroups {
@@ -227,6 +269,10 @@ func (s *GameStructureService) Save(ctx context.Context, questID string, group *
 		return fmt.Errorf("ensuring all locations included: %w", err)
 	}
 
+	if err := s.ensureAllObjectivesIncluded(ctx, questID, group); err != nil {
+		return fmt.Errorf("ensuring all objectives included: %w", err)
+	}
+
 	// Validate before saving
 	if err := s.Validate(group, questID); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
@@ -291,6 +337,44 @@ func (s *GameStructureService) collectAllLocationIDs(group *models.GameStructure
 	}
 }
 
+// ensureAllObjectivesIncluded adds orphaned objectives to the root group.
+func (s *GameStructureService) ensureAllObjectivesIncluded(
+	ctx context.Context,
+	questID string,
+	group *models.GameStructure,
+) error {
+	includedIDs := make(map[string]bool)
+	s.collectAllObjectiveIDs(group, includedIDs)
+
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch objectives: %w", err)
+	}
+
+	var orphanedIDs []string
+	for _, obj := range objectives {
+		if !includedIDs[obj.ID] {
+			orphanedIDs = append(orphanedIDs, obj.ID)
+		}
+	}
+
+	if len(orphanedIDs) > 0 {
+		group.ObjectiveIDs = append(group.ObjectiveIDs, orphanedIDs...)
+	}
+
+	return nil
+}
+
+func (s *GameStructureService) collectAllObjectiveIDs(group *models.GameStructure, ids map[string]bool) {
+	for _, id := range group.ObjectiveIDs {
+		ids[id] = true
+	}
+
+	for i := range group.SubGroups {
+		s.collectAllObjectiveIDs(&group.SubGroups[i], ids)
+	}
+}
+
 // Validate checks the GameStructure for errors.
 func (s *GameStructureService) Validate(group *models.GameStructure, _ string) error {
 	if group == nil {
@@ -300,6 +384,11 @@ func (s *GameStructureService) Validate(group *models.GameStructure, _ string) e
 	// Check for duplicate location IDs across entire tree
 	allIDs := make(map[string]bool)
 	if err := s.checkDuplicateLocationIDs(group, allIDs); err != nil {
+		return err
+	}
+
+	allObjectiveIDs := make(map[string]bool)
+	if err := s.checkDuplicateObjectiveIDs(group, allObjectiveIDs); err != nil {
 		return err
 	}
 
@@ -328,6 +417,23 @@ func (s *GameStructureService) checkDuplicateLocationIDs(group *models.GameStruc
 
 	for i := range group.SubGroups {
 		if err := s.checkDuplicateLocationIDs(&group.SubGroups[i], seen); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *GameStructureService) checkDuplicateObjectiveIDs(group *models.GameStructure, seen map[string]bool) error {
+	for _, id := range group.ObjectiveIDs {
+		if seen[id] {
+			return fmt.Errorf("duplicate objective ID found: %s", id)
+		}
+		seen[id] = true
+	}
+
+	for i := range group.SubGroups {
+		if err := s.checkDuplicateObjectiveIDs(&group.SubGroups[i], seen); err != nil {
 			return err
 		}
 	}
@@ -405,6 +511,21 @@ func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []
 	return ids
 }
 
+// GetAllObjectiveIDs returns objective IDs flattened and in order across subgroups.
+func (s *GameStructureService) GetAllObjectiveIDs(group *models.GameStructure) []string {
+	ids := make([]string, 0)
+
+	// Add this group's objectives first.
+	ids = append(ids, group.ObjectiveIDs...)
+
+	// Then add subgroups' objectives recursively.
+	for i := range group.SubGroups {
+		ids = append(ids, s.GetAllObjectiveIDs(&group.SubGroups[i])...)
+	}
+
+	return ids
+}
+
 // InsertLocationIntoGroup inserts a location into a specific group at a specific position.
 // If groupID is empty or not found, falls back to root.
 // beforeLocationID inserts before that location; afterLocationID inserts after it.
@@ -457,6 +578,62 @@ func (s *GameStructureService) InsertLocationIntoGroup(
 		}
 	default:
 		target.LocationIDs = append(target.LocationIDs, locationID)
+	}
+
+	return s.Save(ctx, questID, &instance.GameStructure)
+}
+
+// InsertObjectiveIntoGroup falls back to root when groupID is empty or not
+// found. beforeObjectiveID and afterObjectiveID choose the insertion point;
+// beforeObjectiveID takes precedence. If both are empty, appends to the end.
+func (s *GameStructureService) InsertObjectiveIntoGroup(
+	ctx context.Context,
+	questID, objectiveID, groupID, afterObjectiveID, beforeObjectiveID string,
+) error {
+	instance, err := s.instanceRepo.GetByID(ctx, questID)
+	if err != nil {
+		return fmt.Errorf("loading instance: %w", err)
+	}
+
+	target := s.FindGroupByID(&instance.GameStructure, groupID)
+	if target == nil {
+		target = &instance.GameStructure // fallback to root.
+	}
+
+	switch {
+	case beforeObjectiveID != "":
+		inserted := false
+		for i, id := range target.ObjectiveIDs {
+			if id == beforeObjectiveID {
+				newIDs := make([]string, 0, len(target.ObjectiveIDs)+1)
+				newIDs = append(newIDs, target.ObjectiveIDs[:i]...)
+				newIDs = append(newIDs, objectiveID)
+				newIDs = append(newIDs, target.ObjectiveIDs[i:]...)
+				target.ObjectiveIDs = newIDs
+				inserted = true
+				break
+			}
+		}
+		if !inserted {
+			target.ObjectiveIDs = append([]string{objectiveID}, target.ObjectiveIDs...)
+		}
+	case afterObjectiveID != "":
+		inserted := false
+		for i, id := range target.ObjectiveIDs {
+			if id == afterObjectiveID {
+				target.ObjectiveIDs = append(
+					target.ObjectiveIDs[:i+1],
+					append([]string{objectiveID}, target.ObjectiveIDs[i+1:]...)...,
+				)
+				inserted = true
+				break
+			}
+		}
+		if !inserted {
+			target.ObjectiveIDs = append(target.ObjectiveIDs, objectiveID)
+		}
+	default:
+		target.ObjectiveIDs = append(target.ObjectiveIDs, objectiveID)
 	}
 
 	return s.Save(ctx, questID, &instance.GameStructure)
