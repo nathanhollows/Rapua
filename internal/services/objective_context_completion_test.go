@@ -7,6 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -218,6 +219,45 @@ func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *t
 // TestCheckInService_IsObjectiveContextPending exercises the objective view
 // handler's decision path: pending while a required block is unvalidated,
 // no longer pending once it is.
+// TestCheckInService_CompleteObjectiveContext_PreviewIsNoOp proves the preview
+// guard: a preview run's code ("preview") has no matching row in runs, so
+// logging completion for it would violate objective_context_completions'
+// run_code FK. Deliberately does not insert a runs row for "preview", so a
+// missing guard would surface as an FK constraint error here.
+func TestCheckInService_CompleteObjectiveContext_PreviewIsNoOp(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.WithValue(context.Background(), contextkeys.PreviewKey, true)
+
+	parents := createTestParents(t, dbc)
+
+	objective := &models.Objective{
+		ID:         gofakeit.UUID(),
+		QuestID:    parents.QuestID,
+		Slug:       "flavour-text",
+		Title:      "Flavour text",
+		RevealSets: game.SetsField{"story_seen": "true"},
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	team := &models.Run{Code: "preview", QuestID: parents.QuestID}
+
+	err = svc.CompleteObjectiveContext(ctx, team, objective.ID, blocks.ContextObjectiveReveal)
+	require.NoError(t, err, "preview must no-op, not attempt to write a completion row")
+
+	count, err := dbc.NewSelect().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Where("objective_id = ?", objective.ID).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "preview must not log a completion")
+
+	vars, err := repositories.NewRunVarStateRepository(dbc).GetAll(ctx, team.Code, parents.QuestID)
+	require.NoError(t, err)
+	assert.NotContains(t, vars, "story_seen", "preview must not apply context sets")
+}
+
 func TestCheckInService_IsObjectiveContextPending(t *testing.T) {
 	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
 	defer cleanup()

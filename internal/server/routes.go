@@ -360,15 +360,15 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/", adminHandler.Locations)
 			r.Post("/reorder", adminHandler.ReorderLocations)
 			r.Post("/structure", adminHandler.SaveGameStructure)
-			r.Get("/new", adminHandler.LocationNew)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
 		})
 
 		r.Route("/objective", func(r chi.Router) {
-			r.Get("/{slug:[a-z0-9-]+}", adminHandler.LocationEdit)
-			r.Post("/{slug:[a-z0-9-]+}", adminHandler.LocationEditPost)
-			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.LocationDelete)
+			r.Get("/new", adminHandler.ObjectiveNew)
+			r.Get("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEdit)
+			r.Post("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEditPost)
+			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveDelete)
 		})
 
 		// RESTful blocks API

@@ -1,9 +1,7 @@
 package admin
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -64,64 +62,6 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
 	}
-}
-
-// LocationNew creates a new location with a default name and redirects to the edit page.
-func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	location, err := h.locationService.CreateLocation(
-		r.Context(), user.CurrentQuestID, "New Location", 0, 0, 0,
-	)
-	if err != nil {
-		h.handleError(w, r, "LocationNew: creating location", "Error creating location", "error", err)
-		return
-	}
-
-	groupID := r.URL.Query().Get("groupId")
-	afterLocationID := r.URL.Query().Get("afterLocationId")
-	beforeLocationID := r.URL.Query().Get("beforeLocationId")
-
-	if groupID != "" { //nolint:nestif // linear structure placement logic with adjacent-ID fallback
-		if err = h.gameStructureService.InsertLocationIntoGroup(
-			r.Context(), user.CurrentQuestID, location.ID, groupID, afterLocationID, beforeLocationID,
-		); err != nil {
-			h.logger.ErrorContext(
-				r.Context(),
-				"LocationNew: inserting location into group",
-				"error",
-				err,
-				"location_id",
-				location.ID,
-			)
-		}
-		adjacentID := afterLocationID
-		if adjacentID == "" {
-			adjacentID = beforeLocationID
-		}
-		if adjacentID != "" {
-			h.copyClueBlockIfSingle(r.Context(), location.ID, adjacentID)
-		}
-	} else {
-		if err = h.addLocationToRootGroup(r.Context(), user.CurrentQuestID, location.ID); err != nil {
-			h.logger.ErrorContext(
-				r.Context(),
-				"LocationNew: adding location to root group",
-				"error",
-				err,
-				"location_id",
-				location.ID,
-			)
-		}
-	}
-
-	editPath := "/admin/objective/" + location.Slug
-	if r.Header.Get("Hx-Request") == "true" {
-		w.Header().Set("Hx-Location", editPath)
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	http.Redirect(w, r, editPath, http.StatusFound)
 }
 
 // ReorderLocations handles reordering locations.
@@ -405,43 +345,6 @@ func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.handleSuccess(w, r, "Game structure saved")
-}
-
-// copyClueBlockIfSingle copies the navigation block type from adjacentLocationID to newLocationID
-// when the adjacent location has exactly one navigation block. Errors are non-fatal.
-func (h *Handler) copyClueBlockIfSingle(ctx context.Context, newLocationID, adjacentLocationID string) {
-	navBlocks, err := h.blockService.FindByOwnerIDAndContext(ctx, adjacentLocationID, blocks.ContextNavigation)
-	if err != nil || len(navBlocks) != 1 {
-		return
-	}
-	if _, err = h.blockService.NewBlockWithOwnerAndContext(
-		ctx,
-		newLocationID,
-		blocks.ContextNavigation,
-		navBlocks[0].GetType(),
-	); err != nil {
-		h.logger.WarnContext(ctx, "copyClueBlockIfSingle: creating navigation block",
-			"error", err, "location_id", newLocationID)
-	}
-}
-
-// addLocationToRootGroup adds a newly created location to the root group (unassigned area).
-func (h *Handler) addLocationToRootGroup(ctx context.Context, questID, locationID string) error {
-	// Load the current instance
-	instance, err := h.questService.GetByID(ctx, questID)
-	if err != nil {
-		return fmt.Errorf("loading instance: %w", err)
-	}
-
-	// Add the location to the root group
-	instance.GameStructure.LocationIDs = append(instance.GameStructure.LocationIDs, locationID)
-
-	// Save the updated structure
-	if err = h.gameStructureService.Save(ctx, questID, &instance.GameStructure); err != nil {
-		return fmt.Errorf("saving structure: %w", err)
-	}
-
-	return nil
 }
 
 // StartPageEdit shows the start page editor.

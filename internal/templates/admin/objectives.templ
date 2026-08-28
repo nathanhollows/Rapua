@@ -1,0 +1,183 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+
+type EditObjectiveData struct {
+	Settings     models.QuestSettings
+	Objective    models.Objective
+	ProofBlocks  blocks.Blocks
+	RevealBlocks blocks.Blocks
+}
+
+// EditObjective mirrors EditLocation's two-zone layout. The zones keep the
+// literal #nav-blocks/#content-blocks/#nav-tab/#content-tab ids so
+// previewSortableScript() works unmodified: #content-tab/#content-blocks is
+// the default-active pairing (here: Proof, matching Location's default-active
+// Content zone), #nav-tab/#nav-blocks is the secondary pairing (here: Reveal).
+templ EditObjective(data EditObjectiveData) {
+	<!-- Header -->
+	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
+		<h1 id="objective-title" class="text-2xl font-bold">{ data.Objective.Title }</h1>
+		<div class="flex gap-3">
+			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
+				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
+				Delete
+			</button>
+			<form
+				id="edit-objective"
+				hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
+				hx-trigger="click, saveobjective delay:500ms, keyup from:[form=edit-objective] delay:500ms"
+				hx-swap="none"
+			>
+				<button
+					id="edit-objective-btn"
+					class="btn btn-primary"
+					type="submit"
+				>
+					@icon("save", templ.Attributes{"class": "w-4 h-4"})
+					Save
+				</button>
+			</form>
+		</div>
+	</div>
+	<div
+		class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0"
+		_="on click in #nav-blocks
+			if #nav-tab does not match .tab-active
+				send click to #nav-tab
+			end
+		on click in #content-blocks
+			if #content-tab does not match .tab-active
+				send click to #content-tab
+			end
+		on htmx:afterSwap from #nav-blocks
+			call _hyperscript.processNode(event.detail.target)
+		on htmx:afterSwap from #content-blocks
+			call _hyperscript.processNode(event.detail.target)
+		"
+	>
+		<div class="flex flex-col flex-grow min-w-0">
+			<div class="flex flex-col sm:flex-row gap-5 mb-5">
+				<fieldset class="fieldset w-full md:w-1/2">
+					<legend class="fieldset-legend">Objective Title</legend>
+					<input
+						type="text"
+						id="title"
+						name="title"
+						form="edit-objective"
+						class="input w-full"
+						value={ data.Objective.Title }
+						placeholder="Objective title"
+						_="
+						on input
+						set #objective-title's textContent to my value"
+					/>
+				</fieldset>
+			</div>
+		@deleteBlockModal()
+			<!-- Proof -->
+			<section>
+				@blockAddButton(data.Objective.ID, blocks.ContextObjectiveProof, ".blocks")
+				<div
+					id="content-blocks"
+					class="blocks flex flex-col gap-5"
+				>
+					for _, block := range data.ProofBlocks {
+						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.ProofBlocks) < 4)
+					}
+				</div>
+			</section>
+			<!-- Reveal -->
+			@blockAddButton(data.Objective.ID, blocks.ContextObjectiveReveal, ".blocks")
+			<div
+				id="nav-blocks"
+				class="blocks flex flex-col gap-5"
+			>
+				for _, block := range data.RevealBlocks {
+					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.RevealBlocks) < 4)
+				}
+			</div>
+		</div>
+		<!-- Preview -->
+		<div class="h-min sticky top-3">
+			<div id="preview-nav" role="tablist" class="tabs tabs-box tabs-sm font-bold m-auto mb-3">
+				<a
+					id="content-tab"
+					role="tab"
+					data-url={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=proof") }
+					class="tab transition-colors grow tab-active"
+					_="on click
+					remove .tab-active from <#preview-nav a.tab-active />
+					add .tab-active to me
+					trigger changePreviewPage
+				"
+				>
+					Proof
+				</a>
+				<a
+					id="nav-tab"
+					role="tab"
+					class="tab transition-colors grow"
+					data-url={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=reveal") }
+					_="on click
+					remove .tab-active from <#preview-nav a.tab-active />
+					add .tab-active to me
+					trigger changePreviewPage
+				"
+				>
+					Reveal
+				</a>
+			</div>
+			<div class="mockup-phone bg-black h-min shadow-2xl">
+				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
+					<div
+						id="mobile-preview-container"
+						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
+						hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=proof") }
+						hx-trigger={ fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-objective-btn, htmx:afterRequest from:#delete-block-btn") }
+						hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
+						hx-swap="innerHTML"
+						_="on changePreviewPage from <body/>
+					set @hx-get to event.detail.sender.dataset.url
+					then call htmx.process(me)
+					then trigger load"
+					></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Hidden form for block reordering via HTMX -->
+	@blockReorderForm()
+	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete this objective?</h3>
+			<p class="pt-4">You are about to delete this objective. Are you sure?</p>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick="confirm_delete_modal.close()"
+				>Nevermind</button>
+				<button
+					type="button"
+					class="btn btn-error"
+					hx-delete={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
+					hx-trigger="click"
+					onclick="confirm_delete_modal.close()"
+				>Delete</button>
+			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	@previewSortableScript()
+	@blockMoveScript()
+	@sortableStyles()
+}

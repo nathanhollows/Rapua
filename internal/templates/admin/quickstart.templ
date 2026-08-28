@@ -32,10 +32,10 @@ templ QuickstartBar(quest models.Quest) {
 				} else {
 					@nextStep(1, "Create an instance", "/admin/quests", false)
 				}
-				if len(quest.Locations) > 0 {
-					@completedStep("Add a Location")
+				if len(quest.Objectives) > 0 {
+					@completedStep("Add an Objective")
 				} else {
-					@nextStep(2, "Add a Location", "/admin/quest/new", quest.ID == "")
+					@nextStep(2, "Add an Objective", "/admin/quest/new-objective", quest.ID == "")
 				}
 				if len(quest.Runs) > 0 {
 					@completedStep("Add a Team")

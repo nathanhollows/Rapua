@@ -2,7 +2,6 @@ package players
 
 import "log/slog"
 
-// TestHandlerOption sets one field on a handler built by NewTestPlayerHandler.
 type TestHandlerOption func(*PlayerHandler)
 
 // NewTestPlayerHandler builds a PlayerHandler for tests in package players_test,
@@ -21,4 +20,12 @@ func WithRunService(s RunService) TestHandlerOption {
 
 func WithUploadService(s UploadService) TestHandlerOption {
 	return func(h *PlayerHandler) { h.uploadService = s }
+}
+
+func WithCheckInService(s CheckInService) TestHandlerOption {
+	return func(h *PlayerHandler) { h.checkInService = s }
+}
+
+func WithBlockService(s BlockService) TestHandlerOption {
+	return func(h *PlayerHandler) { h.blockService = s }
 }

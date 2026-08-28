@@ -26,6 +26,11 @@ type LocationUpdateData struct {
 	SetWhen   bool             // true when the caller explicitly submitted a when_clause value
 }
 
+// ObjectiveUpdateData: blank fields are ignored.
+type ObjectiveUpdateData struct {
+	Title string
+}
+
 // LeaderBoardTeamData represents a team's data for leaderboard display.
 type LeaderBoardTeamData struct {
 	ID           string

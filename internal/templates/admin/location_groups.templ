@@ -82,12 +82,12 @@ templ LocationGroupList(settings models.QuestSettings, groups models.GameStructu
 				</button>
 			</label>
 			<a
-				href="/admin/quest/new"
+				href="/admin/objective/new"
 				hx-boost="true"
 				class="btn btn-secondary"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-plus w-5 h-5"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg>
-				Add Location
+				Add Objective
 			</a>
 		</span>
 	</div>
@@ -142,6 +142,9 @@ templ locationGroup(group models.GameStructure, settings models.QuestSettings) {
 			for _, location := range group.Locations {
 				@locationItem(*location, settings, "")
 			}
+			for _, objective := range group.Objectives {
+				@objectiveItem(*objective, settings)
+			}
 		</div>
 	} else {
 		<!-- Nested group card -->
@@ -170,13 +173,16 @@ templ locationGroup(group models.GameStructure, settings models.QuestSettings) {
 					"
 				>
 					if len(group.Locations) > 0 {
-						@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s&beforeLocationId=%s", group.ID, group.Locations[0].ID))
+						@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
 						for _, location := range group.Locations {
 							@locationItem(*location, settings, group.ID)
-							@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s&afterLocationId=%s", group.ID, location.ID))
+							@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
 						}
-					} else {
-						@locationInsertZone(fmt.Sprintf("/admin/quest/new?groupId=%s", group.ID))
+					} else if len(group.Objectives) == 0 {
+						@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
+					}
+					for _, objective := range group.Objectives {
+						@objectiveItem(*objective, settings)
 					}
 				</div>
 				<!-- Subgroups area within group - always show -->
@@ -249,6 +255,36 @@ templ locationItem(location models.Location, settings models.QuestSettings, grou
 				<span class="badge badge-primary badge-sm">{ fmt.Sprint(location.Points) } pts</span>
 			}
 			@publishedToggle()
+		</div>
+	</div>
+}
+
+// objectiveItem is a read-only row: no drag handle, since reorder/move
+// between groups isn't wired for objectives yet (the JS structure encoder
+// doesn't emit objective_ids). Click-through to the edit page only.
+templ objectiveItem(objective models.Objective, settings models.QuestSettings) {
+	<div
+		class="objective-item relative bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30"
+		data-objective-id={ objective.ID }
+	>
+		<div class="loc flex items-center gap-3">
+			<div class="tooltip tooltip-right" data-tip="Objective">
+				@icon("target", templ.Attributes{"class": "w-4 h-4 text-base-content/60"})
+			</div>
+			if !objective.HasProofContext() {
+				<span
+					class="tooltip cursor-help location-nav-icon text-primary"
+					data-tip="No proof content yet"
+				>
+					@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 m-auto"})
+				</span>
+			}
+			<a
+				href={ templ.URL(fmt.Sprintf("/admin/objective/%s", objective.Slug)) }
+				class="link link-hover font-medium"
+				hx-boost="true"
+			>{ objective.Title }</a>
+			<div class="flex-grow"></div>
 		</div>
 	</div>
 }
@@ -1036,22 +1072,24 @@ templ sortableScript() {
 			// Remove all existing insert zones
 			container.querySelectorAll(':scope > .loc-insert-zone').forEach(z => z.remove());
 
-			// Get location items
+			// Objective rows are read-only, but they still count toward "is this
+			// group empty": an objective-only group must not get a stray zone.
 			const items = container.querySelectorAll(':scope > .location-item');
 			if (items.length === 0) {
+				if (container.querySelectorAll(':scope > .objective-item').length > 0) return;
 				// Empty group: single zone
-				const zone = createInsertZone('/admin/quest/new?groupId=' + groupId);
+				const zone = createInsertZone('/admin/objective/new?groupId=' + groupId);
 				container.appendChild(zone);
 				return;
 			}
 
 			// Zone before first item
-			const firstZone = createInsertZone('/admin/quest/new?groupId=' + groupId + '&beforeLocationId=' + items[0].dataset.locationId);
+			const firstZone = createInsertZone('/admin/objective/new?groupId=' + groupId);
 			container.insertBefore(firstZone, items[0]);
 
 			// Zone after each item
 			items.forEach(function(item, i) {
-				const zone = createInsertZone('/admin/quest/new?groupId=' + groupId + '&afterLocationId=' + item.dataset.locationId);
+				const zone = createInsertZone('/admin/objective/new?groupId=' + groupId);
 				if (item.nextSibling) {
 					container.insertBefore(zone, item.nextSibling);
 				} else {

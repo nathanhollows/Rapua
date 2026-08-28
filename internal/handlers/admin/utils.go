@@ -101,6 +101,7 @@ type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteQuest(ctx context.Context, userID, instanceID string) error
 	DeleteLocation(ctx context.Context, locationID string) error
+	DeleteObjective(ctx context.Context, objectiveID string) error
 	ResetTeams(ctx context.Context, instanceID string, runCodes []string) error
 	DeleteTeams(ctx context.Context, instanceID string, teamIDs []string) error
 	DeleteUser(ctx context.Context, userID string) error
@@ -295,6 +296,7 @@ type Handler struct {
 	questService            QuestService
 	instanceSettingsService QuestSettingsService
 	locationService         services.LocationService
+	objectiveService        services.ObjectiveService
 	markerService           MarkerService
 	navigationService       NavigationService
 	notificationService     NotificationService
@@ -326,6 +328,7 @@ func NewAdminHandler(
 	questService QuestService,
 	instanceSettingsService QuestSettingsService,
 	locationService services.LocationService,
+	objectiveService services.ObjectiveService,
 	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService NotificationService,
@@ -356,6 +359,7 @@ func NewAdminHandler(
 		questService:            questService,
 		instanceSettingsService: instanceSettingsService,
 		locationService:         locationService,
+		objectiveService:        objectiveService,
 		markerService:           markerService,
 		navigationService:       navigationService,
 		notificationService:     notificationService,

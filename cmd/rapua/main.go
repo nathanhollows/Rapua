@@ -121,6 +121,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
 	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
+	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 
 	gameStructureService.SetRelationLoader(locationService)
 
@@ -193,7 +194,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
 		gameStructureService, instanceRepo, questService, instanceSettingsService,
-		locationService, markerService, navigationService, notificationService,
+		locationService, objectiveService, markerService, navigationService, notificationService,
 		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,
 	)

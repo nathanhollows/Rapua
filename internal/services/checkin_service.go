@@ -65,7 +65,6 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locatio
 		return fmt.Errorf("loading relations: %w", err)
 	}
 
-	// Check if the team must scan out
 	if team.MustCheckOut == "" {
 		return ErrUnecessaryCheckOut
 	} else if team.MustCheckOut != location.ID {
@@ -89,24 +88,21 @@ func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locatio
 		return ErrUnfinishedCheckIn
 	}
 
-	// Award base points on checkout completion
+	// Award base points on checkout completion.
 	team.Points += location.Points
 
-	// Log the scan out and get the updated CheckIn record
 	checkIn, err := s.checkOut(ctx, team, location)
 	if err != nil {
 		return fmt.Errorf("logging scan out: %w", err)
 	}
 
-	// Update the CheckIn record to include the base points
-	// This ensures the CheckIn record shows the total points earned from this location
+	// The CheckIn record must show the total points earned from this location.
 	checkIn.Points += location.Points
 	err = s.checkInRepo.Update(ctx, &checkIn)
 	if err != nil {
 		return fmt.Errorf("updating check in points: %w", err)
 	}
 
-	// Update team with the awarded points
 	err = s.teamRepo.Update(ctx, team)
 	if err != nil {
 		return fmt.Errorf("updating team points: %w", err)
@@ -124,7 +120,6 @@ func (s *CheckInService) CompleteBlocks(ctx context.Context, runCode string, loc
 		return fmt.Errorf("finding check in: %w", err)
 	}
 
-	// If the check in is already complete, return early
 	if checkIn.BlocksCompleted {
 		return nil
 	}
@@ -138,7 +133,6 @@ func (s *CheckInService) CompleteBlocks(ctx context.Context, runCode string, loc
 	return nil
 }
 
-// CheckOut logs a check out for a team at a location.
 func (s *CheckInService) checkOut(
 	ctx context.Context,
 	team *models.Run,
@@ -149,8 +143,7 @@ func (s *CheckInService) checkOut(
 		return models.CheckIn{}, fmt.Errorf("checking out: %w", err)
 	}
 
-	// Update location statistics
-	// TotalVisits was already incremented on check-in, so we need to account for completed visits
+	// TotalVisits was already incremented on check-in, so we need to account for completed visits.
 	// completedVisitsBefore = TotalVisits - CurrentCount (teams still checked in)
 	// newAverage = (oldAverage * completedVisitsBefore + newDuration) / (completedVisitsBefore + 1)
 	completedVisitsBefore := location.TotalVisits - location.CurrentCount
@@ -164,7 +157,6 @@ func (s *CheckInService) checkOut(
 		return models.CheckIn{}, fmt.Errorf("updating location: %w", err)
 	}
 
-	// Update team
 	team.MustCheckOut = ""
 	err = s.teamRepo.Update(ctx, team)
 	if err != nil {
@@ -184,7 +176,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		return nil, nil, errors.New("blockID must be set")
 	}
 
-	// Check if we're in preview mode - preview mode should use fresh mock state
+	// Preview mode should use fresh mock state.
 	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
 
 	var block blocks.Block
@@ -192,7 +184,6 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	var err error
 
 	if isPreview {
-		// In preview mode, always get a fresh block and create a new mock state
 		block, err = s.blockService.GetByBlockID(ctx, blockID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
@@ -203,7 +194,6 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
 		}
 	} else {
-		// In regular mode, get the existing block and state
 		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndRunCode(ctx, blockID, team.Code, team.QuestID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("getting block with state: %w", err)
@@ -218,19 +208,17 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		return nil, nil, errors.New("block state not found")
 	}
 
-	// In regular mode, return early if already complete to prevent duplicate points
-	// Preview mode always uses fresh state so this check is not needed
+	// Prevent duplicate points for completed blocks in regular play.
 	if !isPreview && state.IsComplete() {
 		return state, block, nil
 	}
 
-	// Validate the block
 	state, err = block.ValidatePlayerInput(state, data)
 	if err != nil {
 		return nil, nil, fmt.Errorf("validating block: %w", err)
 	}
 
-	// Only persist state changes in regular mode, not in preview mode
+	// Preview never persists state.
 	if !isPreview {
 		state, err = s.blockService.UpdateState(ctx, state)
 		if err != nil {
@@ -241,7 +229,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		}
 	}
 
-	// Only award points and update check-ins in regular mode, not preview mode
+	// Preview never awards points.
 	if !isPreview && state.IsComplete() {
 		blockContext, err := s.blockService.GetBlockContext(ctx, blockID)
 		if err != nil {
@@ -255,7 +243,6 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	return state, block, nil
 }
 
-// writeSetsVars writes block sets variables to the var-state store after block completion.
 func (s *CheckInService) writeSetsVars(
 	ctx context.Context,
 	team models.Run,
@@ -335,6 +322,13 @@ func (s *CheckInService) awardPointsAndComplete(
 func (s *CheckInService) CompleteObjectiveContext(
 	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
 ) error {
+	// Preview runs have no matching row in runs, and objective_context_completions.run_code
+	// has a real FK to it: logging completion for a preview run would violate that
+	// constraint. Preview has no real completion state to log anyway.
+	if ctx.Value(contextkeys.PreviewKey) != nil {
+		return nil
+	}
+
 	resolver, err := s.newTeamResolver(ctx, team)
 	if err != nil {
 		return err

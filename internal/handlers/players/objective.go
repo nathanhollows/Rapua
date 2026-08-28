@@ -17,7 +17,7 @@ import (
 // unproven, reveal content once proof completes.
 func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
-		h.handleError(w, r, "ObjectiveView: preview mode is unavailable", "Objective preview is unavailable")
+		h.objectivePreview(w, r)
 		return
 	}
 
@@ -148,5 +148,59 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	err = templates.Layout(c, objective.Title, team.Messages).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering objective view", "error", err.Error())
+	}
+}
+
+// objectivePreview shows a player preview of the given objective's proof or
+// reveal zone. Unlike the normal path, it never calls
+// IsObjectiveContextPending/CompleteObjectiveContext: there's no real
+// completion state for a preview run, so the zone is chosen directly from the
+// ?zone= query param (defaulting to proof) and blocks are rendered with
+// mocked, unpersisted states, mirroring checkInPreview.
+func (h *PlayerHandler) objectivePreview(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	team, err := h.getRunFromContext(r.Context())
+	if err != nil {
+		h.handleError(w, r, "ObjectivePreview: getting team", "Error getting team", "error", err)
+		return
+	}
+
+	objective, err := h.checkInService.GetObjectiveByQuestIDAndSlug(r.Context(), team.QuestID, slug)
+	if err != nil {
+		h.handleError(w, r, "ObjectivePreview: finding objective", "Objective not found", "error", err)
+		return
+	}
+
+	zone := blocks.ContextObjectiveProof
+	if r.URL.Query().Get("zone") == "reveal" {
+		zone = blocks.ContextObjectiveReveal
+	}
+
+	contentBlocks, err := h.blockService.FindByOwnerIDAndContext(r.Context(), objective.ID, zone)
+	if err != nil {
+		h.handleError(w, r, "ObjectivePreview: getting blocks", "Error getting blocks", "error", err)
+		return
+	}
+
+	blockStates := make(map[string]blocks.PlayerState, len(contentBlocks))
+	for _, block := range contentBlocks {
+		blockStates[block.GetID()], err = h.blockService.NewMockBlockState(r.Context(), block.GetID(), "", "")
+		if err != nil {
+			h.handleError(w, r, "ObjectivePreview: creating block state", "Error creating block state", "error", err)
+			return
+		}
+	}
+
+	data := templates.ObjectiveViewData{
+		Settings: team.Quest.Settings,
+		Zone:     zone,
+		Blocks:   contentBlocks,
+		States:   blockStates,
+	}
+
+	err = templates.ObjectiveView(data).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ObjectivePreview: rendering template", "error", err)
 	}
 }

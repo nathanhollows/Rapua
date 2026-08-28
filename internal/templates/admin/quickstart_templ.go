@@ -50,13 +50,13 @@ func QuickstartBar(quest models.Quest) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			if len(quest.Locations) > 0 {
-				templ_7745c5c3_Err = completedStep("Add a Location").Render(ctx, templ_7745c5c3_Buffer)
+			if len(quest.Objectives) > 0 {
+				templ_7745c5c3_Err = completedStep("Add an Objective").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = nextStep(2, "Add a Location", "/admin/quest/new", quest.ID == "").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = nextStep(2, "Add an Objective", "/admin/quest/new-objective", quest.ID == "").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

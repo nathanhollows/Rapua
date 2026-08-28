@@ -181,11 +181,13 @@ func (r *blockRepository) GetContext(ctx context.Context, blockID string) (block
 	return modelBlock.Context, nil
 }
 
-// UserOwnsBlock checks if a user owns a block by checking ownership of the block's owner (instance or location).
+// UserOwnsBlock: owner_id may be an instance, location, or objective.
 func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
 	// Query to check block ownership through instances
 	// For start/complete blocks: owner_id IS the quest_id
 	// For location blocks: owner_id IS the location_id, which belongs to an instance
+	// For objective blocks: owner_id IS the objective_id, which belongs to an instance.
+	objectiveContexts := []blocks.BlockContext{blocks.ContextObjectiveProof, blocks.ContextObjectiveReveal}
 	count, err := r.db.NewSelect().
 		Model((*models.Block)(nil)).
 		ColumnExpr("1").
@@ -201,10 +203,22 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 						).
 						Where("owner_id IN (SELECT id FROM quests WHERE user_id = ?)", userID)
 				}).
-				// Location-owned blocks (all other contexts)
+				// Objective-owned blocks (proof/reveal contexts).
 				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
 					return q.
-						Where("context NOT IN (?)", bun.In([]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish})).
+						Where("context IN (?)", bun.In(objectiveContexts)).
+						Where("owner_id IN (SELECT id FROM objectives WHERE quest_id IN (SELECT id FROM quests WHERE user_id = ?))", userID)
+				}).
+				// Location-owned blocks (everything else).
+				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
+					return q.
+						Where(
+							"context NOT IN (?)",
+							bun.In(append(
+								[]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish},
+								objectiveContexts...,
+							)),
+						).
 						Where("owner_id IN (SELECT id FROM locations WHERE quest_id IN (SELECT id FROM quests WHERE user_id = ?))", userID)
 				})
 		}).

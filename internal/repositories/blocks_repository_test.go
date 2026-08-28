@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -608,6 +609,59 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		owns, err := repo.UserOwnsBlock(ctx, parents.UserID, block.GetID())
 		require.NoError(t, err)
 		assert.True(t, owns, "User should own their instance's location blocks")
+	})
+
+	t.Run("user owns objective block through instances and objectives", func(t *testing.T) {
+		parents := createTestParents(t, dbc)
+		objective := &models.Objective{
+			ID:      gofakeit.UUID(),
+			QuestID: parents.QuestID,
+			Slug:    gofakeit.Word() + "-objective",
+			Title:   gofakeit.Sentence(3),
+		}
+		_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+		require.NoError(t, err)
+
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				OwnerID: objective.ID,
+				Type:    "text",
+				Points:  0,
+			},
+		), objective.ID, blocks.ContextObjectiveProof)
+		require.NoError(t, err)
+
+		owns, err := repo.UserOwnsBlock(ctx, parents.UserID, block.GetID())
+		require.NoError(t, err)
+		assert.True(t, owns, "User should own their instance's objective blocks")
+	})
+
+	t.Run("user does not own objective block from different user's instance", func(t *testing.T) {
+		otherParents := createTestParents(t, dbc)
+		userID := gofakeit.UUID()
+		insertUserWithID(t, dbc, userID)
+
+		objective := &models.Objective{
+			ID:      gofakeit.UUID(),
+			QuestID: otherParents.QuestID,
+			Slug:    gofakeit.Word() + "-objective",
+			Title:   gofakeit.Sentence(3),
+		}
+		_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+		require.NoError(t, err)
+
+		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
+			blocks.BaseBlock{
+				OwnerID: objective.ID,
+				Type:    "text",
+				Points:  0,
+			},
+		), objective.ID, blocks.ContextObjectiveReveal)
+		require.NoError(t, err)
+
+		owns, err := repo.UserOwnsBlock(ctx, userID, block.GetID())
+		require.NoError(t, err)
+		assert.False(t, owns, "User should not own another user's instance objective blocks")
 	})
 
 	t.Run("user does not own block from different user's instance", func(t *testing.T) {
