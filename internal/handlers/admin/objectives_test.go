@@ -140,6 +140,98 @@ func TestObjectiveNew(t *testing.T) {
 	assert.Contains(t, quest.GameStructure.ObjectiveIDs, objective.ID, "new objective must land in the root group")
 }
 
+// Proves ObjectiveNew honors afterObjectiveId/beforeObjectiveId (the insert-zone
+// position params), not just groupId's append-to-end path covered above.
+func TestObjectiveNew_PositionedInGroup(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	existing1, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 1")
+	require.NoError(t, err)
+	existing2, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 2")
+	require.NoError(t, err)
+
+	groupID := "test-group"
+	user.CurrentQuest.GameStructure.SubGroups = []models.GameStructure{
+		{
+			ID:           groupID,
+			Name:         "Test Group",
+			Color:        "primary",
+			ObjectiveIDs: []string{existing1.ID, existing2.ID},
+		},
+	}
+	require.NoError(t, h.gameStructureService.Save(ctx, user.CurrentQuestID, &user.CurrentQuest.GameStructure))
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
+	req.URL.RawQuery = url.Values{
+		"groupId":          {groupID},
+		"afterObjectiveId": {existing1.ID},
+	}.Encode()
+	req = withObjectiveUser(req, user)
+
+	w := httptest.NewRecorder()
+	h.ObjectiveNew(w, req)
+
+	quest, err := h.questService.GetByID(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	require.Len(t, quest.GameStructure.SubGroups, 1)
+
+	objectiveIDs := quest.GameStructure.SubGroups[0].ObjectiveIDs
+	require.Len(t, objectiveIDs, 3)
+	assert.Equal(t, existing1.ID, objectiveIDs[0])
+	assert.Equal(t, existing2.ID, objectiveIDs[2], "new objective must land between existing1 and existing2, not appended to the end")
+}
+
+// Covers the before-branch specifically: InsertObjectiveIntoGroup's before/after
+// cases have independent fallback behavior (prepend vs. append on a missing
+// anchor), and the UI's own "before first item" zone only ever sends
+// beforeObjectiveId, so a regression isolated to that branch needs its own test.
+func TestObjectiveNew_PositionedInGroup_Before(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	existing1, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 1")
+	require.NoError(t, err)
+	existing2, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 2")
+	require.NoError(t, err)
+
+	groupID := "test-group"
+	user.CurrentQuest.GameStructure.SubGroups = []models.GameStructure{
+		{
+			ID:           groupID,
+			Name:         "Test Group",
+			Color:        "primary",
+			ObjectiveIDs: []string{existing1.ID, existing2.ID},
+		},
+	}
+	require.NoError(t, h.gameStructureService.Save(ctx, user.CurrentQuestID, &user.CurrentQuest.GameStructure))
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
+	req.URL.RawQuery = url.Values{
+		"groupId":           {groupID},
+		"beforeObjectiveId": {existing2.ID},
+	}.Encode()
+	req = withObjectiveUser(req, user)
+
+	w := httptest.NewRecorder()
+	h.ObjectiveNew(w, req)
+
+	quest, err := h.questService.GetByID(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	require.Len(t, quest.GameStructure.SubGroups, 1)
+
+	objectiveIDs := quest.GameStructure.SubGroups[0].ObjectiveIDs
+	require.Len(t, objectiveIDs, 3)
+	assert.Equal(t, existing1.ID, objectiveIDs[0])
+	assert.Equal(t, existing2.ID, objectiveIDs[2], "new objective must land between existing1 and existing2, not appended to the end")
+}
+
 func TestObjectiveEdit(t *testing.T) {
 	dbc, cleanup := setupObjectiveTestDB(t)
 	defer cleanup()

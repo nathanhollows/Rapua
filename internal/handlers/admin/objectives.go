@@ -23,13 +23,13 @@ func (h *Handler) ObjectiveNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Objective rows have no insert-zone position in the quest tree: they are
-	// read-only, so every placement appends.
 	groupID := r.URL.Query().Get("groupId")
+	afterObjectiveID := r.URL.Query().Get("afterObjectiveId")
+	beforeObjectiveID := r.URL.Query().Get("beforeObjectiveId")
 
 	if groupID != "" {
 		if err = h.gameStructureService.InsertObjectiveIntoGroup(
-			r.Context(), user.CurrentQuestID, objective.ID, groupID, "", "",
+			r.Context(), user.CurrentQuestID, objective.ID, groupID, afterObjectiveID, beforeObjectiveID,
 		); err != nil {
 			h.logger.ErrorContext(
 				r.Context(),

@@ -140,7 +140,7 @@ templ locationGroup(group models.GameStructure, settings models.QuestSettings) {
 		</div>
 		<div class="locations-area flex flex-col mb-6 w-full bg-base-300 rounded-2xl overflow-hidden saturate-0" data-unassigned="true" data-route-mode={ string(group.Routing) }>
 			for _, location := range group.Locations {
-				@locationItem(*location, settings, "")
+				@locationItem(*location, settings)
 			}
 			for _, objective := range group.Objectives {
 				@objectiveItem(*objective, settings)
@@ -172,17 +172,17 @@ templ locationGroup(group models.GameStructure, settings models.QuestSettings) {
 						end
 					"
 				>
-					if len(group.Locations) > 0 {
-						@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
-						for _, location := range group.Locations {
-							@locationItem(*location, settings, group.ID)
-							@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
-						}
-					} else if len(group.Objectives) == 0 {
-						@locationInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
+					for _, location := range group.Locations {
+						@locationItem(*location, settings)
 					}
-					for _, objective := range group.Objectives {
-						@objectiveItem(*objective, settings)
+					if len(group.Objectives) > 0 {
+						@objectiveInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s&beforeObjectiveId=%s", group.ID, group.Objectives[0].ID))
+						for _, objective := range group.Objectives {
+							@objectiveItem(*objective, settings)
+							@objectiveInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s&afterObjectiveId=%s", group.ID, objective.ID))
+						}
+					} else {
+						@objectiveInsertZone(fmt.Sprintf("/admin/objective/new?groupId=%s", group.ID))
 					}
 				</div>
 				<!-- Subgroups area within group - always show -->
@@ -209,28 +209,11 @@ templ groupInsertZone() {
 	</div>
 }
 
-templ locationItem(location models.Location, settings models.QuestSettings, groupID string) {
+templ locationItem(location models.Location, settings models.QuestSettings) {
 	<div
 		class="location-item relative bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30"
 		data-location-id={ location.ID }
 		data-search-text={ location.Name }
-		if groupID != "" {
-			_="on mousemove(clientY)
-				js(me, clientY)
-					const rect = me.getBoundingClientRect();
-					const isTop = clientY < rect.top + rect.height / 2;
-					const prev = me.previousElementSibling;
-					const next = me.nextElementSibling;
-					// Clear all zones in container first
-					me.closest('.locations-area').querySelectorAll('.loc-insert-zone').forEach(z => z.classList.remove('zone-visible'));
-					if (isTop && prev && prev.classList.contains('loc-insert-zone')) {
-						prev.classList.add('zone-visible');
-					} else if (!isTop && next && next.classList.contains('loc-insert-zone')) {
-						next.classList.add('zone-visible');
-					}
-				end
-			"
-		}
 	>
 		<div class="loc flex items-center gap-3">
 			<div class="tooltip tooltip-right" data-tip="Drag to reorder location">
@@ -259,15 +242,30 @@ templ locationItem(location models.Location, settings models.QuestSettings, grou
 	</div>
 }
 
-// objectiveItem is a read-only row: no drag handle, since reorder/move
-// between groups isn't wired for objectives yet (the JS structure encoder
-// doesn't emit objective_ids). Click-through to the edit page only.
 templ objectiveItem(objective models.Objective, settings models.QuestSettings) {
 	<div
 		class="objective-item relative bg-base-100/60 hover:bg-base-200/60 p-4 border border-primary/30"
 		data-objective-id={ objective.ID }
+		_="on mousemove(clientY)
+			js(me, clientY)
+				const rect = me.getBoundingClientRect();
+				const isTop = clientY < rect.top + rect.height / 2;
+				const prev = me.previousElementSibling;
+				const next = me.nextElementSibling;
+				// Clear all zones in container first
+				me.closest('.locations-area').querySelectorAll('.loc-insert-zone').forEach(z => z.classList.remove('zone-visible'));
+				if (isTop && prev && prev.classList.contains('loc-insert-zone')) {
+					prev.classList.add('zone-visible');
+				} else if (!isTop && next && next.classList.contains('loc-insert-zone')) {
+					next.classList.add('zone-visible');
+				}
+			end
+		"
 	>
 		<div class="loc flex items-center gap-3">
+			<div class="tooltip tooltip-right" data-tip="Drag to reorder objective">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical text-base-content cursor-move objective-drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+			</div>
 			<div class="tooltip tooltip-right" data-tip="Objective">
 				@icon("target", templ.Attributes{"class": "w-4 h-4 text-base-content/60"})
 			</div>
@@ -372,14 +370,14 @@ templ completionCount(group models.GameStructure) {
 	<div class="dropdown dropdown-bottom dropdown-center completion-dropdown" data-completion-type={ getCompletionTypeAttr(group) }>
 		<a tabindex="0" role="button" class="btn btn-sm btn-ghost tooltip" data-tip="Completion requirement">
 			<span class="completion-button-icon">
-				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= totalGroupItems(group) {
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check-icon lucide-check-check"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
 				} else {
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"></path></svg>
 				}
 			</span>
 			<span class="completion-button-text">
-				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+				if group.CompletionType == models.CompletionAll || group.MinimumRequired >= totalGroupItems(group) {
 					Complete All
 				} else {
 					Complete { fmt.Sprint(group.MinimumRequired) }
@@ -395,7 +393,7 @@ templ completionCount(group models.GameStructure) {
 					<input
 						type="range"
 						min="1"
-						max={ fmt.Sprint(len(group.Locations)) }
+						max={ fmt.Sprint(totalGroupItems(group)) }
 						value={ getCompletionValue(group) }
 						class="range range-primary range-sm flex-1 completion-slider"
 						aria-label="Number of locations required to complete this group"
@@ -431,7 +429,7 @@ templ completionCount(group models.GameStructure) {
 								js window.debouncedSave() end"
 					/>
 					<output class="badge badge-sm badge-primary min-w-[3rem] text-center">
-						if group.CompletionType == models.CompletionAll || group.MinimumRequired >= len(group.Locations) {
+						if group.CompletionType == models.CompletionAll || group.MinimumRequired >= totalGroupItems(group) {
 							All
 						} else {
 							{ fmt.Sprint(group.MinimumRequired) }
@@ -728,11 +726,18 @@ func colours() []string {
 	}
 }
 
+// totalGroupItems counts everything completion requirements are set against.
+// Location and Objective are mutually exclusive in practice for one group,
+// but summing handles the transitional/mixed case without a branch.
+func totalGroupItems(group models.GameStructure) int {
+	return len(group.Locations) + len(group.Objectives)
+}
+
 func getCompletionValue(group models.GameStructure) string {
 	if group.CompletionType == models.CompletionMinimum && group.MinimumRequired > 0 {
 		return fmt.Sprint(group.MinimumRequired)
 	}
-	return fmt.Sprint(len(group.Locations))
+	return fmt.Sprint(totalGroupItems(group))
 }
 
 func getCompletionTypeAttr(group models.GameStructure) string {
@@ -780,15 +785,15 @@ templ picker(colour string) {
 	</div>
 }
 
-templ locationInsertZone(href string) {
+templ objectiveInsertZone(href string) {
 	<div class="loc-insert-zone h-0 overflow-visible relative flex justify-center z-10">
 		<a
 			href={ templ.SafeURL(href) }
 			hx-boost="true"
 			class="loc-insert-btn absolute -translate-y-1/2 btn btn-xs btn-primary shadow whitespace-nowrap"
 		>
-			@icon("map-pin-plus", templ.Attributes{"class": "w-3 h-3"})
-			Insert location
+			@icon("target", templ.Attributes{"class": "w-3 h-3"})
+			Insert objective
 		</a>
 	</div>
 }
@@ -880,6 +885,7 @@ templ sortableScript() {
 				auto_advance: false,
 				is_root: true,
 				location_ids: [],
+				objective_ids: [],
 				sub_groups: []
 			};
 
@@ -891,6 +897,14 @@ templ sortableScript() {
 					const locationId = item.dataset.locationId;
 					if (locationId) {
 						structure.location_ids.push(locationId);
+					}
+				});
+
+				const objectiveItems = unassignedLocationsArea.querySelectorAll(':scope > .objective-item');
+				objectiveItems.forEach(item => {
+					const objectiveId = item.dataset.objectiveId;
+					if (objectiveId) {
+						structure.objective_ids.push(objectiveId);
 					}
 				});
 			}
@@ -973,6 +987,7 @@ templ sortableScript() {
 				auto_advance: autoAdvance,
 				is_root: false,
 				location_ids: [],
+				objective_ids: [],
 				sub_groups: []
 			};
 
@@ -985,10 +1000,18 @@ templ sortableScript() {
 						group.location_ids.push(locationId);
 					}
 				});
+
+				const objectiveItems = locationsArea.querySelectorAll(':scope > .objective-item');
+				objectiveItems.forEach(item => {
+					const objectiveId = item.dataset.objectiveId;
+					if (objectiveId) {
+						group.objective_ids.push(objectiveId);
+					}
+				});
 			}
 
-			// Edge case: If group has no locations, ensure minimumRequired is 0
-			if (group.location_ids.length === 0) {
+			// Edge case: If group has no locations or objectives, ensure minimumRequired is 0
+			if (group.location_ids.length === 0 && group.objective_ids.length === 0) {
 				group.minimum_required = 0;
 				group.completion_type = 'all'; // Default for empty groups
 			}
@@ -1012,26 +1035,31 @@ templ sortableScript() {
 		function updateCompletionSlider(groupCard) {
 			const locationsArea = groupCard.querySelector('.locations-area');
 			const slider = groupCard.querySelector('.completion-slider');
-			const output = groupCard.querySelector('.completion-dropdown output');
-			const buttonText = groupCard.querySelector('.completion-button-text');
-			const buttonIcon = groupCard.querySelector('.completion-button-icon');
+			const dropdown = groupCard.querySelector('.completion-dropdown');
 
-			if (!locationsArea || !slider) return;
+			if (!locationsArea || !slider || !dropdown) return;
 
-			const locationCount = locationsArea.querySelectorAll('.location-item').length;
+			const itemCount = locationsArea.querySelectorAll('.location-item, .objective-item').length;
 			const oldMax = parseInt(slider.max);
 			const currentValue = parseInt(slider.value);
 
 			// Update max value
-			slider.max = locationCount;
+			slider.max = itemCount;
 
-			// If current value equals or exceeds new max, set to max (All)
-			if (currentValue >= locationCount || currentValue === oldMax) {
-				slider.value = locationCount;
-				if (output) output.textContent = 'All';
-				if (buttonText) buttonText.textContent = 'Complete All';
-				if (buttonIcon) {
-					buttonIcon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-check-check-icon lucide-check-check'><path d='M18 6 7 17l-5-5'/><path d='m22 10-7.5 7.5L13 16'/></svg>`;
+			// If current value equals or exceeds new max, set to max (All).
+			// Reaching max via a drag-induced clamp is treated the same as the
+			// user manually dragging the slider to max (see the slider's own
+			// on-input handler): switch to "Complete All" mode, not just the
+			// display, so dataset.completionType and auto-advance stay in sync
+			// with what saveGameStructure() is about to encode.
+			if (currentValue >= itemCount || currentValue === oldMax) {
+				slider.value = itemCount;
+				dropdown.dataset.completionType = 'all';
+				updateCompletionButton(dropdown, 'all', null);
+				const autoAdvanceCheckbox = dropdown.querySelector('.auto-advance-checkbox');
+				if (autoAdvanceCheckbox) {
+					autoAdvanceCheckbox.checked = true;
+					autoAdvanceCheckbox.disabled = true;
 				}
 			}
 		}
@@ -1045,7 +1073,7 @@ templ sortableScript() {
 			}
 
 			// Validate structure has valid data
-			if (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0)) {
+			if (!structure.id || (structure.sub_groups.length === 0 && structure.location_ids.length === 0 && structure.objective_ids.length === 0)) {
 				console.warn('Structure has no groups or locations, skipping save');
 				return;
 			}
@@ -1072,24 +1100,25 @@ templ sortableScript() {
 			// Remove all existing insert zones
 			container.querySelectorAll(':scope > .loc-insert-zone').forEach(z => z.remove());
 
-			// Objective rows are read-only, but they still count toward "is this
-			// group empty": an objective-only group must not get a stray zone.
-			const items = container.querySelectorAll(':scope > .location-item');
+			// Zones are positioned among objectives only: locations can no longer
+			// be created, so they get no insert zones of their own (dragging/
+			// reordering them still works without any). A group with zero
+			// objectives always gets a single zone regardless of whether it has
+			// locations, so there's still a way to add its first objective.
+			const items = container.querySelectorAll(':scope > .objective-item');
 			if (items.length === 0) {
-				if (container.querySelectorAll(':scope > .objective-item').length > 0) return;
-				// Empty group: single zone
 				const zone = createInsertZone('/admin/objective/new?groupId=' + groupId);
 				container.appendChild(zone);
 				return;
 			}
 
 			// Zone before first item
-			const firstZone = createInsertZone('/admin/objective/new?groupId=' + groupId);
+			const firstZone = createInsertZone('/admin/objective/new?groupId=' + groupId + '&beforeObjectiveId=' + items[0].dataset.objectiveId);
 			container.insertBefore(firstZone, items[0]);
 
 			// Zone after each item
 			items.forEach(function(item, i) {
-				const zone = createInsertZone('/admin/objective/new?groupId=' + groupId);
+				const zone = createInsertZone('/admin/objective/new?groupId=' + groupId + '&afterObjectiveId=' + item.dataset.objectiveId);
 				if (item.nextSibling) {
 					container.insertBefore(zone, item.nextSibling);
 				} else {
@@ -1102,7 +1131,7 @@ templ sortableScript() {
 		function createInsertZone(href) {
 			const zone = document.createElement('div');
 			zone.className = 'loc-insert-zone h-0 overflow-visible relative flex justify-center z-10';
-			zone.innerHTML = '<a href="' + href + '" data-hx-boost="true" class="loc-insert-btn absolute -translate-y-1/2 btn btn-xs btn-primary shadow whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"></path><circle cx="12" cy="10" r="3"></circle><path d="M16 18h6"></path><path d="M19 15v6"></path></svg> Insert location</a>';
+			zone.innerHTML = '<a href="' + href + '" data-hx-boost="true" class="loc-insert-btn absolute -translate-y-1/2 btn btn-xs btn-primary shadow whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> Insert objective</a>';
 			htmx.process(zone);
 			return zone;
 		}
@@ -1172,7 +1201,7 @@ templ sortableScript() {
 			el.sortableInstance = new Sortable(el, {
 				group: 'locations',
 				animation: 150,
-				draggable: '.location-item',
+				draggable: '.location-item, .objective-item',
 				ghostClass: 'sortable-ghost',
 				chosenClass: 'sortable-chosen',
 				dragClass: 'sortable-drag',
@@ -1215,7 +1244,7 @@ templ sortableScript() {
 					chosenClass: 'sortable-chosen',
 					dragClass: 'sortable-drag',
 					invertSwap: true,
-					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .locations-area, .group-insert-zone',
+					filter: 'a:not(.tooltip), button, input, select, textarea, [contenteditable], .badge, .dropdown, .location-item, .objective-item, .locations-area, .group-insert-zone',
 					preventOnFilter: false,
 					onEnd: function(evt) {
 						reinitGroupInsertZones();
