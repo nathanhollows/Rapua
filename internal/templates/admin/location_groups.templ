@@ -252,7 +252,7 @@ templ objectiveItem(objective models.Objective, settings models.QuestSettings) {
 				const isTop = clientY < rect.top + rect.height / 2;
 				const prev = me.previousElementSibling;
 				const next = me.nextElementSibling;
-				// Clear all zones in container first
+				// Clear all zones in container first.
 				me.closest('.locations-area').querySelectorAll('.loc-insert-zone').forEach(z => z.classList.remove('zone-visible'));
 				if (isTop && prev && prev.classList.contains('loc-insert-zone')) {
 					prev.classList.add('zone-visible');
@@ -1010,7 +1010,7 @@ templ sortableScript() {
 				});
 			}
 
-			// Edge case: If group has no locations or objectives, ensure minimumRequired is 0
+			// Edge case: If group has no locations or objectives, ensure minimumRequired is 0.
 			if (group.location_ids.length === 0 && group.objective_ids.length === 0) {
 				group.minimum_required = 0;
 				group.completion_type = 'all'; // Default for empty groups
