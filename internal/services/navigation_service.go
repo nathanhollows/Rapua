@@ -18,16 +18,20 @@ import (
 
 var (
 	ErrAllLocationsVisited = errors.New("all locations visited")
-	ErrInstanceNotFound    = errors.New("instance not found")
+	// ErrAllObjectivesVisited mirrors ErrAllLocationsVisited for objective-built quests.
+	ErrAllObjectivesVisited = errors.New("all objectives visited")
+	ErrInstanceNotFound     = errors.New("instance not found")
 )
 
 type NavigationService struct {
-	locationRepo         repositories.LocationRepository
-	teamRepo             repositories.RunRepository
-	varStateRepo         repositories.RunVarStateRepository
-	gameStructureService *GameStructureService
-	blockService         *BlockService
-	logger               *slog.Logger
+	locationRepo                   repositories.LocationRepository
+	objectiveRepo                  repositories.ObjectiveRepository
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	teamRepo                       repositories.RunRepository
+	varStateRepo                   repositories.RunVarStateRepository
+	gameStructureService           *GameStructureService
+	blockService                   *BlockService
+	logger                         *slog.Logger
 }
 
 // PlayerNavigationView contains all data needed to render the player navigation UI.
@@ -49,9 +53,24 @@ type PlayerNavigationView struct {
 	BlockStates map[string]blocks.PlayerState // States for navigation blocks
 }
 
+// PlayerObjectiveView is PlayerNavigationView's Objective-ID counterpart. It drops
+// MustCheckOut/BlockingLocation (no equivalent mechanic for objectives) and Blocks/
+// BlockStates (the /objectives list renders objective titles only, no block content,
+// unlike /next's per-location clue rendering).
+type PlayerObjectiveView struct {
+	Settings models.QuestSettings
+
+	CurrentGroup    *models.GameStructure
+	CanAdvanceEarly bool
+
+	NextObjectives []models.Objective
+}
+
 // NewNavigationService creates a NavigationService.
 func NewNavigationService(
 	locationRepo repositories.LocationRepository,
+	objectiveRepo repositories.ObjectiveRepository,
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 	teamRepo repositories.RunRepository,
 	varStateRepo repositories.RunVarStateRepository,
 	gameStructureService *GameStructureService,
@@ -59,12 +78,14 @@ func NewNavigationService(
 	logger *slog.Logger,
 ) *NavigationService {
 	return &NavigationService{
-		locationRepo:         locationRepo,
-		teamRepo:             teamRepo,
-		varStateRepo:         varStateRepo,
-		gameStructureService: gameStructureService,
-		blockService:         blockService,
-		logger:               logger,
+		locationRepo:                   locationRepo,
+		objectiveRepo:                  objectiveRepo,
+		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		teamRepo:                       teamRepo,
+		varStateRepo:                   varStateRepo,
+		gameStructureService:           gameStructureService,
+		blockService:                   blockService,
+		logger:                         logger,
 	}
 }
 
@@ -109,6 +130,46 @@ func filterLocationsByWhen(locs []models.Location, resolver game.VarResolver) []
 	for _, loc := range locs {
 		if game.EvaluateWhen(loc.When, resolver) {
 			out = append(out, loc)
+		}
+	}
+	return out
+}
+
+// filterGameStructureForObjectives is filterGameStructure's Objective-ID counterpart.
+func filterGameStructureForObjectives(
+	gs models.GameStructure,
+	resolver game.VarResolver,
+	hiddenObjectiveIDs map[string]bool,
+) models.GameStructure {
+	filtered := gs
+
+	if len(hiddenObjectiveIDs) > 0 && len(gs.ObjectiveIDs) > 0 {
+		filteredIDs := make([]string, 0, len(gs.ObjectiveIDs))
+		for _, id := range gs.ObjectiveIDs {
+			if !hiddenObjectiveIDs[id] {
+				filteredIDs = append(filteredIDs, id)
+			}
+		}
+		filtered.ObjectiveIDs = filteredIDs
+	}
+
+	filtered.SubGroups = nil
+	for _, sub := range gs.SubGroups {
+		if game.EvaluateWhen(sub.When, resolver) {
+			filtered.SubGroups = append(
+				filtered.SubGroups, filterGameStructureForObjectives(sub, resolver, hiddenObjectiveIDs),
+			)
+		}
+	}
+	return filtered
+}
+
+// filterObjectivesByWhen is filterLocationsByWhen's Objective counterpart.
+func filterObjectivesByWhen(objs []models.Objective, resolver game.VarResolver) []models.Objective {
+	out := make([]models.Objective, 0, len(objs))
+	for _, obj := range objs {
+		if game.EvaluateWhen(obj.When, resolver) {
+			out = append(out, obj)
 		}
 	}
 	return out
@@ -296,6 +357,95 @@ func (s *NavigationService) GetPlayerNavigationView(
 	return view, nil
 }
 
+// GetPlayerObjectiveView is GetPlayerNavigationView's Objective-ID counterpart.
+func (s *NavigationService) GetPlayerObjectiveView(
+	ctx context.Context,
+	team *models.Run,
+) (*PlayerObjectiveView, error) {
+	if err := s.ensureObjectiveTeamRelationsLoaded(ctx, team); err != nil {
+		return nil, fmt.Errorf("loading team relations: %w", err)
+	}
+
+	view := &PlayerObjectiveView{
+		Settings: team.Quest.Settings,
+	}
+
+	runCount, countErr := s.teamRepo.CountByInstance(ctx, team.QuestID)
+	if countErr != nil {
+		runCount = 0
+		s.logger.WarnContext(ctx, "getting team count for visibility resolver",
+			"instance_id", team.QuestID, "error", countErr)
+	}
+	resolver := NewPlayerVarResolver(team, team.VarStates).WithRunCount(runCount)
+
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, team.QuestID)
+	if err != nil {
+		return nil, fmt.Errorf("loading quest objectives: %w", err)
+	}
+
+	hiddenObjectiveIDs := make(map[string]bool)
+	for _, obj := range objectives {
+		if !game.EvaluateWhen(obj.When, resolver) {
+			hiddenObjectiveIDs[obj.ID] = true
+		}
+	}
+
+	// Build a local copy of the team whose Quest.GameStructure has been filtered
+	// for visibility, mirroring GetPlayerNavigationView's own copy-not-mutate approach.
+	navTeam := team
+	if team.Quest.GameStructure.ID != "" {
+		navInstance := team.Quest
+		navInstance.GameStructure = filterGameStructureForObjectives(
+			team.Quest.GameStructure, resolver, hiddenObjectiveIDs,
+		)
+		navTeam = &models.Run{}
+		*navTeam = *team
+		navTeam.Quest = navInstance
+	}
+
+	var currentGroup *models.GameStructure
+	var objectiveIDs []string
+	if navTeam.Quest.GameStructure.ID != "" {
+		completedIDs, compErr := s.getCompletedObjectiveIDs(ctx, team.Code)
+		if compErr != nil {
+			return nil, fmt.Errorf("getting completed objective ids: %w", compErr)
+		}
+		currentGroupID := navigation.ComputeCurrentGroupForObjectives(
+			&navTeam.Quest.GameStructure,
+			completedIDs,
+			navTeam.SkippedGroupIDs,
+		)
+
+		if currentGroupID != "" {
+			currentGroup = navigation.FindGroupByID(&navTeam.Quest.GameStructure, currentGroupID)
+		}
+		view.CurrentGroup = currentGroup
+
+		view.CanAdvanceEarly = s.computeCanAdvanceEarlyForObjectives(currentGroup, completedIDs)
+
+		// Same navTeam (when-filtered) and completedIDs used above, not a second
+		// unfiltered fetch: see getValidObjectiveIDsFromGameStructure's doc comment.
+		objectiveIDs, err = s.getValidObjectiveIDsFromGameStructure(navTeam, completedIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	byID := make(map[string]models.Objective, len(objectives))
+	for _, obj := range objectives {
+		byID[obj.ID] = obj
+	}
+	nextObjectives := make([]models.Objective, 0, len(objectiveIDs))
+	for _, id := range objectiveIDs {
+		if obj, ok := byID[id]; ok {
+			nextObjectives = append(nextObjectives, obj)
+		}
+	}
+	view.NextObjectives = filterObjectivesByWhen(nextObjectives, resolver)
+
+	return view, nil
+}
+
 // determineNextLocations is the core logic for finding next locations without relation loading.
 func (s *NavigationService) determineNextLocations(ctx context.Context, team *models.Run) ([]models.Location, error) {
 	if err := s.validateTeamState(team); err != nil {
@@ -336,6 +486,31 @@ func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team 
 	return nil
 }
 
+// ensureObjectiveTeamRelationsLoaded is ensureTeamRelationsLoaded's Objective
+// counterpart: objective quests have no check-ins/blocking-location concept, so
+// team.CheckIns is always empty and ensureTeamRelationsLoaded's `len(team.CheckIns)
+// == 0` guard would never short-circuit, forcing a full LoadRelations (Quest,
+// CheckIns, BlockingLocation, Messages) on every single call. This skips the two
+// Location-only pieces (CheckIns, BlockingLocation) but keeps Messages: the
+// player handlers render team.Messages for the notification banner regardless
+// of quest type, and nothing else in the request populates it.
+func (s *NavigationService) ensureObjectiveTeamRelationsLoaded(ctx context.Context, team *models.Run) error {
+	if team.Quest.ID == "" {
+		if err := s.teamRepo.LoadQuest(ctx, team); err != nil {
+			return err
+		}
+	}
+	if err := s.teamRepo.LoadMessages(ctx, team); err != nil {
+		return fmt.Errorf("loading messages: %w", err)
+	}
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	if err != nil {
+		return fmt.Errorf("loading var states: %w", err)
+	}
+	team.VarStates = varStates
+	return nil
+}
+
 // computeCanAdvanceEarly returns true when the team has met the group minimum
 // but not all locations are complete, and AutoAdvance is disabled.
 func (s *NavigationService) computeCanAdvanceEarly(group *models.GameStructure, completedIDs []string) bool {
@@ -361,6 +536,77 @@ func (s *NavigationService) computeCanAdvanceEarly(group *models.GameStructure, 
 		isMinimumMet = completedCount >= group.MinimumRequired
 	}
 	return isMinimumMet && !allComplete
+}
+
+// computeCanAdvanceEarlyForObjectives is computeCanAdvanceEarly's Objective-ID counterpart.
+func (s *NavigationService) computeCanAdvanceEarlyForObjectives(group *models.GameStructure, completedIDs []string) bool {
+	if group == nil || group.AutoAdvance || len(group.ObjectiveIDs) == 0 {
+		return false
+	}
+	completedSet := make(map[string]bool, len(completedIDs))
+	for _, id := range completedIDs {
+		completedSet[id] = true
+	}
+	completedCount := 0
+	for _, objID := range group.ObjectiveIDs {
+		if completedSet[objID] {
+			completedCount++
+		}
+	}
+	allComplete := completedCount == len(group.ObjectiveIDs)
+	var isMinimumMet bool
+	switch group.CompletionType {
+	case models.CompletionAll:
+		isMinimumMet = allComplete
+	case models.CompletionMinimum:
+		isMinimumMet = completedCount >= group.MinimumRequired
+	}
+	return isMinimumMet && !allComplete
+}
+
+// getCompletedObjectiveIDs is getCompletedLocationIDs' Objective-ID counterpart: since
+// objective completion has no check-in step, the raw ingredient comes from the
+// append-only completion log instead of CheckIns.
+func (s *NavigationService) getCompletedObjectiveIDs(ctx context.Context, runCode string) ([]string, error) {
+	return s.objectiveContextCompletionRepo.FindCompletedObjectiveIDs(ctx, runCode, game.ContextObjectiveReveal)
+}
+
+// getValidObjectiveIDsFromGameStructure is getValidLocationsFromGameStructure's
+// Objective-ID counterpart. Returns objective IDs rather than hydrated objects:
+// unlike Location, hydration is a single batch FindByIDs call, done once by the caller.
+// completedIDs is passed in rather than fetched here: the caller already needs
+// it for CurrentGroup/CanAdvanceEarly, and this must run against the same
+// when-filtered structure the caller used for those, not a second unfiltered
+// fetch. Using two different structures for the two halves of one view is
+// how a hidden current-group objective went missing from NextObjectives while
+// CurrentGroup had already moved past it.
+func (s *NavigationService) getValidObjectiveIDsFromGameStructure(
+	team *models.Run,
+	completedIDs []string,
+) ([]string, error) {
+	currentGroupID := navigation.ComputeCurrentGroupForObjectives(
+		&team.Quest.GameStructure, completedIDs, team.SkippedGroupIDs,
+	)
+	if currentGroupID == "" {
+		return []string{}, nil
+	}
+
+	objectiveIDs := navigation.GetAvailableObjectiveIDs(
+		&team.Quest.GameStructure,
+		currentGroupID,
+		completedIDs,
+		team.Code,
+	)
+
+	if len(objectiveIDs) == 0 {
+		_, shouldAdvance, _ := navigation.GetNextGroup(&team.Quest.GameStructure, currentGroupID, completedIDs)
+		if !shouldAdvance {
+			return []string{}, ErrAllObjectivesVisited
+		}
+		return []string{}, nil
+	}
+
+	return objectiveIDs, nil
 }
 
 // normalizeMarkerID trims and uppercases marker ID.
@@ -477,6 +723,37 @@ func (s *NavigationService) GetPreviewNavigationView(
 	}
 	view.Blocks = append(view.Blocks, locationBlocks...)
 	maps.Copy(view.BlockStates, blockStates)
+
+	return view, nil
+}
+
+// GetPreviewObjectiveView is GetPreviewNavigationView's Objective-ID counterpart.
+// No block loading: the /objectives list renders the objective title only.
+func (s *NavigationService) GetPreviewObjectiveView(
+	ctx context.Context,
+	team *models.Run,
+	objectiveID string,
+) (*PlayerObjectiveView, error) {
+	if err := s.ensureObjectiveTeamRelationsLoaded(ctx, team); err != nil {
+		return nil, fmt.Errorf("loading team relations: %w", err)
+	}
+
+	group := navigation.FindGroupContainingObjective(&team.Quest.GameStructure, objectiveID)
+	if group == nil {
+		return nil, errors.New("objective not found in game structure")
+	}
+
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
+	if err != nil {
+		return nil, fmt.Errorf("loading objective: %w", err)
+	}
+
+	view := &PlayerObjectiveView{
+		Settings:        team.Quest.Settings,
+		CurrentGroup:    group,
+		NextObjectives:  []models.Objective{*objective},
+		CanAdvanceEarly: false,
+	}
 
 	return view, nil
 }

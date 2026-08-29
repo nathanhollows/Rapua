@@ -251,6 +251,42 @@ func setupPlayerRoutes(
 		r.NotFound(publicHandler.NotFound)
 	})
 
+	// Show the next available objectives: /next's counterpart for objective-built quests.
+	router.Route("/objectives", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
+				adminHandler.GetIdentityService(),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
+			)
+		})
+		r.Get("/", playerHandler.Objectives)
+		r.Post("/", playerHandler.Objectives)
+		// Sub-routers get their own default NotFoundHandler unless set explicitly
+		// (chi does not fall back to the parent router's), which otherwise
+		// surfaces chi's bare, unstyled 404 instead of the site's own.
+		r.NotFound(publicHandler.NotFound)
+	})
+
+	// Show completed objectives: /checkins' counterpart for objective-built quests.
+	router.Route("/journal", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
+				adminHandler.GetIdentityService(),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
+			)
+		})
+		r.Get("/", playerHandler.Journal)
+		r.NotFound(publicHandler.NotFound)
+	})
+
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
 }
 

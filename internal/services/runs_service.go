@@ -265,18 +265,9 @@ func (s *RunService) buildObjectiveGroupMapRecursive(group *models.GameStructure
 // incomplete for this run: an unordered "what's outstanding" list for admin
 // dashboards.
 func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
-	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	objectives, _, completed, err := s.objectivesWithCompletion(ctx, questID, runCode)
 	if err != nil {
-		return nil, fmt.Errorf("finding objectives: %w", err)
-	}
-
-	completedIDs, err := s.objectiveContextCompletionRepo.FindCompletedObjectiveIDs(ctx, runCode, game.ContextObjectiveReveal)
-	if err != nil {
-		return nil, fmt.Errorf("finding completed objectives: %w", err)
-	}
-	completed := make(map[string]bool, len(completedIDs))
-	for _, id := range completedIDs {
-		completed[id] = true
+		return nil, err
 	}
 
 	incomplete := make([]models.Objective, 0, len(objectives))
@@ -286,6 +277,57 @@ func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCo
 		}
 	}
 	return incomplete, nil
+}
+
+// objectivesWithCompletion fetches every objective for a quest, alongside which
+// ones are complete for a run (both as a completion-order ID slice and a lookup
+// set): the shared core of GetIncompleteObjectives and GetCompletedObjectives,
+// so the definition of "complete" (reveal-context, from the append-only
+// completion log) lives in one place instead of drifting between them.
+func (s *RunService) objectivesWithCompletion(
+	ctx context.Context, questID, runCode string,
+) (objectives []models.Objective, completedIDsOrdered []string, completed map[string]bool, err error) {
+	objectives, err = s.objectiveRepo.FindByQuestID(ctx, questID)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("finding objectives: %w", err)
+	}
+
+	completedIDsOrdered, err = s.objectiveContextCompletionRepo.FindCompletedObjectiveIDsOrdered(
+		ctx, runCode, game.ContextObjectiveReveal,
+	)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("finding completed objectives: %w", err)
+	}
+
+	completed = make(map[string]bool, len(completedIDsOrdered))
+	for _, id := range completedIDsOrdered {
+		completed[id] = true
+	}
+	return objectives, completedIDsOrdered, completed, nil
+}
+
+// GetCompletedObjectives is GetIncompleteObjectives' complement: the quest's
+// reveal-context objectives already completed for this run, for the player's /journal.
+// GetCompletedObjectives returns objectives in completion order, most recent
+// first, matching MyCheckins' time-based ordering for the equivalent Location list.
+func (s *RunService) GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
+	objectives, completedIDsOrdered, _, err := s.objectivesWithCompletion(ctx, questID, runCode)
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[string]models.Objective, len(objectives))
+	for _, objective := range objectives {
+		byID[objective.ID] = objective
+	}
+
+	result := make([]models.Objective, 0, len(completedIDsOrdered))
+	for _, id := range completedIDsOrdered {
+		if objective, ok := byID[id]; ok {
+			result = append(result, objective)
+		}
+	}
+	return result, nil
 }
 
 // CountCompletedObjectivesByRun counts reveal-context completions, matching

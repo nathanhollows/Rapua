@@ -1,0 +1,47 @@
+package templates
+
+import (
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Journal is MyCheckins' Objective-built quest counterpart: a list of completed
+// objectives instead of check-ins.
+templ Journal(team models.Run, completed []models.Objective) {
+	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
+		@icon("book-check", templ.Attributes{"class": "w-16 h-16 m-auto"})
+		<h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight">
+			My Journal
+		</h2>
+	</div>
+	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+		if len(completed) == 0 {
+			<div role="alert" class="alert">
+				@icon("circle-alert", templ.Attributes{"class": "w-5 h-5 text-info"})
+				<span>
+					Nothing to show yet. <a href="/objectives" hx-boost="true" class="link">Complete your first objective to get started.</a>
+				</span>
+			</div>
+		}
+		<div class="w-full join join-vertical">
+			for _, objective := range completed {
+				<a
+					href={ templ.URL("/objective/" + objective.Slug) }
+					hx-boost="true"
+					class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
+				>
+					@icon("circle-check-big", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
+					<span class="break-after-auto wrap-break-word grow">
+						{ objective.Title }
+					</span>
+				</a>
+			}
+		</div>
+		<div class="flex flex-row justify-center mt-12">
+			<a href="/objectives" class="btn btn-ghost btn-outline" hx-boost="true">
+				@icon("compass", templ.Attributes{})
+				Next objectives
+			</a>
+		</div>
+		@footer(team)
+	</div>
+}

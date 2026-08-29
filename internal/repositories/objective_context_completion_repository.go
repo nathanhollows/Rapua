@@ -24,6 +24,13 @@ type ObjectiveContextCompletionRepository interface {
 		runCode string,
 		blockContext game.BlockContext,
 	) ([]string, error)
+	// FindCompletedObjectiveIDsOrdered is FindCompletedObjectiveIDs ordered by
+	// completion time, most recent first, for the player's /journal.
+	FindCompletedObjectiveIDsOrdered(
+		ctx context.Context,
+		runCode string,
+		blockContext game.BlockContext,
+	) ([]string, error)
 	CountCompletedObjectivesByRun(
 		ctx context.Context,
 		questID string,
@@ -74,6 +81,24 @@ func (r *objectiveContextCompletionRepository) FindCompletedObjectiveIDs(
 		Model((*models.ObjectiveContextCompletion)(nil)).
 		Column("objective_id").
 		Where("run_code = ? AND context = ?", runCode, blockContext).
+		Scan(ctx, &ids)
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+func (r *objectiveContextCompletionRepository) FindCompletedObjectiveIDsOrdered(
+	ctx context.Context,
+	runCode string,
+	blockContext game.BlockContext,
+) ([]string, error) {
+	var ids []string
+	err := r.db.NewSelect().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Column("objective_id").
+		Where("run_code = ? AND context = ?", runCode, blockContext).
+		Order("completed_at DESC").
 		Scan(ctx, &ids)
 	if err != nil {
 		return nil, err

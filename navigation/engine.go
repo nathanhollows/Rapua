@@ -131,6 +131,82 @@ func ComputeCurrentGroup( //nolint:gocognit
 	}
 }
 
+// ComputeCurrentGroupForObjectives is ComputeCurrentGroup's Objective-ID counterpart:
+// same auto-advance semantics, walking GameStructure.ObjectiveIDs instead of LocationIDs.
+// Kept as a mirror rather than a generalized version of ComputeCurrentGroup: a
+// GameStructure is always fully Location-built or fully Objective-built, never
+// both, so a "works for both" abstraction would only add indirection no caller needs.
+func ComputeCurrentGroupForObjectives( //nolint:gocognit
+	structure *models.GameStructure,
+	completedObjectiveIDs []string,
+	skippedGroupIDs []string,
+) string {
+	current := GetFirstVisibleGroup(structure)
+	if current == nil {
+		return ""
+	}
+
+	skipped := makeSet(skippedGroupIDs)
+
+	for {
+		if skipped[current.ID] {
+			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedObjectiveIDs)
+
+			if !shouldAdvance || reason == ReasonAllComplete {
+				return current.ID
+			}
+
+			current = next
+			continue
+		}
+
+		completed := makeSet(completedObjectiveIDs)
+		completedCount := 0
+		for _, objID := range current.ObjectiveIDs {
+			if completed[objID] {
+				completedCount++
+			}
+		}
+
+		isMinimumMet := false
+		switch current.CompletionType {
+		case models.CompletionAll:
+			isMinimumMet = completedCount == len(current.ObjectiveIDs)
+		case models.CompletionMinimum:
+			isMinimumMet = completedCount >= current.MinimumRequired
+		}
+
+		if !isMinimumMet {
+			return current.ID
+		}
+
+		allComplete := completedCount == len(current.ObjectiveIDs)
+
+		if allComplete {
+			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedObjectiveIDs)
+
+			if !shouldAdvance || reason == ReasonAllComplete {
+				return current.ID
+			}
+
+			current = next
+			continue
+		}
+
+		if !current.AutoAdvance {
+			return current.ID
+		}
+
+		next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedObjectiveIDs)
+
+		if !shouldAdvance || reason == ReasonAllComplete {
+			return current.ID
+		}
+
+		current = next
+	}
+}
+
 // GetNextGroup finds the next non-secret group in sequence after the current group.
 // This is a low-level function that just finds the next sibling or parent's sibling.
 // It does NOT check AutoAdvance - that's handled by ComputeCurrentGroup.
@@ -228,6 +304,46 @@ func GetAvailableLocationIDs(
 	case models.RouteStrategySecret:
 		// Secret locations are never shown in the normal available locations
 		// They are only accessible via direct access (QR code, link, GPS)
+		return []string{}
+
+	default:
+		return unvisitedIDs
+	}
+}
+
+// GetAvailableObjectiveIDs is GetAvailableLocationIDs' Objective-ID counterpart,
+// same routing-strategy semantics over GameStructure.ObjectiveIDs.
+func GetAvailableObjectiveIDs(
+	structure *models.GameStructure,
+	groupID string,
+	completedObjectiveIDs []string,
+	runCode string,
+) []string {
+	group := FindGroupByID(structure, groupID)
+	if group == nil || len(group.ObjectiveIDs) == 0 {
+		return []string{}
+	}
+
+	unvisitedIDs := filterUnvisitedIDs(group.ObjectiveIDs, completedObjectiveIDs)
+	if len(unvisitedIDs) == 0 {
+		return []string{}
+	}
+
+	switch group.Routing {
+	case models.RouteStrategyOrdered:
+		firstID := findMinOrderID(group.ObjectiveIDs, completedObjectiveIDs)
+		if firstID == "" {
+			return []string{}
+		}
+		return []string{firstID}
+
+	case models.RouteStrategyRandomised:
+		return deterministicShuffleIDs(group.ObjectiveIDs, completedObjectiveIDs, runCode, group.MaxNext)
+
+	case models.RouteStrategyFreeRoam:
+		return unvisitedIDs
+
+	case models.RouteStrategySecret:
 		return []string{}
 
 	default:
@@ -370,6 +486,28 @@ func FindGroupContainingLocation(root *models.GameStructure, locationID string) 
 	// Recursively search subgroups
 	for i := range root.SubGroups {
 		if found := FindGroupContainingLocation(&root.SubGroups[i], locationID); found != nil {
+			return found
+		}
+	}
+
+	return nil
+}
+
+// FindGroupContainingObjective is FindGroupContainingLocation's Objective-ID counterpart.
+// Returns nil if not found.
+func FindGroupContainingObjective(root *models.GameStructure, objectiveID string) *models.GameStructure {
+	if root == nil {
+		return nil
+	}
+
+	for _, id := range root.ObjectiveIDs {
+		if id == objectiveID {
+			return root
+		}
+	}
+
+	for i := range root.SubGroups {
+		if found := FindGroupContainingObjective(&root.SubGroups[i], objectiveID); found != nil {
 			return found
 		}
 	}

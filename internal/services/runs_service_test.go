@@ -397,3 +397,118 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 		assert.Contains(t, ids, obj3.ID)
 	})
 }
+
+func TestRunService_GetCompletedObjectives(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+
+	transactor := db.NewTransactor(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
+	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
+
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Find the key")
+	require.NoError(t, err)
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Open the door")
+	require.NoError(t, err)
+
+	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
+	require.NoError(t, err)
+	require.Len(t, teams, 1)
+	runCode := teams[0].Code
+
+	t.Run("no completions yet: nothing completed", func(t *testing.T) {
+		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+		assert.Empty(t, completed)
+	})
+
+	t.Run("one objective completed: only it is returned", func(t *testing.T) {
+		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveReveal)
+		require.NoError(t, err)
+
+		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+		require.Len(t, completed, 1)
+		assert.Equal(t, obj1.ID, completed[0].ID)
+	})
+
+	t.Run("proof completion alone does not count as completed", func(t *testing.T) {
+		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Escape the room")
+		require.NoError(t, err)
+
+		_, err = completionRepo.Insert(ctx, runCode, obj3.ID, game.ContextObjectiveProof)
+		require.NoError(t, err)
+
+		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+
+		ids := make([]string, len(completed))
+		for i, o := range completed {
+			ids[i] = o.ID
+		}
+		assert.NotContains(t, ids, obj3.ID)
+	})
+
+	t.Run("second objective completed: both are returned", func(t *testing.T) {
+		_, err := completionRepo.Insert(ctx, runCode, obj2.ID, game.ContextObjectiveReveal)
+		require.NoError(t, err)
+
+		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
+		require.NoError(t, err)
+
+		ids := make([]string, len(completed))
+		for i, o := range completed {
+			ids[i] = o.ID
+		}
+		assert.ElementsMatch(t, []string{obj1.ID, obj2.ID}, ids)
+	})
+}
+
+func TestRunService_GetCompletedObjectives_OrderedByCompletionTimeDesc(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+
+	transactor := db.NewTransactor(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
+
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed first")
+	require.NoError(t, err)
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed second")
+	require.NoError(t, err)
+	obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed third")
+	require.NoError(t, err)
+
+	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
+	require.NoError(t, err)
+	require.Len(t, teams, 1)
+	runCode := teams[0].Code
+
+	// Explicit, out-of-order-of-creation timestamps: quest-insertion order
+	// (obj1, obj2, obj3) must not be mistaken for completion order.
+	base := getBaseTime()
+	rows := []models.ObjectiveContextCompletion{
+		{RunCode: runCode, ObjectiveID: obj2.ID, Context: game.ContextObjectiveReveal, CompletedAt: base},
+		{RunCode: runCode, ObjectiveID: obj1.ID, Context: game.ContextObjectiveReveal, CompletedAt: base.Add(time.Minute)},
+		{RunCode: runCode, ObjectiveID: obj3.ID, Context: game.ContextObjectiveReveal, CompletedAt: base.Add(2 * time.Minute)},
+	}
+	_, err = dbc.NewInsert().Model(&rows).Exec(ctx)
+	require.NoError(t, err)
+
+	completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
+	require.NoError(t, err)
+	require.Len(t, completed, 3)
+
+	ids := make([]string, len(completed))
+	for i, o := range completed {
+		ids[i] = o.ID
+	}
+	assert.Equal(t, []string{obj3.ID, obj1.ID, obj2.ID}, ids, "most recently completed first")
+}

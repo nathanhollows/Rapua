@@ -19,25 +19,47 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	// Skip redirect logic in preview mode
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		// Use the same navigation view as /next so both handlers agree on
-		// remaining locations (including when-clause filtering).
-		view, navErr := h.navigationService.GetPlayerNavigationView(r.Context(), team)
-		if navErr != nil {
-			if !errors.Is(navErr, services.ErrAllLocationsVisited) {
-				h.handleError(
-					w,
-					r,
-					"Complete: getting navigation view",
-					"Error getting navigation view",
-					"Could not load data",
-					navErr,
-				)
+		if !isObjectiveBuiltQuest(team.Quest.GameStructure) {
+			// Use the same navigation view as /next so both handlers agree on
+			// remaining locations (including when-clause filtering).
+			view, navErr := h.navigationService.GetPlayerNavigationView(r.Context(), team)
+			if navErr != nil {
+				if !errors.Is(navErr, services.ErrAllLocationsVisited) {
+					h.handleError(
+						w,
+						r,
+						"Complete: getting navigation view",
+						"Error getting navigation view",
+						"Could not load data",
+						navErr,
+					)
+					return
+				}
+				// ErrAllLocationsVisited: fall through to show complete page.
+			} else if len(view.NextLocations) > 0 {
+				h.redirect(w, r, "/next")
 				return
 			}
-			// ErrAllLocationsVisited — fall through to show complete page
-		} else if len(view.NextLocations) > 0 {
-			h.redirect(w, r, "/next")
-			return
+		} else {
+			// Use the same objective view as /objectives so both handlers agree.
+			view, objErr := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
+			if objErr != nil {
+				if !errors.Is(objErr, services.ErrAllObjectivesVisited) {
+					h.handleError(
+						w,
+						r,
+						"Complete: getting objective view",
+						"Error getting objective view",
+						"Could not load data",
+						objErr,
+					)
+					return
+				}
+				// ErrAllObjectivesVisited: fall through to show complete page.
+			} else if len(view.NextObjectives) > 0 {
+				h.redirect(w, r, "/objectives")
+				return
+			}
 		}
 	}
 

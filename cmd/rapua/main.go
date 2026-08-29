@@ -127,6 +127,8 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	navigationService := services.NewNavigationService(
 		locationRepo,
+		objectiveRepo,
+		objectiveContextCompletionRepo,
 		teamRepo,
 		teamVarStateRepo,
 		gameStructureService,

@@ -1,0 +1,70 @@
+package templates
+
+import (
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+type ObjectivesParams struct {
+	Run  models.Run
+	View *services.PlayerObjectiveView
+}
+
+// Objectives is Next's Objective-built quest counterpart. Unlike /next, it renders
+// no block content: just each objective's title linking through to its own
+// proof/reveal page, per the deliberate "lighter than /next" scope decision.
+templ Objectives(data ObjectivesParams) {
+	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
+		@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
+		<h2
+			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
+		>
+			Next objectives
+		</h2>
+		if data.View.CanAdvanceEarly {
+			<div role="alert" class="alert alert-info alert-vertical sm:alert-horizontal mb-10">
+				<div>
+					<div class="text-sm">
+						You have completed the minimum number of tasks. Would you like to skip ahead?
+					</div>
+				</div>
+				<a
+					hx-post="/advance"
+					hx-swap="none"
+					class="btn btn-sm btn-neutral"
+				>
+					Skip
+					@icon("chevron-right", templ.Attributes{"class": "w-4 h-4"})
+				</a>
+			</div>
+		}
+		if len(data.View.NextObjectives) == 0 {
+			<div role="alert" class="alert">
+				@icon("circle-alert", templ.Attributes{"class": "w-5 h-5 text-info"})
+				<span>Nothing to show right now.</span>
+			</div>
+		} else {
+			<div class="w-full join join-vertical">
+				for _, objective := range data.View.NextObjectives {
+					<a
+						href={ templ.URL("/objective/" + objective.Slug) }
+						hx-boost="true"
+						class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
+					>
+						@icon("target", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
+						<span class="break-after-auto wrap-break-word grow">
+							{ objective.Title }
+						</span>
+					</a>
+				}
+			</div>
+		}
+		<div id="player-nav" class="flex flex-row justify-center mt-10">
+			<a href="/journal" hx-boost="true" class="btn btn-ghost btn-outline">
+				@icon("book-check", templ.Attributes{})
+				My Journal
+			</a>
+		</div>
+		@footer(data.Run)
+	</div>
+}

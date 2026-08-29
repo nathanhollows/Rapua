@@ -29,3 +29,7 @@ func WithCheckInService(s CheckInService) TestHandlerOption {
 func WithBlockService(s BlockService) TestHandlerOption {
 	return func(h *PlayerHandler) { h.blockService = s }
 }
+
+func WithNavigationService(s NavigationService) TestHandlerOption {
+	return func(h *PlayerHandler) { h.navigationService = s }
+}

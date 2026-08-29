@@ -72,6 +72,12 @@ type NavigationService interface {
 		team *models.Run,
 		locationID string,
 	) (*services.PlayerNavigationView, error)
+	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
+	GetPreviewObjectiveView(
+		ctx context.Context,
+		team *models.Run,
+		objectiveID string,
+	) (*services.PlayerObjectiveView, error)
 }
 
 type LocationService interface {
@@ -91,6 +97,7 @@ type RunService interface {
 	LoadBlockingLocation(ctx context.Context, run *models.Run) error
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
+	GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 }
 
 type UploadService interface {
@@ -161,6 +168,35 @@ func (h PlayerHandler) getRunFromContext(ctx context.Context) (*models.Run, erro
 		return nil, errors.New("run not found")
 	}
 	return run, nil
+}
+
+// isObjectiveBuiltQuest reports whether a quest's GameStructure is objective-built
+// rather than location-built. A quest doc is always fully one kind or the other,
+// never mixed (enforced at the doc level), so the first populated ID list found
+// anywhere in the tree, depth-first, settles it for the whole structure. This
+// reads team.Quest.GameStructure directly rather than the Locations/Objectives
+// relations, which are only conditionally loaded and unreliable as a signal.
+// An unconfigured/empty structure (no groups yet) defaults to objective-built.
+func isObjectiveBuiltQuest(gs models.GameStructure) bool {
+	if found, isObjective := questTypeOf(gs); found {
+		return isObjective
+	}
+	return true
+}
+
+func questTypeOf(gs models.GameStructure) (found, isObjective bool) {
+	if len(gs.LocationIDs) > 0 {
+		return true, false
+	}
+	if len(gs.ObjectiveIDs) > 0 {
+		return true, true
+	}
+	for _, sub := range gs.SubGroups {
+		if f, obj := questTypeOf(sub); f {
+			return true, obj
+		}
+	}
+	return false, false
 }
 
 func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
