@@ -72,7 +72,7 @@ func TestCompletionType_String(t *testing.T) {
 		input game.CompletionType
 		want  string
 	}{
-		{game.CompletionAll, "All Locations"},
+		{game.CompletionAll, "All Objectives"},
 		{game.CompletionMinimum, "Minimum Required"},
 		{game.CompletionType("unknown"), "unknown"},
 	}

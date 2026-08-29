@@ -119,7 +119,7 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 		ID:      gofakeit.UUID(),
 		OwnerID: loc.ID,
 		Type:    "quiz",
-		Context: game.ContextLocationContent,
+		Context: game.BlockContext("location_content"),
 		Data:    json.RawMessage(`{"prompt":"What is 2+2?"}`),
 	}
 	_, err = dbc.NewInsert().Model(interactiveBlock).Exec(ctx)
@@ -129,7 +129,7 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 		ID:      gofakeit.UUID(),
 		OwnerID: loc.ID,
 		Type:    "text",
-		Context: game.ContextLocationContent,
+		Context: game.BlockContext("location_content"),
 		Data:    json.RawMessage(`{"content":"Welcome!"}`),
 	}
 	_, err = dbc.NewInsert().Model(contentBlock).Exec(ctx)
@@ -139,7 +139,7 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 		ID:      gofakeit.UUID(),
 		OwnerID: loc.ID,
 		Type:    "clue",
-		Context: game.ContextNavigation,
+		Context: game.BlockContext("navigation"),
 		Data:    json.RawMessage(`{"clue":"Look near the fountain"}`),
 	}
 	_, err = dbc.NewInsert().Model(navBlock).Exec(ctx)

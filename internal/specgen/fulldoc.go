@@ -59,7 +59,7 @@ func GenerateFullSpec() FullSpec {
 	}
 }
 
-// whenFieldSpec returns the shared `when` field spec used on blocks, locations, and groups.
+// whenFieldSpec returns the shared `when` field spec used on blocks, objectives, and groups.
 func whenFieldSpec() game.FieldSpec {
 	condItem := &game.FieldSpec{
 		Type:        "object",
@@ -136,7 +136,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Name:        "routing",
 			Type:        "enum",
 			Required:    true,
-			Description: "How players are routed through locations. See enums.routing.",
+			Description: "How players are routed through objectives. See enums.routing.",
 		},
 		{
 			Name:        "completion",
@@ -147,7 +147,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 		{
 			Name:        "minimum_required",
 			Type:        "int",
-			Description: "Number of locations required when completion is \"minimum\".",
+			Description: "Number of objectives required when completion is \"minimum\".",
 		},
 		whenFieldSpec(),
 		{Name: "children", Type: "list", Required: true, Description: "Ordered list of objective or group children.",
@@ -242,7 +242,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Name:        "structure",
 				Type:        "object",
 				Required:    true,
-				Description: "Root group defining routing and the location tree.",
+				Description: "Root group defining routing and the objective tree.",
 				Fields:      structureFields,
 			},
 			{
@@ -256,33 +256,26 @@ func documentSpec() ObjectSpec { //nolint:funlen
 }
 
 func enumDefs() EnumDefs {
+	// Label/Description come from RouteStrategy/CompletionType's own String()/
+	// Description() methods (game/enums.go), not a second hand-maintained copy
+	// of the same text that could drift out of sync with it.
+	routing := []game.RouteStrategy{
+		game.RouteStrategyRandomised, game.RouteStrategyFreeRoam, game.RouteStrategyOrdered, game.RouteStrategySecret,
+	}
+	routingValues := make([]EnumValue, len(routing))
+	for i, r := range routing {
+		routingValues[i] = EnumValue{Value: string(r), Label: r.String(), Description: r.Description()}
+	}
+
+	completion := []game.CompletionType{game.CompletionAll, game.CompletionMinimum}
+	completionValues := make([]EnumValue, len(completion))
+	for i, c := range completion {
+		completionValues[i] = EnumValue{Value: string(c), Label: c.String(), Description: c.Description()}
+	}
+
 	return EnumDefs{
-		Routing: []EnumValue{
-			{
-				Value:       "randomised",
-				Label:       "Randomised Route",
-				Description: "The game randomly selects locations for each player/team. Good for large groups.",
-			},
-			{
-				Value:       "free_roam",
-				Label:       "Open Exploration",
-				Description: "Players visit locations in any order. All locations are visible.",
-			},
-			{Value: "ordered", Label: "Guided Path", Description: "Players must visit locations in a fixed order."},
-			{
-				Value:       "secret",
-				Label:       "Secret",
-				Description: "Locations never explicitly shown; players access them out of sequence.",
-			},
-		},
-		Completion: []EnumValue{
-			{Value: "all", Label: "All", Description: "All locations/groups in this group must be completed."},
-			{
-				Value:       "minimum",
-				Label:       "Minimum",
-				Description: "At least minimum_required locations/groups must be completed.",
-			},
-		},
+		Routing:    routingValues,
+		Completion: completionValues,
 		ConditionOps: []EnumValue{
 			{Value: "eq", Label: "Equal", Description: "var == value"},
 			{Value: "neq", Label: "Not equal", Description: "var != value"},
@@ -333,15 +326,18 @@ func builtInVarSpecs() []BuiltInVarSpec {
 
 func contextDefs() []ContextDef {
 	return []ContextDef{
-		{Value: "location_content", Description: "Blocks shown to players after checking in to a location."},
-		{
-			Value:       "navigation",
-			Description: "Blocks shown on the /next page to help players find a location.",
-		},
 		{
 			Value:       "start",
 			Description: "Blocks shown on the game start page (introductions, rules, team name, start button).",
 		},
 		{Value: "finish", Description: "Blocks shown on the game finish/end page."},
+		{
+			Value:       "objective_proof",
+			Description: "Blocks a player must complete to prove an objective. Once every block here completes, the reveal context is shown.",
+		},
+		{
+			Value:       "objective_reveal",
+			Description: "Blocks shown once an objective's proof context is complete.",
+		},
 	}
 }

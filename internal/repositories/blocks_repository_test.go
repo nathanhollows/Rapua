@@ -57,11 +57,11 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 			},
 			action: func(block blocks.Block) (any, error) {
-				return repo.Create(context.Background(), block, gofakeit.UUID(), blocks.ContextLocationContent)
+				return repo.Create(context.Background(), block, gofakeit.UUID(), blocks.ContextObjectiveProof)
 			},
 			assertion: func(result any, err error) {
 				require.NoError(t, err)
@@ -98,7 +98,7 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				if err != nil {
 					return nil, err
@@ -107,7 +107,7 @@ func TestBlockRepository(t *testing.T) {
 					context.Background(),
 					block,
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				return createdBlock, nil
 			},
@@ -149,7 +149,7 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				if err != nil {
 					return nil, err
@@ -158,7 +158,7 @@ func TestBlockRepository(t *testing.T) {
 					context.Background(),
 					block,
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				return createdBlock, nil
 			},
@@ -213,7 +213,7 @@ func TestBlockRepository(t *testing.T) {
 						},
 					),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				if err != nil {
 					return nil, err
@@ -222,7 +222,7 @@ func TestBlockRepository(t *testing.T) {
 					context.Background(),
 					block,
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				return createdBlock, nil
 			},
@@ -279,7 +279,7 @@ func TestBlockRepository_Create_NewOwnerID(t *testing.T) {
 			},
 		),
 		gofakeit.UUID(),
-		blocks.ContextLocationContent,
+		blocks.ContextObjectiveProof,
 	)
 
 	require.NoError(t, err)
@@ -290,7 +290,7 @@ func TestBlockRepository_Create_NewOwnerID(t *testing.T) {
 		context.Background(),
 		block,
 		gofakeit.UUID(),
-		blocks.ContextLocationContent,
+		blocks.ContextObjectiveProof,
 	)
 
 	require.NoError(t, err)
@@ -324,7 +324,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndRunCode(t *testing.T) {
 						Points:  10,
 					}),
 					ownerID,
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				if err != nil {
 					return "", "", err
@@ -366,7 +366,7 @@ func TestBlockRepository_GetBlockAndStateByBlockIDAndRunCode(t *testing.T) {
 						Points:  10,
 					}),
 					ownerID,
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 				)
 				if err != nil {
 					return "", "", err
@@ -463,7 +463,7 @@ func TestBlockRepository_EdgeCases(t *testing.T) {
 				Points:  5,
 			}),
 			ownerID,
-			blocks.ContextLocationContent,
+			blocks.ContextObjectiveProof,
 		)
 
 		require.NoError(t, err)
@@ -494,7 +494,7 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 				Type:    "text",
 				Points:  0,
 			},
-		), oldOwnerID, blocks.ContextLocationContent)
+		), oldOwnerID, blocks.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		block2, err := repo.Create(ctx, blocks.NewMarkdownBlock(
@@ -503,7 +503,7 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 				Type:    "text",
 				Points:  0,
 			},
-		), oldOwnerID, blocks.ContextLocationContent)
+		), oldOwnerID, blocks.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		_ = block1
@@ -542,7 +542,7 @@ func TestBlockRepository_DuplicateBlocksByOwnerTx(t *testing.T) {
 				Type:    "text",
 				Points:  0,
 			},
-		), oldOwnerID, blocks.ContextLocationContent)
+		), oldOwnerID, blocks.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		// Start transaction

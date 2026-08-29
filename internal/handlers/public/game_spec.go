@@ -14,7 +14,7 @@ import (
 
 // SpecJSON serves the generated game spec as JSON.
 //
-//	GET /api/v7/spec
+//	GET /api/v8/spec
 func (h *Handler) SpecJSON(w http.ResponseWriter, _ *http.Request) {
 	data, err := specgen.GenerateJSON()
 	if err != nil {
@@ -26,9 +26,9 @@ func (h *Handler) SpecJSON(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write(data)
 }
 
-// LintDoc validates a v7 JSON document without importing it.
+// LintDoc validates a v8 JSON document without importing it.
 //
-//	POST /api/v7/lint
+//	POST /api/v8/lint
 func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
 	data, err := parseGameBytes(r)
 	if err != nil {

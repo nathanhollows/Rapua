@@ -5,8 +5,6 @@ package game
 type BlockContext string
 
 const (
-	ContextLocationContent BlockContext = "location_content"
-	ContextNavigation      BlockContext = "navigation"
 	ContextStart           BlockContext = "start"
 	ContextFinish          BlockContext = "finish"
 	ContextObjectiveProof  BlockContext = "objective_proof"

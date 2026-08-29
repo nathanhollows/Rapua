@@ -94,7 +94,7 @@ func init() {
 				Model((*m20251205061242_Block)(nil)).
 				Set("ordering = ordering + 1").
 				Where("owner_id = ?", location.ID).
-				Where("context = ?", blocks.ContextLocationContent).
+				Where("context = ?", "location_content").
 				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to update block ordering for location %s: %w", location.ID, err)
@@ -111,7 +111,7 @@ func init() {
 				ID:                 uuid.New().String(),
 				OwnerID:            location.ID,
 				Type:               "header",
-				Context:            blocks.ContextLocationContent,
+				Context:            blocks.BlockContext("location_content"),
 				Data:               headerData,
 				Ordering:           0,
 				Points:             0,
@@ -159,7 +159,7 @@ func init() {
 		_, err := db.NewDelete().
 			Model((*m20251205061242_Block)(nil)).
 			Where("type = ?", "header").
-			Where("context = ?", blocks.ContextLocationContent).
+			Where("context = ?", "location_content").
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to delete location header blocks: %w", err)
@@ -169,7 +169,7 @@ func init() {
 		_, err = db.NewUpdate().
 			Model((*m20251205061242_Block)(nil)).
 			Set("ordering = ordering - 1").
-			Where("context = ?", blocks.ContextLocationContent).
+			Where("context = ?", "location_content").
 			Where("ordering > 0").
 			Exec(ctx)
 		if err != nil {

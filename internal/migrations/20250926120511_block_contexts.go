@@ -56,7 +56,7 @@ func init() {
 			ALTER TABLE blocks
 			ADD COLUMN context VARCHAR(50) DEFAULT ?;
 		`,
-			blocks.ContextLocationContent,
+			"location_content",
 		)
 		if err != nil {
 			return fmt.Errorf("add context column to blocks: %w", err)
@@ -65,7 +65,7 @@ func init() {
 		// Set all existing blocks to 'content' context
 		_, err = db.NewUpdate().
 			Model((*m20250926120511_Block)(nil)).
-			Set("context = ?", blocks.ContextLocationContent).
+			Set("context = ?", "location_content").
 			Where("context IS NULL OR context = ''").
 			Exec(ctx)
 		if err != nil {

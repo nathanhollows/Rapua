@@ -70,7 +70,7 @@ func createTestBlock(t *testing.T, dbc *bun.DB, ownerID string) string {
 		ID:      gofakeit.UUID(),
 		OwnerID: ownerID,
 		Type:    "text",
-		Context: "location_content",
+		Context: "objective_proof",
 	}
 	_, err := dbc.NewInsert().Model(block).Exec(context.Background())
 	if err != nil {

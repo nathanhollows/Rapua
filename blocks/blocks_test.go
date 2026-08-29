@@ -11,7 +11,7 @@ import (
 
 // Test that each registered block can be created from a base block.
 func TestCreateFromBaseBlock(t *testing.T) {
-	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
 		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
 			baseBlock := blocks.BaseBlock{
 				ID:      "1",
@@ -57,7 +57,7 @@ func TestBlockUniqueness(t *testing.T) {
 	icons := make(map[string]bool)
 	descriptions := make(map[string]bool)
 
-	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
 		t.Run("block uniqueness", func(t *testing.T) {
 			assert.False(t, types[block.GetType()], "duplicate type: "+block.GetType())
 			types[block.GetType()] = true

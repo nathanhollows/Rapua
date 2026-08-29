@@ -33,8 +33,6 @@ const FormValueTrue = game.FormValueTrue
 
 // BlockContext constants re-exported from game/.
 const (
-	ContextLocationContent = game.ContextLocationContent
-	ContextNavigation      = game.ContextNavigation
 	ContextStart           = game.ContextStart
 	ContextFinish          = game.ContextFinish
 	ContextObjectiveProof  = game.ContextObjectiveProof
@@ -68,89 +66,79 @@ func registerBlock(prototype Block, contexts []BlockContext) {
 
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
-	// Content blocks. Every block valid in ContextLocationContent is also valid in
-	// an objective's proof/reveal contexts, which play the equivalent structural role.
+	// Content blocks.
 	registerBlock(
 		&MarkdownBlock{},
-		[]BlockContext{ContextLocationContent, ContextNavigation, ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&AlertBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&ButtonBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&DividerBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&HeaderBlock{},
-		[]BlockContext{ContextLocationContent, ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&ImageBlock{},
-		[]BlockContext{
-			ContextLocationContent, ContextNavigation, ContextFinish, ContextStart,
-			ContextObjectiveProof, ContextObjectiveReveal,
-		},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&MapBlock{},
-		[]BlockContext{
-			ContextLocationContent, ContextNavigation, ContextFinish, ContextStart,
-			ContextObjectiveProof, ContextObjectiveReveal,
-		},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&RandomClueBlock{}, []BlockContext{ContextNavigation})
+	registerBlock(&RandomClueBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 	registerBlock(
 		&ToggleTextBlock{},
-		[]BlockContext{
-			ContextLocationContent, ContextNavigation, ContextStart, ContextFinish,
-			ContextObjectiveProof, ContextObjectiveReveal,
-		},
+		[]BlockContext{ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&YoutubeBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 
-	// Interactive blocks. Same rule: ContextLocationContent implies both objective contexts.
+	// Interactive blocks.
 	registerBlock(
 		&BrokerBlock{},
-		[]BlockContext{ContextLocationContent, ContextNavigation, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&ChecklistBlock{},
-		[]BlockContext{ContextLocationContent, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&ClueBlock{},
-		[]BlockContext{ContextLocationContent, ContextNavigation, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&FreeTextBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 	registerBlock(
 		&PhotoBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 	registerBlock(
 		&ScanBlock{},
-		[]BlockContext{ContextLocationContent, ContextNavigation, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
 		&RatingBlock{},
-		[]BlockContext{ContextLocationContent, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
-	registerBlock(&ChoiceBlock{}, []BlockContext{ContextLocationContent, ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&SortingBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&ChoiceBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})

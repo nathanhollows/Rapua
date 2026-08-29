@@ -70,6 +70,15 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	if blockType == "" {
 		return nil, errors.New("blockType cannot be empty")
 	}
+	// The admin "add block" dropdown only ever offers blocks valid for the
+	// zone it's rendered in, but that's a client-side filter, not enforcement:
+	// a direct POST (or a stale form after a block's registered contexts
+	// change) could still ask to create e.g. a start-only block inside an
+	// objective's proof/reveal zone. Reject it here, not just at import/lint
+	// time (game.Lint via blocks.Registry already covers that separate path).
+	if !blocks.CanBlockBeUsedInContext(blockType, blockContext) {
+		return nil, fmt.Errorf("%w: block type %q cannot be used in context %q", ErrBlockNotValidForContext, blockType, blockContext)
+	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
 		Type:    blockType,

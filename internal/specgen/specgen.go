@@ -20,6 +20,15 @@ func GenerateBlockSpecs() []game.BlockSpec {
 	for _, reg := range registered {
 		if sp, ok := reg.Prototype.(game.SpecProvider); ok {
 			spec := sp.GetSpec()
+			// Contexts comes from the registry, not the block's own GetSpec
+			// literal: SupportedContexts is what BlockCreate actually enforces,
+			// so it can't drift out of sync with reality the way a
+			// hand-maintained duplicate list already had.
+			contexts := make([]string, len(reg.SupportedContexts))
+			for i, c := range reg.SupportedContexts {
+				contexts[i] = string(c)
+			}
+			spec.Contexts = contexts
 			spec.SharedFields = []string{"when"}
 			// Asked of the block rather than listed here, so a new interactive
 			// block cannot ship with the spec hiding a field the runtime honours.
@@ -37,7 +46,7 @@ func GenerateBlockSpecs() []game.BlockSpec {
 	return specs
 }
 
-// GenerateJSON returns the complete v7 spec serialised as indented JSON.
+// GenerateJSON returns the complete v8 spec serialised as indented JSON.
 func GenerateJSON() ([]byte, error) {
 	return json.MarshalIndent(GenerateFullSpec(), "", "  ")
 }

@@ -481,7 +481,7 @@ func setupWebhookRoutes(router chi.Router, adminHandler *admin.Handler) {
 
 // setupAPIRoutes sets up public API routes that bypass CSRF protection.
 func setupAPIRoutes(router chi.Router, publicHandler *public.Handler) {
-	router.Route("/api/v7", func(r chi.Router) {
+	router.Route("/api/v8", func(r chi.Router) {
 		r.Get("/spec", publicHandler.SpecJSON)
 		r.Post("/lint", publicHandler.LintDoc)
 	})

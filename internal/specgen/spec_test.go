@@ -121,11 +121,40 @@ func TestGenerateFullSpec_HasAllContexts(t *testing.T) {
 	}
 
 	expected := []string{
-		"location_content", "navigation", "start", "finish",
+		"start", "finish", "objective_proof", "objective_reveal",
 	}
 	for _, ctx := range expected {
 		if !contextValues[ctx] {
 			t.Errorf("GenerateFullSpec().Contexts missing %q", ctx)
+		}
+	}
+}
+
+// TestGenerateBlockSpecs_ContextsMatchRegistry proves each block's generated
+// Contexts comes from the live registry (blocks.block.go's registerBlock
+// calls), not a hand-maintained copy that can drift out of sync with it.
+func TestGenerateBlockSpecs_ContextsMatchRegistry(t *testing.T) {
+	registered := blocks.GetRegisteredBlocks()
+	byType := make(map[string][]game.BlockContext, len(registered))
+	for _, reg := range registered {
+		byType[reg.BlockType] = reg.SupportedContexts
+	}
+
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		want := byType[spec.Type]
+		if len(spec.Contexts) != len(want) {
+			t.Errorf("block %q: Contexts = %v, want %v", spec.Type, spec.Contexts, want)
+			continue
+		}
+		for i, c := range want {
+			if spec.Contexts[i] != string(c) {
+				t.Errorf("block %q: Contexts[%d] = %q, want %q", spec.Type, i, spec.Contexts[i], string(c))
+			}
+		}
+		for _, c := range spec.Contexts {
+			if c == "location_content" || c == "navigation" {
+				t.Errorf("block %q: Contexts still lists dead context %q", spec.Type, c)
+			}
 		}
 	}
 }

@@ -45,7 +45,7 @@ func validSpecDoc() string {
 
 func TestSpecJSON(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodGet, "/api/v7/spec", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v8/spec", nil)
 	w := httptest.NewRecorder()
 
 	h.SpecJSON(w, req)
@@ -62,7 +62,7 @@ func TestSpecJSON(t *testing.T) {
 
 func TestLintDoc_ValidDoc_JSONBody(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(validSpecDoc()))
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(validSpecDoc()))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -81,7 +81,7 @@ func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 	h := &Handler{}
 	// Missing required "name" field
 	body := `{"rapua":"v8","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -97,7 +97,7 @@ func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 
 func TestLintDoc_MalformedJSON(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(`not json`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -117,7 +117,7 @@ func TestLintDoc_MultipartUpload_Valid(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, mw.Close())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	w := httptest.NewRecorder()
 
@@ -133,7 +133,7 @@ func TestLintDoc_MultipartUpload_MissingFile(t *testing.T) {
 	mw := multipart.NewWriter(body)
 	require.NoError(t, mw.Close())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	w := httptest.NewRecorder()
 

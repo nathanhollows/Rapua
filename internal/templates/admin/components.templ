@@ -17,14 +17,7 @@ templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, ta
 			<div class="block">
 				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
 					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
-					switch context {
-						case blocks.ContextNavigation:
-							Add clues
-						case blocks.ContextLocationContent:
-							Add content
-						default:
-							Add content
-					}
+					Add content
 				</div>
 			</div>
 			<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">

@@ -54,7 +54,7 @@ func TestWriteGameSpec_ContainsAuthConstraints(t *testing.T) {
 	s := string(content)
 
 	checks := []string{
-		"ROOT_LOCATION_HIDDEN",
+		"ROOT_OBJECTIVE_HIDDEN",
 		"EMPTY_GROUP",
 		"SLUG_DUPLICATE",
 		"BLOCK_ID_DUPLICATE",

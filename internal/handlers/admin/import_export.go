@@ -14,7 +14,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// ExportQuest exports a quest as a v7 JSON document download.
+// ExportQuest exports a quest as a v8 JSON document download.
 //
 //	GET /admin/quests/{id}/export
 func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 	_ = templates.ImportCheckResult(lintResult, matched, doc.Name).Render(r.Context(), w)
 }
 
-// ImportInstanceCreate creates a new instance from an uploaded v7 JSON document.
+// ImportInstanceCreate creates a new instance from an uploaded v8 JSON document.
 //
 //	POST /admin/quests/import
 func (h *Handler) ImportInstanceCreate(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +116,7 @@ func (h *Handler) ImportInstanceCreate(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/admin/quests")
 }
 
-// ImportInstanceUpdate updates an existing instance from an uploaded v7 JSON document.
+// ImportInstanceUpdate updates an existing instance from an uploaded v8 JSON document.
 //
 //	POST /admin/quests/{id}/import
 func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {

@@ -14,29 +14,17 @@ func TestBlockContextFiltering(t *testing.T) {
 		unexpectedBlocks []string
 	}{
 		{
-			name:             "Content context should include most blocks",
-			context:          blocks.ContextLocationContent,
+			name:             "Objective proof context should include most blocks",
+			context:          blocks.ContextObjectiveProof,
 			expectedBlocks:   []string{"text", "alert", "button", "image", "broker", "checklist"},
-			unexpectedBlocks: []string{}, // All current blocks support content
+			unexpectedBlocks: []string{}, // All current blocks support proof/reveal.
 		},
-		// {
-		// 	name:             "Navigation context should be limited",
-		// 	context:          blocks.ContextNavigation,
-		// 	expectedBlocks:   []string{"markdown", "image", "youtube", "clue"},
-		// 	unexpectedBlocks: []string{"broker", "checklist", "pincode", "quiz_block", "button"},
-		// },
-		// {
-		// 	name:             "Start page context should exclude interactive blocks",
-		// 	context:          blocks.ContextStart,
-		// 	expectedBlocks:   []string{"markdown", "alert", "button", "divider", "image", "youtube"},
-		// 	unexpectedBlocks: []string{"broker", "checklist", "pincode", "quiz_block", "sorting"},
-		// },
-		// {
-		// 	name:             "End page context should exclude interactive blocks",
-		// 	context:          blocks.ContextEnd,
-		// 	expectedBlocks:   []string{"markdown", "alert", "button", "divider", "image", "youtube"},
-		// 	unexpectedBlocks: []string{"broker", "checklist", "pincode", "quiz_block", "sorting"},
-		// },
+		{
+			name:             "Start page context should exclude most interactive blocks",
+			context:          blocks.ContextStart,
+			expectedBlocks:   []string{"text", "alert", "button", "divider", "image", "youtube", "checklist"},
+			unexpectedBlocks: []string{"broker", "pincode", "quiz", "sorting", "clue"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -91,16 +79,13 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 		context   blocks.BlockContext
 		expected  bool
 	}{
-		{"text", blocks.ContextLocationContent, true},
-		// {"text", blocks.ContextNavigation, true},
-		// {"text", blocks.ContextStart, true},
-		{"broker", blocks.ContextLocationContent, true},
-		// {"broker", blocks.ContextNavigation, false},
-		// {"broker", blocks.ContextStart, false},
-		{"clue", blocks.ContextLocationContent, true},
-		// {"clue", blocks.ContextNavigation, true},
-		// {"clue", blocks.ContextStart, false},
-		{"nonexistent", blocks.ContextLocationContent, false},
+		{"text", blocks.ContextObjectiveProof, true},
+		{"text", blocks.ContextStart, true},
+		{"broker", blocks.ContextObjectiveProof, true},
+		{"broker", blocks.ContextStart, false},
+		{"clue", blocks.ContextObjectiveProof, true},
+		{"clue", blocks.ContextStart, false},
+		{"nonexistent", blocks.ContextObjectiveProof, false},
 	}
 
 	for _, tt := range tests {
@@ -116,7 +101,7 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 
 func TestBackwardCompatibility(t *testing.T) {
 	// Test that GetRegisteredBlocks still works
-	blks := blocks.GetBlocksForContext(blocks.ContextLocationContent)
+	blks := blocks.GetBlocksForContext(blocks.ContextObjectiveProof)
 	if len(blks) == 0 {
 		t.Error("GetRegisteredBlocks() returned empty slice")
 	}

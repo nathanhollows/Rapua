@@ -8,27 +8,27 @@ order: 21
 
 > Generated from code. Regenerate with: `rapua genspec`
 >
-> Machine-readable: `GET /api/v7/spec`
+> Machine-readable: `GET /api/v8/spec`
 
 ## Authoring constraints
 
-These rules are enforced by the linter (`POST /api/v7/lint`). Errors block import; warnings should be fixed.
+These rules are enforced by the linter (`POST /api/v8/lint`). Errors block import; warnings should be fixed.
 
 **Structure**
-- Every location must be inside a group. A location placed directly under `structure.children` is never shown to players. Wrap it in a group. *(`ROOT_LOCATION_HIDDEN`)*
+- Every objective must be inside a group. An objective placed directly under `structure.children` is never shown to players. Wrap it in a group. *(`ROOT_OBJECTIVE_HIDDEN`)*
 - Groups must have at least one child. An empty group produces a warning. *(`EMPTY_GROUP`)*
-- Location slugs must be unique across the entire game, including across groups. *(`SLUG_DUPLICATE`)*
+- Objective slugs must be unique across the entire game, including across groups. *(`SLUG_DUPLICATE`)*
 
 **Import modes**
-- **Create-import** (`POST /admin/quests/import`): omit `id` on locations and blocks — new UUIDs are generated.
-- **Update-import** (`POST /admin/quests/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`TeamBlockState`). Locations absent from the document are deleted.
+- **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.
+- **Update-import** (`POST /admin/quests/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`RunBlockState`). Objectives absent from the document are deleted.
 - Group `id` is preserved on update-import to avoid orphaning team progress records (`SkippedGroupIDs`).
 
 **Blocks**
 - Every block must have a `type` field matching a registered block type.
 - A block may only appear in contexts listed in its spec. *(`INVALID_CONTEXT`)*
 - Block `id` values must be unique across the document. *(`BLOCK_ID_DUPLICATE`)*
-- Block and location `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)*
+- Block and objective `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)*
 
 **Start page**
 - A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
@@ -36,18 +36,28 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
 **Completion**
 - `minimum_required` is only valid when `completion` is `"minimum"`; it must be a positive integer. *(`MINIMUM_REQUIRED_MISMATCH` / `MINIMUM_REQUIRED_MISSING`)*
 
+**Conditional visibility (`when` / `sets`)**
+- Every variable referenced in a `when` condition must be defined in a block `sets` or the built-in variable list. *(`UNDEFINED_VAR`)*
+- No two `sets` declarations across the whole game may write the same variable name. *(`DUPLICATE_SETS_VAR`)*
+- `sets` variable names must not shadow built-in variable names. *(`SHADOWED_VAR`)*
+- `sets` is a list of variable names set to `"true"` when the block completes.
+- `op` in a condition must be a valid operator from `enums.condition_ops`. *(`INVALID_CONDITION_OP`)*
+- Every condition must have a `var` field; `value` is required when `op` is present. *(`INVALID_CONDITION`)*
+- `sets` on a content block (text, alert, image, etc.) is ignored. *(`SETS_ON_CONTENT_BLOCK` warning)*
+- A `sets` variable that is never referenced in any `when` clause produces a warning. *(`UNUSED_SETS_VAR` warning)*
+
 ## Full spec
 
 ```json
 {
-  "version": "v7",
+  "version": "v8",
   "document": {
-    "description": "Top-level v7 game document.",
+    "description": "Top-level v8 game document.",
     "fields": [
       {
         "name": "rapua",
         "type": "string",
-        "description": "Format version. Must be \"v7\".",
+        "description": "Format version. Must be \"v8\".",
         "required": true
       },
       {
@@ -68,24 +78,14 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
         "required": true,
         "fields": [
           {
-            "name": "must_check_out",
-            "type": "bool",
-            "description": "Players must explicitly check out of each location before moving on."
-          },
-          {
             "name": "show_team_count",
             "type": "bool",
-            "description": "Show how many teams are at each location."
+            "description": "Show how many teams are at each objective."
           },
           {
             "name": "enable_points",
             "type": "bool",
             "description": "Enable the points system."
-          },
-          {
-            "name": "enable_bonus_points",
-            "type": "bool",
-            "description": "Enable bonus points on blocks."
           },
           {
             "name": "show_leaderboard",
@@ -109,7 +109,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       {
         "name": "structure",
         "type": "object",
-        "description": "Root group defining routing, navigation, and the location tree.",
+        "description": "Root group defining routing and the objective tree.",
         "required": true,
         "fields": [
           {
@@ -120,13 +120,7 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
           {
             "name": "routing",
             "type": "enum",
-            "description": "How players are routed through locations. See enums.routing.",
-            "required": true
-          },
-          {
-            "name": "navigation",
-            "type": "enum",
-            "description": "How the navigation UI is presented. See enums.navigation.",
+            "description": "How players are routed through objectives. See enums.routing.",
             "required": true
           },
           {
@@ -138,27 +132,120 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
           {
             "name": "minimum_required",
             "type": "int",
-            "description": "Number of locations required when completion is \"minimum\"."
+            "description": "Number of objectives required when completion is \"minimum\"."
+          },
+          {
+            "name": "when",
+            "type": "object",
+            "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
+            "fields": [
+              {
+                "name": "all_of",
+                "type": "list",
+                "description": "ALL conditions must be true (AND). Each item is a condition object.",
+                "items": {
+                  "name": "",
+                  "type": "object",
+                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+                  "fields": [
+                    {
+                      "name": "var",
+                      "type": "string",
+                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                      "required": true
+                    },
+                    {
+                      "name": "op",
+                      "type": "enum",
+                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                      "enum": [
+                        "eq",
+                        "neq",
+                        "gt",
+                        "lt",
+                        "gte",
+                        "lte",
+                        "in",
+                        "not_in"
+                      ]
+                    },
+                    {
+                      "name": "value",
+                      "type": "any",
+                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+                    },
+                    {
+                      "name": "not",
+                      "type": "bool",
+                      "description": "Negate the result of this condition."
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "any_of",
+                "type": "list",
+                "description": "At least one condition must be true (OR). Each item is a condition object.",
+                "items": {
+                  "name": "",
+                  "type": "object",
+                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+                  "fields": [
+                    {
+                      "name": "var",
+                      "type": "string",
+                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                      "required": true
+                    },
+                    {
+                      "name": "op",
+                      "type": "enum",
+                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                      "enum": [
+                        "eq",
+                        "neq",
+                        "gt",
+                        "lt",
+                        "gte",
+                        "lte",
+                        "in",
+                        "not_in"
+                      ]
+                    },
+                    {
+                      "name": "value",
+                      "type": "any",
+                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+                    },
+                    {
+                      "name": "not",
+                      "type": "bool",
+                      "description": "Negate the result of this condition."
+                    }
+                  ]
+                }
+              }
+            ]
           },
           {
             "name": "children",
             "type": "list",
-            "description": "Ordered list of location or group children.",
+            "description": "Ordered list of objective or group children.",
             "required": true,
             "items": {
               "name": "",
               "type": "object",
-              "description": "Tagged union: set exactly one of \"location\" or \"group\".",
+              "description": "Tagged union: set exactly one of \"objective\" or \"group\".",
               "fields": [
                 {
-                  "name": "location",
+                  "name": "objective",
                   "type": "object",
-                  "description": "A single game location. See location schema."
+                  "description": "A single game objective. See objective schema."
                 },
                 {
                   "name": "group",
                   "type": "object",
-                  "description": "A named sub-group with its own routing/navigation/completion settings."
+                  "description": "A named sub-group with its own routing and completion settings."
                 }
               ]
             }
@@ -166,61 +253,163 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
         ]
       },
       {
-        "name": "location",
+        "name": "objective",
         "type": "object",
-        "description": "Schema for location objects within structure.children.",
+        "description": "Schema for objective objects within structure.children.",
         "fields": [
           {
             "name": "id",
             "type": "string",
-            "description": "Location UUID. Present on export; omit on create-import to generate a new UUID."
+            "description": "Objective UUID. Present on export; omit on create-import to generate a new UUID."
           },
           {
             "name": "slug",
             "type": "string",
-            "description": "Short alphanumeric code used in QR/URLs. Must be unique within the game.",
+            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e when clauses. Must be unique within the game.",
             "required": true
           },
           {
-            "name": "name",
+            "name": "title",
             "type": "string",
-            "description": "Display name shown to players.",
+            "description": "Display title shown to players.",
             "required": true
           },
           {
-            "name": "points",
-            "type": "int",
-            "description": "Points awarded on check-in (requires enable_points in settings)."
-          },
-          {
-            "name": "marker",
+            "name": "when",
             "type": "object",
-            "description": "Geographic map pin. Omit if the location has no map position.",
+            "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
             "fields": [
               {
-                "name": "lat",
-                "type": "float",
-                "description": "Latitude in decimal degrees.",
-                "required": true
+                "name": "all_of",
+                "type": "list",
+                "description": "ALL conditions must be true (AND). Each item is a condition object.",
+                "items": {
+                  "name": "",
+                  "type": "object",
+                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+                  "fields": [
+                    {
+                      "name": "var",
+                      "type": "string",
+                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                      "required": true
+                    },
+                    {
+                      "name": "op",
+                      "type": "enum",
+                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                      "enum": [
+                        "eq",
+                        "neq",
+                        "gt",
+                        "lt",
+                        "gte",
+                        "lte",
+                        "in",
+                        "not_in"
+                      ]
+                    },
+                    {
+                      "name": "value",
+                      "type": "any",
+                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+                    },
+                    {
+                      "name": "not",
+                      "type": "bool",
+                      "description": "Negate the result of this condition."
+                    }
+                  ]
+                }
               },
               {
-                "name": "lng",
-                "type": "float",
-                "description": "Longitude in decimal degrees.",
-                "required": true
+                "name": "any_of",
+                "type": "list",
+                "description": "At least one condition must be true (OR). Each item is a condition object.",
+                "items": {
+                  "name": "",
+                  "type": "object",
+                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+                  "fields": [
+                    {
+                      "name": "var",
+                      "type": "string",
+                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                      "required": true
+                    },
+                    {
+                      "name": "op",
+                      "type": "enum",
+                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                      "enum": [
+                        "eq",
+                        "neq",
+                        "gt",
+                        "lt",
+                        "gte",
+                        "lte",
+                        "in",
+                        "not_in"
+                      ]
+                    },
+                    {
+                      "name": "value",
+                      "type": "any",
+                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+                    },
+                    {
+                      "name": "not",
+                      "type": "bool",
+                      "description": "Negate the result of this condition."
+                    }
+                  ]
+                }
               }
             ]
           },
           {
-            "name": "content",
-            "type": "list",
-            "description": "Blocks shown to players after check-in. Always present, even if empty.",
-            "required": true
+            "name": "proof",
+            "type": "object",
+            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              },
+              {
+                "name": "sets",
+                "type": "object",
+                "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+                "items": {
+                  "name": "",
+                  "type": "string"
+                }
+              }
+            ]
           },
           {
-            "name": "navigation",
-            "type": "list",
-            "description": "Blocks shown on the /next page to help players find this location."
+            "name": "reveal",
+            "type": "object",
+            "description": "Blocks and sets shown/fired once proof completes.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              },
+              {
+                "name": "sets",
+                "type": "object",
+                "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+                "items": {
+                  "name": "",
+                  "type": "string"
+                }
+              }
+            ]
           }
         ]
       }
@@ -231,73 +420,107 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       {
         "value": "randomised",
         "label": "Randomised Route",
-        "description": "The game randomly selects locations for each player/team. Good for large groups."
+        "description": "The game will randomly select objectives for players to pursue. Good for large groups as it disperses players."
       },
       {
         "value": "free_roam",
         "label": "Open Exploration",
-        "description": "Players visit locations in any order. All locations are visible."
+        "description": "Players can pursue objectives in any order. This mode shows all objectives and is good for exploration."
       },
       {
         "value": "ordered",
         "label": "Guided Path",
-        "description": "Players must visit locations in a fixed order."
+        "description": "Players must complete objectives in a specific order. Good for narrative experiences."
       },
       {
         "value": "secret",
         "label": "Secret",
-        "description": "Locations never explicitly shown; players access them out of sequence."
-      }
-    ],
-    "navigation": [
-      {
-        "value": "map",
-        "label": "Map Only",
-        "description": "Players are shown a map with unlabelled pins."
-      },
-      {
-        "value": "labelled_map",
-        "label": "Labelled Map",
-        "description": "Players are shown a map with location names."
-      },
-      {
-        "value": "location_list",
-        "label": "Location List",
-        "description": "Players are shown a list of location names."
-      },
-      {
-        "value": "custom",
-        "label": "Custom Clues",
-        "description": "Players see custom content (e.g. randomised clues) built with the block builder."
-      },
-      {
-        "value": "tasks",
-        "label": "Tasks",
-        "description": "Players see a scavenger-hunt-style checklist with completion tracking."
+        "description": "Objectives that may be accessed out of sequence. These objectives are never explicitly shown to players."
       }
     ],
     "completion": [
       {
         "value": "all",
-        "label": "All",
-        "description": "All locations/groups in this group must be completed."
+        "label": "All Objectives",
+        "description": "All objectives must be completed for the group to be considered done."
       },
       {
         "value": "minimum",
-        "label": "Minimum",
-        "description": "At least minimum_required locations/groups must be completed."
+        "label": "Minimum Required",
+        "description": "A minimum number of objectives must be completed for the group to be considered done."
+      }
+    ],
+    "condition_ops": [
+      {
+        "value": "eq",
+        "label": "Equal",
+        "description": "var == value"
+      },
+      {
+        "value": "neq",
+        "label": "Not equal",
+        "description": "var != value"
+      },
+      {
+        "value": "gt",
+        "label": "Greater than",
+        "description": "var \u003e value (numeric)"
+      },
+      {
+        "value": "lt",
+        "label": "Less than",
+        "description": "var \u003c value (numeric)"
+      },
+      {
+        "value": "gte",
+        "label": "Greater than or equal",
+        "description": "var \u003e= value (numeric)"
+      },
+      {
+        "value": "lte",
+        "label": "Less than or equal",
+        "description": "var \u003c= value (numeric)"
+      },
+      {
+        "value": "in",
+        "label": "In array",
+        "description": "var is one of value (value must be an array)"
+      },
+      {
+        "value": "not_in",
+        "label": "Not in array",
+        "description": "var is not in value (value must be an array)"
       }
     ]
   },
+  "built_in_vars": [
+    {
+      "var": "player.points",
+      "type": "int",
+      "description": "Total points earned on this run. Evaluated live from the run's points."
+    },
+    {
+      "var": "points",
+      "type": "int",
+      "description": "Pre-respine spelling of player.points. Still resolves; prefer player.points."
+    },
+    {
+      "var": "run.started_at",
+      "type": "timestamp",
+      "description": "RFC3339 timestamp of when the run began. Empty until the players start."
+    },
+    {
+      "var": "objective.\u003cslug\u003e",
+      "type": "string",
+      "description": "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise."
+    },
+    {
+      "var": "game.team_count",
+      "type": "int",
+      "description": "Number of teams with HasStarted == true in this game instance."
+    }
+  ],
   "contexts": [
-    {
-      "value": "location_content",
-      "description": "Blocks shown to players after checking in to a location."
-    },
-    {
-      "value": "navigation",
-      "description": "Blocks shown on the /next page to help players find a location."
-    },
     {
       "value": "start",
       "description": "Blocks shown on the game start page (introductions, rules, team name, start button)."
@@ -305,6 +528,118 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
     {
       "value": "finish",
       "description": "Blocks shown on the game finish/end page."
+    },
+    {
+      "value": "objective_proof",
+      "description": "Blocks a player must complete to prove an objective. Once every block here completes, the reveal context is shown."
+    },
+    {
+      "value": "objective_reveal",
+      "description": "Blocks shown once an objective's proof context is complete."
+    }
+  ],
+  "block_shared_fields": [
+    {
+      "name": "when",
+      "type": "object",
+      "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
+      "fields": [
+        {
+          "name": "all_of",
+          "type": "list",
+          "description": "ALL conditions must be true (AND). Each item is a condition object.",
+          "items": {
+            "name": "",
+            "type": "object",
+            "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+            "fields": [
+              {
+                "name": "var",
+                "type": "string",
+                "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                "required": true
+              },
+              {
+                "name": "op",
+                "type": "enum",
+                "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                "enum": [
+                  "eq",
+                  "neq",
+                  "gt",
+                  "lt",
+                  "gte",
+                  "lte",
+                  "in",
+                  "not_in"
+                ]
+              },
+              {
+                "name": "value",
+                "type": "any",
+                "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+              },
+              {
+                "name": "not",
+                "type": "bool",
+                "description": "Negate the result of this condition."
+              }
+            ]
+          }
+        },
+        {
+          "name": "any_of",
+          "type": "list",
+          "description": "At least one condition must be true (OR). Each item is a condition object.",
+          "items": {
+            "name": "",
+            "type": "object",
+            "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
+            "fields": [
+              {
+                "name": "var",
+                "type": "string",
+                "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
+                "required": true
+              },
+              {
+                "name": "op",
+                "type": "enum",
+                "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
+                "enum": [
+                  "eq",
+                  "neq",
+                  "gt",
+                  "lt",
+                  "gte",
+                  "lte",
+                  "in",
+                  "not_in"
+                ]
+              },
+              {
+                "name": "value",
+                "type": "any",
+                "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
+              },
+              {
+                "name": "not",
+                "type": "bool",
+                "description": "Negate the result of this condition."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sets",
+      "type": "object",
+      "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+      "items": {
+        "name": "",
+        "type": "string"
+      }
     }
   ],
   "blocks": [
@@ -313,9 +648,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Alert",
       "description": "Displays a styled alert box with a message.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -342,8 +681,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Information Broker",
       "description": "Players spend points to reveal progressively detailed information tiers.",
       "contexts": [
-        "location_content",
-        "navigation"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -386,9 +729,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Button",
       "description": "A clickable button that opens a URL.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -421,8 +768,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Checklist",
       "description": "An interactive checklist players can tick off.",
       "contexts": [
-        "location_content",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -461,12 +813,71 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "choice",
+      "name": "Choice",
+      "description": "Presents labelled options; selecting one sets a boolean variable.",
+      "contexts": [
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Question or instruction shown above the choices",
+          "required": true
+        },
+        {
+          "name": "button_text",
+          "type": "string",
+          "description": "Label for the submit button (default: \"Confirm choice\")"
+        },
+        {
+          "name": "multi_select",
+          "type": "bool",
+          "description": "Allow selecting multiple options (default: false — single choice)"
+        },
+        {
+          "name": "options",
+          "type": "list",
+          "description": "Choices presented to the player",
+          "required": true,
+          "items": {
+            "name": "",
+            "type": "object",
+            "fields": [
+              {
+                "name": "label",
+                "type": "string",
+                "description": "Display text for this choice",
+                "required": true
+              },
+              {
+                "name": "sets",
+                "type": "string",
+                "description": "Variable name set to \"true\" when this choice is selected",
+                "required": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "type": "clue",
       "name": "Clue",
       "description": "A clue revealed behind a button — players tap to reveal the hint.",
       "contexts": [
-        "location_content",
-        "navigation"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -492,9 +903,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Divider",
       "description": "A horizontal rule with an optional title label.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -505,11 +920,40 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "free_text",
+      "name": "Free Text",
+      "description": "An ungraded text input for player reflections and free-form responses.",
+      "contexts": [
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Question or instruction shown to the player"
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text for the input field"
+        }
+      ]
+    },
+    {
       "type": "game_status",
       "name": "Game Status Alert",
       "description": "Shows the current game status (scheduled, active, or closed) with optional messages.",
       "contexts": [
         "start"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -534,9 +978,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Header",
       "description": "A page header with an icon and title.",
       "contexts": [
-        "location_content",
         "start",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -570,10 +1018,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Image",
       "description": "Displays an image with an optional caption and link.",
       "contexts": [
-        "location_content",
-        "navigation",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -604,10 +1055,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Map",
       "description": "Displays a Mapbox map centred on a specific location with a marker.",
       "contexts": [
-        "location_content",
-        "navigation",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -644,7 +1098,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Password",
       "description": "Players must enter the correct text answer to proceed.",
       "contexts": [
-        "location_content"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -670,8 +1129,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Photo Upload",
       "description": "Players upload one or more photos as their response.",
       "contexts": [
-        "location_content",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -691,7 +1155,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Pin Code",
       "description": "Players must enter a numeric PIN to proceed.",
       "contexts": [
-        "location_content"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -717,7 +1186,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Quiz",
       "description": "Multiple choice question with configurable answer options.",
       "contexts": [
-        "location_content"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -780,9 +1254,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
     {
       "type": "random_clue",
       "name": "Random Clue",
-      "description": "Shows a randomly selected clue from a list each time the player views the location.",
+      "description": "Shows a randomly selected clue from a list, deterministically chosen per team.",
       "contexts": [
-        "navigation"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -802,8 +1280,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Rating",
       "description": "Players rate something on a star scale.",
       "contexts": [
-        "location_content",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -819,11 +1302,66 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "scan",
+      "name": "Scan",
+      "description": "Players scan a QR code or barcode to proceed.",
+      "contexts": [
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Instruction shown to the player"
+        },
+        {
+          "name": "codes",
+          "type": "array",
+          "description": "Values that satisfy the block; any one counts. A block with none can never be passed",
+          "fields": [
+            {
+              "name": "value",
+              "type": "string",
+              "description": "The value the code carries",
+              "required": true
+            },
+            {
+              "name": "generate",
+              "type": "bool",
+              "description": "Render as a printable QR. Off for codes already in the world, like an ISBN",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "name": "match",
+          "type": "string",
+          "description": "How a scan is compared: exact is byte-for-byte, ci ignores case, contains accepts a value carrying the code and ignores case too, such as a QR encoding a URL",
+          "default": "exact",
+          "enum": [
+            "exact",
+            "ci",
+            "contains"
+          ]
+        }
+      ]
+    },
+    {
       "type": "sorting",
       "name": "Sorting",
       "description": "Players drag and drop items into the correct order.",
       "contexts": [
-        "location_content"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when",
+        "sets"
       ],
       "fields": [
         {
@@ -878,6 +1416,9 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "contexts": [
         "start"
       ],
+      "shared_fields": [
+        "when"
+      ],
       "fields": [
         {
           "name": "scheduled_text",
@@ -902,37 +1443,14 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
-      "type": "task",
-      "name": "Task",
-      "description": "A single task item in a scavenger hunt task list.",
-      "contexts": [
-        "navigation"
-      ],
-      "fields": [
-        {
-          "name": "task",
-          "type": "string",
-          "description": "Task description shown to players",
-          "required": true
-        },
-        {
-          "name": "icon",
-          "type": "string",
-          "description": "Icon name (Lucide icon)"
-        },
-        {
-          "name": "link_through",
-          "type": "bool",
-          "description": "If true, tapping takes the player to the task location"
-        }
-      ]
-    },
-    {
       "type": "team_name",
       "name": "Team Name",
       "description": "Displays the team name and optionally allows players to change it.",
       "contexts": [
         "start"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -952,10 +1470,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Markdown",
       "description": "Renders Markdown content. Supports headings, lists, links, bold, italic, and images.",
       "contexts": [
-        "location_content",
-        "navigation",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -971,10 +1492,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Toggle Text",
       "description": "Collapsible text section with a title and hidden content.",
       "contexts": [
-        "location_content",
-        "navigation",
         "start",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {
@@ -1001,9 +1525,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "YouTube",
       "description": "Embeds a YouTube video.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "when"
       ],
       "fields": [
         {

@@ -15,7 +15,7 @@ type LintResult struct {
 }
 
 type LintDiag struct {
-	Path    string `json:"path"` // e.g. "structure.children[0].location.content[1]"
+	Path    string `json:"path"` // e.g. "structure.children[0].objective.proof.blocks[1]".
 	Code    string `json:"code"` // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
 	Message string `json:"message"`
 }
@@ -610,8 +610,8 @@ func (l *linter) checkVarReference(path, varName string) {
 // checkGroupMinOneAutoAdvance warns when a when clause inside a group references
 // a variable that is only set within that same group, and the group has
 // completion=minimum, minimum_required=1, and auto_advance=true (or nil/default).
-// Because the team advances as soon as one location is completed, variables set
-// by other locations in the group may never be written.
+// Because the team advances as soon as one objective is completed, variables set
+// by other objectives in the group may never be written.
 func (l *linter) checkGroupMinOneAutoAdvance(path string, g GroupDoc) {
 	if g.Completion != CompletionMinimum || g.MinimumRequired != 1 {
 		return
@@ -637,7 +637,7 @@ func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc
 		case child.Objective != nil:
 			obj := child.Objective
 			objPath := childPath + ".objective"
-			// Objective-level when: check against full groupVars, same reasoning as location.
+			// Objective-level when: check against full groupVars, same reasoning as above.
 			l.checkGroupScopedWhen(objPath+".when", obj.When, groupVars)
 
 			// A proof block is still rendering while its own context hasn't finished,

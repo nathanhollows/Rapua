@@ -125,8 +125,6 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 			start = append(start, doc)
 		case game.ContextFinish:
 			finish = append(finish, doc)
-		case game.ContextLocationContent, game.ContextNavigation:
-			// not valid for instance-level blocks; skip
 		}
 	}
 
@@ -184,7 +182,7 @@ func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []mod
 			proof = append(proof, doc)
 		case game.ContextObjectiveReveal:
 			reveal = append(reveal, doc)
-		case game.ContextLocationContent, game.ContextNavigation, game.ContextStart, game.ContextFinish:
+		case game.ContextStart, game.ContextFinish:
 			// not valid for objective blocks: skip.
 		}
 	}

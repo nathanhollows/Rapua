@@ -65,15 +65,15 @@ func newTestRegistry() *mockRegistry {
 		},
 		contexts: map[string][]game.BlockContext{
 			"text": {
-				game.ContextLocationContent, game.ContextStart, game.ContextFinish,
+				game.ContextStart, game.ContextFinish,
 				game.ContextObjectiveProof, game.ContextObjectiveReveal,
 			},
-			"clue": {game.ContextNavigation},
+			"clue": {game.ContextObjectiveProof, game.ContextObjectiveReveal},
 			"quiz": {
-				game.ContextLocationContent, game.ContextObjectiveProof, game.ContextObjectiveReveal,
+				game.ContextObjectiveProof, game.ContextObjectiveReveal,
 			},
 			"choice": {
-				game.ContextLocationContent, game.ContextObjectiveProof, game.ContextObjectiveReveal,
+				game.ContextObjectiveProof, game.ContextObjectiveReveal,
 			},
 			"start_button": {game.ContextStart},
 			"game_status":  {game.ContextStart},

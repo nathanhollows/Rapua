@@ -58,7 +58,7 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 			blk, err := svc.NewBlockWithOwnerAndContext(
 				context.Background(),
 				tc.locationID,
-				blocks.ContextLocationContent,
+				blocks.ContextObjectiveProof,
 				tc.blockType,
 			)
 			if tc.wantErr {
@@ -71,6 +71,28 @@ func TestBlockService_NewBlockWithOwnerAndContext(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBlockService_NewBlockWithOwnerAndContext_RejectsWrongContext(t *testing.T) {
+	svc, _, cleanup := setupBlocksService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// team_name is registered only for ContextStart (system blocks). Creating
+	// one mid-quest, in an objective's proof/reveal zone, must be rejected
+	// server-side, not just hidden by the admin dropdown's client-side filter.
+	_, err := svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, "team_name")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+
+	_, err = svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextObjectiveReveal, "team_name")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+
+	// Sanity check: team_name in its actual home context still works.
+	blk, err := svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextStart, "team_name")
+	require.NoError(t, err)
+	assert.Equal(t, "team_name", blk.GetType())
 }
 
 func TestBlockService_NewBlockState(t *testing.T) {
@@ -86,7 +108,7 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	validBlock, err := svc.NewBlockWithOwnerAndContext(
 		context.Background(),
 		parents.QuestID,
-		blocks.ContextLocationContent,
+		blocks.ContextObjectiveProof,
 		"text",
 	)
 	require.NoError(t, err)
@@ -94,7 +116,7 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	validBlock2, err := svc.NewBlockWithOwnerAndContext(
 		context.Background(),
 		parents.QuestID,
-		blocks.ContextLocationContent,
+		blocks.ContextObjectiveProof,
 		"text",
 	)
 	require.NoError(t, err)
@@ -198,7 +220,7 @@ func TestBlockService_GetByBlockID(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"text",
 				)
 				if err != nil {
@@ -249,7 +271,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndRunCode(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"checklist",
 				)
 				if err != nil {
@@ -272,7 +294,7 @@ func TestBlockService_GetBlockWithStateByBlockIDAndRunCode(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"checklist",
 				)
 				if err != nil {
@@ -348,7 +370,7 @@ func TestBlockService_FindByOwnerID(t *testing.T) {
 				_, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					tc.locationID,
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"checklist",
 				)
 				require.NoError(t, err, "block creation should succeed in setup")
@@ -408,7 +430,7 @@ func TestBlockService_FindByOwnerIDAndRunCodeWithState(t *testing.T) {
 					blk, err := svc.NewBlockWithOwnerAndContext(
 						context.Background(),
 						tc.locationID,
-						blocks.ContextLocationContent,
+						blocks.ContextObjectiveProof,
 						"checklist",
 					)
 					require.NoError(t, err)
@@ -457,7 +479,7 @@ func TestBlockService_UpdateState(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"checklist",
 				)
 				if err != nil {
@@ -534,7 +556,7 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					tc.locationID,
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"checklist",
 				)
 				require.NoError(t, err)
@@ -571,15 +593,15 @@ func TestBlockService_FindByOwnerIDAndContext(t *testing.T) {
 		{
 			name:         "Find blocks with specific context",
 			locationID:   gofakeit.UUID(),
-			context:      blocks.ContextLocationContent,
+			context:      blocks.ContextObjectiveProof,
 			blockCount:   2,
-			otherContext: blocks.ContextNavigation,
+			otherContext: blocks.ContextObjectiveReveal,
 			wantErr:      false,
 		},
 		{
 			name:       "Empty location ID",
 			locationID: "",
-			context:    blocks.ContextLocationContent,
+			context:    blocks.ContextObjectiveProof,
 			wantErr:    true,
 		},
 	}
@@ -639,7 +661,7 @@ func TestBlockService_FindByOwnerIDAndRunCodeWithStateAndContext(t *testing.T) {
 			name:         "Find blocks with context and states",
 			locationID:   gofakeit.UUID(),
 			runCode:      gofakeit.Password(false, true, false, false, false, 5),
-			context:      blocks.ContextLocationContent,
+			context:      blocks.ContextObjectiveProof,
 			blockCount:   2,
 			stateCreated: true,
 			wantErr:      false,
@@ -648,7 +670,7 @@ func TestBlockService_FindByOwnerIDAndRunCodeWithStateAndContext(t *testing.T) {
 			name:       "Empty location ID",
 			locationID: "",
 			runCode:    gofakeit.Password(false, true, false, false, false, 5),
-			context:    blocks.ContextLocationContent,
+			context:    blocks.ContextObjectiveProof,
 			wantErr:    true,
 		},
 		{
@@ -695,7 +717,7 @@ func TestBlockService_FindByOwnerIDAndRunCodeWithStateAndContext(t *testing.T) {
 				_, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					tc.locationID,
-					blocks.ContextNavigation,
+					blocks.ContextObjectiveReveal,
 					"text",
 				)
 				require.NoError(t, err)
@@ -737,7 +759,7 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"image",
 				)
 				if err != nil {
@@ -757,7 +779,7 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 				blk, err := svc.NewBlockWithOwnerAndContext(
 					context.Background(),
 					gofakeit.UUID(),
-					blocks.ContextLocationContent,
+					blocks.ContextObjectiveProof,
 					"text",
 				)
 				if err != nil {
