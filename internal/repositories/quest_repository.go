@@ -114,7 +114,6 @@ func (r *questRepository) GetByID(ctx context.Context, id string) (*models.Quest
 	err := r.db.NewSelect().
 		Model(instance).
 		Where("id = ?", id).
-		Relation("Locations").
 		Relation("Objectives").
 		Relation("Settings").
 		Relation("ShareLinks").
@@ -157,18 +156,6 @@ func (r *questRepository) Delete(ctx context.Context, tx *bun.Tx, id string) err
 		return err
 	}
 
-	// Delete CheckIns
-	_, err = tx.NewDelete().Model(&models.CheckIn{}).Where("quest_id = ?", id).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Delete locations
-	_, err = tx.NewDelete().Model(&models.Location{}).Where("quest_id = ?", id).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
 	_, err = tx.NewDelete().Model(&models.Objective{}).Where("quest_id = ?", id).Exec(ctx)
 	if err != nil {
 		return err
@@ -205,10 +192,6 @@ func (r *questRepository) GetByIDWithRelations(ctx context.Context, id string) (
 		Where("quest.id = ?", id).
 		Relation("Settings").
 		Relation("Runs").
-		Relation("Locations", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.Order("order ASC")
-		}).
-		Relation("Locations.Marker").
 		Relation("Objectives").
 		Scan(ctx)
 	if err != nil {

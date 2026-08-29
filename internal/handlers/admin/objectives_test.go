@@ -50,8 +50,6 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 	transactor := db.NewTransactor(dbc)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
 	uploadsRepo := repositories.NewUploadRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
@@ -64,8 +62,8 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 		logger:               logger,
 		objectiveService:     services.NewObjectiveService(transactor, objectiveRepo),
 		blockService:         services.NewBlockService(blockRepo, blockStateRepo),
-		deleteService:        services.NewDeleteService(transactor, instanceRepo, locationRepo, markerRepo, teamRepo, uploadsRepo, dbc, t.TempDir(), logger),
-		gameStructureService: services.NewGameStructureService(locationRepo, objectiveRepo, instanceRepo),
+		deleteService:        services.NewDeleteService(transactor, instanceRepo, teamRepo, uploadsRepo, dbc, t.TempDir(), logger),
+		gameStructureService: services.NewGameStructureService(objectiveRepo, instanceRepo),
 		questService:         services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo),
 	}
 }
@@ -90,7 +88,6 @@ func objectiveTestQuest(t *testing.T, dbc *bun.DB) *models.User {
 			IsRoot:         true,
 			Routing:        models.RouteStrategyFreeRoam,
 			CompletionType: models.CompletionAll,
-			LocationIDs:    []string{},
 			ObjectiveIDs:   []string{},
 			SubGroups:      []models.GameStructure{},
 		},

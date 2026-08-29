@@ -104,9 +104,11 @@ func TestUploadService_Search(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name:      "Search by LocationID",
+			// location_id left the whitelist with the Location model: a stale
+			// filter must be rejected like any other unknown key.
+			name:      "Search by location_id is rejected",
 			filters:   map[string]string{"location_id": "456"},
-			expectErr: false,
+			expectErr: true,
 		},
 		{
 			name:      "Search by QuestID and RunID",

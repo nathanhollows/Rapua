@@ -22,7 +22,6 @@ const htmxHeaderTrue = "true"
 type AccessService interface {
 	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
 	CanAdminAccessQuest(ctx context.Context, userID, instanceID string) (bool, error)
-	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
 	CanAdminAccessBlockOwner(
 		ctx context.Context,
 		userID, ownerID string,
@@ -79,11 +78,6 @@ type BlockService interface {
 	UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
 	// ReorderBlocks changes the display/order of blocks at a location
 	ReorderBlocks(ctx context.Context, blockIDs []string) error
-
-	// CheckValidationRequiredForLocation checks if any blocks in a location require validation
-	CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error)
-	// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check-in
-	CheckValidationRequiredForCheckIn(ctx context.Context, locationID, runCode, questID string) (bool, error)
 }
 
 type CreditService interface {
@@ -100,7 +94,6 @@ type CreditService interface {
 type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteQuest(ctx context.Context, userID, instanceID string) error
-	DeleteLocation(ctx context.Context, locationID string) error
 	DeleteObjective(ctx context.Context, objectiveID string) error
 	ResetTeams(ctx context.Context, instanceID string, runCodes []string) error
 	DeleteTeams(ctx context.Context, instanceID string, teamIDs []string) error
@@ -132,11 +125,6 @@ type DuplicationService interface {
 		templateID string,
 		name string,
 	) (*models.Quest, error)
-	DuplicateLocation(
-		ctx context.Context,
-		sourceLocation models.Location,
-		newInstanceID string,
-	) (*models.Location, error)
 }
 
 type FacilitatorService interface {
@@ -187,14 +175,6 @@ type QuestSettingsService interface {
 	GetQuestSettings(ctx context.Context, instanceID string) (*models.QuestSettings, error)
 }
 
-type MarkerService interface {
-	// CreateMarker creates a new marker
-	CreateMarker(ctx context.Context, name string, lat, lng float64) (models.Marker, error)
-	// DuplicateLocation creates a new location given an existing location and the instance ID of the new location
-	// FindMarkersNotInQuest finds all markers that are not in the given quest
-	FindMarkersNotInQuest(ctx context.Context, instanceID string, otherInstances []string) ([]models.Marker, error)
-}
-
 type NotificationService interface {
 	SendNotification(ctx context.Context, runCode string, content string) (models.Notification, error)
 	SendNotificationToAllTeams(ctx context.Context, instanceID string, content string) error
@@ -214,7 +194,6 @@ type RunService interface {
 	// GetRunByCode returns a run by code
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
 
-	LoadCheckIns(ctx context.Context, team *models.Run) error
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Run) error
 
@@ -278,9 +257,7 @@ type Handler struct {
 	questLoader             QuestLoader
 	questService            QuestService
 	instanceSettingsService QuestSettingsService
-	locationService         services.LocationService
 	objectiveService        services.ObjectiveService
-	markerService           MarkerService
 	notificationService     NotificationService
 	runService              RunService
 	templateService         services.TemplateService
@@ -309,9 +286,7 @@ func NewAdminHandler(
 	questLoader QuestLoader,
 	questService QuestService,
 	instanceSettingsService QuestSettingsService,
-	locationService services.LocationService,
 	objectiveService services.ObjectiveService,
-	markerService MarkerService,
 	notificationService NotificationService,
 	runService RunService,
 	templateService services.TemplateService,
@@ -339,9 +314,7 @@ func NewAdminHandler(
 		questLoader:             questLoader,
 		questService:            questService,
 		instanceSettingsService: instanceSettingsService,
-		locationService:         locationService,
 		objectiveService:        objectiveService,
-		markerService:           markerService,
 		notificationService:     notificationService,
 		runService:              runService,
 		templateService:         templateService,

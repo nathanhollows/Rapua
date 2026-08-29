@@ -23,7 +23,6 @@ type Upload struct {
 	ID          string    `bun:"id,pk,notnull"`
 	OriginalURL string    `bun:"original_url,notnull"` // Original file link
 	Timestamp   time.Time `bun:"timestamp"`
-	LocationID  string    `bun:"location_id,nullzero"`
 	QuestID     string    `bun:"quest_id,nullzero"`
 	RunCode     string    `bun:"run_code,nullzero"`
 	BlockID     string    `bun:"block_id,nullzero"`

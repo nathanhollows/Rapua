@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
@@ -40,7 +41,7 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Create new player state",
 			setup: func() (blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, parents.LocationID)
+				blockID := createTestBlock(t, dbc, gofakeit.UUID())
 				runCode := createTestTeam(t, dbc, parents.QuestID)
 				return repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 			},
@@ -59,7 +60,7 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Get player state by block and team",
 			setup: func() (blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, parents.LocationID)
+				blockID := createTestBlock(t, dbc, gofakeit.UUID())
 				runCode := createTestTeam(t, dbc, parents.QuestID)
 				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				return repo.Create(context.Background(), state)
@@ -81,7 +82,7 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Update player state",
 			setup: func() (blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, parents.LocationID)
+				blockID := createTestBlock(t, dbc, gofakeit.UUID())
 				runCode := createTestTeam(t, dbc, parents.QuestID)
 				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				createdState, _ := repo.Create(context.Background(), state)
@@ -107,7 +108,7 @@ func TestBlockStateRepository(t *testing.T) {
 		{
 			name: "Delete player state",
 			setup: func() (blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, parents.LocationID)
+				blockID := createTestBlock(t, dbc, gofakeit.UUID())
 				runCode := createTestTeam(t, dbc, parents.QuestID)
 				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
 				return repo.Create(context.Background(), state)
@@ -161,7 +162,7 @@ func TestBlockStateRepository_Bulk(t *testing.T) {
 		{
 			name: "Delete player states by block ID",
 			setup: func() ([]blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, parents.LocationID)
+				blockID := createTestBlock(t, dbc, gofakeit.UUID())
 				playerStates := make([]blocks.PlayerState, 3)
 				for i := range 3 {
 					runCode := createTestTeam(t, dbc, parents.QuestID)

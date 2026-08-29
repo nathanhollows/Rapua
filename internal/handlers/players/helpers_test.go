@@ -111,10 +111,8 @@ func setupRunService(t *testing.T) (*services.RunService, *bun.DB, func()) {
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
-	checkinRepo := repositories.NewCheckInRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	runRepo := repositories.NewRunRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	varStateRepo := repositories.NewRunVarStateRepository(dbc)
@@ -123,7 +121,7 @@ func setupRunService(t *testing.T) (*services.RunService, *bun.DB, func()) {
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
 	runService := services.NewRunService(
-		transactor, runRepo, checkinRepo, creditService, blockStateRepo, locationRepo, varStateRepo,
+		transactor, runRepo, creditService, blockStateRepo, varStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	return runService, dbc, cleanup

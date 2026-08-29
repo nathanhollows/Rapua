@@ -323,34 +323,9 @@ func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	}
 }
 
-// CheckValidationRequiredForLocation checks if any blocks in a location require validation.
-func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
-	blocks, err := s.FindByOwnerIDAndContext(ctx, locationID, game.ContextLocationContent)
-	if err != nil {
-		return false, err
-	}
-
-	for _, block := range blocks {
-		if block.RequiresValidation() {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check in.
-func (s *BlockService) CheckValidationRequiredForCheckIn(
-	ctx context.Context,
-	locationID, runCode, questID string,
-) (bool, error) {
-	return s.checkValidationRequiredForCheckIn(ctx, locationID, runCode, questID, game.ContextLocationContent, nil)
-}
-
-// checkValidationRequiredForCheckIn is the internal implementation, generalised to any owner
-// and context (a location's content, or one of an objective's proof/reveal contexts). When
-// resolver is non-nil, blocks whose when-clause evaluates to false are skipped (hidden from
-// the player).
+// checkValidationRequiredForCheckIn checks whether any blocks in an objective
+// context still require validation. When resolver is non-nil, blocks whose
+// when-clause evaluates to false are skipped (hidden from the player).
 func (s *BlockService) checkValidationRequiredForCheckIn(
 	ctx context.Context,
 	ownerID, runCode, questID string,

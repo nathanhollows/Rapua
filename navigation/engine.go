@@ -8,13 +8,11 @@ import (
 type AdvanceReason string
 
 const (
-	ReasonGroupIncomplete     AdvanceReason = "group_incomplete"      // Current group not yet completed
-	ReasonAutoAdvanceDisabled AdvanceReason = "auto_advance_disabled" // Group complete but AutoAdvance is false
-	ReasonNextSibling         AdvanceReason = "next_sibling"          // Advancing to next sibling group
-	ReasonParentNextSibling   AdvanceReason = "parent_next_sibling"   // Advancing to parent's next sibling (recursive)
-	ReasonAllComplete         AdvanceReason = "all_complete"          // No more groups available
-	ReasonNoParent            AdvanceReason = "no_parent"             // Current group is root (shouldn't happen)
-	ReasonGroupNotFound       AdvanceReason = "group_not_found"       // Group ID not found in structure
+	ReasonNextSibling       AdvanceReason = "next_sibling"        // Advancing to next sibling group
+	ReasonParentNextSibling AdvanceReason = "parent_next_sibling" // Advancing to parent's next sibling (recursive)
+	ReasonAllComplete       AdvanceReason = "all_complete"        // No more groups available
+	ReasonNoParent          AdvanceReason = "no_parent"           // Current group is root (shouldn't happen)
+	ReasonGroupNotFound     AdvanceReason = "group_not_found"     // Group ID not found in structure
 )
 
 // Engine provides pure navigation logic functions that operate on GameStructure.
@@ -27,115 +25,9 @@ const (
 // - Efficient: O(n) or better time complexity
 // - Multi-tenant safe: no shared state between game instances
 
-// ComputeCurrentGroup determines which group a team should currently be in based on their
-// completed locations. This walks through the structure from the first visible group,
-// automatically advancing through completed groups.
-//
-// Auto-advance behavior:
-//   - 100% completion: ALWAYS auto-advance to next group
-//   - Minimum completion (not 100%):
-//   - AutoAdvance = true: advance immediately
-//   - AutoAdvance = false: stay in group (let players complete remaining locations)
-//   - Skipped groups: If a group is in skippedGroupIDs, advance past it even if AutoAdvance = false
-//
-// Returns empty string if:
-//   - Structure has no visible groups
-//   - All groups are completed
-//
-// This function is deterministic: same inputs always produce same result.
-func ComputeCurrentGroup( //nolint:gocognit
-	structure *models.GameStructure,
-	completedLocationIDs []string,
-	skippedGroupIDs []string,
-) string {
-	// Start at first visible group
-	current := GetFirstVisibleGroup(structure)
-	if current == nil {
-		return "" // No visible groups configured
-	}
-
-	// Create set for fast skipped group lookup
-	skipped := makeSet(skippedGroupIDs)
-
-	// Walk through structure, advancing when appropriate
-	for {
-		// Check if this group was manually skipped
-		if skipped[current.ID] {
-			// Group was skipped - advance to next
-			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
-
-			// If we can't advance or reached the end, stay at current
-			if !shouldAdvance || reason == ReasonAllComplete {
-				return current.ID
-			}
-
-			// Move to next group and continue checking
-			current = next
-			continue
-		}
-
-		// Check completion status
-		completed := makeSet(completedLocationIDs)
-		completedCount := 0
-		for _, locID := range current.LocationIDs {
-			if completed[locID] {
-				completedCount++
-			}
-		}
-
-		// If group is incomplete (minimum not met), stay here
-		isMinimumMet := false
-		switch current.CompletionType {
-		case models.CompletionAll:
-			isMinimumMet = completedCount == len(current.LocationIDs)
-		case models.CompletionMinimum:
-			isMinimumMet = completedCount >= current.MinimumRequired
-		}
-
-		if !isMinimumMet {
-			return current.ID // Stay - minimum not met
-		}
-
-		// Minimum is met - check if we should advance
-		allComplete := completedCount == len(current.LocationIDs)
-
-		// Always advance if 100% complete
-		if allComplete {
-			// Try to advance to next group
-			next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
-
-			// If we can't advance or reached the end, stay at current
-			if !shouldAdvance || reason == ReasonAllComplete {
-				return current.ID
-			}
-
-			// Move to next group and continue checking
-			current = next
-			continue
-		}
-
-		// Partial completion (minimum met, but not all locations)
-		// Only advance if AutoAdvance is true
-		if !current.AutoAdvance {
-			return current.ID // Stay - let players complete remaining locations
-		}
-
-		// AutoAdvance is true and minimum met - advance to next group
-		next, shouldAdvance, reason := GetNextGroup(structure, current.ID, completedLocationIDs)
-
-		if !shouldAdvance || reason == ReasonAllComplete {
-			return current.ID
-		}
-
-		current = next
-	}
-}
-
-// ComputeCurrentGroupForObjectives is ComputeCurrentGroup's Objective-ID counterpart:
-// same auto-advance semantics, walking GameStructure.ObjectiveIDs instead of LocationIDs.
-// Kept as a mirror rather than a generalized version of ComputeCurrentGroup: a
-// GameStructure is always fully Location-built or fully Objective-built, never
-// both, so a "works for both" abstraction would only add indirection no caller needs.
+// ComputeCurrentGroupForObjectives walks GameStructure.ObjectiveIDs, advancing
+// through groups whose completion/auto-advance criteria are already met, and
+// returns the ID of the first group the player should actually see.
 func ComputeCurrentGroupForObjectives( //nolint:gocognit
 	structure *models.GameStructure,
 	completedObjectiveIDs []string,
@@ -209,7 +101,7 @@ func ComputeCurrentGroupForObjectives( //nolint:gocognit
 
 // GetNextGroup finds the next non-secret group in sequence after the current group.
 // This is a low-level function that just finds the next sibling or parent's sibling.
-// It does NOT check AutoAdvance - that's handled by ComputeCurrentGroup.
+// It does NOT check AutoAdvance - that's handled by ComputeCurrentGroupForObjectives.
 // Secret groups are skipped as they never become the current group.
 //
 // Returns (nextGroup, shouldAdvance, reason) where:
@@ -219,7 +111,7 @@ func ComputeCurrentGroupForObjectives( //nolint:gocognit
 func GetNextGroup(
 	structure *models.GameStructure,
 	currentGroupID string,
-	completedLocationIDs []string,
+	completedObjectiveIDs []string,
 ) (*models.GameStructure, bool, AdvanceReason) {
 	currentGroup := FindGroupByID(structure, currentGroupID)
 	if currentGroup == nil {
@@ -241,7 +133,7 @@ func GetNextGroup(
 
 	// Try parent's next sibling (recursive)
 	if !parent.IsRoot {
-		nextGroup, shouldAdvance, _ := GetNextGroup(structure, parent.ID, completedLocationIDs)
+		nextGroup, shouldAdvance, _ := GetNextGroup(structure, parent.ID, completedObjectiveIDs)
 		if shouldAdvance {
 			return nextGroup, true, ReasonParentNextSibling
 		}
@@ -251,68 +143,8 @@ func GetNextGroup(
 	return nil, false, ReasonAllComplete
 }
 
-// GetAvailableLocationIDs returns location IDs a team can visit based on:
-//   - Current group's routing strategy
-//   - Current group's MaxNext setting
-//   - Completed location IDs
-//   - Team code (for deterministic randomization)
-//
-// Returns empty slice if:
-//   - Group not found
-//   - Group has no location IDs
-//   - All locations in group completed
-//
-// Note: This function works with location IDs only. Caller is responsible
-// for fetching actual location objects after filtering.
-// Note: Secret locations are handled separately by GetAccessibleSecretLocationIDs.
-func GetAvailableLocationIDs(
-	structure *models.GameStructure,
-	groupID string,
-	completedLocationIDs []string,
-	runCode string,
-) []string {
-	group := FindGroupByID(structure, groupID)
-	if group == nil || len(group.LocationIDs) == 0 {
-		return []string{}
-	}
-
-	// Filter to unvisited location IDs
-	unvisitedIDs := filterUnvisitedIDs(group.LocationIDs, completedLocationIDs)
-	if len(unvisitedIDs) == 0 {
-		return []string{}
-	}
-
-	// Apply routing strategy
-	switch group.Routing {
-	case models.RouteStrategyOrdered:
-		// For ordered routing, the position in LocationIDs IS the order
-		// Return single location ID with lowest order (first unvisited)
-		firstID := findMinOrderID(group.LocationIDs, completedLocationIDs)
-		if firstID == "" {
-			return []string{}
-		}
-		return []string{firstID}
-
-	case models.RouteStrategyRandomised:
-		// Return up to maxNext randomly selected location IDs (deterministic per team)
-		return deterministicShuffleIDs(group.LocationIDs, completedLocationIDs, runCode, group.MaxNext)
-
-	case models.RouteStrategyFreeRoam:
-		// Return all unvisited location IDs
-		return unvisitedIDs
-
-	case models.RouteStrategySecret:
-		// Secret locations are never shown in the normal available locations
-		// They are only accessible via direct access (QR code, link, GPS)
-		return []string{}
-
-	default:
-		return unvisitedIDs
-	}
-}
-
-// GetAvailableObjectiveIDs is GetAvailableLocationIDs' Objective-ID counterpart,
-// same routing-strategy semantics over GameStructure.ObjectiveIDs.
+// GetAvailableObjectiveIDs returns objective IDs a team can pursue next, based on
+// the current group's routing strategy, MaxNext setting, and completed objective IDs.
 func GetAvailableObjectiveIDs(
 	structure *models.GameStructure,
 	groupID string,
@@ -351,103 +183,6 @@ func GetAvailableObjectiveIDs(
 	}
 }
 
-// GetAccessibleSecretLocationIDs returns secret location IDs that are accessible from the current group.
-// Secret locations are accessible if they are siblings of the current group or any of its ancestors.
-// This walks UP the tree recursively, checking for secret siblings at each level.
-//
-// Accessible relationships (walking UP):
-//   - Sibling: same parent
-//   - Uncle: parent's sibling
-//   - Great-uncle: grandparent's sibling
-//   - Great-great-uncle: great-grandparent's sibling
-//   - ... and so on to root
-//
-// NOT accessible (never walks DOWN):
-//   - Cousins: children of uncles
-//   - Nested children: descendants of any group
-//
-// Example structure:
-//
-//	root[
-//	  secret_root_level[loc9],         ← great-uncle to inner_group
-//	  branch_a[
-//	    secret_a[loc7, loc8],          ← uncle to inner_group
-//	    branch_b[
-//	      inner_group[loc1, loc2],     ← current group
-//	      secret_b[loc3, loc4]         ← sibling to inner_group
-//	    ]
-//	  ]
-//	]
-//
-// If player is in inner_group:
-//   - secret_b accessible (sibling)
-//   - secret_a accessible (uncle - sibling of parent branch_b)
-//   - secret_root_level accessible (great-uncle - sibling of grandparent branch_a)
-//
-// Returns empty slice if:
-//   - Current group not found
-//   - No secret groups are accessible
-func GetAccessibleSecretLocationIDs(
-	structure *models.GameStructure,
-	currentGroupID string,
-	completedLocationIDs []string,
-) []string {
-	currentGroup := FindGroupByID(structure, currentGroupID)
-	if currentGroup == nil {
-		return []string{}
-	}
-
-	accessibleIDs := make([]string, 0)
-	completed := makeSet(completedLocationIDs)
-
-	// Walk up the tree, checking for secret siblings at each ancestor level
-	ancestor := currentGroup
-	for {
-		parent, _ := findParentAndIndex(ancestor, structure)
-		if parent == nil {
-			break // Reached root
-		}
-
-		// Collect unvisited secret locations from siblings
-		secretIDs := collectSecretSiblingLocations(parent, ancestor.ID, completed)
-		accessibleIDs = append(accessibleIDs, secretIDs...)
-
-		// Move up to next ancestor
-		if parent.IsRoot {
-			break // Stop at root
-		}
-		ancestor = parent
-	}
-
-	return accessibleIDs
-}
-
-// collectSecretSiblingLocations finds unvisited locations in secret sibling groups.
-func collectSecretSiblingLocations(
-	parent *models.GameStructure,
-	excludeGroupID string,
-	completed map[string]bool,
-) []string {
-	secretIDs := make([]string, 0)
-
-	for i := range parent.SubGroups {
-		subGroup := &parent.SubGroups[i]
-		if subGroup.ID == excludeGroupID {
-			continue // Skip the excluded group
-		}
-		if subGroup.Routing == models.RouteStrategySecret {
-			// Add unvisited locations from this secret sibling group
-			for _, locID := range subGroup.LocationIDs {
-				if !completed[locID] {
-					secretIDs = append(secretIDs, locID)
-				}
-			}
-		}
-	}
-
-	return secretIDs
-}
-
 // FindGroupByID recursively searches for a group with the specified ID.
 // Returns nil if not found.
 func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStructure {
@@ -469,31 +204,7 @@ func FindGroupByID(root *models.GameStructure, groupID string) *models.GameStruc
 	return nil
 }
 
-// FindGroupContainingLocation recursively searches for a group containing the specified location ID.
-// Returns nil if not found.
-func FindGroupContainingLocation(root *models.GameStructure, locationID string) *models.GameStructure {
-	if root == nil {
-		return nil
-	}
-
-	// Check if this group contains the location
-	for _, id := range root.LocationIDs {
-		if id == locationID {
-			return root
-		}
-	}
-
-	// Recursively search subgroups
-	for i := range root.SubGroups {
-		if found := FindGroupContainingLocation(&root.SubGroups[i], locationID); found != nil {
-			return found
-		}
-	}
-
-	return nil
-}
-
-// FindGroupContainingObjective is FindGroupContainingLocation's Objective-ID counterpart.
+// FindGroupContainingObjective recursively searches for a group containing the specified objective ID.
 // Returns nil if not found.
 func FindGroupContainingObjective(root *models.GameStructure, objectiveID string) *models.GameStructure {
 	if root == nil {
@@ -544,7 +255,6 @@ func GetFirstVisibleGroup(structure *models.GameStructure) *models.GameStructure
 //   - Multiple root groups exist
 //   - Non-root group has IsRoot=true
 //   - Duplicate group IDs found
-//   - Duplicate location IDs found
 //   - Visible groups missing name or color
 //   - Ordered groups do not use CompletionAll
 //   - Random routing has MaxNext = 0
@@ -566,12 +276,6 @@ func ValidateStructure(structure *models.GameStructure) error {
 	// Check for duplicate group IDs
 	groupIDs := make(map[string]bool)
 	if err := checkDuplicateGroupIDs(structure, groupIDs); err != nil {
-		return err
-	}
-
-	// Check for duplicate location IDs
-	locationIDs := make(map[string]bool)
-	if err := checkDuplicateLocationIDs(structure, locationIDs); err != nil {
 		return err
 	}
 

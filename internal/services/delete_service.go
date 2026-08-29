@@ -2,7 +2,7 @@
 // Relies on ON DELETE CASCADE constraints at the database level to handle
 // most child record cleanup. Application code explicitly deletes blocks
 // (whose owner_id is polymorphic and cannot carry a FK constraint) and
-// handles upload file cleanup, unused marker cleanup, and location statistics.
+// handles upload file cleanup.
 package services
 
 import (
@@ -27,8 +27,6 @@ import (
 type DeleteService struct {
 	transactor   db.Transactor
 	instanceRepo repositories.QuestRepository
-	locationRepo repositories.LocationRepository
-	markerRepo   repositories.MarkerRepository
 	teamRepo     repositories.RunRepository
 	uploadsRepo  repositories.UploadsRepository
 	db           *bun.DB
@@ -40,8 +38,6 @@ type DeleteService struct {
 func NewDeleteService(
 	transactor db.Transactor,
 	instanceRepo repositories.QuestRepository,
-	locationRepo repositories.LocationRepository,
-	markerRepo repositories.MarkerRepository,
 	teamRepo repositories.RunRepository,
 	uploadsRepo repositories.UploadsRepository,
 	db *bun.DB,
@@ -51,8 +47,6 @@ func NewDeleteService(
 	return &DeleteService{
 		transactor:   transactor,
 		instanceRepo: instanceRepo,
-		locationRepo: locationRepo,
-		markerRepo:   markerRepo,
 		teamRepo:     teamRepo,
 		uploadsRepo:  uploadsRepo,
 		db:           db,
@@ -62,8 +56,8 @@ func NewDeleteService(
 }
 
 // DeleteUser deletes a user and all associated data.
-// Cascade handles: instances, locations, teams, check-ins, states,
-// settings, credits, purchases, start logs, notifications, facilitator tokens.
+// Cascade handles: instances, objectives, teams, states, settings, credits,
+// purchases, start logs, notifications, facilitator tokens.
 // Blocks are deleted explicitly because owner_id is polymorphic.
 func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 	// Collect upload file paths before the transaction deletes the rows.
@@ -93,15 +87,8 @@ func (s *DeleteService) DeleteUser(ctx context.Context, userID string) error {
 		}
 	}()
 
-	// blocks.owner_id has no FK; delete blocks for all locations and objectives
-	// owned by this user's quests, then delete the quest-level (start/finish) blocks.
-	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id IN (SELECT l.id FROM locations l JOIN quests q ON l.quest_id = q.id WHERE q.user_id = ?)", userID).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting location blocks for user: %w", err)
-	}
+	// blocks.owner_id has no FK; delete blocks for all objectives owned by
+	// this user's quests, then delete the quest-level (start/finish) blocks.
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id IN (SELECT o.id FROM objectives o JOIN quests q ON o.quest_id = q.id WHERE q.user_id = ?)", userID).
 		Exec(ctx)
@@ -233,15 +220,7 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 		}
 	}()
 
-	// Delete location-owned, objective-owned, then instance-owned (start/finish) blocks.
 	// blocks.owner_id has no FK so they won't be cascade-deleted automatically.
-	_, err = tx.NewDelete().Model((*models.Block)(nil)).
-		Where("owner_id IN (SELECT id FROM locations WHERE quest_id = ?)", questID).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting location blocks: %w", err)
-	}
 	_, err = tx.NewDelete().Model((*models.Block)(nil)).
 		Where("owner_id IN (SELECT id FROM objectives WHERE quest_id = ?)", questID).
 		Exec(ctx)
@@ -276,56 +255,6 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 	}
 
 	return nil
-}
-
-// DeleteLocation deletes a location and its blocks, then cleans up unused markers.
-// blocks.owner_id has no FK so blocks must be deleted explicitly.
-func (s *DeleteService) DeleteLocation(ctx context.Context, locationID string) error {
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("beginning transaction: %w", err)
-	}
-	defer func() {
-		if p := recover(); p != nil {
-			_ = tx.Rollback()
-			panic(p)
-		}
-	}()
-
-	// GameStructure is a JSON blob with no FK, so nothing else drops the ID.
-	if err := s.pruneLocationFromStructure(ctx, tx, locationID); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-
-	// Delete blocks first: cascade handles run_block_states.
-	_, err = tx.NewDelete().
-		Model((*models.Block)(nil)).
-		Where("owner_id = ?", locationID).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting blocks for location: %w", err)
-	}
-
-	// Delete location — cascade handles check_ins and any remaining children
-	_, err = tx.NewDelete().
-		Model((*models.Location)(nil)).
-		Where("id = ?", locationID).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting location: %w", err)
-	}
-
-	// Clean up markers that are no longer referenced by any location
-	err = s.markerRepo.DeleteUnused(ctx, tx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting unused markers: %w", err)
-	}
-
-	return tx.Commit()
 }
 
 // DeleteObjective: blocks.owner_id has no FK, so blocks are deleted
@@ -419,54 +348,6 @@ func (s *DeleteService) pruneObjectiveFromStructure(
 	return nil
 }
 
-// pruneLocationFromStructure tolerates a missing location or quest so that
-// DeleteLocation stays idempotent.
-func (s *DeleteService) pruneLocationFromStructure(
-	ctx context.Context,
-	tx *bun.Tx,
-	locationID string,
-) error {
-	var location models.Location
-	err := tx.NewSelect().
-		Model(&location).
-		Column("id", "quest_id").
-		Where("id = ?", locationID).
-		Scan(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return fmt.Errorf("loading location for structure prune: %w", err)
-	}
-
-	var quest models.Quest
-	err = tx.NewSelect().
-		Model(&quest).
-		Where("id = ?", location.QuestID).
-		Scan(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return fmt.Errorf("loading quest for structure prune: %w", err)
-	}
-
-	if !quest.GameStructure.RemoveLocationID(locationID) {
-		return nil
-	}
-
-	_, err = tx.NewUpdate().
-		Model(&quest).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("saving pruned structure: %w", err)
-	}
-
-	return nil
-}
-
 // ResetTeams clears team progress while preserving the teams themselves.
 // Cannot use cascade — teams are preserved, only children are deleted.
 func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCodes []string) error {
@@ -503,17 +384,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		return fmt.Errorf("resetting teams: %w", err)
 	}
 
-	// Delete child records explicitly (can't cascade since teams are preserved)
-	_, err = tx.NewDelete().
-		Model((*models.CheckIn)(nil)).
-		Where("quest_id = ?", questID).
-		Where("run_code IN (?)", bun.In(teamCodes)).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting check-ins: %w", err)
-	}
-
+	// Delete child records explicitly (can't cascade since teams are preserved).
 	// Without this, a reset run keeps its old objective completions: the
 	// overview reports it as already finished, and re-proving an objective
 	// hits the insert's ON CONFLICT DO NOTHING idempotency guard, so it never
@@ -554,12 +425,6 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		return fmt.Errorf("deleting team var states: %w", err)
 	}
 
-	err = s.locationRepo.UpdateStatistics(ctx, tx, questID)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("updating location statistics: %w", err)
-	}
-
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
@@ -572,7 +437,7 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 }
 
 // DeleteTeams deletes teams and their associated progress data.
-// Cascade handles check-ins, block states, uploads, and notifications.
+// Cascade handles block states, uploads, and notifications.
 func (s *DeleteService) DeleteTeams(ctx context.Context, questID string, teamCodes []string) error {
 	if len(teamCodes) == 0 {
 		return nil
@@ -600,7 +465,7 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, questID string, teamCod
 		}
 	}()
 
-	// Delete teams — cascade handles check-ins, block states, notifications, uploads
+	// Delete teams: cascade handles block states, notifications, uploads.
 	_, err = tx.NewDelete().
 		Model((*models.Run)(nil)).
 		Where("quest_id = ?", questID).
@@ -609,13 +474,6 @@ func (s *DeleteService) DeleteTeams(ctx context.Context, questID string, teamCod
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting teams: %w", err)
-	}
-
-	// Update denormalized location statistics
-	err = s.locationRepo.UpdateStatistics(ctx, tx, questID)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("updating location statistics: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {

@@ -8,86 +8,11 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-type TimelineKind int
-
-const (
-	TimelineStart TimelineKind = iota
-	TimelineDone
-	TimelineCurrent
-)
-
-type TimelineEntry struct {
-	Kind      TimelineKind
-	Label     string
-	At        time.Time
-	GapBefore time.Duration
-	Points    int
-}
-
-// Check-ins arrive ordered time_in DESC, so they are re-sorted here.
-func buildRunTimeline(run models.Run) []TimelineEntry {
-	checkIns := make([]models.CheckIn, len(run.CheckIns))
-	copy(checkIns, run.CheckIns)
-	sort.Slice(checkIns, func(i, j int) bool {
-		return timelineStamp(checkIns[i]).Before(timelineStamp(checkIns[j]))
-	})
-
-	entries := make([]TimelineEntry, 0, len(checkIns)+1)
-
-	prev := time.Time{}
-	if !run.StartedAt.IsZero() {
-		entries = append(entries, TimelineEntry{Kind: TimelineStart, At: run.StartedAt})
-		prev = run.StartedAt
-	}
-
-	for _, checkIn := range checkIns {
-		at := timelineStamp(checkIn)
-
-		kind := TimelineDone
-		if run.MustCheckOut != "" && checkIn.LocationID == run.MustCheckOut {
-			kind = TimelineCurrent
-		}
-
-		entry := TimelineEntry{
-			Kind:   kind,
-			Label:  checkIn.Location.Name,
-			At:     at,
-			Points: checkIn.Points,
-		}
-		if !prev.IsZero() && at.After(prev) {
-			entry.GapBefore = at.Sub(prev)
-		}
-		entries = append(entries, entry)
-		prev = at
-	}
-
-	return entries
-}
-
-// TimeIn is unset on rows created before it existed; CreatedAt is the fallback.
-func timelineStamp(checkIn models.CheckIn) time.Time {
-	if !checkIn.TimeIn.IsZero() {
-		return checkIn.TimeIn
-	}
-	return checkIn.CreatedAt
-}
-
 func runElapsed(run models.Run) string {
 	if run.StartedAt.IsZero() {
 		return ""
 	}
 	return formatDuration(time.Since(run.StartedAt))
-}
-
-// Scans for the maximum rather than indexing, so it survives an ordering change.
-func runLastSeen(run models.Run) (time.Time, bool) {
-	var latest time.Time
-	for _, checkIn := range run.CheckIns {
-		if at := timelineStamp(checkIn); at.After(latest) {
-			latest = at
-		}
-	}
-	return latest, !latest.IsZero()
 }
 
 func countNotStarted(runs []models.Run) int {
@@ -101,8 +26,7 @@ func countNotStarted(runs []models.Run) int {
 }
 
 // countFinished counts runs that have completed every objective. completedCounts
-// is keyed by run code (see RunService.CountCompletedObjectivesByRun): run.CheckIns
-// is not used here since check-ins are never written once a quest is objective-built.
+// is keyed by run code (see RunService.CountCompletedObjectivesByRun).
 func countFinished(runs []models.Run, totalObjectives int, completedCounts map[string]int) int {
 	if totalObjectives == 0 {
 		return 0

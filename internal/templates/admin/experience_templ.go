@@ -81,27 +81,17 @@ func PlayerViewCard(settings models.QuestSettings) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Player View</h2><p class=\"text-sm text-base-content/60 mt-1\">How players know what to do and where to go.</p></div><!-- Check Out Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"mustCheckOut\" name=\"mustCheckOut\" class=\"toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Player View</h2><p class=\"text-sm text-base-content/60 mt-1\">How players know what to do and where to go.</p></div><!-- Show Team Count Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"showTeamCount\" name=\"showTeamCount\" class=\"toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.MustCheckOut {
+		if settings.ShowTeamCount {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Check out of every location?</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Useful for tracking time spent at each location</p></div></label></div></div><!-- Show Team Count Toggle --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"showTeamCount\" name=\"showTeamCount\" class=\"toggle\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if settings.ShowTeamCount {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Show total visiting teams</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Display the number of teams that have visited each location where the location name is shown</p></div></label></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "><div class=\"flex-1\"><span class=\"font-medium text-base-content flex items-center gap-2 text-wrap\">Show total visiting teams</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Display the number of teams that have visited each location where the location name is shown</p></div></label></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -131,17 +121,17 @@ func CompetitionCard(settings models.QuestSettings) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Competition</h2><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Configure points and competitive features.</p></div><!-- Enable Points --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle toggle-lg\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full border border-base-content/20 rounded-xl px-10 py-10\"><div class=\"grid h-fit flex-grow space-y-6\"><!-- Section Header --><div><h2 class=\"font-bold text-lg flex items-center gap-2\">Competition</h2><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Configure points and competitive features.</p></div><!-- Enable Points --><div><div class=\"form-control\"><label class=\"label cursor-pointer justify-start gap-3\"><input type=\"checkbox\" id=\"enablePoints\" name=\"enablePoints\" class=\"toggle toggle-lg\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "><div class=\"flex-1\"><span class=\"font-semibold text-base-content flex items-center gap-2\">Enable Points</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Teams earn points for checking into locations and completing activities</p></div></label></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "><div class=\"flex-1\"><span class=\"font-semibold text-base-content flex items-center gap-2\">Enable Points</span><p class=\"text-sm text-base-content/60 mt-1 text-wrap\">Teams earn points for checking into locations and completing activities</p></div></label></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -181,11 +181,9 @@ func (r *blockRepository) GetContext(ctx context.Context, blockID string) (block
 	return modelBlock.Context, nil
 }
 
-// UserOwnsBlock: owner_id may be an instance, location, or objective.
+// UserOwnsBlock: owner_id may be an instance or an objective.
 func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID string) (bool, error) {
-	// Query to check block ownership through instances
-	// For start/complete blocks: owner_id IS the quest_id
-	// For location blocks: owner_id IS the location_id, which belongs to an instance
+	// For start/complete blocks: owner_id IS the quest_id.
 	// For objective blocks: owner_id IS the objective_id, which belongs to an instance.
 	objectiveContexts := []blocks.BlockContext{blocks.ContextObjectiveProof, blocks.ContextObjectiveReveal}
 	count, err := r.db.NewSelect().
@@ -194,7 +192,7 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 		Where("id = ?", blockID).
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				// Instance-owned blocks (start/complete contexts)
+				// Instance-owned blocks (start/complete contexts).
 				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
 					return q.
 						Where(
@@ -208,18 +206,6 @@ func (r *blockRepository) UserOwnsBlock(ctx context.Context, userID, blockID str
 					return q.
 						Where("context IN (?)", bun.In(objectiveContexts)).
 						Where("owner_id IN (SELECT id FROM objectives WHERE quest_id IN (SELECT id FROM quests WHERE user_id = ?))", userID)
-				}).
-				// Location-owned blocks (everything else).
-				WhereGroup(" OR ", func(q *bun.SelectQuery) *bun.SelectQuery {
-					return q.
-						Where(
-							"context NOT IN (?)",
-							bun.In(append(
-								[]blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish},
-								objectiveContexts...,
-							)),
-						).
-						Where("owner_id IN (SELECT id FROM locations WHERE quest_id IN (SELECT id FROM quests WHERE user_id = ?))", userID)
 				})
 		}).
 		Limit(1).
@@ -324,13 +310,14 @@ func (r *blockRepository) Update(ctx context.Context, block blocks.Block) (block
 	return updatedBlock, nil
 }
 
-// Convert block to model.
+// Convert block to model. Context is intentionally left zero: blocks.Block
+// doesn't expose its own context, and the only caller (Update) restricts its
+// write to data/ordering/points, so Context is never persisted from here.
 func convertBlockToModel(block blocks.Block) models.Block {
 	return models.Block{
 		ID:                 block.GetID(),
 		OwnerID:            block.GetOwnerID(),
 		Type:               block.GetType(),
-		Context:            blocks.ContextLocationContent, // Set context for polymorphic relation
 		Ordering:           block.GetOrder(),
 		Data:               block.GetData(),
 		Points:             block.GetPoints(),

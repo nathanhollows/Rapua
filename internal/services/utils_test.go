@@ -57,15 +57,13 @@ func setupDB(t *testing.T) (*bun.DB, func()) {
 	}
 }
 
-// testParents holds IDs for a full FK-valid parent chain: user → instance → marker → location.
+// testParents holds IDs for a full FK-valid parent chain: user → instance.
 type testParents struct {
-	UserID     string
-	QuestID    string
-	MarkerCode string
-	LocationID string
+	UserID  string
+	QuestID string
 }
 
-// createTestParents inserts a user, instance, marker, and location, returning their IDs.
+// createTestParents inserts a user and instance, returning their IDs.
 func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 	t.Helper()
 	ctx := context.Background()
@@ -82,24 +80,9 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 		t.Fatalf("createTestParents: insert instance: %v", err)
 	}
 
-	markerCode := gofakeit.LetterN(5)
-	marker := &models.Marker{Code: markerCode}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	if err != nil {
-		t.Fatalf("createTestParents: insert marker: %v", err)
-	}
-
-	loc := &models.Location{ID: gofakeit.UUID(), QuestID: inst.ID, MarkerID: markerCode, Name: "test-location"}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	if err != nil {
-		t.Fatalf("createTestParents: insert location: %v", err)
-	}
-
 	return testParents{
-		UserID:     user.ID,
-		QuestID:    inst.ID,
-		MarkerCode: markerCode,
-		LocationID: loc.ID,
+		UserID:  user.ID,
+		QuestID: inst.ID,
 	}
 }
 
@@ -115,6 +98,14 @@ func insertTestUser(t *testing.T, dbc *bun.DB, userID string) {
 	}
 }
 
+// validQuestID returns the ID of a fresh instance with an FK-valid user.
+func validQuestID(t *testing.T, dbc *bun.DB) string {
+	t.Helper()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+	return insertTestInstance(t, dbc, userID)
+}
+
 // insertTestInstance inserts an instance with FK-valid user, returning the instance ID.
 func insertTestInstance(t *testing.T, dbc *bun.DB, userID string) string {
 	t.Helper()
@@ -124,36 +115,6 @@ func insertTestInstance(t *testing.T, dbc *bun.DB, userID string) string {
 		t.Fatalf("insertTestQuest: %v", err)
 	}
 	return inst.ID
-}
-
-// insertTestMarker inserts a marker with the given code, ignoring conflicts.
-func insertTestMarker(t *testing.T, dbc *bun.DB, code string) {
-	t.Helper()
-	marker := &models.Marker{Code: code}
-	_, err := dbc.NewInsert().Model(marker).
-		On("CONFLICT (\"code\") DO NOTHING").
-		Exec(context.Background())
-	if err != nil {
-		t.Fatalf("insertTestMarker: %v", err)
-	}
-}
-
-// insertTestLocation inserts a location with a new marker, returning the location ID.
-func insertTestLocation(t *testing.T, dbc *bun.DB, questID string) string {
-	t.Helper()
-	ctx := context.Background()
-	markerCode := gofakeit.LetterN(5)
-	marker := &models.Marker{Code: markerCode}
-	_, err := dbc.NewInsert().Model(marker).Exec(ctx)
-	if err != nil {
-		t.Fatalf("insertTestLocation: insert marker: %v", err)
-	}
-	loc := &models.Location{ID: gofakeit.UUID(), QuestID: questID, MarkerID: markerCode, Name: "test-location"}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	if err != nil {
-		t.Fatalf("insertTestLocation: insert location: %v", err)
-	}
-	return loc.ID
 }
 
 // insertTestTeam inserts a team with a specific code and instance, ignoring conflicts.

@@ -14,15 +14,13 @@ import (
 	"github.com/uptrace/bun/migrate"
 )
 
-// testParents holds IDs for a full FK-valid parent chain: user → instance → marker → location.
+// testParents holds IDs for a full FK-valid parent chain: user → quest.
 type testParents struct {
-	UserID     string
-	QuestID    string
-	MarkerCode string
-	LocationID string
+	UserID  string
+	QuestID string
 }
 
-// createTestParents inserts a user, instance, marker, and location, returning their IDs.
+// createTestParents inserts a user and a quest, returning their IDs.
 // Use this whenever a test needs valid FK references for child rows.
 func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 	t.Helper()
@@ -40,24 +38,9 @@ func createTestParents(t *testing.T, dbc *bun.DB) testParents {
 		t.Fatalf("createTestParents: insert instance: %v", err)
 	}
 
-	markerCode := gofakeit.LetterN(5)
-	marker := &models.Marker{Code: markerCode}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	if err != nil {
-		t.Fatalf("createTestParents: insert marker: %v", err)
-	}
-
-	loc := &models.Location{ID: gofakeit.UUID(), QuestID: inst.ID, MarkerID: markerCode, Name: "test-location"}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	if err != nil {
-		t.Fatalf("createTestParents: insert location: %v", err)
-	}
-
 	return testParents{
-		UserID:     user.ID,
-		QuestID:    inst.ID,
-		MarkerCode: markerCode,
-		LocationID: loc.ID,
+		UserID:  user.ID,
+		QuestID: inst.ID,
 	}
 }
 

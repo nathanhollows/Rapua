@@ -95,17 +95,17 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									</option>
 									<option
 										hx-trigger="chosen"
-										hx-get="/next"
-										value="next"
+										hx-get="/objectives"
+										value="objectives"
 										_="
 											on change from #pages
 												if #pages.options[#pages.selectedIndex].value == me.value then
-													send chosen to me	
+													send chosen to me
 													call window.history.replaceState(null, '', '#' + me.value)
 												end
 											end
 											on load
-												if window.location.hash == '#next' then
+												if window.location.hash == '#objectives' then
 													send chosen to me
 													set #pages's value to my.value
 												end
@@ -114,7 +114,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									>
 										Navigation
 									</option>
-									@renderGroupedLocations(&link.Template.GameStructure, link.Template.Locations, 0)
+									@renderGroupedObjectives(&link.Template.GameStructure, link.Template.Objectives, 0)
 								</select>
 							</form>
 							<button
@@ -242,7 +242,7 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 					<div class="prose">
 						<ul>
 							<li>
-								<strong>{ len(link.Template.Locations) }</strong> locations
+								<strong>{ len(link.Template.Objectives) }</strong> objectives
 							</li>
 							<li>
 								<strong>{ len(link.Template.GameStructure.SubGroups) }</strong>
@@ -266,11 +266,6 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 				</div>
 			</div>
 		</aside>
-	</div>
-	<div class="max-w-7xl m-auto px-8 w-full">
-		<div id="map-container" class="relative w-full rounded-lg shadow-lg my-5 h-96">
-			<div id="map-activity" class="map w-full h-full rounded-lg"></div>
-		</div>
 	</div>
 	if authed {
 		<!-- Launch template modal -->
@@ -352,138 +347,6 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 			</div>
 		</dialog>
 	}
-	<script>
-(function () {
-  let map; // Store the map instance globally within the IIFE
-  let markerArray = []; // Store the markers array globally within the IIFE
-  const bounds = new mapboxgl.LngLatBounds();
-
-  function initializeMap() {
-    const locations = document.querySelectorAll('.location-option');
-    // Calculate the center and zoom level based on the locations
-    let coords = [170.5111643, -45.8650509];
-    let zoom = 17;
-    for (let i = 0; i < locations.length; i++) {
-		if (!locations[i].dataset.lat || !locations[i].dataset.lng) {
-			continue; // Skip if lat or lng is not set
-		}
-      const lat = parseFloat(locations[i].dataset.lat);
-      const lng = parseFloat(locations[i].dataset.lng);
-      if (lat !== 0 && lng !== 0) {
-        coords = [lng, lat];
-        break;
-      }
-    }
-	// If coords are the same, hide the map container and return early
-	if (coords[0] === 170.5111643 && coords[1] === -45.8650509) {
-	  document.getElementById('map-container').style.display = 'none';
-	  return;
-	}
-	
-
-    // Clear any existing markers
-    markerArray.forEach(marker => marker.remove());
-    markerArray = [];
-
-    // Destroy existing map instance if it exists
-    if (map) {
-      map.remove();
-      map = null; // Explicitly set to null to clear reference
-    }
-
-    // Set the Mapbox access token
-    mapboxgl.accessToken = document.getElementById('mapbox_key').dataset.key;
-
-    // Determine the style based on color scheme
-    const style = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
-      : 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
-
-    // Create the map
-    map = new mapboxgl.Map({
-      container: 'map-activity',
-      style: style,
-      center: coords,
-      zoom: zoom,
-      cooperativeGestures: true,
-    });
-
-    map.on('load', function () {
-      map.resize();
-    });
-
-    // Find and loop through .location-name elements to create markers with original numbers
-    locations.forEach(function (location, index) {
-	  if (!location.dataset.lat || !location.dataset.lng) {
-		return;
-	  }
-
-      // Create the marker
-      const marker = new mapboxgl.Marker()
-        .setLngLat([location.dataset.lng, location.dataset.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
-		.setHTML(location.textContent));
-
-		marker.getElement().addEventListener('mouseenter', function () {
-		  popup = marker.getPopup();
-			if (!popup.isOpen()) {
-				marker.togglePopup();
-			}
-		});
-
-		marker.getElement().addEventListener('mouseleave', function () {
-			marker.togglePopup();	
-		});
-
-      markerArray.push(marker);
-
-
-    });
-
-    // Sort markers by latitude
-    markerArray.sort(function (a, b) {
-      return parseFloat(b.getLngLat().lat) - parseFloat(a.getLngLat().lat);
-    });
-
-    // Add markers to the map in the sorted order without changing their displayed numbers
-    markerArray.forEach(marker => {
-      marker.addTo(map);
-    });
-
-    // Fit the map to the bounds of the markers
-    if (markerArray.length > 1) {
-      markerArray.forEach(marker => {
-        bounds.extend(marker.getLngLat());
-      });
-
-      map.fitBounds(bounds, { padding: 50 });
-    }
-  }
-
-  // Function to zoom map when select#pages changes
-  function handlePageChange() {
-    const select = document.getElementById('pages');
-    const selectedOption = select.options[select.selectedIndex];
-
-    if (selectedOption.dataset.lat && selectedOption.dataset.lng) {
-      const lat = parseFloat(selectedOption.dataset.lat);
-      const lng = parseFloat(selectedOption.dataset.lng);
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        map.flyTo({ center: [lng, lat], zoom: 17 });
-      }
-    } else {
-	  map.fitBounds(bounds, { padding: 50 });
-	}
-  }
-  // Attach change event to select#pages
-  document.getElementById('pages').addEventListener('change', handlePageChange);
-
-  // Initialize the map on page load
-  initializeMap();
-
-})();
-</script>
 }
 
 templ TemplateNotFound() {
@@ -518,26 +381,24 @@ templ TemplateNotFound() {
 </script>
 }
 
-// renderGroupedLocations recursively renders locations grouped by the game structure hierarchy
-templ renderGroupedLocations(group *models.GameStructure, allLocations []models.Location, depth int) {
-	// Render group header if not root
+// renderGroupedObjectives renders the preview's objective pages grouped by the game structure hierarchy.
+templ renderGroupedObjectives(group *models.GameStructure, allObjectives []models.Objective, depth int) {
 	if !group.IsRoot && group.Name != "" {
 		<option disabled>{ group.Name }</option>
 	} else if group.IsRoot {
-		// For root, only add "Locations" header if the first subgroup is not named "Locations"
-		if !hasFirstSubGroupNamed(group, "Locations") {
-			<option disabled>Locations</option>
+		// Suppress the root header when the first group is already named "Objectives" to avoid a duplicate label.
+		if !hasFirstSubGroupNamed(group, "Objectives") {
+			<option disabled>Objectives</option>
 		}
 	}
-	// Render locations in this group
-	for _, locationID := range group.LocationIDs {
-		for _, location := range allLocations {
-			if location.ID == locationID {
+	// Iterate the stored IDs first so the options keep the group's ordering.
+	for _, objectiveID := range group.ObjectiveIDs {
+		for _, objective := range allObjectives {
+			if objective.ID == objectiveID {
 				<option
 					hx-trigger="chosen"
-					hx-get={ fmt.Sprint("/checkins/", location.Slug) }
-					value={ location.MarkerID }
-					class="location-option"
+					hx-get={ fmt.Sprint("/objective/", objective.Slug) }
+					value={ objective.Slug }
 					_="
 					on change from #pages
 						if #pages.options[#pages.selectedIndex].value == me.value then
@@ -552,17 +413,12 @@ templ renderGroupedLocations(group *models.GameStructure, allLocations []models.
 						end
 					end
 					"
-					if location.Marker.IsMapped() {
-						data-lat={ fmt.Sprint(location.Marker.Lat) }
-						data-lng={ fmt.Sprint(location.Marker.Lng) }
-					}
-				>{ location.Name }</option>
+				>{ objective.Title }</option>
 			}
 		}
 	}
-	// Recursively render subgroups
 	for i := range group.SubGroups {
-		@renderGroupedLocations(&group.SubGroups[i], allLocations, depth+1)
+		@renderGroupedObjectives(&group.SubGroups[i], allObjectives, depth+1)
 	}
 }
 

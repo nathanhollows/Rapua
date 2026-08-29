@@ -16,9 +16,7 @@ func NewLeaderBoardService() *LeaderBoardService {
 }
 
 // GetLeaderBoardData returns sorted and ranked leaderboard data. completedCounts
-// is keyed by run code and holds each team's completed-objective count: check-ins
-// are no longer written once a quest is objective-built, so team.CheckIns can't
-// be used as a progress source here.
+// is keyed by run code and holds each team's completed-objective count.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
 	teams []models.Run,
@@ -57,42 +55,19 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 func (s *LeaderBoardService) convertTeamToLeaderBoardData(
 	team models.Run, objectiveCount, completedCount int,
 ) LeaderBoardTeamData {
-	checkInCount := len(team.CheckIns)
-
-	// Find the most recent check-in time for accurate tiebreaker
-	lastSeen := team.UpdatedAt
-	for _, checkIn := range team.CheckIns {
-		// Use TimeOut if available (completed check-in), otherwise TimeIn (current check-in)
-		checkInTime := checkIn.TimeIn
-		if !checkIn.TimeOut.IsZero() {
-			checkInTime = checkIn.TimeOut
-		}
-
-		// Keep the most recent check-in time
-		if checkInTime.After(lastSeen) {
-			lastSeen = checkInTime
-		}
-	}
-
 	return LeaderBoardTeamData{
-		ID:           team.ID,
-		Code:         team.Code,
-		Name:         team.Name,
-		Points:       team.Points,
-		LastSeen:     lastSeen,
-		Progress:     completedCount,
-		Status:       s.determineTeamStatus(team, objectiveCount, completedCount),
-		HasStarted:   team.HasStarted,
-		MustCheckOut: team.MustCheckOut,
-		CheckInCount: checkInCount,
+		ID:         team.ID,
+		Code:       team.Code,
+		Name:       team.Name,
+		Points:     team.Points,
+		LastSeen:   team.UpdatedAt,
+		Progress:   completedCount,
+		Status:     s.determineTeamStatus(objectiveCount, completedCount),
+		HasStarted: team.HasStarted,
 	}
 }
 
-func (s *LeaderBoardService) determineTeamStatus(team models.Run, objectiveCount, completedCount int) TeamStatus {
-	if team.MustCheckOut != "" {
-		return StatusOnsite
-	}
-
+func (s *LeaderBoardService) determineTeamStatus(objectiveCount, completedCount int) TeamStatus {
 	if completedCount > 0 {
 		if objectiveCount > 0 && completedCount == objectiveCount {
 			return StatusFinished
@@ -103,8 +78,7 @@ func (s *LeaderBoardService) determineTeamStatus(team models.Run, objectiveCount
 	return StatusStarted
 }
 
-// applyRanking applies ranking based on the specified scheme
-// All ranking schemes use earliest last check-in time as tiebreaker to ensure no tied ranks.
+// All ranking schemes use earliest last-updated time as tiebreaker to ensure no tied ranks.
 func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme RankingScheme) {
 	switch scheme {
 	case RankByProgress:
@@ -118,7 +92,6 @@ func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme Ran
 	}
 }
 
-// rankByProgress ranks teams by their progress (number of check-ins).
 func (s *LeaderBoardService) rankByProgress(data []LeaderBoardTeamData) {
 	// Sort by progress descending, then by last seen ascending (earlier is better)
 	sort.Slice(data, func(i, j int) bool {

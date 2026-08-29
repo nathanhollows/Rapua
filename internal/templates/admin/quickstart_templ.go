@@ -87,7 +87,7 @@ func QuickstartBar(quest models.Quest) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
+			if quest.ID == "" && len(quest.Objectives) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " class=\"btn btn-sm btn-success tooltip tooltip-left text-center flex\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -102,7 +102,7 @@ func QuickstartBar(quest models.Quest) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if quest.ID == "" && len(quest.Locations) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
+			if quest.ID == "" && len(quest.Objectives) > 0 && len(quest.Runs) > 0 && !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "Ready to play!")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

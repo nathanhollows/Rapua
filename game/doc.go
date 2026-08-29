@@ -15,7 +15,6 @@ type GameDoc struct {
 
 // SettingsDoc mirrors QuestSettings fields.
 type SettingsDoc struct {
-	MustCheckOut    bool `json:"must_check_out"`
 	ShowTeamCount   bool `json:"show_team_count"`
 	EnablePoints    bool `json:"enable_points"`
 	ShowLeaderboard bool `json:"show_leaderboard"`
@@ -42,8 +41,8 @@ type GroupDoc struct {
 	Children        []ChildDoc     `json:"children"`
 }
 
-// ObjectiveDoc renders one fixed design rather than the freeform block canvas a
-// Location uses: exactly two contexts, proof then reveal, no pre-proof context.
+// ObjectiveDoc has exactly two block contexts, proof then reveal, no third
+// freeform canvas.
 type ObjectiveDoc struct {
 	ID     string              `json:"id,omitempty"`
 	Slug   string              `json:"slug"`

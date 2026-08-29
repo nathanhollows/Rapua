@@ -22,7 +22,6 @@ func setupDuplicationService(t *testing.T) (
 	db.Transactor,
 	repositories.QuestRepository,
 	repositories.QuestSettingsRepository,
-	repositories.LocationRepository,
 	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -36,7 +35,6 @@ func setupDuplicationService(t *testing.T) (
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
 	duplicationService := services.NewDuplicationService(
@@ -44,22 +42,21 @@ func setupDuplicationService(t *testing.T) (
 		transactor,
 		instanceRepo,
 		instanceSettingsRepo,
-		locationRepo,
 		objectiveRepo,
 		blockRepo,
 	)
 
 	return duplicationService, transactor, instanceRepo, instanceSettingsRepo,
-		locationRepo, objectiveRepo, blockRepo, dbc, cleanup
+		objectiveRepo, blockRepo, dbc, cleanup
 }
 
 func TestDuplicationService_DuplicateQuest(t *testing.T) {
-	svc, transactor, instanceRepo, settingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
+	svc, transactor, instanceRepo, settingsRepo, objectiveRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	t.Run("successfully duplicates instance with locations and blocks", func(t *testing.T) {
+	t.Run("successfully duplicates instance with objectives and blocks", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
@@ -81,32 +78,12 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		// Create location with blocks
-		markerCode := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, markerCode)
-		location := &models.Location{
-			Name:     gofakeit.Word(),
-			QuestID:  sourceInstance.ID,
-			MarkerID: markerCode,
-			Points:   100,
-		}
-		err = locationRepo.Create(ctx, location)
-		require.NoError(t, err)
-
-		// Create blocks for the location
-		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-		require.NoError(t, err)
-		err = blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, "template-id", location.ID)
-		require.NoError(t, err)
-		err = tx.Commit()
-		require.NoError(t, err)
-
 		objective := &models.Objective{
 			QuestID: sourceInstance.ID,
 			Slug:    gofakeit.Word() + "-objective",
 			Title:   gofakeit.Sentence(3),
 		}
-		tx, err = transactor.BeginTx(ctx, &sql.TxOptions{})
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
 		err = objectiveRepo.CreateTx(ctx, tx, objective)
 		require.NoError(t, err)
@@ -137,144 +114,11 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
 
-		// Verify locations were duplicated
-		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
-		require.NoError(t, err)
-		assert.Len(t, duplicatedLocations, 1)
-		assert.NotEqual(t, location.ID, duplicatedLocations[0].ID)
-		assert.Equal(t, location.Name, duplicatedLocations[0].Name)
-		assert.Equal(t, location.Points, duplicatedLocations[0].Points)
-
 		duplicatedObjectives, err := objectiveRepo.FindByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
 		assert.Len(t, duplicatedObjectives, 1)
 		assert.NotEqual(t, objective.ID, duplicatedObjectives[0].ID)
 		assert.Equal(t, objective.Title, duplicatedObjectives[0].Title)
-	})
-
-	t.Run("duplicates game structure with remapped location IDs", func(t *testing.T) {
-		user := &models.User{ID: gofakeit.UUID()}
-		insertTestUser(t, dbc, user.ID)
-
-		// Create source instance with game structure
-		sourceInstance := &models.Quest{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
-		require.NoError(t, err)
-
-		// Create locations
-		marker1 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker1)
-		location1 := &models.Location{
-			Name:     "Location 1",
-			QuestID:  sourceInstance.ID,
-			MarkerID: marker1,
-		}
-		err = locationRepo.Create(ctx, location1)
-		require.NoError(t, err)
-
-		marker2 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker2)
-		location2 := &models.Location{
-			Name:     "Location 2",
-			QuestID:  sourceInstance.ID,
-			MarkerID: marker2,
-		}
-		err = locationRepo.Create(ctx, location2)
-		require.NoError(t, err)
-
-		marker3 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker3)
-		location3 := &models.Location{
-			Name:     "Location 3",
-			QuestID:  sourceInstance.ID,
-			MarkerID: marker3,
-		}
-		err = locationRepo.Create(ctx, location3)
-		require.NoError(t, err)
-
-		// Create game structure with subgroups
-		gameStructure := models.GameStructure{
-			ID:          gofakeit.UUID(),
-			IsRoot:      true,
-			LocationIDs: []string{location1.ID},
-			SubGroups: []models.GameStructure{
-				{
-					ID:          gofakeit.UUID(),
-					Name:        "Group 1",
-					Color:       "primary",
-					LocationIDs: []string{location2.ID},
-				},
-				{
-					ID:          gofakeit.UUID(),
-					Name:        "Group 2",
-					Color:       "secondary",
-					LocationIDs: []string{location3.ID},
-				},
-			},
-		}
-		sourceInstance.GameStructure = gameStructure
-
-		// Update instance with game structure
-		err = instanceRepo.Update(ctx, sourceInstance)
-		require.NoError(t, err)
-
-		// Create settings
-		settings := &models.QuestSettings{
-			QuestID: sourceInstance.ID,
-		}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		// Duplicate the instance
-		newName := gofakeit.Word()
-		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, newName)
-		require.NoError(t, err)
-
-		// Verify game structure was copied
-		assert.NotEmpty(t, duplicated.GameStructure.ID)
-		assert.True(t, duplicated.GameStructure.IsRoot)
-		assert.Len(t, duplicated.GameStructure.SubGroups, 2)
-
-		// Get duplicated locations
-		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
-		require.NoError(t, err)
-		require.Len(t, duplicatedLocations, 3)
-
-		// Build a map of duplicated locations by name for verification
-		locationsByName := make(map[string]string)
-		for _, loc := range duplicatedLocations {
-			locationsByName[loc.Name] = loc.ID
-		}
-
-		// Verify location IDs were remapped in root group
-		assert.Len(t, duplicated.GameStructure.LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 1"], duplicated.GameStructure.LocationIDs[0])
-		assert.NotEqual(t, location1.ID, duplicated.GameStructure.LocationIDs[0], "Location ID should be remapped")
-
-		// Verify location IDs were remapped in subgroups
-		assert.Equal(t, "Group 1", duplicated.GameStructure.SubGroups[0].Name)
-		assert.Len(t, duplicated.GameStructure.SubGroups[0].LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 2"], duplicated.GameStructure.SubGroups[0].LocationIDs[0])
-		assert.NotEqual(
-			t,
-			location2.ID,
-			duplicated.GameStructure.SubGroups[0].LocationIDs[0],
-			"Location ID should be remapped",
-		)
-
-		assert.Equal(t, "Group 2", duplicated.GameStructure.SubGroups[1].Name)
-		assert.Len(t, duplicated.GameStructure.SubGroups[1].LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 3"], duplicated.GameStructure.SubGroups[1].LocationIDs[0])
-		assert.NotEqual(
-			t,
-			location3.ID,
-			duplicated.GameStructure.SubGroups[1].LocationIDs[0],
-			"Location ID should be remapped",
-		)
 	})
 
 	t.Run("duplicates game structure with remapped objective IDs", func(t *testing.T) {
@@ -341,6 +185,51 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 		)
 	})
 
+	t.Run("does not mutate the source instance's game structure", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
+
+		sourceInstance := &models.Quest{
+			Name:       gofakeit.Word(),
+			UserID:     user.ID,
+			IsTemplate: false,
+		}
+		err := instanceRepo.Create(ctx, sourceInstance)
+		require.NoError(t, err)
+
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		objective := &models.Objective{QuestID: sourceInstance.ID, Slug: "obj-src", Title: "Source Objective"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, objective))
+		require.NoError(t, tx.Commit())
+
+		sourceInstance.GameStructure = models.GameStructure{
+			ID:           gofakeit.UUID(),
+			IsRoot:       true,
+			ObjectiveIDs: []string{objective.ID},
+			SubGroups: []models.GameStructure{
+				{ID: gofakeit.UUID(), Name: "Group 1", Color: "primary", ObjectiveIDs: []string{objective.ID}},
+			},
+		}
+		require.NoError(t, instanceRepo.Update(ctx, sourceInstance))
+
+		_, err = svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
+		require.NoError(t, err)
+
+		// Duplication remaps IDs onto the copy in place; a shared backing
+		// array under GameStructure would leak that remap back onto the
+		// in-memory source struct even though its DB row is untouched.
+		assert.Equal(t, objective.ID, sourceInstance.GameStructure.ObjectiveIDs[0],
+			"source's in-memory GameStructure must not be mutated by duplicating it")
+		assert.Equal(t, objective.ID, sourceInstance.GameStructure.SubGroups[0].ObjectiveIDs[0],
+			"source's in-memory GameStructure subgroups must not be mutated by duplicating it")
+
+		reloaded, err := instanceRepo.GetByID(ctx, sourceInstance.ID)
+		require.NoError(t, err)
+		assert.Equal(t, objective.ID, reloaded.GameStructure.ObjectiveIDs[0],
+			"source's persisted game structure must not be remapped")
+	})
+
 	t.Run("rejects template duplication", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
@@ -388,7 +277,7 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 }
 
 func TestDuplicationService_CreateTemplateFromQuest(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -446,7 +335,7 @@ func TestDuplicationService_CreateTemplateFromQuest(t *testing.T) {
 }
 
 func TestDuplicationService_CreateQuestFromTemplate(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -586,7 +475,7 @@ func TestDuplicationService_CreateQuestFromTemplate(t *testing.T) {
 }
 
 func TestDuplicationService_CreateQuestFromSharedTemplate(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -644,53 +533,8 @@ func TestDuplicationService_CreateQuestFromSharedTemplate(t *testing.T) {
 	})
 }
 
-func TestDuplicationService_DuplicateLocation(t *testing.T) {
-	svc, transactor, _, _, locationRepo, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	t.Run("successfully duplicates location with blocks", func(t *testing.T) {
-		// Create FK-valid parent chain for source and target instances
-		userID := gofakeit.UUID()
-		insertTestUser(t, dbc, userID)
-		sourceQuestID := insertTestInstance(t, dbc, userID)
-		targetQuestID := insertTestInstance(t, dbc, userID)
-
-		// Create source location with valid marker
-		markerCode := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, markerCode)
-		sourceLocation := models.Location{
-			Name:     gofakeit.Word(),
-			QuestID:  sourceQuestID,
-			MarkerID: markerCode,
-			Points:   50,
-		}
-		err := locationRepo.Create(ctx, &sourceLocation)
-		require.NoError(t, err)
-
-		// Add blocks to source location
-		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-		require.NoError(t, err)
-		err = blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, "template-id", sourceLocation.ID)
-		require.NoError(t, err)
-		err = tx.Commit()
-		require.NoError(t, err)
-
-		// Duplicate location
-		duplicated, err := svc.DuplicateLocation(ctx, sourceLocation, targetQuestID)
-		require.NoError(t, err)
-
-		// Verify duplicated location
-		assert.NotEqual(t, sourceLocation.ID, duplicated.ID)
-		assert.Equal(t, sourceLocation.Name, duplicated.Name)
-		assert.Equal(t, targetQuestID, duplicated.QuestID)
-		assert.Equal(t, sourceLocation.Points, duplicated.Points)
-	})
-}
-
 func TestDuplicationService_QuickStartDismissed(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupDuplicationService(t)
+	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()

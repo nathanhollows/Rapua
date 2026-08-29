@@ -8,18 +8,6 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// LocationRelationLoader defines the interface for loading location relations.
-type LocationRelationLoader interface {
-	LoadRelations(ctx context.Context, location *models.Location) error
-}
-
-// LocationRepository defines the interface for location data access.
-type LocationRepository interface {
-	FindByIDs(ctx context.Context, questID string, locationIDs []string) ([]*models.Location, error)
-	FindByInstance(ctx context.Context, questID string) ([]models.Location, error)
-	LoadBlocks(ctx context.Context, location *models.Location) error
-}
-
 // ObjectiveRepository defines the interface for objective data access.
 type ObjectiveRepository interface {
 	FindByIDs(ctx context.Context, questID string, objectiveIDs []string) ([]*models.Objective, error)
@@ -35,34 +23,23 @@ type QuestRepository interface {
 
 // GameStructureService provides operations for loading, saving, and validating GameStructures.
 type GameStructureService struct {
-	locationRepo   LocationRepository
-	objectiveRepo  ObjectiveRepository
-	instanceRepo   QuestRepository
-	relationLoader LocationRelationLoader
+	objectiveRepo ObjectiveRepository
+	instanceRepo  QuestRepository
 }
 
 // NewGameStructureService creates a new GameStructureService.
 func NewGameStructureService(
-	locationRepo LocationRepository,
 	objectiveRepo ObjectiveRepository,
 	instanceRepo QuestRepository,
 ) *GameStructureService {
 	return &GameStructureService{
-		locationRepo:   locationRepo,
-		objectiveRepo:  objectiveRepo,
-		instanceRepo:   instanceRepo,
-		relationLoader: nil, // Will be set via SetRelationLoader
+		objectiveRepo: objectiveRepo,
+		instanceRepo:  instanceRepo,
 	}
 }
 
-// SetRelationLoader sets the location relation loader (for loading blocks, etc.)
-func (s *GameStructureService) SetRelationLoader(loader LocationRelationLoader) {
-	s.relationLoader = loader
-}
-
-// Load populates the GameStructure with location data from the database
-// If recursive is true, loads all subgroups recursively
-// If recursive is false, only loads locations for this specific group.
+// Load populates the GameStructure with objective data, recursively loading
+// subgroups when recursive is set.
 func (s *GameStructureService) Load(
 	ctx context.Context,
 	questID string,
@@ -71,30 +48,6 @@ func (s *GameStructureService) Load(
 ) error {
 	if group == nil {
 		return errors.New("group cannot be nil")
-	}
-
-	// Load locations for this group if it has any
-	if len(group.LocationIDs) > 0 {
-		locations, err := s.locationRepo.FindByIDs(ctx, questID, group.LocationIDs)
-		if err != nil {
-			return fmt.Errorf("failed to load locations for group %s: %w", group.ID, err)
-		}
-
-		// Create a map for quick lookup
-		locationMap := make(map[string]*models.Location, len(locations))
-		for _, loc := range locations {
-			locationMap[loc.ID] = loc
-		}
-
-		// Maintain the order from LocationIDs
-		group.Locations = make([]*models.Location, 0, len(group.LocationIDs))
-		for _, id := range group.LocationIDs {
-			if loc, ok := locationMap[id]; ok {
-				group.Locations = append(group.Locations, loc)
-			}
-		}
-	} else {
-		group.Locations = []*models.Location{}
 	}
 
 	if len(group.ObjectiveIDs) > 0 {
@@ -133,67 +86,12 @@ func (s *GameStructureService) Load(
 	return nil
 }
 
-// LoadWithRelations loads locations and their relations (blocks, etc.) for the game structure
-// If recursive is true, loads all subgroups recursively.
-func (s *GameStructureService) LoadWithRelations(
-	ctx context.Context,
-	questID string,
-	group *models.GameStructure,
-	recursive bool,
-) error {
-	// First load the basic location data
-	if err := s.Load(ctx, questID, group, recursive); err != nil {
-		return err
-	}
-
-	// Then load relations if a relation loader is configured
-	if s.relationLoader != nil {
-		return s.loadRelationsRecursive(ctx, group, recursive)
-	}
-
-	return nil
-}
-
-// loadRelationsRecursive loads relations for all locations in the structure.
-func (s *GameStructureService) loadRelationsRecursive(
-	ctx context.Context,
-	group *models.GameStructure,
-	recursive bool,
-) error {
-	// Load relations for this group's locations
-	for i := range group.Locations {
-		if err := s.relationLoader.LoadRelations(ctx, group.Locations[i]); err != nil {
-			return fmt.Errorf("failed to load relations for location %s: %w", group.Locations[i].ID, err)
-		}
-	}
-
-	// Recursively load relations for subgroups if requested
-	if recursive {
-		for i := range group.SubGroups {
-			if err := s.loadRelationsRecursive(ctx, &group.SubGroups[i], true); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadBlocksForStructure loads blocks for all locations in the structure.
-// This should only be called when blocks data is needed (e.g., location groups admin view).
+// LoadBlocksForStructure is expensive: call it only when block data is needed (the quest builder admin view).
 func (s *GameStructureService) LoadBlocksForStructure(
 	ctx context.Context,
 	group *models.GameStructure,
 	recursive bool,
 ) error {
-	// Load blocks for this group's locations
-	for i := range group.Locations {
-		err := s.locationRepo.LoadBlocks(ctx, group.Locations[i])
-		if err != nil {
-			return fmt.Errorf("failed to load blocks for location %s: %w", group.Locations[i].ID, err)
-		}
-	}
-
 	for i := range group.Objectives {
 		err := s.objectiveRepo.LoadBlocks(ctx, group.Objectives[i])
 		if err != nil {
@@ -213,62 +111,8 @@ func (s *GameStructureService) LoadBlocksForStructure(
 	return nil
 }
 
-// LoadByLocationID finds the group containing the specified location and loads it
-// Returns the specific group containing that location (not the root).
-func (s *GameStructureService) LoadByLocationID(
-	ctx context.Context,
-	questID string,
-	locationID string,
-) (*models.GameStructure, error) {
-	// Get the instance (game structure is automatically loaded)
-	instance, err := s.instanceRepo.GetByID(ctx, questID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load instance: %w", err)
-	}
-
-	// Find the group containing this location ID
-	group := s.FindGroupByLocationID(&instance.GameStructure, locationID)
-	if group == nil {
-		return nil, fmt.Errorf("location %s not found in any group", locationID)
-	}
-
-	// Load the group's locations (non-recursive)
-	if err = s.Load(ctx, questID, group, false); err != nil {
-		return nil, err
-	}
-
-	return group, nil
-}
-
-// FindGroupByLocationID recursively searches for a group containing the location ID.
-func (s *GameStructureService) FindGroupByLocationID(
-	group *models.GameStructure,
-	locationID string,
-) *models.GameStructure {
-	// Check if this group contains the location
-	for _, id := range group.LocationIDs {
-		if id == locationID {
-			return group
-		}
-	}
-
-	// Recursively check subgroups
-	for i := range group.SubGroups {
-		if found := s.FindGroupByLocationID(&group.SubGroups[i], locationID); found != nil {
-			return found
-		}
-	}
-
-	return nil
-}
-
 // Save persists the GameStructure to the database.
 func (s *GameStructureService) Save(ctx context.Context, questID string, group *models.GameStructure) error {
-	// Ensure all locations are included in the structure
-	if err := s.ensureAllLocationsIncluded(ctx, questID, group); err != nil {
-		return fmt.Errorf("ensuring all locations included: %w", err)
-	}
-
 	if err := s.ensureAllObjectivesIncluded(ctx, questID, group); err != nil {
 		return fmt.Errorf("ensuring all objectives included: %w", err)
 	}
@@ -291,50 +135,6 @@ func (s *GameStructureService) Save(ctx context.Context, questID string, group *
 	}
 
 	return nil
-}
-
-// ensureAllLocationsIncluded ensures that all locations in the database
-// are included in the structure. Any orphaned locations are added to the root group.
-func (s *GameStructureService) ensureAllLocationsIncluded(
-	ctx context.Context,
-	questID string,
-	group *models.GameStructure,
-) error {
-	// Collect all location IDs currently in the structure
-	includedIDs := make(map[string]bool)
-	s.collectAllLocationIDs(group, includedIDs)
-
-	// Get all location IDs from the database for this instance
-	locations, err := s.locationRepo.FindByInstance(ctx, questID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch locations: %w", err)
-	}
-
-	// Find orphaned locations (in database but not in structure)
-	var orphanedIDs []string
-	for _, loc := range locations {
-		if !includedIDs[loc.ID] {
-			orphanedIDs = append(orphanedIDs, loc.ID)
-		}
-	}
-
-	// Add orphaned locations to root group
-	if len(orphanedIDs) > 0 {
-		group.LocationIDs = append(group.LocationIDs, orphanedIDs...)
-	}
-
-	return nil
-}
-
-// collectAllLocationIDs recursively collects all location IDs from the structure.
-func (s *GameStructureService) collectAllLocationIDs(group *models.GameStructure, ids map[string]bool) {
-	for _, id := range group.LocationIDs {
-		ids[id] = true
-	}
-
-	for i := range group.SubGroups {
-		s.collectAllLocationIDs(&group.SubGroups[i], ids)
-	}
 }
 
 // ensureAllObjectivesIncluded adds orphaned objectives to the root group.
@@ -381,12 +181,6 @@ func (s *GameStructureService) Validate(group *models.GameStructure, _ string) e
 		return errors.New("group cannot be nil")
 	}
 
-	// Check for duplicate location IDs across entire tree
-	allIDs := make(map[string]bool)
-	if err := s.checkDuplicateLocationIDs(group, allIDs); err != nil {
-		return err
-	}
-
 	allObjectiveIDs := make(map[string]bool)
 	if err := s.checkDuplicateObjectiveIDs(group, allObjectiveIDs); err != nil {
 		return err
@@ -401,24 +195,6 @@ func (s *GameStructureService) Validate(group *models.GameStructure, _ string) e
 	// Validate visible groups have names and colors
 	if err := s.validateGroupMetadata(group); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// checkDuplicateLocationIDs recursively checks for duplicate location IDs.
-func (s *GameStructureService) checkDuplicateLocationIDs(group *models.GameStructure, seen map[string]bool) error {
-	for _, id := range group.LocationIDs {
-		if seen[id] {
-			return fmt.Errorf("duplicate location ID found: %s", id)
-		}
-		seen[id] = true
-	}
-
-	for i := range group.SubGroups {
-		if err := s.checkDuplicateLocationIDs(&group.SubGroups[i], seen); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -496,93 +272,6 @@ func (s *GameStructureService) FindGroupByID(group *models.GameStructure, groupI
 	return nil
 }
 
-// GetAllLocationIDs returns all location IDs in the group and its subgroups (flattened, in order).
-func (s *GameStructureService) GetAllLocationIDs(group *models.GameStructure) []string {
-	ids := make([]string, 0)
-
-	// Add this group's locations first
-	ids = append(ids, group.LocationIDs...)
-
-	// Then add subgroups' locations recursively
-	for i := range group.SubGroups {
-		ids = append(ids, s.GetAllLocationIDs(&group.SubGroups[i])...)
-	}
-
-	return ids
-}
-
-// GetAllObjectiveIDs returns objective IDs flattened and in order across subgroups.
-func (s *GameStructureService) GetAllObjectiveIDs(group *models.GameStructure) []string {
-	ids := make([]string, 0)
-
-	// Add this group's objectives first.
-	ids = append(ids, group.ObjectiveIDs...)
-
-	// Then add subgroups' objectives recursively.
-	for i := range group.SubGroups {
-		ids = append(ids, s.GetAllObjectiveIDs(&group.SubGroups[i])...)
-	}
-
-	return ids
-}
-
-// InsertLocationIntoGroup inserts a location into a specific group at a specific position.
-// If groupID is empty or not found, falls back to root.
-// beforeLocationID inserts before that location; afterLocationID inserts after it.
-// If both are empty, appends to end of group. beforeLocationID takes precedence.
-func (s *GameStructureService) InsertLocationIntoGroup(
-	ctx context.Context,
-	questID, locationID, groupID, afterLocationID, beforeLocationID string,
-) error {
-	instance, err := s.instanceRepo.GetByID(ctx, questID)
-	if err != nil {
-		return fmt.Errorf("loading instance: %w", err)
-	}
-
-	target := s.FindGroupByID(&instance.GameStructure, groupID)
-	if target == nil {
-		target = &instance.GameStructure // fallback to root
-	}
-
-	switch {
-	case beforeLocationID != "":
-		inserted := false
-		for i, id := range target.LocationIDs {
-			if id == beforeLocationID {
-				newIDs := make([]string, 0, len(target.LocationIDs)+1)
-				newIDs = append(newIDs, target.LocationIDs[:i]...)
-				newIDs = append(newIDs, locationID)
-				newIDs = append(newIDs, target.LocationIDs[i:]...)
-				target.LocationIDs = newIDs
-				inserted = true
-				break
-			}
-		}
-		if !inserted {
-			target.LocationIDs = append([]string{locationID}, target.LocationIDs...)
-		}
-	case afterLocationID != "":
-		inserted := false
-		for i, id := range target.LocationIDs {
-			if id == afterLocationID {
-				target.LocationIDs = append(
-					target.LocationIDs[:i+1],
-					append([]string{locationID}, target.LocationIDs[i+1:]...)...,
-				)
-				inserted = true
-				break
-			}
-		}
-		if !inserted {
-			target.LocationIDs = append(target.LocationIDs, locationID)
-		}
-	default:
-		target.LocationIDs = append(target.LocationIDs, locationID)
-	}
-
-	return s.Save(ctx, questID, &instance.GameStructure)
-}
-
 // InsertObjectiveIntoGroup falls back to root when groupID is empty or not
 // found. beforeObjectiveID and afterObjectiveID choose the insertion point;
 // beforeObjectiveID takes precedence. If both are empty, appends to the end.
@@ -637,17 +326,4 @@ func (s *GameStructureService) InsertObjectiveIntoGroup(
 	}
 
 	return s.Save(ctx, questID, &instance.GameStructure)
-}
-
-// IsCompleted checks if a group is completed based on completion type and count.
-func (s *GameStructureService) IsCompleted(group *models.GameStructure, completedCount int) bool {
-	switch group.CompletionType {
-	case models.CompletionAll:
-		totalItems := len(group.LocationIDs) + len(group.ObjectiveIDs) + len(group.SubGroups)
-		return completedCount >= totalItems
-	case models.CompletionMinimum:
-		return completedCount >= group.MinimumRequired
-	default:
-		return false
-	}
 }

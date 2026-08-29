@@ -542,26 +542,26 @@ p.label {
   @apply min-h-12;
 }
 
-/* Border-radius and border-collapse for location items.
+/* Border-radius and border-collapse for objective items.
    Uses general sibling combinator (~) to skip insert zone elements. */
-.locations-area > .location-item {
+.locations-area > .objective-item {
   @apply rounded-none;
 }
-.locations-area > .location-item:not(.location-item ~ .location-item) {
+.locations-area > .objective-item:not(.objective-item ~ .objective-item) {
   @apply rounded-t-2xl;
 }
-.locations-area > .location-item:not(:has(~ .location-item)) {
+.locations-area > .objective-item:not(:has(~ .objective-item)) {
   @apply rounded-b-2xl;
 }
-.locations-area > .location-item ~ .location-item {
+.locations-area > .objective-item ~ .objective-item {
   @apply -mt-px;
 }
 
 /* Unassigned items: subdued appearance */
-.locations-area[data-unassigned] > .location-item {
+.locations-area[data-unassigned] > .objective-item {
   @apply text-sm opacity-70;
 }
-.locations-area[data-unassigned] > .location-item:hover {
+.locations-area[data-unassigned] > .objective-item:hover {
   @apply opacity-90;
 }
 

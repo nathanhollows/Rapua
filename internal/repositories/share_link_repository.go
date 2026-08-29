@@ -68,8 +68,7 @@ func (r *ShareLinkRepository) GetByID(ctx context.Context, id string) (*models.S
 		// Ensure the link is active and has not expired
 		Relation("Template").
 		Relation("Template.Settings").
-		Relation("Template.Locations").
-		Relation("Template.Locations.Marker").
+		Relation("Template.Objectives").
 		Scan(ctx)
 	return link, err
 }

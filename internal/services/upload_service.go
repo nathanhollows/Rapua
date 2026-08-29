@@ -27,10 +27,9 @@ func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage
 
 // UploadMetadata contains metadata for an uploaded file.
 type UploadMetadata struct {
-	QuestID    string `json:"questID,omitempty"`
-	RunID      string `json:"teamID,omitempty"`
-	BlockID    string `json:"blockID,omitempty"`
-	LocationID string `json:"locationID,omitempty"`
+	QuestID string `json:"questID,omitempty"`
+	RunID   string `json:"teamID,omitempty"`
+	BlockID string `json:"blockID,omitempty"`
 }
 
 // UploadStorage is an interface for storing files.
@@ -91,7 +90,6 @@ func (s *UploadService) UploadFile(
 		QuestID:     data.QuestID,
 		RunCode:     data.RunID,
 		BlockID:     data.BlockID,
-		LocationID:  data.LocationID,
 	}
 
 	// Save metadata to database

@@ -40,7 +40,6 @@ func TestQuestSettingsRepository(t *testing.T) {
 				parents := createTestParents(t, dbc)
 				return &models.QuestSettings{
 					QuestID:         parents.QuestID,
-					MustCheckOut:    gofakeit.Bool(),
 					EnablePoints:    gofakeit.Bool(),
 					ShowLeaderboard: gofakeit.Bool(),
 				}
@@ -59,7 +58,6 @@ func TestQuestSettingsRepository(t *testing.T) {
 				parents := createTestParents(t, dbc)
 				return &models.QuestSettings{
 					QuestID:         parents.QuestID,
-					MustCheckOut:    gofakeit.Bool(),
 					EnablePoints:    gofakeit.Bool(),
 					ShowLeaderboard: gofakeit.Bool(),
 				}
@@ -103,7 +101,6 @@ func TestQuestSettingsRepository_GetByQuestID(t *testing.T) {
 	// Create test settings
 	settings := &models.QuestSettings{
 		QuestID:         parents.QuestID,
-		MustCheckOut:    gofakeit.Bool(),
 		ShowTeamCount:   gofakeit.Bool(),
 		EnablePoints:    true,
 		ShowLeaderboard: gofakeit.Bool(),

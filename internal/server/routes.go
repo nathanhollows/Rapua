@@ -122,22 +122,6 @@ func setupPlayerRoutes(
 		r.Get("/{code}", playerHandler.PlayWithCode)
 	})
 
-	// Show the next available locations
-	router.Route("/next", func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(
-				logger,
-				playerHandler.GetRunService(),
-				playerHandler.GetQuestService(),
-				adminHandler.GetIdentityService(),
-				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
-					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
-			)
-		})
-		r.Get("/", playerHandler.Next)
-		r.Post("/", playerHandler.Next)
-	})
-
 	// Advance to next group (manual skip)
 	router.Route("/advance", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
@@ -208,31 +192,6 @@ func setupPlayerRoutes(
 		r.Get("/", playerHandler.Complete)
 	})
 
-	// Check out of a location
-	router.Route("/o", func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next)
-		})
-		r.Get("/", playerHandler.CheckOut)
-		r.Get("/{code:[A-z]{5}}", playerHandler.CheckOut)
-		r.Post("/{code:[A-z]{5}}", playerHandler.CheckOutPost)
-	})
-
-	router.Route("/checkins", func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.PreviewMiddleware(
-				logger,
-				playerHandler.GetRunService(),
-				playerHandler.GetQuestService(),
-				adminHandler.GetIdentityService(),
-				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
-					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
-			)
-		})
-		r.Get("/", playerHandler.MyCheckins)
-		r.Get("/{slug:[a-z0-9-]+}", playerHandler.CheckInView)
-	})
-
 	router.Route("/objective", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
@@ -251,7 +210,6 @@ func setupPlayerRoutes(
 		r.NotFound(publicHandler.NotFound)
 	})
 
-	// Show the next available objectives: /next's counterpart for objective-built quests.
 	router.Route("/objectives", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
@@ -271,7 +229,6 @@ func setupPlayerRoutes(
 		r.NotFound(publicHandler.NotFound)
 	})
 
-	// Show completed objectives: /checkins' counterpart for objective-built quests.
 	router.Route("/journal", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
@@ -393,7 +350,6 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 
 		r.Route("/quest", func(r chi.Router) {
 			r.Get("/", adminHandler.Locations)
-			r.Post("/reorder", adminHandler.ReorderLocations)
 			r.Post("/structure", adminHandler.SaveGameStructure)
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)

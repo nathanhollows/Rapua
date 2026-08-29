@@ -59,7 +59,7 @@ func Home(team models.Run) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if team.Code != "" && team.Quest.GetStatus() != models.Closed {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<p class=\"mt-5 text-center\"><a href=\"/checkins\" class=\"link\">See my scanned locations</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<p class=\"mt-5 text-center\"><a href=\"/journal\" class=\"link\">See my journal</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

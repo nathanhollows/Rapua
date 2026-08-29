@@ -85,7 +85,7 @@ func TestBlockService_NewBlockState(t *testing.T) {
 	// Create real blocks so block IDs satisfy FK constraints
 	validBlock, err := svc.NewBlockWithOwnerAndContext(
 		context.Background(),
-		parents.LocationID,
+		parents.QuestID,
 		blocks.ContextLocationContent,
 		"text",
 	)
@@ -93,7 +93,7 @@ func TestBlockService_NewBlockState(t *testing.T) {
 
 	validBlock2, err := svc.NewBlockWithOwnerAndContext(
 		context.Background(),
-		parents.LocationID,
+		parents.QuestID,
 		blocks.ContextLocationContent,
 		"text",
 	)
@@ -554,153 +554,6 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestBlockService_CheckValidationRequiredForLocation(t *testing.T) {
-	testCases := []struct {
-		name       string
-		locationID string
-		setupFn    func(svc services.BlockService, locID string) error
-		wantErr    bool
-		wantVal    bool
-	}{
-		{
-			name:       "No validation required",
-			locationID: "LOC-VALID-0",
-			setupFn: func(svc services.BlockService, locID string) error {
-				// Create block(s) that do not require validation
-				_, err := svc.NewBlockWithOwnerAndContext(
-					context.Background(),
-					locID,
-					blocks.ContextLocationContent,
-					"text",
-				)
-				return err
-			},
-			wantVal: false,
-		},
-		{
-			name:       "Validation required",
-			locationID: "LOC-VALID-1",
-			setupFn: func(svc services.BlockService, locID string) error {
-				// Create block(s) that do require validation
-				_, err := svc.NewBlockWithOwnerAndContext(
-					context.Background(),
-					locID,
-					blocks.ContextLocationContent,
-					"checklist",
-				)
-				return err
-			},
-			wantVal: true,
-		},
-		{
-			name:       "Empty location ID",
-			locationID: "",
-			setupFn:    func(_ services.BlockService, _ string) error { return nil },
-			wantErr:    true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			svc, _, cleanup := setupBlocksService(t)
-			defer cleanup()
-
-			err := tc.setupFn(svc, tc.locationID)
-			require.NoError(t, err, "setup should not fail")
-
-			valRequired, err := svc.CheckValidationRequiredForLocation(context.Background(), tc.locationID)
-			if tc.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.wantVal, valRequired, "Expected validation required to match")
-			}
-		})
-	}
-}
-
-func TestBlockService_CheckValidationRequiredForCheckIn(t *testing.T) {
-	testCases := []struct {
-		name       string
-		locationID string
-		runCode    string
-		setupFn    func(svc services.BlockService, locID, team string) error
-		wantErr    bool
-		wantVal    bool
-	}{
-		{
-			name:       "Validation required",
-			locationID: "LOC-CHIN-1",
-			runCode:    "TEAMCHK",
-			setupFn: func(svc services.BlockService, locID, team string) error {
-				// Create block that needs validation
-				blk, err := svc.NewBlockWithOwnerAndContext(
-					context.Background(),
-					locID,
-					blocks.ContextLocationContent,
-					"checklist",
-				)
-				if err != nil {
-					return err
-				}
-				// Create block state that isn't validated
-				_, err = svc.NewBlockState(context.Background(), blk.GetID(), team, "test-quest")
-				return err
-			},
-			wantVal: true,
-		},
-		{
-			name:       "No validation needed",
-			locationID: "LOC-CHIN-2",
-			runCode:    "TEAMCHK2",
-			setupFn: func(svc services.BlockService, locID, _ string) error {
-				// Maybe a block that doesn't require validation at all
-				_, err := svc.NewBlockWithOwnerAndContext(
-					context.Background(),
-					locID,
-					blocks.ContextLocationContent,
-					"text",
-				)
-				return err
-			},
-			wantVal: false,
-		},
-		{
-			name:       "Empty location or team code",
-			locationID: "",
-			runCode:    "",
-			setupFn:    func(_ services.BlockService, _, _ string) error { return nil },
-			wantErr:    true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			svc, dbc, cleanup := setupBlocksService(t)
-			defer cleanup()
-
-			// Create parent chain and team for tests that use NewBlockState
-			if tc.runCode != "" {
-				parents := createTestParents(t, dbc)
-				insertTestTeam(t, dbc, tc.runCode, parents.QuestID)
-			}
-
-			err := tc.setupFn(svc, tc.locationID, tc.runCode)
-			require.NoError(t, err, "setup should not fail")
-
-			valRequired, err := svc.CheckValidationRequiredForCheckIn(
-				context.Background(), tc.locationID, tc.runCode, "test-quest",
-			)
-			if tc.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.wantVal, valRequired, "Expected validation result to match")
 			}
 		})
 	}

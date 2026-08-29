@@ -26,13 +26,6 @@ func (h *Handler) ExperiencePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse the completion method
-	if r.Form.Has("mustCheckOut") {
-		user.CurrentQuest.Settings.MustCheckOut = true
-	} else {
-		user.CurrentQuest.Settings.MustCheckOut = false
-	}
-
 	// Parse whether to show the team count
 	user.CurrentQuest.Settings.ShowTeamCount = r.Form.Has("showTeamCount") && r.Form.Get("showTeamCount") == "on"
 

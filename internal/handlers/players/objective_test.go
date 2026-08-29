@@ -20,7 +20,8 @@ import (
 
 // setupObjectivePreviewServices wires real CheckInService/BlockService against
 // an in-memory DB, mirroring setupCheckInServiceForObjectives in the services
-// package: objectivePreview never touches locationStatsService/navigationService.
+// package: the preview path never touches the navigation service, so nil is
+// safe there.
 func setupObjectivePreviewServices(t *testing.T) (*services.CheckInService, *services.BlockService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
@@ -30,10 +31,7 @@ func setupObjectivePreviewServices(t *testing.T) (*services.CheckInService, *ser
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	checkInService := services.NewCheckInService(
-		repositories.NewCheckInRepository(dbc),
-		repositories.NewLocationRepository(dbc),
 		repositories.NewRunRepository(dbc),
-		nil, nil,
 		blockService,
 		repositories.NewRunVarStateRepository(dbc),
 		repositories.NewObjectiveRepository(dbc),

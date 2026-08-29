@@ -33,19 +33,19 @@ func makeSet(ids []string) map[string]bool {
 	return set
 }
 
-// filterUnvisitedIDs returns location IDs that haven't been completed.
+// filterUnvisitedIDs returns objective IDs that haven't been completed.
 func filterUnvisitedIDs(
-	locationIDs []string,
+	objectiveIDs []string,
 	completedIDs []string,
 ) []string {
-	if len(locationIDs) == 0 {
+	if len(objectiveIDs) == 0 {
 		return []string{}
 	}
 
 	completed := makeSet(completedIDs)
-	unvisited := make([]string, 0, len(locationIDs))
+	unvisited := make([]string, 0, len(objectiveIDs))
 
-	for _, id := range locationIDs {
+	for _, id := range objectiveIDs {
 		if !completed[id] {
 			unvisited = append(unvisited, id)
 		}
@@ -54,18 +54,18 @@ func filterUnvisitedIDs(
 	return unvisited
 }
 
-// findMinOrderID returns the first unvisited location ID from the ordered list.
-// For ordered routing, the position in LocationIDs slice IS the order.
-// Returns empty string if all locations are completed.
-func findMinOrderID(locationIDs []string, completedIDs []string) string {
-	if len(locationIDs) == 0 {
+// findMinOrderID returns the first unvisited objective ID from the ordered list.
+// For ordered routing, the position in ObjectiveIDs slice IS the order.
+// Returns empty string if all objectives are completed.
+func findMinOrderID(objectiveIDs []string, completedIDs []string) string {
+	if len(objectiveIDs) == 0 {
 		return ""
 	}
 
 	completed := makeSet(completedIDs)
 
-	// Return first unvisited location (they're already in order)
-	for _, id := range locationIDs {
+	// Return first unvisited objective (they're already in order)
+	for _, id := range objectiveIDs {
 		if !completed[id] {
 			return id
 		}
@@ -74,18 +74,18 @@ func findMinOrderID(locationIDs []string, completedIDs []string) string {
 	return "" // All completed
 }
 
-// deterministicShuffleIDs shuffles ALL location IDs deterministically based on team code,
+// deterministicShuffleIDs shuffles ALL objective IDs deterministically based on team code,
 // then filters to unvisited, then returns up to maxNext.
 //
 // This ensures:
 // - Same random order for a team across all requests
-// - Order doesn't change as locations are completed (random with replacement)
+// - Order doesn't change as objectives are completed (random with replacement)
 // - Consistent "next N" regardless of what's been visited
 //
 // Example:
 //
-//	All location IDs: [A, B, C, D, E]
-//	Team shuffle:     [C, A, E, B, D]  (deterministic per team)
+//	All objective IDs: [A, B, C, D, E]
+//	Team shuffle:      [C, A, E, B, D]  (deterministic per team)
 //	Completed: [C]
 //	Unvisited from shuffled: [A, E, B, D]
 //	Return first 2: [A, E]
@@ -96,12 +96,12 @@ func findMinOrderID(locationIDs []string, completedIDs []string) string {
 //	Unvisited from SAME shuffle: [E, B, D]
 //	Return first 2: [E, B]  (consistent order maintained)
 func deterministicShuffleIDs(
-	allLocationIDs []string,
+	allObjectiveIDs []string,
 	completedIDs []string,
 	runCode string,
 	maxNext int,
 ) []string {
-	if len(allLocationIDs) == 0 {
+	if len(allObjectiveIDs) == 0 {
 		return []string{}
 	}
 
@@ -111,15 +111,15 @@ func deterministicShuffleIDs(
 		seed += uint64(c)
 	}
 
-	// Shuffle ALL location IDs (not just unvisited) to maintain consistent order
+	// Shuffle ALL objective IDs (not just unvisited) to maintain consistent order
 	rng := rand.New(rand.NewSource(seed))
-	shuffled := make([]string, len(allLocationIDs))
-	copy(shuffled, allLocationIDs)
+	shuffled := make([]string, len(allObjectiveIDs))
+	copy(shuffled, allObjectiveIDs)
 	rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 
-	// Filter shuffled list to only unvisited location IDs
+	// Filter shuffled list to only unvisited objective IDs
 	completed := makeSet(completedIDs)
 	unvisited := make([]string, 0, len(shuffled))
 	for _, id := range shuffled {
@@ -128,7 +128,7 @@ func deterministicShuffleIDs(
 		}
 	}
 
-	// Return up to maxNext unvisited location IDs (in shuffled order)
+	// Return up to maxNext unvisited objective IDs (in shuffled order)
 	if maxNext > 0 && maxNext < len(unvisited) {
 		return unvisited[:maxNext]
 	}
@@ -161,24 +161,6 @@ func validateCompletionType(group *models.GameStructure) error {
 
 	for i := range group.SubGroups {
 		if err := validateCompletionType(&group.SubGroups[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// checkDuplicateLocationIDs recursively checks for duplicate location IDs.
-func checkDuplicateLocationIDs(group *models.GameStructure, seen map[string]bool) error {
-	for _, id := range group.LocationIDs {
-		if seen[id] {
-			return ErrDuplicateLocationID
-		}
-		seen[id] = true
-	}
-
-	for i := range group.SubGroups {
-		if err := checkDuplicateLocationIDs(&group.SubGroups[i], seen); err != nil {
 			return err
 		}
 	}

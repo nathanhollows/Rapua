@@ -29,10 +29,9 @@ func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	metadata := services.UploadMetadata{
-		QuestID:    r.Form.Get("quest_id"),
-		RunID:      r.Form.Get("team_id"),
-		BlockID:    r.Form.Get("block_id"),
-		LocationID: r.Form.Get("location_id"),
+		QuestID: r.Form.Get("quest_id"),
+		RunID:   r.Form.Get("team_id"),
+		BlockID: r.Form.Get("block_id"),
 	}
 
 	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)
@@ -67,7 +66,6 @@ func (h *Handler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 	filters["type"] = r.Form.Get("type")
 	filters["run_code"] = r.Form.Get("runCode")
 	filters["block_id"] = r.Form.Get("blockID")
-	filters["location_id"] = r.Form.Get("locationID")
 
 	// Remove empty filters
 	for key, value := range filters {

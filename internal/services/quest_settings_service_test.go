@@ -27,7 +27,6 @@ func createTestQuestSettings(t *testing.T) *models.QuestSettings {
 
 	return &models.QuestSettings{
 		QuestID:       gofakeit.UUID(),
-		MustCheckOut:  gofakeit.Bool(),
 		ShowTeamCount: false,
 		EnablePoints:  true,
 	}

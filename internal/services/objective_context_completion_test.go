@@ -16,9 +16,9 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// setupCheckInServiceForObjectives wires a real CheckInService against an in-memory
-// DB. locationStatsService and navigationService are nil: CompleteObjectiveContext
-// never touches them, only CheckIn/CheckOut do.
+// setupCheckInServiceForObjectives wires a real CheckInService against an
+// in-memory DB. navigationService is nil: CompleteObjectiveContext never
+// touches it.
 func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *bun.DB, func()) {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
@@ -28,10 +28,7 @@ func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	svc := services.NewCheckInService(
-		repositories.NewCheckInRepository(dbc),
-		repositories.NewLocationRepository(dbc),
 		repositories.NewRunRepository(dbc),
-		nil, nil,
 		blockService,
 		repositories.NewRunVarStateRepository(dbc),
 		repositories.NewObjectiveRepository(dbc),

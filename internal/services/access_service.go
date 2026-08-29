@@ -11,8 +11,6 @@ import (
 type AccessService struct {
 	blockRepo     repositories.BlockRepository
 	instanceRepo  repositories.QuestRepository
-	locationRepo  repositories.LocationRepository
-	markerRepo    repositories.MarkerRepository
 	objectiveRepo repositories.ObjectiveRepository
 }
 
@@ -20,15 +18,11 @@ type AccessService struct {
 func NewAccessService(
 	blockRepository repositories.BlockRepository,
 	questRepository repositories.QuestRepository,
-	locationRepository repositories.LocationRepository,
-	markerRepository repositories.MarkerRepository,
 	objectiveRepository repositories.ObjectiveRepository,
 ) *AccessService {
 	return &AccessService{
 		blockRepo:     blockRepository,
 		instanceRepo:  questRepository,
-		locationRepo:  locationRepository,
-		markerRepo:    markerRepository,
 		objectiveRepo: objectiveRepository,
 	}
 }
@@ -53,32 +47,6 @@ func (s *AccessService) CanAdminAccessQuest(ctx context.Context, userID, questID
 		}
 	}
 
-	return false, nil
-}
-
-// CanAdminAccessLocation checks if the user can access the location in the given instance.
-func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error) {
-	if userID == "" {
-		return false, errors.New("user ID cannot be empty")
-	}
-	if locationID == "" {
-		return false, errors.New("location ID cannot be empty")
-	}
-
-	instanceIDs, err := s.instanceRepo.FindByUserID(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-
-	location, err := s.locationRepo.GetByID(ctx, locationID)
-	if err != nil {
-		return false, err
-	}
-	for _, instance := range instanceIDs {
-		if instance.ID == location.QuestID {
-			return true, nil
-		}
-	}
 	return false, nil
 }
 
@@ -139,7 +107,7 @@ func (s *AccessService) CanAdminAccessBlockOwner(
 	case blocks.ContextObjectiveProof, blocks.ContextObjectiveReveal:
 		return s.CanAdminAccessObjective(ctx, userID, ownerID)
 	default:
-		// For location blocks, owner is locationID.
-		return s.CanAdminAccessLocation(ctx, userID, ownerID)
+		// No other contexts own blocks, so deny access.
+		return false, nil
 	}
 }

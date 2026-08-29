@@ -3,7 +3,6 @@ package repositories_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
@@ -20,13 +19,11 @@ import (
 // name fails the build instead of a request.
 
 // relationGraph holds the IDs of a fully-populated object graph: a user with a
-// quest, whose quest has settings, a marker, a location with a block, and a run
-// with a check-in and a notification.
+// quest, whose quest has settings, an objective with a block, and a run with a
+// notification.
 type relationGraph struct {
 	UserID      string
 	QuestID     string
-	MarkerCode  string
-	LocationID  string
 	BlockID     string
 	RunCode     string
 	ObjectiveID string
@@ -44,7 +41,7 @@ func seedRelationGraph(t *testing.T, dbc *bun.DB) relationGraph {
 	_, err := dbc.NewInsert().Model(settings).Exec(ctx)
 	require.NoError(t, err, "seed quest settings")
 
-	blockID := createTestBlock(t, dbc, parents.LocationID)
+	blockID := createTestBlock(t, dbc, gofakeit.UUID())
 	runCode := createTestTeam(t, dbc, parents.QuestID)
 
 	objective := &models.Objective{
@@ -55,15 +52,6 @@ func seedRelationGraph(t *testing.T, dbc *bun.DB) relationGraph {
 	}
 	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err, "seed objective")
-
-	checkIn := &models.CheckIn{
-		QuestID:    parents.QuestID,
-		RunID:      runCode,
-		LocationID: parents.LocationID,
-		TimeIn:     time.Now(),
-	}
-	_, err = dbc.NewInsert().Model(checkIn).Exec(ctx)
-	require.NoError(t, err, "seed check-in")
 
 	notification := &models.Notification{
 		ID:      gofakeit.UUID(),
@@ -76,8 +64,6 @@ func seedRelationGraph(t *testing.T, dbc *bun.DB) relationGraph {
 	return relationGraph{
 		UserID:      parents.UserID,
 		QuestID:     parents.QuestID,
-		MarkerCode:  parents.MarkerCode,
-		LocationID:  parents.LocationID,
 		BlockID:     blockID,
 		RunCode:     runCode,
 		ObjectiveID: objective.ID,
@@ -98,16 +84,6 @@ func TestRunRepository_LoadRelations(t *testing.T) {
 		require.NoError(t, repo.LoadQuest(ctx, run))
 		assert.Equal(t, graph.QuestID, run.Quest.ID, "quest should be loaded")
 		assert.Equal(t, graph.QuestID, run.Quest.Settings.QuestID, "nested settings should be loaded")
-		assert.Len(t, run.Quest.Locations, 1, "nested locations should be loaded")
-	})
-
-	t.Run("LoadCheckIns", func(t *testing.T) {
-		run, err := repo.GetByCode(ctx, graph.RunCode)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadCheckIns(ctx, run))
-		require.Len(t, run.CheckIns, 1, "check-ins should be loaded")
-		assert.Equal(t, graph.LocationID, run.CheckIns[0].Location.ID, "nested location should be loaded")
 	})
 
 	t.Run("LoadMessages", func(t *testing.T) {
@@ -119,130 +95,19 @@ func TestRunRepository_LoadRelations(t *testing.T) {
 		assert.Equal(t, "test notification", run.Messages[0].Content)
 	})
 
-	t.Run("LoadBlockingLocation is a no-op when nothing blocks the run", func(t *testing.T) {
-		run, err := repo.GetByCode(ctx, graph.RunCode)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadBlockingLocation(ctx, run))
-		assert.Empty(t, run.BlockingLocation.ID)
-	})
-
-	t.Run("LoadBlockingLocation loads the location the run must check out of", func(t *testing.T) {
-		run, err := repo.GetByCode(ctx, graph.RunCode)
-		require.NoError(t, err)
-		run.MustCheckOut = graph.LocationID
-		require.NoError(t, repo.Update(ctx, run))
-
-		require.NoError(t, repo.LoadBlockingLocation(ctx, run))
-		assert.Equal(t, graph.LocationID, run.BlockingLocation.ID)
-
-		// Restore so sibling subtests see an unblocked run.
-		run.MustCheckOut = ""
-		require.NoError(t, repo.Update(ctx, run))
-	})
-
-	t.Run("GetByCode resolves its BlockingLocation relation", func(t *testing.T) {
-		run, err := repo.GetByCode(ctx, graph.RunCode)
-		require.NoError(t, err)
-		run.MustCheckOut = graph.LocationID
-		require.NoError(t, repo.Update(ctx, run))
-
-		// Re-fetch so the relation, not LoadBlockingLocation, populates the field.
-		reloaded, err := repo.GetByCode(ctx, graph.RunCode)
-		require.NoError(t, err)
-		assert.Equal(t, graph.LocationID, reloaded.BlockingLocation.ID,
-			"BlockingLocation relation should join must_scan_out against location id")
-
-		run.MustCheckOut = ""
-		require.NoError(t, repo.Update(ctx, run))
-	})
-
-	t.Run("LoadRelations loads quest, check-ins, blocking location and messages", func(t *testing.T) {
+	t.Run("LoadRelations loads quest and messages", func(t *testing.T) {
 		run, err := repo.GetByCode(ctx, graph.RunCode)
 		require.NoError(t, err)
 
 		require.NoError(t, repo.LoadRelations(ctx, run))
 		assert.Equal(t, graph.QuestID, run.Quest.ID)
-		assert.Len(t, run.CheckIns, 1)
 		assert.Len(t, run.Messages, 1)
 	})
 
-	t.Run("FindAll resolves its Quest, BlockingLocation and CheckIns relations", func(t *testing.T) {
+	t.Run("FindAll resolves its Quest relation", func(t *testing.T) {
 		runs, err := repo.FindAll(ctx, graph.QuestID)
 		require.NoError(t, err)
 		require.NotEmpty(t, runs)
-	})
-}
-
-func TestLocationRepository_LoadRelations(t *testing.T) {
-	repo, _, dbc, cleanup := setupLocationRepo(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	graph := seedRelationGraph(t, dbc)
-
-	t.Run("LoadRelations", func(t *testing.T) {
-		location, err := repo.GetByID(ctx, graph.LocationID)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadRelations(ctx, location))
-		assert.Equal(t, graph.QuestID, location.Quest.ID, "quest should be loaded")
-		assert.Equal(t, graph.QuestID, location.Quest.Settings.QuestID, "nested quest settings should be loaded")
-		assert.Equal(t, graph.MarkerCode, location.Marker.Code, "marker should be loaded")
-		assert.Len(t, location.Blocks, 1, "blocks should be loaded")
-	})
-
-	t.Run("LoadMarker", func(t *testing.T) {
-		location, err := repo.GetByID(ctx, graph.LocationID)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadMarker(ctx, location))
-		assert.Equal(t, graph.MarkerCode, location.Marker.Code)
-	})
-
-	t.Run("LoadInstance", func(t *testing.T) {
-		location, err := repo.GetByID(ctx, graph.LocationID)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadInstance(ctx, location))
-		assert.Equal(t, graph.QuestID, location.Quest.ID)
-	})
-
-	t.Run("LoadBlocks", func(t *testing.T) {
-		location, err := repo.GetByID(ctx, graph.LocationID)
-		require.NoError(t, err)
-
-		require.NoError(t, repo.LoadBlocks(ctx, location))
-		require.Len(t, location.Blocks, 1)
-		assert.Equal(t, graph.BlockID, location.Blocks[0].ID)
-	})
-
-	t.Run("FindByInstance resolves its Marker relation", func(t *testing.T) {
-		locations, err := repo.FindByInstance(ctx, graph.QuestID)
-		require.NoError(t, err)
-		require.Len(t, locations, 1)
-		assert.Equal(t, graph.MarkerCode, locations[0].Marker.Code)
-	})
-
-	t.Run("GetByInstanceAndCode resolves its Marker relation", func(t *testing.T) {
-		location, err := repo.GetByInstanceAndCode(ctx, graph.QuestID, graph.MarkerCode)
-		require.NoError(t, err)
-		assert.Equal(t, graph.LocationID, location.ID)
-		assert.Equal(t, graph.MarkerCode, location.Marker.Code)
-	})
-
-	t.Run("FindLocationsByMarkerID", func(t *testing.T) {
-		locations, err := repo.FindLocationsByMarkerID(ctx, graph.MarkerCode)
-		require.NoError(t, err)
-		require.Len(t, locations, 1)
-		assert.Equal(t, graph.LocationID, locations[0].ID)
-	})
-
-	t.Run("FindByIDs", func(t *testing.T) {
-		locations, err := repo.FindByIDs(ctx, graph.QuestID, []string{graph.LocationID})
-		require.NoError(t, err)
-		require.Len(t, locations, 1)
-		assert.Equal(t, graph.LocationID, locations[0].ID)
 	})
 }
 
@@ -259,8 +124,6 @@ func TestQuestRepository_GetByIDWithRelations(t *testing.T) {
 
 	assert.Equal(t, graph.QuestID, quest.ID)
 	assert.Equal(t, graph.QuestID, quest.Settings.QuestID, "settings should be loaded")
-	require.Len(t, quest.Locations, 1, "locations should be loaded")
-	assert.Equal(t, graph.MarkerCode, quest.Locations[0].Marker.Code, "nested location markers should be loaded")
 	require.Len(t, quest.Runs, 1, "runs should be loaded")
 	assert.Equal(t, graph.RunCode, quest.Runs[0].Code)
 	require.Len(t, quest.Objectives, 1, "objectives should be loaded")

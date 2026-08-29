@@ -29,28 +29,21 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	dbc, cleanup := setupDB(t)
 
 	transactor := db.NewTransactor(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
 	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 	instanceRepo := repositories.NewQuestRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 
-	gameStructureService := services.NewGameStructureService(locationRepo, objectiveRepo, instanceRepo)
-	markerService := services.NewMarkerService(markerRepo)
+	gameStructureService := services.NewGameStructureService(objectiveRepo, instanceRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
-	gameStructureService.SetRelationLoader(locationService)
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
 
 	navigationService := services.NewNavigationService(
-		locationRepo,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 		teamRepo,
@@ -61,7 +54,7 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	)
 
 	runService := services.NewRunService(
-		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo, varStateRepo,
+		transactor, teamRepo, creditService, blockStateRepo, varStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 

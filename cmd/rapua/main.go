@@ -47,7 +47,11 @@ func main() {
 
 	dbc := db.MustOpen(logger)
 
-	migrator := migrate.NewMigrator(dbc, migrations.Migrations)
+	// WithMarkAppliedOnSuccess: default bun behaviour marks a migration applied
+	// before running Up, so a failed Up still gets skipped on retry. Some of
+	// our migrations (20260829000000, notably) rely on failing loudly and
+	// being retried after the operator fixes the underlying data.
+	migrator := migrate.NewMigrator(dbc, migrations.Migrations, migrate.WithMarkAppliedOnSuccess(true))
 
 	app := &cli.App{
 		Name:        "Rapua",
@@ -79,14 +83,11 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
@@ -100,19 +101,17 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	transactor := db.NewTransactor(dbc)
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
-	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
-	locationStatsService := services.NewLocationStatsService(locationRepo)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
-	markerService := services.NewMarkerService(markerRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	gameStructureService := services.NewGameStructureService(locationRepo, objectiveRepo, instanceRepo)
+	gameStructureService := services.NewGameStructureService(objectiveRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
-		transactor, instanceRepo, locationRepo, markerRepo,
+		transactor, instanceRepo,
 		teamRepo, uploadRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
-		logger, transactor, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
@@ -120,13 +119,9 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	emailService := services.NewEmailService()
 	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
 	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 
-	gameStructureService.SetRelationLoader(locationService)
-
 	navigationService := services.NewNavigationService(
-		locationRepo,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 		teamRepo,
@@ -136,8 +131,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		logger,
 	)
 	checkInService := services.NewCheckInService(
-		checkInRepo, locationRepo, teamRepo,
-		locationStatsService, navigationService, blockService, teamVarStateRepo,
+		teamRepo, blockService, teamVarStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
@@ -148,7 +142,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
 	runService := services.NewRunService(
-		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo, teamVarStateRepo,
+		transactor, teamRepo, creditService, blockStateRepo, teamVarStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
@@ -189,15 +183,15 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		&templateService, userService, magicTokenService,
 	)
 	playerHandler := players.NewPlayerHandler(
-		logger, blockService, checkInService, questService, locationService,
-		markerService, navigationService, notificationService, runService, uploadService,
+		logger, blockService, checkInService, questService,
+		navigationService, notificationService, runService, uploadService,
 	)
 	adminHandler := admin.NewAdminHandler(
 		logger, accessService, assetGenerator, identityService, blockService,
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
 		gameStructureService, instanceRepo, questService, instanceSettingsService,
-		locationService, objectiveService, markerService, notificationService,
+		objectiveService, notificationService,
 		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,
 	)

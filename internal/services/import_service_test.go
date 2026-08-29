@@ -2,7 +2,6 @@ package services_test
 
 import (
 	"context"
-	"database/sql"
 	"log/slog"
 	"testing"
 
@@ -21,7 +20,6 @@ func setupImportService(t *testing.T) (
 	*services.ImportService,
 	repositories.QuestRepository,
 	repositories.QuestSettingsRepository,
-	repositories.LocationRepository,
 	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -35,13 +33,12 @@ func setupImportService(t *testing.T) (
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
 	svc := services.NewImportService(
 		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup
+	return svc, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
 
 // minimalValidDoc returns a valid GameDoc with no locations and no blocks.
@@ -90,7 +87,7 @@ func docWithObjective(gameName, slug, title string) *game.GameDoc {
 }
 
 func TestImportService_ImportCreate_InvalidDoc(t *testing.T) {
-	svc, _, _, _, _, _, _, cleanup := setupImportService(t)
+	svc, _, _, _, _, _, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -103,7 +100,7 @@ func TestImportService_ImportCreate_InvalidDoc(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -128,7 +125,7 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
-	svc, _, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -161,7 +158,7 @@ func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
-	svc, _, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -206,7 +203,7 @@ func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
-	svc, instanceRepo, _, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -228,7 +225,7 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_WithGroup(t *testing.T) {
-	svc, instanceRepo, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -272,7 +269,7 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -290,7 +287,7 @@ func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -307,7 +304,7 @@ func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -339,62 +336,8 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	assert.True(t, settings.ShowLeaderboard)
 }
 
-// TestImportService_ImportUpdate_LocationsNeverDeleted: Location can no
-// longer appear in a doc at all, so a naive orphan-deletion pass would delete
-// every location on every update. That pass was deliberately removed:
-// Location/Marker rows are left alone by import, same as by the Location ->
-// Objective migration. An update-import must leave existing locations and
-// their blocks untouched.
-func TestImportService_ImportUpdate_LocationsNeverDeleted(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, blockRepo, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	inst := &models.Quest{Name: "Game", UserID: userID}
-	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
-
-	locID := insertTestLocation(t, dbc, inst.ID)
-
-	transactor := db.NewTransactor(dbc)
-	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-	require.NoError(t, err)
-	_, err = blockRepo.CreateTx(ctx, tx, newTextBlock(locID), locID, game.ContextLocationContent)
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
-
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyOrdered,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{locID},
-		SubGroups:      []models.GameStructure{},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	// The update doc can never reference the location; the spec has no
-	// representation for it any more.
-	doc := minimalValidDoc("Game")
-	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
-	require.NoError(t, err)
-	assert.Equal(t, 0, result.Deleted.Objectives, "nothing to delete: the doc had no objectives to begin with")
-
-	locations, err := locationRepo.FindByInstance(ctx, inst.ID)
-	require.NoError(t, err)
-	require.Len(t, locations, 1, "the location must survive an update-import")
-	assert.Equal(t, locID, locations[0].ID)
-
-	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, locID)
-	require.NoError(t, err)
-	assert.Len(t, remainingBlocks, 1, "the location's blocks must survive too")
-}
-
 func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
-	svc, _, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -425,7 +368,7 @@ func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
 }
 
 func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
-	svc, instanceRepo, _, _, _, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -460,7 +403,7 @@ func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
 }
 
 func TestImportService_ImportUpdate_ObjectiveWhenUpdated(t *testing.T) {
-	svc, instanceRepo, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	svc, instanceRepo, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()

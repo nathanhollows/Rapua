@@ -17,7 +17,6 @@ func TestGameStructure_JSONRoundTrip(t *testing.T) {
 		Routing:        models.RouteStrategyFreeRoam,
 		CompletionType: models.CompletionAll,
 		IsRoot:         true,
-		LocationIDs:    []string{"loc-1"},
 		SubGroups: []models.GameStructure{
 			{
 				ID:              "group-1",
@@ -28,7 +27,6 @@ func TestGameStructure_JSONRoundTrip(t *testing.T) {
 				MinimumRequired: 2,
 				MaxNext:         3,
 				AutoAdvance:     true,
-				LocationIDs:     []string{"loc-2", "loc-3"},
 				SubGroups:       []models.GameStructure{},
 			},
 		},
@@ -53,13 +51,11 @@ func TestGameStructure_ScanValue_RoundTrip(t *testing.T) {
 		ID:             "root-id",
 		Routing:        models.RouteStrategyOrdered,
 		CompletionType: models.CompletionAll,
-		LocationIDs:    []string{},
 		SubGroups: []models.GameStructure{
 			{
 				ID:             "secret-group",
 				Routing:        models.RouteStrategySecret,
 				CompletionType: models.CompletionAll,
-				LocationIDs:    []string{},
 				SubGroups:      []models.GameStructure{},
 			},
 		},
@@ -134,10 +130,9 @@ func TestGameStructure_RemoveObjectiveID(t *testing.T) {
 func TestGameStructure_AllRouteStrategies_Serialize(t *testing.T) {
 	for _, rs := range models.GetRouteStrategies() {
 		gs := models.GameStructure{
-			ID:          "test",
-			Routing:     rs,
-			LocationIDs: []string{},
-			SubGroups:   []models.GameStructure{},
+			ID:        "test",
+			Routing:   rs,
+			SubGroups: []models.GameStructure{},
 		}
 		data, err := json.Marshal(gs)
 		require.NoError(t, err, "marshal failed for RouteStrategy %s", rs)

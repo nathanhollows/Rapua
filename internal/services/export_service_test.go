@@ -21,7 +21,6 @@ func setupExportService(t *testing.T) (
 	*services.ExportService,
 	repositories.QuestRepository,
 	repositories.QuestSettingsRepository,
-	repositories.LocationRepository,
 	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
@@ -34,11 +33,10 @@ func setupExportService(t *testing.T) (
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
 	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, objectiveRepo, blockRepo, dbc, cleanup
+	return svc, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
 
 // newTextBlock creates a MarkdownBlock for use in tests.
@@ -51,7 +49,7 @@ func newTextBlock(ownerID string) blocks.Block {
 }
 
 func TestExportService_ExportInstance_NotFound(t *testing.T) {
-	svc, _, _, _, _, _, _, cleanup := setupExportService(t)
+	svc, _, _, _, _, _, cleanup := setupExportService(t)
 	defer cleanup()
 
 	_, _, err := svc.ExportInstance(context.Background(), "does-not-exist")
@@ -59,7 +57,7 @@ func TestExportService_ExportInstance_NotFound(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -74,7 +72,6 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 			IsRoot:         true,
 			Routing:        game.RouteStrategyOrdered,
 			CompletionType: game.CompletionAll,
-			LocationIDs:    []string{},
 			SubGroups:      []models.GameStructure{},
 		},
 	}
@@ -100,62 +97,8 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	assert.Empty(t, doc.Finish)
 }
 
-// TestExportService_ExportInstance_LocationsNotExported proves Locations are
-// silently omitted from the exported doc: the spec has no Location representation
-// any more, but Location rows are deliberately left in the DB (see the
-// Location -> Objective migration), so ExportInstance must not error or panic
-// when GameStructure.LocationIDs still references one.
-func TestExportService_ExportInstance_LocationsNotExported(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	markerCode := gofakeit.LetterN(5)
-	insertTestMarker(t, dbc, markerCode)
-
-	inst := &models.Quest{Name: "Export Test", UserID: userID}
-	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
-
-	loc := &models.Location{
-		QuestID:  inst.ID,
-		MarkerID: markerCode,
-		Name:     "Park",
-		Slug:     "park",
-		Points:   10,
-	}
-	require.NoError(t, locationRepo.Create(ctx, loc))
-
-	transactor := db.NewTransactor(dbc)
-	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-	require.NoError(t, err)
-	_, err = blockRepo.CreateTx(ctx, tx, newTextBlock(loc.ID), loc.ID, game.ContextLocationContent)
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
-
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyFreeRoam,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{loc.ID},
-		SubGroups:      []models.GameStructure{},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	doc, warnings, err := svc.ExportInstance(ctx, inst.ID)
-	require.NoError(t, err)
-
-	assert.Empty(t, doc.Structure.Children, "the location is not exported; the doc has no representation for it")
-	require.Len(t, warnings, 1, "the dropped location must be surfaced as a warning, not silently swallowed")
-	assert.Contains(t, warnings[0], "1 location")
-}
-
 func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, blockRepo, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -216,7 +159,7 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, blockRepo, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -241,7 +184,6 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
 		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{},
 		SubGroups:      []models.GameStructure{},
 	}
 	require.NoError(t, instanceRepo.Update(ctx, inst))
@@ -256,7 +198,7 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 }
 
 func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -277,7 +219,6 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 		IsRoot:         true,
 		Routing:        game.RouteStrategyOrdered,
 		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{},
 		SubGroups: []models.GameStructure{
 			{
 				ID:             groupID,
@@ -306,7 +247,7 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 }
 
 func TestExportService_ObjectiveWhenRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -348,7 +289,7 @@ func TestExportService_ObjectiveWhenRoundTrip(t *testing.T) {
 }
 
 func TestExportService_GroupWhenRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -361,9 +302,8 @@ func TestExportService_GroupWhenRoundTrip(t *testing.T) {
 
 	groupWhen := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
 	inst.GameStructure = models.GameStructure{
-		ID:          gofakeit.UUID(),
-		IsRoot:      true,
-		LocationIDs: []string{},
+		ID:     gofakeit.UUID(),
+		IsRoot: true,
 		SubGroups: []models.GameStructure{
 			{
 				ID:           gofakeit.UUID(),

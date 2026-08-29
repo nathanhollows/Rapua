@@ -17,7 +17,6 @@ import (
 type AccessService interface {
 	CanAdminAccessBlock(ctx context.Context, userID, blockID string) (bool, error)
 	CanAdminAccessQuest(ctx context.Context, userID, questID string) (bool, error)
-	CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error)
 	CanAdminAccessObjective(ctx context.Context, userID, objectiveID string) (bool, error)
 }
 
@@ -28,11 +27,9 @@ func setupAccessService(t *testing.T) (AccessService, func()) {
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 
 	return accessService, cleanup
 }
@@ -115,92 +112,6 @@ func TestAccessService_CanAdminAccessQuest(t *testing.T) {
 
 		// Should pass validation (non-empty string)
 		require.NoError(t, err)
-		assert.False(t, canAccess)
-	})
-}
-
-func TestAccessService_CanAdminAccessLocation(t *testing.T) {
-	service, cleanup := setupAccessService(t)
-	defer cleanup()
-
-	t.Run("Valid user and location access", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		locationID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), userID, locationID)
-
-		// May error due to location not existing, but shouldn't be validation error
-		if err != nil {
-			require.NotContains(t, err.Error(), "user ID cannot be empty")
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		} else {
-			assert.False(t, canAccess)
-		}
-	})
-
-	t.Run("Empty user ID", func(t *testing.T) {
-		locationID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), "", locationID)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Empty location ID", func(t *testing.T) {
-		userID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), userID, "")
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "location ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Both empty user and location ID", func(t *testing.T) {
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), "", "")
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user ID cannot be empty")
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Non-existent location", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		locationID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), userID, locationID)
-
-		// Should error due to location not existing in database
-		if err != nil {
-			require.NotContains(t, err.Error(), "user ID cannot be empty")
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		}
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Whitespace in user ID", func(t *testing.T) {
-		locationID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), "   ", locationID)
-
-		// Should pass validation (non-empty string)
-		if err != nil {
-			require.NotContains(t, err.Error(), "user ID cannot be empty")
-		}
-		assert.False(t, canAccess)
-	})
-
-	t.Run("Whitespace in location ID", func(t *testing.T) {
-		userID := gofakeit.UUID()
-
-		canAccess, err := service.CanAdminAccessLocation(context.Background(), userID, "   ")
-
-		// Should pass validation (non-empty string)
-		if err != nil {
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		}
 		assert.False(t, canAccess)
 	})
 }
@@ -309,13 +220,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, canAccess)
 
-		// Test with very long location ID
-		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, longID)
-		if err != nil {
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		}
-		assert.False(t, canAccess)
-
 		// Test with very long block ID
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, longID)
 		if err != nil {
@@ -333,12 +237,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, canAccess)
 
-		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, specialID)
-		if err != nil {
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		}
-		assert.False(t, canAccess)
-
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, specialID)
 		if err != nil {
 			require.NotContains(t, err.Error(), "block ID cannot be empty")
@@ -353,12 +251,6 @@ func TestAccessService_ValidationEdgeCases(t *testing.T) {
 		// Test with unicode characters
 		canAccess, err := service.CanAdminAccessQuest(context.Background(), userID, unicodeID)
 		require.NoError(t, err)
-		assert.False(t, canAccess)
-
-		canAccess, err = service.CanAdminAccessLocation(context.Background(), userID, unicodeID)
-		if err != nil {
-			require.NotContains(t, err.Error(), "location ID cannot be empty")
-		}
 		assert.False(t, canAccess)
 
 		canAccess, err = service.CanAdminAccessBlock(context.Background(), userID, unicodeID)
@@ -428,11 +320,9 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
 	instanceRepo := repositories.NewQuestRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	service := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo, objectiveRepo)
+	service := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 
 	ctx := context.Background()
 
@@ -478,39 +368,6 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, questID, blocks.ContextFinish)
 		require.NoError(t, err)
 		assert.True(t, canAccess, "User should have access to their own instance for finish blocks")
-	})
-
-	t.Run("Owner can access location block through location", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		questID := gofakeit.UUID()
-		markerCode := gofakeit.LetterN(5)
-
-		// Create parent rows for FK constraints
-		insertTestUser(t, dbc, userID)
-		insertTestMarker(t, dbc, markerCode)
-
-		// Create instance owned by user using repository
-		inst := &models.Quest{
-			ID:     questID,
-			Name:   gofakeit.Word(),
-			UserID: userID,
-		}
-		err := instanceRepo.Create(ctx, inst)
-		require.NoError(t, err)
-
-		// Create location in that instance using repository (let ID auto-generate)
-		loc := &models.Location{
-			QuestID:  questID,
-			Name:     gofakeit.Word(),
-			MarkerID: markerCode,
-		}
-		err = locationRepo.Create(ctx, loc)
-		require.NoError(t, err)
-
-		// Test access to location block owner (location)
-		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
-		require.NoError(t, err)
-		assert.True(t, canAccess, "User should have access to locations in their own instance")
 	})
 
 	t.Run("Owner can access objective proof/reveal block through objective", func(t *testing.T) {
@@ -599,49 +456,12 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		assert.False(t, canAccess, "User should not have access to another user's instance")
 	})
 
-	t.Run("Non-owner cannot access location", func(t *testing.T) {
+	t.Run("Context routing: start and finish -> instance, objective contexts -> objective", func(t *testing.T) {
 		userID := gofakeit.UUID()
-		otherUserID := gofakeit.UUID()
 		questID := gofakeit.UUID()
-		markerCode := gofakeit.LetterN(5)
 
 		// Create parent rows for FK constraints
 		insertTestUser(t, dbc, userID)
-		insertTestUser(t, dbc, otherUserID)
-		insertTestMarker(t, dbc, markerCode)
-
-		// Create instance owned by another user using repository
-		inst := &models.Quest{
-			ID:     questID,
-			Name:   gofakeit.Word(),
-			UserID: otherUserID,
-		}
-		err := instanceRepo.Create(ctx, inst)
-		require.NoError(t, err)
-
-		// Create location in that instance using repository (let ID auto-generate)
-		loc := &models.Location{
-			QuestID:  questID,
-			Name:     gofakeit.Word(),
-			MarkerID: markerCode,
-		}
-		err = locationRepo.Create(ctx, loc)
-		require.NoError(t, err)
-
-		// Test access to location block - should fail
-		canAccess, err := service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
-		require.NoError(t, err)
-		assert.False(t, canAccess, "User should not have access to locations in another user's instance")
-	})
-
-	t.Run("Context routing: start and finish -> instance, location contexts -> location", func(t *testing.T) {
-		userID := gofakeit.UUID()
-		questID := gofakeit.UUID()
-		markerCode := gofakeit.LetterN(5)
-
-		// Create parent rows for FK constraints
-		insertTestUser(t, dbc, userID)
-		insertTestMarker(t, dbc, markerCode)
 
 		// Create instance using repository
 		inst := &models.Quest{
@@ -652,13 +472,13 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		err := instanceRepo.Create(ctx, inst)
 		require.NoError(t, err)
 
-		// Create location using repository (let ID auto-generate)
-		loc := &models.Location{
-			QuestID:  questID,
-			Name:     gofakeit.Word(),
-			MarkerID: markerCode,
+		obj := &models.Objective{
+			ID:      gofakeit.UUID(),
+			QuestID: questID,
+			Slug:    gofakeit.LetterN(8),
+			Title:   gofakeit.Word(),
 		}
-		err = locationRepo.Create(ctx, loc)
+		_, err = dbc.NewInsert().Model(obj).Exec(ctx)
 		require.NoError(t, err)
 
 		// Test start context routes to instance check
@@ -671,13 +491,13 @@ func TestAccessService_CanAdminAccessBlockOwner(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, canAccess)
 
-		// Test location_content context routes to location check
-		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_content")
+		// Test objective proof context routes to objective check.
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, obj.ID, blocks.ContextObjectiveProof)
 		require.NoError(t, err)
 		assert.True(t, canAccess)
 
-		// Test location_clues context routes to location check
-		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, loc.ID, "location_clues")
+		// Test objective reveal context routes to objective check.
+		canAccess, err = service.CanAdminAccessBlockOwner(ctx, userID, obj.ID, blocks.ContextObjectiveReveal)
 		require.NoError(t, err)
 		assert.True(t, canAccess)
 	})

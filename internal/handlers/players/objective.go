@@ -47,7 +47,7 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		// found" silently, so it still goes through handleError.
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.WarnContext(r.Context(), "ObjectiveView: objective not found", "team", team.Code, "objective", slug)
-			http.Redirect(w, r, "/next", http.StatusFound)
+			http.Redirect(w, r, "/objectives", http.StatusFound)
 			return
 		}
 		h.handleError(

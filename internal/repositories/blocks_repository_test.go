@@ -264,8 +264,8 @@ func TestBlockRepository(t *testing.T) {
 	}
 }
 
-// Test that creating a new block with a new location ID replaces the old location ID.
-func TestBlockRepository_Create_NewLocationID(t *testing.T) {
+// Test that creating a block with a new owner ID replaces the block's original owner.
+func TestBlockRepository_Create_NewOwnerID(t *testing.T) {
 	repo, _, _, _, cleanup := setupBlockRepo(t)
 	defer cleanup()
 
@@ -590,25 +590,6 @@ func TestBlockRepository_UserOwnsBlock(t *testing.T) {
 		owns, err := repo.UserOwnsBlock(ctx, parents.UserID, block.GetID())
 		require.NoError(t, err)
 		assert.True(t, owns, "User should own their instance's start block")
-	})
-
-	t.Run("user owns location block through instances and locations", func(t *testing.T) {
-		parents := createTestParents(t, dbc)
-
-		// Create location block
-		block, err := repo.Create(ctx, blocks.NewMarkdownBlock(
-			blocks.BaseBlock{
-				OwnerID: parents.LocationID,
-				Type:    "text",
-				Points:  0,
-			},
-		), parents.LocationID, blocks.ContextLocationContent)
-		require.NoError(t, err)
-
-		// Check ownership
-		owns, err := repo.UserOwnsBlock(ctx, parents.UserID, block.GetID())
-		require.NoError(t, err)
-		assert.True(t, owns, "User should own their instance's location blocks")
 	})
 
 	t.Run("user owns objective block through instances and objectives", func(t *testing.T) {

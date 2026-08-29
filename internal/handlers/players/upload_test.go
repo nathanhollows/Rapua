@@ -49,7 +49,6 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 			QuestID:     "instance-123",
 			RunCode:     "TEAM1",
 			BlockID:     "block-456",
-			LocationID:  "location-789",
 		},
 	}
 
@@ -107,7 +106,6 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	assert.Equal(t, "instance-123", mockService.uploadedMetadata.QuestID)
 	assert.Equal(t, "TEAM1", mockService.uploadedMetadata.RunID)
 	assert.Equal(t, "block-456", mockService.uploadedMetadata.BlockID)
-	assert.Equal(t, "location-789", mockService.uploadedMetadata.LocationID)
 }
 
 func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {

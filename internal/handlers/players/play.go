@@ -44,7 +44,7 @@ func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/next")
+	h.redirect(w, r, "/objectives")
 }
 
 // PlayPost is the handler for the play form submission.
@@ -107,5 +107,5 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/next")
+	h.redirect(w, r, "/objectives")
 }

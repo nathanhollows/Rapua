@@ -54,7 +54,6 @@ templ photoPlayer(settings models.QuestSettings, block blocks.PhotoBlock, data b
 						hx-swap="outerHTML"
 						hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
 						data-block-id={ block.ID }
-						data-location-id={ block.OwnerID }
 						data-max-images={ fmt.Sprint(block.MaxImages) }
 					>
 						<input type="hidden" name="block" value={ block.ID }/>
@@ -76,7 +75,6 @@ templ photoPlayer(settings models.QuestSettings, block blocks.PhotoBlock, data b
 						(function() {
 							const form = document.currentScript.previousElementSibling;
 							const blockId = form.getAttribute('data-block-id');
-							const locationId = form.getAttribute('data-location-id');
 							const fileInput = document.getElementById('fileInput-' + blockId);
 							const progressBar = document.getElementById('progressBar-' + blockId);
 
@@ -95,9 +93,6 @@ templ photoPlayer(settings models.QuestSettings, block blocks.PhotoBlock, data b
 								const formData = new FormData();
 								formData.append('file', file);
 								formData.append('block_id', blockId);
-								if (locationId) {
-									formData.append('location_id', locationId);
-								}
 
 								try {
 									const uploadUrl = await uploadFile(formData);

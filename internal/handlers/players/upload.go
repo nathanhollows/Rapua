@@ -35,10 +35,9 @@ func (h *PlayerHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metadata := services.UploadMetadata{
-		QuestID:    team.QuestID,
-		RunID:      team.Code,
-		BlockID:    r.Form.Get("block_id"),
-		LocationID: r.Form.Get("location_id"),
+		QuestID: team.QuestID,
+		RunID:   team.Code,
+		BlockID: r.Form.Get("block_id"),
 	}
 
 	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)

@@ -224,7 +224,6 @@ func (s *ImportService) importCreate(
 	// Create QuestSettings
 	settings := &models.QuestSettings{
 		QuestID:         newInstance.ID,
-		MustCheckOut:    doc.Settings.MustCheckOut,
 		ShowTeamCount:   doc.Settings.ShowTeamCount,
 		EnablePoints:    doc.Settings.EnablePoints,
 		ShowLeaderboard: doc.Settings.ShowLeaderboard,
@@ -240,7 +239,6 @@ func (s *ImportService) importCreate(
 		Routing:         doc.Structure.Routing,
 		CompletionType:  doc.Structure.Completion,
 		MinimumRequired: doc.Structure.MinimumRequired,
-		LocationIDs:     []string{},
 		ObjectiveIDs:    []string{},
 		SubGroups:       []models.GameStructure{},
 	}
@@ -301,7 +299,6 @@ func (s *ImportService) walkCreateChildren(
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
 				When:            g.When,
-				LocationIDs:     []string{},
 				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}
@@ -395,7 +392,6 @@ func (s *ImportService) importUpdate(
 	if err != nil {
 		return nil, fmt.Errorf("load settings: %w", err)
 	}
-	settings.MustCheckOut = doc.Settings.MustCheckOut
 	settings.ShowTeamCount = doc.Settings.ShowTeamCount
 	settings.EnablePoints = doc.Settings.EnablePoints
 	settings.ShowLeaderboard = doc.Settings.ShowLeaderboard
@@ -404,9 +400,6 @@ func (s *ImportService) importUpdate(
 	}
 
 	// Track which existing objectives appeared in the doc (to find orphans).
-	// Location rows are deliberately left alone by import: Location has no
-	// representation in the doc at all, so there is no seenLocIDs tracking or
-	// orphan-deletion pass to mirror this one.
 	seenObjIDs := make(map[string]bool)
 
 	// Build new GameStructure
@@ -416,7 +409,6 @@ func (s *ImportService) importUpdate(
 		Routing:         doc.Structure.Routing,
 		CompletionType:  doc.Structure.Completion,
 		MinimumRequired: doc.Structure.MinimumRequired,
-		LocationIDs:     []string{},
 		ObjectiveIDs:    []string{},
 		SubGroups:       []models.GameStructure{},
 	}
@@ -513,7 +505,6 @@ func (s *ImportService) walkUpdateChildren(
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
 				When:            g.When,
-				LocationIDs:     []string{},
 				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}

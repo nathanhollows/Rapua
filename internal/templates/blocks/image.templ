@@ -67,7 +67,6 @@ templ imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) {
 		hx-trigger={ fmt.Sprintf("change from:#file-%s delay:500ms", block.ID) }
 		hx-swap="none"
 	>
-		<input type="hidden" name="location_id" value={ fmt.Sprint(block.OwnerID) }/>
 		<input type="hidden" name="block_id" value={ fmt.Sprint(block.ID) }/>
 		<input type="hidden" name="context" value="image_block"/>
 		<input

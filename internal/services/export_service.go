@@ -34,23 +34,11 @@ func NewExportService(
 	}
 }
 
-// ExportInstance serialises a live instance to a v8 GameDoc. The returned
-// warnings are non-fatal: a quest whose structure still references
-// unconverted Locations (see countLocationIDs) exports successfully, minus
-// that content, rather than failing outright.
 func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, []string, error) {
 	// 1. Load Instance (includes GameStructure JSON column)
 	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("export: load instance: %w", err)
-	}
-
-	var warnings []string
-	if n := countLocationIDs(instance.GameStructure); n > 0 {
-		warnings = append(warnings, fmt.Sprintf(
-			"%d location(s) in this quest's structure have no representation in the exported document; their content is omitted",
-			n,
-		))
 	}
 
 	// 2. Load QuestSettings.
@@ -102,7 +90,6 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		ID:    questID,
 		Name:  instance.Name,
 		Settings: game.SettingsDoc{
-			MustCheckOut:    settings.MustCheckOut,
 			ShowTeamCount:   settings.ShowTeamCount,
 			EnablePoints:    settings.EnablePoints,
 			ShowLeaderboard: settings.ShowLeaderboard,
@@ -117,18 +104,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		},
 	}
 
-	return doc, warnings, nil
-}
-
-// countLocationIDs sums LocationIDs across a GameStructure tree. Location has
-// no representation in the exported doc, so a non-zero result means that many
-// locations' content is silently omitted from ExportInstance's output.
-func countLocationIDs(gs models.GameStructure) int {
-	count := len(gs.LocationIDs)
-	for _, sub := range gs.SubGroups {
-		count += countLocationIDs(sub)
-	}
-	return count
+	return doc, nil, nil
 }
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.

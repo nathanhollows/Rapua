@@ -2,8 +2,6 @@ package services
 
 import (
 	"time"
-
-	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 const (
@@ -14,18 +12,6 @@ const (
 	year   = "year"
 )
 
-// LocationUpdateData is the data required to update a new location. Blank
-// fields are ignored, with the exception of Clues and ClueIDs which
-// are always required.
-type LocationUpdateData struct {
-	Name      string
-	Latitude  float64
-	Longitude float64
-	Points    int
-	When      *game.WhenClause // visibility condition; nil = no conditions
-	SetWhen   bool             // true when the caller explicitly submitted a when_clause value
-}
-
 // ObjectiveUpdateData: blank fields are ignored.
 type ObjectiveUpdateData struct {
 	Title string
@@ -33,17 +19,15 @@ type ObjectiveUpdateData struct {
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.
 type LeaderBoardTeamData struct {
-	ID           string
-	Code         string
-	Name         string
-	Points       int
-	LastSeen     time.Time
-	Progress     int
-	Status       TeamStatus
-	Rank         int
-	HasStarted   bool
-	MustCheckOut string
-	CheckInCount int
+	ID         string
+	Code       string
+	Name       string
+	Points     int
+	LastSeen   time.Time
+	Progress   int
+	Status     TeamStatus
+	Rank       int
+	HasStarted bool
 }
 
 // TeamStatus represents the current status of a team.
@@ -51,7 +35,6 @@ type TeamStatus string
 
 const (
 	StatusStarted  TeamStatus = "started"
-	StatusOnsite   TeamStatus = "onsite"
 	StatusTransit  TeamStatus = "transit"
 	StatusFinished TeamStatus = "finished"
 )

@@ -11,7 +11,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
-// Objectives is /objectives' handler: the Objective-built quest counterpart of Next.
+// Objectives is /objectives' handler: the player's list of available objectives.
 func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		h.objectivesPreview(w, r)
@@ -104,7 +104,7 @@ func (h *PlayerHandler) objectivesPreview(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// Journal is /journal's handler: the Objective-built quest counterpart of MyCheckins.
+// Journal is /journal's handler: the player's completed-objective list.
 func (h *PlayerHandler) Journal(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getRunFromContext(r.Context())
 	if err != nil || team == nil {

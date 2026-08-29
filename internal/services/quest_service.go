@@ -54,18 +54,16 @@ func (s *QuestService) CreateQuest(
 			Routing:        models.RouteStrategyFreeRoam,
 			CompletionType: models.CompletionAll,
 			IsRoot:         true,
-			LocationIDs:    []string{},
 			SubGroups: []models.GameStructure{
 				{
 					ID:             uuid.New().String(),
-					Name:           "Locations",
+					Name:           "Objectives",
 					Color:          "primary",
 					Routing:        models.RouteStrategyRandomised,
 					CompletionType: models.CompletionAll,
-					MaxNext:        3, //nolint:mnd // Default max next locations
+					MaxNext:        3, //nolint:mnd // Default max next objectives
 					AutoAdvance:    true,
 					IsRoot:         false,
-					LocationIDs:    []string{},
 					SubGroups:      []models.GameStructure{},
 				},
 			},
@@ -157,10 +155,10 @@ func (s *QuestService) Update(ctx context.Context, instance *models.Quest) error
 	return nil
 }
 
-const startInstructionsContent = `- Navigate to each location using the clues, maps, or directions provided.
-- When you arrive, check in by scanning the QR code or following the link.
-- Complete the activity at each stop.
-- Continue moving through all locations and completing their activities until you reach the final checkpoint.
+const startInstructionsContent = `- Work through each objective using the clues, maps, or directions provided.
+- Complete what it asks, such as scanning a code, answering a question, or taking a photo.
+- Check your journal to see what you've completed.
+- Continue until you've finished every objective.
 - Have fun exploring!`
 
 const finishCongratulationsContent = `You’ve wrapped up the entire route. Thanks for being part of the adventure.`

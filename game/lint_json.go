@@ -34,7 +34,7 @@ var (
 		"settings": true, "start": true, "finish": true, "structure": true,
 	}
 	knownSettingsDocFields = map[string]bool{
-		"must_check_out": true, "show_team_count": true, "enable_points": true,
+		"show_team_count": true, "enable_points": true,
 		"show_leaderboard": true,
 	}
 	knownStructureDocFields = map[string]bool{

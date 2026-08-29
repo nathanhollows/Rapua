@@ -48,8 +48,6 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Validate context parameter
 	validContexts := []blocks.BlockContext{
-		blocks.ContextLocationContent,
-		blocks.ContextNavigation,
 		blocks.ContextStart,
 		blocks.ContextFinish,
 		blocks.ContextObjectiveProof,
@@ -69,7 +67,7 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check access based on context type (instance for start/complete, location otherwise)
+	// Check access based on context type (instance for start/complete, objective otherwise)
 	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -239,11 +237,13 @@ func (h *Handler) BlockList(w http.ResponseWriter, r *http.Request) {
 	if contextParam != "" {
 		blockContext = blocks.BlockContext(contextParam)
 	} else {
-		// Default to location context for context-agnostic queries
-		blockContext = blocks.ContextLocationContent
+		// Default to objective-proof for context-agnostic queries: the access
+		// check only cares which owner-type branch it takes (quest vs.
+		// objective), and an objective owner is now the common case.
+		blockContext = blocks.ContextObjectiveProof
 	}
 
-	// Check access to the owner (instance for start/complete, location otherwise)
+	// Check access to the owner (instance for start/complete, objective otherwise)
 	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
 	if err != nil {
 		h.handleError(w, r, "BlockList: checking access", "Could not list blocks", "error", err)

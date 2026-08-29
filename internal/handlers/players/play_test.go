@@ -40,7 +40,7 @@ func TestPlayerHandler_PlayWithCode_Success(t *testing.T) {
 	handler.PlayWithCode(w, requestWithCode(code))
 
 	assert.Equal(t, http.StatusFound, w.Code)
-	assert.Equal(t, "/next", w.Header().Get("Location"))
+	assert.Equal(t, "/objectives", w.Header().Get("Location"))
 	require.NotEmpty(t, w.Result().Cookies(), "starting the session should set a cookie")
 
 	run, err := runService.GetRunByCode(context.Background(), code)
@@ -93,9 +93,9 @@ func TestPlayerHandler_PlayWithCode_AlreadyStarted(t *testing.T) {
 
 	first := httptest.NewRecorder()
 	handler.PlayWithCode(first, requestWithCode(code))
-	require.Equal(t, "/next", first.Header().Get("Location"))
+	require.Equal(t, "/objectives", first.Header().Get("Location"))
 
 	second := httptest.NewRecorder()
 	handler.PlayWithCode(second, requestWithCode(code))
-	assert.Equal(t, "/next", second.Header().Get("Location"))
+	assert.Equal(t, "/objectives", second.Header().Get("Location"))
 }

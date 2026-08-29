@@ -23,8 +23,6 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 
 	// Initialize required repositories
 	instanceRepo := repositories.NewQuestRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
@@ -35,8 +33,6 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	deleteService := services.NewDeleteService(
 		transactor,
 		instanceRepo,
-		locationRepo,
-		markerRepo,
 		teamRepo,
 		uploadRepo,
 		dbc,
@@ -467,67 +463,6 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	count, err = dbc.NewSelect().Model(&models.RunStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All team start logs should be deleted")
-}
-
-func TestDeleteService_DeleteBlock_ImageBlock(t *testing.T) {
-	_, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Create parent chain: user → instance → location → block
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
-	inst := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "test"}
-	_, err = dbc.NewInsert().Model(inst).Exec(ctx)
-	require.NoError(t, err)
-	marker := &models.Marker{Code: "TESTMK"}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	require.NoError(t, err)
-	loc := &models.Location{ID: gofakeit.UUID(), QuestID: inst.ID, MarkerID: marker.Code, Name: "test-loc"}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create a simple image block
-	imageBlock := createTestImageBlock(t, dbc, loc.ID, "/static/uploads/2025/11/18/test-image.png")
-
-	// Verify block exists
-	count, err := dbc.NewSelect().Model(&models.Block{}).Where("id = ?", imageBlock.ID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "Block should exist before deletion")
-
-	// Note: Full end-to-end test requires actual file creation and async testing
-	// The core deletion flow is tested by existing DeleteService tests
-	// Upload cleanup is tested separately in orphaned_uploads_cleanup_test.go
-}
-
-// Helper functions
-
-func createTestImageBlock(t *testing.T, dbc *bun.DB, locationID string, imageURL string) *models.Block {
-	t.Helper()
-
-	// Create image block data
-	imageData := map[string]interface{}{
-		"content": imageURL,
-		"caption": "Test image",
-	}
-	jsonData, err := json.Marshal(imageData)
-	require.NoError(t, err)
-
-	block := &models.Block{
-		ID:       "block-" + gofakeit.UUID(),
-		OwnerID:  locationID,
-		Type:     "image",
-		Data:     jsonData,
-		Ordering: 0,
-		Points:   0,
-	}
-
-	_, err = dbc.NewInsert().Model(block).Exec(context.Background())
-	require.NoError(t, err)
-
-	return block
 }
 
 func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
@@ -967,138 +902,12 @@ func TestDeleteService_DeleteUser_DeletesObjectiveBlocks(t *testing.T) {
 	assert.Zero(t, count, "objective blocks should be deleted when the owning user is deleted")
 }
 
-// deleteLocationFixture creates a quest whose GameStructure references two
-// locations in a nested group, and returns the quest plus both location IDs.
-func deleteLocationFixture(t *testing.T, dbc *bun.DB) (*models.Quest, string, string) {
-	t.Helper()
-	ctx := context.Background()
-
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
-
-	doomedID, survivorID := gofakeit.UUID(), gofakeit.UUID()
-
-	quest := &models.Quest{
-		ID:     gofakeit.UUID(),
-		UserID: user.ID,
-		Name:   "Structure prune",
-		GameStructure: models.GameStructure{
-			ID:          "root",
-			IsRoot:      true,
-			LocationIDs: []string{survivorID},
-			SubGroups: []models.GameStructure{
-				{ID: "nested", Name: "Nested", LocationIDs: []string{doomedID}},
-			},
-		},
-	}
-	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
-	require.NoError(t, err)
-
-	for _, id := range []string{doomedID, survivorID} {
-		marker := &models.Marker{Code: id[:5], Name: gofakeit.City()}
-		_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-		require.NoError(t, err)
-
-		location := &models.Location{
-			ID:       id,
-			QuestID:  quest.ID,
-			MarkerID: marker.Code,
-			Name:     gofakeit.City(),
-			Slug:     gofakeit.Word() + "-" + id[:4],
-		}
-		_, err = dbc.NewInsert().Model(location).Exec(ctx)
-		require.NoError(t, err)
-	}
-
-	return quest, doomedID, survivorID
-}
-
 func reloadStructure(t *testing.T, dbc *bun.DB, questID string) models.GameStructure {
 	t.Helper()
 	var reloaded models.Quest
 	err := dbc.NewSelect().Model(&reloaded).Where("id = ?", questID).Scan(context.Background())
 	require.NoError(t, err)
 	return reloaded.GameStructure
-}
-
-func TestDeleteService_DeleteLocation_PrunesStructure(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	quest, doomedID, survivorID := deleteLocationFixture(t, dbc)
-
-	require.NoError(t, svc.DeleteLocation(context.Background(), doomedID))
-
-	structure := reloadStructure(t, dbc, quest.ID)
-	assert.Empty(t, structure.SubGroups[0].LocationIDs,
-		"deleted location must not linger in the structure")
-	assert.Equal(t, []string{survivorID}, structure.LocationIDs,
-		"sibling groups untouched")
-
-	count, err := dbc.NewSelect().Model((*models.Location)(nil)).
-		Where("id = ?", doomedID).Count(context.Background())
-	require.NoError(t, err)
-	assert.Zero(t, count)
-}
-
-func TestDeleteService_DeleteLocation_LeavesOtherLocationsAlone(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	_, doomedID, survivorID := deleteLocationFixture(t, dbc)
-
-	require.NoError(t, svc.DeleteLocation(context.Background(), doomedID))
-
-	count, err := dbc.NewSelect().Model((*models.Location)(nil)).
-		Where("id = ?", survivorID).Count(context.Background())
-	require.NoError(t, err)
-	assert.Equal(t, 1, count)
-}
-
-func TestDeleteService_DeleteLocation_DeletesBlocks(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	_, doomedID, survivorID := deleteLocationFixture(t, dbc)
-
-	for _, ownerID := range []string{doomedID, survivorID} {
-		block := &models.Block{
-			ID:      gofakeit.UUID(),
-			OwnerID: ownerID,
-			Type:    "markdown",
-			Data:    json.RawMessage(`{}`),
-		}
-		_, err := dbc.NewInsert().Model(block).Exec(ctx)
-		require.NoError(t, err)
-	}
-
-	require.NoError(t, svc.DeleteLocation(ctx, doomedID))
-
-	count, err := dbc.NewSelect().Model((*models.Block)(nil)).
-		Where("owner_id = ?", doomedID).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, count)
-
-	count, err = dbc.NewSelect().Model((*models.Block)(nil)).
-		Where("owner_id = ?", survivorID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "blocks belonging to other locations survive")
-}
-
-// Re-deleting must not error, so a retry after a partial failure is safe.
-func TestDeleteService_DeleteLocation_UnknownIDIsNoOp(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	quest, _, survivorID := deleteLocationFixture(t, dbc)
-
-	require.NoError(t, svc.DeleteLocation(context.Background(), gofakeit.UUID()))
-
-	assert.Equal(t, []string{survivorID},
-		reloadStructure(t, dbc, quest.ID).LocationIDs,
-		"structure untouched when the ID matched nothing")
 }
 
 // deleteObjectiveFixture creates a quest whose GameStructure references two

@@ -41,9 +41,32 @@ func (w m20260827_testWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// m20260827_seedMarker and m20260827_seedLocation are point-in-time stand-ins
+// for the rows that models.Marker and models.Location used to express: the
+// drop migration removes both types (and eventually both tables), so the seed
+// fixture speaks the restored table schema directly.
+type m20260827_seedMarker struct {
+	bun.BaseModel `bun:"table:markers"`
+	Code          string `bun:"code,pk"`
+	Name          string `bun:"name"`
+}
+
+type m20260827_seedLocation struct {
+	bun.BaseModel `bun:"table:locations"`
+	ID            string `bun:"id,pk"`
+	QuestID       string `bun:"quest_id"`
+	Name          string `bun:"name"`
+	Slug          string `bun:"slug"`
+	MarkerID      string `bun:"marker_id"`
+	Points        int    `bun:"points"`
+}
+
 // m20260827_seedQuest inserts a user, quest, marker, location (with an
 // interactive content block, a non-interactive content block, and a
-// navigation block), and returns the quest ID.
+// navigation block), and returns the quest and location IDs. The
+// game_structure column is written as raw JSON mirroring what
+// models.GameStructure used to marshal, because that model no longer carries
+// location_ids.
 func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID string) {
 	t.Helper()
 	ctx := context.Background()
@@ -61,11 +84,11 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 	require.NoError(t, err)
 
 	markerCode := gofakeit.LetterN(5)
-	marker := &models.Marker{Code: markerCode, Name: "Old Sign"}
+	marker := &m20260827_seedMarker{Code: markerCode, Name: "Old Sign"}
 	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
 	require.NoError(t, err)
 
-	loc := &models.Location{
+	loc := &m20260827_seedLocation{
 		ID:       gofakeit.UUID(),
 		QuestID:  quest.ID,
 		Name:     "Old Location",
@@ -76,15 +99,20 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
 	require.NoError(t, err)
 
-	quest.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyFreeRoam,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{loc.ID},
-		SubGroups:      []models.GameStructure{},
+	tree := map[string]any{
+		"id":              gofakeit.UUID(),
+		"name":            "",
+		"color":           "",
+		"routing":         game.RouteStrategyFreeRoam,
+		"completion_type": game.CompletionAll,
+		"auto_advance":    false,
+		"is_root":         true,
+		"location_ids":    []string{loc.ID},
+		"sub_groups":      []any{},
 	}
-	_, err = dbc.NewUpdate().Model(quest).Column("game_structure").WherePK().Exec(ctx)
+	treeJSON, err := json.Marshal(tree)
+	require.NoError(t, err)
+	_, err = dbc.NewRaw("UPDATE quests SET game_structure = ? WHERE id = ?", string(treeJSON), quest.ID).Exec(ctx)
 	require.NoError(t, err)
 
 	interactiveBlock := &models.Block{
@@ -118,191 +146,6 @@ func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID 
 	require.NoError(t, err)
 
 	return quest.ID, loc.ID
-}
-
-func TestLocationsToObjectivesMigration_ConvertsLocationCorrectly(t *testing.T) {
-	dbc := m20260827_setupDB(t)
-	ctx := context.Background()
-	questID, locationID := m20260827_seedQuest(t, dbc)
-
-	require.NoError(t, m20260827_up(ctx, dbc))
-
-	var objectives []models.Objective
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	require.Len(t, objectives, 1, "exactly one objective created for the one location")
-	obj := objectives[0]
-	assert.Equal(t, "old-location", obj.Slug)
-	assert.Equal(t, "Old Location", obj.Title)
-
-	var blocks []models.Block
-	require.NoError(t, dbc.NewSelect().Model(&blocks).Where("owner_id = ?", obj.ID).Scan(ctx))
-	require.Len(t, blocks, 4, "3 moved blocks + 1 new scan block")
-
-	byType := make(map[string]models.Block, len(blocks))
-	for _, b := range blocks {
-		byType[b.Type] = b
-	}
-
-	quiz, ok := byType["quiz"]
-	require.True(t, ok, "interactive content block must be present")
-	assert.Equal(t, game.ContextObjectiveProof, quiz.Context, "interactive content block joins proof")
-
-	text, ok := byType["text"]
-	require.True(t, ok, "non-interactive content block must be present")
-	assert.Equal(t, game.ContextObjectiveReveal, text.Context, "non-interactive content block becomes reveal")
-
-	clue, ok := byType["clue"]
-	require.True(t, ok, "navigation block must be present")
-	assert.Equal(t, game.ContextObjectiveProof, clue.Context, "navigation block folds into proof")
-
-	scan, ok := byType["scan"]
-	require.True(t, ok, "a new scan block must be created")
-	assert.Equal(t, game.ContextObjectiveProof, scan.Context)
-	assert.Equal(t, 15, scan.Points, "location points move onto the scan block")
-	var scanData struct {
-		Codes []struct {
-			Value    string `json:"value"`
-			Generate bool   `json:"generate"`
-		} `json:"codes"`
-	}
-	require.NoError(t, json.Unmarshal(scan.Data, &scanData))
-	require.Len(t, scanData.Codes, 1)
-
-	var loc models.Location
-	require.NoError(t, dbc.NewSelect().Model(&loc).Where("id = ?", locationID).Scan(ctx))
-	assert.Equal(t, scanData.Codes[0].Value, loc.MarkerID, "scan code is the old marker code")
-	assert.False(t, scanData.Codes[0].Generate, "the code already exists physically, don't ask Rapua to mint a new one")
-
-	// Location and its marker are untouched.
-	assert.Equal(t, "Old Location", loc.Name)
-	var marker models.Marker
-	require.NoError(t, dbc.NewSelect().Model(&marker).Where("code = ?", loc.MarkerID).Scan(ctx))
-	assert.Equal(t, "Old Sign", marker.Name)
-
-	// GameStructure now references the objective alongside the untouched location.
-	var quest models.Quest
-	require.NoError(t, dbc.NewSelect().Model(&quest).Where("id = ?", questID).Scan(ctx))
-	assert.Equal(t, []string{locationID}, quest.GameStructure.LocationIDs, "location_ids untouched")
-	assert.Equal(t, []string{obj.ID}, quest.GameStructure.ObjectiveIDs)
-}
-
-func TestLocationsToObjectivesMigration_Idempotent(t *testing.T) {
-	dbc := m20260827_setupDB(t)
-	ctx := context.Background()
-	questID, _ := m20260827_seedQuest(t, dbc)
-
-	require.NoError(t, m20260827_up(ctx, dbc))
-	require.NoError(t, m20260827_up(ctx, dbc))
-
-	var objectives []models.Objective
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	assert.Len(t, objectives, 1, "running the migration twice must not duplicate the objective")
-}
-
-func TestLocationsToObjectivesMigration_DownReverts(t *testing.T) {
-	dbc := m20260827_setupDB(t)
-	ctx := context.Background()
-	questID, locationID := m20260827_seedQuest(t, dbc)
-
-	require.NoError(t, m20260827_up(ctx, dbc))
-	require.NoError(t, m20260827_down(ctx, dbc))
-
-	var objectives []models.Objective
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	assert.Empty(t, objectives, "objectives deleted on down")
-
-	var quest models.Quest
-	require.NoError(t, dbc.NewSelect().Model(&quest).Where("id = ?", questID).Scan(ctx))
-	assert.Empty(t, quest.GameStructure.ObjectiveIDs, "objective_ids stripped on down")
-	assert.Equal(t, []string{locationID}, quest.GameStructure.LocationIDs, "location_ids still untouched")
-
-	var loc models.Location
-	require.NoError(t, dbc.NewSelect().Model(&loc).Where("id = ?", locationID).Scan(ctx))
-	assert.Equal(t, "Old Location", loc.Name, "location was never touched by up, so nothing to revert")
-
-	var blocks []models.Block
-	require.NoError(t, dbc.NewSelect().Model(&blocks).Where("owner_id = ?", locationID).Scan(ctx))
-	require.Len(t, blocks, 3, "the original 3 location blocks are back with their original owner")
-	for _, b := range blocks {
-		// Disclosed, honest limitation: down cannot tell whether a proof-context
-		// block originally came from Content or Navigation (up moves both there),
-		// so it restores everything to location_content. No content is lost:
-		// the "clue" block here really was Navigation before up ran, and still
-		// ends up back as location_content, not navigation. See the doc comment
-		// on m20260827_down.
-		assert.Equal(t, game.ContextLocationContent, b.Context, "type=%s", b.Type)
-	}
-
-	var scanLeftover []models.Block
-	require.NoError(t, dbc.NewSelect().Model(&scanLeftover).Where("type = ?", "scan").Scan(ctx))
-	assert.Empty(t, scanLeftover, "the synthetic scan block is deleted, not restored anywhere")
-}
-
-func TestLocationsToObjectivesMigration_MarkerlessLocationSkippedNotStuck(t *testing.T) {
-	dbc := m20260827_setupDB(t)
-	ctx := context.Background()
-	questID, _ := m20260827_seedQuest(t, dbc)
-
-	// A second location in the same quest, with no marker assigned yet.
-	// locations.marker_id is NOT NULL + FK'd to markers.code in the real schema,
-	// so this cannot happen through the app's own insert paths: the FK bypass
-	// below only exists to exercise the migration's defensive skip.
-	markerlessLoc := &models.Location{
-		ID:      gofakeit.UUID(),
-		QuestID: questID,
-		Name:    "No Marker Yet",
-		Slug:    "no-marker-yet",
-		Points:  5,
-	}
-	conn, err := dbc.Conn(ctx)
-	require.NoError(t, err)
-	_, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF")
-	require.NoError(t, err)
-	_, err = conn.NewInsert().Model(markerlessLoc).Exec(ctx)
-	require.NoError(t, err)
-	_, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=ON")
-	require.NoError(t, err)
-	require.NoError(t, conn.Close())
-
-	var quest models.Quest
-	require.NoError(t, dbc.NewSelect().Model(&quest).Where("id = ?", questID).Scan(ctx))
-	quest.GameStructure.LocationIDs = append(quest.GameStructure.LocationIDs, markerlessLoc.ID)
-	_, err = dbc.NewUpdate().Model(&quest).Column("game_structure").WherePK().Exec(ctx)
-	require.NoError(t, err)
-
-	require.NoError(t, m20260827_up(ctx, dbc))
-
-	var objectives []models.Objective
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	require.Len(t, objectives, 1, "only the markered location converts")
-	assert.Equal(t, "old-location", objectives[0].Slug)
-
-	var markerlessBlocks []models.Block
-	require.NoError(t, dbc.NewSelect().Model(&markerlessBlocks).
-		Where("owner_id = ?", markerlessLoc.ID).Scan(ctx))
-	assert.Empty(t, markerlessBlocks, "no scan block created for the markerless location")
-
-	// Re-running must not get stuck skipping the whole quest just because it
-	// already holds an objective: the markered location must not be
-	// re-converted (still exactly 1 objective), and the markerless one is
-	// still correctly left unconverted.
-	require.NoError(t, m20260827_up(ctx, dbc))
-
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	require.Len(t, objectives, 1, "re-run does not duplicate the already-converted location")
-
-	// Now the marker shows up, mimicking an admin finally assigning one.
-	marker := &models.Marker{Code: gofakeit.LetterN(5), Name: "New Sign"}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	require.NoError(t, err)
-	markerlessLoc.MarkerID = marker.Code
-	_, err = dbc.NewUpdate().Model(markerlessLoc).Column("marker_id").WherePK().Exec(ctx)
-	require.NoError(t, err)
-
-	require.NoError(t, m20260827_up(ctx, dbc))
-
-	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
-	require.Len(t, objectives, 2, "the now-markered location converts on the next run, once it has a marker")
 }
 
 func TestAddObjectiveIDsToTree_AppendsAtEachNode(t *testing.T) {

@@ -28,8 +28,6 @@ type RunRepository interface {
 	CountByInstance(ctx context.Context, questID string) (int, error)
 	// FindAll returns all teams for an instance
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
-	// FindAllWithScans returns all teams for an instance with scans
-	FindAllWithScans(ctx context.Context, questID string) ([]models.Run, error)
 
 	// Update saves or updates a team in the database
 	Update(ctx context.Context, t *models.Run) error
@@ -48,10 +46,6 @@ type RunRepository interface {
 
 	// LoadQuest loads the quest for a run
 	LoadQuest(ctx context.Context, team *models.Run) error
-	// LoadCheckIns loads the check-ins for a team
-	LoadCheckIns(ctx context.Context, team *models.Run) error
-	// LoadBlockingLocation loads the blocking location for a team
-	LoadBlockingLocation(ctx context.Context, team *models.Run) error
 	// LoadMessages loads the messages for a team
 	LoadMessages(ctx context.Context, team *models.Run) error
 	// LoadRelations loads all relations for a team
@@ -92,7 +86,6 @@ func (r *teamRepository) Reset(ctx context.Context, tx *bun.Tx, questID string, 
 		Set("name = ''").
 		Set("has_started = false").
 		Set("started_at = NULL").
-		Set("must_scan_out = ''").
 		Set("points = 0").
 		Where("quest_id = ? AND code IN (?)", questID, bun.In(runCodes)).
 		Exec(ctx)
@@ -133,32 +126,12 @@ func (r *teamRepository) FindAll(ctx context.Context, questID string) ([]models.
 	return teams, nil
 }
 
-func (r *teamRepository) FindAllWithScans(ctx context.Context, questID string) ([]models.Run, error) {
-	var teams []models.Run
-	err := r.db.NewSelect().
-		Model(&teams).
-		Where("run.quest_id = ?", questID).
-		// Add the scans in the relation order by location_id
-		Relation("CheckIns", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.Order("location_id ASC")
-		}).
-		Scan(ctx)
-	if err != nil {
-		return teams, err
-	}
-	return teams, nil
-}
-
 // GetByCode returns a team by code.
 func (r *teamRepository) GetByCode(ctx context.Context, code string) (*models.Run, error) {
 	code = strings.ToUpper(code)
 	var team models.Run
 	err := r.db.NewSelect().Model(&team).Where("run.code = ?", code).
 		Relation("Quest").
-		Relation("BlockingLocation").
-		Relation("CheckIns", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.Order("name ASC")
-		}).
 		Limit(1).Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("FindTeamByCode: %w", err)
@@ -213,37 +186,7 @@ func (r *teamRepository) LoadQuest(ctx context.Context, team *models.Run) error 
 		query = query.Relation("Settings")
 	}
 
-	if len(team.Quest.Locations) == 0 {
-		query = query.Relation("Locations")
-	}
-
 	return query.Scan(ctx)
-}
-
-func (r *teamRepository) LoadCheckIns(ctx context.Context, team *models.Run) error {
-	// Only load the scans if they are not already loaded
-	err := r.db.NewSelect().Model(&team.CheckIns).
-		Where("run_code = ?", team.Code).
-		Relation("Location").
-		Order("time_in DESC").
-		Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("LoadCheckIns: %w", err)
-	}
-	return nil
-}
-
-func (r *teamRepository) LoadBlockingLocation(ctx context.Context, team *models.Run) error {
-	if team.MustCheckOut == "" || team.BlockingLocation.ID != "" {
-		return nil
-	}
-	err := r.db.NewSelect().Model(&team.BlockingLocation).
-		Where("ID = ?", team.MustCheckOut).
-		Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("LoadBlockingLocation: %w", err)
-	}
-	return nil
 }
 
 func (r *teamRepository) LoadMessages(ctx context.Context, team *models.Run) error {
@@ -259,16 +202,6 @@ func (r *teamRepository) LoadMessages(ctx context.Context, team *models.Run) err
 
 func (r *teamRepository) LoadRelations(ctx context.Context, team *models.Run) error {
 	err := r.LoadQuest(ctx, team)
-	if err != nil {
-		return err
-	}
-
-	err = r.LoadCheckIns(ctx, team)
-	if err != nil {
-		return err
-	}
-
-	err = r.LoadBlockingLocation(ctx, team)
 	if err != nil {
 		return err
 	}

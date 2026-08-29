@@ -12,24 +12,6 @@ import (
 func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	for i := range user.CurrentQuest.Runs {
-		if user.CurrentQuest.Runs[i].Code == "" {
-			continue // Skip teams without a code
-		}
-		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"ActivityRunsOverview: loading team relations",
-				"Error loading team relations",
-				"Could not load data",
-				err,
-			)
-			return
-		}
-	}
-
 	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
 	if err != nil {
 		h.handleError(
@@ -55,21 +37,6 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
 	teams := filterTeamsStarted(user.CurrentQuest.Runs)
-
-	for i := range teams {
-		err := h.runService.LoadCheckIns(r.Context(), &teams[i])
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"ActivityRunsOverview: loading team relations",
-				"Error loading team relations",
-				"Could not load data",
-				err,
-			)
-			return
-		}
-	}
 
 	// Get query parameters for sorting with defaults
 	sortField := r.URL.Query().Get("sort")
@@ -153,17 +120,6 @@ func subtractObjectivesByID(all, exclude []models.Objective) []models.Objective 
 // ActivityStats returns just the stats component for HTMX updates.
 func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-
-	for i := range user.CurrentQuest.Runs {
-		if user.CurrentQuest.Runs[i].Code == "" {
-			continue
-		}
-		err := h.runService.LoadCheckIns(r.Context(), &user.CurrentQuest.Runs[i])
-		if err != nil {
-			h.logger.ErrorContext(r.Context(), "ActivityStats: loading team relations", "error", err)
-			return
-		}
-	}
 
 	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
 	if err != nil {

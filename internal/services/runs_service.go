@@ -36,10 +36,8 @@ type ObjectiveGroupInfo struct {
 type RunService struct {
 	transactor                     db.Transactor
 	teamRepo                       repositories.RunRepository
-	checkInRepo                    repositories.CheckInRepository
 	creditService                  RunCreditService
 	blockStateRepo                 repositories.BlockStateRepository
-	locationRepo                   repositories.LocationRepository
 	varStateRepo                   repositories.RunVarStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
@@ -49,10 +47,8 @@ type RunService struct {
 func NewRunService(
 	transactor db.Transactor,
 	tr repositories.RunRepository,
-	ci repositories.CheckInRepository,
 	creditService RunCreditService,
 	bsr repositories.BlockStateRepository,
-	lr repositories.LocationRepository,
 	varStateRepo repositories.RunVarStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
@@ -60,10 +56,8 @@ func NewRunService(
 	return &RunService{
 		transactor:                     transactor,
 		teamRepo:                       tr,
-		checkInRepo:                    ci,
 		creditService:                  creditService,
 		blockStateRepo:                 bsr,
-		locationRepo:                   lr,
 		varStateRepo:                   varStateRepo,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
@@ -151,19 +145,9 @@ func (s *RunService) AwardPoints(ctx context.Context, team *models.Run, points i
 	return s.teamRepo.Update(ctx, team)
 }
 
-// LoadQuest loads the run's quest, along with its settings and locations.
+// LoadQuest loads the run's quest, along with its settings.
 func (s *RunService) LoadQuest(ctx context.Context, team *models.Run) error {
 	return s.teamRepo.LoadQuest(ctx, team)
-}
-
-// LoadCheckIns loads the run's check-ins, most recent first.
-func (s *RunService) LoadCheckIns(ctx context.Context, team *models.Run) error {
-	return s.teamRepo.LoadCheckIns(ctx, team)
-}
-
-// LoadBlockingLocation loads the location the run must check out of, if any.
-func (s *RunService) LoadBlockingLocation(ctx context.Context, team *models.Run) error {
-	return s.teamRepo.LoadBlockingLocation(ctx, team)
 }
 
 // LoadMessages loads the run's notifications, most recent first.
@@ -307,9 +291,8 @@ func (s *RunService) objectivesWithCompletion(
 }
 
 // GetCompletedObjectives is GetIncompleteObjectives' complement: the quest's
-// reveal-context objectives already completed for this run, for the player's /journal.
-// GetCompletedObjectives returns objectives in completion order, most recent
-// first, matching MyCheckins' time-based ordering for the equivalent Location list.
+// reveal-context objectives already completed for this run, for the player's
+// /journal, in completion order (most recent first).
 func (s *RunService) GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
 	objectives, completedIDsOrdered, _, err := s.objectivesWithCompletion(ctx, questID, runCode)
 	if err != nil {

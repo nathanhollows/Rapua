@@ -8,13 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Regression test: AdvanceGroup used to always validate through the
-// location-only GetPlayerNavigationView. On an objective-built quest every
-// group has empty LocationIDs, so the walk trivially "completed" and the
-// service returned ErrAllLocationsVisited: the error toast was silently
-// discarded by hx-swap=none, and the non-htmx fallback redirected to /next,
-// which itself immediately bounces to /complete. The Skip button was a
-// silent no-op. It must now redirect to /objectives instead.
+// Regression test: the Skip button must produce an hx redirect to /objectives
+// rather than an error path, which hx-swap=none silently discards and so made
+// the button look like a no-op.
 func TestPlayerHandler_AdvanceGroup_ObjectiveQuest_RedirectsToObjectives(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()

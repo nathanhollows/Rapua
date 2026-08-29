@@ -34,7 +34,6 @@ type BlockService interface {
 }
 
 type CheckInService interface {
-	CheckOut(ctx context.Context, team *models.Run, locationCode string) error
 	ValidateAndUpdateBlockState(
 		ctx context.Context,
 		team models.Run,
@@ -60,29 +59,13 @@ type QuestService interface {
 	GetByID(ctx context.Context, questID string) (*models.Quest, error)
 }
 
-type MarkerService interface {
-	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
-}
-
 type NavigationService interface {
-	GetNextLocations(ctx context.Context, team *models.Run) ([]models.Location, error)
-	GetPlayerNavigationView(ctx context.Context, team *models.Run) (*services.PlayerNavigationView, error)
-	GetPreviewNavigationView(
-		ctx context.Context,
-		team *models.Run,
-		locationID string,
-	) (*services.PlayerNavigationView, error)
 	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
 	GetPreviewObjectiveView(
 		ctx context.Context,
 		team *models.Run,
 		objectiveID string,
 	) (*services.PlayerObjectiveView, error)
-}
-
-type LocationService interface {
-	GetByID(ctx context.Context, locationID string) (*models.Location, error)
-	LoadBlocks(ctx context.Context, location *models.Location) error
 }
 
 type NotificationService interface {
@@ -94,7 +77,6 @@ type RunService interface {
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
 	Update(ctx context.Context, run *models.Run) error
 	LoadRelations(ctx context.Context, run *models.Run) error
-	LoadBlockingLocation(ctx context.Context, run *models.Run) error
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
 	GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
@@ -115,8 +97,6 @@ type PlayerHandler struct {
 	blockService        BlockService
 	checkInService      CheckInService
 	questService        QuestService
-	locationService     LocationService
-	markerService       MarkerService
 	navigationService   NavigationService
 	notificationService NotificationService
 	runService          RunService
@@ -128,8 +108,6 @@ func NewPlayerHandler(
 	blockService BlockService,
 	checkInService CheckInService,
 	questService QuestService,
-	locationService LocationService,
-	markerService MarkerService,
 	navigationService NavigationService,
 	notificationService NotificationService,
 	runService RunService,
@@ -140,8 +118,6 @@ func NewPlayerHandler(
 		blockService:        blockService,
 		checkInService:      checkInService,
 		questService:        questService,
-		locationService:     locationService,
-		markerService:       markerService,
 		navigationService:   navigationService,
 		notificationService: notificationService,
 		runService:          runService,
@@ -168,35 +144,6 @@ func (h PlayerHandler) getRunFromContext(ctx context.Context) (*models.Run, erro
 		return nil, errors.New("run not found")
 	}
 	return run, nil
-}
-
-// isObjectiveBuiltQuest reports whether a quest's GameStructure is objective-built
-// rather than location-built. A quest doc is always fully one kind or the other,
-// never mixed (enforced at the doc level), so the first populated ID list found
-// anywhere in the tree, depth-first, settles it for the whole structure. This
-// reads team.Quest.GameStructure directly rather than the Locations/Objectives
-// relations, which are only conditionally loaded and unreliable as a signal.
-// An unconfigured/empty structure (no groups yet) defaults to objective-built.
-func isObjectiveBuiltQuest(gs models.GameStructure) bool {
-	if found, isObjective := questTypeOf(gs); found {
-		return isObjective
-	}
-	return true
-}
-
-func questTypeOf(gs models.GameStructure) (found, isObjective bool) {
-	if len(gs.LocationIDs) > 0 {
-		return true, false
-	}
-	if len(gs.ObjectiveIDs) > 0 {
-		return true, true
-	}
-	for _, sub := range gs.SubGroups {
-		if f, obj := questTypeOf(sub); f {
-			return true, obj
-		}
-	}
-	return false, false
 }
 
 func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {

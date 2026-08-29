@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -13,157 +12,28 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-type LocationStatsService interface {
-	IncrementVisitors(ctx context.Context, location *models.Location) error
-	DecrementVisitors(ctx context.Context, location *models.Location) error
-}
-
 type CheckInService struct {
-	checkInRepo                    repositories.CheckInRepository
-	locationRepo                   repositories.LocationRepository
 	teamRepo                       repositories.RunRepository
 	blockService                   *BlockService
-	locationStatsService           LocationStatsService
-	navigationService              *NavigationService
 	varStateRepo                   repositories.RunVarStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 }
 
 func NewCheckInService(
-	checkInRepo repositories.CheckInRepository,
-	locationRepo repositories.LocationRepository,
 	teamRepo repositories.RunRepository,
-	locationStatsService LocationStatsService,
-	navigationService *NavigationService,
 	blockService *BlockService,
 	varStateRepo repositories.RunVarStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 ) *CheckInService {
 	return &CheckInService{
-		checkInRepo:                    checkInRepo,
-		locationRepo:                   locationRepo,
 		teamRepo:                       teamRepo,
-		locationStatsService:           locationStatsService,
-		navigationService:              navigationService,
 		blockService:                   blockService,
 		varStateRepo:                   varStateRepo,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 	}
-}
-
-func (s *CheckInService) CheckOut(ctx context.Context, team *models.Run, locationCode string) error {
-	location, err := s.locationRepo.GetByInstanceAndCode(ctx, team.QuestID, locationCode)
-	if err != nil {
-		return fmt.Errorf("%w: finding location: %w", ErrLocationNotFound, err)
-	}
-
-	err = s.teamRepo.LoadRelations(ctx, team)
-	if err != nil {
-		return fmt.Errorf("loading relations: %w", err)
-	}
-
-	if team.MustCheckOut == "" {
-		return ErrUnecessaryCheckOut
-	} else if team.MustCheckOut != location.ID {
-		return ErrCheckOutAtWrongLocation
-	}
-
-	// Check if all visible blocks are completed (reload var states so when-clauses are current).
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
-	if err != nil {
-		return fmt.Errorf("loading var states: %w", err)
-	}
-	resolver := NewPlayerVarResolver(team, varStates)
-	unfinishedCheckIn, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, location.ID, team.Code, team.QuestID, game.ContextLocationContent, resolver,
-	)
-	if err != nil {
-		return fmt.Errorf("checking if validation is required: %w", err)
-	}
-
-	if unfinishedCheckIn {
-		return ErrUnfinishedCheckIn
-	}
-
-	// Award base points on checkout completion.
-	team.Points += location.Points
-
-	checkIn, err := s.checkOut(ctx, team, location)
-	if err != nil {
-		return fmt.Errorf("logging scan out: %w", err)
-	}
-
-	// The CheckIn record must show the total points earned from this location.
-	checkIn.Points += location.Points
-	err = s.checkInRepo.Update(ctx, &checkIn)
-	if err != nil {
-		return fmt.Errorf("updating check in points: %w", err)
-	}
-
-	err = s.teamRepo.Update(ctx, team)
-	if err != nil {
-		return fmt.Errorf("updating team points: %w", err)
-	}
-
-	return nil
-}
-
-func (s *CheckInService) CompleteBlocks(ctx context.Context, runCode string, locationID string) error {
-	// sql.ErrNoRows is passed through rather than absorbed: whether a missing
-	// check-in is expected depends on the block's context, which the caller knows
-	// and this does not.
-	checkIn, err := s.checkInRepo.FindCheckInByTeamAndLocation(ctx, runCode, locationID)
-	if err != nil {
-		return fmt.Errorf("finding check in: %w", err)
-	}
-
-	if checkIn.BlocksCompleted {
-		return nil
-	}
-
-	checkIn.BlocksCompleted = true
-	err = s.checkInRepo.Update(ctx, checkIn)
-	if err != nil {
-		return fmt.Errorf("updating check in: %w", err)
-	}
-
-	return nil
-}
-
-func (s *CheckInService) checkOut(
-	ctx context.Context,
-	team *models.Run,
-	location *models.Location,
-) (models.CheckIn, error) {
-	scan, err := s.checkInRepo.LogCheckOut(ctx, team, location)
-	if err != nil {
-		return models.CheckIn{}, fmt.Errorf("checking out: %w", err)
-	}
-
-	// TotalVisits was already incremented on check-in, so we need to account for completed visits.
-	// completedVisitsBefore = TotalVisits - CurrentCount (teams still checked in)
-	// newAverage = (oldAverage * completedVisitsBefore + newDuration) / (completedVisitsBefore + 1)
-	completedVisitsBefore := location.TotalVisits - location.CurrentCount
-	location.AvgDuration =
-		(location.AvgDuration*float64(completedVisitsBefore) +
-			scan.TimeOut.Sub(scan.TimeIn).Seconds()) /
-			float64(completedVisitsBefore+1)
-	location.CurrentCount--
-	err = s.locationRepo.Update(ctx, location)
-	if err != nil {
-		return models.CheckIn{}, fmt.Errorf("updating location: %w", err)
-	}
-
-	team.MustCheckOut = ""
-	err = s.teamRepo.Update(ctx, team)
-	if err != nil {
-		return models.CheckIn{}, fmt.Errorf("updating team: %w", err)
-	}
-
-	return scan, nil
 }
 
 func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
@@ -275,9 +145,8 @@ func (s *CheckInService) writeSetsVars(
 	return nil
 }
 
-// awardPointsAndComplete awards points, then dispatches to whichever owner-kind's completion
-// logic applies: objective context completion for proof/reveal blocks, or the existing
-// location check-in completion for everything else.
+// awardPointsAndComplete awards points and, for objective contexts, logs
+// completion once every block in the context is done.
 func (s *CheckInService) awardPointsAndComplete(
 	ctx context.Context, team *models.Run, block blocks.Block, blockContext game.BlockContext,
 ) error {
@@ -290,26 +159,6 @@ func (s *CheckInService) awardPointsAndComplete(
 		return s.CompleteObjectiveContext(ctx, team, block.GetOwnerID(), blockContext)
 	}
 
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
-	if err != nil {
-		return fmt.Errorf("loading var states: %w", err)
-	}
-	blockResolver := NewPlayerVarResolver(team, varStates)
-	unfinished, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, block.GetOwnerID(), team.Code, team.QuestID, game.ContextLocationContent, blockResolver,
-	)
-	if err != nil {
-		return fmt.Errorf("checking if validation is required: %w", err)
-	}
-	if !unfinished {
-		// A navigation block completes before the team reaches the location it
-		// belongs to, so there is no check-in row to mark yet. Anything else
-		// missing one is a real fault.
-		if err = s.CompleteBlocks(ctx, team.Code, block.GetOwnerID()); err != nil &&
-			!errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("completing blocks: %w", err)
-		}
-	}
 	return nil
 }
 

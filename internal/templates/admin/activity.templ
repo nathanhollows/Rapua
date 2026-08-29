@@ -11,12 +11,9 @@ import (
 )
 
 // getTeamStatus calculates the status of a team based on its current state.
-// completedObjectives, not team.CheckIns, drives it: check-ins are never
-// written once a quest is objective-built.
+// completedObjectives drives it; only the counts can prove completion.
 func getTeamStatus(team models.Run, completedObjectives, totalObjectives int) services.TeamStatus {
-	if team.MustCheckOut != "" {
-		return services.StatusOnsite
-	} else if completedObjectives == totalObjectives && totalObjectives > 0 {
+	if completedObjectives == totalObjectives && totalObjectives > 0 {
 		return services.StatusFinished
 	} else if completedObjectives > 0 {
 		return services.StatusTransit
@@ -40,27 +37,21 @@ func countActiveTeams(teams []models.Run) int {
 // TeamStatusBadge renders a status badge for a team with optional tooltip and size
 templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) {
 	switch status {
-		case services.StatusOnsite:
-			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-accent badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Currently checked in">Onsite</span>
-			} else {
-				<span class={ fmt.Sprintf("badge badge-accent badge-%s", size) }>Onsite</span>
-			}
 		case services.StatusFinished:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Finished all locations!">Finished</span>
+				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Finished all objectives!">Finished</span>
 			} else {
 				<span class={ fmt.Sprintf("badge badge-success badge-%s", size) }>Finished</span>
 			}
 		case services.StatusTransit:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-secondary badge-outline text-base-content bg-success badge-%s tooltip tooltip-left", size) } data-tip="This team is between locations">In transit</span>
+				<span class={ fmt.Sprintf("badge badge-secondary badge-outline text-base-content bg-success badge-%s tooltip tooltip-left", size) } data-tip="This team is between objectives">In transit</span>
 			} else {
 				<span class={ fmt.Sprintf("badge badge-secondary badge-%s", size) }>In transit</span>
 			}
 		case services.StatusStarted:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-ghost badge-%s tooltip tooltip-left", size) } data-tip="This team has not checked in anywhere yet">Started</span>
+				<span class={ fmt.Sprintf("badge badge-ghost badge-%s tooltip tooltip-left", size) } data-tip="This team has started but not completed any objectives yet">Started</span>
 			} else {
 				<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Started</span>
 			}
@@ -191,7 +182,7 @@ templ teamModal() {
 	</script>
 }
 
-templ ActivityTeamsTable(settings models.QuestSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
+templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
 	<div class="overflow-x-auto">
 		<table
 			id="team-activity"
@@ -272,10 +263,10 @@ templ ActivityTeamsTable(settings models.QuestSettings, locationCount int, leade
 							</span>
 						</td>
 						<td>
-							if locationCount > 0 {
-								{ fmt.Sprintf("%d ∕ %d", teamData.Progress, locationCount) }
+							if objectiveCount > 0 {
+								{ fmt.Sprintf("%d ∕ %d", teamData.Progress, objectiveCount) }
 							} else {
-								<em class="opacity-50">No locations</em>
+								<em class="opacity-50">No objectives</em>
 							}
 						</td>
 						<td>
