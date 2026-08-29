@@ -29,9 +29,6 @@ templ ObjectiveZoneUpdate(data ObjectiveViewData) {
 }
 
 templ objectiveZoneContents(data ObjectiveViewData) {
-	if data.Zone == game.ContextObjectiveReveal {
-		<div class="badge badge-success">Unlocked</div>
-	}
 	for _, block := range data.Blocks {
 		<div
 			class="block-view"
