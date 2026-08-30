@@ -173,6 +173,7 @@ func setupPlayerRoutes(
 			)
 		})
 		r.Get("/", playerHandler.Start)
+		r.Post("/", playerHandler.StartGame)
 		r.Get("/team-name-value", playerHandler.GetTeamNameValue)
 		r.Get("/team-name-form", playerHandler.GetTeamNameForm)
 		r.Post("/team-name", playerHandler.SetTeamName)

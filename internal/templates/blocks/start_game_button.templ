@@ -47,17 +47,19 @@ templ StartGameButtonActive(block blocks.StartGameButtonBlock) {
 		hx-swap="outerHTML"
 		class="text-center"
 	>
-		<a
-			href="/objectives"
-			hx-boost="true"
-			class={ fmt.Sprintf("btn btn-%s", block.ButtonStyle) }
-		>
-			if block.ActiveButtonText != "" {
-				{ block.ActiveButtonText }
-			} else {
-				Start Playing
-			}
-		</a>
+		<form action="/start" method="post">
+			<input type="hidden" name="csrf" value={ fmt.Sprintf("%s", ctx.Value("gorilla.csrf.Token")) }/>
+			<button
+				type="submit"
+				class={ fmt.Sprintf("btn btn-%s", block.ButtonStyle) }
+			>
+				if block.ActiveButtonText != "" {
+					{ block.ActiveButtonText }
+				} else {
+					Start Playing
+				}
+			</button>
+		</form>
 	</div>
 }
 

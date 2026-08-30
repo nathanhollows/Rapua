@@ -1,12 +1,11 @@
 package players
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v8/internal/flash"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -28,12 +27,15 @@ func (h *PlayerHandler) Play(w http.ResponseWriter, r *http.Request) {
 
 // PlayWithCode is a GET shortcut onto PlayPost's flow, for a run code shared as
 // a link rather than typed into the form. It never creates a run.
+// Joining only attaches the session; StartGame (pressing the start button on
+// /start) is what marks the run started, so a joining team always sees the
+// start page's content first.
 func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
 	runCode := chi.URLParam(r, "code")
 
-	err := h.runService.StartPlaying(r.Context(), runCode)
+	run, err := h.runService.GetRunByCode(r.Context(), runCode)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), "PlayWithCode: starting game", "error", err, "runCode", runCode)
+		h.logger.ErrorContext(r.Context(), "PlayWithCode: looking up run", "error", err, "runCode", runCode)
 		h.redirect(w, r, "/404")
 		return
 	}
@@ -44,10 +46,23 @@ func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/objectives")
+	h.redirect(w, r, landingPageFor(run))
 }
 
-// PlayPost is the handler for the play form submission.
+// landingPageFor sends an already-started team straight back into the quest
+// (a shared link revisited mid-game shouldn't re-show the start page), and a
+// not-yet-started team to /start.
+func landingPageFor(run *models.Run) string {
+	if run.HasStarted {
+		return "/objectives"
+	}
+	return "/start"
+}
+
+// PlayPost is the handler for the play form submission. Joining only
+// attaches the session; StartGame (pressing the start button on /start) is
+// what marks the run started, so a joining team always sees the start
+// page's content first.
 func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -56,35 +71,18 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 	}
 	runCode := r.FormValue("run")
 
-	err = h.runService.StartPlaying(r.Context(), runCode)
+	run, err := h.runService.GetRunByCode(r.Context(), runCode)
 	if err != nil {
-		if errors.Is(err, services.ErrTeamNotFound) {
-			h.handleError(
-				w,
-				r,
-				"PlayPost: starting game",
-				"Team not found: "+runCode,
-				"Cannot start game with this team code",
-				err,
-				"teamCode",
-				runCode,
-			)
-			return
-		}
-		if errors.Is(err, services.ErrInsufficientCredits) {
-			err = templates.Toast(*flash.NewError("Unable to start game. The host has been notified.")).
-				Render(r.Context(), w)
-			if err != nil {
-				h.logger.ErrorContext(r.Context(), "rendering template", "error", err)
-			}
-			return
+		flashMsg := "Could not join this game. Please try again."
+		if errors.Is(err, sql.ErrNoRows) {
+			flashMsg = "Team not found: " + runCode
 		}
 		h.handleError(
 			w,
 			r,
-			"PlayPost: starting game",
-			"Error joining game",
-			"Could not start game",
+			"PlayPost: looking up run",
+			flashMsg,
+			"error",
 			err,
 			"teamCode",
 			runCode,
@@ -107,5 +105,5 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/objectives")
+	h.redirect(w, r, landingPageFor(run))
 }

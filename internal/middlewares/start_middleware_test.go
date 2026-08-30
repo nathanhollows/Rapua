@@ -238,8 +238,9 @@ func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 		EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
 	}
 	team := &models.Run{
-		Code:  "team123",
-		Quest: instance,
+		Code:       "team123",
+		Quest:      instance,
+		HasStarted: true,
 	}
 
 	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
@@ -249,10 +250,58 @@ func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	middleware.ServeHTTP(rr, req)
 
 	if !nextCalled {
-		t.Error("expected next handler to be called for active game")
+		t.Error("expected next handler to be called for an active game the team has started")
 	}
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, rr.Code)
+	}
+}
+
+// TestStartMiddleware_ActiveGameButNotStartedRedirectsToStart is the
+// regression test for the bug this gate exists to close: PlayPost/
+// PlayWithCode attach a session without marking the run started, so a team
+// that joined an already-active game but hasn't pressed the start button yet
+// must still be sent to /start, not waved through to whatever route it asked
+// for (e.g. /objectives).
+func TestStartMiddleware_ActiveGameButNotStartedRedirectsToStart(t *testing.T) {
+	nextCalled := false
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	dummyService := &dummyTeamService{}
+	middleware := StartMiddleware(dummyService, nextHandler)
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/objectives", nil)
+
+	instance := models.Quest{
+		StartTime: schema.NullTime{Time: time.Now()},
+		EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
+	}
+	team := &models.Run{
+		Code:       "team123",
+		Quest:      instance,
+		HasStarted: false,
+	}
+
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	middleware.ServeHTTP(rr, req)
+
+	if nextCalled {
+		t.Error("expected next handler not to be called for a team that hasn't started")
+	}
+
+	if rr.Code != http.StatusFound {
+		t.Errorf("expected status code %d, got %d", http.StatusFound, rr.Code)
+	}
+
+	if location := rr.Header().Get("Location"); location != "/start" {
+		t.Errorf("expected redirect to /start, got %s", location)
 	}
 }

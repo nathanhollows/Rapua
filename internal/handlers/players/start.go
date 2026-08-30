@@ -1,14 +1,17 @@
 package players
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	blockstemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 const (
@@ -61,6 +64,38 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering start", "error", err.Error())
 	}
+}
+
+// StartGame marks the run started (deducting a host credit and stamping
+// StartedAt) when the player presses the start button, then sends them into
+// the quest. This is the only place a run is ever marked started: joining
+// (PlayPost/PlayWithCode) deliberately does not, so every team sees the
+// start page's content before StartMiddleware lets them past it.
+func (h *PlayerHandler) StartGame(w http.ResponseWriter, r *http.Request) {
+	team, err := h.getRunFromContext(r.Context())
+	if err != nil {
+		h.redirect(w, r, "/play")
+		return
+	}
+
+	if team.Quest.GetStatus() != models.Active {
+		h.handleError(w, r, "StartGame: quest not active", "This game isn't open yet.")
+		return
+	}
+
+	err = h.runService.StartPlaying(r.Context(), team.Code)
+	if err != nil {
+		if errors.Is(err, services.ErrInsufficientCredits) {
+			h.handleError(w, r, "StartGame: insufficient credits",
+				"Unable to start game. The host has been notified.", "error", err, "team", team.Code)
+			return
+		}
+		h.handleError(w, r, "StartGame: starting game", "Could not start the game. Please try again.",
+			"error", err, "team", team.Code)
+		return
+	}
+
+	h.redirect(w, r, "/objectives")
 }
 
 // GetTeamNameValue returns just the team name value for auto-population.

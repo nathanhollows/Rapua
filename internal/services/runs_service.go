@@ -208,7 +208,7 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 		if txErr != nil {
 			panic("rolling back transaction after credit deduction failure: " + txErr.Error())
 		}
-		return errors.New("deducting credit for team start: " + err.Error())
+		return fmt.Errorf("deducting credit for team start: %w", err)
 	}
 
 	err = s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
