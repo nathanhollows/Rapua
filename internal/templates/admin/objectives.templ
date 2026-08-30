@@ -15,6 +15,19 @@ type EditObjectiveData struct {
 	RevealBlocks blocks.Blocks
 }
 
+// TotalPoints is the objective's point value: the sum of its proof and reveal
+// blocks' points, not a field of its own.
+func (data EditObjectiveData) TotalPoints() int {
+	total := 0
+	for _, b := range data.ProofBlocks {
+		total += b.GetPoints()
+	}
+	for _, b := range data.RevealBlocks {
+		total += b.GetPoints()
+	}
+	return total
+}
+
 // EditObjective mirrors EditLocation's two-zone layout. The zones keep the
 // literal #nav-blocks/#content-blocks/#nav-tab/#content-tab ids so
 // previewSortableScript() works unmodified: #content-tab/#content-blocks is
@@ -23,7 +36,14 @@ type EditObjectiveData struct {
 templ EditObjective(data EditObjectiveData) {
 	<!-- Header -->
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<h1 id="objective-title" class="text-2xl font-bold">{ data.Objective.Title }</h1>
+		<div class="flex items-center gap-3">
+			<h1 id="objective-title" class="text-2xl font-bold">{ data.Objective.Title }</h1>
+			if data.Settings.EnablePoints && data.TotalPoints() != 0 {
+				<span class="badge badge-ghost tooltip tooltip-right" data-tip="Sum of this objective's proof and reveal block points">
+					{ fmt.Sprintf("%d pts", data.TotalPoints()) }
+				</span>
+			}
+		</div>
 		<div class="flex gap-3">
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
 				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})

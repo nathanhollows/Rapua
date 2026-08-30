@@ -244,6 +244,9 @@ templ objectiveItem(objective models.Objective, settings models.QuestSettings) {
 				hx-boost="true"
 			>{ objective.Title }</a>
 			<div class="flex-grow"></div>
+			if settings.EnablePoints && objective.TotalPoints() != 0 {
+				<span class="badge badge-ghost badge-sm">{ fmt.Sprintf("%d pts", objective.TotalPoints()) }</span>
+			}
 		</div>
 	</div>
 }

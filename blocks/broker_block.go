@@ -138,6 +138,12 @@ func (b *BrokerBlock) ToYAML() map[string]any {
 func (b *BrokerBlock) SupportsVariableSets() bool { return true }
 func (b *BrokerBlock) RequiresValidation() bool   { return true }
 
+// SupportsPoints is false: UpdateBlockData always resets Points to 0 (see
+// below), so the shared points field would document something the runtime
+// discards. The real cost comes from whichever tier's points_required the
+// player affords (see the tiers field).
+func (b *BrokerBlock) SupportsPoints() bool { return false }
+
 func (b *BrokerBlock) ValidatePlayerInput(state PlayerState, input map[string][]string) (PlayerState, error) {
 	newState := state
 

@@ -45,9 +45,11 @@ func (b *ButtonBlock) GetSpec() game.BlockSpec {
 
 func (b *BrokerBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
-		Type:        "broker",
-		Name:        "Information Broker",
-		Description: "Players spend points to reveal progressively detailed information tiers.",
+		Type: "broker",
+		Name: "Information Broker",
+		Description: "Players spend points to reveal progressively detailed information tiers. " +
+			"Points are spent via each tier's points_required, deducted from the team on purchase; " +
+			"the broker has no block-level points field.",
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Description: "Instructions shown to the player"},
 			{Name: "default_info", Type: "markdown", Description: "Information shown for free (0 points)"},

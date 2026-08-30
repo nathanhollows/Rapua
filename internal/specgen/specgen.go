@@ -12,7 +12,9 @@ import (
 )
 
 // GenerateBlockSpecs returns the BlockSpec for every registered block type, sorted by type name.
-// All block specs receive a `when` field. Interactive block specs also receive a `sets` field.
+// All block specs receive a `when` field. Interactive block specs (RequiresValidation) that
+// actually honour it (SupportsPoints) also receive `points`; those supporting creator vars
+// also receive `sets`.
 func GenerateBlockSpecs() []game.BlockSpec {
 	registered := blocks.GetRegisteredBlocks()
 
@@ -32,6 +34,9 @@ func GenerateBlockSpecs() []game.BlockSpec {
 			spec.SharedFields = []string{"when"}
 			// Asked of the block rather than listed here, so a new interactive
 			// block cannot ship with the spec hiding a field the runtime honours.
+			if reg.Prototype.RequiresValidation() && reg.Prototype.SupportsPoints() {
+				spec.SharedFields = append(spec.SharedFields, "points")
+			}
 			if reg.Prototype.SupportsVariableSets() {
 				spec.SharedFields = append(spec.SharedFields, "sets")
 			}

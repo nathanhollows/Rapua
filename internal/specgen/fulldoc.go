@@ -54,7 +54,7 @@ func GenerateFullSpec() FullSpec {
 		Enums:             enumDefs(),
 		BuiltInVars:       builtInVarSpecs(),
 		Contexts:          contextDefs(),
-		BlockSharedFields: []game.FieldSpec{whenFieldSpec(), setsFieldSpec()},
+		BlockSharedFields: []game.FieldSpec{whenFieldSpec(), setsFieldSpec(), pointsFieldSpec()},
 		Blocks:            GenerateBlockSpecs(),
 	}
 }
@@ -122,6 +122,24 @@ func setsFieldSpec() game.FieldSpec {
 			"Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — " +
 			"that prefix is owned by the runtime and set automatically when objectives complete.",
 		Items: &game.FieldSpec{Type: "string"},
+	}
+}
+
+// pointsFieldSpec returns the `points` field spec used on interactive blocks
+// (RequiresValidation() true) whose own Points field is actually honoured
+// (SupportsPoints() true). Content blocks (markdown, alert, divider, etc.)
+// never complete, so their inherited Points field is structurally present but
+// functionally inert; Broker completes but always resets Points to 0, using
+// per-tier costs instead. specgen.GenerateBlockSpecs omits "points" from
+// SharedFields for both reasons.
+func pointsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "points",
+		Type: "int",
+		Description: "Points awarded to the player when this block completes. Negative for a block framed " +
+			"as a cost rather than a reward (e.g. paying points to reveal a clue). Ignored unless " +
+			"settings.enable_points is true. An objective's total point value is the sum of its blocks' " +
+			"points; it is not a field set on the objective itself.",
 	}
 }
 
@@ -246,10 +264,11 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Fields:      structureFields,
 			},
 			{
-				Name:        "objective",
-				Type:        "object",
-				Description: "Schema for objective objects within structure.children.",
-				Fields:      objectiveFields,
+				Name: "objective",
+				Type: "object",
+				Description: "Schema for objective objects within structure.children. Has no points " +
+					"field of its own; its total point value is the sum of its blocks' points.",
+				Fields: objectiveFields,
 			},
 		},
 	}

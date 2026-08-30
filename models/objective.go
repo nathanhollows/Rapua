@@ -39,3 +39,14 @@ func (o *Objective) HasRevealContext() bool {
 	}
 	return false
 }
+
+// TotalPoints is the objective's point value: the sum of its blocks' points,
+// not a field of its own. Requires Blocks to be loaded (e.g. via
+// GameStructureService.LoadBlocksForStructure or ObjectiveRepository.LoadBlocks).
+func (o *Objective) TotalPoints() int {
+	total := 0
+	for i := range o.Blocks {
+		total += o.Blocks[i].Points
+	}
+	return total
+}

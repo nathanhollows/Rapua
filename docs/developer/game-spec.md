@@ -28,7 +28,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - Every block must have a `type` field matching a registered block type.
 - A block may only appear in contexts listed in its spec. *(`INVALID_CONTEXT`)*
 - Block `id` values must be unique across the document. *(`BLOCK_ID_DUPLICATE`)*
-- Block and objective `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)*
+- Block `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)* An objective has no `points` field of its own: its total point value is the sum of its blocks' points.
 
 **Start page**
 - A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
@@ -255,7 +255,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       {
         "name": "objective",
         "type": "object",
-        "description": "Schema for objective objects within structure.children.",
+        "description": "Schema for objective objects within structure.children. Has no points field of its own; its total point value is the sum of its blocks' points.",
         "fields": [
           {
             "name": "id",
@@ -640,6 +640,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "name": "",
         "type": "string"
       }
+    },
+    {
+      "name": "points",
+      "type": "int",
+      "description": "Points awarded to the player when this block completes. Negative for a block framed as a cost rather than a reward (e.g. paying points to reveal a clue). Ignored unless settings.enable_points is true. An objective's total point value is the sum of its blocks' points; it is not a field set on the objective itself."
     }
   ],
   "blocks": [
@@ -679,7 +684,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
     {
       "type": "broker",
       "name": "Information Broker",
-      "description": "Players spend points to reveal progressively detailed information tiers.",
+      "description": "Players spend points to reveal progressively detailed information tiers. Points are spent via each tier's points_required, deducted from the team on purchase; the broker has no block-level points field.",
       "contexts": [
         "objective_proof",
         "objective_reveal"
@@ -774,6 +779,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -822,6 +828,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -877,6 +884,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -930,6 +938,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1103,6 +1112,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1135,6 +1145,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1160,6 +1171,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1191,6 +1203,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1286,6 +1299,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1311,6 +1325,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1361,6 +1376,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ],
       "shared_fields": [
         "when",
+        "points",
         "sets"
       ],
       "fields": [
@@ -1450,7 +1466,8 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "start"
       ],
       "shared_fields": [
-        "when"
+        "when",
+        "points"
       ],
       "fields": [
         {

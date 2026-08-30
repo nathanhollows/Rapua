@@ -50,6 +50,11 @@ type Block interface {
 	// Only blocks that fire sets triggers on validation should return true;
 	// the linter warns if a "sets" field appears on a block that returns false.
 	SupportsVariableSets() bool
+	// SupportsPoints returns false when a block's own Points field is never
+	// actually used to award/deduct points, even though it requires validation
+	// (e.g. Broker, whose real cost comes from its per-tier points_required
+	// instead). specgen only documents the shared "points" field where this is true.
+	SupportsPoints() bool
 
 	// Conditional visibility
 	GetSets() SetsField
@@ -74,6 +79,10 @@ type BaseBlock struct {
 
 // SupportsVariableSets returns false by default; interactive blocks override this.
 func (b *BaseBlock) SupportsVariableSets() bool { return false }
+
+// SupportsPoints returns true by default; a block whose Points field is
+// never actually honoured (e.g. Broker) overrides this to false.
+func (b *BaseBlock) SupportsPoints() bool { return true }
 
 // GetSets returns the variables this block sets on completion.
 func (b *BaseBlock) GetSets() SetsField { return b.Sets }

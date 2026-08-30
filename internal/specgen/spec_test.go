@@ -8,6 +8,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/specgen"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestSpecStaleness ensures every JSON-tagged field on each block struct has a
@@ -284,18 +285,54 @@ func TestGenerateBlockSpecs_SetsMatchesTheBlock(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_BlockSharedFields verifies block_shared_fields contains "when" and "sets".
+// TestGenerateFullSpec_BlockSharedFields verifies block_shared_fields contains "when", "sets", and "points".
 func TestGenerateFullSpec_BlockSharedFields(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 	names := make(map[string]bool, len(spec.BlockSharedFields))
 	for _, f := range spec.BlockSharedFields {
 		names[f.Name] = true
 	}
-	for _, want := range []string{"when", "sets"} {
+	for _, want := range []string{"when", "sets", "points"} {
 		if !names[want] {
 			t.Errorf("block_shared_fields missing %q", want)
 		}
 	}
+}
+
+// TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks proves "points" is
+// documented exactly on blocks with a completion event whose Points field is
+// actually honoured (RequiresValidation && SupportsPoints), matching what the
+// runtime actually awards it for: content blocks (markdown, alert, divider,
+// etc.) never complete, and Broker completes but always resets Points to 0
+// (it uses per-tier costs instead): neither should advertise the field.
+func TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks(t *testing.T) {
+	registered := blocks.GetRegisteredBlocks()
+	wantPoints := make(map[string]bool, len(registered))
+	for _, reg := range registered {
+		wantPoints[reg.BlockType] = reg.Prototype.RequiresValidation() && reg.Prototype.SupportsPoints()
+	}
+
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		hasPoints := false
+		for _, f := range spec.SharedFields {
+			if f == "points" {
+				hasPoints = true
+			}
+		}
+		if want := wantPoints[spec.Type]; hasPoints != want {
+			t.Errorf("block %q: SharedFields has points=%v, want %v (RequiresValidation && SupportsPoints)",
+				spec.Type, hasPoints, want)
+		}
+	}
+}
+
+// TestBrokerBlock_DoesNotSupportPoints locks in the specific exception the
+// above test relies on: Broker requires validation but must not advertise
+// the shared points field, since UpdateBlockData always resets it to 0.
+func TestBrokerBlock_DoesNotSupportPoints(t *testing.T) {
+	b := &blocks.BrokerBlock{}
+	assert.True(t, b.RequiresValidation())
+	assert.False(t, b.SupportsPoints())
 }
 
 // schemas both contain a "when" field.
