@@ -21,8 +21,7 @@ type ObjectSpec struct {
 
 // EnumDefs holds all enum definitions used in the document format.
 type EnumDefs struct {
-	Routing    []EnumValue `json:"routing"`
-	Completion []EnumValue `json:"completion"`
+	Routing []EnumValue `json:"routing"`
 }
 
 // EnumValue is a single allowed enum value with a human-readable label and description.
@@ -128,44 +127,6 @@ func pointsFieldSpec() game.FieldSpec {
 }
 
 func documentSpec() ObjectSpec { //nolint:funlen
-	structureFields := []game.FieldSpec{
-		{
-			Name:        "color",
-			Type:        "string",
-			Description: "Display colour for this group (e.g. \"primary\", \"secondary\"). Omit or empty for the root group.",
-		},
-		{
-			Name:        "routing",
-			Type:        "enum",
-			Required:    true,
-			Description: "How players are routed through objectives. See enums.routing.",
-		},
-		{
-			Name:        "completion",
-			Type:        "enum",
-			Required:    true,
-			Description: "When the group is considered complete. See enums.completion.",
-		},
-		{
-			Name:        "minimum_required",
-			Type:        "int",
-			Description: "Number of objectives required when completion is \"minimum\".",
-		},
-		{Name: "children", Type: "list", Required: true, Description: "Ordered list of objective or group children.",
-			Items: &game.FieldSpec{
-				Type:        "object",
-				Description: "Tagged union: set exactly one of \"objective\" or \"group\".",
-				Fields: []game.FieldSpec{
-					{Name: "objective", Type: "object", Description: "A single game objective. See objective schema."},
-					{
-						Name:        "group",
-						Type:        "object",
-						Description: "A named sub-group with its own routing and completion settings.",
-					},
-				},
-			}},
-	}
-
 	objectiveContextFields := []game.FieldSpec{
 		{
 			Name:        "blocks",
@@ -188,13 +149,19 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Description: "Short alphanumeric code referenced by objective.<slug> in depends lists. Must be unique within the game.",
 		},
 		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
+		{
+			Name:        "color",
+			Type:        "string",
+			Description: "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart.",
+		},
 		dependsFieldSpec(),
 		{
 			Name:     "proof",
 			Type:     "object",
 			Required: true,
 			Description: "Blocks and sets shown/fired while the objective is unproven. A non-empty proof " +
-				"must contain at least one interactive block, or it gates nothing.",
+				"must contain at least one interactive block, or it gates nothing. Proof gates children " +
+				"too: nothing below this objective is reachable until its proof clears.",
 			Fields: objectiveContextFields,
 		},
 		{
@@ -203,6 +170,31 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Required:    true,
 			Description: "Blocks and sets shown/fired once proof completes.",
 			Fields:      objectiveContextFields,
+		},
+		{
+			Name: "routing",
+			Type: "enum",
+			Description: "How players are routed through this objective's children. Required when there " +
+				"are children, meaningless without them. See enums.routing.",
+		},
+		childrenMinFieldSpec(),
+		childrenMaxFieldSpec(),
+		{
+			Name:        "max_next",
+			Type:        "int",
+			Description: "How many children a randomised objective offers at once. 0 means all of them.",
+		},
+		{
+			Name: "finish_label",
+			Type: "string",
+			Description: "Label for the finish button. Only an objective in a range ever shows one, so " +
+				"setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE).",
+		},
+		{
+			Name: "children",
+			Type: "list",
+			Description: "Ordered list of child objectives, each with this same schema. An objective with " +
+				"children is a section; one without is a leaf. Nothing else distinguishes them.",
 		},
 	}
 
@@ -240,45 +232,68 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Description: "Blocks shown on the finish page. Always present, even if empty.",
 			},
 			{
-				Name:        "structure",
-				Type:        "object",
-				Required:    true,
-				Description: "Root group defining routing and the objective tree.",
-				Fields:      structureFields,
+				Name:     "structure",
+				Type:     "object",
+				Required: true,
+				Description: "The root objective. An ordinary objective with no parent, using the schema " +
+					"below: the tree is one recursive type, not a container wrapping a different one.",
+				Fields: objectiveFields,
 			},
 			{
 				Name: "objective",
 				Type: "object",
-				Description: "Schema for objective objects within structure.children. Has no points " +
-					"field of its own; its total point value is the sum of its blocks' points.",
+				Description: "Schema for every objective, root and children alike. Has no points field of " +
+					"its own; its total point value is the sum of its blocks' points.",
 				Fields: objectiveFields,
 			},
 		},
 	}
 }
 
+// childrenMinFieldSpec and childrenMaxFieldSpec document the completion band as
+// the single rule it is, rather than as two independent integers: the
+// relationship between the two bounds is what decides the node's behaviour, and
+// it is the thing authors get wrong.
+func childrenMinFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "children_min",
+		Type: "int",
+		Description: "How many children must complete before the player may finish this objective. " +
+			bandRuleDescription,
+	}
+}
+
+func childrenMaxFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "children_max",
+		Type: "int",
+		Description: "How many completed children finish this objective on their own. " +
+			bandRuleDescription,
+	}
+}
+
+const bandRuleDescription = "The pair forms a completion band. When min equals max the objective " +
+	"auto-completes at that count with no player action. When min is lower, reaching min only reveals " +
+	"a finish button and the player's press is what completes the objective, which also auto-completes " +
+	"at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other " +
+	"to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit " +
+	"children_min of 0 is not the same as omitting it. min greater than max is an error " +
+	"(BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are " +
+	"meaningless on an objective with no children (BAND_ON_LEAF)."
+
 func enumDefs() EnumDefs {
-	// Label/Description come from RouteStrategy/CompletionType's own String()/
-	// Description() methods (game/enums.go), not a second hand-maintained copy
-	// of the same text that could drift out of sync with it.
+	// Label/Description come from RouteStrategy's own String()/Description()
+	// methods (game/enums.go), not a second hand-maintained copy of the same
+	// text that could drift out of sync with it.
 	routing := []game.RouteStrategy{
-		game.RouteStrategyRandomised, game.RouteStrategyFreeRoam, game.RouteStrategyOrdered, game.RouteStrategySecret,
+		game.RouteStrategyRandomised, game.RouteStrategyFreeRoam, game.RouteStrategyOrdered,
 	}
 	routingValues := make([]EnumValue, len(routing))
 	for i, r := range routing {
 		routingValues[i] = EnumValue{Value: string(r), Label: r.String(), Description: r.Description()}
 	}
 
-	completion := []game.CompletionType{game.CompletionAll, game.CompletionMinimum}
-	completionValues := make([]EnumValue, len(completion))
-	for i, c := range completion {
-		completionValues[i] = EnumValue{Value: string(c), Label: c.String(), Description: c.Description()}
-	}
-
-	return EnumDefs{
-		Routing:    routingValues,
-		Completion: completionValues,
-	}
+	return EnumDefs{Routing: routingValues}
 }
 
 // BuiltInVars returns the list of built-in variables available in depends lists.

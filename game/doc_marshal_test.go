@@ -11,90 +11,6 @@ import (
 
 // --- ChildDoc marshal / unmarshal ---
 
-func TestChildDoc_MarshalJSON_Objective(t *testing.T) {
-	c := game.ChildDoc{
-		Objective: &game.ObjectiveDoc{
-			Slug:  "lobby",
-			Title: "The Lobby",
-		},
-	}
-	data, err := json.Marshal(c)
-	require.NoError(t, err)
-
-	var raw map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(data, &raw))
-	assert.Contains(t, raw, "objective")
-	assert.NotContains(t, raw, "group")
-}
-
-func TestChildDoc_MarshalJSON_Group(t *testing.T) {
-	c := game.ChildDoc{
-		Group: &game.GroupDoc{
-			Name:  "My Group",
-			Color: "primary",
-		},
-	}
-	data, err := json.Marshal(c)
-	require.NoError(t, err)
-
-	var raw map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(data, &raw))
-	assert.Contains(t, raw, "group")
-	assert.NotContains(t, raw, "objective")
-}
-
-func TestChildDoc_MarshalJSON_Neither_Error(t *testing.T) {
-	c := game.ChildDoc{}
-	_, err := json.Marshal(c)
-	assert.Error(t, err)
-}
-
-func TestChildDoc_UnmarshalJSON_Objective(t *testing.T) {
-	input := `{"objective":{"slug":"lobby","title":"The Lobby","proof":{},"reveal":{}}}`
-	var c game.ChildDoc
-	require.NoError(t, json.Unmarshal([]byte(input), &c))
-	require.NotNil(t, c.Objective)
-	assert.Equal(t, "lobby", c.Objective.Slug)
-	assert.Nil(t, c.Group)
-}
-
-func TestChildDoc_UnmarshalJSON_Group(t *testing.T) {
-	input := `{"group":{"name":"My Group","color":"primary","routing":"free_roam","completion":"all","children":[]}}`
-	var c game.ChildDoc
-	require.NoError(t, json.Unmarshal([]byte(input), &c))
-	require.NotNil(t, c.Group)
-	assert.Equal(t, "My Group", c.Group.Name)
-	assert.Nil(t, c.Objective)
-}
-
-func TestChildDoc_UnmarshalJSON_InvalidJSON(t *testing.T) {
-	// Go's JSON scanner rejects completely invalid input before calling UnmarshalJSON,
-	// so use valid JSON that isn't an object to trigger the error inside UnmarshalJSON.
-	var c game.ChildDoc
-	err := json.Unmarshal([]byte(`42`), &c)
-	assert.Error(t, err)
-}
-
-func TestChildDoc_UnmarshalJSON_NeitherKey(t *testing.T) {
-	var c game.ChildDoc
-	err := json.Unmarshal([]byte(`{"foo":"bar"}`), &c)
-	assert.Error(t, err)
-}
-
-func TestChildDoc_UnmarshalJSON_MalformedObjective(t *testing.T) {
-	var c game.ChildDoc
-	err := json.Unmarshal([]byte(`{"objective":"not-an-object"}`), &c)
-	assert.Error(t, err)
-}
-
-func TestChildDoc_UnmarshalJSON_MalformedGroup(t *testing.T) {
-	var c game.ChildDoc
-	err := json.Unmarshal([]byte(`{"group":"not-an-object"}`), &c)
-	assert.Error(t, err)
-}
-
-// --- BlockDoc marshal ---
-
 func TestBlockDoc_MarshalJSON_TypeFirst(t *testing.T) {
 	b := game.BlockDoc{"type": "quiz", "question": "What?", "answer": "42"}
 	data, err := json.Marshal(b)
@@ -175,6 +91,7 @@ func TestBlockDoc_RoundTrip(t *testing.T) {
 // --- Full GameDoc round-trip ---
 
 func TestGameDoc_RoundTrip(t *testing.T) {
+	minChildren := 1
 	doc := &game.GameDoc{
 		Rapua: "v8",
 		Name:  "Round Trip Game",
@@ -183,29 +100,29 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 		},
 		Start:  []game.BlockDoc{{"type": "start_button"}},
 		Finish: []game.BlockDoc{},
-		Structure: game.StructureDoc{
-			Routing:    game.RouteStrategyFreeRoam,
-			Completion: game.CompletionAll,
-			Children: []game.ChildDoc{
-				{Objective: &game.ObjectiveDoc{
+		Structure: game.ObjectiveDoc{
+			Slug:    "root",
+			Title:   "Round Trip Game",
+			Routing: game.RouteStrategyFreeRoam,
+			Children: []game.ObjectiveDoc{
+				{
 					Slug:  "lobby",
 					Title: "The Lobby",
 					Proof: game.ObjectiveContextDoc{
 						Blocks: []game.BlockDoc{{"type": "text", "content": "Hello"}},
 					},
-				}},
-				{Group: &game.GroupDoc{
-					Name:       "East Wing",
-					Color:      "primary",
-					Routing:    game.RouteStrategyFreeRoam,
-					Completion: game.CompletionAll,
-					Children: []game.ChildDoc{
-						{Objective: &game.ObjectiveDoc{
-							Slug:  "room-a",
-							Title: "Room A",
-						}},
+				},
+				{
+					Slug:        "east-wing",
+					Title:       "East Wing",
+					Color:       "primary",
+					Routing:     game.RouteStrategyFreeRoam,
+					ChildrenMin: &minChildren,
+					FinishLabel: "Leave the wing",
+					Children: []game.ObjectiveDoc{
+						{Slug: "room-a", Title: "Room A"},
 					},
-				}},
+				},
 			},
 		},
 	}
@@ -218,18 +135,47 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 
 	assert.Equal(t, "v8", out.Rapua)
 	assert.Equal(t, "Round Trip Game", out.Name)
+	assert.Equal(t, "root", out.Structure.Slug)
 	require.Len(t, out.Structure.Children, 2)
 
-	// First child is an objective.
-	require.NotNil(t, out.Structure.Children[0].Objective)
-	assert.Equal(t, "lobby", out.Structure.Children[0].Objective.Slug)
+	assert.Equal(t, "lobby", out.Structure.Children[0].Slug)
+	assert.Empty(t, out.Structure.Children[0].Children, "a leaf has no children")
 
-	// Second child is a group
-	require.NotNil(t, out.Structure.Children[1].Group)
-	assert.Equal(t, "East Wing", out.Structure.Children[1].Group.Name)
-	require.Len(t, out.Structure.Children[1].Group.Children, 1)
-	require.NotNil(t, out.Structure.Children[1].Group.Children[0].Objective)
-	assert.Equal(t, "room-a", out.Structure.Children[1].Group.Children[0].Objective.Slug)
+	wing := out.Structure.Children[1]
+	assert.Equal(t, "east-wing", wing.Slug)
+	assert.Equal(t, "Leave the wing", wing.FinishLabel)
+	require.Len(t, wing.Children, 1)
+	assert.Equal(t, "room-a", wing.Children[0].Slug)
+
+	require.NotNil(t, wing.ChildrenMin)
+	assert.Equal(t, 1, *wing.ChildrenMin)
+	assert.Nil(t, wing.ChildrenMax, "an omitted bound must stay omitted through a round trip")
+}
+
+// An explicit children_min of 0 is a different node from one that omits it, so
+// the zero must survive marshalling rather than being dropped as empty.
+func TestGameDoc_RoundTrip_ExplicitZeroMinSurvives(t *testing.T) {
+	zero := 0
+	doc := &game.GameDoc{
+		Rapua: "v8",
+		Name:  "Zero Min",
+		Structure: game.ObjectiveDoc{
+			Slug: "root", Title: "Zero Min",
+			Routing:     game.RouteStrategyFreeRoam,
+			ChildrenMin: &zero,
+			Children:    []game.ObjectiveDoc{{Slug: "bonus", Title: "Bonus"}},
+		},
+	}
+
+	data, err := json.Marshal(doc)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `"children_min":0`)
+
+	var out game.GameDoc
+	require.NoError(t, json.Unmarshal(data, &out))
+	require.NotNil(t, out.Structure.ChildrenMin)
+	assert.Equal(t, 0, *out.Structure.ChildrenMin)
+	assert.Equal(t, game.Band{Min: 0, Max: 1}, out.Structure.Band())
 }
 
 // findFieldIdx returns the index of the first occurrence of key in the JSON string.

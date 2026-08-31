@@ -10,6 +10,11 @@ import (
 
 var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
 
+// startButtonBlockType is the one block type the linter names directly: the
+// start page is useless without it, and no generic registry capability
+// expresses that.
+const startButtonBlockType = "start_button"
+
 type LintResult struct {
 	Errors   []LintDiag `json:"errors"`   // Must fix before importing
 	Warnings []LintDiag `json:"warnings"` // Should fix but won't block import
@@ -86,7 +91,7 @@ func (l *linter) checkSchema() {
 	if l.doc.Name == "" {
 		l.errorf("name", "MISSING_NAME", "game name is required")
 	}
-	l.checkStructureDoc("structure", l.doc.Structure)
+	l.checkObjectiveDoc("structure", l.doc.Structure, 0)
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
 	}
@@ -95,53 +100,28 @@ func (l *linter) checkSchema() {
 	}
 }
 
-func (l *linter) checkStructureDoc(path string, s StructureDoc) {
-	l.checkRouting(path+".routing", s.Routing)
-	l.checkCompletion(path, s.Completion, s.MinimumRequired)
-	if s.Completion == CompletionMinimum && s.MinimumRequired > len(s.Children) {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_EXCEEDS_CHILDREN",
-			"minimum_required (%d) exceeds number of children (%d); players can never complete this group",
-			s.MinimumRequired, len(s.Children))
+// maxNestingDepth is a UI sanity cap rather than a technical limit: past this
+// the player has more ancestor context to hold than a phone screen can show.
+const maxNestingDepth = 4
+
+// checkObjectiveDoc validates one node and recurses into its children. depth is
+// the node's own distance from the root, which is depth 0.
+func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth int) {
+	l.checkObjectiveIdentity(path, obj)
+	l.checkChildSettings(path, obj)
+
+	if depth > maxNestingDepth {
+		l.warnf(path, "NESTING_TOO_DEEP",
+			"objective %q is %d levels deep; more than %d is hard to navigate on a phone",
+			obj.Slug, depth, maxNestingDepth)
 	}
-	for i, child := range s.Children {
-		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
+
+	for i, child := range obj.Children {
+		l.checkObjectiveDoc(fmt.Sprintf("%s.children[%d]", path, i), child, depth+1)
 	}
 }
 
-func (l *linter) checkGroupDoc(path string, g GroupDoc) {
-	if g.Name == "" {
-		l.errorf(path+".name", "MISSING_GROUP_NAME", "group name is required")
-	}
-	l.checkRouting(path+".routing", g.Routing)
-	l.checkCompletion(path, g.Completion, g.MinimumRequired)
-	if g.Completion == CompletionMinimum && g.MinimumRequired > len(g.Children) {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_EXCEEDS_CHILDREN",
-			"minimum_required (%d) exceeds number of children (%d); players can never complete this group",
-			g.MinimumRequired, len(g.Children))
-	}
-	if g.AutoAdvance != nil && g.Completion != CompletionMinimum {
-		l.warnf(path+".auto_advance", "AUTO_ADVANCE_IGNORED",
-			"auto_advance has no effect unless completion is %q", string(CompletionMinimum))
-	}
-	for i, child := range g.Children {
-		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
-	}
-}
-
-func (l *linter) checkChildDoc(path string, child ChildDoc) {
-	switch {
-	case child.Group != nil:
-		l.checkGroupDoc(path+".group", *child.Group)
-	case child.Objective != nil:
-		l.checkObjectiveDoc(path+".objective", *child.Objective)
-	default:
-		l.errorf(path, "EMPTY_CHILD", "child has neither group nor objective")
-	}
-}
-
-// checkObjectiveDoc applies the proof-context composition rule: a non-empty
-// proof context must contain at least one interactive block, or it gates nothing.
-func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc) {
+func (l *linter) checkObjectiveIdentity(path string, obj ObjectiveDoc) {
 	if obj.Slug == "" {
 		l.errorf(path+".slug", "MISSING_SLUG", "objective slug is required")
 	} else if !slugPattern.MatchString(obj.Slug) {
@@ -166,6 +146,103 @@ func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc) {
 	}
 	l.errorf(path+".proof", "PROOF_CONTEXT_NO_INTERACTIVE_BLOCK",
 		"a non-empty proof context must contain at least one interactive block, or it gates nothing")
+}
+
+// checkChildSettings validates everything that only means something to a node
+// with children: routing, the completion band, max_next, and the finish label.
+func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
+	childCount := len(obj.Children)
+	if childCount == 0 {
+		l.checkLeafSettings(path, obj)
+		return
+	}
+
+	l.checkRouting(path+".routing", obj.Routing)
+	l.checkBandBounds(path, obj, childCount)
+
+	// Blocks belong to an objective row, and an objective with children is kept
+	// as a group, which is not one. An error rather than a warning because a
+	// warning still imports, and a gate that imports without its blocks is a
+	// gate the author believes in and the game does not have.
+	if len(obj.Proof.Blocks) > 0 || len(obj.Reveal.Blocks) > 0 {
+		l.errorf(path+".proof", "SECTION_BLOCKS_NOT_STORED",
+			"an objective with children cannot carry its own proof or reveal blocks; "+
+				"move them to a child objective")
+	}
+
+	// Every semantic rule reads the filled band, not the literal fields: an
+	// omitted bound is a real value, just not one the author wrote.
+	band := obj.Band()
+	if obj.FinishLabel != "" && band.AutoCompletes() {
+		l.warnf(path+".finish_label", "FINISH_LABEL_UNREACHABLE",
+			"finish_label is set but this objective auto-completes at %d of %d children, "+
+				"so it never shows a finish button", band.Min, childCount)
+	}
+	if band.Max == 0 {
+		// Reads as "no children needed", so the objective completes before the
+		// player has seen any of them and closes the whole subtree. max_next
+		// nearby does treat 0 as "all of them", which invites exactly this.
+		l.errorf(path+".children_max", "BAND_COMPLETES_AT_ZERO",
+			"children_max is 0, so this objective completes before any of its %d children are reachable; "+
+				"omit it to require all of them", childCount)
+	}
+	if obj.MaxNext > 0 && obj.Routing != RouteStrategyRandomised {
+		l.warnf(path+".max_next", "MAX_NEXT_IGNORED",
+			"max_next only applies to %q routing", string(RouteStrategyRandomised))
+	}
+}
+
+// checkBandBounds checks the literal children_min/children_max the author
+// wrote, before any default filling: a bound out of range is an authoring
+// mistake whether or not the filled band happens to come out sane.
+func (l *linter) checkBandBounds(path string, obj ObjectiveDoc, childCount int) {
+	for _, bound := range []struct {
+		name  string
+		value *int
+	}{
+		{"children_min", obj.ChildrenMin},
+		{"children_max", obj.ChildrenMax},
+	} {
+		if bound.value == nil {
+			continue
+		}
+		if *bound.value < 0 {
+			l.errorf(path+"."+bound.name, "BAND_OUT_OF_RANGE",
+				"%s (%d) must not be negative", bound.name, *bound.value)
+		}
+		if *bound.value > childCount {
+			l.errorf(path+"."+bound.name, "BAND_OUT_OF_RANGE",
+				"%s (%d) exceeds the %d children below this objective, so it can never be met",
+				bound.name, *bound.value, childCount)
+		}
+	}
+
+	if obj.ChildrenMin != nil && obj.ChildrenMax != nil && *obj.ChildrenMin > *obj.ChildrenMax {
+		l.errorf(path+".children_min", "BAND_MIN_EXCEEDS_MAX",
+			"children_min (%d) exceeds children_max (%d)", *obj.ChildrenMin, *obj.ChildrenMax)
+	}
+}
+
+// checkLeafSettings warns about fields that govern children on a node with
+// none. They are inert rather than wrong, which is why these are warnings: an
+// author mid-edit may be about to add the children.
+func (l *linter) checkLeafSettings(path string, obj ObjectiveDoc) {
+	if obj.Routing != "" {
+		l.warnf(path+".routing", "ROUTING_ON_LEAF",
+			"routing has no effect on an objective with no children")
+	}
+	if obj.ChildrenMin != nil || obj.ChildrenMax != nil {
+		l.warnf(path+".children_min", "BAND_ON_LEAF",
+			"children_min/children_max have no effect on an objective with no children")
+	}
+	if obj.MaxNext > 0 {
+		l.warnf(path+".max_next", "MAX_NEXT_ON_LEAF",
+			"max_next has no effect on an objective with no children")
+	}
+	if obj.FinishLabel != "" {
+		l.warnf(path+".finish_label", "FINISH_LABEL_UNREACHABLE",
+			"finish_label has no effect on an objective with no children")
+	}
 }
 
 func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDoc, ctx BlockContext) {
@@ -249,35 +326,23 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 
 func (l *linter) checkRouting(path string, r RouteStrategy) {
 	switch r {
-	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered, RouteStrategySecret:
+	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered:
 		// valid.
+	case RouteStrategySecret:
+		// Named rather than left to the default arm so a document carrying the
+		// retired value is told so directly.
+		l.errorf(path, "INVALID_ROUTING",
+			"routing %q is retired; an objective is reachable by its parent's routing and its depends, "+
+				"and a scan block in its proof lets players reach it out of order", r)
 	default:
 		l.errorf(path, "INVALID_ROUTING", "invalid routing value %q", r)
-	}
-}
-
-func (l *linter) checkCompletion(path string, c CompletionType, minRequired int) {
-	switch c {
-	case CompletionAll, CompletionMinimum:
-		// valid.
-	default:
-		l.errorf(path+".completion", "INVALID_COMPLETION", "invalid completion value %q", c)
-		return
-	}
-	if c != CompletionMinimum && minRequired != 0 {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_MISMATCH",
-			"minimum_required is only valid when completion is \"minimum\"")
-	}
-	if c == CompletionMinimum && minRequired <= 0 {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_MISSING",
-			"minimum_required must be positive when completion is \"minimum\"")
 	}
 }
 
 // --- Layer 2: Semantic ---
 
 func (l *linter) checkSemantic() {
-	l.collectAndCheckSlugsInChildren("structure", l.doc.Structure.Children)
+	l.collectAndCheckSlugs("structure", l.doc.Structure)
 	l.checkBlockContexts("start", l.doc.Start, ContextStart)
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
@@ -285,24 +350,20 @@ func (l *linter) checkSemantic() {
 	l.checkDependsInDoc()
 }
 
-func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		switch {
-		case child.Objective != nil:
-			slug := child.Objective.Slug
-			if slug != "" {
-				if l.slugs[slug] {
-					l.errorf(childPath+".objective.slug", "SLUG_DUPLICATE",
-						"duplicate slug %q", slug)
-				}
-				l.slugs[slug] = true
-				l.objectiveSlugs[slug] = true
-			}
-			l.checkObjectiveContexts(childPath+".objective", *child.Objective)
-		case child.Group != nil:
-			l.collectAndCheckSlugsInChildren(childPath+".group", child.Group.Children)
+// collectAndCheckSlugs walks the tree recording slugs. The root is included:
+// it is an ordinary node whose slug can collide like any other.
+func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc) {
+	if obj.Slug != "" {
+		if l.slugs[obj.Slug] {
+			l.errorf(path+".slug", "SLUG_DUPLICATE", "duplicate slug %q", obj.Slug)
 		}
+		l.slugs[obj.Slug] = true
+		l.objectiveSlugs[obj.Slug] = true
+	}
+	l.checkObjectiveContexts(path, obj)
+
+	for i, child := range obj.Children {
+		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
 }
 
@@ -352,18 +413,9 @@ func (l *linter) trackBlockIDs(path string, blocks []BlockDoc) {
 // --- Layer 3: Structural warnings ---
 
 func (l *linter) checkStructural() {
-	for i, child := range l.doc.Structure.Children {
-		if child.Objective != nil {
-			l.warnf(fmt.Sprintf("structure.children[%d].objective", i), "ROOT_OBJECTIVE_HIDDEN",
-				"objective %q is a direct child of the root structure and will not be shown; wrap it in a group",
-				child.Objective.Title)
-		}
-	}
-	l.checkStructuralChildren("structure", l.doc.Structure.Children)
-
 	hasStartButton := false
 	for _, b := range l.doc.Start {
-		if t, ok := b["type"].(string); ok && t == "start_button" {
+		if t, ok := b["type"].(string); ok && t == startButtonBlockType {
 			hasStartButton = true
 			break
 		}
@@ -376,20 +428,7 @@ func (l *linter) checkStructural() {
 	if !l.doc.Settings.EnablePoints {
 		l.warnBlocksWithPoints("start", l.doc.Start)
 		l.warnBlocksWithPoints("finish", l.doc.Finish)
-		l.warnChildrenBlockPoints("structure", l.doc.Structure.Children)
-	}
-}
-
-func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Group != nil {
-			if len(child.Group.Children) == 0 {
-				l.warnf(childPath+".group", "EMPTY_GROUP",
-					"group %q has no children", child.Group.Name)
-			}
-			l.checkStructuralChildren(childPath+".group", child.Group.Children)
-		}
+		l.warnTreeBlockPoints("structure", l.doc.Structure)
 	}
 }
 
@@ -411,18 +450,13 @@ func (l *linter) warnBlocksWithPoints(path string, blocks []BlockDoc) {
 	}
 }
 
-func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		switch {
-		case child.Objective != nil:
-			// Objectives have no points field of their own; points are block-level only.
-			obj := *child.Objective
-			l.warnBlocksWithPoints(childPath+".objective.proof.blocks", obj.Proof.Blocks)
-			l.warnBlocksWithPoints(childPath+".objective.reveal.blocks", obj.Reveal.Blocks)
-		case child.Group != nil:
-			l.warnChildrenBlockPoints(childPath+".group", child.Group.Children)
-		}
+// warnTreeBlockPoints walks the tree. Objectives have no points field of their
+// own; points are block-level only.
+func (l *linter) warnTreeBlockPoints(path string, obj ObjectiveDoc) {
+	l.warnBlocksWithPoints(path+".proof.blocks", obj.Proof.Blocks)
+	l.warnBlocksWithPoints(path+".reveal.blocks", obj.Reveal.Blocks)
+	for i, child := range obj.Children {
+		l.warnTreeBlockPoints(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
 }
 
@@ -451,7 +485,7 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 func (l *linter) collectAllDefinedVars() {
 	l.collectVarsFromBlocks(l.doc.Start)
 	l.collectVarsFromBlocks(l.doc.Finish)
-	l.collectVarsFromChildrenIntoSet(l.doc.Structure.Children, l.definedVars)
+	l.collectVarsFromTree(l.doc.Structure, l.definedVars)
 }
 
 func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
@@ -462,15 +496,11 @@ func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
 	}
 }
 
-func (l *linter) collectVarsFromChildrenIntoSet(children []ChildDoc, vars map[string]bool) {
-	for _, child := range children {
-		switch {
-		case child.Objective != nil:
-			l.collectVarsFromObjectiveContext(child.Objective.Proof, vars)
-			l.collectVarsFromObjectiveContext(child.Objective.Reveal, vars)
-		case child.Group != nil:
-			l.collectVarsFromChildrenIntoSet(child.Group.Children, vars)
-		}
+func (l *linter) collectVarsFromTree(obj ObjectiveDoc, vars map[string]bool) {
+	l.collectVarsFromObjectiveContext(obj.Proof, vars)
+	l.collectVarsFromObjectiveContext(obj.Reveal, vars)
+	for _, child := range obj.Children {
+		l.collectVarsFromTree(child, vars)
 	}
 }
 
@@ -498,7 +528,7 @@ func (l *linter) objectiveContextSelfVars(objCtx ObjectiveContextDoc) []string {
 }
 
 func (l *linter) checkDependsInDoc() {
-	l.checkDependsInChildren("structure", l.doc.Structure.Children)
+	l.checkDependsInTree("structure", l.doc.Structure)
 	l.checkDependsCycles()
 	l.checkUnusedVars()
 }
@@ -512,18 +542,11 @@ func (l *linter) checkUnusedVars() {
 	}
 }
 
-func (l *linter) checkDependsInChildren(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		switch {
-		case child.Objective != nil:
-			obj := child.Objective
-			objPath := childPath + ".objective"
-			l.checkDepends(objPath+".depends", obj.Depends)
-			l.recordDependsEdges(objPath, obj)
-		case child.Group != nil:
-			l.checkDependsInChildren(childPath+".group", child.Group.Children)
-		}
+func (l *linter) checkDependsInTree(path string, obj ObjectiveDoc) {
+	l.checkDepends(path+".depends", obj.Depends)
+	l.recordDependsEdges(path, obj)
+	for i, child := range obj.Children {
+		l.checkDependsInTree(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
 }
 
@@ -544,7 +567,7 @@ func (l *linter) checkDepends(path string, deps DependsField) {
 // for the cycle check once the whole document has been walked. Negation is
 // irrelevant here: "not other" still cannot be evaluated until other is, so it
 // is the same edge for reachability purposes.
-func (l *linter) recordDependsEdges(path string, obj *ObjectiveDoc) {
+func (l *linter) recordDependsEdges(path string, obj ObjectiveDoc) {
 	if obj.Slug == "" {
 		return
 	}

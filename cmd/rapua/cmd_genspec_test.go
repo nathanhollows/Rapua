@@ -54,12 +54,12 @@ func TestWriteGameSpec_ContainsAuthConstraints(t *testing.T) {
 	s := string(content)
 
 	checks := []string{
-		"ROOT_OBJECTIVE_HIDDEN",
-		"EMPTY_GROUP",
 		"SLUG_DUPLICATE",
 		"BLOCK_ID_DUPLICATE",
 		"NO_START_BUTTON",
-		"MINIMUM_REQUIRED_MISMATCH",
+		"BAND_MIN_EXCEEDS_MAX",
+		"BAND_OUT_OF_RANGE",
+		"DEPENDS_CYCLE",
 		"POINTS_DISABLED",
 	}
 	for _, code := range checks {

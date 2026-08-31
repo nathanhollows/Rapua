@@ -7,8 +7,8 @@ import (
 
 // LintJSON validates a raw JSON game document.
 // It checks for unknown fields at the structural level (GameDoc, SettingsDoc,
-// StructureDoc, GroupDoc, ObjectiveDoc) that are silently dropped by the JSON
-// parser, then runs the full Lint pass on the parsed document.
+// ObjectiveDoc) that are silently dropped by the JSON parser, then runs the
+// full Lint pass on the parsed document.
 func LintJSON(data []byte, registry BlockRegistry) LintResult {
 	rawWarnings := checkUnknownFieldsRaw(data)
 
@@ -37,20 +37,13 @@ var (
 		"show_team_count": true, "enable_points": true,
 		"show_leaderboard": true,
 	}
-	knownStructureDocFields = map[string]bool{
-		"routing": true, "completion": true, "minimum_required": true, "children": true,
-	}
-	knownGroupDocFields = map[string]bool{
-		"id": true, "name": true, "color": true, "routing": true,
-		"completion": true, "minimum_required": true, "auto_advance": true,
-		"children": true,
-	}
 	knownObjectiveDocFields = map[string]bool{
-		"id": true, "slug": true, "title": true, "depends": true,
-		"proof": true, "reveal": true,
+		"id": true, "slug": true, "title": true, "color": true,
+		"depends": true, "proof": true, "reveal": true,
+		"routing": true, "children_min": true, "children_max": true,
+		"max_next": true, "finish_label": true, "children": true,
 	}
 	knownObjectiveContextDocFields = map[string]bool{"blocks": true, "sets": true}
-	knownChildDocFields            = map[string]bool{"group": true, "objective": true}
 )
 
 func checkUnknownFieldsRaw(data []byte) []LintDiag {
@@ -64,40 +57,32 @@ func checkUnknownFieldsRaw(data []byte) []LintDiag {
 		warnUnknown("settings", s, knownSettingsDocFields, &diags)
 	}
 	if st, ok := raw["structure"].(map[string]any); ok {
-		warnUnknown("structure", st, knownStructureDocFields, &diags)
-		if children, ok := st["children"].([]any); ok {
-			for i, child := range children {
-				checkUnknownChild(fmt.Sprintf("structure.children[%d]", i), child, &diags)
-			}
-		}
+		checkUnknownObjective("structure", st, &diags)
 	}
 	return diags
 }
 
-func checkUnknownChild(path string, child any, diags *[]LintDiag) {
-	m, ok := child.(map[string]any)
+// checkUnknownObjective walks the node tree, which is the same shape at every
+// level including the root.
+func checkUnknownObjective(path string, obj map[string]any, diags *[]LintDiag) {
+	warnUnknown(path, obj, knownObjectiveDocFields, diags)
+
+	for _, ctx := range []string{"proof", "reveal"} {
+		if fields, ok := obj[ctx].(map[string]any); ok {
+			warnUnknown(path+"."+ctx, fields, knownObjectiveContextDocFields, diags)
+		}
+	}
+
+	children, ok := obj["children"].([]any)
 	if !ok {
 		return
 	}
-	warnUnknown(path, m, knownChildDocFields, diags)
-	if obj, ok := m["objective"].(map[string]any); ok {
-		objPath := path + ".objective"
-		warnUnknown(objPath, obj, knownObjectiveDocFields, diags)
-		if proof, ok := obj["proof"].(map[string]any); ok {
-			warnUnknown(objPath+".proof", proof, knownObjectiveContextDocFields, diags)
+	for i, child := range children {
+		childMap, ok := child.(map[string]any)
+		if !ok {
+			continue
 		}
-		if reveal, ok := obj["reveal"].(map[string]any); ok {
-			warnUnknown(objPath+".reveal", reveal, knownObjectiveContextDocFields, diags)
-		}
-	}
-	if grp, ok := m["group"].(map[string]any); ok {
-		grpPath := path + ".group"
-		warnUnknown(grpPath, grp, knownGroupDocFields, diags)
-		if children, ok := grp["children"].([]any); ok {
-			for i, child := range children {
-				checkUnknownChild(fmt.Sprintf("%s.children[%d]", grpPath, i), child, diags)
-			}
-		}
+		checkUnknownObjective(fmt.Sprintf("%s.children[%d]", path, i), childMap, diags)
 	}
 }
 

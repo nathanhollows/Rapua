@@ -160,14 +160,12 @@ func TestGenerateBlockSpecs_ContextsMatchRegistry(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_HasEnums checks routing and completion enums are non-empty.
+// TestGenerateFullSpec_HasEnums checks the routing enum is non-empty. Routing
+// is the only enum left: the completion enum went with the band that replaced it.
 func TestGenerateFullSpec_HasEnums(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 	if len(spec.Enums.Routing) == 0 {
 		t.Error("GenerateFullSpec().Enums.Routing is empty")
-	}
-	if len(spec.Enums.Completion) == 0 {
-		t.Error("GenerateFullSpec().Enums.Completion is empty")
 	}
 }
 
@@ -350,6 +348,17 @@ func TestGenerateFullSpec_DependsOnObjective(t *testing.T) {
 	}
 	if hasField(objectiveFields, "when") || hasField(structureFields, "when") {
 		t.Error("schemas still publish a \"when\" field")
+	}
+
+	// The root is an ordinary objective, so the two schemas must not drift:
+	// a field documented on one and not the other would be a lie about one of them.
+	for _, name := range []string{"children", "children_min", "children_max", "routing", "color"} {
+		if !hasField(objectiveFields, name) {
+			t.Errorf("objective schema missing %q field", name)
+		}
+		if !hasField(structureFields, name) {
+			t.Errorf("structure schema missing %q field", name)
+		}
 	}
 }
 

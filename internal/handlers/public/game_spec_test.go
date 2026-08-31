@@ -22,22 +22,23 @@ func validSpecDoc() string {
 		"start":[{"type":"start_button"}],
 		"finish":[],
 		"structure":{
+			"slug":"root",
+			"title":"Test Game",
 			"routing":"free_roam",
-			"completion":"all",
+			"proof":{},
+			"reveal":{},
 			"children":[{
-				"group":{
-					"name":"Stage One",
-					"routing":"free_roam",
-					"completion":"all",
-					"children":[{
-						"objective":{
-							"slug":"obj-a",
-							"title":"Objective A",
-							"proof":{},
-							"reveal":{}
-						}
-					}]
-				}
+				"slug":"stage-one",
+				"title":"Stage One",
+				"routing":"free_roam",
+				"proof":{},
+				"reveal":{},
+				"children":[{
+					"slug":"obj-a",
+					"title":"Objective A",
+					"proof":{},
+					"reveal":{}
+				}]
 			}]
 		}
 	}`
