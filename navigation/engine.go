@@ -118,10 +118,21 @@ func GetNextGroup(
 		return nil, false, ReasonGroupNotFound
 	}
 
+	// The root can be the current group when it carries objectives directly, so
+	// advancing from it means moving into its first subgroup.
+	if currentGroup.IsRoot {
+		for i := range structure.SubGroups {
+			if structure.SubGroups[i].Routing != models.RouteStrategySecret {
+				return &structure.SubGroups[i], true, ReasonNextSibling
+			}
+		}
+		return nil, false, ReasonAllComplete
+	}
+
 	// Find parent and current index
 	parent, index := findParentAndIndex(currentGroup, structure)
 	if parent == nil {
-		return nil, false, ReasonNoParent // At root - shouldn't happen
+		return nil, false, ReasonNoParent
 	}
 
 	// Try next non-secret sibling
@@ -226,16 +237,24 @@ func FindGroupContainingObjective(root *models.GameStructure, objectiveID string
 	return nil
 }
 
-// GetFirstVisibleGroup returns the first non-root, non-secret subgroup, which is where teams should start.
-// Secret groups are never the current group - they're accessible but don't affect progression.
-// Returns nil if structure has no non-secret subgroups.
+// GetFirstVisibleGroup returns the group where teams should start: the first
+// non-secret subgroup, or the root itself when the root carries objectives
+// directly. Secret groups are never the current group; they're accessible but
+// don't affect progression. Returns nil when there is nothing to show.
+//
+// The root is eligible because an objective may sit at the top level with no
+// section around it. Excluding it there would render a player an empty list for
+// a quest that is structurally fine.
 func GetFirstVisibleGroup(structure *models.GameStructure) *models.GameStructure {
 	if structure == nil || !structure.IsRoot {
 		return nil
 	}
 
-	if len(structure.SubGroups) == 0 {
-		return nil
+	// The root's own objectives come before its subgroups, matching how the
+	// tree stores them. Checking subgroups first would strand them: nothing
+	// advances back to the root once a subgroup is current.
+	if len(structure.ObjectiveIDs) > 0 {
+		return structure
 	}
 
 	// Find first non-secret group
@@ -245,7 +264,6 @@ func GetFirstVisibleGroup(structure *models.GameStructure) *models.GameStructure
 		}
 	}
 
-	// All subgroups are secret - invalid configuration
 	return nil
 }
 

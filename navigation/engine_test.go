@@ -378,3 +378,50 @@ func BenchmarkFindGroupByID(b *testing.B) {
 		navigation.FindGroupByID(structure, "group2")
 	}
 }
+
+// A quest may put objectives at the top level with no section around them: the
+// root is an ordinary node. Excluding it as a current group renders the player
+// an empty list for a quest that is structurally fine.
+func TestGetFirstVisibleGroup_RootHoldingObjectivesDirectly(t *testing.T) {
+	root := &models.GameStructure{
+		ID:           "root",
+		IsRoot:       true,
+		ObjectiveIDs: []string{"obj-1", "obj-2"},
+		SubGroups:    []models.GameStructure{},
+	}
+
+	got := navigation.GetFirstVisibleGroup(root)
+	if assert.NotNil(t, got, "root objectives must be reachable") {
+		assert.Equal(t, "root", got.ID)
+	}
+}
+
+func TestGetFirstVisibleGroup_EmptyRootHasNothingToShow(t *testing.T) {
+	root := &models.GameStructure{ID: "root", IsRoot: true, SubGroups: []models.GameStructure{}}
+	assert.Nil(t, navigation.GetFirstVisibleGroup(root))
+}
+
+// A root holding both objectives and subgroups must surface both. Preferring
+// the first subgroup strands the root's own objectives: nothing advances back
+// to the root once a subgroup is current.
+func TestGetFirstVisibleGroup_MixedRootSurfacesItsOwnObjectivesFirst(t *testing.T) {
+	root := &models.GameStructure{
+		ID:           "root",
+		IsRoot:       true,
+		ObjectiveIDs: []string{"obj-1"},
+		SubGroups: []models.GameStructure{
+			{ID: "wing", Name: "East Wing", Routing: models.RouteStrategyFreeRoam},
+		},
+	}
+
+	first := navigation.GetFirstVisibleGroup(root)
+	if assert.NotNil(t, first) {
+		assert.Equal(t, "root", first.ID, "the root's own objectives come first")
+	}
+
+	next, shouldAdvance, _ := navigation.GetNextGroup(root, "root", []string{"obj-1"})
+	assert.True(t, shouldAdvance, "the root must advance into its subgroups, not dead-end")
+	if assert.NotNil(t, next) {
+		assert.Equal(t, "wing", next.ID)
+	}
+}
