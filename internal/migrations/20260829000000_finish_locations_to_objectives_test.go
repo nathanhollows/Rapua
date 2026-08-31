@@ -27,10 +27,18 @@ import (
 // m20260827_seedQuest's plain INSERTs into locations/markers would fail. This
 // restores that schema via the drop migration's own down function before
 // seeding, so tests can exercise the up path against real starting data.
+//
+// objectives.when_clause is restored the same way, but by hand rather than
+// through 20260831000000's own down function: the migrations replayed below
+// write to when_clause while the assertions read models.Objective, which needs
+// the depends column that same down function would take away.
 func m20260829_setupDB(t *testing.T) *bun.DB {
 	t.Helper()
 	dbc := m20260827_setupDB(t)
-	require.NoError(t, m20260829010000_down(context.Background(), dbc))
+	ctx := context.Background()
+	require.NoError(t, m20260829010000_down(ctx, dbc))
+	_, err := dbc.ExecContext(ctx, `ALTER TABLE "objectives" ADD COLUMN "when_clause" TEXT`)
+	require.NoError(t, err)
 	return dbc
 }
 
