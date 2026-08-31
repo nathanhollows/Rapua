@@ -157,7 +157,6 @@ func (s *ExportService) walkStructure(
 			Routing:         subGroup.Routing,
 			Completion:      subGroup.CompletionType,
 			MinimumRequired: subGroup.MinimumRequired,
-			When:            subGroup.When,
 			Children:        groupChildren,
 		}
 		groupDoc.AutoAdvance = &subGroup.AutoAdvance
@@ -188,10 +187,10 @@ func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []mod
 	}
 
 	return game.ObjectiveDoc{
-		ID:    obj.ID,
-		Slug:  obj.Slug,
-		Title: obj.Title,
-		When:  obj.When,
+		ID:      obj.ID,
+		Slug:    obj.Slug,
+		Title:   obj.Title,
+		Depends: obj.Depends,
 		Proof: game.ObjectiveContextDoc{
 			Blocks: proof,
 			Sets:   obj.ProofSets,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -48,8 +49,10 @@ type linter struct {
 	slugs          map[string]bool
 	objectiveSlugs map[string]bool // slugs of objectives specifically, a subset of slugs.
 	blockIDs       map[string]bool
-	definedVars    map[string]bool // all variable names set by any block in the doc.
-	usedVars       map[string]bool // all variable names referenced in any when clause.
+	definedVars    map[string]bool     // all variable names set by any block in the doc.
+	usedVars       map[string]bool     // all variable names referenced in any depends list.
+	dependsEdges   map[string][]string // objective slug -> slugs its depends list names.
+	dependsPaths   map[string]string   // objective slug -> its document path, for diagnostics.
 }
 
 func (l *linter) run() {
@@ -58,6 +61,8 @@ func (l *linter) run() {
 	l.blockIDs = make(map[string]bool)
 	l.definedVars = make(map[string]bool)
 	l.usedVars = make(map[string]bool)
+	l.dependsEdges = make(map[string][]string)
+	l.dependsPaths = make(map[string]string)
 	l.collectAllDefinedVars()
 
 	// Layer 1: Schema
@@ -167,7 +172,7 @@ func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDo
 	for i, b := range objCtx.Blocks {
 		l.checkBlockDoc(fmt.Sprintf("%s.blocks[%d]", path, i), b, ctx)
 	}
-	for name := range objCtx.Sets {
+	for _, name := range objCtx.Sets {
 		l.checkReservedVarName(path+".sets", name)
 	}
 }
@@ -215,11 +220,10 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 			for _, f := range known {
 				knownSet[f] = true
 			}
-			// Promoted fields always valid on every block; sets/when handled below.
+			// Promoted fields always valid on every block; sets handled below.
 			knownSet["type"] = true
 			knownSet["id"] = true
 			knownSet["points"] = true
-			knownSet["when"] = true
 			knownSet["sets"] = true
 			for k := range b {
 				if !knownSet[k] {
@@ -278,7 +282,7 @@ func (l *linter) checkSemantic() {
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
 	l.trackBlockIDs("finish", l.doc.Finish)
-	l.checkWhenClausesInDoc()
+	l.checkDependsInDoc()
 }
 
 func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc) {
@@ -384,7 +388,6 @@ func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
 				l.warnf(childPath+".group", "EMPTY_GROUP",
 					"group %q has no children", child.Group.Name)
 			}
-			l.checkGroupMinOneAutoAdvance(childPath+".group", *child.Group)
 			l.checkStructuralChildren(childPath+".group", child.Group.Children)
 		}
 	}
@@ -441,7 +444,7 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 	})
 }
 
-// --- When / variable resolution checks ---
+// --- Depends / variable resolution checks ---
 
 // collectAllDefinedVars records every var any block can set (via "sets").
 // Must run before semantic checks.
@@ -491,218 +494,134 @@ func (l *linter) blockDocsSetsVars(blocks []BlockDoc) []string {
 // objectiveContextSelfVars returns every var name an objective context defines:
 // its blocks' sets and the context's own Sets field.
 func (l *linter) objectiveContextSelfVars(objCtx ObjectiveContextDoc) []string {
-	vars := l.blockDocsSetsVars(objCtx.Blocks)
-	for name := range objCtx.Sets {
-		vars = append(vars, name)
-	}
-	return vars
+	return append(l.blockDocsSetsVars(objCtx.Blocks), objCtx.Sets...)
 }
 
-func (l *linter) checkWhenClausesInDoc() {
-	l.checkWhenInFixedContextBlocks("start", l.doc.Start)
-	l.checkWhenInFixedContextBlocks("finish", l.doc.Finish)
-	l.checkWhenInChildren("structure", l.doc.Structure.Children)
+func (l *linter) checkDependsInDoc() {
+	l.checkDependsInChildren("structure", l.doc.Structure.Children)
+	l.checkDependsCycles()
 	l.checkUnusedVars()
-}
-
-// checkWhenInFixedContextBlocks warns on when clauses in start/finish: those
-// pages have no variable resolver and render all blocks unconditionally, so
-// the clauses are silently ignored.
-func (l *linter) checkWhenInFixedContextBlocks(path string, blks []BlockDoc) {
-	for i, b := range blks {
-		blockPath := fmt.Sprintf("%s[%d]", path, i)
-		wc, err := blockDocWhen(b)
-		if err != nil {
-			l.warnf(blockPath+".when", "WHEN_INVALID", "when clause is structurally invalid: %s", err)
-			continue
-		}
-		if wc != nil {
-			// Dead code: when clauses on start/finish are never evaluated.
-			// Skip further checks to avoid spurious UNDEFINED_VAR warnings.
-			l.warnf(blockPath+".when", "WHEN_ON_START_BLOCK",
-				"when clauses on %s blocks are not evaluated; all blocks on this page are always shown", path)
-			continue
-		}
-	}
 }
 
 func (l *linter) checkUnusedVars() {
 	for varName := range l.definedVars {
 		if !l.usedVars[varName] {
 			l.warnf("", "UNUSED_VAR",
-				"variable %q is set by a block but never referenced in any when clause", varName)
+				"variable %q is set by a block but never referenced in any depends list", varName)
 		}
 	}
 }
 
-func (l *linter) checkWhenInChildren(path string, children []ChildDoc) {
+func (l *linter) checkDependsInChildren(path string, children []ChildDoc) {
 	for i, child := range children {
 		childPath := fmt.Sprintf("%s.children[%d]", path, i)
 		switch {
 		case child.Objective != nil:
 			obj := child.Objective
 			objPath := childPath + ".objective"
-			l.checkWhenClause(objPath+".when", obj.When)
-			l.checkWhenInBlocks(objPath+".proof.blocks", obj.Proof.Blocks)
-			l.checkWhenInBlocks(objPath+".reveal.blocks", obj.Reveal.Blocks)
+			l.checkDepends(objPath+".depends", obj.Depends)
+			l.recordDependsEdges(objPath, obj)
 		case child.Group != nil:
-			l.checkWhenClause(childPath+".group.when", child.Group.When)
-			l.checkWhenInChildren(childPath+".group", child.Group.Children)
+			l.checkDependsInChildren(childPath+".group", child.Group.Children)
 		}
 	}
 }
 
-func (l *linter) checkWhenInBlocks(path string, blocks []BlockDoc) {
-	for i, b := range blocks {
-		blockPath := fmt.Sprintf("%s[%d]", path, i)
-		wc, err := blockDocWhen(b)
-		if err != nil {
-			l.warnf(blockPath+".when", "WHEN_INVALID", "when clause is structurally invalid: %s", err)
+func (l *linter) checkDepends(path string, deps DependsField) {
+	for i, entry := range deps {
+		name, _ := ParseDependsName(entry)
+		if name == "" {
+			l.errorf(fmt.Sprintf("%s[%d]", path, i), "DEPENDS_EMPTY_NAME",
+				"depends entry %q names no variable", entry)
 			continue
 		}
-		l.checkWhenClause(blockPath+".when", wc)
+		l.usedVars[name] = true
+		l.checkVarReference(fmt.Sprintf("%s[%d]", path, i), name)
 	}
 }
 
-func (l *linter) checkWhenClause(path string, wc *WhenClause) {
-	if wc == nil {
+// recordDependsEdges stores the objective.<slug> references an objective makes,
+// for the cycle check once the whole document has been walked. Negation is
+// irrelevant here: "not other" still cannot be evaluated until other is, so it
+// is the same edge for reachability purposes.
+func (l *linter) recordDependsEdges(path string, obj *ObjectiveDoc) {
+	if obj.Slug == "" {
 		return
 	}
-	if len(wc.AllOf) == 0 && len(wc.AnyOf) == 0 {
-		l.warnf(path, "WHEN_VACUOUS",
-			"when clause has no conditions; it is always true and has no effect; omit it or add conditions")
-		return
-	}
-	for i, cond := range wc.AllOf {
-		if cond.Var == "" {
-			continue
+	l.dependsPaths[obj.Slug] = path
+	for _, entry := range obj.Depends {
+		name, _ := ParseDependsName(entry)
+		if slug, ok := strings.CutPrefix(name, objectiveVarPrefix); ok && slug != "" {
+			l.dependsEdges[obj.Slug] = append(l.dependsEdges[obj.Slug], slug)
 		}
-		l.usedVars[cond.Var] = true
-		l.checkVarReference(fmt.Sprintf("%s.all_of[%d].var", path, i), cond.Var)
-	}
-	for i, cond := range wc.AnyOf {
-		if cond.Var == "" {
-			continue
-		}
-		l.usedVars[cond.Var] = true
-		l.checkVarReference(fmt.Sprintf("%s.any_of[%d].var", path, i), cond.Var)
 	}
 }
 
-// checkVarReference validates a single when-clause variable reference. An
+// checkDependsCycles reports objectives that can never be reached because their
+// depends chain leads back to themselves. The self-reference case (an objective
+// naming its own slug) is just the one-node cycle.
+//
+// Only objective.<slug> edges are in this graph. Ordered-sibling edges are not:
+// sibling order is a property of the tree, which this grammar does not
+// express, so a cycle that only closes through sibling ordering is not caught
+// here. Depth-first search over a human-authored document is fast enough that
+// nothing here needs to be cleverer than it looks.
+func (l *linter) checkDependsCycles() {
+	const (
+		unvisited = 0
+		onStack   = 1
+		done      = 2
+	)
+	state := make(map[string]int, len(l.dependsEdges))
+
+	// Sorted so a document with several cycles reports them in a stable order
+	// rather than whatever the map iteration happens to produce.
+	roots := make([]string, 0, len(l.dependsEdges))
+	for slug := range l.dependsEdges {
+		roots = append(roots, slug)
+	}
+	sort.Strings(roots)
+
+	var walk func(slug string, trail []string)
+	walk = func(slug string, trail []string) {
+		switch state[slug] {
+		case onStack:
+			l.errorf(l.dependsPaths[slug]+".depends", "DEPENDS_CYCLE",
+				"objective %q can never be reached: its depends chain leads back to itself (%s)",
+				slug, strings.Join(append(trail, slug), " -> "))
+			return
+		case done:
+			return
+		}
+		state[slug] = onStack
+		targets := append([]string(nil), l.dependsEdges[slug]...)
+		sort.Strings(targets)
+		for _, target := range targets {
+			walk(target, append(trail, slug))
+		}
+		state[slug] = done
+	}
+
+	for _, slug := range roots {
+		walk(slug, nil)
+	}
+}
+
+// checkVarReference validates a single depends variable reference. An
 // objective.<slug> reference is checked against known objective slugs
 // specifically: isBuiltInVar accepts any non-empty suffix, so without this a
 // typo'd slug would silently never match at runtime instead of being caught here.
 func (l *linter) checkVarReference(path, varName string) {
-	if slug, ok := strings.CutPrefix(varName, "objective."); ok && slug != "" {
+	if slug, ok := strings.CutPrefix(varName, objectiveVarPrefix); ok && slug != "" {
 		if !l.objectiveSlugs[slug] {
 			l.warnf(path, "UNDEFINED_OBJECTIVE_VAR",
-				"condition references objective %q, which does not exist in this game", slug)
+				"depends references objective %q, which does not exist in this game", slug)
 		}
 		return
 	}
 	if !l.definedVars[varName] && !isBuiltInVar(varName) {
 		l.warnf(path, "UNDEFINED_VAR",
-			"condition references variable %q which is never set by any block in this game", varName)
-	}
-}
-
-// checkGroupMinOneAutoAdvance warns when a when clause inside a group references
-// a variable that is only set within that same group, and the group has
-// completion=minimum, minimum_required=1, and auto_advance=true (or nil/default).
-// Because the team advances as soon as one objective is completed, variables set
-// by other objectives in the group may never be written.
-func (l *linter) checkGroupMinOneAutoAdvance(path string, g GroupDoc) {
-	if g.Completion != CompletionMinimum || g.MinimumRequired != 1 {
-		return
-	}
-	// nil defaults to true (matches import logic: g.AutoAdvance == nil || *g.AutoAdvance).
-	if g.AutoAdvance != nil && !*g.AutoAdvance {
-		return
-	}
-
-	groupVars := make(map[string]bool)
-	l.collectVarsFromChildrenIntoSet(g.Children, groupVars)
-	if len(groupVars) == 0 {
-		return
-	}
-
-	l.checkGroupScopedWhenInChildren(path, g.Children, groupVars)
-}
-
-func (l *linter) checkGroupScopedWhenInChildren(path string, children []ChildDoc, groupVars map[string]bool) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		switch {
-		case child.Objective != nil:
-			obj := child.Objective
-			objPath := childPath + ".objective"
-			// Objective-level when: check against full groupVars, same reasoning as above.
-			l.checkGroupScopedWhen(objPath+".when", obj.When, groupVars)
-
-			// A proof block is still rendering while its own context hasn't finished,
-			// so only other proof blocks' vars are legitimately already-set (the
-			// self-reveal pattern, within proof). Proof's own context Sets fires once
-			// every proof block completes, so referencing it from within a proof
-			// block's when is genuinely unreachable: not excluded here.
-			proofBlockVars := l.blockDocsSetsVars(obj.Proof.Blocks)
-			proofCross := excludingVars(groupVars, proofBlockVars)
-			for j, b := range obj.Proof.Blocks {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.proof.blocks[%d].when", objPath, j), wc, proofCross)
-			}
-
-			// A reveal block only ever renders once proof has fully cleared (the
-			// proof-to-reveal transition is one-way), so everything proof sets (its
-			// blocks' vars and its context Sets) is legitimately already set by the
-			// time reveal renders. Reveal's own context Sets is dead for the same
-			// reason as proof's: it fires only once every reveal block completes.
-			revealBlockVars := l.blockDocsSetsVars(obj.Reveal.Blocks)
-			revealCross := excludingVars(groupVars, append(l.objectiveContextSelfVars(obj.Proof), revealBlockVars...))
-			for j, b := range obj.Reveal.Blocks {
-				wc, _ := blockDocWhen(b) // errors already reported in checkWhenInBlocks.
-				l.checkGroupScopedWhen(fmt.Sprintf("%s.reveal.blocks[%d].when", objPath, j), wc, revealCross)
-			}
-		case child.Group != nil:
-			l.checkGroupScopedWhenInChildren(childPath+".group", child.Group.Children, groupVars)
-		}
-	}
-}
-
-// excludingVars returns a copy of groupVars with the named vars removed, or
-// groupVars itself (no copy) when selfVars is empty. Callers must not mutate
-// the returned map when selfVars might be empty, since it may alias groupVars.
-func excludingVars(groupVars map[string]bool, selfVars []string) map[string]bool {
-	if len(selfVars) == 0 {
-		return groupVars
-	}
-	out := make(map[string]bool, len(groupVars))
-	for v := range groupVars {
-		out[v] = true
-	}
-	for _, v := range selfVars {
-		delete(out, v)
-	}
-	return out
-}
-
-func (l *linter) checkGroupScopedWhen(path string, wc *WhenClause, groupVars map[string]bool) {
-	if wc == nil {
-		return
-	}
-	for i, cond := range wc.AllOf {
-		if groupVars[cond.Var] {
-			l.warnf(fmt.Sprintf("%s.all_of[%d].var", path, i), "WHEN_UNREACHABLE_VAR",
-				"condition references %q which is set within a min=1 auto-advance group; "+
-					"the team may advance before this variable is ever written", cond.Var)
-		}
-	}
-	for i, cond := range wc.AnyOf {
-		if groupVars[cond.Var] {
-			l.warnf(fmt.Sprintf("%s.any_of[%d].var", path, i), "WHEN_UNREACHABLE_VAR",
-				"condition references %q which is set within a min=1 auto-advance group; "+
-					"the team may advance before this variable is ever written", cond.Var)
-		}
+			"depends references variable %q which is never set by any block in this game", varName)
 	}
 }
 
@@ -718,20 +637,20 @@ func (l *linter) blockDocSetsVars(b BlockDoc) []string {
 	return vars
 }
 
-// checkSetsShape validates the "sets" field on a block: it must be an object
-// {name: value} and must not write into reserved runtime namespaces.
+// checkSetsShape validates the "sets" field on a block: it must be a list of
+// variable names and must not write into reserved runtime namespaces.
 func (l *linter) checkSetsShape(path string, b BlockDoc) {
 	raw, ok := b["sets"]
 	if !ok {
 		return
 	}
-	m, ok := raw.(map[string]any)
+	names, ok := setsNames(raw)
 	if !ok {
-		l.errorf(path+".sets", "SETS_NOT_OBJECT",
-			`"sets" must be an object {"name": "value"}`)
+		l.errorf(path+".sets", "SETS_NOT_LIST",
+			`"sets" must be a list of variable names`)
 		return
 	}
-	for name := range m {
+	for _, name := range names {
 		l.checkReservedVarName(path+".sets", name)
 	}
 }
@@ -760,12 +679,12 @@ func collectSetsFromBlockDoc(b BlockDoc) []string {
 	if !ok {
 		return nil
 	}
-	m, ok := raw.(map[string]any)
+	names, ok := setsNames(raw)
 	if !ok {
 		return nil
 	}
 	var vars []string
-	for name := range m {
+	for _, name := range names {
 		if name != "" {
 			vars = append(vars, name)
 		}
@@ -773,33 +692,33 @@ func collectSetsFromBlockDoc(b BlockDoc) []string {
 	return vars
 }
 
-// blockDocWhen extracts the WhenClause from a BlockDoc by JSON roundtrip.
-// Returns (nil, nil) when the "when" key is absent.
-// Returns (nil, err) when the key is present but structurally invalid.
-func blockDocWhen(b BlockDoc) (*WhenClause, error) {
-	raw, ok := b["when"]
-	if !ok {
-		return nil, nil //nolint:nilnil // nil clause = absent, not an error
+// setsNames reads a block doc's "sets" value, which arrives either as []any
+// from a JSON decode or as []string when a doc is built in Go. Reports false
+// for any other shape, including a list holding a non-string element.
+func setsNames(raw any) ([]string, bool) {
+	switch v := raw.(type) {
+	case []string:
+		return v, true
+	case []any:
+		names := make([]string, 0, len(v))
+		for _, elem := range v {
+			name, ok := elem.(string)
+			if !ok {
+				return nil, false
+			}
+			names = append(names, name)
+		}
+		return names, true
 	}
-	data, err := json.Marshal(raw)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling when clause: %w", err)
-	}
-	var wc WhenClause
-	if err := json.Unmarshal(data, &wc); err != nil {
-		return nil, fmt.Errorf("invalid when clause structure: %w", err)
-	}
-	return &wc, nil
+	return nil, false
 }
 
 // isBuiltInVar reports whether name is a built-in variable provided by the
 // runtime (not set by any block in the game doc). Referencing a built-in in a
-// when clause is valid even though it never appears in definedVars.
+// depends list is valid even though it never appears in definedVars.
 //
-// Built-ins (from specgen.BuiltInVarSpecs):
-//
-//	player.points (legacy spelling: points), run.started_at, game.team_count
-//	objective.<slug>
+// objective.<slug> is the only built-in namespace: conditions are truthy-only,
+// so the numeric built-ins that only comparisons could read are gone.
 //
 // checkVarReference validates objective.<slug> against real objective slugs
 // before ever consulting this function, so its objective.* branch is presently
@@ -807,22 +726,18 @@ func blockDocWhen(b BlockDoc) (*WhenClause, error) {
 // built-in namespace shape (see TestIsBuiltInVar_CanonicalSet) rather than
 // narrowed to what one caller currently needs.
 func isBuiltInVar(name string) bool {
-	switch name {
-	case "player.points", "points", "run.started_at", "game.team_count":
-		return true
-	}
-	if after, ok := strings.CutPrefix(name, "objective."); ok {
-		return len(after) > 0
-	}
-	return false
+	after, ok := strings.CutPrefix(name, objectiveVarPrefix)
+	return ok && len(after) > 0
 }
 
-// reservedVarPrefix: runtime-owned namespaces. Blocks must not write to
-// these: the runtime sets them automatically.
-const reservedVarPrefix = "objective."
+// objectiveVarPrefix is the runtime-owned namespace. Blocks must not write to
+// it (the runtime sets it automatically), and depends entries read it to gate
+// on another objective's completion.
+const objectiveVarPrefix = "objective."
 
-// IsReservedVarName: blocks that set or trigger a reserved var are rejected.
+// IsReservedVarName guards the runtime-owned namespace: a block that sets or
+// triggers such a var is rejected.
 func IsReservedVarName(name string) bool {
-	after, ok := strings.CutPrefix(name, reservedVarPrefix)
+	after, ok := strings.CutPrefix(name, objectiveVarPrefix)
 	return ok && len(after) > 0
 }

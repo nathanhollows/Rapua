@@ -534,11 +534,9 @@ func TestLint_RootHasNoGroups(t *testing.T) {
 
 // --- When / variable resolution ---
 
-func TestLint_UndefinedVar_GroupWhen(t *testing.T) {
+func TestLint_UndefinedVar_ObjectiveDepends(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Group.When = &game.WhenClause{
-		AnyOf: []game.Condition{{Var: "ghost_var"}},
-	}
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"ghost_var"}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
@@ -547,80 +545,97 @@ func TestLint_UndefinedVar_GroupWhen(t *testing.T) {
 	assert.Contains(t, codes, "UNDEFINED_VAR")
 }
 
-func TestLint_UndefinedVar_BlockWhen(t *testing.T) {
+// A negated name is still a reference, so a typo behind "not " is caught too.
+func TestLint_UndefinedVar_NegatedDepends(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{
-			{
-				"type": "quiz",
-				"when": map[string]any{
-					"all_of": []any{
-						map[string]any{"var": "ghost_var"},
-					},
-				},
-			},
-		},
-	}
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"not ghost_var"}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
 		codes[i] = w.Code
 	}
 	assert.Contains(t, codes, "UNDEFINED_VAR")
+}
+
+func TestLint_DependsEmptyName_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"   "}
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("DEPENDS_EMPTY_NAME"))
+}
+
+func TestLint_DependsSelfReference_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"objective.lobby"}
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("DEPENDS_CYCLE"))
+}
+
+func TestLint_DependsMutualCycle_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"objective.annex"}
+	doc.Structure.Children[0].Group.Children = append(
+		doc.Structure.Children[0].Group.Children,
+		game.ChildDoc{Objective: &game.ObjectiveDoc{
+			Slug:    "annex",
+			Title:   "The Annex",
+			Depends: game.DependsField{"objective.lobby"},
+		}},
+	)
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("DEPENDS_CYCLE"))
+}
+
+// Negation does not break a cycle: "not other" still cannot be evaluated until
+// other has been, so the chain is just as unreachable.
+func TestLint_DependsNegatedCycle_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"not objective.lobby"}
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("DEPENDS_CYCLE"))
+}
+
+// A diamond is not a cycle: two objectives may both gate on a third.
+func TestLint_DependsDiamond_NoError(t *testing.T) {
+	doc := validDoc()
+	for _, slug := range []string{"left", "right"} {
+		doc.Structure.Children[0].Group.Children = append(
+			doc.Structure.Children[0].Group.Children,
+			game.ChildDoc{Objective: &game.ObjectiveDoc{
+				Slug:    slug,
+				Title:   slug,
+				Depends: game.DependsField{"objective.lobby"},
+			}},
+		)
+	}
+	result := game.Lint(doc, newTestRegistry())
+	assert.False(t, result.HasError("DEPENDS_CYCLE"))
 }
 
 func TestLint_DefinedVar_NoWarning(t *testing.T) {
 	doc := validDoc()
-	// Block sets "score", objective when references "score": should be clean.
+	// Block sets "score", a sibling objective's depends references it: clean.
 	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
 		Blocks: []game.BlockDoc{
 			{
 				"type": "quiz",
-				"sets": map[string]any{"score": "true"},
+				"sets": []any{"score"},
 			},
 		},
 	}
-	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{
-		AllOf: []game.Condition{{Var: "score"}},
-	}
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"score"}
 	result := game.Lint(doc, newTestRegistry())
 	for _, w := range result.Warnings {
 		assert.NotEqual(t, "UNDEFINED_VAR", w.Code)
 	}
 }
 
-func TestLint_WhenUnreachableVar_NotMin1_NoWarning(t *testing.T) {
-	doc := validDoc()
-	// Group with completion=minimum, min=2: should NOT warn.
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 2
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}}},
-	}
-	secondObj := &game.ObjectiveDoc{
-		Slug:  "loc2",
-		Title: "Location 2",
-		When: &game.WhenClause{
-			AllOf: []game.Condition{{Var: "visited_loc1"}},
-		},
-	}
-	doc.Structure.Children[0].Group.Children = append(
-		doc.Structure.Children[0].Group.Children,
-		game.ChildDoc{Objective: secondObj},
-	)
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "WHEN_UNREACHABLE_VAR", w.Code)
-	}
-}
-
 func TestLint_UnusedVar(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"score": "true"}}},
+		Blocks: []game.BlockDoc{{"type": "quiz", "sets": []any{"score"}}},
 	}
-	// "score" is set but no when clause references it.
+	// "score" is set but no depends list references it.
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
@@ -632,15 +647,13 @@ func TestLint_UnusedVar(t *testing.T) {
 func TestLint_UnusedVar_UsedElsewhere_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"score": "true"}}},
+		Blocks: []game.BlockDoc{{"type": "quiz", "sets": []any{"score"}}},
 	}
-	// A second objective's when references "score": should suppress UNUSED_VAR.
+	// A second objective's depends references "score": should suppress UNUSED_VAR.
 	secondObj := &game.ObjectiveDoc{
-		Slug:  "loc2",
-		Title: "Location 2",
-		When: &game.WhenClause{
-			AllOf: []game.Condition{{Var: "score"}},
-		},
+		Slug:    "loc2",
+		Title:   "Location 2",
+		Depends: game.DependsField{"score"},
 	}
 	doc.Structure.Children[0].Group.Children = append(
 		doc.Structure.Children[0].Group.Children,
@@ -652,55 +665,12 @@ func TestLint_UnusedVar_UsedElsewhere_NoWarning(t *testing.T) {
 	}
 }
 
-// --- Non-interactive block when/sets tests ---
-
-func TestLint_WhenOnNonInteractiveBlock_UndefinedVar(t *testing.T) {
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{
-			{
-				"type": "text",
-				"when": map[string]any{
-					"all_of": []any{
-						map[string]any{"var": "ghost_var"},
-					},
-				},
-			},
-		},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "UNDEFINED_VAR")
-}
-
-func TestLint_WhenOnNonInteractiveBlock_ValidVar_NoWarning(t *testing.T) {
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{
-			{"type": "quiz", "sets": map[string]any{"score": "true"}},
-			{
-				"type": "text",
-				"when": map[string]any{
-					"all_of": []any{
-						map[string]any{"var": "score"},
-					},
-				},
-			},
-		},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "UNDEFINED_VAR", w.Code)
-	}
-}
+// --- Non-interactive block sets tests ---
 
 func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Objective.Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "text", "sets": map[string]any{"foo": "true"}}},
+		Blocks: []game.BlockDoc{{"type": "text", "sets": []any{"foo"}}},
 	}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
@@ -712,10 +682,10 @@ func TestLint_SetsOnNonInteractiveBlock_Warning(t *testing.T) {
 
 // A wrong-shaped "sets" must be caught by lint, with a path, rather than
 // surfacing later as an unmarshalling error with no location.
-func TestLint_SetsAsList_Error(t *testing.T) {
+func TestLint_SetsAsObject_Error(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": []any{"found_clue"}}},
+		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"found_clue": "true"}}},
 	}
 	result := game.Lint(doc, newTestRegistry())
 
@@ -723,12 +693,12 @@ func TestLint_SetsAsList_Error(t *testing.T) {
 	for i, e := range result.Errors {
 		codes[i] = e.Code
 	}
-	require.Contains(t, codes, "SETS_NOT_OBJECT")
+	require.Contains(t, codes, "SETS_NOT_LIST")
 
 	for _, e := range result.Errors {
-		if e.Code == "SETS_NOT_OBJECT" {
+		if e.Code == "SETS_NOT_LIST" {
 			assert.Contains(t, e.Path, ".sets")
-			assert.Contains(t, e.Message, "must be an object")
+			assert.Contains(t, e.Message, "must be a list")
 		}
 	}
 }
@@ -744,13 +714,28 @@ func TestLint_SetsAsScalar_Error(t *testing.T) {
 	for i, e := range result.Errors {
 		codes[i] = e.Code
 	}
-	assert.Contains(t, codes, "SETS_NOT_OBJECT")
+	assert.Contains(t, codes, "SETS_NOT_LIST")
+}
+
+// A list holding anything but names is as unusable as an object.
+func TestLint_SetsAsNonStringList_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
+		Blocks: []game.BlockDoc{{"type": "quiz", "sets": []any{1, 2}}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+
+	codes := make([]string, len(result.Errors))
+	for i, e := range result.Errors {
+		codes[i] = e.Code
+	}
+	assert.Contains(t, codes, "SETS_NOT_LIST")
 }
 
 func TestLint_SetsReservedNamespace_Error(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"objective.find-maisie": "done"}}},
+		Blocks: []game.BlockDoc{{"type": "quiz", "sets": []any{"objective.find-maisie"}}},
 	}
 	result := game.Lint(doc, newTestRegistry())
 
@@ -806,12 +791,12 @@ func TestLint_SetsShapeChecked_WhenTypeIsUnusable(t *testing.T) {
 	}{
 		{
 			name:  "unknown type",
-			block: game.BlockDoc{"type": "not_a_block", "sets": []any{"found_clue"}},
+			block: game.BlockDoc{"type": "not_a_block", "sets": map[string]any{"found_clue": "true"}},
 			want:  "UNKNOWN_BLOCK_TYPE",
 		},
 		{
 			name:  "missing type",
-			block: game.BlockDoc{"sets": []any{"found_clue"}},
+			block: game.BlockDoc{"sets": map[string]any{"found_clue": "true"}},
 			want:  "MISSING_BLOCK_TYPE",
 		},
 	} {
@@ -827,7 +812,7 @@ func TestLint_SetsShapeChecked_WhenTypeIsUnusable(t *testing.T) {
 				codes[i] = e.Code
 			}
 			assert.Contains(t, codes, tt.want)
-			assert.Contains(t, codes, "SETS_NOT_OBJECT")
+			assert.Contains(t, codes, "SETS_NOT_LIST")
 		})
 	}
 }
@@ -925,34 +910,6 @@ func TestLintJSON_ValidDoc_NoUnknownFieldWarnings(t *testing.T) {
 	for _, w := range result.Warnings {
 		assert.NotEqual(t, "UNKNOWN_FIELD", w.Code,
 			"unexpected UNKNOWN_FIELD warning: %s at %s", w.Message, w.Path)
-	}
-}
-
-func TestLint_WhenUnreachableVar_AutoAdvanceFalse_NoWarning(t *testing.T) {
-	autoAdvanceFalse := false
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 1
-	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceFalse
-
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"visited_loc1": "true"}}},
-	}
-	secondObj := &game.ObjectiveDoc{
-		Slug:  "loc2",
-		Title: "Location 2",
-		When: &game.WhenClause{
-			AllOf: []game.Condition{{Var: "visited_loc1"}},
-		},
-	}
-	doc.Structure.Children[0].Group.Children = append(
-		doc.Structure.Children[0].Group.Children,
-		game.ChildDoc{Objective: secondObj},
-	)
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "WHEN_UNREACHABLE_VAR", w.Code)
 	}
 }
 
@@ -1064,52 +1021,6 @@ func TestLint_AutoAdvanceNil_NoWarning(t *testing.T) {
 	}
 }
 
-// --- WHEN_VACUOUS ---
-
-func TestLint_WhenVacuous_EmptyAllOfAnyOf(t *testing.T) {
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{}
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "WHEN_VACUOUS")
-}
-
-func TestLint_WhenWithConditions_NotVacuous(t *testing.T) {
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"score": "true"}}},
-	}
-	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{
-		AllOf: []game.Condition{{Var: "score"}},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "WHEN_VACUOUS", w.Code)
-	}
-}
-
-// --- WHEN_ON_START_BLOCK ---
-
-func TestLint_WhenOnStartBlock_Warning(t *testing.T) {
-	doc := validDoc()
-	doc.Start = []game.BlockDoc{
-		{"type": "start_button"},
-		{
-			"type": "text",
-			"when": map[string]any{"all_of": []any{map[string]any{"var": "score"}}},
-		},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "WHEN_ON_START_BLOCK")
-}
-
 func TestLint_ObjectiveDoc_MissingSlugAndTitle_Error(t *testing.T) {
 	doc := validDoc()
 	obj := doc.Structure.Children[0].Group.Children[0].Objective
@@ -1214,11 +1125,9 @@ func TestLint_ObjectiveBlockPoints_Disabled_Warning(t *testing.T) {
 	assert.Contains(t, codes, "POINTS_DISABLED")
 }
 
-func TestLint_ObjectiveWhenClause_UndefinedVar_Warning(t *testing.T) {
+func TestLint_ObjectiveDepends_UndefinedVar_Warning(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{
-		AllOf: []game.Condition{{Var: "nonexistent_var"}},
-	}
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"nonexistent_var"}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
@@ -1233,122 +1142,12 @@ func TestLint_ObjectiveWhenClause_UndefinedVar_Warning(t *testing.T) {
 func TestLint_ObjectiveContextSets_DefinedAndUsed(t *testing.T) {
 	doc := validDoc()
 	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof.Sets = game.SetsField{"door_unlocked": "true"}
-	obj.When = &game.WhenClause{AllOf: []game.Condition{{Var: "door_unlocked"}}}
+	obj.Proof.Sets = game.SetsField{"door_unlocked"}
+	obj.Depends = game.DependsField{"door_unlocked"}
 	result := game.Lint(doc, newTestRegistry())
 	for _, w := range result.Warnings {
 		assert.NotEqual(t, "UNDEFINED_VAR", w.Code, w.Message)
 		assert.NotEqual(t, "UNUSED_VAR", w.Code, w.Message)
-	}
-}
-
-func TestLint_ObjectiveWhenUnreachableVar_Min1AutoAdvance_Warning(t *testing.T) {
-	autoAdvanceTrue := true
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 1
-	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
-
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"found_key": "true"}}},
-	}
-
-	secondObj := &game.ObjectiveDoc{
-		Slug:  "unlock-door",
-		Title: "Unlock the door",
-		When:  &game.WhenClause{AllOf: []game.Condition{{Var: "found_key"}}},
-	}
-	doc.Structure.Children[0].Group.Children = append(
-		doc.Structure.Children[0].Group.Children,
-		game.ChildDoc{Objective: secondObj},
-	)
-
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "WHEN_UNREACHABLE_VAR")
-}
-
-// TestLint_ObjectiveProofBlockWhen_ReferencesProofSets_UnreachableWarning proves the
-// tightened split: a proof block's own context Sets cannot have fired while that
-// block is still rendering (Sets fires once every proof block completes), so
-// referencing it is genuinely unreachable and must not be excluded from crossVars.
-func TestLint_ObjectiveProofBlockWhen_ReferencesProofSets_UnreachableWarning(t *testing.T) {
-	autoAdvanceTrue := true
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 1
-	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
-
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof = game.ObjectiveContextDoc{
-		Sets: game.SetsField{"proof_ready": "true"},
-		Blocks: []game.BlockDoc{
-			{"type": "quiz", "when": map[string]any{"all_of": []any{map[string]any{"var": "proof_ready"}}}},
-		},
-	}
-
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "WHEN_UNREACHABLE_VAR")
-}
-
-// TestLint_ObjectiveRevealBlockWhen_ReferencesRevealSets_UnreachableWarning is the
-// reveal-side mirror: reveal's own context Sets cannot have fired while a reveal
-// block is still rendering, for the same reason.
-func TestLint_ObjectiveRevealBlockWhen_ReferencesRevealSets_UnreachableWarning(t *testing.T) {
-	autoAdvanceTrue := true
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 1
-	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
-
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Reveal = game.ObjectiveContextDoc{
-		Sets: game.SetsField{"reveal_ready": "true"},
-		Blocks: []game.BlockDoc{
-			{"type": "text", "when": map[string]any{"all_of": []any{map[string]any{"var": "reveal_ready"}}}},
-		},
-	}
-
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "WHEN_UNREACHABLE_VAR")
-}
-
-// TestLint_ObjectiveRevealBlockWhen_ReferencesProofVars_NoWarning proves the
-// legitimate case still passes: proof has fully cleared (one-way transition) by
-// the time any reveal block renders, so a reveal block referencing a var proof set
-// is not a false unreachable warning.
-func TestLint_ObjectiveRevealBlockWhen_ReferencesProofVars_NoWarning(t *testing.T) {
-	autoAdvanceTrue := true
-	doc := validDoc()
-	doc.Structure.Children[0].Group.Completion = game.CompletionMinimum
-	doc.Structure.Children[0].Group.MinimumRequired = 1
-	doc.Structure.Children[0].Group.AutoAdvance = &autoAdvanceTrue
-
-	obj := doc.Structure.Children[0].Group.Children[0].Objective
-	obj.Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "sets": map[string]any{"found_key": "true"}}},
-	}
-	obj.Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{
-			{"type": "text", "when": map[string]any{"all_of": []any{map[string]any{"var": "found_key"}}}},
-		},
-	}
-
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "WHEN_UNREACHABLE_VAR", w.Code, w.Message)
 	}
 }
 
@@ -1357,9 +1156,7 @@ func TestLint_ObjectiveRevealBlockWhen_ReferencesProofVars_NoWarning(t *testing.
 // as a built-in, so a mistyped slug silently never matched at runtime.
 func TestLint_ObjectiveVarReference_UnknownSlug_Warning(t *testing.T) {
 	doc := validDoc()
-	doc.Structure.Children[0].Group.Children[0].Objective.When = &game.WhenClause{
-		AllOf: []game.Condition{{Var: "objective.does-not-exist"}},
-	}
+	doc.Structure.Children[0].Group.Children[0].Objective.Depends = game.DependsField{"objective.does-not-exist"}
 	result := game.Lint(doc, newTestRegistry())
 	codes := make([]string, len(result.Warnings))
 	for i, w := range result.Warnings {
@@ -1372,21 +1169,13 @@ func TestLint_ObjectiveVarReference_KnownSlug_NoWarning(t *testing.T) {
 	doc := validDoc()
 	doc.Structure.Children = append(doc.Structure.Children, game.ChildDoc{
 		Objective: &game.ObjectiveDoc{
-			Slug:  "unlock-door",
-			Title: "Unlock the door",
-			When:  &game.WhenClause{AllOf: []game.Condition{{Var: "objective.lobby"}}},
+			Slug:    "unlock-door",
+			Title:   "Unlock the door",
+			Depends: game.DependsField{"objective.lobby"},
 		},
 	})
 	result := game.Lint(doc, newTestRegistry())
 	for _, w := range result.Warnings {
 		assert.NotEqual(t, "UNDEFINED_OBJECTIVE_VAR", w.Code, w.Message)
-	}
-}
-
-func TestLint_WhenOnStartBlock_NoWhenClause_NoWarning(t *testing.T) {
-	doc := validDoc()
-	result := game.Lint(doc, newTestRegistry())
-	for _, w := range result.Warnings {
-		assert.NotEqual(t, "WHEN_ON_START_BLOCK", w.Code)
 	}
 }

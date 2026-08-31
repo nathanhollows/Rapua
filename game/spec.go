@@ -16,7 +16,7 @@ type BlockRegistry interface {
 	IsValidType(blockType string) bool
 	CanUseInContext(blockType string, ctx BlockContext) bool
 	// KnownFields returns the top-level field names valid for a block type,
-	// excluding the promoted fields "type", "id", "points", and "when".
+	// excluding the promoted fields "type", "id", and "points".
 	// Returns nil if the block type is unknown or has no spec.
 	KnownFields(blockType string) []string
 	// IsInteractive returns true when the block type requires player input

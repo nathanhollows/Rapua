@@ -56,10 +56,8 @@ type Block interface {
 	// instead). specgen only documents the shared "points" field where this is true.
 	SupportsPoints() bool
 
-	// Conditional visibility
+	// GetSets returns the variables this block sets on completion.
 	GetSets() SetsField
-	GetWhen() *WhenClause
-	SetWhen(when *WhenClause)
 }
 
 // Blocks is a slice of Block.
@@ -74,7 +72,6 @@ type BaseBlock struct {
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
 	Sets    SetsField       `json:"sets,omitempty"`
-	When    *WhenClause     `json:"when,omitempty"`
 }
 
 // SupportsVariableSets returns false by default; interactive blocks override this.
@@ -86,12 +83,6 @@ func (b *BaseBlock) SupportsPoints() bool { return true }
 
 // GetSets returns the variables this block sets on completion.
 func (b *BaseBlock) GetSets() SetsField { return b.Sets }
-
-// GetWhen returns the visibility condition clause for this block.
-func (b *BaseBlock) GetWhen() *WhenClause { return b.When }
-
-// SetWhen sets the visibility condition clause for this block.
-func (b *BaseBlock) SetWhen(when *WhenClause) { b.When = when }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {

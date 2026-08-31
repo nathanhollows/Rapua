@@ -22,8 +22,8 @@ func TestObjectiveRepository_GetByID(t *testing.T) {
 		QuestID:    parents.QuestID,
 		Slug:       "find-the-key",
 		Title:      "Find the key",
-		ProofSets:  game.SetsField{"door_unlocked": "true"},
-		RevealSets: game.SetsField{"story_advanced": "true"},
+		ProofSets:  game.SetsField{"door_unlocked"},
+		RevealSets: game.SetsField{"story_advanced"},
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(context.Background())
 	require.NoError(t, err)
@@ -33,8 +33,8 @@ func TestObjectiveRepository_GetByID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, objective.Slug, got.Slug)
 	assert.Equal(t, objective.Title, got.Title)
-	assert.Equal(t, "true", got.ProofSets["door_unlocked"])
-	assert.Equal(t, "true", got.RevealSets["story_advanced"])
+	assert.Equal(t, game.SetsField{"door_unlocked"}, got.ProofSets)
+	assert.Equal(t, game.SetsField{"story_advanced"}, got.RevealSets)
 }
 
 func TestObjectiveRepository_GetByID_NotFound(t *testing.T) {

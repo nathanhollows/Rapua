@@ -43,10 +43,10 @@ var (
 	knownGroupDocFields = map[string]bool{
 		"id": true, "name": true, "color": true, "routing": true,
 		"completion": true, "minimum_required": true, "auto_advance": true,
-		"when": true, "children": true,
+		"children": true,
 	}
 	knownObjectiveDocFields = map[string]bool{
-		"id": true, "slug": true, "title": true, "when": true,
+		"id": true, "slug": true, "title": true, "depends": true,
 		"proof": true, "reveal": true,
 	}
 	knownObjectiveContextDocFields = map[string]bool{"blocks": true, "sets": true}

@@ -246,22 +246,6 @@ func TestSpecStaleness_IgnoresBaseBlockFields(t *testing.T) {
 	}
 }
 
-// TestGenerateBlockSpecs_WhenOnAll verifies every block spec references "when" in shared_fields.
-func TestGenerateBlockSpecs_WhenOnAll(t *testing.T) {
-	for _, spec := range specgen.GenerateBlockSpecs() {
-		found := false
-		for _, name := range spec.SharedFields {
-			if name == "when" {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("block %q: missing \"when\" in shared_fields", spec.Type)
-		}
-	}
-}
-
 // TestGenerateBlockSpecs_SetsMatchesTheBlock checks the published spec against the
 // block itself. A list kept here would be another copy to forget to update, which
 // is how choice and scan came to advertise no "sets" while the runtime honoured it.
@@ -285,14 +269,14 @@ func TestGenerateBlockSpecs_SetsMatchesTheBlock(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_BlockSharedFields verifies block_shared_fields contains "when", "sets", and "points".
+// TestGenerateFullSpec_BlockSharedFields verifies block_shared_fields contains "sets" and "points".
 func TestGenerateFullSpec_BlockSharedFields(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 	names := make(map[string]bool, len(spec.BlockSharedFields))
 	for _, f := range spec.BlockSharedFields {
 		names[f.Name] = true
 	}
-	for _, want := range []string{"when", "sets", "points"} {
+	for _, want := range []string{"sets", "points"} {
 		if !names[want] {
 			t.Errorf("block_shared_fields missing %q", want)
 		}
@@ -335,11 +319,12 @@ func TestBrokerBlock_DoesNotSupportPoints(t *testing.T) {
 	assert.False(t, b.SupportsPoints())
 }
 
-// schemas both contain a "when" field.
-func TestGenerateFullSpec_WhenOnObjectiveAndGroup(t *testing.T) {
+// TestGenerateFullSpec_DependsOnObjective verifies the objective schema carries
+// the depends field. Groups have no condition of their own: a group's gate is
+// the reachability of the objectives inside it.
+func TestGenerateFullSpec_DependsOnObjective(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 
-	// Find objective schema.
 	var objectiveFields []game.FieldSpec
 	var structureFields []game.FieldSpec
 	for _, f := range spec.Document.Fields {
@@ -351,20 +336,20 @@ func TestGenerateFullSpec_WhenOnObjectiveAndGroup(t *testing.T) {
 		}
 	}
 
-	hasWhen := func(fields []game.FieldSpec) bool {
+	hasField := func(fields []game.FieldSpec, name string) bool {
 		for _, f := range fields {
-			if f.Name == "when" {
+			if f.Name == name {
 				return true
 			}
 		}
 		return false
 	}
 
-	if !hasWhen(objectiveFields) {
-		t.Error("objective schema missing \"when\" field")
+	if !hasField(objectiveFields, "depends") {
+		t.Error("objective schema missing \"depends\" field")
 	}
-	if !hasWhen(structureFields) {
-		t.Error("structure (group) schema missing \"when\" field")
+	if hasField(objectiveFields, "when") || hasField(structureFields, "when") {
+		t.Error("schemas still publish a \"when\" field")
 	}
 }
 
@@ -387,31 +372,10 @@ func TestGenerateFullSpec_BuiltInVars(t *testing.T) {
 		}
 	}
 
-	expected := []string{"points", "game.team_count"}
+	expected := []string{"objective.<slug>"}
 	for _, name := range expected {
 		if !varNames[name] {
 			t.Errorf("built_in_vars missing %q", name)
-		}
-	}
-}
-
-// TestGenerateFullSpec_ConditionOpsEnum verifies condition_ops enum is non-empty and
-// contains all expected operators.
-func TestGenerateFullSpec_ConditionOpsEnum(t *testing.T) {
-	spec := specgen.GenerateFullSpec()
-	if len(spec.Enums.ConditionOps) == 0 {
-		t.Fatal("GenerateFullSpec().Enums.ConditionOps is empty")
-	}
-
-	ops := make(map[string]bool, len(spec.Enums.ConditionOps))
-	for _, op := range spec.Enums.ConditionOps {
-		ops[op.Value] = true
-	}
-
-	expected := []string{"eq", "neq", "gt", "lt", "gte", "lte", "in", "not_in"}
-	for _, op := range expected {
-		if !ops[op] {
-			t.Errorf("condition_ops missing operator %q", op)
 		}
 	}
 }

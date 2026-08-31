@@ -185,30 +185,22 @@ func (b *ChoiceBlock) ValidatePlayerInput(
 // Var-writing is handled exclusively by GetTriggeredVars (ChoiceVarSetter).
 // This method exists for: (1) admin variables endpoint listing, (2) UNUSED_VAR lint.
 func (b *ChoiceBlock) GetSets() game.SetsField {
-	vars := make(game.SetsField, len(b.Options))
+	vars := make(game.SetsField, 0, len(b.Options))
 	for _, opt := range b.Options {
 		if opt.Sets != "" {
-			vars[opt.Sets] = "true"
+			vars = append(vars, opt.Sets)
 		}
 	}
 	return vars
 }
 
-// GetTriggeredVars implements ChoiceVarSetter. Returns each chosen option's var
-// as "true", or nil if the block is not yet complete.
-func (b *ChoiceBlock) GetTriggeredVars(state PlayerState) map[string]string {
+// GetTriggeredVars implements ChoiceVarSetter. Returns the var names of the
+// options the player chose, or nil if the block is not yet complete.
+func (b *ChoiceBlock) GetTriggeredVars(state PlayerState) []string {
 	if !state.IsComplete() {
 		return nil
 	}
-	vars := b.GetChosenVars(state)
-	if len(vars) == 0 {
-		return nil
-	}
-	result := make(map[string]string, len(vars))
-	for _, v := range vars {
-		result[v] = "true"
-	}
-	return result
+	return b.GetChosenVars(state)
 }
 
 // GetChosenVars extracts all chosen option var names from state.

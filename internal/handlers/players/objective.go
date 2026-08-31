@@ -7,10 +7,9 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
-	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // ObjectiveView shows the page for a specific objective: proof content while
@@ -65,6 +64,10 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.redirectIfUnreachable(w, r, team, objective) {
+		return
+	}
+
 	pending, err := h.checkInService.IsObjectiveContextPending(r.Context(), team, objective.ID, blocks.ContextObjectiveProof)
 	if err != nil {
 		h.handleError(
@@ -93,13 +96,6 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 			h.logger.ErrorContext(r.Context(), "ObjectiveView: completing reveal context", "error", err.Error())
 		}
 		zone = blocks.ContextObjectiveReveal
-
-		// The two calls above may have just written new sets vars: reload so
-		// the when-clause filtering below sees them, not the pre-completion
-		// snapshot loaded earlier.
-		if err := h.runService.LoadRelations(r.Context(), team); err != nil {
-			h.logger.ErrorContext(r.Context(), "ObjectiveView: reloading team relations", "error", err.Error())
-		}
 	}
 
 	contentBlocks, blockStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
@@ -125,23 +121,11 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resolver := services.NewPlayerVarResolver(team, team.VarStates)
-	visibleBlocks := make(blocks.Blocks, 0, len(contentBlocks))
-	visibleStates := make(map[string]blocks.PlayerState, len(blockStates))
-	for _, b := range contentBlocks {
-		if game.EvaluateWhen(b.GetWhen(), resolver) {
-			visibleBlocks = append(visibleBlocks, b)
-			if s, ok := blockStates[b.GetID()]; ok {
-				visibleStates[b.GetID()] = s
-			}
-		}
-	}
-
 	data := templates.ObjectiveViewData{
 		Settings: team.Quest.Settings,
 		Zone:     zone,
-		Blocks:   visibleBlocks,
-		States:   visibleStates,
+		Blocks:   contentBlocks,
+		States:   blockStates,
 	}
 
 	c := templates.ObjectiveView(data)
@@ -149,6 +133,33 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering objective view", "error", err.Error())
 	}
+}
+
+// redirectIfUnreachable sends a player who reached a gated objective's URL
+// back to the objectives list, and reports whether it did. Rendering it would
+// spoil content the run has not unlocked; CheckInService gates the completion
+// side, which is the half that would otherwise corrupt run state.
+func (h *PlayerHandler) redirectIfUnreachable(
+	w http.ResponseWriter, r *http.Request, team *models.Run, objective *models.Objective,
+) bool {
+	reachable, err := h.checkInService.ObjectiveIsReachable(r.Context(), team, objective)
+	if err != nil {
+		h.handleError(
+			w, r, "ObjectiveView: checking reachability", "Something went wrong",
+			"error", err, "team", team.Code, "objective", objective.Slug,
+		)
+		return true
+	}
+	if reachable {
+		return false
+	}
+
+	// Same treatment as a stale slug: an unmet depends is an expected outcome
+	// of guessing a URL, not a fault worth an error toast.
+	h.logger.WarnContext(r.Context(), "ObjectiveView: objective not yet reachable",
+		"team", team.Code, "objective", objective.Slug)
+	http.Redirect(w, r, "/objectives", http.StatusFound)
+	return true
 }
 
 // objectivePreview shows a player preview of the given objective's proof or

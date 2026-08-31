@@ -76,31 +76,26 @@ func (s *stubState) SetComplete(complete bool)       { s.complete = complete }
 func (s *stubState) GetPointsAwarded() int           { return 0 }
 func (s *stubState) SetPointsAwarded(_ int)          {}
 
-func TestWriteSetsVars_PersistsAuthoredValues(t *testing.T) {
+func TestWriteSetsVars_WritesEachNameAsTrue(t *testing.T) {
 	tests := []struct {
 		name string
 		sets game.SetsField
 		want map[string]string
 	}{
 		{
-			name: "numbers are written, not coerced to true",
-			sets: game.SetsField{"score": "40"},
-			want: map[string]string{"score": "40"},
+			name: "a single name",
+			sets: game.SetsField{"found_clue"},
+			want: map[string]string{"found_clue": "true"},
 		},
 		{
-			name: "strings are written verbatim",
-			sets: game.SetsField{"clue": "greenhouse"},
-			want: map[string]string{"clue": "greenhouse"},
+			name: "every name in the list",
+			sets: game.SetsField{"score", "clue", "found"},
+			want: map[string]string{"score": "true", "clue": "true", "found": "true"},
 		},
 		{
-			name: "mixed values each keep their own value",
-			sets: game.SetsField{"score": "40", "clue": "greenhouse", "found": "true"},
-			want: map[string]string{"score": "40", "clue": "greenhouse", "found": "true"},
-		},
-		{
-			name: "empty value is written as-is, not coerced",
-			sets: game.SetsField{"found_clue": ""},
-			want: map[string]string{"found_clue": ""},
+			name: "an empty list writes nothing",
+			sets: game.SetsField{},
+			want: map[string]string{},
 		},
 	}
 
@@ -126,7 +121,7 @@ func TestWriteSetsVars_PersistsAuthoredValues(t *testing.T) {
 func TestWriteSetsVars_SkipsIncompleteBlock(t *testing.T) {
 	repo := newFakeVarStateRepo()
 	svc := &CheckInService{varStateRepo: repo}
-	block := &setsBlock{BaseBlock: blocks.BaseBlock{ID: "block-1", Sets: game.SetsField{"score": "40"}}}
+	block := &setsBlock{BaseBlock: blocks.BaseBlock{ID: "block-1", Sets: game.SetsField{"score"}}}
 
 	err := svc.writeSetsVars(
 		context.Background(),

@@ -9,14 +9,14 @@ import (
 type Objective struct {
 	baseModel
 
-	ID         string           `bun:"id,pk,notnull"`
-	QuestID    string           `bun:"quest_id,notnull"`
-	Slug       string           `bun:"slug,type:varchar(255)"`
-	Title      string           `bun:"title,type:varchar(255)"`
-	When       *game.WhenClause `bun:"when_clause,type:text,nullzero" json:"when,omitempty"`
-	Order      int              `bun:"order,type:int"`
-	ProofSets  game.SetsField   `bun:"proof_sets,type:text,nullzero" json:"proof_sets,omitempty"`
-	RevealSets game.SetsField   `bun:"reveal_sets,type:text,nullzero" json:"reveal_sets,omitempty"`
+	ID         string            `bun:"id,pk,notnull"`
+	QuestID    string            `bun:"quest_id,notnull"`
+	Slug       string            `bun:"slug,type:varchar(255)"`
+	Title      string            `bun:"title,type:varchar(255)"`
+	Depends    game.DependsField `bun:"depends,type:text,nullzero" json:"depends,omitempty"`
+	Order      int               `bun:"order,type:int"`
+	ProofSets  game.SetsField    `bun:"proof_sets,type:text,nullzero" json:"proof_sets,omitempty"`
+	RevealSets game.SetsField    `bun:"reveal_sets,type:text,nullzero" json:"reveal_sets,omitempty"`
 
 	Quest  Quest   `bun:"rel:has-one,join:quest_id=id"`
 	Blocks []Block `bun:"rel:has-many,join:id=owner_id"`

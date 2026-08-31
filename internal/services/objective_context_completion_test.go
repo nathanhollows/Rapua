@@ -55,7 +55,7 @@ func TestCheckInService_ObjectiveProofContext_CompletesOnceAllBlocksDone(t *test
 		QuestID:   parents.QuestID,
 		Slug:      "find-the-key",
 		Title:     "Find the key",
-		ProofSets: game.SetsField{"door_unlocked": "true"},
+		ProofSets: game.SetsField{"door_unlocked"},
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *t
 		QuestID:    parents.QuestID,
 		Slug:       "flavour-text",
 		Title:      "Flavour text",
-		RevealSets: game.SetsField{"story_seen": "true"},
+		RevealSets: game.SetsField{"story_seen"},
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -233,7 +233,7 @@ func TestCheckInService_CompleteObjectiveContext_PreviewIsNoOp(t *testing.T) {
 		QuestID:    parents.QuestID,
 		Slug:       "flavour-text",
 		Title:      "Flavour text",
-		RevealSets: game.SetsField{"story_seen": "true"},
+		RevealSets: game.SetsField{"story_seen"},
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -322,4 +322,96 @@ func TestCheckInService_GetObjectiveByQuestIDAndSlug(t *testing.T) {
 
 	_, err = svc.GetObjectiveByQuestIDAndSlug(ctx, parents.QuestID, "does-not-exist")
 	assert.Error(t, err)
+}
+
+// TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets covers the
+// hole the objectives list alone leaves open: the list can hide a gated
+// objective, but a player who reaches it another way (a guessed slug, a stale
+// link) must not be able to complete it. Completing early would fire its sets,
+// opening every downstream gate out of order with nothing to rewind.
+func TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	runCode := gofakeit.LetterN(6)
+	insertTestTeam(t, dbc, runCode, parents.QuestID)
+
+	gateway := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		Slug: "gateway", Title: "The Gateway",
+	}
+	_, err := dbc.NewInsert().Model(gateway).Exec(ctx)
+	require.NoError(t, err)
+
+	gated := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		Slug: "inner-room", Title: "The Inner Room",
+		Depends:   game.DependsField{"objective.gateway"},
+		ProofSets: game.SetsField{"inner_room_seen"},
+	}
+	_, err = dbc.NewInsert().Model(gated).Exec(ctx)
+	require.NoError(t, err)
+
+	team := models.Run{Code: runCode, QuestID: parents.QuestID}
+	varStateRepo := repositories.NewRunVarStateRepository(dbc)
+	countCompletions := func(objectiveID string) int {
+		count, cErr := dbc.NewSelect().
+			Model((*models.ObjectiveContextCompletion)(nil)).
+			Where("objective_id = ?", objectiveID).
+			Count(ctx)
+		require.NoError(t, cErr)
+		return count
+	}
+
+	reachable, err := svc.ObjectiveIsReachable(ctx, &team, gated)
+	require.NoError(t, err)
+	assert.False(t, reachable, "gateway is not complete, so the gated objective is out of reach")
+
+	// The content-only GET path: no blocks, so the context reads as done and
+	// this is exactly the call the objective view makes.
+	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
+	assert.Equal(t, 0, countCompletions(gated.ID), "an unreachable objective must not be logged complete")
+	vars, err := varStateRepo.GetAll(ctx, runCode, parents.QuestID)
+	require.NoError(t, err)
+	assert.NotContains(t, vars, "inner_room_seen", "an unreachable objective must not fire its sets")
+
+	// Completing the gateway opens the gate.
+	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gateway.ID, blocks.ContextObjectiveReveal))
+
+	reachable, err = svc.ObjectiveIsReachable(ctx, &team, gated)
+	require.NoError(t, err)
+	assert.True(t, reachable, "gate opens once its objective completes")
+
+	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
+	assert.Equal(t, 1, countCompletions(gated.ID))
+	vars, err = varStateRepo.GetAll(ctx, runCode, parents.QuestID)
+	require.NoError(t, err)
+	assert.Equal(t, "true", vars["inner_room_seen"])
+}
+
+// An objective with no depends must not pay for the reachability check, and
+// must never be gated by it.
+func TestCheckInService_ObjectiveWithoutDepends_IsAlwaysReachable(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	runCode := gofakeit.LetterN(6)
+	insertTestTeam(t, dbc, runCode, parents.QuestID)
+
+	objective := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		Slug: "open-door", Title: "The Open Door",
+	}
+	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	reachable, err := svc.ObjectiveIsReachable(
+		ctx, &models.Run{Code: runCode, QuestID: parents.QuestID}, objective,
+	)
+	require.NoError(t, err)
+	assert.True(t, reachable)
 }

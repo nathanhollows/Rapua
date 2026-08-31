@@ -122,22 +122,22 @@ func (s *CheckInService) writeSetsVars(
 	if setter, ok := block.(blocks.ChoiceVarSetter); ok {
 		// GetTriggeredVars already filters to the options the player chose, so
 		// every returned value is written: matching the GetSets path below.
-		for varName, val := range setter.GetTriggeredVars(state) {
+		for _, varName := range setter.GetTriggeredVars(state) {
 			if game.IsReservedVarName(varName) {
 				continue
 			}
-			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
+			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
 				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}
 		}
 		return nil
 	}
 	if state.IsComplete() {
-		for varName, val := range block.GetSets() {
+		for _, varName := range block.GetSets() {
 			if game.IsReservedVarName(varName) {
 				continue
 			}
-			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
+			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
 				return fmt.Errorf("writing sets var %q: %w", varName, err)
 			}
 		}
@@ -167,7 +167,8 @@ func (s *CheckInService) awardPointsAndComplete(
 // the context defines no sets. Exported because a content-only context has
 // nothing a player can POST to, so it needs a direct caller outside the
 // POST/validate path. Safe to call unconditionally: the idempotency guard
-// makes a context that is not done, or already logged, a harmless no-op.
+// makes a context that is not done, or already logged, a harmless no-op, and
+// an objective the run cannot yet reach is a no-op for the same reason.
 func (s *CheckInService) CompleteObjectiveContext(
 	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
 ) error {
@@ -178,18 +179,32 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	resolver, err := s.newTeamResolver(ctx, team)
-	if err != nil {
-		return err
-	}
-
 	stillRequired, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, objectiveID, team.Code, team.QuestID, blockContext, resolver,
+		ctx, objectiveID, team.Code, team.QuestID, blockContext,
 	)
 	if err != nil {
 		return fmt.Errorf("checking if objective context is complete: %w", err)
 	}
 	if stillRequired {
+		return nil
+	}
+
+	// Loaded before the insert, not after, so the depends check below runs
+	// before anything is written. Only reached once the context is actually
+	// complete, so this is not a per-validation cost.
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
+	if err != nil {
+		return fmt.Errorf("loading objective: %w", err)
+	}
+
+	// A slug is guessable and the objective view completes content-only
+	// contexts on GET, so without this a player could reach a gated objective
+	// directly and fire its sets, opening every downstream gate out of order.
+	reachable, err := s.ObjectiveIsReachable(ctx, team, objective)
+	if err != nil {
+		return err
+	}
+	if !reachable {
 		return nil
 	}
 
@@ -202,33 +217,19 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
-	if err != nil {
-		return fmt.Errorf("loading objective: %w", err)
-	}
 	sets := objective.ProofSets
 	if blockContext == game.ContextObjectiveReveal {
 		sets = objective.RevealSets
 	}
-	for varName, val := range sets {
+	for _, varName := range sets {
 		if game.IsReservedVarName(varName) {
 			continue
 		}
-		if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, val); err != nil {
+		if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
 			return fmt.Errorf("writing context sets var %q: %w", varName, err)
 		}
 	}
 	return nil
-}
-
-// newTeamResolver: shared by CompleteObjectiveContext and IsObjectiveContextPending
-// so both resolve when-clauses against identical, freshly-loaded var state.
-func (s *CheckInService) newTeamResolver(ctx context.Context, team *models.Run) (game.VarResolver, error) {
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
-	if err != nil {
-		return nil, fmt.Errorf("loading var states: %w", err)
-	}
-	return NewPlayerVarResolver(team, varStates), nil
 }
 
 // IsObjectiveContextPending reports whether an objective's proof or reveal
@@ -238,13 +239,42 @@ func (s *CheckInService) newTeamResolver(ctx context.Context, team *models.Run) 
 func (s *CheckInService) IsObjectiveContextPending(
 	ctx context.Context, team *models.Run, objectiveID string, blockContext game.BlockContext,
 ) (bool, error) {
-	resolver, err := s.newTeamResolver(ctx, team)
-	if err != nil {
-		return false, err
-	}
 	return s.blockService.checkValidationRequiredForCheckIn(
-		ctx, objectiveID, team.Code, team.QuestID, blockContext, resolver,
+		ctx, objectiveID, team.Code, team.QuestID, blockContext,
 	)
+}
+
+// ObjectiveIsReachable reports whether a run has met an objective's depends
+// list. An objective with no depends is always reachable and costs no queries,
+// which is the overwhelmingly common case.
+//
+// This duplicates what the navigation service computes for the objectives
+// list, because a list that merely hides an objective is not a gate: a guessed
+// slug reaches it anyway.
+func (s *CheckInService) ObjectiveIsReachable(
+	ctx context.Context, team *models.Run, objective *models.Objective,
+) (bool, error) {
+	if len(objective.Depends) == 0 {
+		return true, nil
+	}
+
+	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	if err != nil {
+		return false, fmt.Errorf("loading var states: %w", err)
+	}
+	completedIDs, err := s.objectiveContextCompletionRepo.FindCompletedObjectiveIDs(
+		ctx, team.Code, game.ContextObjectiveReveal,
+	)
+	if err != nil {
+		return false, fmt.Errorf("loading completed objectives: %w", err)
+	}
+	objectives, err := s.objectiveRepo.FindByQuestID(ctx, team.QuestID)
+	if err != nil {
+		return false, fmt.Errorf("loading quest objectives: %w", err)
+	}
+
+	resolver := NewPlayerVarResolver(varStates, completedObjectiveSlugs(objectives, completedIDs))
+	return game.EvaluateDepends(objective.Depends, resolver), nil
 }
 
 func (s *CheckInService) GetObjectiveByQuestIDAndSlug(

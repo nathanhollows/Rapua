@@ -27,8 +27,9 @@ type StructureDoc struct {
 	Children        []ChildDoc     `json:"children"`
 }
 
-// GroupDoc: AutoAdvance defaults to true when omitted. Set it to false to keep
-// players in the group after its completion criteria are met.
+// GroupDoc defaults to auto-advancing: AutoAdvance is true when omitted, so
+// set it to false to keep players in the group after its completion criteria
+// are met.
 type GroupDoc struct {
 	ID              string         `json:"id,omitempty"`
 	Name            string         `json:"name"`
@@ -37,19 +38,18 @@ type GroupDoc struct {
 	Completion      CompletionType `json:"completion"`
 	MinimumRequired int            `json:"minimum_required,omitempty"`
 	AutoAdvance     *bool          `json:"auto_advance,omitempty"`
-	When            *WhenClause    `json:"when,omitempty"`
 	Children        []ChildDoc     `json:"children"`
 }
 
 // ObjectiveDoc has exactly two block contexts, proof then reveal, no third
 // freeform canvas.
 type ObjectiveDoc struct {
-	ID     string              `json:"id,omitempty"`
-	Slug   string              `json:"slug"`
-	Title  string              `json:"title"`
-	When   *WhenClause         `json:"when,omitempty"`
-	Proof  ObjectiveContextDoc `json:"proof"`
-	Reveal ObjectiveContextDoc `json:"reveal"`
+	ID      string              `json:"id,omitempty"`
+	Slug    string              `json:"slug"`
+	Title   string              `json:"title"`
+	Depends DependsField        `json:"depends,omitempty"`
+	Proof   ObjectiveContextDoc `json:"proof"`
+	Reveal  ObjectiveContextDoc `json:"reveal"`
 }
 
 // ObjectiveContextDoc is one of an objective's two contexts (proof or reveal).

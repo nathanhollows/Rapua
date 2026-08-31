@@ -5,23 +5,10 @@ import "testing"
 // TestIsBuiltInVar_CanonicalSet ensures the linter's built-in variable
 // detection matches the canonical set. Adding or removing a built-in in
 // isBuiltInVar without updating the spec and resolver will cause this
-// test to fail.
+// test to fail. objective.<slug> is the only built-in namespace: conditions
+// are truthy-only, so the numeric built-ins went with the comparison operators.
 func TestIsBuiltInVar_CanonicalSet(t *testing.T) {
-	// Exact-match builtins (no wildcards). "points" is the pre-respine
-	// spelling of player.points and is still accepted.
-	exact := []string{
-		"player.points",
-		"points",
-		"run.started_at",
-		"game.team_count",
-	}
-	for _, name := range exact {
-		if !isBuiltInVar(name) {
-			t.Errorf("isBuiltInVar(%q) = false, want true", name)
-		}
-	}
-
-	// Prefix/wildcard builtins.
+	// The whole built-in namespace is the objective prefix.
 	prefix := []string{
 		"objective.some-slug",
 	}
@@ -33,6 +20,10 @@ func TestIsBuiltInVar_CanonicalSet(t *testing.T) {
 
 	// Explicitly NOT built-in.
 	notBuiltin := []string{
+		"player.points",
+		"points",
+		"run.started_at",
+		"game.team_count",
 		"game.status",
 		"location.some-slug.visited",
 		"location.some-slug.checked_in",

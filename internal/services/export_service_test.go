@@ -114,8 +114,8 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 		QuestID:    inst.ID,
 		Slug:       "find-the-key",
 		Title:      "Find the key",
-		ProofSets:  game.SetsField{"door_unlocked": "true"},
-		RevealSets: game.SetsField{"story_seen": "true"},
+		ProofSets:  game.SetsField{"door_unlocked"},
+		RevealSets: game.SetsField{"story_seen"},
 	}
 	_, err := dbc.NewInsert().Model(obj).Exec(ctx)
 	require.NoError(t, err)
@@ -151,11 +151,11 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 
 	require.Len(t, child.Objective.Proof.Blocks, 1)
 	assert.Equal(t, proofBlock.GetID(), child.Objective.Proof.Blocks[0]["id"])
-	assert.Equal(t, "true", child.Objective.Proof.Sets["door_unlocked"])
+	assert.Equal(t, game.SetsField{"door_unlocked"}, child.Objective.Proof.Sets)
 
 	require.Len(t, child.Objective.Reveal.Blocks, 1)
 	assert.Equal(t, revealBlock.GetID(), child.Objective.Reveal.Blocks[0]["id"])
-	assert.Equal(t, "true", child.Objective.Reveal.Sets["story_seen"])
+	assert.Equal(t, game.SetsField{"story_seen"}, child.Objective.Reveal.Sets)
 }
 
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
@@ -246,7 +246,7 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 	assert.Equal(t, "spot", child.Group.Children[0].Objective.Slug)
 }
 
-func TestExportService_ObjectiveWhenRoundTrip(t *testing.T) {
+func TestExportService_ObjectiveDependsRoundTrip(t *testing.T) {
 	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
@@ -254,17 +254,16 @@ func TestExportService_ObjectiveWhenRoundTrip(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Quest{Name: "When Test", UserID: userID}
+	inst := &models.Quest{Name: "Depends Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
 	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
-	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
 	obj := &models.Objective{
 		ID:      gofakeit.UUID(),
 		QuestID: inst.ID,
 		Slug:    "gated",
 		Title:   "Gated Spot",
-		When:    when,
+		Depends: game.DependsField{"gate", "not decoy"},
 	}
 	_, err := dbc.NewInsert().Model(obj).Exec(ctx)
 	require.NoError(t, err)
@@ -283,47 +282,5 @@ func TestExportService_ObjectiveWhenRoundTrip(t *testing.T) {
 	require.Len(t, doc.Structure.Children, 1)
 	objDoc := doc.Structure.Children[0].Objective
 	require.NotNil(t, objDoc)
-	require.NotNil(t, objDoc.When)
-	require.Len(t, objDoc.When.AllOf, 1)
-	assert.Equal(t, "gate", objDoc.When.AllOf[0].Var)
-}
-
-func TestExportService_GroupWhenRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	inst := &models.Quest{Name: "Group When Test", UserID: userID}
-	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
-
-	groupWhen := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
-	inst.GameStructure = models.GameStructure{
-		ID:     gofakeit.UUID(),
-		IsRoot: true,
-		SubGroups: []models.GameStructure{
-			{
-				ID:           gofakeit.UUID(),
-				Name:         "Hidden Group",
-				Color:        "secondary",
-				When:         groupWhen,
-				ObjectiveIDs: []string{},
-				SubGroups:    []models.GameStructure{},
-			},
-		},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	doc, _, err := svc.ExportInstance(ctx, inst.ID)
-	require.NoError(t, err)
-
-	require.Len(t, doc.Structure.Children, 1)
-	groupDoc := doc.Structure.Children[0].Group
-	require.NotNil(t, groupDoc)
-	require.NotNil(t, groupDoc.When)
-	require.Len(t, groupDoc.When.AllOf, 1)
-	assert.Equal(t, "unlocked", groupDoc.When.AllOf[0].Var)
+	assert.Equal(t, game.DependsField{"gate", "not decoy"}, objDoc.Depends)
 }

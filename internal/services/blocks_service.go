@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -147,35 +146,10 @@ func (s *BlockService) UpdateBlock(
 		return nil, fmt.Errorf("updating block data: %w", err)
 	}
 
-	// Parse when_clause if submitted (empty string clears the condition).
-	if vals, ok := data["when_clause"]; ok {
-		when, parseErr := parseWhenClause(vals)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		block.SetWhen(when)
-	}
-
 	return s.blockRepo.Update(ctx, block)
 }
 
 // ReorderBlocks reorders the blocks in a location.
-// parseWhenClause parses the when_clause form values into a *game.WhenClause.
-// Returns nil when vals is empty or the value is empty (clears the condition).
-func parseWhenClause(vals []string) (*game.WhenClause, error) {
-	if len(vals) == 0 || vals[0] == "" {
-		return nil, nil //nolint:nilnil // nil clause = clear condition; nil error = no failure
-	}
-	var wc game.WhenClause
-	if err := json.Unmarshal([]byte(vals[0]), &wc); err != nil {
-		return nil, fmt.Errorf("parsing when_clause: %w", err)
-	}
-	if len(wc.AllOf) == 0 && len(wc.AnyOf) == 0 {
-		return nil, nil //nolint:nilnil // empty clause = clear condition; nil error = no failure
-	}
-	return &wc, nil
-}
-
 func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
@@ -333,13 +307,11 @@ func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 }
 
 // checkValidationRequiredForCheckIn checks whether any blocks in an objective
-// context still require validation. When resolver is non-nil, blocks whose
-// when-clause evaluates to false are skipped (hidden from the player).
+// context still require validation.
 func (s *BlockService) checkValidationRequiredForCheckIn(
 	ctx context.Context,
 	ownerID, runCode, questID string,
 	blockContext game.BlockContext,
-	resolver game.VarResolver,
 ) (bool, error) {
 	blocks, state, err := s.FindByOwnerIDAndRunCodeWithStateAndContext(
 		ctx,
@@ -354,9 +326,6 @@ func (s *BlockService) checkValidationRequiredForCheckIn(
 
 	for _, block := range blocks {
 		if block.RequiresValidation() {
-			if resolver != nil && !game.EvaluateWhen(block.GetWhen(), resolver) {
-				continue
-			}
 			if state[block.GetID()] == nil {
 				return true, nil
 			}

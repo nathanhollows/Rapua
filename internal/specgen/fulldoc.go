@@ -21,9 +21,8 @@ type ObjectSpec struct {
 
 // EnumDefs holds all enum definitions used in the document format.
 type EnumDefs struct {
-	Routing      []EnumValue `json:"routing"`
-	Completion   []EnumValue `json:"completion"`
-	ConditionOps []EnumValue `json:"condition_ops"`
+	Routing    []EnumValue `json:"routing"`
+	Completion []EnumValue `json:"completion"`
 }
 
 // EnumValue is a single allowed enum value with a human-readable label and description.
@@ -33,7 +32,7 @@ type EnumValue struct {
 	Description string `json:"description"`
 }
 
-// BuiltInVarSpec documents a single built-in variable available in when clauses.
+// BuiltInVarSpec documents a single built-in variable available in depends lists.
 type BuiltInVarSpec struct {
 	Var         string `json:"var"`
 	Type        string `json:"type"`
@@ -54,59 +53,21 @@ func GenerateFullSpec() FullSpec {
 		Enums:             enumDefs(),
 		BuiltInVars:       builtInVarSpecs(),
 		Contexts:          contextDefs(),
-		BlockSharedFields: []game.FieldSpec{whenFieldSpec(), setsFieldSpec(), pointsFieldSpec()},
+		BlockSharedFields: []game.FieldSpec{setsFieldSpec(), pointsFieldSpec()},
 		Blocks:            GenerateBlockSpecs(),
 	}
 }
 
-// whenFieldSpec returns the shared `when` field spec used on blocks, objectives, and groups.
-func whenFieldSpec() game.FieldSpec {
-	condItem := &game.FieldSpec{
-		Type:        "object",
-		Description: "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-		Fields: []game.FieldSpec{
-			{
-				Name:        "var",
-				Type:        "string",
-				Required:    true,
-				Description: "Variable to check. Built-in: player.points, run.started_at, objective.<slug>, game.team_count. Creator-defined via block sets.",
-			},
-			{
-				Name:        "op",
-				Type:        "enum",
-				Description: "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-				Enum:        []string{"eq", "neq", "gt", "lt", "gte", "lte", "in", "not_in"},
-			},
-			{
-				Name:        "value",
-				Type:        "any",
-				Description: "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present.",
-			},
-			{
-				Name:        "not",
-				Type:        "bool",
-				Description: "Negate the result of this condition.",
-			},
-		},
-	}
+// dependsFieldSpec returns the `depends` field spec used on objectives.
+func dependsFieldSpec() game.FieldSpec {
 	return game.FieldSpec{
-		Name:        "when",
-		Type:        "object",
-		Description: "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
-		Fields: []game.FieldSpec{
-			{
-				Name:        "all_of",
-				Type:        "list",
-				Description: "ALL conditions must be true (AND). Each item is a condition object.",
-				Items:       condItem,
-			},
-			{
-				Name:        "any_of",
-				Type:        "list",
-				Description: "At least one condition must be true (OR). Each item is a condition object.",
-				Items:       condItem,
-			},
-		},
+		Name: "depends",
+		Type: "list",
+		Description: "Variable names gating this objective's reachability, implicitly ANDed. " +
+			"Each name is a truthy check with no comparison operators; prefix a name with " +
+			"\"not \" to negate it. A name is either objective.<slug> or a variable written " +
+			"by a block or context \"sets\". Absent or empty means always reachable.",
+		Items: &game.FieldSpec{Type: "string"},
 	}
 }
 
@@ -114,16 +75,39 @@ func whenFieldSpec() game.FieldSpec {
 func setsFieldSpec() game.FieldSpec {
 	return game.FieldSpec{
 		Name: "sets",
-		Type: "object",
-		Description: "Variables written when this block completes, as an object of {name: value}. " +
-			"Values may be strings, numbers, or booleans; all are stored as strings. " +
-			"Any other shape emits SETS_NOT_OBJECT. " +
-			"Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. " +
-			"Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — " +
-			"that prefix is owned by the runtime and set automatically when objectives complete.",
+		Type: "list",
+		Description: setsSharedDescription +
+			"Only valid on interactive blocks: linter emits SETS_ON_CONTENT_BLOCK warning otherwise. " +
+			setsReservedDescription,
 		Items: &game.FieldSpec{Type: "string"},
 	}
 }
+
+// contextSetsFieldSpec returns the `sets` field spec used on an objective's
+// proof and reveal contexts. A context's sets fire when every block in it
+// completes, which is not the same event as any one block completing, and a
+// content-only context fires them with no interactive block present at all.
+// The interactive-block restriction therefore does not apply here.
+func contextSetsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "sets",
+		Type: "list",
+		Description: setsSharedDescription +
+			"Fires once, the moment every block in this context is complete; a context with " +
+			"no blocks fires immediately. " +
+			setsReservedDescription,
+		Items: &game.FieldSpec{Type: "string"},
+	}
+}
+
+const (
+	setsSharedDescription = "Variable names written on completion, as a list of names. " +
+		"Sets are presence-only: each name is stored with the value \"true\". " +
+		"Any other shape emits SETS_NOT_LIST. "
+	setsReservedDescription = "Writing to the reserved \"objective.*\" namespace emits " +
+		"SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically " +
+		"when objectives complete."
+)
 
 // pointsFieldSpec returns the `points` field spec used on interactive blocks
 // (RequiresValidation() true) whose own Points field is actually honoured
@@ -167,7 +151,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "int",
 			Description: "Number of objectives required when completion is \"minimum\".",
 		},
-		whenFieldSpec(),
 		{Name: "children", Type: "list", Required: true, Description: "Ordered list of objective or group children.",
 			Items: &game.FieldSpec{
 				Type:        "object",
@@ -189,7 +172,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "list",
 			Description: "Blocks shown to players while this context is active.",
 		},
-		setsFieldSpec(),
+		contextSetsFieldSpec(),
 	}
 
 	objectiveFields := []game.FieldSpec{
@@ -202,10 +185,10 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Name:        "slug",
 			Type:        "string",
 			Required:    true,
-			Description: "Short alphanumeric code referenced by objective.<slug> when clauses. Must be unique within the game.",
+			Description: "Short alphanumeric code referenced by objective.<slug> in depends lists. Must be unique within the game.",
 		},
 		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
-		whenFieldSpec(),
+		dependsFieldSpec(),
 		{
 			Name:     "proof",
 			Type:     "object",
@@ -295,20 +278,10 @@ func enumDefs() EnumDefs {
 	return EnumDefs{
 		Routing:    routingValues,
 		Completion: completionValues,
-		ConditionOps: []EnumValue{
-			{Value: "eq", Label: "Equal", Description: "var == value"},
-			{Value: "neq", Label: "Not equal", Description: "var != value"},
-			{Value: "gt", Label: "Greater than", Description: "var > value (numeric)"},
-			{Value: "lt", Label: "Less than", Description: "var < value (numeric)"},
-			{Value: "gte", Label: "Greater than or equal", Description: "var >= value (numeric)"},
-			{Value: "lte", Label: "Less than or equal", Description: "var <= value (numeric)"},
-			{Value: "in", Label: "In array", Description: "var is one of value (value must be an array)"},
-			{Value: "not_in", Label: "Not in array", Description: "var is not in value (value must be an array)"},
-		},
 	}
 }
 
-// BuiltInVars returns the list of built-in variables available in when-clause conditions.
+// BuiltInVars returns the list of built-in variables available in depends lists.
 func BuiltInVars() []BuiltInVarSpec {
 	return builtInVarSpecs()
 }
@@ -316,29 +289,9 @@ func BuiltInVars() []BuiltInVarSpec {
 func builtInVarSpecs() []BuiltInVarSpec {
 	return []BuiltInVarSpec{
 		{
-			Var:         "player.points",
-			Type:        "int",
-			Description: "Total points earned on this run. Evaluated live from the run's points.",
-		},
-		{
-			Var:         "points",
-			Type:        "int",
-			Description: "Pre-respine spelling of player.points. Still resolves; prefer player.points.",
-		},
-		{
-			Var:         "run.started_at",
-			Type:        "timestamp",
-			Description: "RFC3339 timestamp of when the run began. Empty until the players start.",
-		},
-		{
 			Var:         "objective.<slug>",
 			Type:        "string",
 			Description: "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise.",
-		},
-		{
-			Var:         "game.team_count",
-			Type:        "int",
-			Description: "Number of teams with HasStarted == true in this game instance.",
 		},
 	}
 }

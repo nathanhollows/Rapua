@@ -73,7 +73,7 @@ func docWithObjective(gameName, slug, title string) *game.GameDoc {
 					Blocks: []game.BlockDoc{
 						{"type": "free_text", "prompt": "What is the answer?"},
 					},
-					Sets: game.SetsField{"door_unlocked": "true"},
+					Sets: game.SetsField{"door_unlocked"},
 				},
 				Reveal: game.ObjectiveContextDoc{
 					Blocks: []game.BlockDoc{
@@ -144,7 +144,7 @@ func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
 	require.Len(t, objectives, 1)
 	assert.Equal(t, "find-the-key", objectives[0].Slug)
 	assert.Equal(t, "Find the key", objectives[0].Title)
-	assert.Equal(t, "true", objectives[0].ProofSets["door_unlocked"])
+	assert.Equal(t, game.SetsField{"door_unlocked"}, objectives[0].ProofSets)
 
 	proofBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives[0].ID, game.ContextObjectiveProof)
 	require.NoError(t, err)
@@ -336,7 +336,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	assert.True(t, settings.ShowLeaderboard)
 }
 
-func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
+func TestImportService_ImportCreate_ObjectiveDepends(t *testing.T) {
 	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
@@ -344,14 +344,13 @@ func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	when := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
-	doc := minimalValidDoc("When Objective Game")
+	doc := minimalValidDoc("Depends Objective Game")
 	doc.Structure.Children = []game.ChildDoc{
 		{
 			Objective: &game.ObjectiveDoc{
-				Slug:  "secret",
-				Title: "Secret Spot",
-				When:  when,
+				Slug:    "secret",
+				Title:   "Secret Spot",
+				Depends: game.DependsField{"unlocked"},
 			},
 		},
 	}
@@ -362,47 +361,10 @@ func TestImportService_ImportCreate_ObjectiveWhen(t *testing.T) {
 	objs, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
 	require.Len(t, objs, 1)
-	require.NotNil(t, objs[0].When)
-	require.Len(t, objs[0].When.AllOf, 1)
-	assert.Equal(t, "unlocked", objs[0].When.AllOf[0].Var)
+	assert.Equal(t, game.DependsField{"unlocked"}, objs[0].Depends)
 }
 
-func TestImportService_ImportCreate_GroupWhen(t *testing.T) {
-	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	when := &game.WhenClause{AllOf: []game.Condition{{Var: "unlocked"}}}
-	doc := minimalValidDoc("Group When Game")
-	doc.Structure.Children = []game.ChildDoc{
-		{
-			Group: &game.GroupDoc{
-				Name:       "Hidden Group",
-				Color:      "primary",
-				Routing:    game.RouteStrategyOrdered,
-				Completion: game.CompletionAll,
-				When:       when,
-				Children:   []game.ChildDoc{},
-			},
-		},
-	}
-
-	result, err := svc.ImportCreate(ctx, userID, doc)
-	require.NoError(t, err)
-
-	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
-	require.NoError(t, err)
-	require.Len(t, inst.GameStructure.SubGroups, 1)
-	subGroup := inst.GameStructure.SubGroups[0]
-	require.NotNil(t, subGroup.When)
-	require.Len(t, subGroup.When.AllOf, 1)
-	assert.Equal(t, "unlocked", subGroup.When.AllOf[0].Var)
-}
-
-func TestImportService_ImportUpdate_ObjectiveWhenUpdated(t *testing.T) {
+func TestImportService_ImportUpdate_ObjectiveDependsUpdated(t *testing.T) {
 	svc, instanceRepo, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
@@ -410,25 +372,24 @@ func TestImportService_ImportUpdate_ObjectiveWhenUpdated(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	// Set up existing instance with an objective (no when clause).
-	createDoc := docWithObjective("When Update Game", "spot", "The Spot")
+	// Set up existing instance with an objective (no depends).
+	createDoc := docWithObjective("Depends Update Game", "spot", "The Spot")
 	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
 	require.NoError(t, err)
 
 	objs, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
 	require.NoError(t, err)
 	require.Len(t, objs, 1)
-	assert.Nil(t, objs[0].When)
+	assert.Nil(t, objs[0].Depends)
 
 	// Load instance for update
 	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
 	require.NoError(t, err)
 
-	// Update doc: add when clause to same objective (matched by slug).
-	when := &game.WhenClause{AllOf: []game.Condition{{Var: "gate"}}}
-	updateDoc := docWithObjective("When Update Game", "spot", "The Spot")
+	// Update doc: add depends to same objective (matched by slug).
+	updateDoc := docWithObjective("Depends Update Game", "spot", "The Spot")
 	updateDoc.Structure.Children[0].Objective.ID = objs[0].ID
-	updateDoc.Structure.Children[0].Objective.When = when
+	updateDoc.Structure.Children[0].Objective.Depends = game.DependsField{"gate"}
 
 	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
 	require.NoError(t, err)
@@ -436,7 +397,5 @@ func TestImportService_ImportUpdate_ObjectiveWhenUpdated(t *testing.T) {
 	updatedObjs, err := objectiveRepo.FindByQuestID(ctx, inst.ID)
 	require.NoError(t, err)
 	require.Len(t, updatedObjs, 1)
-	require.NotNil(t, updatedObjs[0].When)
-	require.Len(t, updatedObjs[0].When.AllOf, 1)
-	assert.Equal(t, "gate", updatedObjs[0].When.AllOf[0].Var)
+	assert.Equal(t, game.DependsField{"gate"}, updatedObjs[0].Depends)
 }

@@ -31,56 +31,32 @@ func (b *concreteBlock) ParseData() error {
 func TestBaseBlock_GetSets_NilByDefault(t *testing.T) {
 	b := &concreteBlock{}
 	assert.Nil(t, b.GetSets())
-	assert.Nil(t, b.GetWhen())
 }
 
 func TestBaseBlock_GetSets_PopulatedByParseData(t *testing.T) {
 	raw := json.RawMessage(`{
 		"content": "hello",
-		"sets": {"took_bergamot": "true", "score": 40}
+		"sets": ["took_bergamot", "found_still"]
 	}`)
 	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
 	require.NoError(t, b.ParseData())
 
-	assert.Equal(t, game.SetsField{"took_bergamot": "true", "score": "40"}, b.GetSets())
+	assert.Equal(t, game.SetsField{"took_bergamot", "found_still"}, b.GetSets())
 	assert.Equal(t, "hello", b.Content)
 }
 
-func TestBaseBlock_ParseData_RejectsListSets(t *testing.T) {
-	raw := json.RawMessage(`{"sets": ["took_bergamot"]}`)
+func TestBaseBlock_ParseData_RejectsObjectSets(t *testing.T) {
+	raw := json.RawMessage(`{"sets": {"took_bergamot": "true"}}`)
 	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
 
-	err := b.ParseData()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "must be an object")
+	require.Error(t, b.ParseData())
 }
 
-func TestBaseBlock_GetWhen_PopulatedByParseData(t *testing.T) {
-	raw := json.RawMessage(`{
-		"when": {
-			"all_of": [
-				{"var": "took_bergamot"},
-				{"var": "points", "op": "gte", "value": 10}
-			]
-		}
-	}`)
-	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
-	require.NoError(t, b.ParseData())
-
-	w := b.GetWhen()
-	require.NotNil(t, w)
-	require.Len(t, w.AllOf, 2)
-	assert.Equal(t, "took_bergamot", w.AllOf[0].Var)
-	assert.Equal(t, "points", w.AllOf[1].Var)
-	assert.Equal(t, "gte", w.AllOf[1].Op)
-}
-
-func TestBaseBlock_NoSetsOrWhenInJSON(t *testing.T) {
+func TestBaseBlock_NoSetsInJSON(t *testing.T) {
 	raw := json.RawMessage(`{"content": "plain block"}`)
 	b := &concreteBlock{BaseBlock: game.BaseBlock{Data: raw}}
 	require.NoError(t, b.ParseData())
 
 	assert.Nil(t, b.GetSets())
-	assert.Nil(t, b.GetWhen())
 	assert.Equal(t, "plain block", b.Content)
 }

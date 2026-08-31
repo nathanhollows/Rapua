@@ -7,8 +7,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
-	"github.com/nathanhollows/Rapua/v8/game"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	playerTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -271,29 +269,11 @@ func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
 		return
 	}
 
-	// Reload relations: writeSetsVars may have just written new vars this
-	// request, and they must be current for when-clause filtering below.
-	if err := h.runService.LoadRelations(r.Context(), team); err != nil {
-		h.logger.ErrorContext(r.Context(), "validateBlock: loading team relations", "error", err.Error())
-		return
-	}
-	resolver := services.NewPlayerVarResolver(team, team.VarStates)
-	visibleBlocks := make(blocks.Blocks, 0, len(revealBlocks))
-	visibleStates := make(map[string]blocks.PlayerState, len(revealStates))
-	for _, b := range revealBlocks {
-		if game.EvaluateWhen(b.GetWhen(), resolver) {
-			visibleBlocks = append(visibleBlocks, b)
-			if s, ok := revealStates[b.GetID()]; ok {
-				visibleStates[b.GetID()] = s
-			}
-		}
-	}
-
 	data := playerTemplates.ObjectiveViewData{
 		Settings: team.Quest.Settings,
 		Zone:     blocks.ContextObjectiveReveal,
-		Blocks:   visibleBlocks,
-		States:   visibleStates,
+		Blocks:   revealBlocks,
+		States:   revealStates,
 	}
 	if err := playerTemplates.ObjectiveZoneUpdate(data).Render(r.Context(), w); err != nil {
 		h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal zone", "error", err.Error())

@@ -40,6 +40,7 @@ type CheckInService interface {
 		data map[string][]string,
 	) (blocks.PlayerState, blocks.Block, error)
 	GetObjectiveByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	ObjectiveIsReachable(ctx context.Context, team *models.Run, objective *models.Objective) (bool, error)
 	IsObjectiveContextPending(
 		ctx context.Context,
 		team *models.Run,

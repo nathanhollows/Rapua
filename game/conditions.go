@@ -1,45 +1,14 @@
 package game
 
-import (
-	"database/sql/driver"
-	"encoding/json"
-	"fmt"
-	"strconv"
-	"strings"
-)
+import "strings"
 
-const (
-	opEq    = "eq"
-	opNeq   = "neq"
-	opGt    = "gt"
-	opLt    = "lt"
-	opGte   = "gte"
-	opLte   = "lte"
-	opIn    = "in"
-	opNotIn = "not_in"
-)
+// notPrefix negates a single depends name.
+const notPrefix = "not "
 
-// Condition is a single structured visibility condition.
-//
-// Bare check (op omitted): the variable must be truthy.
-// Comparison (op set): the variable value is coerced and compared against Value.
-// Not inverts the result.
-type Condition struct {
-	Var   string `json:"var"`
-	Op    string `json:"op,omitempty"`    // eq|neq|gt|lt|gte|lte|in|not_in; omit for truthy check
-	Value any    `json:"value,omitempty"` // string, number, bool, or []any for in/not_in
-	Not   bool   `json:"not,omitempty"`
-}
-
-// WhenClause holds the visibility conditions for a block, location, or group.
-//
-// AllOf: all conditions must be true (AND).
-// AnyOf: at least one condition must be true (OR).
-// Both can be combined: (all AllOf) AND (any one of AnyOf).
-type WhenClause struct {
-	AllOf []Condition `json:"all_of,omitempty"`
-	AnyOf []Condition `json:"any_of,omitempty"`
-}
+// DependsField is a flat list of variable names gating an objective's
+// reachability. Names are implicitly ANDed; a "not " prefix negates one.
+// There are no comparison operators: every name is a truthy check.
+type DependsField []string
 
 // VarResolver looks up variable values by name.
 // Returns (value, true) if set, ("", false) if not set.
@@ -62,199 +31,42 @@ func isTruthy(val string, exists bool) bool {
 	return true
 }
 
-// Evaluate checks a single Condition against the resolver.
-// Returns true if the condition is met.
-func Evaluate(cond Condition, resolver VarResolver) bool {
-	val, exists := resolver.ResolveVar(cond.Var)
-
-	var result bool
-	if cond.Op == "" {
-		// Bare truthy check
-		result = isTruthy(val, exists)
-	} else {
-		result = evalOp(val, cond.Op, cond.Value)
+// ParseDependsName splits a depends entry into its variable name and whether
+// the entry is negated. Surrounding whitespace is ignored so that "not  x" and
+// " x " both name the variable x.
+//
+// Only leading whitespace is stripped before the prefix test, so a dangling
+// "not " reports an empty name rather than a variable literally called "not".
+// An author who typed the negation and left the name off gets a diagnostic
+// (DEPENDS_EMPTY_NAME) instead of a gate that silently never opens. A bare
+// "not" with no trailing space is still an ordinary variable name.
+func ParseDependsName(entry string) (string, bool) {
+	leading := strings.TrimLeft(entry, " \t\n\r")
+	if rest, ok := strings.CutPrefix(leading, notPrefix); ok {
+		return strings.TrimSpace(rest), true
 	}
-
-	if cond.Not {
-		return !result
-	}
-	return result
+	return strings.TrimSpace(leading), false
 }
 
-// EvaluateWhen checks a full WhenClause. Returns true if the element should be visible.
+// EvaluateDepends reports whether every name in deps evaluates truthy.
+// An empty list is vacuously true: an objective with no depends is reachable.
 //
-// Logic:
-//  1. nil → visible
-//  2. All AllOf conditions must be true
-//  3. If AnyOf is non-empty, at least one must be true
-//  4. Otherwise visible
-func EvaluateWhen(when *WhenClause, resolver VarResolver) bool {
-	if when == nil {
-		return true
-	}
-	for _, cond := range when.AllOf {
-		if !Evaluate(cond, resolver) {
+// An entry that names nothing fails closed. Lint rejects such an entry at
+// import (DEPENDS_EMPTY_NAME), so this only fires on state that bypassed
+// import, and a gate nobody can read should stay shut rather than swing open.
+func EvaluateDepends(deps DependsField, resolver VarResolver) bool {
+	for _, entry := range deps {
+		name, negated := ParseDependsName(entry)
+		if name == "" {
 			return false
 		}
-	}
-	if len(when.AnyOf) > 0 {
-		met := false
-		for _, cond := range when.AnyOf {
-			if Evaluate(cond, resolver) {
-				met = true
-				break
-			}
+		met := isTruthy(resolver.ResolveVar(name))
+		if negated {
+			met = !met
 		}
 		if !met {
 			return false
 		}
 	}
 	return true
-}
-
-// evalOp compares raw (string from resolver) against expected using op.
-func evalOp(raw, op string, expected any) bool {
-	switch op {
-	case opEq:
-		// If expected is numeric, prefer numeric equality so "5.0" == float64(5).
-		// Falls back to string comparison if either side cannot be parsed.
-		rawF, rawErr := strconv.ParseFloat(strings.TrimSpace(raw), 64)
-		expF, expErr := toFloat64(expected)
-		if rawErr == nil && expErr == nil {
-			return rawF == expF
-		}
-		return raw == toString(expected)
-	case opNeq:
-		rawF, rawErr := strconv.ParseFloat(strings.TrimSpace(raw), 64)
-		expF, expErr := toFloat64(expected)
-		if rawErr == nil && expErr == nil {
-			return rawF != expF
-		}
-		return raw != toString(expected)
-	case opGt, opLt, opGte, opLte:
-		return compareNumeric(raw, op, expected)
-	case opIn:
-		return containsValue(raw, expected)
-	case opNotIn:
-		return !containsValue(raw, expected)
-	}
-	return false
-}
-
-// toString converts any value to its string representation for eq/neq comparisons.
-func toString(v any) string {
-	if v == nil {
-		return ""
-	}
-	return fmt.Sprintf("%v", v)
-}
-
-// compareNumeric parses both sides as float64 and compares.
-// Falls back to string comparison if either side cannot be parsed as a number.
-func compareNumeric(raw, op string, expected any) bool {
-	rawF, rawErr := strconv.ParseFloat(strings.TrimSpace(raw), 64)
-	expF, expErr := toFloat64(expected)
-
-	if rawErr != nil || expErr != nil {
-		// Fall back to string comparison
-		rawStr := raw
-		expStr := toString(expected)
-		switch op {
-		case opGt:
-			return rawStr > expStr
-		case opLt:
-			return rawStr < expStr
-		case opGte:
-			return rawStr >= expStr
-		case opLte:
-			return rawStr <= expStr
-		}
-		return false
-	}
-
-	switch op {
-	case opGt:
-		return rawF > expF
-	case opLt:
-		return rawF < expF
-	case opGte:
-		return rawF >= expF
-	case opLte:
-		return rawF <= expF
-	}
-	return false
-}
-
-// toFloat64 converts a value to float64. Returns an error if not a numeric type.
-func toFloat64(v any) (float64, error) {
-	switch n := v.(type) {
-	case float64:
-		return n, nil
-	case float32:
-		return float64(n), nil
-	case int:
-		return float64(n), nil
-	case int64:
-		return float64(n), nil
-	case int32:
-		return float64(n), nil
-	case string:
-		return strconv.ParseFloat(strings.TrimSpace(n), 64)
-	}
-	return 0, fmt.Errorf("cannot convert %T to float64", v)
-}
-
-// containsValue checks whether raw matches any element in the expected slice.
-// Accepts []any (from JSON decode) or []string (from Go code).
-func containsValue(raw string, expected any) bool {
-	switch slice := expected.(type) {
-	case []any:
-		for _, elem := range slice {
-			if raw == toString(elem) {
-				return true
-			}
-		}
-	case []string:
-		for _, elem := range slice {
-			if raw == elem {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// Value implements driver.Valuer for bun/sql database storage (TEXT column).
-// Returns nil (SQL NULL) when the clause is empty.
-//
-
-func (w *WhenClause) Value() (driver.Value, error) {
-	if len(w.AllOf) == 0 && len(w.AnyOf) == 0 {
-		return nil, nil //nolint:nilnil // nil driver.Value = SQL NULL; nil error = no failure
-	}
-	data, err := json.Marshal(w)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling WhenClause: %w", err)
-	}
-	return string(data), nil
-}
-
-// Scan implements sql.Scanner for bun/sql database retrieval.
-func (w *WhenClause) Scan(src any) error {
-	if src == nil {
-		return nil
-	}
-	var data []byte
-	switch v := src.(type) {
-	case []byte:
-		data = v
-	case string:
-		data = []byte(v)
-	default:
-		return fmt.Errorf("cannot scan %T into WhenClause", src)
-	}
-	if len(data) == 0 {
-		return nil
-	}
-	return json.Unmarshal(data, w)
 }

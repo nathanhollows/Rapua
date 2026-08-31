@@ -433,14 +433,88 @@ func TestNavigationService_GetPreviewObjectiveView_ObjectiveNotFound(t *testing.
 	assert.Contains(t, err.Error(), "objective not found in game structure")
 }
 
+// objective.<slug> is the only built-in variable left, and the whole point of
+// depends. This exercises it end to end: a gate on an uncompleted objective
+// hides its dependent, and completing that objective's reveal context (the fact
+// the resolver reads) opens it.
+func TestNavigationService_GetPlayerObjectiveView_ObjectiveSlugGateOpensOnCompletion(t *testing.T) {
+	navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+	instance := &models.Quest{
+		ID:            gofakeit.UUID(),
+		Name:          "Gate Game",
+		UserID:        userID,
+		GameStructure: createTestObjectiveGameStructure(),
+	}
+	require.NoError(t, instanceRepo.Create(ctx, instance))
+	require.NoError(t, repositories.NewQuestSettingsRepository(dbc).
+		Create(ctx, &models.QuestSettings{QuestID: instance.ID}))
+
+	gateway := insertTestObjective(t, dbc, instance.ID, "The Gateway", "gateway")
+
+	locked := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Title:   "The Inner Room",
+		Slug:    "inner-room",
+		Depends: game.DependsField{"objective.gateway"},
+	}
+	_, err := dbc.NewInsert().Model(locked).Exec(ctx)
+	require.NoError(t, err)
+
+	instance.GameStructure.SubGroups[0].ObjectiveIDs = []string{gateway.ID, locked.ID}
+	instance.GameStructure.SubGroups[0].Routing = models.RouteStrategyFreeRoam
+	require.NoError(t, instanceRepo.Update(ctx, instance))
+
+	team := models.Run{
+		ID:      gofakeit.UUID(),
+		Code:    strings.ToUpper(gofakeit.Password(false, true, false, false, false, 4)),
+		Name:    "Test Team",
+		QuestID: instance.ID,
+	}
+	require.NoError(t, teamRepo.InsertBatch(ctx, []models.Run{team}))
+
+	loadTeam := func() *models.Run {
+		teamPtr, getErr := teamRepo.GetByCode(ctx, team.Code)
+		require.NoError(t, getErr)
+		require.NoError(t, teamRepo.LoadRelations(ctx, teamPtr))
+		return teamPtr
+	}
+
+	view, err := navService.GetPlayerObjectiveView(ctx, loadTeam())
+	require.NoError(t, err)
+	slugs := make([]string, 0, len(view.NextObjectives))
+	for _, obj := range view.NextObjectives {
+		slugs = append(slugs, obj.Slug)
+	}
+	assert.NotContains(t, slugs, "inner-room", "gate must be shut before its objective completes")
+
+	// The reveal context completing is what makes objective.gateway truthy.
+	_, err = repositories.NewObjectiveContextCompletionRepository(dbc).
+		Insert(ctx, team.Code, gateway.ID, game.ContextObjectiveReveal)
+	require.NoError(t, err)
+
+	view, err = navService.GetPlayerObjectiveView(ctx, loadTeam())
+	require.NoError(t, err)
+	slugs = slugs[:0]
+	for _, obj := range view.NextObjectives {
+		slugs = append(slugs, obj.Slug)
+	}
+	assert.Contains(t, slugs, "inner-room", "gate must open once its objective completes")
+}
+
 // Regression test: CurrentGroup/CanAdvanceEarly used to be computed against the
-// when-filtered structure while NextObjectives was derived from the unfiltered
-// one. When a when-clause hid every objective in the current group, CurrentGroup
+// filtered structure while NextObjectives was derived from the unfiltered one.
+// When an unmet depends hid every objective in the current group, CurrentGroup
 // would advance to the next group while NextObjectives stayed computed against
 // the old (now-satisfied-looking) group, filtering everything out: the player
 // saw "nothing to show" and got bounced to /complete despite real objectives
 // pending in the group CurrentGroup already reported as current.
-func TestNavigationService_GetPlayerObjectiveView_WhenFilteringConsistentAcrossCurrentGroupAndNextObjectives(t *testing.T) {
+func TestNavigationService_GetPlayerObjectiveView_FilteringConsistentAcrossCurrentGroupAndNextObjectives(t *testing.T) {
 	navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -470,7 +544,7 @@ func TestNavigationService_GetPlayerObjectiveView_WhenFilteringConsistentAcrossC
 		QuestID: instance.ID,
 		Title:   "Hidden objective",
 		Slug:    "hidden-objective",
-		When:    &game.WhenClause{AllOf: []game.Condition{{Var: "never_set"}}},
+		Depends: game.DependsField{"never_set"},
 	}
 	_, err = dbc.NewInsert().Model(objA).Exec(ctx)
 	require.NoError(t, err)

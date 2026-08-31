@@ -143,7 +143,7 @@ func TestChoiceBlock_GetSets(t *testing.T) {
 		},
 	}
 	sets := block.GetSets()
-	assert.Equal(t, game.SetsField{"went_left": "true", "went_right": "true"}, sets)
+	assert.Equal(t, game.SetsField{"went_left", "went_right"}, sets)
 }
 
 func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
@@ -272,24 +272,18 @@ func TestChoiceBlock_GetTriggeredVars(t *testing.T) {
 		assert.Nil(t, block.GetTriggeredVars(state))
 	})
 
-	t.Run("single chosen var set to true", func(t *testing.T) {
+	t.Run("only the chosen var is returned", func(t *testing.T) {
 		state := choiceState("mountain")
 		state.SetComplete(true)
 
-		vars := block.GetTriggeredVars(state)
-		require.NotNil(t, vars)
-		assert.Equal(t, "true", vars["mountain"])
-		assert.NotContains(t, vars, "forest")
+		assert.Equal(t, []string{"mountain"}, block.GetTriggeredVars(state))
 	})
 
-	t.Run("multiple chosen vars all set to true", func(t *testing.T) {
+	t.Run("multiple chosen vars are all returned", func(t *testing.T) {
 		state := choiceState("forest", "mountain")
 		state.SetComplete(true)
 
-		vars := block.GetTriggeredVars(state)
-		require.NotNil(t, vars)
-		assert.Equal(t, "true", vars["forest"])
-		assert.Equal(t, "true", vars["mountain"])
+		assert.ElementsMatch(t, []string{"forest", "mountain"}, block.GetTriggeredVars(state))
 	})
 
 	t.Run("malformed player data returns nil", func(t *testing.T) {

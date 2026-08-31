@@ -298,7 +298,6 @@ func (s *ImportService) walkCreateChildren(
 				CompletionType:  g.Completion,
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
-				When:            g.When,
 				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}
@@ -322,7 +321,7 @@ func (s *ImportService) createObjective(
 		QuestID:    questID,
 		Slug:       objDoc.Slug,
 		Title:      objDoc.Title,
-		When:       objDoc.When,
+		Depends:    objDoc.Depends,
 		ProofSets:  objDoc.Proof.Sets,
 		RevealSets: objDoc.Reveal.Sets,
 	}
@@ -504,7 +503,6 @@ func (s *ImportService) walkUpdateChildren(
 				CompletionType:  g.Completion,
 				MinimumRequired: g.MinimumRequired,
 				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
-				When:            g.When,
 				ObjectiveIDs:    []string{},
 				SubGroups:       []models.GameStructure{},
 			}
@@ -552,7 +550,7 @@ func (s *ImportService) reconcileObjective(
 	seenObjIDs[existingObj.ID] = true
 	existingObj.Title = objDoc.Title
 	existingObj.Slug = objDoc.Slug
-	existingObj.When = objDoc.When
+	existingObj.Depends = objDoc.Depends
 	existingObj.ProofSets = objDoc.Proof.Sets
 	existingObj.RevealSets = objDoc.Reveal.Sets
 

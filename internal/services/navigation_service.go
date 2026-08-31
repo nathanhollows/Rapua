@@ -61,10 +61,9 @@ func NewNavigationService(
 }
 
 // filterGameStructureForObjectives returns a copy of gs with hidden objective
-// IDs stripped from ObjectiveIDs and when-filtered subgroups removed.
+// IDs stripped from ObjectiveIDs.
 func filterGameStructureForObjectives(
 	gs models.GameStructure,
-	resolver game.VarResolver,
 	hiddenObjectiveIDs map[string]bool,
 ) models.GameStructure {
 	filtered := gs
@@ -81,21 +80,19 @@ func filterGameStructureForObjectives(
 
 	filtered.SubGroups = nil
 	for _, sub := range gs.SubGroups {
-		if game.EvaluateWhen(sub.When, resolver) {
-			filtered.SubGroups = append(
-				filtered.SubGroups, filterGameStructureForObjectives(sub, resolver, hiddenObjectiveIDs),
-			)
-		}
+		filtered.SubGroups = append(
+			filtered.SubGroups, filterGameStructureForObjectives(sub, hiddenObjectiveIDs),
+		)
 	}
 	return filtered
 }
 
-// filterObjectivesByWhen returns objs with any entry whose when clause
-// evaluates to false removed.
-func filterObjectivesByWhen(objs []models.Objective, resolver game.VarResolver) []models.Objective {
+// filterObjectivesByDepends returns objs with any entry whose depends list is
+// unmet removed.
+func filterObjectivesByDepends(objs []models.Objective, resolver game.VarResolver) []models.Objective {
 	out := make([]models.Objective, 0, len(objs))
 	for _, obj := range objs {
-		if game.EvaluateWhen(obj.When, resolver) {
+		if game.EvaluateDepends(obj.Depends, resolver) {
 			out = append(out, obj)
 		}
 	}
@@ -115,33 +112,34 @@ func (s *NavigationService) GetPlayerObjectiveView(
 		Settings: team.Quest.Settings,
 	}
 
-	runCount, countErr := s.teamRepo.CountByInstance(ctx, team.QuestID)
-	if countErr != nil {
-		runCount = 0
-		s.logger.WarnContext(ctx, "getting team count for visibility resolver",
-			"instance_id", team.QuestID, "error", countErr)
-	}
-	resolver := NewPlayerVarResolver(team, team.VarStates).WithRunCount(runCount)
-
 	objectives, err := s.objectiveRepo.FindByQuestID(ctx, team.QuestID)
 	if err != nil {
 		return nil, fmt.Errorf("loading quest objectives: %w", err)
 	}
 
+	// Loaded before the resolver rather than inside the game-structure branch
+	// below: a depends list can name objective.<slug>, so completion facts are
+	// an input to reachability, not just to the current-group walk.
+	completedIDs, err := s.getCompletedObjectiveIDs(ctx, team.Code)
+	if err != nil {
+		return nil, fmt.Errorf("getting completed objective ids: %w", err)
+	}
+	resolver := NewPlayerVarResolver(team.VarStates, completedObjectiveSlugs(objectives, completedIDs))
+
 	hiddenObjectiveIDs := make(map[string]bool)
 	for _, obj := range objectives {
-		if !game.EvaluateWhen(obj.When, resolver) {
+		if !game.EvaluateDepends(obj.Depends, resolver) {
 			hiddenObjectiveIDs[obj.ID] = true
 		}
 	}
 
 	// Build a local copy of the team whose Quest.GameStructure has been filtered
-	// for visibility, so the caller's team is never modified.
+	// for reachability, so the caller's team is never modified.
 	navTeam := team
 	if team.Quest.GameStructure.ID != "" {
 		navInstance := team.Quest
 		navInstance.GameStructure = filterGameStructureForObjectives(
-			team.Quest.GameStructure, resolver, hiddenObjectiveIDs,
+			team.Quest.GameStructure, hiddenObjectiveIDs,
 		)
 		navTeam = &models.Run{}
 		*navTeam = *team
@@ -151,10 +149,6 @@ func (s *NavigationService) GetPlayerObjectiveView(
 	var currentGroup *models.GameStructure
 	var objectiveIDs []string
 	if navTeam.Quest.GameStructure.ID != "" {
-		completedIDs, compErr := s.getCompletedObjectiveIDs(ctx, team.Code)
-		if compErr != nil {
-			return nil, fmt.Errorf("getting completed objective ids: %w", compErr)
-		}
 		currentGroupID := navigation.ComputeCurrentGroupForObjectives(
 			&navTeam.Quest.GameStructure,
 			completedIDs,
@@ -168,7 +162,7 @@ func (s *NavigationService) GetPlayerObjectiveView(
 
 		view.CanAdvanceEarly = s.computeCanAdvanceEarlyForObjectives(currentGroup, completedIDs)
 
-		// Same navTeam (when-filtered) and completedIDs used above, not a second
+		// Same navTeam (depends-filtered) and completedIDs used above, not a second
 		// unfiltered fetch: see getValidObjectiveIDsFromGameStructure's doc comment.
 		objectiveIDs, err = s.getValidObjectiveIDsFromGameStructure(navTeam, completedIDs)
 		if err != nil {
@@ -186,14 +180,14 @@ func (s *NavigationService) GetPlayerObjectiveView(
 			nextObjectives = append(nextObjectives, obj)
 		}
 	}
-	view.NextObjectives = filterObjectivesByWhen(nextObjectives, resolver)
+	view.NextObjectives = filterObjectivesByDepends(nextObjectives, resolver)
 
 	return view, nil
 }
 
 // ensureObjectiveTeamRelationsLoaded loads the quest, messages, and fresh var
 // states for an objective-built quest: the player handlers render team.Messages
-// for the notification banner, and var states must be fresh for `when` evaluation.
+// for the notification banner, and var states must be fresh for depends evaluation.
 func (s *NavigationService) ensureObjectiveTeamRelationsLoaded(ctx context.Context, team *models.Run) error {
 	if team.Quest.ID == "" {
 		if err := s.teamRepo.LoadQuest(ctx, team); err != nil {

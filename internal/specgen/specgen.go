@@ -12,9 +12,9 @@ import (
 )
 
 // GenerateBlockSpecs returns the BlockSpec for every registered block type, sorted by type name.
-// All block specs receive a `when` field. Interactive block specs (RequiresValidation) that
-// actually honour it (SupportsPoints) also receive `points`; those supporting creator vars
-// also receive `sets`.
+// Interactive block specs (RequiresValidation) that actually honour it (SupportsPoints)
+// receive `points`; those supporting creator vars also receive `sets`. A block that does
+// neither lists no shared fields at all.
 func GenerateBlockSpecs() []game.BlockSpec {
 	registered := blocks.GetRegisteredBlocks()
 
@@ -31,7 +31,6 @@ func GenerateBlockSpecs() []game.BlockSpec {
 				contexts[i] = string(c)
 			}
 			spec.Contexts = contexts
-			spec.SharedFields = []string{"when"}
 			// Asked of the block rather than listed here, so a new interactive
 			// block cannot ship with the spec hiding a field the runtime honours.
 			if reg.Prototype.RequiresValidation() && reg.Prototype.SupportsPoints() {
