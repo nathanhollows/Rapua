@@ -52,15 +52,26 @@ const (
 //
 //nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type GameStructure struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`                       // Empty for root group, required for visible groups.
-	Color           string         `json:"color"`                      // Empty for root, required for visible groups (e.g. "primary", "secondary").
-	Routing         RouteStrategy  `json:"routing"`                    // ordered, randomised, free_roam, secret.
+	ID      string        `json:"id"`
+	Slug    string        `json:"slug,omitempty"`     // Unique within the quest; minted from Name when absent.
+	Name    string        `json:"name"`               // Empty for root group, required for visible groups.
+	Color   string        `json:"color"`              // Empty for root, required for visible groups (e.g. "primary", "secondary").
+	Routing RouteStrategy `json:"routing"`            // ordered, randomised, free_roam, secret.
+	MaxNext int           `json:"max_next,omitempty"` // Max objectives to show for random routing (0 = unlimited).
+	IsRoot  bool          `json:"is_root"`            // true ONLY for the invisible root container.
+
+	// ChildrenMin and ChildrenMax are the completion band, and the authoritative
+	// record of when this group completes. CompletionType, MinimumRequired and
+	// AutoAdvance are derived from them on write: that trio is the narrower
+	// vocabulary the navigation engine reads, and it cannot express a range.
+	ChildrenMin *int              `json:"children_min,omitempty"`
+	ChildrenMax *int              `json:"children_max,omitempty"`
+	FinishLabel string            `json:"finish_label,omitempty"` // Label for the finish button.
+	Depends     game.DependsField `json:"depends,omitempty"`      // Variable names gating this group.
+
 	CompletionType  CompletionType `json:"completion_type"`            // all, minimum.
 	MinimumRequired int            `json:"minimum_required,omitempty"` // For minimum completion type.
-	MaxNext         int            `json:"max_next,omitempty"`         // Max objectives to show for random routing (0 = unlimited).
 	AutoAdvance     bool           `json:"auto_advance"`               // If true, auto-move to next group when CompletionType met.
-	IsRoot          bool           `json:"is_root"`                    // true ONLY for the invisible root container.
 
 	// Storage: objectives first, then subgroups - order preserved in arrays.
 	ObjectiveIDs []string        `json:"objective_ids,omitempty"` // Ordered list of objective IDs.

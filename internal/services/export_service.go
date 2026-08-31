@@ -82,7 +82,17 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
 
 	// 8. Walk GameStructure recursively to build the children tree
-	children := s.walkStructure(instance.GameStructure, objectiveByID, blocksByOwner)
+	// Slugs are unique document-wide, and objective rows already hold theirs,
+	// so they are claimed before any group slug is minted from a name.
+	takenSlugs := make(map[string]bool, len(objectiveByID))
+	for _, obj := range objectiveByID {
+		if obj.Slug != "" {
+			takenSlugs[obj.Slug] = true
+		}
+	}
+	root := s.walkStructure(instance.GameStructure, objectiveByID, blocksByOwner, takenSlugs)
+	root.Slug = uniqueSlug("root", takenSlugs)
+	root.Title = instance.Name
 
 	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
@@ -94,14 +104,9 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 			EnablePoints:    settings.EnablePoints,
 			ShowLeaderboard: settings.ShowLeaderboard,
 		},
-		Start:  startDoc,
-		Finish: finishDoc,
-		Structure: game.StructureDoc{
-			Routing:         instance.GameStructure.Routing,
-			Completion:      instance.GameStructure.CompletionType,
-			MinimumRequired: instance.GameStructure.MinimumRequired,
-			Children:        children,
-		},
+		Start:     startDoc,
+		Finish:    finishDoc,
+		Structure: root,
 	}
 
 	return doc, nil, nil
@@ -131,39 +136,45 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 	return start, finish
 }
 
-// walkStructure recursively converts a GameStructure node into []game.ChildDoc.
+// walkStructure converts a stored group node into the objective that now
+// represents it. Storage keeps objectives and subgroups in separate arrays, so
+// the single ordered children list puts objectives first, matching the order
+// the blob itself documents.
 func (s *ExportService) walkStructure(
 	gs models.GameStructure,
 	objectiveByID map[string]*models.Objective,
 	blocksByOwner map[string][]models.Block,
-) []game.ChildDoc {
-	children := make([]game.ChildDoc, 0)
+	takenSlugs map[string]bool,
+) game.ObjectiveDoc {
+	children := make([]game.ObjectiveDoc, 0, len(gs.ObjectiveIDs)+len(gs.SubGroups))
 
 	for _, objID := range gs.ObjectiveIDs {
 		obj, ok := objectiveByID[objID]
 		if !ok {
 			continue
 		}
-		objDoc := s.buildObjectiveDoc(obj, blocksByOwner[objID])
-		children = append(children, game.ChildDoc{Objective: &objDoc})
+		children = append(children, s.buildObjectiveDoc(obj, blocksByOwner[objID]))
 	}
 
 	for _, subGroup := range gs.SubGroups {
-		groupChildren := s.walkStructure(subGroup, objectiveByID, blocksByOwner)
-		groupDoc := game.GroupDoc{
-			ID:              subGroup.ID,
-			Name:            subGroup.Name,
-			Color:           subGroup.Color,
-			Routing:         subGroup.Routing,
-			Completion:      subGroup.CompletionType,
-			MinimumRequired: subGroup.MinimumRequired,
-			Children:        groupChildren,
-		}
-		groupDoc.AutoAdvance = &subGroup.AutoAdvance
-		children = append(children, game.ChildDoc{Group: &groupDoc})
+		child := s.walkStructure(subGroup, objectiveByID, blocksByOwner, takenSlugs)
+		child.Slug = uniqueSlug(sectionSlug(subGroup), takenSlugs)
+		child.Title = sectionTitle(subGroup)
+		children = append(children, child)
 	}
 
-	return children
+	minChildren, maxChildren := bandFromGroup(gs)
+	return game.ObjectiveDoc{
+		ID:          gs.ID,
+		Color:       gs.Color,
+		Depends:     gs.Depends,
+		Routing:     gs.Routing,
+		ChildrenMin: minChildren,
+		ChildrenMax: maxChildren,
+		MaxNext:     gs.MaxNext,
+		FinishLabel: gs.FinishLabel,
+		Children:    children,
+	}
 }
 
 func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {

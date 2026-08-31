@@ -51,10 +51,11 @@ func minimalValidDoc(name string) *game.GameDoc {
 		},
 		Start:  []game.BlockDoc{},
 		Finish: []game.BlockDoc{},
-		Structure: game.StructureDoc{
-			Routing:    game.RouteStrategyOrdered,
-			Completion: game.CompletionAll,
-			Children:   []game.ChildDoc{},
+		Structure: game.ObjectiveDoc{
+			Slug:     "root",
+			Title:    name,
+			Routing:  game.RouteStrategyOrdered,
+			Children: []game.ObjectiveDoc{},
 		},
 	}
 }
@@ -64,21 +65,19 @@ func minimalValidDoc(name string) *game.GameDoc {
 // reveal block.
 func docWithObjective(gameName, slug, title string) *game.GameDoc {
 	doc := minimalValidDoc(gameName)
-	doc.Structure.Children = []game.ChildDoc{
+	doc.Structure.Children = []game.ObjectiveDoc{
 		{
-			Objective: &game.ObjectiveDoc{
-				Slug:  slug,
-				Title: title,
-				Proof: game.ObjectiveContextDoc{
-					Blocks: []game.BlockDoc{
-						{"type": "free_text", "prompt": "What is the answer?"},
-					},
-					Sets: game.SetsField{"door_unlocked"},
+			Slug:  slug,
+			Title: title,
+			Proof: game.ObjectiveContextDoc{
+				Blocks: []game.BlockDoc{
+					{"type": "free_text", "prompt": "What is the answer?"},
 				},
-				Reveal: game.ObjectiveContextDoc{
-					Blocks: []game.BlockDoc{
-						{"type": "text", "content": "You found it!"},
-					},
+				Sets: game.SetsField{"door_unlocked"},
+			},
+			Reveal: game.ObjectiveContextDoc{
+				Blocks: []game.BlockDoc{
+					{"type": "text", "content": "You found it!"},
 				},
 			},
 		},
@@ -212,7 +211,6 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 
 	doc := minimalValidDoc("Structure Test")
 	doc.Structure.Routing = game.RouteStrategyFreeRoam
-	doc.Structure.Completion = game.CompletionAll
 
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
@@ -220,6 +218,7 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.Equal(t, game.RouteStrategyFreeRoam, inst.GameStructure.Routing)
+	// An omitted band is every child, which the blob still spells "all".
 	assert.Equal(t, game.CompletionAll, inst.GameStructure.CompletionType)
 	assert.True(t, inst.GameStructure.IsRoot)
 }
@@ -233,21 +232,15 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	doc := minimalValidDoc("Grouped Hunt")
-	doc.Structure.Children = []game.ChildDoc{
+	// A node with children is what storage keeps as a group.
+	doc.Structure.Children = []game.ObjectiveDoc{
 		{
-			Group: &game.GroupDoc{
-				Name:       "Wave 1",
-				Color:      "primary",
-				Routing:    game.RouteStrategyOrdered,
-				Completion: game.CompletionAll,
-				Children: []game.ChildDoc{
-					{
-						Objective: &game.ObjectiveDoc{
-							Slug:  "checkpoint-a",
-							Title: "Checkpoint A",
-						},
-					},
-				},
+			Slug:    "wave-1",
+			Title:   "Wave 1",
+			Color:   "primary",
+			Routing: game.RouteStrategyOrdered,
+			Children: []game.ObjectiveDoc{
+				{Slug: "checkpoint-a", Title: "Checkpoint A"},
 			},
 		},
 	}
@@ -345,13 +338,11 @@ func TestImportService_ImportCreate_ObjectiveDepends(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	doc := minimalValidDoc("Depends Objective Game")
-	doc.Structure.Children = []game.ChildDoc{
+	doc.Structure.Children = []game.ObjectiveDoc{
 		{
-			Objective: &game.ObjectiveDoc{
-				Slug:    "secret",
-				Title:   "Secret Spot",
-				Depends: game.DependsField{"unlocked"},
-			},
+			Slug:    "secret",
+			Title:   "Secret Spot",
+			Depends: game.DependsField{"unlocked"},
 		},
 	}
 
@@ -388,8 +379,8 @@ func TestImportService_ImportUpdate_ObjectiveDependsUpdated(t *testing.T) {
 
 	// Update doc: add depends to same objective (matched by slug).
 	updateDoc := docWithObjective("Depends Update Game", "spot", "The Spot")
-	updateDoc.Structure.Children[0].Objective.ID = objs[0].ID
-	updateDoc.Structure.Children[0].Objective.Depends = game.DependsField{"gate"}
+	updateDoc.Structure.Children[0].ID = objs[0].ID
+	updateDoc.Structure.Children[0].Depends = game.DependsField{"gate"}
 
 	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
 	require.NoError(t, err)

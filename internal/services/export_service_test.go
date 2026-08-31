@@ -91,8 +91,9 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	assert.True(t, doc.Settings.EnablePoints)
 	assert.True(t, doc.Settings.ShowLeaderboard)
 	assert.Equal(t, game.RouteStrategyOrdered, doc.Structure.Routing)
-	assert.Equal(t, game.CompletionAll, doc.Structure.Completion)
 	assert.Empty(t, doc.Structure.Children)
+	assert.Nil(t, doc.Structure.ChildrenMin, "completion=all exports as an omitted band")
+	assert.Nil(t, doc.Structure.ChildrenMax)
 	assert.Empty(t, doc.Start)
 	assert.Empty(t, doc.Finish)
 }
@@ -144,18 +145,18 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 
 	require.Len(t, doc.Structure.Children, 1)
 	child := doc.Structure.Children[0]
-	require.NotNil(t, child.Objective)
-	assert.Equal(t, obj.ID, child.Objective.ID)
-	assert.Equal(t, "find-the-key", child.Objective.Slug)
-	assert.Equal(t, "Find the key", child.Objective.Title)
+	assert.Equal(t, obj.ID, child.ID)
+	assert.Equal(t, "find-the-key", child.Slug)
+	assert.Equal(t, "Find the key", child.Title)
+	assert.Empty(t, child.Children, "an objective row exports as a leaf")
 
-	require.Len(t, child.Objective.Proof.Blocks, 1)
-	assert.Equal(t, proofBlock.GetID(), child.Objective.Proof.Blocks[0]["id"])
-	assert.Equal(t, game.SetsField{"door_unlocked"}, child.Objective.Proof.Sets)
+	require.Len(t, child.Proof.Blocks, 1)
+	assert.Equal(t, proofBlock.GetID(), child.Proof.Blocks[0]["id"])
+	assert.Equal(t, game.SetsField{"door_unlocked"}, child.Proof.Sets)
 
-	require.Len(t, child.Objective.Reveal.Blocks, 1)
-	assert.Equal(t, revealBlock.GetID(), child.Objective.Reveal.Blocks[0]["id"])
-	assert.Equal(t, game.SetsField{"story_seen"}, child.Objective.Reveal.Sets)
+	require.Len(t, child.Reveal.Blocks, 1)
+	assert.Equal(t, revealBlock.GetID(), child.Reveal.Blocks[0]["id"])
+	assert.Equal(t, game.SetsField{"story_seen"}, child.Reveal.Sets)
 }
 
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
@@ -237,13 +238,15 @@ func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, doc.Structure.Children, 1)
+	// A stored group exports as an ordinary objective with children: its name
+	// becomes the title, and a slug is minted from that name since groups
+	// predate slugs.
 	child := doc.Structure.Children[0]
-	require.NotNil(t, child.Group)
-	assert.Equal(t, "Wave 1", child.Group.Name)
-	assert.Equal(t, groupID, child.Group.ID)
-	require.Len(t, child.Group.Children, 1)
-	require.NotNil(t, child.Group.Children[0].Objective)
-	assert.Equal(t, "spot", child.Group.Children[0].Objective.Slug)
+	assert.Equal(t, "Wave 1", child.Title)
+	assert.Equal(t, "wave-1", child.Slug)
+	assert.Equal(t, groupID, child.ID)
+	require.Len(t, child.Children, 1)
+	assert.Equal(t, "spot", child.Children[0].Slug)
 }
 
 func TestExportService_ObjectiveDependsRoundTrip(t *testing.T) {
@@ -280,7 +283,5 @@ func TestExportService_ObjectiveDependsRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, doc.Structure.Children, 1)
-	objDoc := doc.Structure.Children[0].Objective
-	require.NotNil(t, objDoc)
-	assert.Equal(t, game.DependsField{"gate", "not decoy"}, objDoc.Depends)
+	assert.Equal(t, game.DependsField{"gate", "not decoy"}, doc.Structure.Children[0].Depends)
 }

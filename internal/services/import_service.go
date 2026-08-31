@@ -234,14 +234,14 @@ func (s *ImportService) importCreate(
 
 	stats := ImportStats{}
 	gs := &models.GameStructure{
-		ID:              uuid.New().String(),
-		IsRoot:          true,
-		Routing:         doc.Structure.Routing,
-		CompletionType:  doc.Structure.Completion,
-		MinimumRequired: doc.Structure.MinimumRequired,
-		ObjectiveIDs:    []string{},
-		SubGroups:       []models.GameStructure{},
+		ID:           uuid.New().String(),
+		IsRoot:       true,
+		Routing:      doc.Structure.Routing,
+		MaxNext:      doc.Structure.MaxNext,
+		ObjectiveIDs: []string{},
+		SubGroups:    []models.GameStructure{},
 	}
+	gs.CompletionType, gs.MinimumRequired, gs.AutoAdvance = groupCompletionFromBand(doc.Structure)
 
 	if err := s.walkCreateChildren(ctx, tx, newInstance.ID, doc.Structure.Children, gs, &stats); err != nil {
 		return nil, err
@@ -275,38 +275,30 @@ func (s *ImportService) walkCreateChildren(
 	ctx context.Context,
 	tx *bun.Tx,
 	questID string,
-	children []game.ChildDoc,
+	children []game.ObjectiveDoc,
 	parentGS *models.GameStructure,
 	stats *ImportStats,
 ) error {
 	for _, child := range children {
-		if child.Objective != nil {
-			objID, blockCount, err := s.createObjective(ctx, tx, questID, *child.Objective)
+		// Children are what separate a section from a leaf: storage has two
+		// shapes where the document has one.
+		if len(child.Children) == 0 {
+			objID, blockCount, err := s.createObjective(ctx, tx, questID, child)
 			if err != nil {
 				return err
 			}
 			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
 			stats.Objectives++
 			stats.Blocks += blockCount
-		} else if child.Group != nil {
-			g := child.Group
-			subGS := models.GameStructure{
-				ID:              uuid.New().String(),
-				Name:            g.Name,
-				Color:           g.Color,
-				Routing:         g.Routing,
-				CompletionType:  g.Completion,
-				MinimumRequired: g.MinimumRequired,
-				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
-				ObjectiveIDs:    []string{},
-				SubGroups:       []models.GameStructure{},
-			}
-			if err := s.walkCreateChildren(ctx, tx, questID, g.Children, &subGS, stats); err != nil {
-				return err
-			}
-			parentGS.SubGroups = append(parentGS.SubGroups, subGS)
-			stats.Groups++
+			continue
 		}
+
+		subGS := newSectionGroup(uuid.New().String(), child)
+		if err := s.walkCreateChildren(ctx, tx, questID, child.Children, &subGS, stats); err != nil {
+			return err
+		}
+		parentGS.SubGroups = append(parentGS.SubGroups, subGS)
+		stats.Groups++
 	}
 	return nil
 }
@@ -403,14 +395,14 @@ func (s *ImportService) importUpdate(
 
 	// Build new GameStructure
 	gs := &models.GameStructure{
-		ID:              existing.GameStructure.ID,
-		IsRoot:          true,
-		Routing:         doc.Structure.Routing,
-		CompletionType:  doc.Structure.Completion,
-		MinimumRequired: doc.Structure.MinimumRequired,
-		ObjectiveIDs:    []string{},
-		SubGroups:       []models.GameStructure{},
+		ID:           existing.GameStructure.ID,
+		IsRoot:       true,
+		Routing:      doc.Structure.Routing,
+		MaxNext:      doc.Structure.MaxNext,
+		ObjectiveIDs: []string{},
+		SubGroups:    []models.GameStructure{},
 	}
+	gs.CompletionType, gs.MinimumRequired, gs.AutoAdvance = groupCompletionFromBand(doc.Structure)
 
 	if err := s.walkUpdateChildren(ctx, tx, existing.ID, doc.Structure.Children, gs,
 		objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
@@ -473,7 +465,7 @@ func (s *ImportService) walkUpdateChildren(
 	ctx context.Context,
 	tx *bun.Tx,
 	questID string,
-	children []game.ChildDoc,
+	children []game.ObjectiveDoc,
 	parentGS *models.GameStructure,
 	objByID map[string]*models.Objective,
 	objBySlug map[string]*models.Objective,
@@ -482,36 +474,26 @@ func (s *ImportService) walkUpdateChildren(
 	result *ImportResult,
 ) error {
 	for _, child := range children {
-		if child.Objective != nil {
-			objID, err := s.reconcileObjective(ctx, tx, questID, *child.Objective,
+		if len(child.Children) == 0 {
+			objID, err := s.reconcileObjective(ctx, tx, questID, child,
 				objByID, objBySlug, blockByID, seenObjIDs, result)
 			if err != nil {
 				return err
 			}
 			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
-		} else if child.Group != nil {
-			g := child.Group
-			groupID := g.ID
-			if groupID == "" {
-				groupID = uuid.New().String()
-			}
-			subGS := models.GameStructure{
-				ID:              groupID,
-				Name:            g.Name,
-				Color:           g.Color,
-				Routing:         g.Routing,
-				CompletionType:  g.Completion,
-				MinimumRequired: g.MinimumRequired,
-				AutoAdvance:     g.AutoAdvance == nil || *g.AutoAdvance,
-				ObjectiveIDs:    []string{},
-				SubGroups:       []models.GameStructure{},
-			}
-			if err := s.walkUpdateChildren(ctx, tx, questID, g.Children, &subGS,
-				objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
-				return err
-			}
-			parentGS.SubGroups = append(parentGS.SubGroups, subGS)
+			continue
 		}
+
+		groupID := child.ID
+		if groupID == "" {
+			groupID = uuid.New().String()
+		}
+		subGS := newSectionGroup(groupID, child)
+		if err := s.walkUpdateChildren(ctx, tx, questID, child.Children, &subGS,
+			objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
+			return err
+		}
+		parentGS.SubGroups = append(parentGS.SubGroups, subGS)
 	}
 	return nil
 }
