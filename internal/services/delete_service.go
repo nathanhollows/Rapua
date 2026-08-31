@@ -257,8 +257,8 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 	return nil
 }
 
-// DeleteObjective: blocks.owner_id has no FK, so blocks are deleted
-// explicitly.
+// DeleteObjective deletes blocks explicitly because blocks.owner_id has no FK
+// to cascade from.
 func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {

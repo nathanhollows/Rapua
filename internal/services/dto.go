@@ -12,7 +12,7 @@ const (
 	year   = "year"
 )
 
-// ObjectiveUpdateData: blank fields are ignored.
+// ObjectiveUpdateData ignores blank fields.
 type ObjectiveUpdateData struct {
 	Title string
 }
