@@ -107,10 +107,6 @@ func init() {
 
 	// Interactive blocks.
 	registerBlock(
-		&BrokerBlock{},
-		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
-	)
-	registerBlock(
 		&ChecklistBlock{},
 		[]BlockContext{ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
@@ -292,8 +288,6 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewQuizBlock(baseBlock), nil
 	case "clue":
 		return NewClueBlock(baseBlock), nil
-	case "broker":
-		return NewBrokerBlock(baseBlock), nil
 	case "button":
 		return NewButtonBlock(baseBlock), nil
 	case "random_clue":
@@ -386,12 +380,6 @@ func NewSortingBlock(base BaseBlock) *SortingBlock {
 
 func NewClueBlock(base BaseBlock) *ClueBlock {
 	return &ClueBlock{
-		BaseBlock: base,
-	}
-}
-
-func NewBrokerBlock(base BaseBlock) *BrokerBlock {
-	return &BrokerBlock{
 		BaseBlock: base,
 	}
 }

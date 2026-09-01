@@ -31,7 +31,6 @@ These blocks are the foundation of your game and are used to provide information
 
 These blocks allow you to create interactive elements in your game that require participants to complete a task or answer a question. They can be used to test knowledge, provide feedback, or guide participants through the game.
 
-- [Broker](/docs/user/blocks/broker)
 - [Checklist](/docs/user/blocks/checklist)
 - [Choice](/docs/user/blocks/choice)
 - [Clue](/docs/user/blocks/clue)

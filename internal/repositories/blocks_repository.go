@@ -330,7 +330,12 @@ func (r *blockRepository) convertModelsToBlocks(modelBlocks []models.Block) (blo
 	for _, modelBlock := range modelBlocks {
 		block, err := convertModelToBlock(&modelBlock)
 		if err != nil {
-			// Skip unknown block types gracefully - they may exist in another branch
+			// A row whose type is not registered is skipped rather than
+			// failing the page. That covers a branch where the type exists and
+			// a type that has since been retired, and it is silent either way:
+			// the block simply is not there, and any gate it held opens. So
+			// retiring a type means deleting its rows in the same change, not
+			// leaving them for this to swallow.
 			if errors.Is(err, blocks.ErrBlockTypeNotFound) {
 				continue
 			}

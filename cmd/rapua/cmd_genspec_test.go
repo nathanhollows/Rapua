@@ -128,7 +128,7 @@ func TestWriteGameSpec_AllRegisteredBlocksPresent(t *testing.T) {
 
 	// Every registered block type should appear in the output
 	knownTypes := []string{
-		"alert", "broker", "button", "checklist", "clue", "divider",
+		"alert", "button", "checklist", "clue", "divider",
 		"game_status", "header", "image", "password", "photo", "pincode",
 		"quiz", "random_clue", "rating", "sorting", "start_button",
 		"team_name", "text", "toggle_text", "youtube",

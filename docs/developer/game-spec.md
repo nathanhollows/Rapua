@@ -15,14 +15,15 @@ order: 21
 These rules are enforced by the linter (`POST /api/v8/lint`). Errors block import; warnings should be fixed.
 
 **Structure**
-- Every objective must be inside a group. An objective placed directly under `structure.children` is never shown to players. Wrap it in a group. *(`ROOT_OBJECTIVE_HIDDEN`)*
-- Groups must have at least one child. An empty group produces a warning. *(`EMPTY_GROUP`)*
-- Objective slugs must be unique across the entire game, including across groups. *(`SLUG_DUPLICATE`)*
+- The document is one recursive type. `structure` is the root objective, and every node under `children` has the same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them.
+- Objective slugs must be unique across the whole document, root and sections included. *(`SLUG_DUPLICATE`)*
+- `routing` is required on an objective with children and inert without them. *(`INVALID_ROUTING`, `ROUTING_ON_LEAF`)*
+- Nesting deeper than 4 levels warns: it is hard to navigate on a phone. *(`NESTING_TOO_DEEP`)*
+- An objective's `depends` must not lead back to itself. *(`DEPENDS_CYCLE`)*
 
 **Import modes**
 - **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.
 - **Update-import** (`POST /admin/quests/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`RunBlockState`). Objectives absent from the document are deleted.
-- Group `id` is preserved on update-import to avoid orphaning team progress records (`SkippedGroupIDs`).
 
 **Blocks**
 - Every block must have a `type` field matching a registered block type.
@@ -33,18 +34,23 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 **Start page**
 - A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
 
-**Completion**
-- `minimum_required` is only valid when `completion` is `"minimum"`; it must be a positive integer. *(`MINIMUM_REQUIRED_MISMATCH` / `MINIMUM_REQUIRED_MISSING`)*
+**Completion band**
+- `children_min` and `children_max` form a range over completed children. When they are equal the objective auto-completes at that count; when min is lower, reaching min reveals a finish button and the player's press completes the objective, which also auto-completes at max.
+- Omitting both requires every child. Naming either bound widens the other to its extreme (min to 0, max to the child count), so an explicit `children_min: 0` is not the same as omitting it.
+- `children_min` must not exceed `children_max`. *(`BAND_MIN_EXCEEDS_MAX`)*
+- Both bounds must lie between 0 and the child count. *(`BAND_OUT_OF_RANGE`)*
+- `children_max: 0` completes the objective before any child is reachable. *(`BAND_COMPLETES_AT_ZERO`)*
+- The band, `routing`, `max_next` and `finish_label` are inert on an objective with no children. *(`BAND_ON_LEAF`, `ROUTING_ON_LEAF`, `MAX_NEXT_ON_LEAF`, `FINISH_LABEL_UNREACHABLE`)*
+- `finish_label` only shows on an objective in a range. *(`FINISH_LABEL_UNREACHABLE`)*
 
-**Conditional visibility (`when` / `sets`)**
-- Every variable referenced in a `when` condition must be defined in a block `sets` or the built-in variable list. *(`UNDEFINED_VAR`)*
-- No two `sets` declarations across the whole game may write the same variable name. *(`DUPLICATE_SETS_VAR`)*
-- `sets` variable names must not shadow built-in variable names. *(`SHADOWED_VAR`)*
-- `sets` is a list of variable names set to `"true"` when the block completes.
-- `op` in a condition must be a valid operator from `enums.condition_ops`. *(`INVALID_CONDITION_OP`)*
-- Every condition must have a `var` field; `value` is required when `op` is present. *(`INVALID_CONDITION`)*
+**Reachability (`depends` / `sets`)**
+- `depends` is a flat list of variable names on an objective, implicitly ANDed. Each name is a truthy check: there are no comparison operators. Prefix a name with `not ` to negate it.
+- A name is either `objective.<slug>` or a variable written by a block or context `sets`. Anything else warns. *(`UNDEFINED_VAR`, `UNDEFINED_OBJECTIVE_VAR`)*
+- A `depends` entry that names no variable is an error. *(`DEPENDS_EMPTY_NAME`)*
+- `sets` is a list of variable names, each written as `"true"` when the block or context completes. Any other shape is an error. *(`SETS_NOT_LIST`)*
+- `sets` must not write to the runtime-owned `objective.*` namespace. *(`SETS_RESERVED_NAMESPACE`)*
 - `sets` on a content block (text, alert, image, etc.) is ignored. *(`SETS_ON_CONTENT_BLOCK` warning)*
-- A `sets` variable that is never referenced in any `when` clause produces a warning. *(`UNUSED_SETS_VAR` warning)*
+- A `sets` variable that no `depends` list references produces a warning. *(`UNUSED_VAR` warning)*
 
 ## Full spec
 
@@ -109,153 +115,8 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       {
         "name": "structure",
         "type": "object",
-        "description": "Root group defining routing and the objective tree.",
+        "description": "The root objective. An ordinary objective with no parent, using the schema below: the tree is one recursive type, not a container wrapping a different one.",
         "required": true,
-        "fields": [
-          {
-            "name": "color",
-            "type": "string",
-            "description": "Display colour for this group (e.g. \"primary\", \"secondary\"). Omit or empty for the root group."
-          },
-          {
-            "name": "routing",
-            "type": "enum",
-            "description": "How players are routed through objectives. See enums.routing.",
-            "required": true
-          },
-          {
-            "name": "completion",
-            "type": "enum",
-            "description": "When the group is considered complete. See enums.completion.",
-            "required": true
-          },
-          {
-            "name": "minimum_required",
-            "type": "int",
-            "description": "Number of objectives required when completion is \"minimum\"."
-          },
-          {
-            "name": "when",
-            "type": "object",
-            "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
-            "fields": [
-              {
-                "name": "all_of",
-                "type": "list",
-                "description": "ALL conditions must be true (AND). Each item is a condition object.",
-                "items": {
-                  "name": "",
-                  "type": "object",
-                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-                  "fields": [
-                    {
-                      "name": "var",
-                      "type": "string",
-                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                      "required": true
-                    },
-                    {
-                      "name": "op",
-                      "type": "enum",
-                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                      "enum": [
-                        "eq",
-                        "neq",
-                        "gt",
-                        "lt",
-                        "gte",
-                        "lte",
-                        "in",
-                        "not_in"
-                      ]
-                    },
-                    {
-                      "name": "value",
-                      "type": "any",
-                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-                    },
-                    {
-                      "name": "not",
-                      "type": "bool",
-                      "description": "Negate the result of this condition."
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "any_of",
-                "type": "list",
-                "description": "At least one condition must be true (OR). Each item is a condition object.",
-                "items": {
-                  "name": "",
-                  "type": "object",
-                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-                  "fields": [
-                    {
-                      "name": "var",
-                      "type": "string",
-                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                      "required": true
-                    },
-                    {
-                      "name": "op",
-                      "type": "enum",
-                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                      "enum": [
-                        "eq",
-                        "neq",
-                        "gt",
-                        "lt",
-                        "gte",
-                        "lte",
-                        "in",
-                        "not_in"
-                      ]
-                    },
-                    {
-                      "name": "value",
-                      "type": "any",
-                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-                    },
-                    {
-                      "name": "not",
-                      "type": "bool",
-                      "description": "Negate the result of this condition."
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "name": "children",
-            "type": "list",
-            "description": "Ordered list of objective or group children.",
-            "required": true,
-            "items": {
-              "name": "",
-              "type": "object",
-              "description": "Tagged union: set exactly one of \"objective\" or \"group\".",
-              "fields": [
-                {
-                  "name": "objective",
-                  "type": "object",
-                  "description": "A single game objective. See objective schema."
-                },
-                {
-                  "name": "group",
-                  "type": "object",
-                  "description": "A named sub-group with its own routing and completion settings."
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "objective",
-        "type": "object",
-        "description": "Schema for objective objects within structure.children. Has no points field of its own; its total point value is the sum of its blocks' points.",
         "fields": [
           {
             "name": "id",
@@ -265,7 +126,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "slug",
             "type": "string",
-            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e when clauses. Must be unique within the game.",
+            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e in depends lists. Must be unique within the game.",
             "required": true
           },
           {
@@ -275,102 +136,23 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "required": true
           },
           {
-            "name": "when",
-            "type": "object",
-            "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
-            "fields": [
-              {
-                "name": "all_of",
-                "type": "list",
-                "description": "ALL conditions must be true (AND). Each item is a condition object.",
-                "items": {
-                  "name": "",
-                  "type": "object",
-                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-                  "fields": [
-                    {
-                      "name": "var",
-                      "type": "string",
-                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                      "required": true
-                    },
-                    {
-                      "name": "op",
-                      "type": "enum",
-                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                      "enum": [
-                        "eq",
-                        "neq",
-                        "gt",
-                        "lt",
-                        "gte",
-                        "lte",
-                        "in",
-                        "not_in"
-                      ]
-                    },
-                    {
-                      "name": "value",
-                      "type": "any",
-                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-                    },
-                    {
-                      "name": "not",
-                      "type": "bool",
-                      "description": "Negate the result of this condition."
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "any_of",
-                "type": "list",
-                "description": "At least one condition must be true (OR). Each item is a condition object.",
-                "items": {
-                  "name": "",
-                  "type": "object",
-                  "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-                  "fields": [
-                    {
-                      "name": "var",
-                      "type": "string",
-                      "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                      "required": true
-                    },
-                    {
-                      "name": "op",
-                      "type": "enum",
-                      "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                      "enum": [
-                        "eq",
-                        "neq",
-                        "gt",
-                        "lt",
-                        "gte",
-                        "lte",
-                        "in",
-                        "not_in"
-                      ]
-                    },
-                    {
-                      "name": "value",
-                      "type": "any",
-                      "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-                    },
-                    {
-                      "name": "not",
-                      "type": "bool",
-                      "description": "Negate the result of this condition."
-                    }
-                  ]
-                }
-              }
-            ]
+            "name": "color",
+            "type": "string",
+            "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
+          },
+          {
+            "name": "depends",
+            "type": "list",
+            "description": "Variable names gating this objective's reachability, implicitly ANDed. Each name is a truthy check with no comparison operators; prefix a name with \"not \" to negate it. A name is either objective.\u003cslug\u003e or a variable written by a block or context \"sets\". Absent or empty means always reachable.",
+            "items": {
+              "name": "",
+              "type": "string"
+            }
           },
           {
             "name": "proof",
             "type": "object",
-            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing.",
+            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears.",
             "required": true,
             "fields": [
               {
@@ -380,8 +162,8 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
               },
               {
                 "name": "sets",
-                "type": "object",
-                "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+                "type": "list",
+                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
                 "items": {
                   "name": "",
                   "type": "string"
@@ -402,14 +184,156 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
               },
               {
                 "name": "sets",
-                "type": "object",
-                "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+                "type": "list",
+                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
                 "items": {
                   "name": "",
                   "type": "string"
                 }
               }
             ]
+          },
+          {
+            "name": "routing",
+            "type": "enum",
+            "description": "How players are routed through this objective's children. Required when there are children, meaningless without them. See enums.routing."
+          },
+          {
+            "name": "children_min",
+            "type": "int",
+            "description": "How many children must complete before the player may finish this objective. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "children_max",
+            "type": "int",
+            "description": "How many completed children finish this objective on their own. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "max_next",
+            "type": "int",
+            "description": "How many children a randomised objective offers at once. 0 means all of them."
+          },
+          {
+            "name": "finish_label",
+            "type": "string",
+            "description": "Label for the finish button. Only an objective in a range ever shows one, so setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE)."
+          },
+          {
+            "name": "children",
+            "type": "list",
+            "description": "Ordered list of child objectives, each with this same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them."
+          }
+        ]
+      },
+      {
+        "name": "objective",
+        "type": "object",
+        "description": "Schema for every objective, root and children alike. Has no points field of its own; its total point value is the sum of its blocks' points.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "Objective UUID. Present on export; omit on create-import to generate a new UUID."
+          },
+          {
+            "name": "slug",
+            "type": "string",
+            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e in depends lists. Must be unique within the game.",
+            "required": true
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "description": "Display title shown to players.",
+            "required": true
+          },
+          {
+            "name": "color",
+            "type": "string",
+            "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
+          },
+          {
+            "name": "depends",
+            "type": "list",
+            "description": "Variable names gating this objective's reachability, implicitly ANDed. Each name is a truthy check with no comparison operators; prefix a name with \"not \" to negate it. A name is either objective.\u003cslug\u003e or a variable written by a block or context \"sets\". Absent or empty means always reachable.",
+            "items": {
+              "name": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "proof",
+            "type": "object",
+            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              },
+              {
+                "name": "sets",
+                "type": "list",
+                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
+                "items": {
+                  "name": "",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "reveal",
+            "type": "object",
+            "description": "Blocks and sets shown/fired once proof completes.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              },
+              {
+                "name": "sets",
+                "type": "list",
+                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
+                "items": {
+                  "name": "",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "routing",
+            "type": "enum",
+            "description": "How players are routed through this objective's children. Required when there are children, meaningless without them. See enums.routing."
+          },
+          {
+            "name": "children_min",
+            "type": "int",
+            "description": "How many children must complete before the player may finish this objective. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "children_max",
+            "type": "int",
+            "description": "How many completed children finish this objective on their own. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "max_next",
+            "type": "int",
+            "description": "How many children a randomised objective offers at once. 0 means all of them."
+          },
+          {
+            "name": "finish_label",
+            "type": "string",
+            "description": "Label for the finish button. Only an objective in a range ever shows one, so setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE)."
+          },
+          {
+            "name": "children",
+            "type": "list",
+            "description": "Ordered list of child objectives, each with this same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them."
           }
         ]
       }
@@ -431,93 +355,14 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "value": "ordered",
         "label": "Guided Path",
         "description": "Players must complete objectives in a specific order. Good for narrative experiences."
-      },
-      {
-        "value": "secret",
-        "label": "Secret",
-        "description": "Objectives that may be accessed out of sequence. These objectives are never explicitly shown to players."
-      }
-    ],
-    "completion": [
-      {
-        "value": "all",
-        "label": "All Objectives",
-        "description": "All objectives must be completed for the group to be considered done."
-      },
-      {
-        "value": "minimum",
-        "label": "Minimum Required",
-        "description": "A minimum number of objectives must be completed for the group to be considered done."
-      }
-    ],
-    "condition_ops": [
-      {
-        "value": "eq",
-        "label": "Equal",
-        "description": "var == value"
-      },
-      {
-        "value": "neq",
-        "label": "Not equal",
-        "description": "var != value"
-      },
-      {
-        "value": "gt",
-        "label": "Greater than",
-        "description": "var \u003e value (numeric)"
-      },
-      {
-        "value": "lt",
-        "label": "Less than",
-        "description": "var \u003c value (numeric)"
-      },
-      {
-        "value": "gte",
-        "label": "Greater than or equal",
-        "description": "var \u003e= value (numeric)"
-      },
-      {
-        "value": "lte",
-        "label": "Less than or equal",
-        "description": "var \u003c= value (numeric)"
-      },
-      {
-        "value": "in",
-        "label": "In array",
-        "description": "var is one of value (value must be an array)"
-      },
-      {
-        "value": "not_in",
-        "label": "Not in array",
-        "description": "var is not in value (value must be an array)"
       }
     ]
   },
   "built_in_vars": [
     {
-      "var": "player.points",
-      "type": "int",
-      "description": "Total points earned on this run. Evaluated live from the run's points."
-    },
-    {
-      "var": "points",
-      "type": "int",
-      "description": "Pre-respine spelling of player.points. Still resolves; prefer player.points."
-    },
-    {
-      "var": "run.started_at",
-      "type": "timestamp",
-      "description": "RFC3339 timestamp of when the run began. Empty until the players start."
-    },
-    {
       "var": "objective.\u003cslug\u003e",
       "type": "string",
       "description": "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise."
-    },
-    {
-      "var": "game.team_count",
-      "type": "int",
-      "description": "Number of teams with HasStarted == true in this game instance."
     }
   ],
   "contexts": [
@@ -540,102 +385,9 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
   ],
   "block_shared_fields": [
     {
-      "name": "when",
-      "type": "object",
-      "description": "Visibility conditions. Element is hidden when conditions are not met. Absent means always visible.",
-      "fields": [
-        {
-          "name": "all_of",
-          "type": "list",
-          "description": "ALL conditions must be true (AND). Each item is a condition object.",
-          "items": {
-            "name": "",
-            "type": "object",
-            "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-            "fields": [
-              {
-                "name": "var",
-                "type": "string",
-                "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                "required": true
-              },
-              {
-                "name": "op",
-                "type": "enum",
-                "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                "enum": [
-                  "eq",
-                  "neq",
-                  "gt",
-                  "lt",
-                  "gte",
-                  "lte",
-                  "in",
-                  "not_in"
-                ]
-              },
-              {
-                "name": "value",
-                "type": "any",
-                "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-              },
-              {
-                "name": "not",
-                "type": "bool",
-                "description": "Negate the result of this condition."
-              }
-            ]
-          }
-        },
-        {
-          "name": "any_of",
-          "type": "list",
-          "description": "At least one condition must be true (OR). Each item is a condition object.",
-          "items": {
-            "name": "",
-            "type": "object",
-            "description": "A single condition. var is required; op+value are optional comparisons; not negates the result.",
-            "fields": [
-              {
-                "name": "var",
-                "type": "string",
-                "description": "Variable to check. Built-in: player.points, run.started_at, objective.\u003cslug\u003e, game.team_count. Creator-defined via block sets.",
-                "required": true
-              },
-              {
-                "name": "op",
-                "type": "enum",
-                "description": "Comparison operator. Omit for a bare truthy check. See enums.condition_ops.",
-                "enum": [
-                  "eq",
-                  "neq",
-                  "gt",
-                  "lt",
-                  "gte",
-                  "lte",
-                  "in",
-                  "not_in"
-                ]
-              },
-              {
-                "name": "value",
-                "type": "any",
-                "description": "Value to compare against. String, int, bool, or array (for in/not_in). Required when op is present."
-              },
-              {
-                "name": "not",
-                "type": "bool",
-                "description": "Negate the result of this condition."
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "name": "sets",
-      "type": "object",
-      "description": "Variables written when this block completes, as an object of {name: value}. Values may be strings, numbers, or booleans; all are stored as strings. Any other shape emits SETS_NOT_OBJECT. Only valid on interactive blocks — linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE — that prefix is owned by the runtime and set automatically when objectives complete.",
+      "type": "list",
+      "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Only valid on interactive blocks: linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
       "items": {
         "name": "",
         "type": "string"
@@ -658,9 +410,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof",
         "objective_reveal"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "content",
@@ -682,54 +431,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ]
     },
     {
-      "type": "broker",
-      "name": "Information Broker",
-      "description": "Players spend points to reveal progressively detailed information tiers. Points are spent via each tier's points_required, deducted from the team on purchase; the broker has no block-level points field.",
-      "contexts": [
-        "objective_proof",
-        "objective_reveal"
-      ],
-      "shared_fields": [
-        "when",
-        "sets"
-      ],
-      "fields": [
-        {
-          "name": "prompt",
-          "type": "string",
-          "description": "Instructions shown to the player"
-        },
-        {
-          "name": "default_info",
-          "type": "markdown",
-          "description": "Information shown for free (0 points)"
-        },
-        {
-          "name": "tiers",
-          "type": "list",
-          "description": "Paid information tiers in ascending cost order",
-          "items": {
-            "name": "",
-            "type": "object",
-            "fields": [
-              {
-                "name": "points_required",
-                "type": "int",
-                "description": "Points cost for this tier",
-                "required": true
-              },
-              {
-                "name": "content",
-                "type": "markdown",
-                "description": "Information revealed at this tier",
-                "required": true
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "type": "button",
       "name": "Button",
       "description": "A clickable button that opens a URL.",
@@ -738,9 +439,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "start",
         "objective_proof",
         "objective_reveal"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {
@@ -778,7 +476,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -827,7 +524,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -883,7 +579,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -916,9 +611,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof",
         "objective_reveal"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "title",
@@ -937,7 +629,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -960,9 +651,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       "description": "Shows the current game status (scheduled, active, or closed) with optional messages.",
       "contexts": [
         "start"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {
@@ -991,9 +679,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "finish",
         "objective_proof",
         "objective_reveal"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {
@@ -1032,9 +717,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof",
         "objective_reveal"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "url",
@@ -1068,9 +750,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "start",
         "objective_proof",
         "objective_reveal"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {
@@ -1111,7 +790,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1144,7 +822,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1170,7 +847,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1202,7 +878,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1272,9 +947,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof",
         "objective_reveal"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "clues",
@@ -1298,7 +970,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1324,7 +995,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1375,7 +1045,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "when",
         "points",
         "sets"
       ],
@@ -1432,9 +1101,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       "contexts": [
         "start"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "scheduled_text",
@@ -1466,7 +1132,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "start"
       ],
       "shared_fields": [
-        "when",
         "points"
       ],
       "fields": [
@@ -1492,9 +1157,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof",
         "objective_reveal"
       ],
-      "shared_fields": [
-        "when"
-      ],
       "fields": [
         {
           "name": "content",
@@ -1513,9 +1175,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "finish",
         "objective_proof",
         "objective_reveal"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {
@@ -1546,9 +1205,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "start",
         "objective_proof",
         "objective_reveal"
-      ],
-      "shared_fields": [
-        "when"
       ],
       "fields": [
         {

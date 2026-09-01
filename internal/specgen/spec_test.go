@@ -8,7 +8,6 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/specgen"
-	"github.com/stretchr/testify/assert"
 )
 
 // TestSpecStaleness ensures every JSON-tagged field on each block struct has a
@@ -282,16 +281,14 @@ func TestGenerateFullSpec_BlockSharedFields(t *testing.T) {
 }
 
 // TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks proves "points" is
-// documented exactly on blocks with a completion event whose Points field is
-// actually honoured (RequiresValidation && SupportsPoints), matching what the
-// runtime actually awards it for: content blocks (markdown, alert, divider,
-// etc.) never complete, and Broker completes but always resets Points to 0
-// (it uses per-tier costs instead): neither should advertise the field.
+// documented exactly on the blocks that have a completion event to award it
+// at, matching what the runtime awards it for: content blocks (markdown,
+// alert, divider, etc.) never complete, so they should not advertise it.
 func TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks(t *testing.T) {
 	registered := blocks.GetRegisteredBlocks()
 	wantPoints := make(map[string]bool, len(registered))
 	for _, reg := range registered {
-		wantPoints[reg.BlockType] = reg.Prototype.RequiresValidation() && reg.Prototype.SupportsPoints()
+		wantPoints[reg.BlockType] = reg.Prototype.RequiresValidation()
 	}
 
 	for _, spec := range specgen.GenerateBlockSpecs() {
@@ -302,19 +299,10 @@ func TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks(t *testing.T) {
 			}
 		}
 		if want := wantPoints[spec.Type]; hasPoints != want {
-			t.Errorf("block %q: SharedFields has points=%v, want %v (RequiresValidation && SupportsPoints)",
+			t.Errorf("block %q: SharedFields has points=%v, want %v (RequiresValidation)",
 				spec.Type, hasPoints, want)
 		}
 	}
-}
-
-// TestBrokerBlock_DoesNotSupportPoints locks in the specific exception the
-// above test relies on: Broker requires validation but must not advertise
-// the shared points field, since UpdateBlockData always resets it to 0.
-func TestBrokerBlock_DoesNotSupportPoints(t *testing.T) {
-	b := &blocks.BrokerBlock{}
-	assert.True(t, b.RequiresValidation())
-	assert.False(t, b.SupportsPoints())
 }
 
 // TestGenerateFullSpec_DependsOnObjective verifies the objective schema carries

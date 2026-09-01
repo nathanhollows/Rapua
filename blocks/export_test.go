@@ -27,7 +27,6 @@ func (m *MockPlayerState) SetPointsAwarded(points int)        { m.PointsAwarded 
 
 type PincodeBlockData = pincodeBlockData
 type ChecklistPlayerData = checklistPlayerData
-type BrokerBlockData = brokerBlockData
 type ClueBlockData = clueBlockData
 type PhotoBlockData = photoBlockData
 type RatingBlockData = ratingBlockData

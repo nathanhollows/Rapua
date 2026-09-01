@@ -16,14 +16,14 @@ func TestBlockContextFiltering(t *testing.T) {
 		{
 			name:             "Objective proof context should include most blocks",
 			context:          blocks.ContextObjectiveProof,
-			expectedBlocks:   []string{"text", "alert", "button", "image", "broker", "checklist"},
+			expectedBlocks:   []string{"text", "alert", "button", "image", "checklist"},
 			unexpectedBlocks: []string{}, // All current blocks support proof/reveal.
 		},
 		{
 			name:             "Start page context should exclude most interactive blocks",
 			context:          blocks.ContextStart,
 			expectedBlocks:   []string{"text", "alert", "button", "divider", "image", "youtube", "checklist"},
-			unexpectedBlocks: []string{"broker", "pincode", "quiz", "sorting", "clue"},
+			unexpectedBlocks: []string{"pincode", "quiz", "sorting", "clue"},
 		},
 	}
 
@@ -81,8 +81,6 @@ func TestCanBlockBeUsedInContext(t *testing.T) {
 	}{
 		{"text", blocks.ContextObjectiveProof, true},
 		{"text", blocks.ContextStart, true},
-		{"broker", blocks.ContextObjectiveProof, true},
-		{"broker", blocks.ContextStart, false},
 		{"clue", blocks.ContextObjectiveProof, true},
 		{"clue", blocks.ContextStart, false},
 		{"nonexistent", blocks.ContextObjectiveProof, false},
@@ -114,7 +112,6 @@ func TestBackwardCompatibility(t *testing.T) {
 		"divider",
 		"image",
 		"youtube",
-		"broker",
 		"checklist",
 		"clue",
 		"password",

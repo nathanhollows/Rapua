@@ -109,12 +109,10 @@ const (
 )
 
 // pointsFieldSpec returns the `points` field spec used on interactive blocks
-// (RequiresValidation() true) whose own Points field is actually honoured
-// (SupportsPoints() true). Content blocks (markdown, alert, divider, etc.)
+// (RequiresValidation() true). Content blocks (markdown, alert, divider, etc.)
 // never complete, so their inherited Points field is structurally present but
-// functionally inert; Broker completes but always resets Points to 0, using
-// per-tier costs instead. specgen.GenerateBlockSpecs omits "points" from
-// SharedFields for both reasons.
+// functionally inert, and specgen.GenerateBlockSpecs omits "points" from their
+// SharedFields.
 func pointsFieldSpec() game.FieldSpec {
 	return game.FieldSpec{
 		Name: "points",

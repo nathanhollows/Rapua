@@ -465,7 +465,7 @@ The most exciting change is the ability to use blocks in multiple contexts, not 
 - Check in view now displays correct icons and long location names no longer look crowded.
 - Check out logic for tracking players at each location no longer triggers twice.
 - [Quiz block](/docs/user/blocks/quiz) correctly renders if the user revisits the location after having completed the quiz.
-- Minor [Broker block](/docs/user/blocks/broker) style fixes.
+- Minor Broker block style fixes.
 - Minor [Checklist block](/docs/user/blocks/checklist) style fixes.
 - Minor [Sorting block](/docs/user/blocks/sorting) style fixes.
 
@@ -582,7 +582,7 @@ This update introduces significant architectural changes to make the codebase ea
 ### Added
 
 - [Clue block](/docs/user/blocks/clue)! A new interactive content block that allows players to view clues for a price.
-- [Broker block](/docs/user/blocks/broker)! A new interactive content block that allows players to blindly trade points for clues.
+- Broker block! A new interactive content block that allows players to blindly trade points for clues.
 
 ### Changed
 
