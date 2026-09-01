@@ -9,7 +9,11 @@ const (
 	RouteStrategyRandomised RouteStrategy = "randomised"
 	RouteStrategyFreeRoam   RouteStrategy = "free_roam"
 	RouteStrategyOrdered    RouteStrategy = "ordered"
-	RouteStrategySecret     RouteStrategy = "secret" // Objectives that may be accessed out of sequence.
+	// RouteStrategySecret is retired: lint rejects a document carrying it, and
+	// an objective is reached instead through its parent's routing, its depends
+	// and a scan block in its proof. It survives only because the group blob
+	// and the code reading that blob still reference it.
+	RouteStrategySecret RouteStrategy = "secret"
 )
 
 // CompletionType defines how a group is considered completed.
