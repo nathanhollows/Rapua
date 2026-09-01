@@ -300,10 +300,15 @@ func (s *DuplicationService) duplicateObjective(
 	sourceObjective models.Objective,
 	newInstanceID string,
 ) (*models.Objective, error) {
-	// Create new objective (copy all fields except ID and QuestID).
+	// Create new objective (copy all fields except ID, QuestID and placement).
 	newObjective := sourceObjective
 	newObjective.ID = "" // Reset ID so a new one is generated.
 	newObjective.QuestID = newInstanceID
+	// Placement names an objective in the source quest, and the copy has no
+	// business pointing there: carrying it over would leave the duplicate's
+	// rows parented across two quests.
+	newObjective.ParentID = ""
+	newObjective.Position = 0
 
 	err := s.objectiveRepo.CreateTx(ctx, tx, &newObjective)
 	if err != nil {
