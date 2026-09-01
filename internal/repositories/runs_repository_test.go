@@ -3,6 +3,7 @@ package repositories_test
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -288,8 +289,8 @@ func TestRunRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	sampleTeams := []models.Run{
-		{Code: "team1", QuestID: parents.QuestID},
-		{Code: "team2", QuestID: parents.QuestID},
+		{Code: strings.ToUpper(gofakeit.LetterN(6)), QuestID: parents.QuestID},
+		{Code: strings.ToUpper(gofakeit.LetterN(6)), QuestID: parents.QuestID},
 	}
 	err := repo.InsertBatch(ctx, sampleTeams)
 	require.NoError(t, err, "expected no error when inserting batch of teams")

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
@@ -29,8 +30,9 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 
 	parents := createTestParents(t, dbc)
 
+	tokenValue := gofakeit.UUID()
 	token := models.FacilitatorToken{
-		Token:      "jsonTest123",
+		Token:      tokenValue,
 		QuestID:    parents.QuestID,
 		Objectives: []string{"objective-1"},
 		ExpiresAt:  time.Now().Add(24 * time.Hour),
@@ -41,7 +43,7 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 	require.NoError(t, err)
 
 	// Retrieve token
-	retrieved, err := repo.GetToken(ctx, "jsonTest123")
+	retrieved, err := repo.GetToken(ctx, tokenValue)
 	require.NoError(t, err)
 	assert.NotNil(t, retrieved)
 	assert.Equal(t, token.Token, retrieved.Token)

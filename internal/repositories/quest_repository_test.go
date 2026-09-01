@@ -75,24 +75,28 @@ func TestQuestRepository_Create(t *testing.T) {
 func TestQuestRepository_FindByID(t *testing.T) {
 	testCases := []struct {
 		name    string
-		setupFn func(context.Context, testing.TB, models.Quest, *testing.T)
+		setupFn func(context.Context, *testing.T, repositories.QuestRepository, *bun.DB, models.Quest)
 		questID string
 		wantErr bool
 	}{
 		{
 			name: "Existing instance",
-			setupFn: func(ctx context.Context, _ testing.TB, inst models.Quest, t *testing.T) {
-				innerRepo, _, innerDbc, cleanup := setupInstanceRepo(t)
-				defer cleanup()
-				insertUserWithID(t, innerDbc, inst.UserID)
-				err := innerRepo.Create(ctx, &inst)
-				require.NoError(t, err)
+			setupFn: func(
+				ctx context.Context, t *testing.T,
+				repo repositories.QuestRepository, dbc *bun.DB, inst models.Quest,
+			) {
+				t.Helper()
+				insertUserWithID(t, dbc, inst.UserID)
+				require.NoError(t, repo.Create(ctx, &inst))
 			},
 			wantErr: false,
 		},
 		{
 			name: "Non-existent instance",
-			setupFn: func(_ context.Context, _ testing.TB, _ models.Quest, _ *testing.T) {
+			setupFn: func(
+				_ context.Context, _ *testing.T,
+				_ repositories.QuestRepository, _ *bun.DB, _ models.Quest,
+			) {
 				// Intentionally do not save
 			},
 			wantErr: true,
@@ -101,7 +105,7 @@ func TestQuestRepository_FindByID(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo, _, _, cleanup := setupInstanceRepo(t)
+			repo, _, dbc, cleanup := setupInstanceRepo(t)
 			defer cleanup()
 
 			ctx := context.Background()
@@ -110,7 +114,7 @@ func TestQuestRepository_FindByID(t *testing.T) {
 				Name:   gofakeit.Word(),
 				UserID: gofakeit.UUID(),
 			}
-			tc.setupFn(ctx, t, inst, t)
+			tc.setupFn(ctx, t, repo, dbc, inst)
 
 			found, err := repo.GetByID(ctx, inst.ID)
 			if tc.wantErr {
