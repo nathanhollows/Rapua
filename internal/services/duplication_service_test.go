@@ -121,113 +121,68 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 		assert.Equal(t, objective.Title, duplicatedObjectives[0].Title)
 	})
 
-	t.Run("duplicates game structure with remapped objective IDs", func(t *testing.T) {
+	t.Run("duplicates the tree with parents remapped to the copies", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		sourceInstance := &models.Quest{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
-		require.NoError(t, err)
+		sourceInstance := &models.Quest{Name: gofakeit.Word(), UserID: user.ID}
+		require.NoError(t, instanceRepo.Create(ctx, sourceInstance))
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
-		objective1 := &models.Objective{QuestID: sourceInstance.ID, Slug: "obj-1", Title: "Objective 1"}
-		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, objective1))
-		objective2 := &models.Objective{QuestID: sourceInstance.ID, Slug: "obj-2", Title: "Objective 2"}
-		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, objective2))
+		root := &models.Objective{QuestID: sourceInstance.ID, Slug: "root", Title: "Root"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, root))
+		section := &models.Objective{QuestID: sourceInstance.ID, ParentID: root.ID, Slug: "sec", Title: "Section"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, section))
+		leaf := &models.Objective{QuestID: sourceInstance.ID, ParentID: section.ID, Slug: "leaf", Title: "Leaf"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, leaf))
 		require.NoError(t, tx.Commit())
 
-		sourceInstance.GameStructure = models.GameStructure{
-			ID:           gofakeit.UUID(),
-			IsRoot:       true,
-			ObjectiveIDs: []string{objective1.ID},
-			SubGroups: []models.GameStructure{
-				{
-					ID:           gofakeit.UUID(),
-					Name:         "Group 1",
-					Color:        "primary",
-					ObjectiveIDs: []string{objective2.ID},
-				},
-			},
-		}
-		require.NoError(t, instanceRepo.Update(ctx, sourceInstance))
-
-		settings := &models.QuestSettings{QuestID: sourceInstance.ID}
-		require.NoError(t, settingsRepo.Create(ctx, settings))
+		require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: sourceInstance.ID}))
 
 		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
 		require.NoError(t, err)
 
-		duplicatedObjectives, err := objectiveRepo.FindByQuestID(ctx, duplicated.ID)
+		copies, err := objectiveRepo.FindTreeByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
-		require.Len(t, duplicatedObjectives, 2)
+		require.Len(t, copies, 3)
 
-		objectivesByTitle := make(map[string]string)
-		for _, obj := range duplicatedObjectives {
-			objectivesByTitle[obj.Title] = obj.ID
+		byTitle := make(map[string]models.Objective, len(copies))
+		for _, obj := range copies {
+			byTitle[obj.Title] = obj
+			assert.Equal(t, duplicated.ID, obj.QuestID)
 		}
 
-		require.Len(t, duplicated.GameStructure.ObjectiveIDs, 1)
-		assert.Equal(t, objectivesByTitle["Objective 1"], duplicated.GameStructure.ObjectiveIDs[0])
-		assert.NotEqual(t, objective1.ID, duplicated.GameStructure.ObjectiveIDs[0], "Objective ID should be remapped")
-
-		require.Len(t, duplicated.GameStructure.SubGroups[0].ObjectiveIDs, 1)
-		assert.Equal(t, objectivesByTitle["Objective 2"], duplicated.GameStructure.SubGroups[0].ObjectiveIDs[0])
-		assert.NotEqual(
-			t,
-			objective2.ID,
-			duplicated.GameStructure.SubGroups[0].ObjectiveIDs[0],
-			"Objective ID should be remapped",
-		)
+		assert.Empty(t, byTitle["Root"].ParentID, "the copy has its own root")
+		assert.Equal(t, byTitle["Root"].ID, byTitle["Section"].ParentID,
+			"the section hangs off the copied root, not the source's")
+		assert.Equal(t, byTitle["Section"].ID, byTitle["Leaf"].ParentID)
+		assert.NotEqual(t, section.ID, byTitle["Section"].ID, "ids are remapped")
 	})
 
-	t.Run("does not mutate the source instance's game structure", func(t *testing.T) {
+	t.Run("does not move the source's own objectives", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		sourceInstance := &models.Quest{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
-		require.NoError(t, err)
+		sourceInstance := &models.Quest{Name: gofakeit.Word(), UserID: user.ID}
+		require.NoError(t, instanceRepo.Create(ctx, sourceInstance))
 
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
-		objective := &models.Objective{QuestID: sourceInstance.ID, Slug: "obj-src", Title: "Source Objective"}
-		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, objective))
+		root := &models.Objective{QuestID: sourceInstance.ID, Slug: "root", Title: "Root"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, root))
+		child := &models.Objective{QuestID: sourceInstance.ID, ParentID: root.ID, Slug: "child", Title: "Child"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, child))
 		require.NoError(t, tx.Commit())
 
-		sourceInstance.GameStructure = models.GameStructure{
-			ID:           gofakeit.UUID(),
-			IsRoot:       true,
-			ObjectiveIDs: []string{objective.ID},
-			SubGroups: []models.GameStructure{
-				{ID: gofakeit.UUID(), Name: "Group 1", Color: "primary", ObjectiveIDs: []string{objective.ID}},
-			},
-		}
-		require.NoError(t, instanceRepo.Update(ctx, sourceInstance))
+		require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: sourceInstance.ID}))
 
 		_, err = svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
 		require.NoError(t, err)
 
-		// Duplication remaps IDs onto the copy in place; a shared backing
-		// array under GameStructure would leak that remap back onto the
-		// in-memory source struct even though its DB row is untouched.
-		assert.Equal(t, objective.ID, sourceInstance.GameStructure.ObjectiveIDs[0],
-			"source's in-memory GameStructure must not be mutated by duplicating it")
-		assert.Equal(t, objective.ID, sourceInstance.GameStructure.SubGroups[0].ObjectiveIDs[0],
-			"source's in-memory GameStructure subgroups must not be mutated by duplicating it")
-
-		reloaded, err := instanceRepo.GetByID(ctx, sourceInstance.ID)
+		reloaded, err := objectiveRepo.GetByID(ctx, child.ID)
 		require.NoError(t, err)
-		assert.Equal(t, objective.ID, reloaded.GameStructure.ObjectiveIDs[0],
-			"source's persisted game structure must not be remapped")
+		assert.Equal(t, root.ID, reloaded.ParentID, "the source keeps its own tree")
 	})
 
 	t.Run("rejects template duplication", func(t *testing.T) {

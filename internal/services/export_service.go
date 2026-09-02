@@ -35,66 +35,66 @@ func NewExportService(
 }
 
 func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, []string, error) {
-	// 1. Load Instance (includes GameStructure JSON column)
 	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("export: load instance: %w", err)
 	}
 
-	// 2. Load QuestSettings.
 	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("export: load settings: %w", err)
 	}
 
-	// 3. Load all Objectives.
-	objectives, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	// Ordered so siblings follow their position: the document's child order is
+	// the table's.
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("export: load objectives: %w", err)
 	}
 
-	// 4. Collect all owner IDs: instance itself (start/finish) + all objective IDs.
+	// The quest owns its start and finish blocks; every objective owns its own.
 	ownerIDs := make([]string, 0, len(objectives)+1)
 	ownerIDs = append(ownerIDs, questID)
 	for i := range objectives {
 		ownerIDs = append(ownerIDs, objectives[i].ID)
 	}
 
-	// 5. Load all raw blocks in one query
 	rawBlocks, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("export: load blocks: %w", err)
 	}
 
-	// 6. Build map for fast lookup.
-	objectiveByID := make(map[string]*models.Objective, len(objectives))
-	for i := range objectives {
-		objectiveByID[objectives[i].ID] = &objectives[i]
-	}
-
-	// Group blocks by ownerID, preserving ordering
 	blocksByOwner := make(map[string][]models.Block)
 	for _, b := range rawBlocks {
 		blocksByOwner[b.OwnerID] = append(blocksByOwner[b.OwnerID], b)
 	}
 
-	// 7. Build start/finish from instance-level blocks
 	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
 
-	// 8. Walk GameStructure recursively to build the children tree
-	// Slugs are unique document-wide, and objective rows already hold theirs,
-	// so they are claimed before any group slug is minted from a name.
-	takenSlugs := make(map[string]bool, len(objectiveByID))
-	for _, obj := range objectiveByID {
-		if obj.Slug != "" {
-			takenSlugs[obj.Slug] = true
+	// Every node is an objective row, so the document's recursion is the
+	// table's parent_id and position.
+	childrenOf := make(map[string][]models.Objective, len(objectives))
+	var rootRow *models.Objective
+	for i := range objectives {
+		if objectives[i].ParentID == "" {
+			// Refused rather than resolved. Taking one and dropping the rest
+			// would export a document missing whole subtrees, and re-importing
+			// it sweeps those objectives away as orphans: a backup that deletes
+			// what it was taken to protect.
+			if rootRow != nil {
+				return nil, nil, fmt.Errorf(
+					"export: %w: quest %s", repositories.ErrAmbiguousRootObjective, questID)
+			}
+			rootRow = &objectives[i]
+			continue
 		}
+		childrenOf[objectives[i].ParentID] = append(childrenOf[objectives[i].ParentID], objectives[i])
 	}
-	root := s.walkStructure(instance.GameStructure, objectiveByID, blocksByOwner, takenSlugs)
-	root.Slug = uniqueSlug("root", takenSlugs)
-	root.Title = instance.Name
+	if rootRow == nil {
+		return nil, nil, fmt.Errorf("export: %w: quest %s", repositories.ErrNoRootObjective, questID)
+	}
+	root := s.buildObjectiveTree(*rootRow, childrenOf, blocksByOwner)
 
-	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
 		Rapua: "v8",
 		ID:    questID,
@@ -130,51 +130,26 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 			start = append(start, doc)
 		case game.ContextFinish:
 			finish = append(finish, doc)
+		case game.ContextObjectiveProof, game.ContextObjectiveReveal:
+			// owned by an objective, not the quest: skip.
 		}
 	}
 
 	return start, finish
 }
 
-// walkStructure converts a stored group node into the objective that now
-// represents it. Storage keeps objectives and subgroups in separate arrays, so
-// the single ordered children list puts objectives first, matching the order
-// the blob itself documents.
-func (s *ExportService) walkStructure(
-	gs models.GameStructure,
-	objectiveByID map[string]*models.Objective,
+// buildObjectiveTree converts one objective row and everything beneath it.
+// Children arrive already ordered by position from the repository.
+func (s *ExportService) buildObjectiveTree(
+	row models.Objective,
+	childrenOf map[string][]models.Objective,
 	blocksByOwner map[string][]models.Block,
-	takenSlugs map[string]bool,
 ) game.ObjectiveDoc {
-	children := make([]game.ObjectiveDoc, 0, len(gs.ObjectiveIDs)+len(gs.SubGroups))
-
-	for _, objID := range gs.ObjectiveIDs {
-		obj, ok := objectiveByID[objID]
-		if !ok {
-			continue
-		}
-		children = append(children, s.buildObjectiveDoc(obj, blocksByOwner[objID]))
+	doc := s.buildObjectiveDoc(&row, blocksByOwner[row.ID])
+	for _, child := range childrenOf[row.ID] {
+		doc.Children = append(doc.Children, s.buildObjectiveTree(child, childrenOf, blocksByOwner))
 	}
-
-	for _, subGroup := range gs.SubGroups {
-		child := s.walkStructure(subGroup, objectiveByID, blocksByOwner, takenSlugs)
-		child.Slug = uniqueSlug(sectionSlug(subGroup), takenSlugs)
-		child.Title = sectionTitle(subGroup)
-		children = append(children, child)
-	}
-
-	minChildren, maxChildren := bandFromGroup(gs)
-	return game.ObjectiveDoc{
-		ID:          gs.ID,
-		Color:       gs.Color,
-		Depends:     gs.Depends,
-		Routing:     gs.Routing,
-		ChildrenMin: minChildren,
-		ChildrenMax: maxChildren,
-		MaxNext:     gs.MaxNext,
-		FinishLabel: gs.FinishLabel,
-		Children:    children,
-	}
+	return doc
 }
 
 func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {
@@ -198,10 +173,16 @@ func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []mod
 	}
 
 	return game.ObjectiveDoc{
-		ID:      obj.ID,
-		Slug:    obj.Slug,
-		Title:   obj.Title,
-		Depends: obj.Depends,
+		ID:          obj.ID,
+		Slug:        obj.Slug,
+		Title:       obj.Title,
+		Color:       obj.Color,
+		Depends:     obj.Depends,
+		Routing:     obj.Routing,
+		ChildrenMin: obj.ChildrenMin,
+		ChildrenMax: obj.ChildrenMax,
+		MaxNext:     obj.MaxNext,
+		FinishLabel: obj.FinishLabel,
 		Proof: game.ObjectiveContextDoc{
 			Blocks: proof,
 			Sets:   obj.ProofSets,

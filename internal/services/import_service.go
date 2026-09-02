@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
@@ -233,17 +232,7 @@ func (s *ImportService) importCreate(
 	}
 
 	stats := ImportStats{}
-	gs := &models.GameStructure{
-		ID:           uuid.New().String(),
-		IsRoot:       true,
-		Routing:      doc.Structure.Routing,
-		MaxNext:      doc.Structure.MaxNext,
-		ObjectiveIDs: []string{},
-		SubGroups:    []models.GameStructure{},
-	}
-	gs.CompletionType, gs.MinimumRequired, gs.AutoAdvance = groupCompletionFromBand(doc.Structure)
-
-	if err := s.walkCreateChildren(ctx, tx, newInstance.ID, doc.Structure.Children, gs, &stats); err != nil {
+	if err := s.createObjectiveTree(ctx, tx, newInstance.ID, "", 0, doc.Structure, &stats); err != nil {
 		return nil, err
 	}
 
@@ -258,47 +247,36 @@ func (s *ImportService) importCreate(
 	}
 	stats.Blocks += startCount + finishCount
 
-	// Save GameStructure to Instance
-	newInstance.GameStructure = *gs
-	if _, err := tx.NewUpdate().
-		Model(newInstance).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx); err != nil {
-		return nil, fmt.Errorf("save game structure: %w", err)
-	}
-
 	return &createResult{QuestID: newInstance.ID, Created: stats}, nil
 }
 
-func (s *ImportService) walkCreateChildren(
+// createObjectiveTree writes one node and everything beneath it, returning the
+// new row's id so its children can name it as their parent. A node with
+// children counts as a section in the import stats; the document itself draws
+// no such distinction.
+func (s *ImportService) createObjectiveTree(
 	ctx context.Context,
 	tx *bun.Tx,
-	questID string,
-	children []game.ObjectiveDoc,
-	parentGS *models.GameStructure,
+	questID, parentID string,
+	position int,
+	objDoc game.ObjectiveDoc,
 	stats *ImportStats,
 ) error {
-	for _, child := range children {
-		// Children are what separate a section from a leaf: storage has two
-		// shapes where the document has one.
-		if len(child.Children) == 0 {
-			objID, blockCount, err := s.createObjective(ctx, tx, questID, child)
-			if err != nil {
-				return err
-			}
-			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
-			stats.Objectives++
-			stats.Blocks += blockCount
-			continue
-		}
+	objID, blockCount, err := s.createObjective(ctx, tx, questID, parentID, position, objDoc)
+	if err != nil {
+		return err
+	}
+	stats.Blocks += blockCount
+	if len(objDoc.Children) > 0 {
+		stats.Groups++
+	} else {
+		stats.Objectives++
+	}
 
-		subGS := newSectionGroup(uuid.New().String(), child)
-		if err := s.walkCreateChildren(ctx, tx, questID, child.Children, &subGS, stats); err != nil {
+	for i, child := range objDoc.Children {
+		if err := s.createObjectiveTree(ctx, tx, questID, objID, i, child, stats); err != nil {
 			return err
 		}
-		parentGS.SubGroups = append(parentGS.SubGroups, subGS)
-		stats.Groups++
 	}
 	return nil
 }
@@ -306,16 +284,25 @@ func (s *ImportService) walkCreateChildren(
 func (s *ImportService) createObjective(
 	ctx context.Context,
 	tx *bun.Tx,
-	questID string,
+	questID, parentID string,
+	position int,
 	objDoc game.ObjectiveDoc,
 ) (string, int, error) {
 	obj := &models.Objective{
-		QuestID:    questID,
-		Slug:       objDoc.Slug,
-		Title:      objDoc.Title,
-		Depends:    objDoc.Depends,
-		ProofSets:  objDoc.Proof.Sets,
-		RevealSets: objDoc.Reveal.Sets,
+		QuestID:     questID,
+		ParentID:    parentID,
+		Position:    position,
+		Slug:        objDoc.Slug,
+		Title:       objDoc.Title,
+		Color:       objDoc.Color,
+		Depends:     objDoc.Depends,
+		Routing:     objDoc.Routing,
+		ChildrenMin: objDoc.ChildrenMin,
+		ChildrenMax: objDoc.ChildrenMax,
+		MaxNext:     objDoc.MaxNext,
+		FinishLabel: objDoc.FinishLabel,
+		ProofSets:   objDoc.Proof.Sets,
+		RevealSets:  objDoc.Reveal.Sets,
 	}
 	if err := s.objectiveRepo.CreateTx(ctx, tx, obj); err != nil {
 		return "", 0, fmt.Errorf("create objective %q: %w", objDoc.Slug, err)
@@ -393,18 +380,7 @@ func (s *ImportService) importUpdate(
 	// Track which existing objectives appeared in the doc (to find orphans).
 	seenObjIDs := make(map[string]bool)
 
-	// Build new GameStructure
-	gs := &models.GameStructure{
-		ID:           existing.GameStructure.ID,
-		IsRoot:       true,
-		Routing:      doc.Structure.Routing,
-		MaxNext:      doc.Structure.MaxNext,
-		ObjectiveIDs: []string{},
-		SubGroups:    []models.GameStructure{},
-	}
-	gs.CompletionType, gs.MinimumRequired, gs.AutoAdvance = groupCompletionFromBand(doc.Structure)
-
-	if err := s.walkUpdateChildren(ctx, tx, existing.ID, doc.Structure.Children, gs,
+	if err := s.reconcileObjectiveTree(ctx, tx, existing.ID, "", 0, doc.Structure,
 		objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
 		return nil, err
 	}
@@ -448,62 +424,52 @@ func (s *ImportService) importUpdate(
 		}
 	}
 
-	// Save updated GameStructure
-	existing.GameStructure = *gs
-	if _, err := tx.NewUpdate().
-		Model(existing).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx); err != nil {
-		return nil, fmt.Errorf("save game structure: %w", err)
-	}
-
 	return result, nil
 }
 
-func (s *ImportService) walkUpdateChildren(
+// reconcileObjectiveTree matches one node against what is stored and recurses,
+// returning the row's id so its children can name it as their parent. Placement
+// is written here rather than through Reposition: the document is the whole
+// tree, so there are no siblings outside it to renumber against.
+func (s *ImportService) reconcileObjectiveTree(
 	ctx context.Context,
 	tx *bun.Tx,
-	questID string,
-	children []game.ObjectiveDoc,
-	parentGS *models.GameStructure,
+	questID, parentID string,
+	position int,
+	objDoc game.ObjectiveDoc,
 	objByID map[string]*models.Objective,
 	objBySlug map[string]*models.Objective,
 	blockByID map[string]models.Block,
 	seenObjIDs map[string]bool,
 	result *ImportResult,
 ) error {
-	for _, child := range children {
-		if len(child.Children) == 0 {
-			objID, err := s.reconcileObjective(ctx, tx, questID, child,
-				objByID, objBySlug, blockByID, seenObjIDs, result)
-			if err != nil {
-				return err
-			}
-			parentGS.ObjectiveIDs = append(parentGS.ObjectiveIDs, objID)
-			continue
-		}
+	objID, err := s.reconcileObjective(ctx, tx, questID, parentID, position, objDoc,
+		objByID, objBySlug, blockByID, seenObjIDs, result)
+	if err != nil {
+		return err
+	}
 
-		groupID := child.ID
-		if groupID == "" {
-			groupID = uuid.New().String()
-		}
-		subGS := newSectionGroup(groupID, child)
-		if err := s.walkUpdateChildren(ctx, tx, questID, child.Children, &subGS,
+	for i, child := range objDoc.Children {
+		if err := s.reconcileObjectiveTree(ctx, tx, questID, objID, i, child,
 			objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
 			return err
 		}
-		parentGS.SubGroups = append(parentGS.SubGroups, subGS)
 	}
 	return nil
 }
 
+// ErrObjectiveIDNotInQuest is returned when a document names an objective id
+// this quest does not have. Import will not guess what was meant.
+var ErrObjectiveIDNotInQuest = errors.New("objective id does not belong to this quest")
+
 // reconcileObjective matches an ObjectiveDoc to an existing objective by ID or
 // slug; creates one when there is no match.
+
 func (s *ImportService) reconcileObjective(
 	ctx context.Context,
 	tx *bun.Tx,
-	questID string,
+	questID, parentID string,
+	position int,
 	objDoc game.ObjectiveDoc,
 	objByID map[string]*models.Objective,
 	objBySlug map[string]*models.Objective,
@@ -511,16 +477,22 @@ func (s *ImportService) reconcileObjective(
 	seenObjIDs map[string]bool,
 	result *ImportResult,
 ) (string, error) {
+	// An id naming nothing in this quest is not a near miss to be recovered by
+	// slug: it is a document written against some other quest, and adopting a
+	// same-slugged row would move content the author never named.
 	var existingObj *models.Objective
 	if objDoc.ID != "" {
 		existingObj = objByID[objDoc.ID]
+		if existingObj == nil {
+			return "", fmt.Errorf("%w: objective %q names id %q", ErrObjectiveIDNotInQuest, objDoc.Slug, objDoc.ID)
+		}
 	}
 	if existingObj == nil && objDoc.Slug != "" {
 		existingObj = objBySlug[objDoc.Slug]
 	}
 
 	if existingObj == nil {
-		newObjID, blockCount, err := s.createObjective(ctx, tx, questID, objDoc)
+		newObjID, blockCount, err := s.createObjective(ctx, tx, questID, parentID, position, objDoc)
 		if err != nil {
 			return "", err
 		}
@@ -532,12 +504,26 @@ func (s *ImportService) reconcileObjective(
 	seenObjIDs[existingObj.ID] = true
 	existingObj.Title = objDoc.Title
 	existingObj.Slug = objDoc.Slug
+	existingObj.Color = objDoc.Color
 	existingObj.Depends = objDoc.Depends
+	existingObj.Routing = objDoc.Routing
+	existingObj.ChildrenMin = objDoc.ChildrenMin
+	existingObj.ChildrenMax = objDoc.ChildrenMax
+	existingObj.MaxNext = objDoc.MaxNext
+	existingObj.FinishLabel = objDoc.FinishLabel
 	existingObj.ProofSets = objDoc.Proof.Sets
 	existingObj.RevealSets = objDoc.Reveal.Sets
 
 	if err := s.objectiveRepo.UpdateTx(ctx, tx, existingObj); err != nil {
 		return "", fmt.Errorf("update objective %q: %w", objDoc.Slug, err)
+	}
+	// UpdateTx cannot move a row, and the document is the whole tree, so
+	// placement is written directly rather than through Reposition: there are
+	// no siblings outside the document to renumber against.
+	if _, err := tx.NewUpdate().Model((*models.Objective)(nil)).
+		Set("parent_id = ?", parentID).Set("position = ?", position).
+		Where("id = ?", existingObj.ID).Exec(ctx); err != nil {
+		return "", fmt.Errorf("placing objective %q: %w", objDoc.Slug, err)
 	}
 
 	for _, pair := range []struct {

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -22,11 +23,14 @@ func setupQuestService(t *testing.T) (services.QuestService, services.UserServic
 	userRepo := repositories.NewUserRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	transactor := db.NewTransactor(dbc)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, instanceRepo)
 	questService := services.NewQuestService(
-		instanceRepo, instanceSettingsRepo, blockRepo,
+		transactor,
+		instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo,
 	)
 
 	return *questService, *userService, cleanup
@@ -49,11 +53,14 @@ func setupQuestServiceWithBlockRepo(
 	userRepo := repositories.NewUserRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	transactor := db.NewTransactor(dbc)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, instanceRepo)
 	questService := services.NewQuestService(
-		instanceRepo, instanceSettingsRepo, blockRepo,
+		transactor,
+		instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo,
 	)
 
 	return *questService, *userService, blockRepo, cleanup

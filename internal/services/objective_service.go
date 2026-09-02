@@ -13,10 +13,19 @@ import (
 )
 
 type ObjectiveService interface {
-	CreateObjective(ctx context.Context, questID, title string) (models.Objective, error)
+	// CreateObjective writes a new objective under parentID, appended after
+	// whatever is already there. An empty parentID creates the quest's root,
+	// which only a quest without one may do.
+	CreateObjective(ctx context.Context, questID, parentID, title string) (models.Objective, error)
 	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
 	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
 	UpdateObjective(ctx context.Context, objective *models.Objective, data ObjectiveUpdateData) error
+	// FindTree returns a quest's objectives with each parent ahead of its children.
+	FindTree(ctx context.Context, questID string) ([]models.Objective, error)
+	// FindRoot returns the quest's root objective, the node everything hangs from.
+	FindRoot(ctx context.Context, questID string) (*models.Objective, error)
+	// FindChildren returns one objective's direct children in position order.
+	FindChildren(ctx context.Context, questID, parentID string) ([]models.Objective, error)
 }
 
 type objectiveService struct {
@@ -58,7 +67,9 @@ func (s objectiveService) generateUniqueSlug(ctx context.Context, questID, title
 	return "", fmt.Errorf("could not generate unique slug for %q after %d attempts", title, maxAttempts)
 }
 
-func (s objectiveService) CreateObjective(ctx context.Context, questID, title string) (models.Objective, error) {
+func (s objectiveService) CreateObjective(
+	ctx context.Context, questID, parentID, title string,
+) (models.Objective, error) {
 	if questID == "" {
 		return models.Objective{}, errors.New("questID cannot be empty")
 	}
@@ -72,9 +83,10 @@ func (s objectiveService) CreateObjective(ctx context.Context, questID, title st
 	}
 
 	objective := models.Objective{
-		QuestID: questID,
-		Title:   title,
-		Slug:    slug,
+		QuestID:  questID,
+		ParentID: parentID,
+		Title:    title,
+		Slug:     slug,
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -142,4 +154,18 @@ func (s objectiveService) UpdateObjective(
 	}
 
 	return nil
+}
+
+func (s objectiveService) FindRoot(ctx context.Context, questID string) (*models.Objective, error) {
+	return s.objectiveRepo.FindRoot(ctx, questID)
+}
+
+func (s objectiveService) FindTree(ctx context.Context, questID string) ([]models.Objective, error) {
+	return s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+}
+
+func (s objectiveService) FindChildren(
+	ctx context.Context, questID, parentID string,
+) ([]models.Objective, error) {
+	return s.objectiveRepo.FindChildren(ctx, questID, parentID)
 }

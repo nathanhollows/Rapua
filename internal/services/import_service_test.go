@@ -60,6 +60,24 @@ func minimalValidDoc(name string) *game.GameDoc {
 	}
 }
 
+// importedChildren returns the quest's objectives without the root, which every
+// import writes from the document's structure node.
+func importedChildren(
+	t *testing.T, repo repositories.ObjectiveRepository, questID string,
+) []models.Objective {
+	t.Helper()
+	objectives, err := repo.FindByQuestID(context.Background(), questID)
+	require.NoError(t, err)
+
+	out := make([]models.Objective, 0, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			out = append(out, obj)
+		}
+	}
+	return out
+}
+
 // docWithObjective returns a GameDoc with a single objective: an interactive
 // proof block (satisfies PROOF_CONTEXT_NO_INTERACTIVE_BLOCK) and a content
 // reveal block.
@@ -138,8 +156,7 @@ func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
 	assert.Equal(t, 1, result.Created.Objectives)
 	assert.Equal(t, 2, result.Created.Blocks)
 
-	objectives, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
-	require.NoError(t, err)
+	objectives := importedChildren(t, objectiveRepo, result.QuestID)
 	require.Len(t, objectives, 1)
 	assert.Equal(t, "find-the-key", objectives[0].Slug)
 	assert.Equal(t, "Find the key", objectives[0].Title)
@@ -168,19 +185,17 @@ func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 	createResult, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	objectivesBefore, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
-	require.NoError(t, err)
+	objectivesBefore := importedChildren(t, objectiveRepo, createResult.QuestID)
 	require.Len(t, objectivesBefore, 1)
 
 	// Re-import the same slug with a changed title: must update, not duplicate.
 	updateDoc := docWithObjective("Hunt", "find-the-key", "Find the hidden key")
 	updateResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
 	require.NoError(t, err)
-	assert.Equal(t, 1, updateResult.Updated.Objectives)
+	assert.Equal(t, 2, updateResult.Updated.Objectives, "the root is reconciled alongside its child")
 	assert.Equal(t, 0, updateResult.Created.Objectives)
 
-	objectivesAfter, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
-	require.NoError(t, err)
+	objectivesAfter := importedChildren(t, objectiveRepo, createResult.QuestID)
 	require.Len(t, objectivesAfter, 1)
 	assert.Equal(t, objectivesBefore[0].ID, objectivesAfter[0].ID, "same objective, not a new row")
 	assert.Equal(t, "Find the hidden key", objectivesAfter[0].Title)
@@ -192,17 +207,15 @@ func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, finalResult.Deleted.Objectives)
 
-	objectivesFinal, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
-	require.NoError(t, err)
-	assert.Empty(t, objectivesFinal)
+	assert.Empty(t, importedChildren(t, objectiveRepo, createResult.QuestID))
 
 	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, orphanObjID)
 	require.NoError(t, err)
 	assert.Empty(t, remainingBlocks, "the orphan's blocks must not be left behind — owner_id has no FK to cascade them")
 }
 
-func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
-	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportCreate_RootStructurePreserved(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -215,16 +228,16 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
+	root, err := objectiveRepo.FindRoot(ctx, result.QuestID)
 	require.NoError(t, err)
-	assert.Equal(t, game.RouteStrategyFreeRoam, inst.GameStructure.Routing)
-	// An omitted band is every child, which the blob still spells "all".
-	assert.Equal(t, game.CompletionAll, inst.GameStructure.CompletionType)
-	assert.True(t, inst.GameStructure.IsRoot)
+	assert.Equal(t, game.RouteStrategyFreeRoam, root.Routing)
+	assert.Empty(t, root.ParentID)
+	assert.Nil(t, root.ChildrenMin, "an omitted band stays omitted")
+	assert.Nil(t, root.ChildrenMax)
 }
 
-func TestImportService_ImportCreate_WithGroup(t *testing.T) {
-	svc, instanceRepo, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportCreate_WithSection(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -232,7 +245,7 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	doc := minimalValidDoc("Grouped Hunt")
-	// A node with children is what storage keeps as a group.
+	// A node with children is what storage keeps as a section.
 	doc.Structure.Children = []game.ObjectiveDoc{
 		{
 			Slug:    "wave-1",
@@ -247,18 +260,22 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
-	assert.Equal(t, 1, result.Created.Groups)
+	assert.Equal(t, 2, result.Created.Groups, "the root and wave-1 both have children")
 	assert.Equal(t, 1, result.Created.Objectives)
 
-	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
+	objectives, err := objectiveRepo.FindTreeByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
-	require.Len(t, inst.GameStructure.SubGroups, 1)
-	assert.Equal(t, "Wave 1", inst.GameStructure.SubGroups[0].Name)
+	require.Len(t, objectives, 3)
 
-	objectives, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
-	require.NoError(t, err)
-	require.Len(t, objectives, 1)
-	assert.Equal(t, "checkpoint-a", objectives[0].Slug)
+	bySlug := make(map[string]models.Objective, len(objectives))
+	for _, obj := range objectives {
+		bySlug[obj.Slug] = obj
+	}
+	section := bySlug["wave-1"]
+	assert.Equal(t, "Wave 1", section.Title)
+	assert.Equal(t, "primary", section.Color)
+	assert.Equal(t, game.RouteStrategyOrdered, section.Routing)
+	assert.Equal(t, section.ID, bySlug["checkpoint-a"].ParentID)
 }
 
 func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
@@ -349,8 +366,7 @@ func TestImportService_ImportCreate_ObjectiveDepends(t *testing.T) {
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	objs, err := objectiveRepo.FindByQuestID(ctx, result.QuestID)
-	require.NoError(t, err)
+	objs := importedChildren(t, objectiveRepo, result.QuestID)
 	require.Len(t, objs, 1)
 	assert.Equal(t, game.DependsField{"unlocked"}, objs[0].Depends)
 }
@@ -368,8 +384,7 @@ func TestImportService_ImportUpdate_ObjectiveDependsUpdated(t *testing.T) {
 	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
 	require.NoError(t, err)
 
-	objs, err := objectiveRepo.FindByQuestID(ctx, createResult.QuestID)
-	require.NoError(t, err)
+	objs := importedChildren(t, objectiveRepo, createResult.QuestID)
 	require.Len(t, objs, 1)
 	assert.Nil(t, objs[0].Depends)
 
@@ -385,8 +400,35 @@ func TestImportService_ImportUpdate_ObjectiveDependsUpdated(t *testing.T) {
 	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
 	require.NoError(t, err)
 
-	updatedObjs, err := objectiveRepo.FindByQuestID(ctx, inst.ID)
-	require.NoError(t, err)
+	updatedObjs := importedChildren(t, objectiveRepo, inst.ID)
 	require.Len(t, updatedObjs, 1)
 	assert.Equal(t, game.DependsField{"gate"}, updatedObjs[0].Depends)
+}
+
+// A document carrying an objective id from some other quest is a document about
+// something else. Matching it to a same-slugged row here would silently move
+// content the author never named.
+func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	createResult, err := svc.ImportCreate(ctx, userID, docWithObjective("Hunt", "spot", "The Spot"))
+	require.NoError(t, err)
+
+	before := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, before, 1)
+
+	updateDoc := docWithObjective("Hunt", "spot", "Renamed")
+	updateDoc.Structure.Children[0].ID = gofakeit.UUID()
+
+	_, err = svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
+	require.ErrorIs(t, err, services.ErrObjectiveIDNotInQuest)
+
+	after := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "The Spot", after[0].Title, "the rejected import changed nothing")
 }

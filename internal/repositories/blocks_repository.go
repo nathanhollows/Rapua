@@ -88,10 +88,25 @@ type BlockRepository interface {
 	// BulkCreate inserts multiple blocks for an owner with specific context
 	// Blocks should have Order set explicitly; IDs will be generated
 	BulkCreate(ctx context.Context, blockList []blocks.Block, ownerID string, blockContext blocks.BlockContext) error
+	// BulkCreateTx is BulkCreate within a transaction.
+	BulkCreateTx(
+		ctx context.Context,
+		tx *bun.Tx,
+		blockList []blocks.Block,
+		ownerID string,
+		blockContext blocks.BlockContext,
+	) error
 
 	// FindModelsByOwnerIDs fetches raw model blocks for a list of owner IDs.
 	// Unlike FindByOwnerID, the returned records preserve the Context field needed for export.
 	FindModelsByOwnerIDs(ctx context.Context, ownerIDs []string) ([]models.Block, error)
+
+	// FindOwnerIDsWithContext returns which of the given owners have at least
+	// one block in a context. It answers a yes/no question, so it projects the
+	// owner column rather than hydrating every block to look at one field.
+	FindOwnerIDsWithContext(
+		ctx context.Context, ownerIDs []string, blockContext blocks.BlockContext,
+	) ([]string, error)
 }
 
 type blockRepository struct {
@@ -135,6 +150,26 @@ func (r *blockRepository) FindModelsByOwnerIDs(ctx context.Context, ownerIDs []s
 		return nil, err
 	}
 	return modelBlocks, nil
+}
+
+// FindOwnerIDsWithContext implements BlockRepository.
+func (r *blockRepository) FindOwnerIDsWithContext(
+	ctx context.Context, ownerIDs []string, blockContext blocks.BlockContext,
+) ([]string, error) {
+	if len(ownerIDs) == 0 {
+		return nil, nil
+	}
+	var owners []string
+	err := r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		ColumnExpr("DISTINCT owner_id").
+		Where("owner_id IN (?)", bun.In(ownerIDs)).
+		Where("context = ?", blockContext).
+		Scan(ctx, &owners)
+	if err != nil {
+		return nil, err
+	}
+	return owners, nil
 }
 
 // FindByOwnerIDAndContext fetches all blocks for an owner with specific context.
@@ -644,6 +679,27 @@ func (r *blockRepository) BulkCreate(
 	ownerID string,
 	blockContext blocks.BlockContext,
 ) error {
+	return bulkInsertBlocks(ctx, r.db, blockList, ownerID, blockContext)
+}
+
+// BulkCreateTx implements BlockRepository.
+func (r *blockRepository) BulkCreateTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	blockList []blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) error {
+	return bulkInsertBlocks(ctx, tx, blockList, ownerID, blockContext)
+}
+
+func bulkInsertBlocks(
+	ctx context.Context,
+	db bun.IDB,
+	blockList []blocks.Block,
+	ownerID string,
+	blockContext blocks.BlockContext,
+) error {
 	if len(blockList) == 0 {
 		return nil
 	}
@@ -662,6 +718,6 @@ func (r *blockRepository) BulkCreate(
 		}
 	}
 
-	_, err := r.db.NewInsert().Model(&modelBlocks).Exec(ctx)
+	_, err := db.NewInsert().Model(&modelBlocks).Exec(ctx)
 	return err
 }

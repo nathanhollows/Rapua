@@ -28,18 +28,18 @@ func TestObjectiveService_CreateObjective(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Create objective", func(t *testing.T) {
-		objective, err := service.CreateObjective(context.Background(), validQuestID(t, dbc), gofakeit.Sentence(3))
+		objective, err := service.CreateObjective(context.Background(), validQuestID(t, dbc), "", gofakeit.Sentence(3))
 		require.NoError(t, err)
 		assert.NotEmpty(t, objective.ID)
 	})
 
 	t.Run("Create objective with invalid instance ID", func(t *testing.T) {
-		_, err := service.CreateObjective(context.Background(), "", gofakeit.Sentence(3))
+		_, err := service.CreateObjective(context.Background(), "", "", gofakeit.Sentence(3))
 		require.Error(t, err)
 	})
 
 	t.Run("Create objective with invalid title", func(t *testing.T) {
-		_, err := service.CreateObjective(context.Background(), validQuestID(t, dbc), "")
+		_, err := service.CreateObjective(context.Background(), validQuestID(t, dbc), "", "")
 		require.Error(t, err)
 	})
 }
@@ -52,7 +52,7 @@ func TestObjectiveService_CreateObjective_RealSlugCheckErrorPropagates(t *testin
 
 	cleanup() // close the DB so the slug-availability check fails with something other than sql.ErrNoRows.
 
-	_, err := service.CreateObjective(context.Background(), questID, "Find the key")
+	_, err := service.CreateObjective(context.Background(), questID, "", "Find the key")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "checking slug availability")
 }
@@ -63,24 +63,24 @@ func TestObjectiveService_CreateObjective_Slug(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("slug generated from title", func(t *testing.T) {
-		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "Citrus Collection")
+		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Citrus Collection")
 		require.NoError(t, err)
 		assert.Equal(t, "citrus-collection", objective.Slug)
 	})
 
 	t.Run("duplicate title in same instance gets unique slug", func(t *testing.T) {
 		questID := validQuestID(t, dbc)
-		obj1, err := service.CreateObjective(ctx, questID, "Garden Walk")
+		obj1, err := service.CreateObjective(ctx, questID, "", "Garden Walk")
 		require.NoError(t, err)
-		obj2, err := service.CreateObjective(ctx, questID, "Garden Walk")
+		obj2, err := service.CreateObjective(ctx, questID, "", "Garden Walk")
 		require.NoError(t, err)
 		assert.NotEqual(t, obj1.Slug, obj2.Slug)
 	})
 
 	t.Run("same title in different instances can share slug", func(t *testing.T) {
-		obj1, err := service.CreateObjective(ctx, validQuestID(t, dbc), "Garden Walk")
+		obj1, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Garden Walk")
 		require.NoError(t, err)
-		obj2, err := service.CreateObjective(ctx, validQuestID(t, dbc), "Garden Walk")
+		obj2, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Garden Walk")
 		require.NoError(t, err)
 		assert.Equal(t, obj1.Slug, obj2.Slug)
 	})
@@ -92,7 +92,7 @@ func TestObjectiveService_GetByQuestIDAndSlug(t *testing.T) {
 	ctx := context.Background()
 
 	questID := validQuestID(t, dbc)
-	objective, err := service.CreateObjective(ctx, questID, gofakeit.Sentence(3))
+	objective, err := service.CreateObjective(ctx, questID, "", gofakeit.Sentence(3))
 	require.NoError(t, err)
 	require.NotEmpty(t, objective.Slug)
 
@@ -119,7 +119,7 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("slug updates when title changes", func(t *testing.T) {
-		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "Original Title")
+		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Original Title")
 		require.NoError(t, err)
 		assert.Equal(t, "original-title", objective.Slug)
 
@@ -130,7 +130,7 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 	})
 
 	t.Run("slug unchanged when title not provided", func(t *testing.T) {
-		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "Original Title")
+		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Original Title")
 		require.NoError(t, err)
 		originalSlug := objective.Slug
 
@@ -141,9 +141,9 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 
 	t.Run("duplicate title in same instance gets unique slug on rename", func(t *testing.T) {
 		questID := validQuestID(t, dbc)
-		_, err := service.CreateObjective(ctx, questID, "Garden Walk")
+		_, err := service.CreateObjective(ctx, questID, "", "Garden Walk")
 		require.NoError(t, err)
-		obj2, err := service.CreateObjective(ctx, questID, gofakeit.Sentence(3))
+		obj2, err := service.CreateObjective(ctx, questID, "", gofakeit.Sentence(3))
 		require.NoError(t, err)
 
 		err = service.UpdateObjective(ctx, &obj2, services.ObjectiveUpdateData{Title: "Garden Walk"})
@@ -154,7 +154,7 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 
 	t.Run("update persists to storage", func(t *testing.T) {
 		questID := validQuestID(t, dbc)
-		objective, err := service.CreateObjective(ctx, questID, "Original Title")
+		objective, err := service.CreateObjective(ctx, questID, "", "Original Title")
 		require.NoError(t, err)
 
 		err = service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{Title: "New Title"})
@@ -172,9 +172,9 @@ func TestObjectiveService_FindByQuestID(t *testing.T) {
 	ctx := context.Background()
 
 	questID := validQuestID(t, dbc)
-	obj1, err := service.CreateObjective(ctx, questID, "Find the key")
+	obj1, err := service.CreateObjective(ctx, questID, "", "Find the key")
 	require.NoError(t, err)
-	obj2, err := service.CreateObjective(ctx, questID, "Open the door")
+	obj2, err := service.CreateObjective(ctx, questID, "", "Open the door")
 	require.NoError(t, err)
 
 	t.Run("returns all objectives for the quest", func(t *testing.T) {

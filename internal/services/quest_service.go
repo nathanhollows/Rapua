@@ -2,30 +2,39 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/uptrace/bun"
 )
 
 type QuestService struct {
+	transactor           db.Transactor
 	instanceRepo         repositories.QuestRepository
 	instanceSettingsRepo repositories.QuestSettingsRepository
 	blockRepo            repositories.BlockRepository
+	objectiveRepo        repositories.ObjectiveRepository
 }
 
 func NewQuestService(
+	transactor db.Transactor,
 	instanceRepo repositories.QuestRepository,
 	instanceSettingsRepo repositories.QuestSettingsRepository,
 	blockRepo repositories.BlockRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 ) *QuestService {
 	return &QuestService{
+		transactor:           transactor,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
 		blockRepo:            blockRepo,
+		objectiveRepo:        objectiveRepo,
 	}
 }
 
@@ -47,48 +56,47 @@ func (s *QuestService) CreateQuest(
 		Name:       name,
 		UserID:     user.ID,
 		IsTemplate: false,
-		GameStructure: models.GameStructure{
-			ID:             uuid.New().String(),
-			Name:           "",
-			Color:          "",
-			Routing:        models.RouteStrategyFreeRoam,
-			CompletionType: models.CompletionAll,
-			IsRoot:         true,
-			SubGroups: []models.GameStructure{
-				{
-					ID:             uuid.New().String(),
-					Name:           "Objectives",
-					Color:          "primary",
-					Routing:        models.RouteStrategyRandomised,
-					CompletionType: models.CompletionAll,
-					MaxNext:        3, //nolint:mnd // Default max next objectives
-					AutoAdvance:    true,
-					IsRoot:         false,
-					SubGroups:      []models.GameStructure{},
-				},
-			},
-		},
 	}
 
-	if err := s.instanceRepo.Create(ctx, instance); err != nil {
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err := s.instanceRepo.CreateTx(ctx, tx, instance); err != nil {
 		return nil, fmt.Errorf("creating instance: %w", err)
 	}
 
-	settings := &models.QuestSettings{
+	// Every quest has a root objective: it is the node everything else hangs
+	// from, and a quest without one has no tree to add to. It goes in the same
+	// transaction as the quest for that reason: a quest that outlives a failed
+	// root insert cannot be opened or repaired.
+	root := &models.Objective{
+		ID:      uuid.New().String(),
 		QuestID: instance.ID,
+		Slug:    "start",
+		Title:   name,
+		Routing: models.RouteStrategyFreeRoam,
 	}
-	if err := s.instanceSettingsRepo.Create(ctx, settings); err != nil {
+	if err := s.objectiveRepo.CreateTx(ctx, tx, root); err != nil {
+		return nil, fmt.Errorf("creating root objective: %w", err)
+	}
+
+	settings := &models.QuestSettings{QuestID: instance.ID}
+	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
 
-	// Create default start blocks
-	if err := s.createDefaultStartBlocks(ctx, instance); err != nil {
+	if err := s.createDefaultStartBlocksTx(ctx, tx, instance); err != nil {
 		return nil, fmt.Errorf("creating default start blocks: %w", err)
 	}
-
-	// Create default finish blocks
-	if err := s.createDefaultFinishBlocks(ctx, instance); err != nil {
+	if err := s.createDefaultFinishBlocksTx(ctx, tx, instance); err != nil {
 		return nil, fmt.Errorf("creating default finish blocks: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("committing transaction: %w", err)
 	}
 
 	return instance, nil
@@ -164,7 +172,7 @@ const startInstructionsContent = `- Work through each objective using the clues,
 const finishCongratulationsContent = `You’ve wrapped up the entire route. Thanks for being part of the adventure.`
 
 // createDefaultStartBlocks creates the default blocks for an instance's start page.
-func (s *QuestService) createDefaultStartBlocks(ctx context.Context, instance *models.Quest) error {
+func (s *QuestService) createDefaultStartBlocksTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error {
 	startBlocks := []blocks.Block{
 		// 1. Header block
 		&blocks.HeaderBlock{
@@ -210,11 +218,11 @@ func (s *QuestService) createDefaultStartBlocks(ctx context.Context, instance *m
 		},
 	}
 
-	return s.blockRepo.BulkCreate(ctx, startBlocks, instance.ID, blocks.ContextStart)
+	return s.blockRepo.BulkCreateTx(ctx, tx, startBlocks, instance.ID, blocks.ContextStart)
 }
 
 // createDefaultFinishBlocks creates the default blocks for an instance's finish page.
-func (s *QuestService) createDefaultFinishBlocks(ctx context.Context, instance *models.Quest) error {
+func (s *QuestService) createDefaultFinishBlocksTx(ctx context.Context, tx *bun.Tx, instance *models.Quest) error {
 	finishBlocks := []blocks.Block{
 		// 1. Header block
 		&blocks.HeaderBlock{
@@ -230,5 +238,5 @@ func (s *QuestService) createDefaultFinishBlocks(ctx context.Context, instance *
 		},
 	}
 
-	return s.blockRepo.BulkCreate(ctx, finishBlocks, instance.ID, blocks.ContextFinish)
+	return s.blockRepo.BulkCreateTx(ctx, tx, finishBlocks, instance.ID, blocks.ContextFinish)
 }

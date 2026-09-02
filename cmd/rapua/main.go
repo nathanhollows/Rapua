@@ -105,7 +105,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	gameStructureService := services.NewGameStructureService(objectiveRepo, instanceRepo)
 	deleteService := services.NewDeleteService(
 		transactor, instanceRepo,
 		teamRepo, uploadRepo, dbc, uploadsDir, logger,
@@ -121,18 +120,20 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
 	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 
+	sectionFinishRepo := repositories.NewSectionFinishRepository(dbc)
 	navigationService := services.NewNavigationService(
 		objectiveRepo,
 		objectiveContextCompletionRepo,
+		sectionFinishRepo,
+		blockRepo,
 		teamRepo,
 		teamVarStateRepo,
-		gameStructureService,
-		blockService,
 		logger,
 	)
 	checkInService := services.NewCheckInService(
 		teamRepo, blockService, teamVarStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
+		sectionFinishRepo, blockRepo,
 	)
 	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
@@ -146,7 +147,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	questService := services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo)
+	questService := services.NewQuestService(transactor, instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
@@ -190,7 +191,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		logger, accessService, assetGenerator, identityService, blockService,
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
-		gameStructureService, instanceRepo, questService, instanceSettingsService,
+		instanceRepo, questService, instanceSettingsService,
 		objectiveService, notificationService,
 		runService, templateService, uploadService, userService, quickstartService,
 		leaderBoardService, stripeService,

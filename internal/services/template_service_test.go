@@ -39,7 +39,8 @@ func setupTemplateService(t *testing.T) (services.TemplateService, services.Ques
 		blockRepo,
 	)
 	questService := services.NewQuestService(
-		instanceRepo, instanceSettingsRepo, blockRepo,
+		transactor,
+		instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo,
 	)
 
 	templateService := services.NewTemplateService(

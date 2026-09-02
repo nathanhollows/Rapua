@@ -38,6 +38,8 @@ type ObjectiveRepository interface {
 	// is an error for a quest to hold several, since then no row is
 	// identifiable as the root and picking one would be a guess.
 	FindRoot(ctx context.Context, questID string) (*models.Objective, error)
+	// FindChildrenCount returns how many direct children an objective has.
+	FindChildrenCount(ctx context.Context, parentID string) (int, error)
 	// FindChildren returns one objective's direct children in position order.
 	// It is scoped by quest because parent_id has no foreign key, so an id that
 	// leaked in from elsewhere would otherwise pull in another quest's rows.
@@ -53,6 +55,9 @@ type ObjectiveRepository interface {
 	// into somebody's child.
 	Reposition(ctx context.Context, tx *bun.Tx, objectiveID, newParentID string, newPosition int) error
 	LoadBlocks(ctx context.Context, objective *models.Objective) error
+	// Create writes one objective outside a transaction, for callers that are
+	// not already in one. It applies the same checks as CreateTx.
+	Create(ctx context.Context, objective *models.Objective) error
 	CreateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
 	// UpdateTx writes every column of an objective except its place in the
 	// tree, so it needs a fully loaded model: a sparsely built one blanks the
@@ -83,7 +88,10 @@ func (r *objectiveRepository) GetByID(ctx context.Context, objectiveID string) (
 	return &objective, nil
 }
 
-func (r *objectiveRepository) GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error) {
+func (r *objectiveRepository) GetByQuestIDAndSlug(
+	ctx context.Context,
+	questID, slug string,
+) (*models.Objective, error) {
 	var objective models.Objective
 	err := r.db.NewSelect().
 		Model(&objective).
@@ -215,6 +223,17 @@ func findUnattached(ctx context.Context, db bun.IDB, questID string) ([]models.O
 		return nil, fmt.Errorf("finding unparented objectives: %w", err)
 	}
 	return objectives, nil
+}
+
+func (r *objectiveRepository) FindChildrenCount(ctx context.Context, parentID string) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.Objective)(nil)).
+		Where("parent_id = ?", parentID).
+		Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("counting children: %w", err)
+	}
+	return count, nil
 }
 
 func (r *objectiveRepository) FindChildren(
@@ -410,7 +429,15 @@ func (r *objectiveRepository) LoadBlocks(ctx context.Context, objective *models.
 	return nil
 }
 
+func (r *objectiveRepository) Create(ctx context.Context, objective *models.Objective) error {
+	return createObjective(ctx, r.db, objective)
+}
+
 func (r *objectiveRepository) CreateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error {
+	return createObjective(ctx, tx, objective)
+}
+
+func createObjective(ctx context.Context, db bun.IDB, objective *models.Objective) error {
 	if objective.ID == "" {
 		objective.ID = uuid.New().String()
 	}
@@ -420,20 +447,20 @@ func (r *objectiveRepository) CreateTx(ctx context.Context, tx *bun.Tx, objectiv
 	// none is unattached, which is a legitimate state: rows exist before
 	// anything arranges them into a tree.
 	if objective.ParentID != "" {
-		if err := checkParentExists(ctx, tx, *objective, objective.ParentID); err != nil {
+		if err := checkParentExists(ctx, db, *objective, objective.ParentID); err != nil {
 			return err
 		}
 		// Placement is Reposition's job, so a new child goes last and any
 		// Position on the model is ignored. Appending is what keeps positions
 		// dense without the caller having to read the siblings first.
-		siblings, err := countChildren(ctx, tx, objective.QuestID, objective.ParentID)
+		siblings, err := countChildren(ctx, db, objective.QuestID, objective.ParentID)
 		if err != nil {
 			return err
 		}
 		objective.Position = siblings
 	}
 
-	_, err := tx.NewInsert().Model(objective).Exec(ctx)
+	_, err := db.NewInsert().Model(objective).Exec(ctx)
 	return err
 }
 

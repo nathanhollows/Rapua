@@ -238,13 +238,11 @@ func (s *DuplicationService) duplicateInstance(
 	name string,
 	asTemplate bool,
 ) (*models.Quest, error) {
-	// Create new instance with copied game structure
 	newInstance := &models.Quest{
 		Name:                  name,
 		UserID:                userID,
 		IsTemplate:            asTemplate,
 		IsQuickStartDismissed: true,
-		GameStructure:         sourceInstance.GameStructure.Clone(),
 	}
 
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
@@ -258,7 +256,9 @@ func (s *DuplicationService) duplicateInstance(
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
 
-	objectives, err := s.objectiveRepo.FindByQuestID(ctx, sourceInstance.ID)
+	// Ordered parent-before-child, so a copy's parent always exists by the time
+	// the copy that names it is written.
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, sourceInstance.ID)
 	if err != nil {
 		return nil, fmt.Errorf("finding objectives: %w", err)
 	}
@@ -278,16 +278,8 @@ func (s *DuplicationService) duplicateInstance(
 		return nil, fmt.Errorf("duplicating instance blocks: %w", err)
 	}
 
-	s.remapObjectiveIDs(&newInstance.GameStructure, objectiveIDMap)
-
-	// Update the instance with the remapped game structure
-	_, err = tx.NewUpdate().
-		Model(newInstance).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("updating game structure: %w", err)
+	if err := s.remapObjectiveParents(ctx, tx, objectives, objectiveIDMap); err != nil {
+		return nil, err
 	}
 
 	return newInstance, nil
@@ -323,14 +315,32 @@ func (s *DuplicationService) duplicateObjective(
 	return &newObjective, nil
 }
 
-func (s *DuplicationService) remapObjectiveIDs(group *models.GameStructure, idMap map[string]string) {
-	for i, oldID := range group.ObjectiveIDs {
-		if newID, exists := idMap[oldID]; exists {
-			group.ObjectiveIDs[i] = newID
+// remapObjectiveParents points each copy at the copy of its source's parent.
+// duplicateObjective clears placement precisely so it can be rewritten here in
+// the copy's own ids: carrying the source's over would parent the duplicate
+// across two quests.
+func (s *DuplicationService) remapObjectiveParents(
+	ctx context.Context, tx *bun.Tx, sources []models.Objective, idMap map[string]string,
+) error {
+	for _, source := range sources {
+		if source.ParentID == "" {
+			continue
+		}
+		newID, ok := idMap[source.ID]
+		if !ok {
+			continue
+		}
+		newParentID, ok := idMap[source.ParentID]
+		if !ok {
+			// The source tree was already damaged; copying the damage forward
+			// is better than pointing the copy back into the original.
+			continue
+		}
+		if _, err := tx.NewUpdate().Model((*models.Objective)(nil)).
+			Set("parent_id = ?", newParentID).Set("position = ?", source.Position).
+			Where("id = ?", newID).Exec(ctx); err != nil {
+			return fmt.Errorf("placing duplicated objective %s: %w", newID, err)
 		}
 	}
-
-	for i := range group.SubGroups {
-		s.remapObjectiveIDs(&group.SubGroups[i], idMap)
-	}
+	return nil
 }

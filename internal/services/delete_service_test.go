@@ -902,17 +902,13 @@ func TestDeleteService_DeleteUser_DeletesObjectiveBlocks(t *testing.T) {
 	assert.Zero(t, count, "objective blocks should be deleted when the owning user is deleted")
 }
 
-func reloadStructure(t *testing.T, dbc *bun.DB, questID string) models.GameStructure {
-	t.Helper()
-	var reloaded models.Quest
-	err := dbc.NewSelect().Model(&reloaded).Where("id = ?", questID).Scan(context.Background())
-	require.NoError(t, err)
-	return reloaded.GameStructure
-}
-
-// deleteObjectiveFixture creates a quest whose GameStructure references two
-// objectives in a nested group, and returns the quest plus both objective IDs.
-func deleteObjectiveFixture(t *testing.T, dbc *bun.DB) (*models.Quest, string, string) {
+// deleteObjectiveFixture builds root -> doomed -> grandchild, with a survivor
+// beside the doomed one, so a delete has both a sibling to leave alone and a
+// child that would be stranded.
+func deleteObjectiveFixture(
+	t *testing.T,
+	dbc *bun.DB,
+) (quest *models.Quest, doomedID, survivorID, grandchildID string) {
 	t.Helper()
 	ctx := context.Background()
 
@@ -920,63 +916,64 @@ func deleteObjectiveFixture(t *testing.T, dbc *bun.DB) (*models.Quest, string, s
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
 
-	doomedID, survivorID := gofakeit.UUID(), gofakeit.UUID()
-
-	quest := &models.Quest{
-		ID:     gofakeit.UUID(),
-		UserID: user.ID,
-		Name:   "Structure prune",
-		GameStructure: models.GameStructure{
-			ID:           "root",
-			IsRoot:       true,
-			ObjectiveIDs: []string{survivorID},
-			SubGroups: []models.GameStructure{
-				{ID: "nested", Name: "Nested", ObjectiveIDs: []string{doomedID}},
-			},
-		},
-	}
+	quest = &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Structure prune"}
 	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
 	require.NoError(t, err)
 
-	for _, id := range []string{doomedID, survivorID} {
+	insert := func(parentID string) string {
+		id := gofakeit.UUID()
 		objective := &models.Objective{
-			ID:      id,
-			QuestID: quest.ID,
-			Slug:    gofakeit.Word() + "-" + id[:4],
-			Title:   gofakeit.Sentence(3),
+			ID: id, QuestID: quest.ID, ParentID: parentID,
+			Slug: gofakeit.Word() + "-" + id[:4], Title: gofakeit.Sentence(3),
 		}
-		_, err = dbc.NewInsert().Model(objective).Exec(ctx)
-		require.NoError(t, err)
+		_, insertErr := dbc.NewInsert().Model(objective).Exec(ctx)
+		require.NoError(t, insertErr)
+		return id
 	}
 
-	return quest, doomedID, survivorID
+	rootID := insert("")
+	doomedID = insert(rootID)
+	survivorID = insert(rootID)
+	grandchildID = insert(doomedID)
+
+	return quest, doomedID, survivorID, grandchildID
 }
 
-func TestDeleteService_DeleteObjective_PrunesStructure(t *testing.T) {
+// Deleting a section removes the section, not everything under it: its
+// children move up to its own parent, where a walk from the root still reaches
+// them.
+func TestDeleteService_DeleteObjective_AdoptsChildren(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()
+	ctx := context.Background()
 
-	quest, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+	_, doomedID, survivorID, grandchildID := deleteObjectiveFixture(t, dbc)
 
-	require.NoError(t, svc.DeleteObjective(context.Background(), doomedID))
+	var doomed models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&doomed).Where("id = ?", doomedID).Scan(ctx))
 
-	structure := reloadStructure(t, dbc, quest.ID)
-	assert.Empty(t, structure.SubGroups[0].ObjectiveIDs,
-		"deleted objective must not linger in the structure")
-	assert.Equal(t, []string{survivorID}, structure.ObjectiveIDs,
-		"sibling groups untouched")
+	require.NoError(t, svc.DeleteObjective(ctx, doomedID))
 
 	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).
-		Where("id = ?", doomedID).Count(context.Background())
+		Where("id = ?", doomedID).Count(ctx)
 	require.NoError(t, err)
-	assert.Zero(t, count)
+	assert.Zero(t, count, "the deleted objective is gone")
+
+	var grandchild models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&grandchild).Where("id = ?", grandchildID).Scan(ctx))
+	assert.Equal(t, doomed.ParentID, grandchild.ParentID,
+		"its child moves up rather than being stranded")
+
+	var survivor models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&survivor).Where("id = ?", survivorID).Scan(ctx))
+	assert.Equal(t, doomed.ParentID, survivor.ParentID, "its sibling is untouched")
 }
 
 func TestDeleteService_DeleteObjective_LeavesOtherObjectivesAlone(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()
 
-	_, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+	_, doomedID, survivorID, _ := deleteObjectiveFixture(t, dbc)
 
 	require.NoError(t, svc.DeleteObjective(context.Background(), doomedID))
 
@@ -991,7 +988,7 @@ func TestDeleteService_DeleteObjective_DeletesBlocks(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	_, doomedID, survivorID := deleteObjectiveFixture(t, dbc)
+	_, doomedID, survivorID, _ := deleteObjectiveFixture(t, dbc)
 
 	for _, ownerID := range []string{doomedID, survivorID} {
 		block := &models.Block{
@@ -1022,11 +1019,84 @@ func TestDeleteService_DeleteObjective_UnknownIDIsNoOp(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()
 
-	quest, _, survivorID := deleteObjectiveFixture(t, dbc)
+	ctx := context.Background()
+	quest, _, _, _ := deleteObjectiveFixture(t, dbc)
 
-	require.NoError(t, svc.DeleteObjective(context.Background(), gofakeit.UUID()))
+	before, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("quest_id = ?", quest.ID).Count(ctx)
+	require.NoError(t, err)
 
-	assert.Equal(t, []string{survivorID},
-		reloadStructure(t, dbc, quest.ID).ObjectiveIDs,
-		"structure untouched when the ID matched nothing")
+	require.NoError(t, svc.DeleteObjective(ctx, gofakeit.UUID()))
+
+	after, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("quest_id = ?", quest.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, before, after, "the tree is untouched when the id matched nothing")
+}
+
+// Deleting the root would leave its children parentless alongside it, and a
+// quest with several parentless rows is one no walk can read and no screen can
+// mend. The route is live, so the guard is the only thing standing in the way.
+func TestDeleteService_DeleteObjective_RefusesTheRoot(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: questID, Slug: "start", Title: "Start"}
+	_, err := dbc.NewInsert().Model(root).Exec(ctx)
+	require.NoError(t, err)
+	child := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: questID, ParentID: root.ID, Slug: "one", Title: "One",
+	}
+	_, err = dbc.NewInsert().Model(child).Exec(ctx)
+	require.NoError(t, err)
+
+	require.ErrorIs(t, svc.DeleteObjective(ctx, root.ID), services.ErrCannotDeleteRoot)
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).Where("quest_id = ?", questID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 2, count, "the refused delete removed nothing")
+}
+
+// Adopted children are appended after the destination's existing ones and the
+// whole list renumbered, because carrying old positions across collides with
+// the positions already in use and the tie is broken arbitrarily by id.
+func TestDeleteService_DeleteObjective_RenumbersAdoptedSiblings(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int) {
+		_, iErr := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug, Position: position,
+		}).Exec(ctx)
+		require.NoError(t, iErr)
+	}
+
+	root := gofakeit.UUID()
+	section := gofakeit.UUID()
+	insert(root, "", "start", 0)
+	insert(gofakeit.UUID(), root, "keeper", 0)
+	insert(section, root, "doomed", 1)
+	// Both children of the doomed section carry positions already in use above.
+	insert(gofakeit.UUID(), section, "adopted-a", 0)
+	insert(gofakeit.UUID(), section, "adopted-b", 1)
+
+	require.NoError(t, svc.DeleteObjective(ctx, section))
+
+	var survivors []models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&survivors).
+		Where("parent_id = ?", root).Order("position ASC").Scan(ctx))
+
+	slugs := make([]string, len(survivors))
+	positions := make([]int, len(survivors))
+	for i, obj := range survivors {
+		slugs[i] = obj.Slug
+		positions[i] = obj.Position
+	}
+	assert.Equal(t, []string{"keeper", "adopted-a", "adopted-b"}, slugs,
+		"the existing child keeps its place and the adopted ones follow")
+	assert.Equal(t, []int{0, 1, 2}, positions, "positions are dense and distinct")
 }

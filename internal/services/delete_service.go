@@ -21,6 +21,10 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// ErrCannotDeleteRoot is returned when a delete names a quest's root objective.
+// The root goes only with the quest it belongs to.
+var ErrCannotDeleteRoot = errors.New("the root objective cannot be deleted")
+
 // DeleteService coordinates deletions. Database-level ON DELETE CASCADE
 // handles child record cleanup; this service handles auth, file cleanup,
 // and denormalized data updates.
@@ -259,6 +263,11 @@ func (s *DeleteService) DeleteQuest(ctx context.Context, userID, questID string)
 
 // DeleteObjective deletes blocks explicitly because blocks.owner_id has no FK
 // to cascade from.
+//
+// The quest's root is refused. Its children would be adopted by the parent it
+// does not have, leaving a quest with several parentless rows, which every walk
+// from the root reads as an ambiguous tree and no screen offers a way to mend.
+// Deleting the quest removes the root along with everything else.
 func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string) error {
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -271,8 +280,19 @@ func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string)
 		}
 	}()
 
-	// GameStructure is a JSON blob with no FK, so nothing else drops the ID.
-	if err := s.pruneObjectiveFromStructure(ctx, tx, objectiveID); err != nil {
+	isRoot, err := s.objectiveIsRoot(ctx, tx, objectiveID)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if isRoot {
+		_ = tx.Rollback()
+		return fmt.Errorf("%w: %s", ErrCannotDeleteRoot, objectiveID)
+	}
+
+	// parent_id has no FK, so nothing reparents the children on its own, and
+	// left alone they would be unreachable from the root.
+	if err := s.adoptChildrenOfDeleted(ctx, tx, objectiveID); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -300,9 +320,34 @@ func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string)
 	return tx.Commit()
 }
 
-// pruneObjectiveFromStructure tolerates a missing objective or quest so that
-// DeleteObjective stays idempotent.
-func (s *DeleteService) pruneObjectiveFromStructure(
+// objectiveIsRoot reports whether an objective is the top of its quest's tree.
+// A row that is not there at all is not the root, so a repeated delete still
+// reaches the idempotent path below rather than being refused.
+func (s *DeleteService) objectiveIsRoot(ctx context.Context, tx *bun.Tx, objectiveID string) (bool, error) {
+	var objective models.Objective
+	err := tx.NewSelect().
+		Model(&objective).
+		Column("id", "parent_id").
+		Where("id = ?", objectiveID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("loading objective before delete: %w", err)
+	}
+	return objective.ParentID == "", nil
+}
+
+// adoptChildrenOfDeleted moves an objective's children up to its own parent, so
+// deleting a section removes the section rather than everything under it.
+//
+// The adopted children are appended after the destination's existing ones and
+// the whole sibling list is renumbered densely. Carrying their old positions
+// across would collide with the positions already in use there, and a tie is
+// broken by id, which is to say arbitrarily: under ordered routing that
+// silently rewrites the order the quest is played in.
+func (s *DeleteService) adoptChildrenOfDeleted(
 	ctx context.Context,
 	tx *bun.Tx,
 	objectiveID string,
@@ -310,41 +355,79 @@ func (s *DeleteService) pruneObjectiveFromStructure(
 	var objective models.Objective
 	err := tx.NewSelect().
 		Model(&objective).
-		Column("id", "quest_id").
+		Column("id", "parent_id").
 		Where("id = ?", objectiveID).
 		Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
-		return fmt.Errorf("loading objective for structure prune: %w", err)
+		return fmt.Errorf("loading objective before delete: %w", err)
 	}
 
-	var quest models.Quest
-	err = tx.NewSelect().
-		Model(&quest).
-		Where("id = ?", objective.QuestID).
+	// Shift the adopted rows past every position already in use at the
+	// destination. Without it they arrive holding positions their new siblings
+	// hold too, and a tie is broken by id, which is to say by nothing.
+	offset, err := s.siblingCount(ctx, tx, objective.ParentID)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.NewUpdate().
+		Model((*models.Objective)(nil)).
+		Set("parent_id = ?", objective.ParentID).
+		Set("position = position + ?", offset).
+		Where("parent_id = ?", objectiveID).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("reparenting children of %s: %w", objectiveID, err)
+	}
+
+	return s.renumberSiblings(ctx, tx, objective.ParentID, objectiveID)
+}
+
+// siblingCount counts a parent's children, which is one past every position
+// they can be occupying once the list is dense.
+func (s *DeleteService) siblingCount(ctx context.Context, tx *bun.Tx, parentID string) (int, error) {
+	count, err := tx.NewSelect().
+		Model((*models.Objective)(nil)).
+		Where("parent_id = ?", parentID).
+		Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("counting children of %s: %w", parentID, err)
+	}
+	return count, nil
+}
+
+// renumberSiblings gives every child of a parent a dense position in its
+// current order, with the objective about to be deleted left out. Both groups
+// keep their relative order: the adopted rows were shifted past the existing
+// ones before this runs, so sorting by position holds them apart.
+func (s *DeleteService) renumberSiblings(
+	ctx context.Context,
+	tx *bun.Tx,
+	parentID string,
+	excludeID string,
+) error {
+	var siblings []models.Objective
+	err := tx.NewSelect().
+		Model(&siblings).
+		Column("id").
+		Where("parent_id = ?", parentID).
+		Where("id != ?", excludeID).
+		Order("position ASC", "id ASC").
 		Scan(ctx)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
+		return fmt.Errorf("loading siblings of %s: %w", parentID, err)
+	}
+
+	for i, sibling := range siblings {
+		if _, err := tx.NewUpdate().
+			Model((*models.Objective)(nil)).
+			Set("position = ?", i).
+			Where("id = ?", sibling.ID).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("renumbering objective %s: %w", sibling.ID, err)
 		}
-		return fmt.Errorf("loading quest for structure prune: %w", err)
 	}
-
-	if !quest.GameStructure.RemoveObjectiveID(objectiveID) {
-		return nil
-	}
-
-	_, err = tx.NewUpdate().
-		Model(&quest).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("saving pruned structure: %w", err)
-	}
-
 	return nil
 }
 
