@@ -197,7 +197,7 @@ type RunService interface {
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Run) error
 
-	BuildObjectiveGroupMap(structure *models.GameStructure) map[string]services.ObjectiveGroupInfo
+	BuildObjectiveSectionMap(ctx context.Context, questID string) (map[string]services.ObjectiveSectionInfo, error)
 	GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 }
@@ -253,7 +253,6 @@ type Handler struct {
 	importService           *services.ImportService
 	facilitatorService      FacilitatorService
 	gameScheduleService     GameScheduleService
-	gameStructureService    *services.GameStructureService
 	questLoader             QuestLoader
 	questService            QuestService
 	instanceSettingsService QuestSettingsService
@@ -282,7 +281,6 @@ func NewAdminHandler(
 	importService *services.ImportService,
 	facilitatorService FacilitatorService,
 	gameScheduleService GameScheduleService,
-	gameStructureService *services.GameStructureService,
 	questLoader QuestLoader,
 	questService QuestService,
 	instanceSettingsService QuestSettingsService,
@@ -310,7 +308,6 @@ func NewAdminHandler(
 		importService:           importService,
 		facilitatorService:      facilitatorService,
 		gameScheduleService:     gameScheduleService,
-		gameStructureService:    gameStructureService,
 		questLoader:             questLoader,
 		questService:            questService,
 		instanceSettingsService: instanceSettingsService,

@@ -1,10 +1,10 @@
 package admin
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
+
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -14,117 +14,47 @@ import (
 func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.gameStructureService.Load(
-		r.Context(),
-		user.CurrentQuestID,
-		&user.CurrentQuest.GameStructure,
-		true, // recursive
-	)
+	objectives, err := h.objectiveService.FindTree(r.Context(), user.CurrentQuestID)
 	if err != nil {
 		h.handleError(
-			w,
-			r,
-			"Locations: loading game structure",
-			"Error loading game structure",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
+			w, r, "Locations: loading objective tree", "Error loading quest",
+			"error", err, "quest_id", user.CurrentQuestID,
 		)
 		return
 	}
 
-	// Needed for the clue indicators.
-	err = h.gameStructureService.LoadBlocksForStructure(
-		r.Context(),
-		&user.CurrentQuest.GameStructure,
-		true, // recursive
-	)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"Locations: loading blocks",
-			"Error loading blocks",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		return
-	}
-
-	c := templates.LocationGroupList(user.CurrentQuest.Settings, user.CurrentQuest.GameStructure)
+	c := templates.ObjectiveTree(objectiveTreeNodes(objectives))
 	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
 	}
 }
 
-// SaveGameStructure handles saving the game structure from the browser.
-func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
-	// Check HTMX headers
-	if r.Header.Get("Hx-Request") != htmxHeaderTrue {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
+// objectiveTreeNodes flattens the tree for rendering. The rows arrive with each
+// parent ahead of its children, so depth is the parent's depth plus one, and
+// the root is dropped: it holds everything, so listing it says nothing.
+func objectiveTreeNodes(objectives []models.Objective) []templates.ObjectiveTreeNode {
+	depths := make(map[string]int, len(objectives))
+	hasChildren := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		hasChildren[obj.ParentID] = true
 	}
 
-	user := h.UserFromContext(r.Context())
-
-	// Parse form data
-	if err := r.ParseForm(); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: parsing form",
-			"Error parsing form",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		return
+	nodes := make([]templates.ObjectiveTreeNode, 0, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID == "" {
+			depths[obj.ID] = 0
+			continue
+		}
+		depth := depths[obj.ParentID] + 1
+		depths[obj.ID] = depth
+		nodes = append(nodes, templates.ObjectiveTreeNode{
+			Objective: obj,
+			Depth:     depth - 1,
+			IsSection: hasChildren[obj.ID],
+		})
 	}
-
-	// Get the structure JSON from form
-	structureJSON := r.FormValue("structure")
-	if structureJSON == "" {
-		h.handleError(w, r, "SaveGameStructure: missing structure", "Missing structure data")
-		return
-	}
-
-	// Parse the JSON
-	var structure models.GameStructure
-	if err := json.Unmarshal([]byte(structureJSON), &structure); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: decoding JSON",
-			"Invalid JSON: "+err.Error(),
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		return
-	}
-
-	// Validate and save using the service
-	if err := h.gameStructureService.Save(r.Context(), user.CurrentQuestID, &structure); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: saving structure",
-			"Validation failed: "+err.Error(),
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		return
-	}
-
-	h.handleSuccess(w, r, "Game structure saved")
+	return nodes
 }
 
 // StartPageEdit shows the start page editor.

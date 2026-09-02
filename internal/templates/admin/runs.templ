@@ -496,7 +496,7 @@ type TeamOverviewData struct {
 	IncompleteObjectives []models.Objective
 	Uploads              []*models.Upload
 	TotalObjectives      int
-	ObjectiveGroups      map[string]services.ObjectiveGroupInfo
+	ObjectiveSections    map[string]services.ObjectiveSectionInfo
 }
 
 templ TeamOverview(data TeamOverviewData) {
@@ -542,7 +542,7 @@ templ TeamOverview(data TeamOverviewData) {
 		<div class="relative flex flex-col-reverse lg:flex-row px-5 gap-5">
 			<!-- Sidebar -->
 			<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-				@CurrentObjectivesCard(data.IncompleteObjectives, data.ObjectiveGroups, data.Run, data.TotalObjectives)
+				@CurrentObjectivesCard(data.IncompleteObjectives, data.ObjectiveSections, data.Run, data.TotalObjectives)
 				@MessagesCard(data.Run, data.Notifications)
 			</div>
 			<!-- Main -->
@@ -660,7 +660,7 @@ templ RunStatsCard(settings models.QuestSettings, run models.Run, completedObjec
 	</div>
 }
 
-templ CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveGroups map[string]services.ObjectiveGroupInfo, run models.Run, totalObjectives int) {
+templ CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveSections map[string]services.ObjectiveSectionInfo, run models.Run, totalObjectives int) {
 	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
 		<div class="card-body p-6 pb-4">
 			<div class="flex items-center justify-between mb-2">
@@ -684,8 +684,8 @@ templ CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveGr
 							<span class="status mt-1.5 shrink-0"></span>
 							<div class="min-w-0">
 								<p class="text-sm font-medium truncate">{ objective.Title }</p>
-								if groupInfo, ok := objectiveGroups[objective.ID]; ok {
-									<p class="text-xs opacity-60">{ groupInfo.GroupName }</p>
+								if section, ok := objectiveSections[objective.ID]; ok {
+									<p class="text-xs opacity-60">{ section.SectionTitle }</p>
 								}
 							</div>
 						</a>

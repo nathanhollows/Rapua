@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	admin "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -144,7 +145,13 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		uploads = []*models.Upload{}
 	}
 
-	objectiveGroups := h.runService.BuildObjectiveGroupMap(&user.CurrentQuest.GameStructure)
+	objectiveSections, err := h.runService.BuildObjectiveSectionMap(r.Context(), user.CurrentQuest.ID)
+	if err != nil {
+		// The section label is decoration on this card; losing it should not
+		// cost the admin the whole page.
+		h.logger.WarnContext(r.Context(), "TeamOverview: loading objective sections", "error", err)
+		objectiveSections = map[string]services.ObjectiveSectionInfo{}
+	}
 
 	data := admin.TeamOverviewData{
 		Quest:                user.CurrentQuest,
@@ -153,7 +160,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		IncompleteObjectives: incompleteObjectives,
 		Uploads:              uploads,
 		TotalObjectives:      len(user.CurrentQuest.Objectives),
-		ObjectiveGroups:      objectiveGroups,
+		ObjectiveSections:    objectiveSections,
 	}
 	c := admin.TeamOverview(data)
 	err = admin.Layout(c, *user, "Runs", "Run overview").Render(r.Context(), w)

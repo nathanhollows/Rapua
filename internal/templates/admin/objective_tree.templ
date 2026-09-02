@@ -1,0 +1,58 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// ObjectiveTreeNode is one row of the quest builder: an objective and the
+// depth it sits at, flattened for rendering.
+type ObjectiveTreeNode struct {
+	Objective models.Objective
+	Depth     int
+	IsSection bool
+}
+
+// ObjectiveTree lists a quest's objectives in tree order. Reordering and
+// reparenting are not offered here: an objective's place is changed by editing
+// it, and the drag-and-drop editor is its own screen.
+templ ObjectiveTree(nodes []ObjectiveTreeNode) {
+	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
+		<h1 class="text-2xl font-bold">Quest</h1>
+		<a href="/admin/objectives/new" class="btn btn-primary btn-sm">
+			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
+			New objective
+		</a>
+	</div>
+	if len(nodes) == 0 {
+		<div class="p-5">
+			<div role="alert" class="alert">
+				@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+				<span>This quest has no objectives yet.</span>
+			</div>
+		</div>
+	} else {
+		<ul class="list p-5">
+			for _, node := range nodes {
+				<li class="list-row items-center">
+					<div style={ fmt.Sprintf("padding-left: %drem", node.Depth) }>
+						if node.IsSection {
+							@icon("folder", templ.Attributes{"class": "w-5 h-5 opacity-60"})
+						} else {
+							@icon("target", templ.Attributes{"class": "w-5 h-5 opacity-60"})
+						}
+					</div>
+					<div class="min-w-0 grow">
+						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="font-medium hover:underline">
+							{ node.Objective.Title }
+						</a>
+						<p class="text-xs opacity-60">{ node.Objective.Slug }</p>
+					</div>
+					if node.IsSection && node.Objective.Routing != "" {
+						<span class="badge badge-ghost badge-sm">{ node.Objective.Routing.String() }</span>
+					}
+				</li>
+			}
+		</ul>
+	}
+}

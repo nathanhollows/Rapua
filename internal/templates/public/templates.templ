@@ -114,7 +114,9 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 									>
 										Navigation
 									</option>
-									@renderGroupedObjectives(&link.Template.GameStructure, link.Template.Objectives, 0)
+									for _, objective := range link.Template.Objectives {
+										<option value={ objective.ID }>{ objective.Title }</option>
+									}
 								</select>
 							</form>
 							<button
@@ -243,14 +245,6 @@ templ TemplatePeview(link models.ShareLink, authed bool) {
 						<ul>
 							<li>
 								<strong>{ len(link.Template.Objectives) }</strong> objectives
-							</li>
-							<li>
-								<strong>{ len(link.Template.GameStructure.SubGroups) }</strong>
-								if len(link.Template.GameStructure.SubGroups) == 1 {
-									group
-								} else {
-									groups
-								}
 							</li>
 							if link.Template.Settings.EnablePoints {
 								<li>
@@ -382,50 +376,3 @@ templ TemplateNotFound() {
 }
 
 // renderGroupedObjectives renders the preview's objective pages grouped by the game structure hierarchy.
-templ renderGroupedObjectives(group *models.GameStructure, allObjectives []models.Objective, depth int) {
-	if !group.IsRoot && group.Name != "" {
-		<option disabled>{ group.Name }</option>
-	} else if group.IsRoot {
-		// Suppress the root header when the first group is already named "Objectives" to avoid a duplicate label.
-		if !hasFirstSubGroupNamed(group, "Objectives") {
-			<option disabled>Objectives</option>
-		}
-	}
-	// Iterate the stored IDs first so the options keep the group's ordering.
-	for _, objectiveID := range group.ObjectiveIDs {
-		for _, objective := range allObjectives {
-			if objective.ID == objectiveID {
-				<option
-					hx-trigger="chosen"
-					hx-get={ fmt.Sprint("/objective/", objective.Slug) }
-					value={ objective.Slug }
-					_="
-					on change from #pages
-						if #pages.options[#pages.selectedIndex].value == me.value then
-							send chosen to me
-							call window.history.replaceState(null, '', '#' + me.value)
-						end
-					end
-					on load
-						if window.location.hash == '#' + me.value then
-							send chosen to me
-							set #pages's value to my.value
-						end
-					end
-					"
-				>{ objective.Title }</option>
-			}
-		}
-	}
-	for i := range group.SubGroups {
-		@renderGroupedObjectives(&group.SubGroups[i], allObjectives, depth+1)
-	}
-}
-
-// hasFirstSubGroupNamed checks if the first subgroup has the given name
-func hasFirstSubGroupNamed(group *models.GameStructure, name string) bool {
-	if len(group.SubGroups) > 0 && group.SubGroups[0].Name == name {
-		return true
-	}
-	return false
-}

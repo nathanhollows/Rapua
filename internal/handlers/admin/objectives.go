@@ -1,10 +1,8 @@
 package admin
 
 import (
-	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -17,40 +15,25 @@ import (
 func (h *Handler) ObjectiveNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	objective, err := h.objectiveService.CreateObjective(r.Context(), user.CurrentQuestID, "New Objective")
+	// Where the objective goes is decided before it exists: creating it loose
+	// and moving it after would leave a moment with two roots.
+	parentID := r.URL.Query().Get("parentId")
+	if parentID == "" {
+		root, rootErr := h.objectiveService.FindRoot(r.Context(), user.CurrentQuestID)
+		if rootErr != nil {
+			h.handleError(w, r, "ObjectiveNew: finding root objective",
+				"Error creating objective", "error", rootErr)
+			return
+		}
+		parentID = root.ID
+	}
+
+	objective, err := h.objectiveService.CreateObjective(
+		r.Context(), user.CurrentQuestID, parentID, "New Objective",
+	)
 	if err != nil {
 		h.handleError(w, r, "ObjectiveNew: creating objective", "Error creating objective", "error", err)
 		return
-	}
-
-	groupID := r.URL.Query().Get("groupId")
-	afterObjectiveID := r.URL.Query().Get("afterObjectiveId")
-	beforeObjectiveID := r.URL.Query().Get("beforeObjectiveId")
-
-	if groupID != "" {
-		if err = h.gameStructureService.InsertObjectiveIntoGroup(
-			r.Context(), user.CurrentQuestID, objective.ID, groupID, afterObjectiveID, beforeObjectiveID,
-		); err != nil {
-			h.logger.ErrorContext(
-				r.Context(),
-				"ObjectiveNew: inserting objective into group",
-				"error",
-				err,
-				"objective_id",
-				objective.ID,
-			)
-		}
-	} else {
-		if err = h.addObjectiveToRootGroup(r.Context(), user.CurrentQuestID, objective.ID); err != nil {
-			h.logger.ErrorContext(
-				r.Context(),
-				"ObjectiveNew: adding objective to root group",
-				"error",
-				err,
-				"objective_id",
-				objective.ID,
-			)
-		}
 	}
 
 	editPath := "/admin/objective/" + objective.Slug
@@ -200,19 +183,4 @@ func (h *Handler) ObjectiveDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/quest")
-}
-
-func (h *Handler) addObjectiveToRootGroup(ctx context.Context, questID, objectiveID string) error {
-	instance, err := h.questService.GetByID(ctx, questID)
-	if err != nil {
-		return fmt.Errorf("loading instance: %w", err)
-	}
-
-	instance.GameStructure.ObjectiveIDs = append(instance.GameStructure.ObjectiveIDs, objectiveID)
-
-	if err = h.gameStructureService.Save(ctx, questID, &instance.GameStructure); err != nil {
-		return fmt.Errorf("saving structure: %w", err)
-	}
-
-	return nil
 }

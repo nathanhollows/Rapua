@@ -385,7 +385,7 @@ type TeamOverviewData struct {
 	IncompleteObjectives []models.Objective
 	Uploads              []*models.Upload
 	TotalObjectives      int
-	ObjectiveGroups      map[string]services.ObjectiveGroupInfo
+	ObjectiveSections    map[string]services.ObjectiveSectionInfo
 }
 
 func TeamOverview(data TeamOverviewData) templ.Component {
@@ -469,7 +469,7 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = CurrentObjectivesCard(data.IncompleteObjectives, data.ObjectiveGroups, data.Run, data.TotalObjectives).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = CurrentObjectivesCard(data.IncompleteObjectives, data.ObjectiveSections, data.Run, data.TotalObjectives).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -709,7 +709,7 @@ func RunStatsCard(settings models.QuestSettings, run models.Run, completedObject
 	})
 }
 
-func CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveGroups map[string]services.ObjectiveGroupInfo, run models.Run, totalObjectives int) templ.Component {
+func CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveSections map[string]services.ObjectiveSectionInfo, run models.Run, totalObjectives int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -819,15 +819,15 @@ func CurrentObjectivesCard(incompleteObjectives []models.Objective, objectiveGro
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if groupInfo, ok := objectiveGroups[objective.ID]; ok {
+				if section, ok := objectiveSections[objective.ID]; ok {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<p class=\"text-xs opacity-60\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var34 string
-					templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(groupInfo.GroupName)
+					templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(section.SectionTitle)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 688, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 688, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 					if templ_7745c5c3_Err != nil {

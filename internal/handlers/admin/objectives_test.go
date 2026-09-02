@@ -59,12 +59,25 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 	logger := slog.New(slog.DiscardHandler)
 
 	return &Handler{
-		logger:               logger,
-		objectiveService:     services.NewObjectiveService(transactor, objectiveRepo),
-		blockService:         services.NewBlockService(blockRepo, blockStateRepo),
-		deleteService:        services.NewDeleteService(transactor, instanceRepo, teamRepo, uploadsRepo, dbc, t.TempDir(), logger),
-		gameStructureService: services.NewGameStructureService(objectiveRepo, instanceRepo),
-		questService:         services.NewQuestService(instanceRepo, instanceSettingsRepo, blockRepo),
+		logger:           logger,
+		objectiveService: services.NewObjectiveService(transactor, objectiveRepo),
+		blockService:     services.NewBlockService(blockRepo, blockStateRepo),
+		deleteService: services.NewDeleteService(
+			transactor,
+			instanceRepo,
+			teamRepo,
+			uploadsRepo,
+			dbc,
+			t.TempDir(),
+			logger,
+		),
+		questService: services.NewQuestService(
+			transactor,
+			instanceRepo,
+			instanceSettingsRepo,
+			blockRepo,
+			objectiveRepo,
+		),
 	}
 }
 
@@ -83,16 +96,17 @@ func objectiveTestQuest(t *testing.T, dbc *bun.DB) *models.User {
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "test-quest",
-		GameStructure: models.GameStructure{
-			ID:             gofakeit.UUID(),
-			IsRoot:         true,
-			Routing:        models.RouteStrategyFreeRoam,
-			CompletionType: models.CompletionAll,
-			ObjectiveIDs:   []string{},
-			SubGroups:      []models.GameStructure{},
-		},
 	}
 	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
+	require.NoError(t, err)
+
+	// Every quest has a root objective; the handler places new objectives
+	// under it when no parent is named.
+	root := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: quest.ID,
+		Slug: "root", Title: "test-quest", Routing: models.RouteStrategyFreeRoam,
+	}
+	_, err = dbc.NewInsert().Model(root).Exec(ctx)
 	require.NoError(t, err)
 
 	user.CurrentQuestID = quest.ID
@@ -132,101 +146,44 @@ func TestObjectiveNew(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "New Objective", objective.Title)
 
-	quest, err := h.questService.GetByID(context.Background(), user.CurrentQuestID)
+	stored, err := h.objectiveService.GetByQuestIDAndSlug(context.Background(), user.CurrentQuestID, objective.Slug)
 	require.NoError(t, err)
-	assert.Contains(t, quest.GameStructure.ObjectiveIDs, objective.ID, "new objective must land in the root group")
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+	assert.Equal(t, root.ID, stored.ParentID, "a new objective lands under the root when no parent is named")
 }
 
-// Proves ObjectiveNew honors afterObjectiveId/beforeObjectiveId (the insert-zone
-// position params), not just groupId's append-to-end path covered above.
-func TestObjectiveNew_PositionedInGroup(t *testing.T) {
+// A named parent is where the objective goes, appended after whatever is
+// already there: a caller adding something new has no opinion about where among
+// its siblings it lands.
+func TestObjectiveNew_PlacedUnderNamedParent(t *testing.T) {
 	dbc, cleanup := setupObjectiveTestDB(t)
 	defer cleanup()
 	h := newObjectiveTestHandler(t, dbc)
 	user := objectiveTestQuest(t, dbc)
 	ctx := context.Background()
 
-	existing1, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 1")
-	require.NoError(t, err)
-	existing2, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 2")
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
 	require.NoError(t, err)
 
-	groupID := "test-group"
-	user.CurrentQuest.GameStructure.SubGroups = []models.GameStructure{
-		{
-			ID:           groupID,
-			Name:         "Test Group",
-			Color:        "primary",
-			ObjectiveIDs: []string{existing1.ID, existing2.ID},
-		},
-	}
-	require.NoError(t, h.gameStructureService.Save(ctx, user.CurrentQuestID, &user.CurrentQuest.GameStructure))
+	section, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "A section")
+	require.NoError(t, err)
+
+	existing, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, section.ID, "Existing")
+	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
-	req.URL.RawQuery = url.Values{
-		"groupId":          {groupID},
-		"afterObjectiveId": {existing1.ID},
-	}.Encode()
+	req.URL.RawQuery = url.Values{"parentId": {section.ID}}.Encode()
 	req = withObjectiveUser(req, user)
 
 	w := httptest.NewRecorder()
 	h.ObjectiveNew(w, req)
 
-	quest, err := h.questService.GetByID(ctx, user.CurrentQuestID)
+	children, err := h.objectiveService.FindChildren(ctx, user.CurrentQuestID, section.ID)
 	require.NoError(t, err)
-	require.Len(t, quest.GameStructure.SubGroups, 1)
-
-	objectiveIDs := quest.GameStructure.SubGroups[0].ObjectiveIDs
-	require.Len(t, objectiveIDs, 3)
-	assert.Equal(t, existing1.ID, objectiveIDs[0])
-	assert.Equal(t, existing2.ID, objectiveIDs[2], "new objective must land between existing1 and existing2, not appended to the end")
-}
-
-// Covers the before-branch specifically: InsertObjectiveIntoGroup's before/after
-// cases have independent fallback behavior (prepend vs. append on a missing
-// anchor), and the UI's own "before first item" zone only ever sends
-// beforeObjectiveId, so a regression isolated to that branch needs its own test.
-func TestObjectiveNew_PositionedInGroup_Before(t *testing.T) {
-	dbc, cleanup := setupObjectiveTestDB(t)
-	defer cleanup()
-	h := newObjectiveTestHandler(t, dbc)
-	user := objectiveTestQuest(t, dbc)
-	ctx := context.Background()
-
-	existing1, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 1")
-	require.NoError(t, err)
-	existing2, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, "Existing 2")
-	require.NoError(t, err)
-
-	groupID := "test-group"
-	user.CurrentQuest.GameStructure.SubGroups = []models.GameStructure{
-		{
-			ID:           groupID,
-			Name:         "Test Group",
-			Color:        "primary",
-			ObjectiveIDs: []string{existing1.ID, existing2.ID},
-		},
-	}
-	require.NoError(t, h.gameStructureService.Save(ctx, user.CurrentQuestID, &user.CurrentQuest.GameStructure))
-
-	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
-	req.URL.RawQuery = url.Values{
-		"groupId":           {groupID},
-		"beforeObjectiveId": {existing2.ID},
-	}.Encode()
-	req = withObjectiveUser(req, user)
-
-	w := httptest.NewRecorder()
-	h.ObjectiveNew(w, req)
-
-	quest, err := h.questService.GetByID(ctx, user.CurrentQuestID)
-	require.NoError(t, err)
-	require.Len(t, quest.GameStructure.SubGroups, 1)
-
-	objectiveIDs := quest.GameStructure.SubGroups[0].ObjectiveIDs
-	require.Len(t, objectiveIDs, 3)
-	assert.Equal(t, existing1.ID, objectiveIDs[0])
-	assert.Equal(t, existing2.ID, objectiveIDs[2], "new objective must land between existing1 and existing2, not appended to the end")
+	require.Len(t, children, 2)
+	assert.Equal(t, existing.ID, children[0].ID)
+	assert.Equal(t, []int{0, 1}, []int{children[0].Position, children[1].Position})
 }
 
 func TestObjectiveEdit(t *testing.T) {
@@ -235,8 +192,16 @@ func TestObjectiveEdit(t *testing.T) {
 	h := newObjectiveTestHandler(t, dbc)
 	user := objectiveTestQuest(t, dbc)
 
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+
 	t.Run("renders the edit page for an existing objective", func(t *testing.T) {
-		objective, err := h.objectiveService.CreateObjective(context.Background(), user.CurrentQuestID, "Find the key")
+		objective, err := h.objectiveService.CreateObjective(
+			context.Background(),
+			user.CurrentQuestID,
+			root.ID,
+			"Find the key",
+		)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/admin/objective/"+objective.Slug, nil)
@@ -291,12 +256,23 @@ func TestObjectiveEditPost(t *testing.T) {
 	h := newObjectiveTestHandler(t, dbc)
 	user := objectiveTestQuest(t, dbc)
 
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
 	t.Run("updates the title without a slug change", func(t *testing.T) {
-		objective, err := h.objectiveService.CreateObjective(context.Background(), user.CurrentQuestID, "Original Title")
+		objective, err := h.objectiveService.CreateObjective(
+			context.Background(),
+			user.CurrentQuestID,
+			root.ID,
+			"Original Title",
+		)
 		require.NoError(t, err)
 
 		form := url.Values{"title": {"Original Title"}}
-		req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+objective.Slug, strings.NewReader(form.Encode()))
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/admin/objective/"+objective.Slug,
+			strings.NewReader(form.Encode()),
+		)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = withObjectiveUser(req, user)
 		req = withObjectiveSlug(req, objective.Slug)
@@ -306,17 +282,28 @@ func TestObjectiveEditPost(t *testing.T) {
 
 		assert.Empty(t, w.Header().Get("Hx-Redirect"), "no slug change means no redirect")
 
-		reloaded, err := h.objectiveService.GetByQuestIDAndSlug(context.Background(), user.CurrentQuestID, objective.Slug)
+		reloaded, err := h.objectiveService.GetByQuestIDAndSlug(
+			context.Background(),
+			user.CurrentQuestID,
+			objective.Slug,
+		)
 		require.NoError(t, err)
 		assert.Equal(t, "Original Title", reloaded.Title)
 	})
 
 	t.Run("slug change redirects to the new path", func(t *testing.T) {
-		objective, err := h.objectiveService.CreateObjective(context.Background(), user.CurrentQuestID, "Old Title")
+		root, rootErr := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+		require.NoError(t, rootErr)
+		objective, err := h.objectiveService.CreateObjective(
+			context.Background(), user.CurrentQuestID, root.ID, "Old Title")
 		require.NoError(t, err)
 
 		form := url.Values{"title": {"Brand New Title"}}
-		req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+objective.Slug, strings.NewReader(form.Encode()))
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/admin/objective/"+objective.Slug,
+			strings.NewReader(form.Encode()),
+		)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Hx-Request", "true")
 		req = withObjectiveUser(req, user)
@@ -335,8 +322,16 @@ func TestObjectiveDelete(t *testing.T) {
 	h := newObjectiveTestHandler(t, dbc)
 	user := objectiveTestQuest(t, dbc)
 
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+
 	t.Run("deletes an existing objective", func(t *testing.T) {
-		objective, err := h.objectiveService.CreateObjective(context.Background(), user.CurrentQuestID, "Find the key")
+		objective, err := h.objectiveService.CreateObjective(
+			context.Background(),
+			user.CurrentQuestID,
+			root.ID,
+			"Find the key",
+		)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodDelete, "/admin/objective/"+objective.Slug, nil)
