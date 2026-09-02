@@ -9,11 +9,6 @@ const (
 	RouteStrategyRandomised RouteStrategy = "randomised"
 	RouteStrategyFreeRoam   RouteStrategy = "free_roam"
 	RouteStrategyOrdered    RouteStrategy = "ordered"
-	// RouteStrategySecret is retired: lint rejects a document carrying it, and
-	// an objective is reached instead through its parent's routing, its depends
-	// and a scan block in its proof. It survives only because the group blob
-	// and the code reading that blob still reference it.
-	RouteStrategySecret RouteStrategy = "secret"
 )
 
 // CompletionType defines how a group is considered completed.
@@ -33,8 +28,6 @@ func (n RouteStrategy) String() string {
 		return "Open Exploration"
 	case RouteStrategyOrdered:
 		return "Guided Path"
-	case RouteStrategySecret:
-		return "Secret"
 	default:
 		return string(n)
 	}
@@ -49,8 +42,6 @@ func (n RouteStrategy) Description() string {
 		return "Players can pursue objectives in any order. This mode shows all objectives and is good for exploration."
 	case RouteStrategyOrdered:
 		return "Players must complete objectives in a specific order. Good for narrative experiences."
-	case RouteStrategySecret:
-		return "Objectives that may be accessed out of sequence. These objectives are never explicitly shown to players."
 	default:
 		return ""
 	}
@@ -65,8 +56,6 @@ func ParseRouteStrategy(s string) (RouteStrategy, error) {
 		return RouteStrategyFreeRoam, nil
 	case "ordered":
 		return RouteStrategyOrdered, nil
-	case "secret":
-		return RouteStrategySecret, nil
 	default:
 		return "", errors.New("invalid RouteStrategy")
 	}

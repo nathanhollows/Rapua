@@ -18,12 +18,31 @@ import (
 
 func m20260827_setupDB(t *testing.T) *bun.DB {
 	t.Helper()
+	return m20260827_setupDBThrough(t, "")
+}
+
+// m20260827_setupDBThrough migrates up to and including the named migration and
+// no further. A test that seeds a column a later migration drops has to stop
+// before that migration runs.
+func m20260827_setupDBThrough(t *testing.T, through string) *bun.DB {
+	t.Helper()
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 	t.Setenv("DB_TYPE", "sqlite3")
 	dbc := db.MustOpen(slog.New(slog.NewTextHandler(m20260827_testWriter{t}, nil)))
 	ctx := context.Background()
 
-	migrator := migrate.NewMigrator(dbc, Migrations)
+	set := Migrations
+	if through != "" {
+		set = migrate.NewMigrations()
+		for _, m := range Migrations.Sorted() {
+			if m.Name > through {
+				continue
+			}
+			set.Add(m)
+		}
+	}
+
+	migrator := migrate.NewMigrator(dbc, set)
 	require.NoError(t, migrator.Init(ctx))
 	require.NoError(t, migrator.Lock(ctx))
 	defer func() { require.NoError(t, migrator.Unlock(ctx)) }()

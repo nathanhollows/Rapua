@@ -15,6 +15,11 @@ var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
 // expresses that.
 const startButtonBlockType = "start_button"
 
+// retiredSecretRouting is no longer a RouteStrategy, but a document written
+// before it was retired can still name it, and saying why is more use than
+// calling the value unrecognised.
+const retiredSecretRouting = "secret"
+
 type LintResult struct {
 	Errors   []LintDiag `json:"errors"`   // Must fix before importing
 	Warnings []LintDiag `json:"warnings"` // Should fix but won't block import
@@ -159,16 +164,6 @@ func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
 
 	l.checkRouting(path+".routing", obj.Routing)
 	l.checkBandBounds(path, obj, childCount)
-
-	// Blocks belong to an objective row, and an objective with children is kept
-	// as a group, which is not one. An error rather than a warning because a
-	// warning still imports, and a gate that imports without its blocks is a
-	// gate the author believes in and the game does not have.
-	if len(obj.Proof.Blocks) > 0 || len(obj.Reveal.Blocks) > 0 {
-		l.errorf(path+".proof", "SECTION_BLOCKS_NOT_STORED",
-			"an objective with children cannot carry its own proof or reveal blocks; "+
-				"move them to a child objective")
-	}
 
 	// Every semantic rule reads the filled band, not the literal fields: an
 	// omitted bound is a real value, just not one the author wrote.
@@ -328,7 +323,7 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 	switch r {
 	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered:
 		// valid.
-	case RouteStrategySecret:
+	case RouteStrategy(retiredSecretRouting):
 		// Named rather than left to the default arm so a document carrying the
 		// retired value is told so directly.
 		l.errorf(path, "INVALID_ROUTING",

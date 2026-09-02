@@ -83,7 +83,7 @@ func m20260902000000_root(t *testing.T, rows []m20260902000000_row) m20260902000
 // A group becomes an objective with children, and within a node the blob's
 // objectives come before its subgroups.
 func TestStructureBlobToRows_BuildsTheTree(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	objA, objB, nested := gofakeit.UUID(), gofakeit.UUID(), gofakeit.UUID()
 
 	questID := m20260902000000_seed(t, dbc, "Harbour Hunt", m20260902000000_group{
@@ -118,7 +118,7 @@ func TestStructureBlobToRows_BuildsTheTree(t *testing.T) {
 // several quests. An objective id is unique across all of them, so a section
 // cannot reuse one.
 func TestStructureBlobToRows_RepeatedBlobIDsDoNotCollide(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	sharedID := gofakeit.UUID()
 
 	blob := m20260902000000_group{ID: sharedID, Routing: "free_roam", CompletionType: "all"}
@@ -156,7 +156,7 @@ func TestStructureBlobToRows_Band(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dbc := m20260827_setupDB(t)
+			dbc := m20260827_setupDBThrough(t, "20260901010000")
 			objID := gofakeit.UUID()
 			questID := m20260902000000_seed(t, dbc, "Banded", m20260902000000_group{
 				ID: gofakeit.UUID(), Routing: "free_roam",
@@ -181,7 +181,7 @@ func TestStructureBlobToRows_Band(t *testing.T) {
 // Group names repeat within a quest, and the objectives table holds a unique
 // index on (quest_id, slug).
 func TestStructureBlobToRows_SuffixesRepeatedSlugs(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	sameName := m20260902000000_group{
 		ID: gofakeit.UUID(), Name: "Locations", Routing: "free_roam", CompletionType: "all",
 	}
@@ -206,7 +206,7 @@ func TestStructureBlobToRows_SuffixesRepeatedSlugs(t *testing.T) {
 // blob never mentioned still needs somewhere to live: unplaced, it would read
 // as a second root.
 func TestStructureBlobToRows_SkipsStaleIDsAndAdoptsOrphans(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	known, orphan := gofakeit.UUID(), gofakeit.UUID()
 
 	questID := m20260902000000_seed(t, dbc, "Strays", m20260902000000_group{
@@ -227,7 +227,7 @@ func TestStructureBlobToRows_SkipsStaleIDsAndAdoptsOrphans(t *testing.T) {
 // A rerun after a partial failure must find its own work rather than building
 // the tree a second time.
 func TestStructureBlobToRows_RerunIsANoOp(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	ctx := context.Background()
 	objID := gofakeit.UUID()
 
@@ -247,7 +247,7 @@ func TestStructureBlobToRows_RerunIsANoOp(t *testing.T) {
 // express a range. Deriving from the completion trio instead would narrow
 // [1,3] to [1, omitted] and lose the upper bound the author wrote.
 func TestStructureBlobToRows_PrefersTheVerbatimBand(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	minChildren, maxChildren := 1, 3
 
 	questID := m20260902000000_seed(t, dbc, "Ranged", m20260902000000_group{
@@ -272,7 +272,7 @@ func TestStructureBlobToRows_PrefersTheVerbatimBand(t *testing.T) {
 // in particular is what a depends list names it by, so re-minting one from the
 // title would break every gate pointing at it.
 func TestStructureBlobToRows_CarriesTheStoredFields(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 
 	questID := m20260902000000_seed(t, dbc, "Carried", m20260902000000_group{
 		ID: gofakeit.UUID(), Routing: "free_roam", CompletionType: "all",
@@ -300,7 +300,7 @@ func TestStructureBlobToRows_CarriesTheStoredFields(t *testing.T) {
 // A stale id places nothing, so numbering the objectives that follow it from
 // the blob's declared count would leave a hole where it would have sat.
 func TestStructureBlobToRows_PositionsStayDense(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
 	known, orphan := gofakeit.UUID(), gofakeit.UUID()
 
 	questID := m20260902000000_seed(t, dbc, "Dense", m20260902000000_group{
@@ -314,4 +314,38 @@ func TestStructureBlobToRows_PositionsStayDense(t *testing.T) {
 	children := m20260902000000_childrenOf(rows, m20260902000000_root(t, rows).ID)
 	require.Len(t, children, 2)
 	assert.Equal(t, []int{0, 1}, []int{children[0].Position, children[1].Position})
+}
+
+// The old engine presented subgroups one at a time whatever their parent's
+// routing said, so a chaptered quest migrates as ordered. A group holding only
+// objectives keeps its own value, which is the only thing it ever governed.
+func TestStructureBlobToRows_ChapteredGroupsMigrateOrdered(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260901010000")
+	objA, objB := gofakeit.UUID(), gofakeit.UUID()
+
+	questID := m20260902000000_seed(t, dbc, "Chaptered", m20260902000000_group{
+		ID: gofakeit.UUID(), Routing: "free_roam", CompletionType: "all",
+		SubGroups: []m20260902000000_group{
+			{
+				ID: gofakeit.UUID(), Name: "Chapter One",
+				Routing: "free_roam", CompletionType: "all",
+				ObjectiveIDs: []string{objA, objB},
+			},
+		},
+	}, objA, objB)
+
+	require.NoError(t, m20260902000000_up(context.Background(), dbc))
+
+	routing := func(slug string) string {
+		var got string
+		err := dbc.QueryRowContext(context.Background(),
+			`SELECT "routing" FROM "objectives" WHERE "quest_id" = ? AND "slug" = ?`, questID, slug).Scan(&got)
+		require.NoError(t, err)
+		return got
+	}
+
+	assert.Equal(t, "ordered", routing("chaptered"),
+		"the root held chapters, which the old engine gave out one at a time")
+	assert.Equal(t, "free_roam", routing("chapter-one"),
+		"a group of plain objectives keeps the routing it always had")
 }

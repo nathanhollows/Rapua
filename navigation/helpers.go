@@ -1,78 +1,6 @@
 package navigation
 
-import (
-	"github.com/nathanhollows/Rapua/v8/models"
-	"golang.org/x/exp/rand"
-)
-
-// findParentAndIndex finds the parent of target group and its index in parent's SubGroups.
-// Returns (parent, index) or (nil, -1) if not found.
-func findParentAndIndex(
-	target *models.GameStructure,
-	current *models.GameStructure,
-) (*models.GameStructure, int) {
-	for i, subGroup := range current.SubGroups {
-		if subGroup.ID == target.ID {
-			return current, i
-		}
-
-		// Recursively search in subgroup's children
-		if parent, idx := findParentAndIndex(target, &subGroup); parent != nil {
-			return parent, idx
-		}
-	}
-	return nil, -1
-}
-
-// makeSet converts a slice of strings to a map for O(1) lookup.
-func makeSet(ids []string) map[string]bool {
-	set := make(map[string]bool, len(ids))
-	for _, id := range ids {
-		set[id] = true
-	}
-	return set
-}
-
-// filterUnvisitedIDs returns objective IDs that haven't been completed.
-func filterUnvisitedIDs(
-	objectiveIDs []string,
-	completedIDs []string,
-) []string {
-	if len(objectiveIDs) == 0 {
-		return []string{}
-	}
-
-	completed := makeSet(completedIDs)
-	unvisited := make([]string, 0, len(objectiveIDs))
-
-	for _, id := range objectiveIDs {
-		if !completed[id] {
-			unvisited = append(unvisited, id)
-		}
-	}
-
-	return unvisited
-}
-
-// findMinOrderID returns the first unvisited objective ID from the ordered list.
-// For ordered routing, the position in ObjectiveIDs slice IS the order.
-// Returns empty string if all objectives are completed.
-func findMinOrderID(objectiveIDs []string, completedIDs []string) string {
-	if len(objectiveIDs) == 0 {
-		return ""
-	}
-
-	completed := makeSet(completedIDs)
-
-	// Return first unvisited objective (they're already in order)
-	for _, id := range objectiveIDs {
-		if !completed[id] {
-			return id
-		}
-	}
-
-	return "" // All completed
-}
+import "math/rand"
 
 // deterministicShuffleIDs shuffles ALL objective IDs deterministically based on team code,
 // then filters to unvisited, then returns up to maxNext.
@@ -106,9 +34,9 @@ func deterministicShuffleIDs(
 	}
 
 	// Create deterministic seed from team code
-	seed := uint64(0)
+	seed := int64(0)
 	for _, c := range runCode {
-		seed += uint64(c)
+		seed += int64(c)
 	}
 
 	// Shuffle ALL objective IDs (not just unvisited) to maintain consistent order
@@ -120,7 +48,10 @@ func deterministicShuffleIDs(
 	})
 
 	// Filter shuffled list to only unvisited objective IDs
-	completed := makeSet(completedIDs)
+	completed := make(map[string]bool, len(completedIDs))
+	for _, id := range completedIDs {
+		completed[id] = true
+	}
 	unvisited := make([]string, 0, len(shuffled))
 	for _, id := range shuffled {
 		if !completed[id] {
@@ -133,106 +64,4 @@ func deterministicShuffleIDs(
 		return unvisited[:maxNext]
 	}
 	return unvisited
-}
-
-// checkDuplicateGroupIDs recursively checks for duplicate group IDs.
-func checkDuplicateGroupIDs(group *models.GameStructure, seen map[string]bool) error {
-	if group.ID != "" {
-		if seen[group.ID] {
-			return ErrDuplicateGroupID
-		}
-		seen[group.ID] = true
-	}
-
-	for i := range group.SubGroups {
-		if err := checkDuplicateGroupIDs(&group.SubGroups[i], seen); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// validateCompletionType checks that ordered groups have CompletionAll type.
-func validateCompletionType(group *models.GameStructure) error {
-	if group.Routing == models.RouteStrategyOrdered && group.CompletionType != models.CompletionAll {
-		return ErrInvalidCompletionType
-	}
-
-	for i := range group.SubGroups {
-		if err := validateCompletionType(&group.SubGroups[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// validateGroupMetadata checks that visible groups have required metadata.
-func validateGroupMetadata(group *models.GameStructure) error {
-	// Root group can have empty name and color
-	if !group.IsRoot {
-		if group.Name == "" {
-			return ErrMissingGroupName
-		}
-		if group.Color == "" {
-			return ErrMissingGroupColor
-		}
-	}
-
-	// Recursively validate subgroups
-	for i := range group.SubGroups {
-		if err := validateGroupMetadata(&group.SubGroups[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// validateRootConstraints ensures only the top-level group can be a root.
-func validateRootConstraints(group *models.GameStructure) error {
-	return checkRootConstraints(group, true)
-}
-
-// checkRootConstraints recursively checks that only the top-level group is marked as root.
-func checkRootConstraints(group *models.GameStructure, isTopLevel bool) error {
-	// Only top-level group can be root
-	if !isTopLevel && group.IsRoot {
-		return ErrNonRootIsRoot
-	}
-
-	// Top-level group should be root (optional check - can be relaxed)
-	// if isTopLevel && !group.IsRoot {
-	//     return ErrTopLevelNotRoot
-	// }
-
-	// Recursively check subgroups (none should be root)
-	for i := range group.SubGroups {
-		if err := checkRootConstraints(&group.SubGroups[i], false); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// validateRoutingStrategies checks that routing strategies have valid configuration.
-func validateRoutingStrategies(group *models.GameStructure) error {
-	// Skip validation for root group (it doesn't use routing)
-	if !group.IsRoot {
-		// Random routing must have MaxNext > 0 (0 means unlimited, but should be explicit)
-		if group.Routing == models.RouteStrategyRandomised && group.MaxNext == 0 {
-			return ErrInvalidMaxNext
-		}
-	}
-
-	// Recursively validate subgroups
-	for i := range group.SubGroups {
-		if err := validateRoutingStrategies(&group.SubGroups[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

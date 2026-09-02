@@ -245,6 +245,26 @@ func m20260902000000_convertGroupReturningID(
 	return sectionID, nil
 }
 
+// m20260902000000_routingFor returns the routing to store for a converted
+// group.
+//
+// A group's stored routing only ever ordered its own objectives: the engine
+// walked subgroups one at a time regardless of what the value said, so a root
+// holding chapters read "free_roam" while presenting exactly one. Routing now
+// governs every child alike, so copying that value verbatim would open every
+// chapter at once on the first request: faithful to the record, and a different
+// game.
+//
+// A group that held subgroups therefore migrates as ordered, which is what its
+// players actually saw. One that held only objectives keeps its own value,
+// which is the only thing it ever meant.
+func m20260902000000_routingFor(group m20260902000000_group) string {
+	if len(group.SubGroups) > 0 {
+		return "ordered"
+	}
+	return group.Routing
+}
+
 // m20260902000000_setSectionFields writes the columns the snapshot model does
 // not carry, so the insert above stays a plain row write.
 func m20260902000000_setSectionFields(
@@ -258,7 +278,7 @@ func m20260902000000_setSectionFields(
 		`UPDATE "objectives" SET "routing" = ?, "color" = ?, "max_next" = ?,`+
 			` "children_min" = ?, "children_max" = ?, "finish_label" = ?, "depends" = ?`+
 			` WHERE "id" = ?`,
-		group.Routing, group.Color, group.MaxNext, minChildren, maxChildren,
+		m20260902000000_routingFor(group), group.Color, group.MaxNext, minChildren, maxChildren,
 		group.FinishLabel, depends, sectionID)
 	if err != nil {
 		return fmt.Errorf("setting section fields on %s: %w", sectionID, err)

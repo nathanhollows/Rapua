@@ -11,10 +11,9 @@ type Run struct {
 	QuestID string `bun:"quest_id,notnull"`
 	// StartedAt is when the players began the run — zero until then.
 	// Distinct from CreatedAt, which is when the run was provisioned.
-	StartedAt       time.Time `bun:"started_at,nullzero"`
-	HasStarted      bool      `bun:"has_started,default:false"`
-	Points          int       `bun:"points,"`
-	SkippedGroupIDs []string  `bun:"skipped_group_ids,type:text[],array"`
+	StartedAt  time.Time `bun:"started_at,nullzero"`
+	HasStarted bool      `bun:"has_started,default:false"`
+	Points     int       `bun:"points,"`
 
 	Quest    Quest           `bun:"rel:has-one,join:quest_id=id"`
 	Messages []Notification  `bun:"rel:has-many,join:code=run_code"`

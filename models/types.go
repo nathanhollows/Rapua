@@ -25,7 +25,6 @@ const (
 	RouteStrategyRandomised = game.RouteStrategyRandomised
 	RouteStrategyFreeRoam   = game.RouteStrategyFreeRoam
 	RouteStrategyOrdered    = game.RouteStrategyOrdered
-	RouteStrategySecret     = game.RouteStrategySecret
 )
 
 const (
@@ -66,7 +65,7 @@ func (s *StrArray) Scan(value any) error {
 
 // GetRouteStrategies returns a list of route strategies.
 func GetRouteStrategies() RouteStrategies {
-	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandomised, RouteStrategySecret}
+	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandomised}
 }
 
 // GetGameStatuses returns a list of game statuses.

@@ -54,7 +54,6 @@ func TestRouteStrategy_String(t *testing.T) {
 		{models.RouteStrategyRandomised, "Randomised Route"},
 		{models.RouteStrategyFreeRoam, "Open Exploration"},
 		{models.RouteStrategyOrdered, "Guided Path"},
-		{models.RouteStrategySecret, "Secret"},
 	}
 	for _, tt := range tests {
 		assert.Equal(t, tt.expected, tt.strategy.String())
@@ -76,7 +75,6 @@ func TestParseRouteStrategy(t *testing.T) {
 		{"randomised", models.RouteStrategyRandomised, false},
 		{"free_roam", models.RouteStrategyFreeRoam, false},
 		{"ordered", models.RouteStrategyOrdered, false},
-		{"secret", models.RouteStrategySecret, false},
 		{"bogus", "", true},
 	}
 	for _, tt := range tests {

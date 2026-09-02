@@ -18,7 +18,6 @@ func TestRouteStrategy_String(t *testing.T) {
 		{game.RouteStrategyRandomised, "Randomised Route"},
 		{game.RouteStrategyFreeRoam, "Open Exploration"},
 		{game.RouteStrategyOrdered, "Guided Path"},
-		{game.RouteStrategySecret, "Secret"},
 		{game.RouteStrategy("unknown"), "unknown"},
 	}
 	for _, c := range cases {
@@ -34,7 +33,6 @@ func TestRouteStrategy_Description(t *testing.T) {
 		{game.RouteStrategyRandomised, false},
 		{game.RouteStrategyFreeRoam, false},
 		{game.RouteStrategyOrdered, false},
-		{game.RouteStrategySecret, false},
 		{game.RouteStrategy("unknown"), true},
 	}
 	for _, c := range cases {
@@ -55,7 +53,6 @@ func TestParseRouteStrategy(t *testing.T) {
 		{"randomised", game.RouteStrategyRandomised},
 		{"free_roam", game.RouteStrategyFreeRoam},
 		{"ordered", game.RouteStrategyOrdered},
-		{"secret", game.RouteStrategySecret},
 	}
 	for _, c := range valid {
 		got, err := game.ParseRouteStrategy(c.input)

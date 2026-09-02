@@ -1070,35 +1070,14 @@ func TestLint_BandCompletesAtZero_NotOnLeaf(t *testing.T) {
 	assert.False(t, result.HasError("BAND_COMPLETES_AT_ZERO"))
 }
 
-// Blocks belong to an objective row, and a node with children is not kept as
-// one, so a section's own proof would import as nothing at all. Better to
-// reject the document than to accept a gate the game will not have.
-func TestLint_SectionWithOwnBlocks_Error(t *testing.T) {
-	for _, tt := range []struct {
-		name    string
-		context func(*game.ObjectiveDoc)
-	}{
-		{
-			name:    "proof blocks",
-			context: func(o *game.ObjectiveDoc) { o.Proof.Blocks = []game.BlockDoc{{"type": "quiz"}} },
-		},
-		{
-			name:    "reveal blocks",
-			context: func(o *game.ObjectiveDoc) { o.Reveal.Blocks = []game.BlockDoc{{"type": "text"}} },
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			doc := validDoc()
-			tt.context(section(doc))
-			result := game.Lint(doc, newTestRegistry())
-			assert.True(t, result.HasError("SECTION_BLOCKS_NOT_STORED"))
-		})
-	}
-}
-
-// A leaf's blocks are the ordinary case and must stay untouched by that rule.
-func TestLint_LeafWithBlocks_NoError(t *testing.T) {
+// A section is an objective row like any other, so its own proof and reveal
+// blocks are stored and read back rather than being rejected.
+func TestLint_SectionWithOwnBlocks_NoError(t *testing.T) {
 	doc := validDoc()
+	sec := section(doc)
+	sec.Proof.Blocks = []game.BlockDoc{{"type": "quiz"}}
+	sec.Reveal.Blocks = []game.BlockDoc{{"type": "text"}}
+
 	result := game.Lint(doc, newTestRegistry())
-	assert.False(t, result.HasError("SECTION_BLOCKS_NOT_STORED"))
+	assert.Empty(t, result.Errors)
 }

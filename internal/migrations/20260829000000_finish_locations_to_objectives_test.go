@@ -34,7 +34,7 @@ import (
 // the depends column that same down function would take away.
 func m20260829_setupDB(t *testing.T) *bun.DB {
 	t.Helper()
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260902000000")
 	ctx := context.Background()
 	require.NoError(t, m20260829010000_down(ctx, dbc))
 	_, err := dbc.ExecContext(ctx, `ALTER TABLE "objectives" ADD COLUMN "when_clause" TEXT`)
@@ -211,7 +211,7 @@ func TestDropLocationMigration_NoLocationsTable_NoOp(t *testing.T) {
 	// Deliberately m20260827_setupDB, not the wrapper: the full auto-migrate it
 	// runs already drops Location (this package's own migration is part of that
 	// chain), which is exactly the precondition this test wants to exercise.
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260902000000")
 	ctx := context.Background()
 
 	require.NoError(t, m20260829010000_up(ctx, dbc))
