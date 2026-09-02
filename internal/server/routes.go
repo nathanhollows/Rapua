@@ -122,8 +122,8 @@ func setupPlayerRoutes(
 		r.Get("/{code}", playerHandler.PlayWithCode)
 	})
 
-	// Advance to next group (manual skip)
-	router.Route("/advance", func(r chi.Router) {
+	// End a section the player has done enough of.
+	router.Route("/objective/{slug}/finish", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.RunMiddleware(
 				logger,
@@ -131,7 +131,7 @@ func setupPlayerRoutes(
 				middlewares.StartMiddleware(playerHandler.GetRunService(), next),
 			)
 		})
-		r.Post("/", playerHandler.AdvanceGroup)
+		r.Post("/", playerHandler.FinishSection)
 	})
 
 	router.Route("/blocks", func(r chi.Router) {
@@ -351,7 +351,7 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 
 		r.Route("/quest", func(r chi.Router) {
 			r.Get("/", adminHandler.Locations)
-			r.Post("/structure", adminHandler.SaveGameStructure)
+
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
 		})

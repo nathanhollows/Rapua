@@ -28,11 +28,6 @@ const (
 	maxBatchRetries = 10
 )
 
-type ObjectiveGroupInfo struct {
-	GroupName  string
-	GroupColor string
-}
-
 type RunService struct {
 	transactor                     db.Transactor
 	teamRepo                       repositories.RunRepository
@@ -223,26 +218,41 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 	return tx.Commit()
 }
 
-func (s *RunService) BuildObjectiveGroupMap(structure *models.GameStructure) map[string]ObjectiveGroupInfo {
-	result := make(map[string]ObjectiveGroupInfo)
-	s.buildObjectiveGroupMapRecursive(structure, result)
-	return result
+// ObjectiveSectionInfo names the section an objective sits in, for admin
+// screens that show where a player's outstanding work belongs.
+type ObjectiveSectionInfo struct {
+	SectionTitle string
+	SectionColor string
 }
 
-func (s *RunService) buildObjectiveGroupMapRecursive(group *models.GameStructure, result map[string]ObjectiveGroupInfo) {
-	// Skip root group (has no name/color).
-	if !group.IsRoot {
-		info := ObjectiveGroupInfo{
-			GroupName:  group.Name,
-			GroupColor: group.Color,
+// BuildObjectiveSectionMap maps each objective to the section holding it. The
+// root is not a section anyone means by the word: it holds everything, so
+// naming it tells a reader nothing.
+func (s *RunService) BuildObjectiveSectionMap(
+	ctx context.Context, questID string,
+) (map[string]ObjectiveSectionInfo, error) {
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("loading objective tree: %w", err)
+	}
+
+	byID := make(map[string]models.Objective, len(objectives))
+	for _, obj := range objectives {
+		byID[obj.ID] = obj
+	}
+
+	sections := make(map[string]ObjectiveSectionInfo, len(objectives))
+	for _, obj := range objectives {
+		parent, ok := byID[obj.ParentID]
+		if !ok || parent.ParentID == "" {
+			continue
 		}
-		for _, objectiveID := range group.ObjectiveIDs {
-			result[objectiveID] = info
+		sections[obj.ID] = ObjectiveSectionInfo{
+			SectionTitle: parent.Title,
+			SectionColor: parent.Color,
 		}
 	}
-	for i := range group.SubGroups {
-		s.buildObjectiveGroupMapRecursive(&group.SubGroups[i], result)
-	}
+	return sections, nil
 }
 
 // GetIncompleteObjectives returns the quest's reveal-context objectives still
@@ -263,18 +273,25 @@ func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCo
 	return incomplete, nil
 }
 
-// objectivesWithCompletion fetches every objective for a quest, alongside which
+// objectivesWithCompletion fetches a quest's leaf objectives, alongside which
 // ones are complete for a run (both as a completion-order ID slice and a lookup
 // set): the shared core of GetIncompleteObjectives and GetCompletedObjectives,
 // so the definition of "complete" (reveal-context, from the append-only
 // completion log) lives in one place instead of drifting between them.
+//
+// Leaves only, because these are the counts of places a run has been. A section
+// completes through its band rather than by being visited, so it earns no
+// completion row: counting one would put a total in the denominator that the
+// numerator can never reach, and a finished run would read as unfinished
+// forever.
 func (s *RunService) objectivesWithCompletion(
 	ctx context.Context, questID, runCode string,
 ) (objectives []models.Objective, completedIDsOrdered []string, completed map[string]bool, err error) {
-	objectives, err = s.objectiveRepo.FindByQuestID(ctx, questID)
+	all, err := s.objectiveRepo.FindByQuestID(ctx, questID)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("finding objectives: %w", err)
 	}
+	objectives = leavesOf(all)
 
 	completedIDsOrdered, err = s.objectiveContextCompletionRepo.FindCompletedObjectiveIDsOrdered(
 		ctx, runCode, game.ContextObjectiveReveal,
@@ -288,6 +305,25 @@ func (s *RunService) objectivesWithCompletion(
 		completed[id] = true
 	}
 	return objectives, completedIDsOrdered, completed, nil
+}
+
+// leavesOf returns the objectives with no children of their own: the ones a run
+// visits, as opposed to the sections that hold them.
+func leavesOf(objectives []models.Objective) []models.Objective {
+	hasChildren := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			hasChildren[obj.ParentID] = true
+		}
+	}
+
+	leaves := make([]models.Objective, 0, len(objectives))
+	for _, obj := range objectives {
+		if !hasChildren[obj.ID] {
+			leaves = append(leaves, obj)
+		}
+	}
+	return leaves
 }
 
 // GetCompletedObjectives is GetIncompleteObjectives' complement: the quest's

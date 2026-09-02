@@ -249,93 +249,6 @@ func TestRunService_FindTeamByCode(t *testing.T) {
 	})
 }
 
-func TestRunService_BuildObjectiveGroupMap(t *testing.T) {
-	runService, _, cleanup := setupRunsService(t)
-	defer cleanup()
-
-	tests := []struct {
-		name      string
-		structure *models.GameStructure
-		want      map[string]services.ObjectiveGroupInfo
-	}{
-		{
-			name: "empty root structure",
-			structure: &models.GameStructure{
-				IsRoot:       true,
-				ObjectiveIDs: []string{},
-				SubGroups:    []models.GameStructure{},
-			},
-			want: map[string]services.ObjectiveGroupInfo{},
-		},
-		{
-			name: "root with objectives only",
-			structure: &models.GameStructure{
-				IsRoot:       true,
-				ObjectiveIDs: []string{"obj1", "obj2"},
-				SubGroups:    []models.GameStructure{},
-			},
-			want: map[string]services.ObjectiveGroupInfo{},
-		},
-		{
-			name: "single level with one group",
-			structure: &models.GameStructure{
-				IsRoot:       true,
-				ObjectiveIDs: []string{},
-				SubGroups: []models.GameStructure{
-					{
-						Name:         "Museum Tour",
-						Color:        "primary",
-						ObjectiveIDs: []string{"obj1", "obj2"},
-					},
-				},
-			},
-			want: map[string]services.ObjectiveGroupInfo{
-				"obj1": {GroupName: "Museum Tour", GroupColor: "primary"},
-				"obj2": {GroupName: "Museum Tour", GroupColor: "primary"},
-			},
-		},
-		{
-			name: "nested groups",
-			structure: &models.GameStructure{
-				IsRoot:       true,
-				ObjectiveIDs: []string{},
-				SubGroups: []models.GameStructure{
-					{
-						Name:         "Zone A",
-						Color:        "primary",
-						ObjectiveIDs: []string{"obj1"},
-						SubGroups: []models.GameStructure{
-							{
-								Name:         "Subzone A1",
-								Color:        "secondary",
-								ObjectiveIDs: []string{"obj2", "obj3"},
-							},
-						},
-					},
-					{
-						Name:         "Zone B",
-						Color:        "accent",
-						ObjectiveIDs: []string{"obj4"},
-					},
-				},
-			},
-			want: map[string]services.ObjectiveGroupInfo{
-				"obj1": {GroupName: "Zone A", GroupColor: "primary"},
-				"obj2": {GroupName: "Subzone A1", GroupColor: "secondary"},
-				"obj3": {GroupName: "Subzone A1", GroupColor: "secondary"},
-				"obj4": {GroupName: "Zone B", GroupColor: "accent"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := runService.BuildObjectiveGroupMap(tt.structure)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestRunService_GetIncompleteObjectives(t *testing.T) {
 	runService, dbc, cleanup := setupRunsService(t)
 	defer cleanup()
@@ -348,9 +261,9 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
-	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Find the key")
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Find the key")
 	require.NoError(t, err)
-	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Open the door")
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Open the door")
 	require.NoError(t, err)
 
 	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
@@ -377,7 +290,7 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 	t.Run("proof completion alone does not mark an objective complete", func(t *testing.T) {
 		// Its own objective, not obj1/obj2: this subtest must hold on its own,
 		// independent of whether the earlier subtests ran or what they left behind.
-		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Escape the room")
+		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Escape the room")
 		require.NoError(t, err)
 
 		_, err = completionRepo.Insert(ctx, runCode, obj3.ID, game.ContextObjectiveProof)
@@ -406,9 +319,9 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 
-	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Find the key")
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Find the key")
 	require.NoError(t, err)
-	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Open the door")
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Open the door")
 	require.NoError(t, err)
 
 	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
@@ -433,7 +346,7 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 	})
 
 	t.Run("proof completion alone does not count as completed", func(t *testing.T) {
-		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Escape the room")
+		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Escape the room")
 		require.NoError(t, err)
 
 		_, err = completionRepo.Insert(ctx, runCode, obj3.ID, game.ContextObjectiveProof)
@@ -475,11 +388,11 @@ func TestRunService_GetCompletedObjectives_OrderedByCompletionTimeDesc(t *testin
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 
-	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed first")
+	obj1, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Completed first")
 	require.NoError(t, err)
-	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed second")
+	obj2, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Completed second")
 	require.NoError(t, err)
-	obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "Completed third")
+	obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Completed third")
 	require.NoError(t, err)
 
 	teams, err := runService.AddTeams(ctx, parents.QuestID, 1)
@@ -492,8 +405,18 @@ func TestRunService_GetCompletedObjectives_OrderedByCompletionTimeDesc(t *testin
 	base := getBaseTime()
 	rows := []models.ObjectiveContextCompletion{
 		{RunCode: runCode, ObjectiveID: obj2.ID, Context: game.ContextObjectiveReveal, CompletedAt: base},
-		{RunCode: runCode, ObjectiveID: obj1.ID, Context: game.ContextObjectiveReveal, CompletedAt: base.Add(time.Minute)},
-		{RunCode: runCode, ObjectiveID: obj3.ID, Context: game.ContextObjectiveReveal, CompletedAt: base.Add(2 * time.Minute)},
+		{
+			RunCode:     runCode,
+			ObjectiveID: obj1.ID,
+			Context:     game.ContextObjectiveReveal,
+			CompletedAt: base.Add(time.Minute),
+		},
+		{
+			RunCode:     runCode,
+			ObjectiveID: obj3.ID,
+			Context:     game.ContextObjectiveReveal,
+			CompletedAt: base.Add(2 * time.Minute),
+		},
 	}
 	_, err = dbc.NewInsert().Model(&rows).Exec(ctx)
 	require.NoError(t, err)

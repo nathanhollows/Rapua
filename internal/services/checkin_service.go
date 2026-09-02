@@ -18,6 +18,7 @@ type CheckInService struct {
 	varStateRepo                   repositories.RunVarStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	loader                         runStateLoader
 }
 
 func NewCheckInService(
@@ -26,6 +27,8 @@ func NewCheckInService(
 	varStateRepo repositories.RunVarStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
+	sectionFinishRepo repositories.SectionFinishRepository,
+	blockRepo repositories.BlockRepository,
 ) *CheckInService {
 	return &CheckInService{
 		teamRepo:                       teamRepo,
@@ -33,6 +36,13 @@ func NewCheckInService(
 		varStateRepo:                   varStateRepo,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		loader: runStateLoader{
+			objectiveRepo:                  objectiveRepo,
+			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+			sectionFinishRepo:              sectionFinishRepo,
+			blockRepo:                      blockRepo,
+			varStateRepo:                   varStateRepo,
+		},
 	}
 }
 
@@ -250,7 +260,10 @@ func (s *CheckInService) IsObjectiveContextPending(
 //
 // This duplicates what the navigation service computes for the objectives
 // list, because a list that merely hides an objective is not a gate: a guessed
-// slug reaches it anyway.
+// slug reaches it anyway. It reads completion through the same loader so that
+// the two agree; answering from the completion log alone would let a depends on
+// a section pass here and fail there, since a section completes through its
+// band and never earns a row.
 func (s *CheckInService) ObjectiveIsReachable(
 	ctx context.Context, team *models.Run, objective *models.Objective,
 ) (bool, error) {
@@ -258,23 +271,11 @@ func (s *CheckInService) ObjectiveIsReachable(
 		return true, nil
 	}
 
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
+	_, state, err := s.loader.load(ctx, team)
 	if err != nil {
-		return false, fmt.Errorf("loading var states: %w", err)
+		return false, fmt.Errorf("loading run state: %w", err)
 	}
-	completedIDs, err := s.objectiveContextCompletionRepo.FindCompletedObjectiveIDs(
-		ctx, team.Code, game.ContextObjectiveReveal,
-	)
-	if err != nil {
-		return false, fmt.Errorf("loading completed objectives: %w", err)
-	}
-	objectives, err := s.objectiveRepo.FindByQuestID(ctx, team.QuestID)
-	if err != nil {
-		return false, fmt.Errorf("loading quest objectives: %w", err)
-	}
-
-	resolver := NewPlayerVarResolver(varStates, completedObjectiveSlugs(objectives, completedIDs))
-	return game.EvaluateDepends(objective.Depends, resolver), nil
+	return game.EvaluateDepends(objective.Depends, state.Vars), nil
 }
 
 func (s *CheckInService) GetObjectiveByQuestIDAndSlug(

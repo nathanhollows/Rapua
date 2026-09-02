@@ -3,7 +3,17 @@ package templates
 import (
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
+
+// finishLabel is what the button on a finishable section says. An author may
+// name it; otherwise it says the plainest true thing.
+func finishLabel(objective models.Objective) string {
+	if objective.FinishLabel != "" {
+		return objective.FinishLabel
+	}
+	return "Finish"
+}
 
 type ObjectivesParams struct {
 	Run  models.Run
@@ -21,41 +31,40 @@ templ Objectives(data ObjectivesParams) {
 		>
 			Next objectives
 		</h2>
-		if data.View.CanAdvanceEarly {
-			<div role="alert" class="alert alert-info alert-vertical sm:alert-horizontal mb-10">
-				<div>
-					<div class="text-sm">
-						You have completed the minimum number of tasks. Would you like to skip ahead?
-					</div>
-				</div>
-				<a
-					hx-post="/advance"
-					hx-swap="none"
-					class="btn btn-sm btn-neutral"
-				>
-					Skip
-					@icon("chevron-right", templ.Attributes{"class": "w-4 h-4"})
-				</a>
-			</div>
-		}
-		if len(data.View.NextObjectives) == 0 {
+		if len(data.View.Frontier.Available) == 0 {
 			<div role="alert" class="alert">
 				@icon("circle-alert", templ.Attributes{"class": "w-5 h-5 text-info"})
 				<span>Nothing to show right now.</span>
 			</div>
 		} else {
 			<div class="w-full join join-vertical">
-				for _, objective := range data.View.NextObjectives {
-					<a
-						href={ templ.URL("/objective/" + objective.Slug) }
-						hx-boost="true"
-						class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
-					>
-						@icon("target", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
-						<span class="break-after-auto wrap-break-word grow">
-							{ objective.Title }
-						</span>
-					</a>
+				for _, objective := range data.View.Frontier.Available {
+					if data.View.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
+						<div class="flex flex-row justify-start items-center gap-2 bg-base-200 p-4 w-full join-item border border-base-300">
+							@icon("flag", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
+							<span class="break-after-auto wrap-break-word grow">
+								{ objective.Title }
+							</span>
+							<button
+								hx-post={ "/objective/" + objective.Slug + "/finish" }
+								hx-swap="none"
+								class="btn btn-sm btn-neutral"
+							>
+								{ finishLabel(objective) }
+							</button>
+						</div>
+					} else {
+						<a
+							href={ templ.URL("/objective/" + objective.Slug) }
+							hx-boost="true"
+							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
+						>
+							@icon("target", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
+							<span class="break-after-auto wrap-break-word grow">
+								{ objective.Title }
+							</span>
+						</a>
+					}
 				}
 			</div>
 		}

@@ -33,6 +33,8 @@ func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *
 		repositories.NewRunVarStateRepository(dbc),
 		repositories.NewObjectiveRepository(dbc),
 		repositories.NewObjectiveContextCompletionRepository(dbc),
+		repositories.NewSectionFinishRepository(dbc),
+		blockRepo,
 	)
 	return svc, dbc, cleanup
 }
@@ -62,9 +64,19 @@ func TestCheckInService_ObjectiveProofContext_CompletesOnceAllBlocksDone(t *test
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockService := services.NewBlockService(repositories.NewBlockRepository(dbc, blockStateRepo), blockStateRepo)
-	block1, err := blockService.NewBlockWithOwnerAndContext(ctx, objective.ID, blocks.ContextObjectiveProof, "free_text")
+	block1, err := blockService.NewBlockWithOwnerAndContext(
+		ctx,
+		objective.ID,
+		blocks.ContextObjectiveProof,
+		"free_text",
+	)
 	require.NoError(t, err)
-	block2, err := blockService.NewBlockWithOwnerAndContext(ctx, objective.ID, blocks.ContextObjectiveProof, "free_text")
+	block2, err := blockService.NewBlockWithOwnerAndContext(
+		ctx,
+		objective.ID,
+		blocks.ContextObjectiveProof,
+		"free_text",
+	)
 	require.NoError(t, err)
 
 	// Seed block state rows the way a page view would (FindByOwnerIDAndRunCodeWithStateAndContext
@@ -131,7 +143,12 @@ func TestCheckInService_ObjectiveContext_NoSetsDefined_StillLogsCompletion(t *te
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockService := services.NewBlockService(repositories.NewBlockRepository(dbc, blockStateRepo), blockStateRepo)
-	block, err := blockService.NewBlockWithOwnerAndContext(ctx, objective.ID, blocks.ContextObjectiveReveal, "free_text")
+	block, err := blockService.NewBlockWithOwnerAndContext(
+		ctx,
+		objective.ID,
+		blocks.ContextObjectiveReveal,
+		"free_text",
+	)
 	require.NoError(t, err)
 
 	// Seed the block's state row the way a page view would; see the comment in the
@@ -377,7 +394,11 @@ func TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets(t *testin
 	require.NoError(t, err)
 	assert.NotContains(t, vars, "inner_room_seen", "an unreachable objective must not fire its sets")
 
-	// Completing the gateway opens the gate.
+	// Completing the gateway opens the gate. Both contexts, because that is what
+	// viewing an objective with no interactive proof does, and completion is
+	// derived from the proof context: a reveal row alone is the player having
+	// read the payoff, not having cleared the gate.
+	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gateway.ID, blocks.ContextObjectiveProof))
 	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gateway.ID, blocks.ContextObjectiveReveal))
 
 	reachable, err = svc.ObjectiveIsReachable(ctx, &team, gated)

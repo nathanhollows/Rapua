@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v8/game"
-	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // objectiveVarPrefix is the runtime-owned namespace: objective.<slug> reports
@@ -51,22 +50,5 @@ func (r *PlayerVarResolver) ResolveVar(name string) (string, bool) {
 // objectiveVarDone is the truthy value objective.<slug> takes once complete.
 // Any non-falsy string would do; this one is what the published spec names.
 const objectiveVarDone = "done"
-
-// completedObjectiveSlugs maps completed objective IDs to their slugs, which is
-// the form objective.<slug> resolution needs.
-func completedObjectiveSlugs(objectives []models.Objective, completedIDs []string) map[string]bool {
-	slugByID := make(map[string]string, len(objectives))
-	for _, obj := range objectives {
-		slugByID[obj.ID] = obj.Slug
-	}
-
-	slugs := make(map[string]bool, len(completedIDs))
-	for _, id := range completedIDs {
-		if slug, ok := slugByID[id]; ok && slug != "" {
-			slugs[slug] = true
-		}
-	}
-	return slugs
-}
 
 var _ game.VarResolver = (*PlayerVarResolver)(nil)

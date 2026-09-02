@@ -20,7 +20,7 @@ func TestPlayerHandler_StartGame_Success(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 
-	instance, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	instance, _, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 	instance.StartTime = schema.NullTime{Time: time.Now().Add(-1 * time.Hour)}
 	require.NoError(t, instanceRepo.Update(context.Background(), instance))
 	team.Quest = *instance
@@ -51,7 +51,7 @@ func TestPlayerHandler_StartGame_QuestNotActive(t *testing.T) {
 	defer cleanup()
 
 	// createTestObjectiveQuest leaves StartTime zero, i.e. Closed.
-	_, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	_, _, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	handler := players.NewTestPlayerHandler(
 		players.WithNavigationService(navigationService),
@@ -75,7 +75,7 @@ func TestPlayerHandler_StartGame_InsufficientCredits(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 
-	instance, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	instance, _, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 	instance.StartTime = schema.NullTime{Time: time.Now().Add(-1 * time.Hour)}
 	require.NoError(t, instanceRepo.Update(context.Background(), instance))
 	team.Quest = *instance

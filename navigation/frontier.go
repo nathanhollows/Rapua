@@ -57,9 +57,10 @@ type RunState struct {
 type Frontier struct {
 	// Status maps objective ID to its state.
 	Status map[string]Status
-	// Available lists the objectives the run can work on now, in tree order.
-	// A section that is merely open does not appear: only leaves, and sections
-	// offering a finish button, are things a player can act on.
+	// Available lists the objectives the run can work on now, in tree order:
+	// leaves, sections offering a finish button, and sections whose own proof
+	// is still uncleared. A section that is merely open does not appear, since
+	// its children are listed in its place.
 	Available []models.Objective
 }
 
@@ -126,6 +127,22 @@ func less(a, b models.Objective) bool {
 	return a.ID < b.ID
 }
 
+// ComputeCompleted returns the objectives that are complete for a run.
+//
+// It exists separately because a depends list can name a section by slug, and a
+// section completes through its band rather than through a row of its own: the
+// only way to answer "is objective.<slug> true" is to derive completion first.
+// Completion never reads state.Vars, so there is no circularity in computing it
+// before the resolver that reachability then needs.
+func ComputeCompleted(objectives []models.Objective, state RunState) map[string]bool {
+	t := newTree(objectives)
+	complete := make(map[string]bool, len(objectives))
+	for _, root := range t.roots {
+		markComplete(t, root, state, complete)
+	}
+	return complete
+}
+
 // ComputeFrontier derives every objective's status for one run.
 //
 // It runs in two passes because the two questions face opposite directions.
@@ -157,23 +174,28 @@ func ComputeFrontier(objectives []models.Objective, state RunState) Frontier {
 	}
 
 	for _, root := range t.roots {
-		collectAvailable(t, root, &frontier)
+		collectAvailable(t, root, state, &frontier)
 	}
 	return frontier
 }
 
-// collectAvailable gathers what a player can act on, in tree order. A section
-// that is merely open is somewhere to navigate rather than something to do, so
-// only leaves and sections offering a finish button are listed.
-func collectAvailable(t tree, obj models.Objective, frontier *Frontier) {
+// collectAvailable gathers what a player can act on, in tree order.
+//
+// A section that is merely open is somewhere to navigate rather than something
+// to do, so it is not listed. A section whose own proof is still uncleared is
+// the exception: its proof gates its children, so nothing beneath it is listed
+// either, and leaving it out too would put its whole subtree beyond reach.
+func collectAvailable(t tree, obj models.Objective, state RunState, frontier *Frontier) {
 	children := t.children[obj.ID]
 	status := frontier.StatusOf(obj.ID)
 
-	if status == StatusFinishable || (status == StatusAvailable && len(children) == 0) {
+	actionable := status == StatusFinishable ||
+		(status == StatusAvailable && (len(children) == 0 || !proofCleared(obj, state)))
+	if actionable {
 		frontier.Available = append(frontier.Available, obj)
 	}
 	for _, child := range children {
-		collectAvailable(t, child, frontier)
+		collectAvailable(t, child, state, frontier)
 	}
 }
 
@@ -330,15 +352,14 @@ func admittedChildren(
 			admitted[id] = true
 		}
 
-	case game.RouteStrategyFreeRoam, game.RouteStrategySecret:
-		// Secret is named only because the constant still exists and the switch
-		// has to cover it; a document carrying that value is rejected on
-		// import. Where one reaches a row anyway it reads as free roam, since
-		// what it used to mean was keeping a group out of the listings and
-		// nothing is kept out of listings any more. Admitting nothing instead
-		// would leave authored content no player could reach.
+	case game.RouteStrategyFreeRoam:
 		fallthrough
 	default:
+		// Anything unrecognised reads as free roam, including the retired
+		// secret value a row written before it was retired can still carry.
+		// What that value meant was keeping a group out of the listings, and
+		// nothing is kept out of listings now; admitting nothing instead would
+		// leave authored content no player could reach.
 		for _, child := range children {
 			admitted[child.ID] = true
 		}

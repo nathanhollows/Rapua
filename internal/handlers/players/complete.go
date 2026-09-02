@@ -1,12 +1,10 @@
 package players
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 )
 
@@ -22,19 +20,17 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 		// Use the same objective view as /objectives so both handlers agree.
 		view, objErr := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
 		if objErr != nil {
-			if !errors.Is(objErr, services.ErrAllObjectivesVisited) {
-				h.handleError(
-					w,
-					r,
-					"Complete: getting objective view",
-					"Error getting objective view",
-					"Could not load data",
-					objErr,
-				)
-				return
-			}
-			// ErrAllObjectivesVisited: fall through to show complete page.
-		} else if len(view.NextObjectives) > 0 {
+			h.handleError(
+				w,
+				r,
+				"Complete: getting objective view",
+				"Error getting objective view",
+				"Could not load data",
+				objErr,
+			)
+			return
+		}
+		if !view.Complete {
 			h.redirect(w, r, "/objectives")
 			return
 		}

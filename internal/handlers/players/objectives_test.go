@@ -39,17 +39,16 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	creditRepo := repositories.NewCreditRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 
-	gameStructureService := services.NewGameStructureService(objectiveRepo, instanceRepo)
-	blockService := services.NewBlockService(blockRepo, blockStateRepo)
+	sectionFinishRepo := repositories.NewSectionFinishRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
 
 	navigationService := services.NewNavigationService(
 		objectiveRepo,
 		objectiveContextCompletionRepo,
+		sectionFinishRepo,
+		blockRepo,
 		teamRepo,
 		varStateRepo,
-		gameStructureService,
-		blockService,
 		newTLogger(t),
 	)
 
@@ -62,36 +61,19 @@ func setupObjectivesHandlerServices(t *testing.T) (
 }
 
 func createTestObjectiveQuest(t *testing.T, dbc *bun.DB, instanceRepo repositories.QuestRepository) (
-	*models.Quest, *models.Run,
+	*models.Quest, *models.Objective, *models.Run,
 ) {
 	t.Helper()
 	ctx := context.Background()
-
-	gameStructure := models.GameStructure{
-		ID:     gofakeit.UUID(),
-		IsRoot: true,
-		SubGroups: []models.GameStructure{
-			{
-				ID:             gofakeit.UUID(),
-				Name:           "Group 1",
-				Color:          "blue",
-				CompletionType: models.CompletionAll,
-				AutoAdvance:    true,
-				Routing:        models.RouteStrategyFreeRoam,
-				ObjectiveIDs:   []string{},
-			},
-		},
-	}
 
 	userID := gofakeit.UUID()
 	_, err := dbc.NewInsert().Model(&models.User{ID: userID, Name: gofakeit.Name(), Email: gofakeit.Email()}).Exec(ctx)
 	require.NoError(t, err)
 
 	instance := &models.Quest{
-		ID:            gofakeit.UUID(),
-		Name:          "Test Game",
-		UserID:        userID,
-		GameStructure: gameStructure,
+		ID:     gofakeit.UUID(),
+		Name:   "Test Game",
+		UserID: userID,
 	}
 	err = instanceRepo.Create(ctx, instance)
 	require.NoError(t, err)
@@ -100,17 +82,21 @@ func createTestObjectiveQuest(t *testing.T, dbc *bun.DB, instanceRepo repositori
 	err = settingsRepo.Create(ctx, &models.QuestSettings{QuestID: instance.ID})
 	require.NoError(t, err)
 
-	objective := &models.Objective{
-		ID:      gofakeit.UUID(),
-		QuestID: instance.ID,
-		Title:   "Find the key",
-		Slug:    "find-the-key",
+	root := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: instance.ID,
+		Title: "Test Game", Slug: "root", Routing: models.RouteStrategyFreeRoam,
 	}
-	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	_, err = dbc.NewInsert().Model(root).Exec(ctx)
 	require.NoError(t, err)
 
-	instance.GameStructure.SubGroups[0].ObjectiveIDs = []string{objective.ID}
-	err = instanceRepo.Update(ctx, instance)
+	objective := &models.Objective{
+		ID:       gofakeit.UUID(),
+		QuestID:  instance.ID,
+		ParentID: root.ID,
+		Title:    "Find the key",
+		Slug:     "find-the-key",
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
 
 	team := models.Run{
@@ -128,7 +114,7 @@ func createTestObjectiveQuest(t *testing.T, dbc *bun.DB, instanceRepo repositori
 	loaded, err := teamRepo.GetByCode(ctx, team.Code)
 	require.NoError(t, err)
 
-	return instance, loaded
+	return instance, objective, loaded
 }
 
 func requestWithRun(target string, team *models.Run) *http.Request {
@@ -141,7 +127,7 @@ func TestPlayerHandler_Objectives_RendersNextObjectives(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 
-	_, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	_, _, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	handler := players.NewTestPlayerHandler(
 		players.WithNavigationService(navigationService),
@@ -160,11 +146,10 @@ func TestPlayerHandler_Objectives_RedirectsToCompleteWhenAllVisited(t *testing.T
 	defer cleanup()
 	ctx := context.Background()
 
-	instance, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	_, objective, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
-	objectiveID := instance.GameStructure.SubGroups[0].ObjectiveIDs[0]
-	_, err := completionRepo.Insert(ctx, team.Code, objectiveID, game.ContextObjectiveReveal)
+	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveProof)
 	require.NoError(t, err)
 
 	handler := players.NewTestPlayerHandler(
@@ -185,11 +170,10 @@ func TestPlayerHandler_Journal_RendersCompletedObjectives(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	instance, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	_, objective, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
-	objectiveID := instance.GameStructure.SubGroups[0].ObjectiveIDs[0]
-	_, err := completionRepo.Insert(ctx, team.Code, objectiveID, game.ContextObjectiveReveal)
+	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveReveal)
 	require.NoError(t, err)
 
 	handler := players.NewTestPlayerHandler(
@@ -208,7 +192,7 @@ func TestPlayerHandler_Journal_EmptyWhenNothingCompleted(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 
-	_, team := createTestObjectiveQuest(t, dbc, instanceRepo)
+	_, _, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	handler := players.NewTestPlayerHandler(
 		players.WithNavigationService(navigationService),

@@ -262,6 +262,25 @@ func TestComputeFrontier_SectionProofGatesItsChildren(t *testing.T) {
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("one"))
 }
 
+// A section whose proof gates its children must be reachable itself, or the
+// subtree is unreachable: its children are locked behind a proof the player has
+// no listed way to clear.
+func TestComputeFrontier_SectionAwaitingItsOwnProofIsListed(t *testing.T) {
+	objectives := bandTree(nil, nil)
+	state := runState(objectives)
+	state.ProofCompleted["root"] = true
+
+	frontier := navigation.ComputeFrontier(objectives, state)
+	assert.Equal(t, []string{"section"}, availableSlugs(frontier),
+		"the section is the only thing the player can act on")
+
+	// Once its proof clears it becomes navigation rather than an action, and
+	// its children take its place in the list.
+	state.ProofCompleted["section"] = true
+	frontier = navigation.ComputeFrontier(objectives, state)
+	assert.Equal(t, []string{"one", "two", "three"}, availableSlugs(frontier))
+}
+
 // A section with nothing to prove passes straight through to its content: its
 // reveal is the intro card, and no row is ever written for it.
 func TestComputeFrontier_SectionWithoutProofPassesThrough(t *testing.T) {

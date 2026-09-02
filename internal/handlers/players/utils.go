@@ -62,6 +62,7 @@ type QuestService interface {
 
 type NavigationService interface {
 	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
+	FinishSection(ctx context.Context, team *models.Run, objectiveID string) (bool, error)
 	GetPreviewObjectiveView(
 		ctx context.Context,
 		team *models.Run,

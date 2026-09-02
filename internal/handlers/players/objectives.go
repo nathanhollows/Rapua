@@ -1,14 +1,12 @@
 package players
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
-	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 // Objectives is /objectives' handler: the player's list of available objectives.
@@ -26,11 +24,21 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 
 	view, err := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
 	if err != nil {
-		if errors.Is(err, services.ErrAllObjectivesVisited) {
-			h.redirect(w, r, "/complete")
-			return
-		}
-		h.handleError(w, r, "Objectives: getting objective view", "Error loading objectives", "Could not load data", err)
+		h.handleError(
+			w,
+			r,
+			"Objectives: getting objective view",
+			"Error loading objectives",
+			"Could not load data",
+			err,
+		)
+		return
+	}
+
+	// Only the root completing means the run is finished. An empty list can
+	// also mean everything left is waiting on something.
+	if view.Complete {
+		h.redirect(w, r, "/complete")
 		return
 	}
 
@@ -43,7 +51,14 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 	template = templates.Layout(template, "Objectives", team.Messages)
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.handleError(w, r, "Objectives: rendering template", "Error rendering template", "Could not render template", err)
+		h.handleError(
+			w,
+			r,
+			"Objectives: rendering template",
+			"Error rendering template",
+			"Could not render template",
+			err,
+		)
 	}
 }
 
@@ -63,33 +78,17 @@ func (h *PlayerHandler) objectivesPreview(w http.ResponseWriter, r *http.Request
 	var view *services.PlayerObjectiveView
 
 	targetObjectiveID := r.URL.Query().Get("objective_id")
-	if targetObjectiveID != "" { //nolint:nestif // preview vs. normal navigation requires nested error handling per path
+	if targetObjectiveID != "" {
 		view, err = h.navigationService.GetPreviewObjectiveView(r.Context(), team, targetObjectiveID)
 		if err != nil {
 			h.handleError(w, r, "ObjectivesPreview: building objective view", "Error loading objective", "error", err)
 			return
 		}
 	} else {
-		// GetFirstVisibleGroup, not SubGroups[0] directly: the first subgroup may be
-		// secret (RouteStrategySecret), which must never be what a preview opens on.
-		firstGroup := navigation.GetFirstVisibleGroup(&team.Quest.GameStructure)
-		if firstGroup != nil && len(firstGroup.ObjectiveIDs) > 0 {
-			firstObjectiveID := firstGroup.ObjectiveIDs[0]
-			view, err = h.navigationService.GetPreviewObjectiveView(r.Context(), team, firstObjectiveID)
-			if err != nil {
-				h.handleError(w, r, "ObjectivesPreview: building first group view", "Error loading first group", "error", err)
-				return
-			}
-		} else {
-			view, err = h.navigationService.GetPlayerObjectiveView(r.Context(), team)
-			if err != nil {
-				if errors.Is(err, services.ErrAllObjectivesVisited) {
-					h.redirect(w, r, "/complete")
-					return
-				}
-				h.handleError(w, r, "ObjectivesPreview: getting objective view", "Error loading objectives", "error", err)
-				return
-			}
+		view, err = h.navigationService.GetPlayerObjectiveView(r.Context(), team)
+		if err != nil {
+			h.handleError(w, r, "ObjectivesPreview: getting objective view", "Error loading objectives", "error", err)
+			return
 		}
 	}
 
