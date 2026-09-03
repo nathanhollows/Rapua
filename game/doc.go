@@ -29,9 +29,18 @@ type SettingsDoc struct {
 // chapter may carry real proof content of its own, and a leaf may later grow
 // children without changing type.
 type ObjectiveDoc struct {
-	ID      string              `json:"id,omitempty"`
-	Slug    string              `json:"slug"`
-	Title   string              `json:"title"`
+	ID    string `json:"id,omitempty"`
+	Slug  string `json:"slug"`
+	Title string `json:"title"`
+	// Draft holds an objective out of play without moving it, gating it and
+	// everything beneath it. A drafted node keeps its place in the tree and its
+	// children, so publishing puts back exactly what was there.
+	//
+	// A pointer because omitting the key and writing false are different
+	// statements. A document that never mentions draft (one exported before the
+	// field existed, or written by other tooling) leaves the stored state
+	// alone; only "draft": false publishes something.
+	Draft   *bool               `json:"draft,omitempty"`
 	Color   string              `json:"color,omitempty"`
 	Depends DependsField        `json:"depends,omitempty"`
 	Proof   ObjectiveContextDoc `json:"proof"`
@@ -97,9 +106,29 @@ func FillBand(minChildren, maxChildren *int, childCount int) Band {
 // to, which is exactly the case where the band has no range to decide within.
 func (b Band) AutoCompletes() bool { return b.Min >= b.Max }
 
-// Band resolves this node's completion band against its own children.
+// Band resolves this node's completion band against its published children.
+//
+// Drafts are excluded because the player engine never loads them: a band
+// counting a child no run can reach is a band no run can meet. This is the same
+// count the frontier works from, which loads published rows only.
 func (o ObjectiveDoc) Band() Band {
-	return FillBand(o.ChildrenMin, o.ChildrenMax, len(o.Children))
+	return FillBand(o.ChildrenMin, o.ChildrenMax, o.PublishedChildCount())
+}
+
+// IsDraft reports whether the node is held out of play. An omitted key is not a
+// draft: it is a document with no opinion, which reads as published for a node
+// that has no stored state to keep.
+func (o ObjectiveDoc) IsDraft() bool { return o.Draft != nil && *o.Draft }
+
+// PublishedChildCount is how many of a node's children are in play.
+func (o ObjectiveDoc) PublishedChildCount() int {
+	count := 0
+	for _, child := range o.Children {
+		if !child.IsDraft() {
+			count++
+		}
+	}
+	return count
 }
 
 // BlockDoc is a flat map with a "type" discriminator plus all block-specific fields.

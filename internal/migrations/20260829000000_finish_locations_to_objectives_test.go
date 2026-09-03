@@ -32,13 +32,22 @@ import (
 // through 20260831000000's own down function: the migrations replayed below
 // write to when_clause while the assertions read models.Objective, which needs
 // the depends column that same down function would take away.
+//
+// objectives.draft is added by hand for the same reason in the other
+// direction. It arrives after the cutoff, and the cutoff cannot simply move
+// past it: game_structure, which these tests seed, is dropped in between.
 func m20260829_setupDB(t *testing.T) *bun.DB {
 	t.Helper()
 	dbc := m20260827_setupDBThrough(t, "20260902000000")
 	ctx := context.Background()
 	require.NoError(t, m20260829010000_down(ctx, dbc))
-	_, err := dbc.ExecContext(ctx, `ALTER TABLE "objectives" ADD COLUMN "when_clause" TEXT`)
-	require.NoError(t, err)
+	for _, ddl := range []string{
+		`ALTER TABLE "objectives" ADD COLUMN "when_clause" TEXT`,
+		`ALTER TABLE "objectives" ADD COLUMN "draft" BOOLEAN NOT NULL DEFAULT FALSE`,
+	} {
+		_, err := dbc.ExecContext(ctx, ddl)
+		require.NoError(t, err)
+	}
 	return dbc
 }
 
