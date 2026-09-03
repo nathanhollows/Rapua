@@ -9,6 +9,22 @@ tag: updated
 
 ## 8.0.0
 
+### Added
+
+- Objectives can be kept as drafts. A draft is hidden from players along with
+  everything beneath it, keeps its place in the quest, and comes back exactly
+  where it was when you publish it again. New objectives start as drafts, so you
+  can build a section before anyone can see it.
+- A game has to be stopped before it can be edited. Editing one mid-game reaches
+  players immediately and cannot be undone, so stop it first, or duplicate it and
+  work on the copy.
+
+### Changed
+
+- Importing a game document applies everything in it, drafts included. A backup
+  taken before you drafted something will publish it again on restore, the same
+  way it restores the old titles and content.
+
 ## 7.0.0
 
 v7.0.0 introduces games as code which lets me do fancy things like static game analysis (finding bugs in games without playing them), have AI write games using a [game specification](/docs/developer/game-spec), and store game templates with the code. 

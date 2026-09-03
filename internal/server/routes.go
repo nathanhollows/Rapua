@@ -356,7 +356,12 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/complete", adminHandler.CompletePageEdit)
 		})
 
+		// Structure and content are what a running game is made of, so these
+		// are the routes a stopped-game rule has to cover.
 		r.Route("/objective", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return middlewares.QuestEditableMiddleware(logger, next)
+			})
 			r.Get("/new", adminHandler.ObjectiveNew)
 			r.Get("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEdit)
 			r.Post("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEditPost)
@@ -365,6 +370,9 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return middlewares.QuestEditableMiddleware(logger, next)
+			})
 			// Primary RESTful endpoints
 			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
 			r.Get("/", adminHandler.BlockList)            // GET /admin/blocks?owner=uuid&context=ctx

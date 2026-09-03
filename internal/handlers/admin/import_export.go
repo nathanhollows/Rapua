@@ -129,6 +129,22 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An import rewrites the whole tree, which is the largest edit there is, so
+	// it is refused while the game is running like every other one. The quest
+	// comes from the URL rather than the session, so the route middleware
+	// cannot make this check.
+	quest, err := h.questService.GetByID(r.Context(), questID)
+	if err != nil {
+		_ = templates.ImportErrorResult("Could not load this game.").Render(r.Context(), w)
+		return
+	}
+	if quest.GetStatus() == models.Active {
+		_ = templates.ImportErrorResult(
+			"This game is running. Stop it before importing, or duplicate it to work on a copy.",
+		).Render(r.Context(), w)
+		return
+	}
+
 	doc, err := parseUploadedDoc(r)
 	if err != nil {
 		_ = templates.ImportErrorResult(fmt.Sprintf("Could not read file: %v", err)).Render(r.Context(), w)
