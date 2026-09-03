@@ -279,3 +279,36 @@ func TestExportService_ExportInstance_RefusesAmbiguousRoot(t *testing.T) {
 	_, _, err := svc.ExportInstance(ctx, inst.ID)
 	require.ErrorIs(t, err, repositories.ErrAmbiguousRootObjective)
 }
+
+// Draft is part of the document, so a quest can be exported mid-edit and come
+// back with the same things out of play.
+func TestExportService_ExportInstance_CarriesDraft(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Mid Edit", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "live", Title: "Live", Position: 0,
+	})
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "parked", Title: "Parked", Position: 1, Draft: true,
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 2, "a draft is exported, not omitted")
+	assert.False(t, doc.Structure.Children[0].IsDraft())
+	assert.True(t, doc.Structure.Children[1].IsDraft())
+}

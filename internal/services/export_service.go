@@ -176,6 +176,7 @@ func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []mod
 		ID:          obj.ID,
 		Slug:        obj.Slug,
 		Title:       obj.Title,
+		Draft:       &obj.Draft,
 		Color:       obj.Color,
 		Depends:     obj.Depends,
 		Routing:     obj.Routing,

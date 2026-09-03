@@ -294,6 +294,7 @@ func (s *ImportService) createObjective(
 		Position:    position,
 		Slug:        objDoc.Slug,
 		Title:       objDoc.Title,
+		Draft:       objDoc.IsDraft(),
 		Color:       objDoc.Color,
 		Depends:     objDoc.Depends,
 		Routing:     objDoc.Routing,
@@ -377,11 +378,15 @@ func (s *ImportService) importUpdate(
 		return nil, fmt.Errorf("update settings: %w", err)
 	}
 
-	// Track which existing objectives appeared in the doc (to find orphans).
-	seenObjIDs := make(map[string]bool)
+	state := &reconcileState{
+		objByID:    objByID,
+		objBySlug:  objBySlug,
+		blockByID:  blockByID,
+		seenObjIDs: make(map[string]bool),
+		result:     result,
+	}
 
-	if err := s.reconcileObjectiveTree(ctx, tx, existing.ID, "", 0, doc.Structure,
-		objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
+	if err := s.reconcileObjectiveTree(ctx, tx, existing.ID, "", 0, doc.Structure, state); err != nil {
 		return nil, err
 	}
 
@@ -410,7 +415,7 @@ func (s *ImportService) importUpdate(
 	}
 
 	for objID, obj := range objByID {
-		if !seenObjIDs[objID] {
+		if !state.seenObjIDs[objID] {
 			// blocks.owner_id has no FK, so the row delete below would not cascade.
 			if _, err := s.blockRepo.DeleteByOwnerIDPreservingStates(ctx, tx, objID, nil); err != nil {
 				return nil, fmt.Errorf("delete blocks for orphan objective %q: %w", obj.Slug, err)
@@ -424,34 +429,49 @@ func (s *ImportService) importUpdate(
 		}
 	}
 
+	// Placement last, once the orphans are gone: their slots are freed by the
+	// deletes above, and the document's own rows then settle into a tree with
+	// nothing left over to collide with.
+	if err := s.objectiveRepo.PlaceTx(ctx, tx, state.placements); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
+// reconcileState is what an update carries down the document walk: what the
+// quest already holds, what the walk has matched so far, and the placements it
+// has gathered.
+type reconcileState struct {
+	objByID    map[string]*models.Objective
+	objBySlug  map[string]*models.Objective
+	blockByID  map[string]models.Block
+	seenObjIDs map[string]bool
+	// placements are applied in one call once the whole document has been
+	// walked. Writing each row where it belongs as the walk reaches it would
+	// put it on a slot another row has not left yet, which is any document that
+	// reorders siblings or drops one from the middle.
+	placements []repositories.Placement
+	result     *ImportResult
+}
+
 // reconcileObjectiveTree matches one node against what is stored and recurses,
-// returning the row's id so its children can name it as their parent. Placement
-// is written here rather than through Reposition: the document is the whole
-// tree, so there are no siblings outside it to renumber against.
+// returning the row's id so its children can name it as their parent.
 func (s *ImportService) reconcileObjectiveTree(
 	ctx context.Context,
 	tx *bun.Tx,
 	questID, parentID string,
 	position int,
 	objDoc game.ObjectiveDoc,
-	objByID map[string]*models.Objective,
-	objBySlug map[string]*models.Objective,
-	blockByID map[string]models.Block,
-	seenObjIDs map[string]bool,
-	result *ImportResult,
+	state *reconcileState,
 ) error {
-	objID, err := s.reconcileObjective(ctx, tx, questID, parentID, position, objDoc,
-		objByID, objBySlug, blockByID, seenObjIDs, result)
+	objID, err := s.reconcileObjective(ctx, tx, questID, parentID, position, objDoc, state)
 	if err != nil {
 		return err
 	}
 
 	for i, child := range objDoc.Children {
-		if err := s.reconcileObjectiveTree(ctx, tx, questID, objID, i, child,
-			objByID, objBySlug, blockByID, seenObjIDs, result); err != nil {
+		if err := s.reconcileObjectiveTree(ctx, tx, questID, objID, i, child, state); err != nil {
 			return err
 		}
 	}
@@ -471,24 +491,20 @@ func (s *ImportService) reconcileObjective(
 	questID, parentID string,
 	position int,
 	objDoc game.ObjectiveDoc,
-	objByID map[string]*models.Objective,
-	objBySlug map[string]*models.Objective,
-	blockByID map[string]models.Block,
-	seenObjIDs map[string]bool,
-	result *ImportResult,
+	state *reconcileState,
 ) (string, error) {
 	// An id naming nothing in this quest is not a near miss to be recovered by
 	// slug: it is a document written against some other quest, and adopting a
 	// same-slugged row would move content the author never named.
 	var existingObj *models.Objective
 	if objDoc.ID != "" {
-		existingObj = objByID[objDoc.ID]
+		existingObj = state.objByID[objDoc.ID]
 		if existingObj == nil {
 			return "", fmt.Errorf("%w: objective %q names id %q", ErrObjectiveIDNotInQuest, objDoc.Slug, objDoc.ID)
 		}
 	}
 	if existingObj == nil && objDoc.Slug != "" {
-		existingObj = objBySlug[objDoc.Slug]
+		existingObj = state.objBySlug[objDoc.Slug]
 	}
 
 	if existingObj == nil {
@@ -496,14 +512,24 @@ func (s *ImportService) reconcileObjective(
 		if err != nil {
 			return "", err
 		}
-		result.Created.Objectives++
-		result.Created.Blocks += blockCount
+		state.result.Created.Objectives++
+		state.result.Created.Blocks += blockCount
+		// A new row is appended by the repository, which is the right default
+		// but not what the document said. It is placed with the rest.
+		state.placements = append(state.placements, repositories.Placement{
+			ObjectiveID: newObjID, ParentID: parentID, Position: position,
+		})
 		return newObjID, nil
 	}
 
-	seenObjIDs[existingObj.ID] = true
+	state.seenObjIDs[existingObj.ID] = true
 	existingObj.Title = objDoc.Title
 	existingObj.Slug = objDoc.Slug
+	// An omitted key leaves the stored state alone: a document with no opinion
+	// about draft must not publish a section somebody deliberately parked.
+	if objDoc.Draft != nil {
+		existingObj.Draft = *objDoc.Draft
+	}
 	existingObj.Color = objDoc.Color
 	existingObj.Depends = objDoc.Depends
 	existingObj.Routing = objDoc.Routing
@@ -517,14 +543,13 @@ func (s *ImportService) reconcileObjective(
 	if err := s.objectiveRepo.UpdateTx(ctx, tx, existingObj); err != nil {
 		return "", fmt.Errorf("update objective %q: %w", objDoc.Slug, err)
 	}
-	// UpdateTx cannot move a row, and the document is the whole tree, so
-	// placement is written directly rather than through Reposition: there are
-	// no siblings outside the document to renumber against.
-	if _, err := tx.NewUpdate().Model((*models.Objective)(nil)).
-		Set("parent_id = ?", parentID).Set("position = ?", position).
-		Where("id = ?", existingObj.ID).Exec(ctx); err != nil {
-		return "", fmt.Errorf("placing objective %q: %w", objDoc.Slug, err)
-	}
+	// UpdateTx deliberately cannot move a row. Placement is gathered for one
+	// call at the end of the walk rather than written here, because a document
+	// that reorders or removes a sibling would otherwise put a row on a slot
+	// another row still holds.
+	state.placements = append(state.placements, repositories.Placement{
+		ObjectiveID: existingObj.ID, ParentID: parentID, Position: position,
+	})
 
 	for _, pair := range []struct {
 		docs []game.BlockDoc
@@ -533,12 +558,20 @@ func (s *ImportService) reconcileObjective(
 		{objDoc.Proof.Blocks, game.ContextObjectiveProof},
 		{objDoc.Reveal.Blocks, game.ContextObjectiveReveal},
 	} {
-		if err := s.reconcileBlocks(ctx, tx, existingObj.ID, pair.docs, pair.ctx, blockByID, result); err != nil {
+		if err := s.reconcileBlocks(
+			ctx,
+			tx,
+			existingObj.ID,
+			pair.docs,
+			pair.ctx,
+			state.blockByID,
+			state.result,
+		); err != nil {
 			return "", err
 		}
 	}
 
-	result.Updated.Objectives++
+	state.result.Updated.Objectives++
 	return existingObj.ID, nil
 }
 

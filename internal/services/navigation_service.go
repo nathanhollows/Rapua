@@ -75,12 +75,12 @@ func (s *NavigationService) GetPlayerObjectiveView(
 		return nil, fmt.Errorf("loading team relations: %w", err)
 	}
 
-	objectives, state, err := s.loader.load(ctx, team)
+	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
 		return nil, err
 	}
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := navigation.ComputeFrontier(objectives, state, complete)
 	return &PlayerObjectiveView{
 		Settings: team.Quest.Settings,
 		Frontier: frontier,
@@ -114,12 +114,12 @@ func rootComplete(objectives []models.Objective, frontier navigation.Frontier) b
 func (s *NavigationService) FinishSection(
 	ctx context.Context, team *models.Run, objectiveID string,
 ) (bool, error) {
-	objectives, state, err := s.loader.load(ctx, team)
+	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
 		return false, err
 	}
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := navigation.ComputeFrontier(objectives, state, complete)
 	if frontier.StatusOf(objectiveID) != navigation.StatusFinishable {
 		return false, fmt.Errorf("%w: %q", ErrSectionNotFinishable, objectiveID)
 	}

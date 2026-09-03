@@ -44,6 +44,16 @@ func (r LintResult) HasError(code string) bool {
 	return false
 }
 
+// HasWarning is HasError for the diagnostics that do not block an import.
+func (r LintResult) HasWarning(code string) bool {
+	for _, w := range r.Warnings {
+		if w.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
 // Lint validates a GameDoc in three layers: schema, semantic, structural.
 // registry is used to check valid block types and contexts; pass blocks.Registry().
 func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
@@ -58,16 +68,21 @@ type linter struct {
 	result         LintResult
 	slugs          map[string]bool
 	objectiveSlugs map[string]bool // slugs of objectives specifically, a subset of slugs.
-	blockIDs       map[string]bool
-	definedVars    map[string]bool     // all variable names set by any block in the doc.
-	usedVars       map[string]bool     // all variable names referenced in any depends list.
-	dependsEdges   map[string][]string // objective slug -> slugs its depends list names.
-	dependsPaths   map[string]string   // objective slug -> its document path, for diagnostics.
+	// draftSlugs are the objectives out of play: drafted, or anywhere beneath
+	// something drafted. They exist in the document and take a slug, but no run
+	// ever reaches them, so a depends naming one can never be satisfied.
+	draftSlugs   map[string]bool
+	blockIDs     map[string]bool
+	definedVars  map[string]bool     // all variable names set by any block in the doc.
+	usedVars     map[string]bool     // all variable names referenced in any depends list.
+	dependsEdges map[string][]string // objective slug -> slugs its depends list names.
+	dependsPaths map[string]string   // objective slug -> its document path, for diagnostics.
 }
 
 func (l *linter) run() {
 	l.slugs = make(map[string]bool)
 	l.objectiveSlugs = make(map[string]bool)
+	l.draftSlugs = make(map[string]bool)
 	l.blockIDs = make(map[string]bool)
 	l.definedVars = make(map[string]bool)
 	l.usedVars = make(map[string]bool)
@@ -96,6 +111,12 @@ func (l *linter) checkSchema() {
 	if l.doc.Name == "" {
 		l.errorf("name", "MISSING_NAME", "game name is required")
 	}
+	if l.doc.Structure.IsDraft() {
+		l.errorf("structure.draft", "ROOT_DRAFT",
+			"the root objective is a draft, which takes the whole quest out of play; "+
+				"draft the sections beneath it instead")
+	}
+	l.checkRootIsContainer()
 	l.checkObjectiveDoc("structure", l.doc.Structure, 0)
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
@@ -156,8 +177,19 @@ func (l *linter) checkObjectiveIdentity(path string, obj ObjectiveDoc) {
 // checkChildSettings validates everything that only means something to a node
 // with children: routing, the completion band, max_next, and the finish label.
 func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
-	childCount := len(obj.Children)
+	// Published children only: the player engine never loads a draft, so a band
+	// counting one is a band no run can meet.
+	childCount := obj.PublishedChildCount()
 	if childCount == 0 {
+		// With nothing below it in play, the node behaves as a leaf: its own
+		// proof is the whole of its completion. Worth saying when the author
+		// wrote children and drafted them all, since the document still looks
+		// like a section.
+		if len(obj.Children) > 0 {
+			l.warnf(path, "ALL_CHILDREN_DRAFT",
+				"every one of this objective's %d children is a draft, so it has nothing to route "+
+					"or complete and behaves as a leaf", len(obj.Children))
+		}
 		l.checkLeafSettings(path, obj)
 		return
 	}
@@ -173,10 +205,14 @@ func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
 			"finish_label is set but this objective auto-completes at %d of %d children, "+
 				"so it never shows a finish button", band.Min, childCount)
 	}
-	if band.Max == 0 {
+	if obj.ChildrenMax != nil && *obj.ChildrenMax == 0 {
 		// Reads as "no children needed", so the objective completes before the
 		// player has seen any of them and closes the whole subtree. max_next
 		// nearby does treat 0 as "all of them", which invites exactly this.
+		//
+		// Only when the author wrote it. A filled band reaching zero because
+		// every child is drafted is the case above, and blaming a field nobody
+		// set sends them looking for something that is not there.
 		l.errorf(path+".children_max", "BAND_COMPLETES_AT_ZERO",
 			"children_max is 0, so this objective completes before any of its %d children are reachable; "+
 				"omit it to require all of them", childCount)
@@ -337,7 +373,7 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 // --- Layer 2: Semantic ---
 
 func (l *linter) checkSemantic() {
-	l.collectAndCheckSlugs("structure", l.doc.Structure)
+	l.collectAndCheckSlugs("structure", l.doc.Structure, false)
 	l.checkBlockContexts("start", l.doc.Start, ContextStart)
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
@@ -346,19 +382,53 @@ func (l *linter) checkSemantic() {
 }
 
 // collectAndCheckSlugs walks the tree recording slugs. The root is included:
-// it is an ordinary node whose slug can collide like any other.
-func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc) {
+// it is an ordinary node whose slug can collide like any other. Drafts are
+// included too: a slug is taken whether or not the objective is in play, and
+// publishing must not be the moment a collision appears.
+//
+// drafted carries down from any drafted ancestor, since drafting a section
+// takes everything beneath it out of play without marking those rows.
+func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc, drafted bool) {
+	drafted = drafted || obj.IsDraft()
 	if obj.Slug != "" {
 		if l.slugs[obj.Slug] {
 			l.errorf(path+".slug", "SLUG_DUPLICATE", "duplicate slug %q", obj.Slug)
 		}
 		l.slugs[obj.Slug] = true
 		l.objectiveSlugs[obj.Slug] = true
+		if drafted {
+			l.draftSlugs[obj.Slug] = true
+		}
 	}
 	l.checkObjectiveContexts(path, obj)
 
 	for i, child := range obj.Children {
-		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child)
+		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child, drafted)
+	}
+}
+
+// checkRootIsContainer rejects content on the root.
+//
+// The root is the quest, not a place in it: it is never rendered as an
+// objective, so proof or reveal blocks on it are content no player is ever
+// shown. A second introduction belongs to an objective of its own, ordered
+// first, where it can be seen, reordered and drafted like anything else.
+func (l *linter) checkRootIsContainer() {
+	for _, context := range []struct {
+		name   string
+		blocks []BlockDoc
+		sets   SetsField
+	}{
+		{"proof", l.doc.Structure.Proof.Blocks, l.doc.Structure.Proof.Sets},
+		{"reveal", l.doc.Structure.Reveal.Blocks, l.doc.Structure.Reveal.Sets},
+	} {
+		if len(context.blocks) == 0 && len(context.sets) == 0 {
+			continue
+		}
+		l.errorf("structure."+context.name, "ROOT_HAS_CONTENT",
+			"the root carries %s content, which no player is shown: the root is the quest rather than "+
+				"a place in it. Move it to an objective of its own, first among the root's children",
+			context.name)
 	}
 }
 
@@ -539,6 +609,12 @@ func (l *linter) checkUnusedVars() {
 
 func (l *linter) checkDependsInTree(path string, obj ObjectiveDoc) {
 	l.checkDepends(path+".depends", obj.Depends)
+	// Every edge is recorded, drafts included. A drafted node is inert today,
+	// but publishing it is one checkbox and nothing re-lints the document at
+	// that point, so a cycle admitted here would go live with no diagnostic
+	// anywhere. DEPENDS_ON_DRAFT still says the softer thing about a reference
+	// to parked content, which is a different question: that one resolves once
+	// the objective is published, where a cycle never does.
 	l.recordDependsEdges(path, obj)
 	for i, child := range obj.Children {
 		l.checkDependsInTree(fmt.Sprintf("%s.children[%d]", path, i), child)
@@ -631,9 +707,17 @@ func (l *linter) checkDependsCycles() {
 // typo'd slug would silently never match at runtime instead of being caught here.
 func (l *linter) checkVarReference(path, varName string) {
 	if slug, ok := strings.CutPrefix(varName, objectiveVarPrefix); ok && slug != "" {
-		if !l.objectiveSlugs[slug] {
+		switch {
+		case !l.objectiveSlugs[slug]:
 			l.warnf(path, "UNDEFINED_OBJECTIVE_VAR",
 				"depends references objective %q, which does not exist in this game", slug)
+		case l.draftSlugs[slug]:
+			// The slug resolves, so the reference is not a typo, which is what
+			// makes this worth its own diagnostic: nothing looks wrong and the
+			// gate never opens.
+			l.warnf(path, "DEPENDS_ON_DRAFT",
+				"depends references objective %q, which is a draft: no run can complete it, "+
+					"so this stays locked until it is published", slug)
 		}
 		return
 	}

@@ -55,15 +55,26 @@ func setupNavigationService(t *testing.T) (
 // tree without going through the checks the repository applies to new rows.
 func insertTestObjective(t *testing.T, dbc *bun.DB, questID, parentID, title, slug string) *models.Objective {
 	t.Helper()
+	ctx := context.Background()
+
+	// (parent_id, position) is unique, so a fixture that left every sibling at
+	// zero would insert one child and fail on the next.
+	position, err := dbc.NewSelect().
+		Model((*models.Objective)(nil)).
+		Where("parent_id = ?", parentID).
+		Count(ctx)
+	require.NoError(t, err)
+
 	objective := &models.Objective{
 		ID:       gofakeit.UUID(),
 		QuestID:  questID,
 		ParentID: parentID,
+		Position: position,
 		Title:    title,
 		Slug:     slug,
 		Routing:  models.RouteStrategyFreeRoam,
 	}
-	_, err := dbc.NewInsert().Model(objective).Exec(context.Background())
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
 	return objective
 }
@@ -225,4 +236,71 @@ func TestNavigationService_GetPreviewObjectiveView(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"previewed"}, availableSlugs(view),
 		"a preview shows the one objective it was asked for")
+}
+
+// Drafting is a gate on a node evaluated with its ancestors, never written
+// downward, so these cover the two directions of that: what it takes out of
+// play, and what it leaves behind.
+func TestNavigationService_Draft(t *testing.T) {
+	t.Run("a drafted section takes its subtree out of play", func(t *testing.T) {
+		navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
+		defer cleanup()
+		ctx := context.Background()
+
+		quest, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
+		insertTestObjective(t, dbc, quest.ID, root.ID, "Live", "live")
+		parked := insertTestObjective(t, dbc, quest.ID, root.ID, "Parked", "parked")
+		draftObjective(t, dbc, parked.ID)
+		insertTestObjective(t, dbc, quest.ID, parked.ID, "Buried", "buried")
+
+		view, err := navService.GetPlayerObjectiveView(ctx, run)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"live"}, availableSlugs(view))
+	})
+
+	// The gate is what a run cannot reach, not what it did not do. A team that
+	// cleared an objective before it was drafted keeps what that opened.
+	t.Run("completion survives its objective being drafted", func(t *testing.T) {
+		navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
+		defer cleanup()
+		ctx := context.Background()
+
+		quest, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
+		gateway := insertTestObjective(t, dbc, quest.ID, root.ID, "Gateway", "gateway")
+
+		gated := insertTestObjective(t, dbc, quest.ID, root.ID, "Gated", "gated")
+		gated.Depends = game.DependsField{"objective.gateway"}
+		_, err := dbc.NewUpdate().Model(gated).Column("depends").WherePK().Exec(ctx)
+		require.NoError(t, err)
+
+		completeObjectiveProof(t, dbc, run.Code, gateway.ID)
+		view, err := navService.GetPlayerObjectiveView(ctx, run)
+		require.NoError(t, err)
+		require.Contains(t, availableSlugs(view), "gated", "the gate opens once its objective completes")
+
+		draftObjective(t, dbc, gateway.ID)
+		view, err = navService.GetPlayerObjectiveView(ctx, run)
+		require.NoError(t, err)
+		assert.NotContains(t, availableSlugs(view), "gateway", "the drafted objective is gone")
+		assert.Contains(t, availableSlugs(view), "gated",
+			"but what it unlocked stays unlocked: the team did the thing")
+	})
+}
+
+func draftObjective(t *testing.T, dbc *bun.DB, objectiveID string) {
+	t.Helper()
+	_, err := dbc.NewUpdate().
+		Model((*models.Objective)(nil)).
+		Set("draft = ?", true).
+		Where("id = ?", objectiveID).
+		Exec(context.Background())
+	require.NoError(t, err)
+}
+
+func completeObjectiveProof(t *testing.T, dbc *bun.DB, runCode, objectiveID string) {
+	t.Helper()
+	_, err := dbc.NewInsert().Model(&models.ObjectiveContextCompletion{
+		RunCode: runCode, ObjectiveID: objectiveID, Context: game.ContextObjectiveProof,
+	}).Exec(context.Background())
+	require.NoError(t, err)
 }

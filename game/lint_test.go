@@ -140,6 +140,10 @@ func leaf(doc *game.GameDoc) *game.ObjectiveDoc {
 // means something an omitted bound does not.
 func intPtr(n int) *int { return &n }
 
+// boolPtr names a draft state. Draft is a pointer because omitting the key and
+// writing false are different statements about an existing row.
+func boolPtr(b bool) *bool { return &b }
+
 func TestLint_ValidDoc(t *testing.T) {
 	doc := validDoc()
 	result := game.Lint(doc, newTestRegistry())
@@ -1080,4 +1084,152 @@ func TestLint_SectionWithOwnBlocks_NoError(t *testing.T) {
 
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
+}
+
+// Publishing must not be the moment a slug collision appears, so drafts take
+// their slugs like anything else.
+func TestLint_DraftSlugStillCollides(t *testing.T) {
+	doc := validDoc()
+	sec := section(doc)
+	sec.Children = append(sec.Children, game.ObjectiveDoc{
+		Slug:  leaf(doc).Slug,
+		Title: "A parked copy",
+		Draft: boolPtr(true),
+	})
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("SLUG_DUPLICATE"))
+}
+
+// A depends naming a draft resolves, so nothing looks wrong: the reference is
+// not a typo and the gate simply never opens. That is what earns it a
+// diagnostic of its own rather than silence or "undefined".
+func TestLint_DependsOnDraft(t *testing.T) {
+	t.Run("names a drafted objective", func(t *testing.T) {
+		doc := validDoc()
+		sec := section(doc)
+		sec.Children = append(sec.Children, game.ObjectiveDoc{
+			Slug: "parked", Title: "Parked", Draft: boolPtr(true),
+		})
+		leaf(doc).Depends = game.DependsField{"objective.parked"}
+
+		result := game.Lint(doc, newTestRegistry())
+		assert.True(t, result.HasWarning("DEPENDS_ON_DRAFT"))
+		assert.False(t, result.HasWarning("UNDEFINED_OBJECTIVE_VAR"), "the slug does resolve")
+	})
+
+	t.Run("names something beneath a drafted section", func(t *testing.T) {
+		doc := validDoc()
+		sec := section(doc)
+		sec.Children = append(sec.Children, game.ObjectiveDoc{
+			Slug: "parked", Title: "Parked", Draft: boolPtr(true),
+			Routing:  game.RouteStrategyFreeRoam,
+			Children: []game.ObjectiveDoc{{Slug: "buried", Title: "Buried"}},
+		})
+		leaf(doc).Depends = game.DependsField{"objective.buried"}
+
+		result := game.Lint(doc, newTestRegistry())
+		assert.True(t, result.HasWarning("DEPENDS_ON_DRAFT"),
+			"drafting a section takes everything under it out of play")
+	})
+
+	t.Run("a published objective is not flagged", func(t *testing.T) {
+		doc := validDoc()
+		sec := section(doc)
+		sec.Children = append(sec.Children, game.ObjectiveDoc{Slug: "live", Title: "Live"})
+		leaf(doc).Depends = game.DependsField{"objective.live"}
+
+		result := game.Lint(doc, newTestRegistry())
+		assert.False(t, result.HasWarning("DEPENDS_ON_DRAFT"))
+	})
+}
+
+// The band counts what a run can reach, so drafting a child can push an
+// explicit minimum past the children that remain.
+func TestLint_BandCountsPublishedChildrenOnly(t *testing.T) {
+	doc := validDoc()
+	sec := section(doc)
+	sec.Children = []game.ObjectiveDoc{
+		{Slug: "a", Title: "A"},
+		{Slug: "b", Title: "B", Draft: boolPtr(true)},
+	}
+	sec.ChildrenMin = intPtr(2)
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("BAND_OUT_OF_RANGE"),
+		"a minimum of 2 over one published child can never be met")
+}
+
+// Drafting the root leaves the frontier with nothing to walk, so every player
+// sees an empty quest and no screen says why.
+func TestLint_RootDraft(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Draft = boolPtr(true)
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("ROOT_DRAFT"))
+}
+
+// A filled band reaching zero because every child is drafted is not the author
+// writing children_max: 0, and blaming that field sends them looking for
+// something nobody set.
+func TestLint_AllChildrenDraft(t *testing.T) {
+	doc := validDoc()
+	sec := section(doc)
+	sec.Children = []game.ObjectiveDoc{{Slug: "parked", Title: "Parked", Draft: boolPtr(true)}}
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.False(t, result.HasError("BAND_COMPLETES_AT_ZERO"),
+		"nothing here says children_max is 0")
+	assert.True(t, result.HasWarning("ALL_CHILDREN_DRAFT"))
+}
+
+// A cycle inside parked content is inert today and live the moment somebody
+// publishes the section, with nothing re-linting in between. It is reported now,
+// while there is a document in front of somebody.
+func TestLint_CycleInsideADraftedSubtreeIsStillReported(t *testing.T) {
+	doc := validDoc()
+	sec := section(doc)
+	sec.Children = append(sec.Children, game.ObjectiveDoc{
+		Slug: "parked", Title: "Parked", Draft: boolPtr(true),
+		Routing: game.RouteStrategyFreeRoam,
+		Children: []game.ObjectiveDoc{
+			{Slug: "loop-a", Title: "A", Depends: game.DependsField{"objective.loop-b"}},
+			{Slug: "loop-b", Title: "B", Depends: game.DependsField{"objective.loop-a"}},
+		},
+	})
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("DEPENDS_CYCLE"),
+		"publishing the section is one checkbox, and nothing re-lints at that point")
+}
+
+// The root is the quest rather than a place in it, and is never rendered as an
+// objective, so content on it is content nobody is shown.
+func TestLint_RootHasContent(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		content func(*game.ObjectiveDoc)
+	}{
+		{"proof blocks", func(o *game.ObjectiveDoc) { o.Proof.Blocks = []game.BlockDoc{{"type": "text"}} }},
+		{"reveal blocks", func(o *game.ObjectiveDoc) { o.Reveal.Blocks = []game.BlockDoc{{"type": "text"}} }},
+		{"proof sets", func(o *game.ObjectiveDoc) { o.Proof.Sets = game.SetsField{"started"} }},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := validDoc()
+			tt.content(&doc.Structure)
+			result := game.Lint(doc, newTestRegistry())
+			assert.True(t, result.HasError("ROOT_HAS_CONTENT"))
+		})
+	}
+}
+
+// A section that is not the root carries its own content as before.
+func TestLint_SectionContentIsUntouchedByTheRootRule(t *testing.T) {
+	doc := validDoc()
+	sec := section(doc)
+	sec.Proof.Blocks = []game.BlockDoc{{"type": "quiz"}}
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.False(t, result.HasError("ROOT_HAS_CONTENT"))
 }

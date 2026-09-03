@@ -11,7 +11,9 @@ import (
 )
 
 // runStateLoader gathers a quest's objectives and the facts one run has
-// recorded against them. Every consumer of "is this complete" reads from here,
+// recorded against them. It is the player engine's only door onto a quest: what
+// it returns is what a run can reach, and nothing downstream has to know that
+// drafts exist. Every consumer of "is this complete" reads from here,
 // so completion has one definition: the band derivation in navigation. Answers
 // drawn from the completion log alone disagree with it, because a section
 // completes through its children and never earns a row of its own.
@@ -31,41 +33,50 @@ type runStateLoader struct {
 // it does not read the resolver, so the order is well founded.
 func (l runStateLoader) load(
 	ctx context.Context, team *models.Run,
-) ([]models.Objective, navigation.RunState, error) {
+) ([]models.Objective, navigation.RunState, map[string]bool, error) {
 	objectives, err := l.objectiveRepo.FindTreeByQuestID(ctx, team.QuestID)
 	if err != nil {
-		return nil, navigation.RunState{}, fmt.Errorf("loading objective tree: %w", err)
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading objective tree: %w", err)
 	}
 
 	state := navigation.RunState{RunCode: team.Code}
 
 	state.HasProofBlocks, err = l.proofBlockOwners(ctx, objectives)
 	if err != nil {
-		return nil, navigation.RunState{}, err
+		return nil, navigation.RunState{}, nil, err
 	}
 
 	proofCompleted, err := l.objectiveContextCompletionRepo.
 		FindCompletedObjectiveIDs(ctx, team.Code, game.ContextObjectiveProof)
 	if err != nil {
-		return nil, navigation.RunState{}, fmt.Errorf("loading completed proof contexts: %w", err)
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading completed proof contexts: %w", err)
 	}
 	state.ProofCompleted = setOf(proofCompleted)
 
 	finished, err := l.sectionFinishRepo.FindFinishedObjectiveIDs(ctx, team.Code)
 	if err != nil {
-		return nil, navigation.RunState{}, fmt.Errorf("loading finished sections: %w", err)
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading finished sections: %w", err)
 	}
 	state.SectionFinished = setOf(finished)
 
 	varStates, err := l.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
 	if err != nil {
-		return nil, navigation.RunState{}, fmt.Errorf("loading var states: %w", err)
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading var states: %w", err)
 	}
 
-	completed := navigation.ComputeCompleted(objectives, state)
-	state.Vars = NewPlayerVarResolver(varStates, completedSlugsFrom(objectives, completed))
+	// Completion is derived once, over every row, drafts included: what a run
+	// did, it did, and a gate it opened stays open even once the objective is
+	// taken out of play. Deriving it from what is still in play would answer a
+	// different question with the same name: parking a section would shrink its
+	// ancestors' bands and complete a quest nobody finished.
+	//
+	// The whole tree goes back, not the pruned one. ComputeFrontier prunes for
+	// itself because it needs both views, and pruning here would take the
+	// difference away before it got there.
+	complete := navigation.ComputeCompleted(objectives, state)
+	state.Vars = NewPlayerVarResolver(varStates, completedSlugsFrom(objectives, complete))
 
-	return objectives, state, nil
+	return objectives, state, complete, nil
 }
 
 // proofBlockOwners returns the objectives with at least one proof block. An

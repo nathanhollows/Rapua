@@ -66,6 +66,13 @@ func statuses(f navigation.Frontier, ids ...string) []navigation.Status {
 	return out
 }
 
+// frontierOf derives completion first and hands both it and the whole tree to
+// the frontier, which is the order and the set the loader uses.
+func frontierOf(objectives []models.Objective, state navigation.RunState) navigation.Frontier {
+	complete := navigation.ComputeCompleted(objectives, state)
+	return navigation.ComputeFrontier(objectives, state, complete)
+}
+
 func availableSlugs(f navigation.Frontier) []string {
 	slugs := make([]string, len(f.Available))
 	for i, obj := range f.Available {
@@ -107,14 +114,14 @@ func TestComputeFrontier_Perfumers_OutroWaitsForEveryCategory(t *testing.T) {
 	containers := []string{"root", "top", "heart", "base"}
 
 	// Nothing done yet: every category is open, the outro is not.
-	frontier := navigation.ComputeFrontier(objectives, withoutProof(runState(objectives), containers...))
+	frontier := frontierOf(objectives, withoutProof(runState(objectives), containers...))
 	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("outro"))
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("top-a"))
 
 	// One plant proves its category, and closes its siblings with it.
 	state := withoutProof(runState(objectives, "top-a"), containers...)
 	state.Vars = mapResolver{"objective.top": "done"}
-	frontier = navigation.ComputeFrontier(objectives, state)
+	frontier = frontierOf(objectives, state)
 
 	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("top"),
 		"one plant of three completes a min=max=1 category")
@@ -130,7 +137,7 @@ func TestComputeFrontier_Perfumers_OutroWaitsForEveryCategory(t *testing.T) {
 	state.Vars = mapResolver{
 		"objective.top": "done", "objective.heart": "done", "objective.base": "done",
 	}
-	frontier = navigation.ComputeFrontier(objectives, state)
+	frontier = frontierOf(objectives, state)
 
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("outro"),
 		"the depends list is the AND the tree cannot express")
@@ -223,7 +230,7 @@ func TestComputeFrontier_Band(t *testing.T) {
 			state.ProofCompleted["section"] = true
 			state.SectionFinished["section"] = tt.sectionFinished
 
-			frontier := navigation.ComputeFrontier(objectives, state)
+			frontier := frontierOf(objectives, state)
 			assert.Equal(t, tt.want, frontier.StatusOf("section"))
 		})
 	}
@@ -237,7 +244,7 @@ func TestComputeFrontier_AvailableListsLeavesAndFinishableSections(t *testing.T)
 	state.ProofCompleted["root"] = true
 	state.ProofCompleted["section"] = true
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t, []string{"section", "two", "three"}, availableSlugs(frontier))
 }
 
@@ -250,7 +257,7 @@ func TestComputeFrontier_SectionProofGatesItsChildren(t *testing.T) {
 	state := runState(objectives)
 	state.ProofCompleted["root"] = true
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("section"))
 	assert.Equal(t,
 		[]navigation.Status{navigation.StatusLocked, navigation.StatusLocked, navigation.StatusLocked},
@@ -258,7 +265,7 @@ func TestComputeFrontier_SectionProofGatesItsChildren(t *testing.T) {
 		"nothing below a section is reachable until its proof clears")
 
 	state.ProofCompleted["section"] = true
-	frontier = navigation.ComputeFrontier(objectives, state)
+	frontier = frontierOf(objectives, state)
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("one"))
 }
 
@@ -270,14 +277,14 @@ func TestComputeFrontier_SectionAwaitingItsOwnProofIsListed(t *testing.T) {
 	state := runState(objectives)
 	state.ProofCompleted["root"] = true
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t, []string{"section"}, availableSlugs(frontier),
 		"the section is the only thing the player can act on")
 
 	// Once its proof clears it becomes navigation rather than an action, and
 	// its children take its place in the list.
 	state.ProofCompleted["section"] = true
-	frontier = navigation.ComputeFrontier(objectives, state)
+	frontier = frontierOf(objectives, state)
 	assert.Equal(t, []string{"one", "two", "three"}, availableSlugs(frontier))
 }
 
@@ -289,7 +296,7 @@ func TestComputeFrontier_SectionWithoutProofPassesThrough(t *testing.T) {
 	state.ProofCompleted["root"] = true
 	state.HasProofBlocks["section"] = false
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("one"))
 }
 
@@ -302,7 +309,7 @@ func TestComputeFrontier_LeafWithoutProofIsNotCompleteUnseen(t *testing.T) {
 	state.ProofCompleted["section"] = true
 	state.HasProofBlocks["one"] = false
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("one"))
 }
 
@@ -319,12 +326,12 @@ func orderedTree() []models.Objective {
 func TestComputeFrontier_OrderedRoutingOffersOneAtATime(t *testing.T) {
 	objectives := orderedTree()
 
-	frontier := navigation.ComputeFrontier(objectives, runState(objectives, "root"))
+	frontier := frontierOf(objectives, runState(objectives, "root"))
 	assert.Equal(t,
 		[]navigation.Status{navigation.StatusAvailable, navigation.StatusLocked, navigation.StatusLocked},
 		statuses(frontier, "one", "two", "three"))
 
-	frontier = navigation.ComputeFrontier(objectives, runState(objectives, "root", "one"))
+	frontier = frontierOf(objectives, runState(objectives, "root", "one"))
 	assert.Equal(t,
 		[]navigation.Status{navigation.StatusComplete, navigation.StatusAvailable, navigation.StatusLocked},
 		statuses(frontier, "one", "two", "three"))
@@ -334,7 +341,7 @@ func TestComputeFrontier_FreeRoamOffersEveryChild(t *testing.T) {
 	objectives := bandTree(nil, nil)
 	state := runState(objectives, "root", "section")
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 	assert.Equal(t,
 		[]navigation.Status{navigation.StatusAvailable, navigation.StatusAvailable, navigation.StatusAvailable},
 		statuses(frontier, "one", "two", "three"))
@@ -352,8 +359,8 @@ func TestComputeFrontier_RandomisedRoutingWindowIsStable(t *testing.T) {
 	}
 	state := runState(objectives, "root", "section")
 
-	first := availableSlugs(navigation.ComputeFrontier(objectives, state))
-	second := availableSlugs(navigation.ComputeFrontier(objectives, state))
+	first := availableSlugs(frontierOf(objectives, state))
+	second := availableSlugs(frontierOf(objectives, state))
 	assert.Len(t, first, 2, "max_next caps the window")
 	assert.Equal(t, first, second, "the window must not move between requests")
 }
@@ -367,11 +374,11 @@ func TestComputeFrontier_DependsGatesAnObjective(t *testing.T) {
 
 	state := runState(objectives, "root")
 	assert.Equal(t, navigation.StatusLocked,
-		navigation.ComputeFrontier(objectives, state).StatusOf("locked"))
+		frontierOf(objectives, state).StatusOf("locked"))
 
 	state.Vars = mapResolver{"found_key": "true"}
 	assert.Equal(t, navigation.StatusAvailable,
-		navigation.ComputeFrontier(objectives, state).StatusOf("locked"))
+		frontierOf(objectives, state).StatusOf("locked"))
 }
 
 // A negated depends is met until the thing it names happens.
@@ -382,11 +389,11 @@ func TestComputeFrontier_NegatedDependsClosesOnceMet(t *testing.T) {
 
 	state := runState(objectives, "root")
 	assert.Equal(t, navigation.StatusAvailable,
-		navigation.ComputeFrontier(objectives, state).StatusOf("shortcut"))
+		frontierOf(objectives, state).StatusOf("shortcut"))
 
 	state.Vars = mapResolver{"took_long_way": "true"}
 	assert.Equal(t, navigation.StatusLocked,
-		navigation.ComputeFrontier(objectives, state).StatusOf("shortcut"))
+		frontierOf(objectives, state).StatusOf("shortcut"))
 }
 
 // --- Damaged trees ---
@@ -401,7 +408,7 @@ func TestComputeFrontier_ToleratesACycle(t *testing.T) {
 
 	var frontier navigation.Frontier
 	require.NotPanics(t, func() {
-		frontier = navigation.ComputeFrontier(objectives, runState(objectives, "root"))
+		frontier = frontierOf(objectives, runState(objectives, "root"))
 	})
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("open"))
 	assert.Equal(t,
@@ -414,13 +421,13 @@ func TestComputeFrontier_ToleratesAMissingParent(t *testing.T) {
 		node("root", "", 0), node("open", "root", 0), node("stray", "vanished", 0),
 	}
 
-	frontier := navigation.ComputeFrontier(objectives, runState(objectives, "root"))
+	frontier := frontierOf(objectives, runState(objectives, "root"))
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("open"))
 	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("stray"))
 }
 
 func TestComputeFrontier_EmptyQuest(t *testing.T) {
-	frontier := navigation.ComputeFrontier(nil, runState(nil))
+	frontier := frontierOf(nil, runState(nil))
 	assert.Empty(t, frontier.Available)
 	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("anything"))
 }
@@ -434,7 +441,7 @@ func TestComputeFrontier_ClosedBranchKeepsItsCompletions(t *testing.T) {
 	state.ProofCompleted["root"] = true
 	state.ProofCompleted["section"] = true
 
-	frontier := navigation.ComputeFrontier(objectives, state)
+	frontier := frontierOf(objectives, state)
 
 	require.Equal(t, navigation.StatusComplete, frontier.StatusOf("section"),
 		"one of three completes a min=max=1 section")
@@ -453,12 +460,12 @@ func TestComputeFrontier_RootGetsAStatus(t *testing.T) {
 	objectives := bandTree(nil, nil)
 
 	// Its own proof outstanding: open, and nothing below it is reachable.
-	frontier := navigation.ComputeFrontier(objectives, runState(objectives))
+	frontier := frontierOf(objectives, runState(objectives))
 	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("root"))
 
 	// Everything below done: the root completes with its only child.
 	state := runState(objectives, "root", "section", "one", "two", "three")
-	frontier = navigation.ComputeFrontier(objectives, state)
+	frontier = frontierOf(objectives, state)
 	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("root"))
 }
 
@@ -472,6 +479,97 @@ func TestComputeFrontier_RootCanBeFinishable(t *testing.T) {
 		}
 	}
 
-	frontier := navigation.ComputeFrontier(objectives, runState(objectives, "root"))
+	frontier := frontierOf(objectives, runState(objectives, "root"))
 	assert.Equal(t, navigation.StatusFinishable, frontier.StatusOf("root"))
+}
+
+// Drafting gates a node and everything under it without marking any of them,
+// so what is in play is a question about ancestry rather than about a column.
+func TestInPlay(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("live", "root", 0),
+		node("parked", "root", 1),
+		node("buried", "parked", 0),
+		node("deeper", "buried", 0),
+	}
+	objectives[2].Draft = true
+
+	slugs := []string{}
+	for _, obj := range navigation.InPlay(objectives) {
+		slugs = append(slugs, obj.Slug)
+	}
+	assert.Equal(t, []string{"root", "live"}, slugs,
+		"the drafted section and everything under it drops out, however deep")
+
+	// Nothing beneath it was marked, so publishing restores the lot.
+	objectives[2].Draft = false
+	slugs = nil
+	for _, obj := range navigation.InPlay(objectives) {
+		slugs = append(slugs, obj.Slug)
+	}
+	assert.ElementsMatch(t, []string{"root", "live", "parked", "buried", "deeper"}, slugs)
+}
+
+// Parking a section must not finish the quest. Completion is derived over every
+// row, so an ancestor's band still counts the parked children: work already
+// done cannot satisfy a band that shrank under it.
+func TestComputeFrontier_DraftingASectionDoesNotCompleteItsAncestors(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("done", "root", 0),
+		node("parked", "root", 1),
+	}
+	state := runState(objectives, "root", "done")
+
+	frontier := frontierOf(objectives, state)
+	require.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
+		"one of two children done, so the root is not finished")
+
+	objectives[2].Draft = true
+	frontier = frontierOf(objectives, state)
+	assert.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
+		"and parking the other one must not finish it either")
+}
+
+// The other direction of the same rule: what a run cleared before a section was
+// parked still counts, so the gates it opened stay open.
+func TestComputeFrontier_CompletionOutlivesDrafting(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("gateway", "root", 0),
+		node("gated", "root", 1),
+	}
+	objectives[2].Depends = game.DependsField{"objective.gateway"}
+
+	state := runState(objectives, "root", "gateway")
+	state.Vars = mapResolver{"objective.gateway": "done"}
+	require.Equal(t, navigation.StatusAvailable, frontierOf(objectives, state).StatusOf("gated"))
+
+	objectives[1].Draft = true
+	frontier := frontierOf(objectives, state)
+	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("gateway"), "the parked one is gone")
+	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("gated"),
+		"what it unlocked stays unlocked")
+}
+
+// A section whose children are all parked looks childless once the tree is
+// pruned, but it is not a leaf: its band still counts them, so clearing its
+// proof would not complete it. Offering it hands a player a dead end.
+func TestComputeFrontier_SectionWithOnlyParkedChildrenIsNotOffered(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("section", "root", 0),
+		node("one", "section", 0),
+	}
+	state := runState(objectives, "root", "section")
+
+	require.Equal(t, []string{"one"}, availableSlugs(frontierOf(objectives, state)))
+
+	objectives[2].Draft = true
+	frontier := frontierOf(objectives, state)
+	assert.Empty(t, availableSlugs(frontier),
+		"nothing is offered: the only content is parked and the section cannot be cleared")
+	assert.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
+		"and the quest is not finished, because its content was never played")
 }

@@ -60,6 +60,10 @@ func minimalValidDoc(name string) *game.GameDoc {
 	}
 }
 
+// boolPtr names a draft state in a document, where omitting the key and writing
+// false are different statements.
+func boolPtr(b bool) *bool { return &b }
+
 // importedChildren returns the quest's objectives without the root, which every
 // import writes from the document's structure node.
 func importedChildren(
@@ -431,4 +435,139 @@ func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {
 	after := importedChildren(t, objectiveRepo, createResult.QuestID)
 	require.Len(t, after, 1)
 	assert.Equal(t, "The Spot", after[0].Title, "the rejected import changed nothing")
+}
+
+// The draft state survives a round trip, so exporting a quest mid-edit and
+// importing it back does not quietly publish everything.
+func TestImportService_ImportCreate_CarriesDraft(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Mid Edit")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "live", Title: "Live"},
+		{Slug: "parked", Title: "Parked", Draft: boolPtr(true)},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["live"].Draft)
+	assert.True(t, bySlug["parked"].Draft)
+}
+
+// Re-importing an edited document is the workflow the format exists for, and
+// every edit but a tail append moves a row onto a slot another row still holds.
+func TestImportService_ImportUpdate_RearrangesSiblings(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Rearrange")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "a", Title: "A"}, {Slug: "b", Title: "B"}, {Slug: "c", Title: "C"},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	orderedSlugs := func() []string {
+		objectives, findErr := objectiveRepo.FindTreeByQuestID(ctx, created.QuestID)
+		require.NoError(t, findErr)
+		slugs := []string{}
+		for _, obj := range objectives {
+			if obj.ParentID != "" {
+				slugs = append(slugs, obj.Slug)
+			}
+		}
+		return slugs
+	}
+	require.Equal(t, []string{"a", "b", "c"}, orderedSlugs())
+
+	t.Run("reversing the order", func(t *testing.T) {
+		reversed := minimalValidDoc("Rearrange")
+		reversed.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "b", Title: "B"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, reversed)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "b", "a"}, orderedSlugs())
+	})
+
+	t.Run("dropping one from the middle", func(t *testing.T) {
+		shorter := minimalValidDoc("Rearrange")
+		shorter.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, shorter)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "a"}, orderedSlugs())
+	})
+
+	t.Run("inserting into the middle", func(t *testing.T) {
+		longer := minimalValidDoc("Rearrange")
+		longer.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "new", Title: "New"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, longer)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "new", "a"}, orderedSlugs())
+	})
+}
+
+// A document that never mentions draft has no opinion about it. Publishing a
+// section somebody deliberately parked, on a routine content update from
+// tooling that predates the field, is the one thing draft must never do.
+func TestImportService_ImportUpdate_OmittedDraftKeyLeavesStateAlone(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Parked")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "parked", Title: "Parked", Draft: boolPtr(true)},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	drafted := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, drafted, 1)
+	require.True(t, drafted[0].Draft)
+
+	// The same document with the key absent entirely.
+	silent := minimalValidDoc("Parked")
+	silent.Structure.Children = []game.ObjectiveDoc{{Slug: "parked", Title: "Renamed"}}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, silent)
+	require.NoError(t, err)
+
+	after := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "Renamed", after[0].Title, "the update applied")
+	assert.True(t, after[0].Draft, "and left draft where it was")
+
+	// Saying false explicitly does publish it.
+	explicit := minimalValidDoc("Parked")
+	explicit.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "parked", Title: "Renamed", Draft: boolPtr(false)},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, explicit)
+	require.NoError(t, err)
+
+	published := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, published, 1)
+	assert.False(t, published[0].Draft)
 }

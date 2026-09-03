@@ -80,6 +80,11 @@ type tree struct {
 	byID     map[string]models.Objective
 	children map[string][]models.Objective
 	roots    []models.Objective
+	// hasParkedChildren names the objectives whose children are all out of
+	// play. The pruned tree cannot tell those from a leaf, and the difference
+	// matters: a leaf is cleared by being seen, while one of these still has a
+	// band counting children no run can reach.
+	hasParkedChildren map[string]bool
 }
 
 func newTree(objectives []models.Objective) tree {
@@ -127,7 +132,69 @@ func less(a, b models.Objective) bool {
 	return a.ID < b.ID
 }
 
+// parkedParents names the objectives that have children, none of them in play.
+// It is derived from the full set, which is the only place the distinction
+// exists: after pruning they look childless.
+func parkedParents(objectives []models.Objective) map[string]bool {
+	inPlay := make(map[string]bool, len(objectives))
+	for _, obj := range InPlay(objectives) {
+		inPlay[obj.ID] = true
+	}
+
+	hasChildren := make(map[string]bool, len(objectives))
+	hasChildInPlay := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID == "" {
+			continue
+		}
+		hasChildren[obj.ParentID] = true
+		if inPlay[obj.ID] {
+			hasChildInPlay[obj.ParentID] = true
+		}
+	}
+
+	parked := make(map[string]bool, len(objectives))
+	for parentID := range hasChildren {
+		if !hasChildInPlay[parentID] {
+			parked[parentID] = true
+		}
+	}
+	return parked
+}
+
+// InPlay returns the objectives a run can reach, which is every objective that
+// is not drafted and has no drafted ancestor.
+//
+// Drafting gates a node and everything under it without marking any of them:
+// the flag stays where the author set it, so publishing restores exactly what
+// was there. That makes "is this in play" a question about a node's ancestry
+// rather than about its own column, and this is the only place that answers it.
+func InPlay(objectives []models.Objective) []models.Objective {
+	t := newTree(objectives)
+	inPlay := make([]models.Objective, 0, len(objectives))
+
+	var descend func(obj models.Objective)
+	descend = func(obj models.Objective) {
+		if obj.Draft {
+			return
+		}
+		inPlay = append(inPlay, obj)
+		for _, child := range t.children[obj.ID] {
+			descend(child)
+		}
+	}
+	for _, root := range t.roots {
+		descend(root)
+	}
+	return inPlay
+}
+
 // ComputeCompleted returns the objectives that are complete for a run.
+//
+// It runs over every objective given to it, drafts included, because completion
+// records what a run did rather than what it can still reach. An objective that
+// was in play when a team cleared it stays complete once it is drafted away, so
+// the gates it opened stay open.
 //
 // It exists separately because a depends list can name a section by slug, and a
 // section completes through its band rather than through a row of its own: the
@@ -143,25 +210,31 @@ func ComputeCompleted(objectives []models.Objective, state RunState) map[string]
 	return complete
 }
 
-// ComputeFrontier derives every objective's status for one run.
+// ComputeFrontier derives every objective's status for one run, from the
+// completion ComputeCompleted derived first.
 //
-// It runs in two passes because the two questions face opposite directions.
-// Completion rises: an objective is complete once its own proof has cleared and
-// enough of its children are complete, so children must be settled first.
-// Reachability descends: an objective is reachable only if everything above it
-// is open, so ancestors must be settled first.
+// The two are separate calls because they run over different sets. Completion
+// is derived over every row, drafts included, because it records what a run
+// did: parking a section must not shrink an ancestor's band and complete a
+// quest nobody finished. Reachability is derived over what is in play, since
+// that is what a run can still act on. Deriving completion again from the
+// pruned set would answer a different question with the same name.
+//
+// Completion rises and reachability descends, which is why the completion pass
+// has to have run first: an objective is complete once its own proof has
+// cleared and enough of its children are complete, while it is reachable only
+// if everything above it is open.
 //
 // Objectives whose parent is missing, and any caught in a parent cycle, are
 // simply never reached by the walk and stay locked. A document that could
 // produce either is rejected at import; this tolerates one rather than
 // crashing on it.
-func ComputeFrontier(objectives []models.Objective, state RunState) Frontier {
-	t := newTree(objectives)
-
-	complete := make(map[string]bool, len(objectives))
-	for _, root := range t.roots {
-		markComplete(t, root, state, complete)
-	}
+func ComputeFrontier(objectives []models.Objective, state RunState, complete map[string]bool) Frontier {
+	// Pruned here rather than by the caller, because both views are needed and
+	// only the full set holds the difference: after pruning, a section whose
+	// children are all parked is indistinguishable from a leaf.
+	t := newTree(InPlay(objectives))
+	t.hasParkedChildren = parkedParents(objectives)
 
 	frontier := Frontier{Status: make(map[string]Status, len(objectives))}
 	for _, obj := range objectives {
@@ -189,8 +262,12 @@ func collectAvailable(t tree, obj models.Objective, state RunState, frontier *Fr
 	children := t.children[obj.ID]
 	status := frontier.StatusOf(obj.ID)
 
+	// A node whose children are all parked is not a leaf, whatever the pruned
+	// tree looks like: its band still counts them, so clearing its proof would
+	// not complete it and offering it hands a player a dead end.
+	leaf := len(children) == 0 && !t.hasParkedChildren[obj.ID]
 	actionable := status == StatusFinishable ||
-		(status == StatusAvailable && (len(children) == 0 || !proofCleared(obj, state)))
+		(status == StatusAvailable && (leaf || !proofCleared(obj, state)))
 	if actionable {
 		frontier.Available = append(frontier.Available, obj)
 	}
