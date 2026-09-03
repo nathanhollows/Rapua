@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"database/sql"
+
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
@@ -190,4 +192,151 @@ func TestObjectiveService_FindByQuestID(t *testing.T) {
 		require.NoError(t, findErr)
 		assert.Empty(t, objectives)
 	})
+}
+
+// A quest can be live while it is being built, so a new objective is parked
+// until its author says otherwise. The root is the exception: it is the quest
+// rather than a place in it, and drafting it takes the whole game out of play.
+func TestObjectiveService_CreateObjective_Draft(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	assert.False(t, root.Draft, "the root is never a draft")
+
+	child, err := service.CreateObjective(ctx, questID, root.ID, "A new objective")
+	require.NoError(t, err)
+	assert.True(t, child.Draft, "everything else arrives parked")
+}
+
+// Publishing and parking is the one edit that has to survive a form that never
+// mentions the title, and a title change must not quietly publish anything.
+func TestObjectiveService_UpdateObjective_Draft(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	objective, err := service.CreateObjective(ctx, questID, root.ID, "Parked")
+	require.NoError(t, err)
+	require.True(t, objective.Draft)
+
+	t.Run("a form with no opinion leaves it parked", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+			Title: "Renamed",
+		}))
+		assert.True(t, objective.Draft)
+		assert.Equal(t, "Renamed", objective.Title)
+	})
+
+	t.Run("publishing", func(t *testing.T) {
+		published := false
+		require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+			Draft: &published,
+		}))
+		assert.False(t, objective.Draft)
+
+		reloaded, findErr := service.GetByQuestIDAndSlug(ctx, questID, objective.Slug)
+		require.NoError(t, findErr)
+		assert.False(t, reloaded.Draft, "and it persisted")
+	})
+
+	t.Run("parking again", func(t *testing.T) {
+		parked := true
+		require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+			Draft: &parked,
+		}))
+		assert.True(t, objective.Draft)
+	})
+}
+
+// Parking the root takes every objective out of play at once, and the builder
+// does not list the root, so nothing on screen would explain the empty quest.
+func TestObjectiveService_UpdateObjective_CannotDraftRoot(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+
+	parked := true
+	err = service.UpdateObjective(ctx, &root, services.ObjectiveUpdateData{Draft: &parked})
+	require.ErrorIs(t, err, services.ErrCannotDraftRoot)
+	assert.False(t, root.Draft)
+
+	// Publishing it is always allowed, so a root that somehow got parked can be
+	// brought back.
+	root.Draft = true
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &root, services.ObjectiveUpdateData{Draft: &published}))
+	assert.False(t, root.Draft)
+}
+
+// A band counts published children, so parking one lowers what its section can
+// ever reach. Past an explicit minimum the section can never complete and
+// everything after it stays locked, which lint says about a document and the
+// toggle would otherwise let through in silence.
+func TestObjectiveService_UpdateObjective_ParkingCannotBreakABand(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, questID, root.ID, "Section")
+	require.NoError(t, err)
+
+	first, err := service.CreateObjective(ctx, questID, section.ID, "First")
+	require.NoError(t, err)
+	second, err := service.CreateObjective(ctx, questID, section.ID, "Second")
+	require.NoError(t, err)
+
+	// The section needs both of them.
+	minChildren := 2
+	section.ChildrenMin = &minChildren
+	tx, err := db.NewTransactor(dbc).BeginTx(ctx, &sql.TxOptions{})
+	require.NoError(t, err)
+	require.NoError(t, repositories.NewObjectiveRepository(dbc).UpdateTx(ctx, tx, &section))
+	require.NoError(t, tx.Commit())
+
+	// Both children start parked, so publish them before the band can bind.
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &first, services.ObjectiveUpdateData{Draft: &published}))
+	require.NoError(t, service.UpdateObjective(ctx, &second, services.ObjectiveUpdateData{Draft: &published}))
+
+	parked := true
+	err = service.UpdateObjective(ctx, &second, services.ObjectiveUpdateData{Draft: &parked})
+	require.ErrorIs(t, err, services.ErrParkingBreaksBand)
+	assert.False(t, second.Draft, "and it stays in play")
+}
+
+// A section with no explicit minimum needs whatever is left, so parking a child
+// is always fine there.
+func TestObjectiveService_UpdateObjective_ParkingUnderAnOmittedBandIsFine(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, questID, root.ID, "Section")
+	require.NoError(t, err)
+	child, err := service.CreateObjective(ctx, questID, section.ID, "Child")
+	require.NoError(t, err)
+
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: &published}))
+
+	parked := true
+	require.NoError(t, service.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: &parked}))
+	assert.True(t, child.Draft)
 }

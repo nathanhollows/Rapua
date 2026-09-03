@@ -107,7 +107,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	uploadService := services.NewUploadService(uploadRepo, localStorage)
 	deleteService := services.NewDeleteService(
 		transactor, instanceRepo,
-		teamRepo, uploadRepo, dbc, uploadsDir, logger,
+		teamRepo, uploadRepo, objectiveRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
 		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,

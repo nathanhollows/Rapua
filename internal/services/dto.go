@@ -15,6 +15,10 @@ const (
 // ObjectiveUpdateData ignores blank fields.
 type ObjectiveUpdateData struct {
 	Title string
+	// Draft publishes or parks the objective. A pointer because the form may
+	// not be offering the control at all, and "not mentioned" has to differ
+	// from "publish this".
+	Draft *bool
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.

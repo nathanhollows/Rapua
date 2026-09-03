@@ -14,8 +14,9 @@ import (
 
 type ObjectiveService interface {
 	// CreateObjective writes a new objective under parentID, appended after
-	// whatever is already there. An empty parentID creates the quest's root,
-	// which only a quest without one may do.
+	// whatever is already there, and parked as a draft so it is not shown to
+	// players before its author is ready. An empty parentID creates the quest's
+	// root, which only a quest without one may do, and which is never a draft.
 	CreateObjective(ctx context.Context, questID, parentID, title string) (models.Objective, error)
 	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
 	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
@@ -27,6 +28,15 @@ type ObjectiveService interface {
 	// FindChildren returns one objective's direct children in position order.
 	FindChildren(ctx context.Context, questID, parentID string) ([]models.Objective, error)
 }
+
+// ErrParkingBreaksBand is returned when parking an objective would leave its
+// parent needing more children than remain in play, so the parent could never
+// complete and everything after it would stay locked.
+var ErrParkingBreaksBand = errors.New("parking this objective would leave its section unable to complete")
+
+// ErrCannotDraftRoot is returned when an edit would park a quest's root. Lint
+// refuses the same shape in a document (ROOT_DRAFT).
+var ErrCannotDraftRoot = errors.New("the root objective cannot be a draft")
 
 type objectiveService struct {
 	transactor    db.Transactor
@@ -87,6 +97,12 @@ func (s objectiveService) CreateObjective(
 		ParentID: parentID,
 		Title:    title,
 		Slug:     slug,
+		// New objectives arrive parked. A quest can be live while it is being
+		// built, and an objective that appears to players the moment it is named
+		// is one an author has to finish in a hurry. The root is the exception:
+		// it is the quest rather than a place in it, and drafting it would take
+		// the whole game out of play.
+		Draft: parentID != "",
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -102,6 +118,44 @@ func (s objectiveService) CreateObjective(
 	}
 
 	return objective, nil
+}
+
+// checkParkingLeavesBandSatisfiable refuses a park that would put an
+// objective's parent past the point of ever completing.
+//
+// A band counts published children, so parking one lowers the number a section
+// can ever reach. Where an author wrote an explicit minimum, that minimum can
+// end up above what is left, and the section then cannot complete however much
+// a run does: everything after it stays locked. Lint says the same thing about
+// a document (BAND_OUT_OF_RANGE), but the toggle is the one mutation path lint
+// never sees.
+func (s objectiveService) checkParkingLeavesBandSatisfiable(
+	ctx context.Context, objective *models.Objective,
+) error {
+	parent, err := s.objectiveRepo.GetByID(ctx, objective.ParentID)
+	if err != nil {
+		return fmt.Errorf("loading parent to check its band: %w", err)
+	}
+	if parent.ChildrenMin == nil {
+		return nil
+	}
+
+	siblings, err := s.objectiveRepo.FindChildren(ctx, objective.QuestID, objective.ParentID)
+	if err != nil {
+		return fmt.Errorf("loading siblings to check the band: %w", err)
+	}
+
+	remaining := 0
+	for _, sibling := range siblings {
+		if sibling.ID != objective.ID && !sibling.Draft {
+			remaining++
+		}
+	}
+	if remaining < *parent.ChildrenMin {
+		return fmt.Errorf("%w: %q needs %d of its children and would have %d left in play",
+			ErrParkingBreaksBand, parent.Title, *parent.ChildrenMin, remaining)
+	}
+	return nil
 }
 
 func (s objectiveService) GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error) {
@@ -134,6 +188,22 @@ func (s objectiveService) UpdateObjective(
 			return fmt.Errorf("generating slug: %w", slugErr)
 		}
 		objective.Slug = newSlug
+		update = true
+	}
+
+	if data.Draft != nil && *data.Draft != objective.Draft {
+		// The root is the quest rather than a place in it, so parking it takes
+		// every objective out of play at once, and the builder does not list
+		// the root, which leaves nothing on screen explaining why.
+		if *data.Draft && objective.ParentID == "" {
+			return fmt.Errorf("%w: %q", ErrCannotDraftRoot, objective.ID)
+		}
+		if *data.Draft {
+			if err := s.checkParkingLeavesBandSatisfiable(ctx, objective); err != nil {
+				return err
+			}
+		}
+		objective.Draft = *data.Draft
 		update = true
 	}
 

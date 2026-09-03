@@ -11,6 +11,13 @@ type ObjectiveTreeNode struct {
 	Objective models.Objective
 	Depth     int
 	IsSection bool
+	// Draft is the flag on this row: the author parked this one.
+	Draft bool
+	// OutOfPlay is true for a draft and for everything beneath one. Drafting
+	// gates a subtree without marking it, so a row can be invisible to players
+	// while carrying no flag of its own, and the builder has to show that or
+	// the operator edits content they cannot see the state of.
+	OutOfPlay bool
 }
 
 // ObjectiveTree lists a quest's objectives in tree order. Reordering and
@@ -34,7 +41,7 @@ templ ObjectiveTree(nodes []ObjectiveTreeNode) {
 	} else {
 		<ul class="list p-5">
 			for _, node := range nodes {
-				<li class="list-row items-center">
+				<li class={ "list-row items-center", templ.KV("text-base-content/40", node.OutOfPlay) }>
 					<div style={ fmt.Sprintf("padding-left: %drem", node.Depth) }>
 						if node.IsSection {
 							@icon("folder", templ.Attributes{"class": "w-5 h-5 opacity-60"})
@@ -48,6 +55,11 @@ templ ObjectiveTree(nodes []ObjectiveTreeNode) {
 						</a>
 						<p class="text-xs opacity-60">{ node.Objective.Slug }</p>
 					</div>
+					if node.Draft {
+						<span class="badge badge-warning badge-sm">Draft</span>
+					} else if node.OutOfPlay {
+						<span class="badge badge-ghost badge-sm">In a draft</span>
+					}
 					if node.IsSection && node.Objective.Routing != "" {
 						<span class="badge badge-ghost badge-sm">{ node.Objective.Routing.String() }</span>
 					}

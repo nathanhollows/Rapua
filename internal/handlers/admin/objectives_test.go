@@ -16,6 +16,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/migrations"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 			transactor,
 			instanceRepo,
 			teamRepo,
-			uploadsRepo,
+			uploadsRepo, objectiveRepo,
 			dbc,
 			t.TempDir(),
 			logger,
@@ -358,4 +359,66 @@ func TestObjectiveDelete(t *testing.T) {
 
 		assert.NotEqual(t, "/admin/quest", w.Header().Get("Location"))
 	})
+}
+
+// The builder renders the whole tree, drafts included, so it has to say which
+// rows players cannot see. A row hidden only because an ancestor is drafted
+// carries no flag of its own, and is the case an operator would otherwise
+// edit, reorder or delete blind.
+func TestObjectiveTreeNodes_MarksWhatIsOutOfPlay(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	live := models.Objective{ID: "live", ParentID: "root", Slug: "live", Title: "Live"}
+	parked := models.Objective{ID: "parked", ParentID: "root", Slug: "parked", Title: "Parked", Draft: true}
+	buried := models.Objective{ID: "buried", ParentID: "parked", Slug: "buried", Title: "Buried"}
+
+	nodes := objectiveTreeNodes([]models.Objective{root, live, parked, buried})
+
+	bySlug := map[string]templates.ObjectiveTreeNode{}
+	for _, node := range nodes {
+		bySlug[node.Objective.Slug] = node
+	}
+	require.Len(t, nodes, 3, "the root holds everything, so listing it says nothing")
+
+	assert.False(t, bySlug["live"].OutOfPlay)
+	assert.True(t, bySlug["parked"].Draft)
+	assert.True(t, bySlug["parked"].OutOfPlay)
+	assert.False(t, bySlug["buried"].Draft, "the flag stays where the author put it")
+	assert.True(t, bySlug["buried"].OutOfPlay, "but the builder still shows it as hidden")
+}
+
+// The visibility toggle is a checkbox, and an unticked checkbox is absent from
+// the form rather than false. Its absence has to read as "park this", or an
+// author could never hide anything.
+func TestObjectiveEditPost_Visibility(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+
+	objective, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "Parked")
+	require.NoError(t, err)
+	require.True(t, objective.Draft, "new objectives arrive parked")
+
+	post := func(form url.Values) {
+		req := httptest.NewRequest(
+			http.MethodPost, "/admin/objective/"+objective.Slug, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req = withObjectiveUser(req, user)
+		req = withObjectiveSlug(req, objective.Slug)
+		h.ObjectiveEditPost(httptest.NewRecorder(), req)
+	}
+
+	post(url.Values{"title": {"Parked"}, "published": {"true"}})
+	reloaded, err := h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, objective.Slug)
+	require.NoError(t, err)
+	assert.False(t, reloaded.Draft, "ticking it publishes")
+
+	post(url.Values{"title": {"Parked"}})
+	reloaded, err = h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, objective.Slug)
+	require.NoError(t, err)
+	assert.True(t, reloaded.Draft, "and an absent checkbox parks it again")
 }

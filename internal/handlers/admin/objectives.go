@@ -123,6 +123,10 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// boolPtr names a visibility decision. ObjectiveUpdateData.Draft is a pointer
+// so a form that does not offer the control leaves the state alone.
+func boolPtr(b bool) *bool { return &b }
+
 func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.handleError(w, r, "ObjectiveEditPost: parsing form", "Error parsing form", "error", err)
@@ -143,11 +147,19 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The checkbox is absent from the form when unticked, so its absence is the
+	// instruction to park rather than a form that said nothing.
+	published := r.FormValue("published") == "true"
 	data := services.ObjectiveUpdateData{
 		Title: r.FormValue("title"),
+		Draft: boolPtr(!published),
 	}
 
 	err = h.objectiveService.UpdateObjective(r.Context(), objective, data)
+	if errors.Is(err, services.ErrParkingBreaksBand) || errors.Is(err, services.ErrCannotDraftRoot) {
+		h.handleError(w, r, "ObjectiveEditPost: refused visibility change", err.Error(), "error", err)
+		return
+	}
 	if err != nil {
 		h.handleError(w, r, "ObjectiveEditPost: updating objective", "Error updating objective", "error", err)
 		return

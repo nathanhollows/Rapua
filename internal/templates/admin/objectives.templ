@@ -52,7 +52,7 @@ templ EditObjective(data EditObjectiveData) {
 			<form
 				id="edit-objective"
 				hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
-				hx-trigger="click, saveobjective delay:500ms, keyup from:[form=edit-objective] delay:500ms"
+				hx-trigger="click, saveobjective delay:500ms, keyup from:[form=edit-objective] delay:500ms, change from:[form=edit-objective] delay:500ms"
 				hx-swap="none"
 			>
 				<button
@@ -98,6 +98,27 @@ templ EditObjective(data EditObjectiveData) {
 						on input
 						set #objective-title's textContent to my value"
 					/>
+				</fieldset>
+				<fieldset class="fieldset w-full md:w-1/2">
+					<legend class="fieldset-legend">Visibility</legend>
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							name="published"
+							value="true"
+							form="edit-objective"
+							class="toggle toggle-primary"
+							checked?={ !data.Objective.Draft }
+						/>
+						<span>Visible to players</span>
+					</label>
+					<p class="label">
+						if data.Objective.Draft {
+							A draft: this objective and everything under it is hidden from players.
+						} else {
+							Turning this off hides this objective and everything under it.
+						}
+					</p>
 				</fieldset>
 			</div>
 		@deleteBlockModal()

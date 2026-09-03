@@ -35,6 +35,7 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 		instanceRepo,
 		teamRepo,
 		uploadRepo,
+		repositories.NewObjectiveRepository(dbc),
 		dbc,
 		uploadsDir,
 		newTLogger(t),
@@ -922,8 +923,14 @@ func deleteObjectiveFixture(
 
 	insert := func(parentID string) string {
 		id := gofakeit.UUID()
+		position, countErr := dbc.NewSelect().
+			Model((*models.Objective)(nil)).
+			Where("parent_id = ?", parentID).
+			Count(ctx)
+		require.NoError(t, countErr)
+
 		objective := &models.Objective{
-			ID: id, QuestID: quest.ID, ParentID: parentID,
+			ID: id, QuestID: quest.ID, ParentID: parentID, Position: position,
 			Slug: gofakeit.Word() + "-" + id[:4], Title: gofakeit.Sentence(3),
 		}
 		_, insertErr := dbc.NewInsert().Model(objective).Exec(ctx)
@@ -1099,4 +1106,109 @@ func TestDeleteService_DeleteObjective_RenumbersAdoptedSiblings(t *testing.T) {
 	assert.Equal(t, []string{"keeper", "adopted-a", "adopted-b"}, slugs,
 		"the existing child keeps its place and the adopted ones follow")
 	assert.Equal(t, []int{0, 1, 2}, positions, "positions are dense and distinct")
+}
+
+// A drafted section is the only thing holding its children out of play. Tidying
+// it away must not put them back into a live quest, so the flag goes with them.
+func TestDeleteService_DeleteObjective_AdoptedChildrenInheritDraft(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int, draft bool) {
+		_, err := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug,
+			Position: position, Draft: draft,
+		}).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	root, parked := gofakeit.UUID(), gofakeit.UUID()
+	buried := gofakeit.UUID()
+	insert(root, "", "root", 0, false)
+	insert(parked, root, "parked", 0, true)
+	insert(buried, parked, "buried", 0, false)
+
+	require.NoError(t, svc.DeleteObjective(ctx, parked))
+
+	var adopted models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&adopted).Where("id = ?", buried).Scan(ctx))
+	assert.Equal(t, root, adopted.ParentID, "the child moves up")
+	assert.True(t, adopted.Draft, "and stays out of play, where the deleted section had it")
+}
+
+// Deleting a published section leaves its children exactly as they were.
+func TestDeleteService_DeleteObjective_AdoptedChildrenKeepTheirOwnState(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int, draft bool) {
+		_, err := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug,
+			Position: position, Draft: draft,
+		}).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	root, section := gofakeit.UUID(), gofakeit.UUID()
+	live, hidden := gofakeit.UUID(), gofakeit.UUID()
+	insert(root, "", "root", 0, false)
+	insert(section, root, "section", 0, false)
+	insert(live, section, "live", 0, false)
+	insert(hidden, section, "hidden", 1, true)
+
+	require.NoError(t, svc.DeleteObjective(ctx, section))
+
+	var objectives []models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&objectives).
+		Where("id IN (?)", bun.In([]string{live, hidden})).Scan(ctx))
+	byID := map[string]models.Objective{}
+	for _, obj := range objectives {
+		byID[obj.ID] = obj
+	}
+	assert.False(t, byID[live].Draft)
+	assert.True(t, byID[hidden].Draft, "its own flag is untouched")
+}
+
+// A double-submitted delete finds the row already gone. Carrying on from there
+// ran the adoption with an empty parent, which is a real value the backfill
+// wrote into every migrated quest's root, so it reached rows in quests the
+// request never named.
+//
+// Rows are inserted with raw SQL because that is the shape production holds:
+// the model writes NULL for an empty parent, the backfill wrote ”.
+func TestDeleteService_DeleteObjective_RepeatDeleteLeavesOtherQuestsAlone(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	type root struct{ id, questID string }
+	roots := []root{
+		{gofakeit.UUID(), validQuestID(t, dbc)},
+		{gofakeit.UUID(), validQuestID(t, dbc)},
+	}
+	for i, r := range roots {
+		_, err := dbc.ExecContext(ctx,
+			`INSERT INTO objectives (id, quest_id, parent_id, position, slug, title)`+
+				` VALUES (?, ?, '', ?, 'root', 'Root')`, r.id, r.questID, i)
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, svc.DeleteObjective(ctx, gofakeit.UUID()), "deleting nothing is a no-op")
+
+	for i, r := range roots {
+		var parentID sql.NullString
+		var position int
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT parent_id, position FROM objectives WHERE id = ?`, r.id).Scan(&parentID, &position))
+		// Valid, not just empty: a NULL scans into String as "" too, so
+		// checking the string alone cannot tell an untouched row from one the
+		// adoption rewrote.
+		assert.True(t, parentID.Valid, "still the literal '' the backfill wrote")
+		assert.Empty(t, parentID.String)
+		assert.Equal(t, i, position, "and untouched")
+	}
 }

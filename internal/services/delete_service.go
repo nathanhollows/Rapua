@@ -21,6 +21,10 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// errObjectiveAlreadyGone means the row a delete named is not there. Internal:
+// callers see an idempotent no-op, not an error.
+var errObjectiveAlreadyGone = errors.New("objective already deleted")
+
 // ErrCannotDeleteRoot is returned when a delete names a quest's root objective.
 // The root goes only with the quest it belongs to.
 var ErrCannotDeleteRoot = errors.New("the root objective cannot be deleted")
@@ -29,13 +33,14 @@ var ErrCannotDeleteRoot = errors.New("the root objective cannot be deleted")
 // handles child record cleanup; this service handles auth, file cleanup,
 // and denormalized data updates.
 type DeleteService struct {
-	transactor   db.Transactor
-	instanceRepo repositories.QuestRepository
-	teamRepo     repositories.RunRepository
-	uploadsRepo  repositories.UploadsRepository
-	db           *bun.DB
-	uploadsDir   string
-	logger       *slog.Logger
+	transactor    db.Transactor
+	instanceRepo  repositories.QuestRepository
+	teamRepo      repositories.RunRepository
+	uploadsRepo   repositories.UploadsRepository
+	objectiveRepo repositories.ObjectiveRepository
+	db            *bun.DB
+	uploadsDir    string
+	logger        *slog.Logger
 }
 
 // NewDeleteService creates a new DeleteService with the provided dependencies.
@@ -44,18 +49,20 @@ func NewDeleteService(
 	instanceRepo repositories.QuestRepository,
 	teamRepo repositories.RunRepository,
 	uploadsRepo repositories.UploadsRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	db *bun.DB,
 	uploadsDir string,
 	logger *slog.Logger,
 ) *DeleteService {
 	return &DeleteService{
-		transactor:   transactor,
-		instanceRepo: instanceRepo,
-		teamRepo:     teamRepo,
-		uploadsRepo:  uploadsRepo,
-		db:           db,
-		uploadsDir:   uploadsDir,
-		logger:       logger,
+		transactor:    transactor,
+		instanceRepo:  instanceRepo,
+		teamRepo:      teamRepo,
+		uploadsRepo:   uploadsRepo,
+		objectiveRepo: objectiveRepo,
+		db:            db,
+		uploadsDir:    uploadsDir,
+		logger:        logger,
 	}
 }
 
@@ -290,9 +297,18 @@ func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string)
 		return fmt.Errorf("%w: %s", ErrCannotDeleteRoot, objectiveID)
 	}
 
-	// parent_id has no FK, so nothing reparents the children on its own, and
-	// left alone they would be unreachable from the root.
-	if err := s.adoptChildrenOfDeleted(ctx, tx, objectiveID); err != nil {
+	// Read the row before it goes: the children are placed under its parent
+	// afterwards, and they inherit its draft state, and by then there is
+	// nothing left to read either from.
+	target, err := s.objectiveBeforeDelete(ctx, tx, objectiveID)
+	if errors.Is(err, errObjectiveAlreadyGone) {
+		// Which a double-submitted delete reaches. Nothing to delete and
+		// nothing to reparent: carrying on would run the adoption with an empty
+		// parent, and that is a real value matching every root the backfill
+		// wrote, across every quest.
+		return tx.Commit()
+	}
+	if err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -307,7 +323,6 @@ func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string)
 		return fmt.Errorf("deleting blocks for objective: %w", err)
 	}
 
-	// Delete objective: cascade handles any remaining children.
 	_, err = tx.NewDelete().
 		Model((*models.Objective)(nil)).
 		Where("id = ?", objectiveID).
@@ -317,7 +332,40 @@ func (s *DeleteService) DeleteObjective(ctx context.Context, objectiveID string)
 		return fmt.Errorf("deleting objective: %w", err)
 	}
 
+	// After the delete, so the slot the row held is free for the placement to
+	// settle into. parent_id has no FK, so nothing reparents the children on
+	// their own, and left alone they are unreachable from the root.
+	if err := s.adoptChildrenOfDeleted(ctx, tx, target); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
 	return tx.Commit()
+}
+
+// objectiveBeforeDelete returns the row about to be deleted, or
+// errObjectiveAlreadyGone when it is not there.
+//
+// A sentinel rather than a zero value because every field the caller needs (the
+// quest it belongs to, where it sat, whether it was parked) is a real value at
+// zero, and acting on those would be acting on the wrong rows: an empty parent
+// is the spelling migrated roots carry.
+func (s *DeleteService) objectiveBeforeDelete(
+	ctx context.Context, tx *bun.Tx, objectiveID string,
+) (*models.Objective, error) {
+	var objective models.Objective
+	err := tx.NewSelect().
+		Model(&objective).
+		Column("id", "quest_id", "parent_id", "draft").
+		Where("id = ?", objectiveID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errObjectiveAlreadyGone
+		}
+		return nil, fmt.Errorf("loading objective before delete: %w", err)
+	}
+	return &objective, nil
 }
 
 // objectiveIsRoot reports whether an objective is the top of its quest's tree.
@@ -342,93 +390,64 @@ func (s *DeleteService) objectiveIsRoot(ctx context.Context, tx *bun.Tx, objecti
 // adoptChildrenOfDeleted moves an objective's children up to its own parent, so
 // deleting a section removes the section rather than everything under it.
 //
-// The adopted children are appended after the destination's existing ones and
-// the whole sibling list is renumbered densely. Carrying their old positions
-// across would collide with the positions already in use there, and a tie is
-// broken by id, which is to say arbitrarily: under ordered routing that
-// silently rewrites the order the quest is played in.
+// The adopted children follow the destination's existing ones, and the whole
+// list is renumbered densely. Carrying their old positions across would land
+// them on positions already in use, and before that was a constraint it left
+// the order to a tie broken by id, which is to say by nothing.
 func (s *DeleteService) adoptChildrenOfDeleted(
 	ctx context.Context,
 	tx *bun.Tx,
-	objectiveID string,
+	target *models.Objective,
 ) error {
-	var objective models.Objective
-	err := tx.NewSelect().
-		Model(&objective).
-		Column("id", "parent_id").
-		Where("id = ?", objectiveID).
-		Scan(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return fmt.Errorf("loading objective before delete: %w", err)
-	}
-
-	// Shift the adopted rows past every position already in use at the
-	// destination. Without it they arrive holding positions their new siblings
-	// hold too, and a tie is broken by id, which is to say by nothing.
-	offset, err := s.siblingCount(ctx, tx, objective.ParentID)
-	if err != nil {
-		return err
-	}
-	if _, err := tx.NewUpdate().
-		Model((*models.Objective)(nil)).
-		Set("parent_id = ?", objective.ParentID).
-		Set("position = position + ?", offset).
-		Where("parent_id = ?", objectiveID).
-		Exec(ctx); err != nil {
-		return fmt.Errorf("reparenting children of %s: %w", objectiveID, err)
-	}
-
-	return s.renumberSiblings(ctx, tx, objective.ParentID, objectiveID)
-}
-
-// siblingCount counts a parent's children, which is one past every position
-// they can be occupying once the list is dense.
-func (s *DeleteService) siblingCount(ctx context.Context, tx *bun.Tx, parentID string) (int, error) {
-	count, err := tx.NewSelect().
-		Model((*models.Objective)(nil)).
-		Where("parent_id = ?", parentID).
-		Count(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("counting children of %s: %w", parentID, err)
-	}
-	return count, nil
-}
-
-// renumberSiblings gives every child of a parent a dense position in its
-// current order, with the objective about to be deleted left out. Both groups
-// keep their relative order: the adopted rows were shifted past the existing
-// ones before this runs, so sorting by position holds them apart.
-func (s *DeleteService) renumberSiblings(
-	ctx context.Context,
-	tx *bun.Tx,
-	parentID string,
-	excludeID string,
-) error {
-	var siblings []models.Objective
-	err := tx.NewSelect().
-		Model(&siblings).
-		Column("id").
-		Where("parent_id = ?", parentID).
-		Where("id != ?", excludeID).
+	// Every read here is scoped to the quest. parent_id carries no foreign key
+	// and an empty parent is a value the backfill actually wrote, so an
+	// unscoped match on it reaches other quests' roots.
+	var remaining []models.Objective
+	if err := tx.NewSelect().
+		Model(&remaining).
+		Column("id", "position").
+		Where("quest_id = ?", target.QuestID).
+		Where("parent_id = ?", sql.NullString{String: target.ParentID, Valid: target.ParentID != ""}).
 		Order("position ASC", "id ASC").
-		Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("loading siblings of %s: %w", parentID, err)
+		Scan(ctx); err != nil {
+		return fmt.Errorf("loading siblings of %s: %w", target.ID, err)
 	}
 
-	for i, sibling := range siblings {
+	var adopted []models.Objective
+	if err := tx.NewSelect().
+		Model(&adopted).
+		Column("id", "position").
+		Where("quest_id = ?", target.QuestID).
+		Where("parent_id = ?", target.ID).
+		Order("position ASC", "id ASC").
+		Scan(ctx); err != nil {
+		return fmt.Errorf("loading children of %s: %w", target.ID, err)
+	}
+
+	// A drafted section was the only thing holding its children out of play, so
+	// they carry the flag out with them. Left published they would rejoin a live
+	// quest the moment the section they were hidden behind was tidied away.
+	if target.Draft && len(adopted) > 0 {
+		adoptedIDs := make([]string, len(adopted))
+		for i, obj := range adopted {
+			adoptedIDs[i] = obj.ID
+		}
 		if _, err := tx.NewUpdate().
 			Model((*models.Objective)(nil)).
-			Set("position = ?", i).
-			Where("id = ?", sibling.ID).
+			Set("draft = ?", true).
+			Where("id IN (?)", bun.In(adoptedIDs)).
 			Exec(ctx); err != nil {
-			return fmt.Errorf("renumbering objective %s: %w", sibling.ID, err)
+			return fmt.Errorf("drafting adopted children of %s: %w", target.ID, err)
 		}
 	}
-	return nil
+
+	placements := make([]repositories.Placement, 0, len(remaining)+len(adopted))
+	for _, obj := range append(remaining, adopted...) {
+		placements = append(placements, repositories.Placement{
+			ObjectiveID: obj.ID, ParentID: target.ParentID, Position: len(placements),
+		})
+	}
+	return s.objectiveRepo.PlaceTx(ctx, tx, placements)
 }
 
 // ResetTeams clears team progress while preserving the teams themselves.

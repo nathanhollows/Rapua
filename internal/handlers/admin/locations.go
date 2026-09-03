@@ -33,8 +33,14 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 // objectiveTreeNodes flattens the tree for rendering. The rows arrive with each
 // parent ahead of its children, so depth is the parent's depth plus one, and
 // the root is dropped: it holds everything, so listing it says nothing.
+//
+// Draft is carried in two parts because the operator needs both: which row was
+// parked, and everything that is out of play as a result. A row that is hidden
+// only because of an ancestor must look hidden, or every edit, delete and
+// reorder below a parked section is made blind to what players can see.
 func objectiveTreeNodes(objectives []models.Objective) []templates.ObjectiveTreeNode {
 	depths := make(map[string]int, len(objectives))
+	drafted := make(map[string]bool, len(objectives))
 	hasChildren := make(map[string]bool, len(objectives))
 	for _, obj := range objectives {
 		hasChildren[obj.ParentID] = true
@@ -42,6 +48,7 @@ func objectiveTreeNodes(objectives []models.Objective) []templates.ObjectiveTree
 
 	nodes := make([]templates.ObjectiveTreeNode, 0, len(objectives))
 	for _, obj := range objectives {
+		drafted[obj.ID] = obj.Draft || drafted[obj.ParentID]
 		if obj.ParentID == "" {
 			depths[obj.ID] = 0
 			continue
@@ -52,6 +59,8 @@ func objectiveTreeNodes(objectives []models.Objective) []templates.ObjectiveTree
 			Objective: obj,
 			Depth:     depth - 1,
 			IsSection: hasChildren[obj.ID],
+			Draft:     obj.Draft,
+			OutOfPlay: drafted[obj.ID],
 		})
 	}
 	return nodes
