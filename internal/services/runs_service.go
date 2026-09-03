@@ -13,6 +13,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 	"github.com/uptrace/bun"
 )
 
@@ -276,8 +277,14 @@ func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCo
 // objectivesWithCompletion fetches a quest's leaf objectives, alongside which
 // ones are complete for a run (both as a completion-order ID slice and a lookup
 // set): the shared core of GetIncompleteObjectives and GetCompletedObjectives,
-// so the definition of "complete" (reveal-context, from the append-only
-// completion log) lives in one place instead of drifting between them.
+// so the definition of "complete" lives in one place instead of drifting
+// between them.
+//
+// Complete means the proof context has cleared, which is what the frontier
+// counts and what opens whatever the objective gates. The reveal is the payoff
+// afterwards and can sit unfinished behind an interactive block or a player who
+// navigated away, so counting it would tell a team it still has work it has
+// already done.
 //
 // Leaves only, because these are the counts of places a run has been. A section
 // completes through its band rather than by being visited, so it earns no
@@ -287,14 +294,14 @@ func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCo
 func (s *RunService) objectivesWithCompletion(
 	ctx context.Context, questID, runCode string,
 ) (objectives []models.Objective, completedIDsOrdered []string, completed map[string]bool, err error) {
-	all, err := s.objectiveRepo.FindByQuestID(ctx, questID)
+	all, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("finding objectives: %w", err)
 	}
-	objectives = leavesOf(all)
+	objectives = leavesOf(navigation.InPlay(all))
 
 	completedIDsOrdered, err = s.objectiveContextCompletionRepo.FindCompletedObjectiveIDsOrdered(
-		ctx, runCode, game.ContextObjectiveReveal,
+		ctx, runCode, game.ContextObjectiveProof,
 	)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("finding completed objectives: %w", err)
@@ -349,10 +356,10 @@ func (s *RunService) GetCompletedObjectives(ctx context.Context, questID, runCod
 	return result, nil
 }
 
-// CountCompletedObjectivesByRun counts reveal-context completions, matching
-// GetIncompleteObjectives' definition of "complete".
+// CountCompletedObjectivesByRun counts cleared proofs, matching
+// GetIncompleteObjectives' definition of "complete" and the frontier's.
 func (s *RunService) CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error) {
-	return s.objectiveContextCompletionRepo.CountCompletedObjectivesByRun(ctx, questID, game.ContextObjectiveReveal)
+	return s.objectiveContextCompletionRepo.CountCompletedObjectivesByRun(ctx, questID, game.ContextObjectiveProof)
 }
 
 // newCode generates an alpha string of easily recognisable characters.

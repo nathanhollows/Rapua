@@ -355,15 +355,25 @@ func TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets(t *testin
 	runCode := gofakeit.LetterN(6)
 	insertTestTeam(t, dbc, runCode, parents.QuestID)
 
-	gateway := &models.Objective{
+	// A real tree: both hang off the quest's root. Parentless rows read as
+	// roots, and a root is open by definition, so a flat fixture would not
+	// exercise the gate at all.
+	root := &models.Objective{
 		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		Slug: "root", Title: "Root", Routing: models.RouteStrategyFreeRoam,
+	}
+	_, err := dbc.NewInsert().Model(root).Exec(ctx)
+	require.NoError(t, err)
+
+	gateway := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 0,
 		Slug: "gateway", Title: "The Gateway",
 	}
-	_, err := dbc.NewInsert().Model(gateway).Exec(ctx)
+	_, err = dbc.NewInsert().Model(gateway).Exec(ctx)
 	require.NoError(t, err)
 
 	gated := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 1,
 		Slug: "inner-room", Title: "The Inner Room",
 		Depends:   game.DependsField{"objective.gateway"},
 		ProofSets: game.SetsField{"inner_room_seen"},
@@ -435,4 +445,49 @@ func TestCheckInService_ObjectiveWithoutDepends_IsAlwaysReachable(t *testing.T) 
 	)
 	require.NoError(t, err)
 	assert.True(t, reachable)
+}
+
+// Points are credited only for work the game will record. They used to be
+// written before the reachability gate ran, so a team could be paid for
+// finishing an objective that then produced no completion row and fired no
+// sets: paid for something that, as far as the game is concerned, never
+// happened.
+func TestCheckInService_UnreachableObjective_AwardsNoPoints(t *testing.T) {
+	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	runCode := gofakeit.LetterN(6)
+	insertTestTeam(t, dbc, runCode, parents.QuestID)
+
+	root := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID,
+		Slug: "root", Title: "Root", Routing: models.RouteStrategyFreeRoam,
+	}
+	_, err := dbc.NewInsert().Model(root).Exec(ctx)
+	require.NoError(t, err)
+	gated := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 0,
+		Slug: "inner-room", Title: "The Inner Room",
+		Depends: game.DependsField{"objective.never"},
+	}
+	_, err = dbc.NewInsert().Model(gated).Exec(ctx)
+	require.NoError(t, err)
+
+	team := models.Run{Code: runCode, QuestID: parents.QuestID}
+	reachable, err := svc.ObjectiveIsReachable(ctx, &team, gated)
+	require.NoError(t, err)
+	require.False(t, reachable, "its depends names something that never completes")
+
+	before := team.Points
+	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
+	assert.Equal(t, before, team.Points, "no points for an objective the gate turns away")
+
+	count, err := dbc.NewSelect().
+		Model((*models.ObjectiveContextCompletion)(nil)).
+		Where("objective_id = ?", gated.ID).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count, "and no completion row either")
 }

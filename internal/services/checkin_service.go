@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 type CheckInService struct {
@@ -160,16 +161,37 @@ func (s *CheckInService) writeSetsVars(
 func (s *CheckInService) awardPointsAndComplete(
 	ctx context.Context, team *models.Run, block blocks.Block, blockContext game.BlockContext,
 ) error {
+	if blockContext != game.ContextObjectiveProof && blockContext != game.ContextObjectiveReveal {
+		team.Points += block.GetPoints()
+		if err := s.teamRepo.Update(ctx, team); err != nil {
+			return fmt.Errorf("awarding points: %w", err)
+		}
+		return nil
+	}
+
+	// Reachability first, and once. Points used to be credited before the gate
+	// ran, so a team could be paid for finishing an objective the gate then
+	// turned away without a completion row: paid for work the game does not
+	// record. The answer is passed down rather than asked for again, since each
+	// ask is a full tree load and a frontier.
+	objective, err := s.objectiveRepo.GetByID(ctx, block.GetOwnerID())
+	if err != nil {
+		return fmt.Errorf("loading objective: %w", err)
+	}
+	reachable, err := s.ObjectiveIsReachable(ctx, team, objective)
+	if err != nil {
+		return err
+	}
+	if !reachable {
+		return nil
+	}
+
 	team.Points += block.GetPoints()
 	if err := s.teamRepo.Update(ctx, team); err != nil {
 		return fmt.Errorf("awarding points: %w", err)
 	}
 
-	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
-		return s.CompleteObjectiveContext(ctx, team, block.GetOwnerID(), blockContext)
-	}
-
-	return nil
+	return s.completeReachableObjectiveContext(ctx, team, objective, blockContext)
 }
 
 // CompleteObjectiveContext logs the completion and applies the context's sets
@@ -218,7 +240,39 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	inserted, err := s.objectiveContextCompletionRepo.Insert(ctx, team.Code, objectiveID, blockContext)
+	return s.logCompletionAndApplySets(ctx, team, objective, blockContext)
+}
+
+// completeReachableObjectiveContext is CompleteObjectiveContext for a caller
+// that has already established the objective is reachable, so the gate is not
+// paid for twice: each check loads the quest's tree and derives a frontier.
+func (s *CheckInService) completeReachableObjectiveContext(
+	ctx context.Context, team *models.Run, objective *models.Objective, blockContext game.BlockContext,
+) error {
+	if ctx.Value(contextkeys.PreviewKey) != nil {
+		return nil
+	}
+
+	stillRequired, err := s.blockService.checkValidationRequiredForCheckIn(
+		ctx, objective.ID, team.Code, team.QuestID, blockContext,
+	)
+	if err != nil {
+		return fmt.Errorf("checking if objective context is complete: %w", err)
+	}
+	if stillRequired {
+		return nil
+	}
+
+	return s.logCompletionAndApplySets(ctx, team, objective, blockContext)
+}
+
+// logCompletionAndApplySets writes the completion row and, if that row is new,
+// fires the context's sets. The insert is the idempotency guard: sets belong to
+// the call that recorded the completion, not to every call that finds it done.
+func (s *CheckInService) logCompletionAndApplySets(
+	ctx context.Context, team *models.Run, objective *models.Objective, blockContext game.BlockContext,
+) error {
+	inserted, err := s.objectiveContextCompletionRepo.Insert(ctx, team.Code, objective.ID, blockContext)
 	if err != nil {
 		return fmt.Errorf("logging objective context completion: %w", err)
 	}
@@ -254,30 +308,38 @@ func (s *CheckInService) IsObjectiveContextPending(
 	)
 }
 
-// ObjectiveIsReachable reports whether a run has met an objective's depends
-// list. An objective with no depends is always reachable and costs no queries,
-// which is the overwhelmingly common case.
+// ObjectiveIsReachable reports whether a run can be on this objective's page at
+// all: it is in play, its ancestors are open, its parent's routing has offered
+// it, and its depends are met.
 //
-// This duplicates what the navigation service computes for the objectives
-// list, because a list that merely hides an objective is not a gate: a guessed
-// slug reaches it anyway. It reads completion through the same loader so that
-// the two agree; answering from the completion log alone would let a depends on
-// a section pass here and fail there, since a section completes through its
-// band and never earns a row.
+// This asks the frontier rather than re-deriving a piece of it, because a list
+// that merely leaves an objective out is not a gate: a guessed slug, a printed
+// QR code or a stale bookmark reaches the page directly. Every reason the list
+// would omit an objective has to be a reason the page turns it away, or they
+// are two different games.
 func (s *CheckInService) ObjectiveIsReachable(
 	ctx context.Context, team *models.Run, objective *models.Objective,
 ) (bool, error) {
-	if len(objective.Depends) == 0 {
-		return true, nil
-	}
-
-	_, state, err := s.loader.load(ctx, team)
+	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
 		return false, fmt.Errorf("loading run state: %w", err)
 	}
-	return game.EvaluateDepends(objective.Depends, state.Vars), nil
+
+	frontier := navigation.ComputeFrontier(objectives, state, complete)
+	switch frontier.StatusOf(objective.ID) {
+	case navigation.StatusAvailable, navigation.StatusFinishable, navigation.StatusComplete:
+		// Complete counts: revisiting somewhere already finished is reading it
+		// again, not reaching somewhere out of bounds.
+		return true, nil
+	case navigation.StatusLocked:
+		return false, nil
+	}
+	return false, nil
 }
 
+// GetObjectiveByQuestIDAndSlug finds an objective by slug without asking
+// whether a run can reach it. Drafts included: preview is for looking at
+// content mid-edit, and ObjectiveIsReachable is what gates a real player.
 func (s *CheckInService) GetObjectiveByQuestIDAndSlug(
 	ctx context.Context, questID, slug string,
 ) (*models.Objective, error) {

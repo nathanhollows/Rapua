@@ -173,7 +173,7 @@ func TestPlayerHandler_Journal_RendersCompletedObjectives(t *testing.T) {
 	_, objective, team := createTestObjectiveQuest(t, dbc, instanceRepo)
 
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
-	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveReveal)
+	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveProof)
 	require.NoError(t, err)
 
 	handler := players.NewTestPlayerHandler(

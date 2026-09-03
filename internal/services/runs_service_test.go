@@ -278,7 +278,7 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 	})
 
 	t.Run("one objective completed: only the other remains", func(t *testing.T) {
-		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveReveal)
+		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		incomplete, err := runService.GetIncompleteObjectives(ctx, parents.QuestID, runCode)
@@ -287,7 +287,7 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 		assert.Equal(t, obj2.ID, incomplete[0].ID)
 	})
 
-	t.Run("proof completion alone does not mark an objective complete", func(t *testing.T) {
+	t.Run("a cleared proof is what marks an objective complete", func(t *testing.T) {
 		// Its own objective, not obj1/obj2: this subtest must hold on its own,
 		// independent of whether the earlier subtests ran or what they left behind.
 		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Escape the room")
@@ -303,7 +303,8 @@ func TestRunService_GetIncompleteObjectives(t *testing.T) {
 		for i, o := range incomplete {
 			ids[i] = o.ID
 		}
-		assert.Contains(t, ids, obj3.ID)
+		assert.NotContains(t, ids, obj3.ID,
+			"the proof is the gate, and clearing it is what the frontier counts too")
 	})
 }
 
@@ -336,7 +337,7 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 	})
 
 	t.Run("one objective completed: only it is returned", func(t *testing.T) {
-		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveReveal)
+		_, err := completionRepo.Insert(ctx, runCode, obj1.ID, game.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
@@ -345,7 +346,7 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 		assert.Equal(t, obj1.ID, completed[0].ID)
 	})
 
-	t.Run("proof completion alone does not count as completed", func(t *testing.T) {
+	t.Run("a cleared proof counts as completed", func(t *testing.T) {
 		obj3, err := objectiveService.CreateObjective(ctx, parents.QuestID, "", "Escape the room")
 		require.NoError(t, err)
 
@@ -359,11 +360,12 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 		for i, o := range completed {
 			ids[i] = o.ID
 		}
-		assert.NotContains(t, ids, obj3.ID)
+		assert.Contains(t, ids, obj3.ID,
+			"the journal records what a team cleared, which is the proof")
 	})
 
-	t.Run("second objective completed: both are returned", func(t *testing.T) {
-		_, err := completionRepo.Insert(ctx, runCode, obj2.ID, game.ContextObjectiveReveal)
+	t.Run("second objective completed: all cleared ones are returned", func(t *testing.T) {
+		_, err := completionRepo.Insert(ctx, runCode, obj2.ID, game.ContextObjectiveProof)
 		require.NoError(t, err)
 
 		completed, err := runService.GetCompletedObjectives(ctx, parents.QuestID, runCode)
@@ -373,7 +375,7 @@ func TestRunService_GetCompletedObjectives(t *testing.T) {
 		for i, o := range completed {
 			ids[i] = o.ID
 		}
-		assert.ElementsMatch(t, []string{obj1.ID, obj2.ID}, ids)
+		assert.Subset(t, ids, []string{obj1.ID, obj2.ID})
 	})
 }
 
@@ -404,17 +406,17 @@ func TestRunService_GetCompletedObjectives_OrderedByCompletionTimeDesc(t *testin
 	// (obj1, obj2, obj3) must not be mistaken for completion order.
 	base := getBaseTime()
 	rows := []models.ObjectiveContextCompletion{
-		{RunCode: runCode, ObjectiveID: obj2.ID, Context: game.ContextObjectiveReveal, CompletedAt: base},
+		{RunCode: runCode, ObjectiveID: obj2.ID, Context: game.ContextObjectiveProof, CompletedAt: base},
 		{
 			RunCode:     runCode,
 			ObjectiveID: obj1.ID,
-			Context:     game.ContextObjectiveReveal,
+			Context:     game.ContextObjectiveProof,
 			CompletedAt: base.Add(time.Minute),
 		},
 		{
 			RunCode:     runCode,
 			ObjectiveID: obj3.ID,
-			Context:     game.ContextObjectiveReveal,
+			Context:     game.ContextObjectiveProof,
 			CompletedAt: base.Add(2 * time.Minute),
 		},
 	}
@@ -430,4 +432,49 @@ func TestRunService_GetCompletedObjectives_OrderedByCompletionTimeDesc(t *testin
 		ids[i] = o.ID
 	}
 	assert.Equal(t, []string{obj3.ID, obj1.ID, obj2.ID}, ids, "most recently completed first")
+}
+
+// Completing an objective is clearing its proof: that is what opens the gates
+// below it and what the frontier counts. The reveal is the payoff afterwards,
+// and it can sit unfinished (an interactive block in the reveal, a player who
+// navigated away) while the objective is done. Reporting has to agree with the
+// engine, or a team is told it has outstanding work it has already cleared.
+func TestRunService_CompletionCountsProofNotReveal(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	p := createTestParents(t, dbc)
+	teams, err := runService.AddTeams(ctx, p.QuestID, 1)
+	require.NoError(t, err)
+	runCode := teams[0].Code
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: p.QuestID, Slug: "root", Title: "Root"}
+	_, err = dbc.NewInsert().Model(root).Exec(ctx)
+	require.NoError(t, err)
+	objective := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: p.QuestID, ParentID: root.ID,
+		Slug: "cleared", Title: "Cleared", Position: 0,
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	// The proof is cleared; the reveal never is.
+	_, err = dbc.NewInsert().Model(&models.ObjectiveContextCompletion{
+		RunCode: runCode, ObjectiveID: objective.ID, Context: game.ContextObjectiveProof,
+	}).Exec(ctx)
+	require.NoError(t, err)
+
+	incomplete, err := runService.GetIncompleteObjectives(ctx, p.QuestID, runCode)
+	require.NoError(t, err)
+	assert.Empty(t, incomplete, "the objective is cleared, so nothing is outstanding")
+
+	completed, err := runService.GetCompletedObjectives(ctx, p.QuestID, runCode)
+	require.NoError(t, err)
+	require.Len(t, completed, 1)
+	assert.Equal(t, "cleared", completed[0].Slug)
+
+	counts, err := runService.CountCompletedObjectivesByRun(ctx, p.QuestID)
+	require.NoError(t, err)
+	assert.Equal(t, 1, counts[runCode])
 }
