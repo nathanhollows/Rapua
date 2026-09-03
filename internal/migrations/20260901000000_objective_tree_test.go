@@ -32,7 +32,7 @@ func TestObjectiveTreeMigration_AddsTheTreeColumns(t *testing.T) {
 }
 
 func TestObjectiveTreeMigration_DownRestoresTheOldShape(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901000000")
 	ctx := context.Background()
 
 	require.NoError(t, m20260901000000_down(ctx, dbc))
@@ -47,7 +47,7 @@ func TestObjectiveTreeMigration_DownRestoresTheOldShape(t *testing.T) {
 // Both directions are guarded on what already exists, so a retry after a
 // partial failure finishes the job instead of erroring on the half already done.
 func TestObjectiveTreeMigration_IsRepeatable(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901000000")
 	ctx := context.Background()
 
 	require.NoError(t, m20260901000000_up(ctx, dbc), "up over an already-migrated schema")

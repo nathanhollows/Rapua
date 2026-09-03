@@ -322,6 +322,7 @@ func (s *DuplicationService) duplicateObjective(
 func (s *DuplicationService) remapObjectiveParents(
 	ctx context.Context, tx *bun.Tx, sources []models.Objective, idMap map[string]string,
 ) error {
+	placements := make([]repositories.Placement, 0, len(sources))
 	for _, source := range sources {
 		if source.ParentID == "" {
 			continue
@@ -336,11 +337,9 @@ func (s *DuplicationService) remapObjectiveParents(
 			// is better than pointing the copy back into the original.
 			continue
 		}
-		if _, err := tx.NewUpdate().Model((*models.Objective)(nil)).
-			Set("parent_id = ?", newParentID).Set("position = ?", source.Position).
-			Where("id = ?", newID).Exec(ctx); err != nil {
-			return fmt.Errorf("placing duplicated objective %s: %w", newID, err)
-		}
+		placements = append(placements, repositories.Placement{
+			ObjectiveID: newID, ParentID: newParentID, Position: source.Position,
+		})
 	}
-	return nil
+	return s.objectiveRepo.PlaceTx(ctx, tx, placements)
 }

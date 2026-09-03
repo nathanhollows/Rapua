@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -54,6 +55,16 @@ type ObjectiveRepository interface {
 	// one it means has to protect it: this will accept a move that turns it
 	// into somebody's child.
 	Reposition(ctx context.Context, tx *bun.Tx, objectiveID, newParentID string, newPosition int) error
+	// PlaceTx is the only writer of parent_id and position. Every path that
+	// rearranges the tree goes through it, because (parent_id, position) is
+	// unique and SQLite checks it per statement: a row cannot take a number
+	// another row has not let go of yet, so placements have to be parked clear
+	// and settled in two passes rather than written where they belong.
+	//
+	// Callers must pass every sibling of every parent they touch. A placement
+	// settling onto a slot held by a row that was left out is the collision
+	// this exists to prevent.
+	PlaceTx(ctx context.Context, tx *bun.Tx, placements []Placement) error
 	LoadBlocks(ctx context.Context, objective *models.Objective) error
 	// Create writes one objective outside a transaction, for callers that are
 	// not already in one. It applies the same checks as CreateTx.
@@ -66,6 +77,14 @@ type ObjectiveRepository interface {
 	UpdateTx(ctx context.Context, tx *bun.Tx, objective *models.Objective) error
 	Delete(ctx context.Context, tx *bun.Tx, objectiveID string) error
 	DeleteByQuestID(ctx context.Context, tx *bun.Tx, questID string) error
+}
+
+// Placement is where one objective sits: under a parent, at an index among the
+// children placed there.
+type Placement struct {
+	ObjectiveID string
+	ParentID    string
+	Position    int
 }
 
 type objectiveRepository struct {
@@ -284,19 +303,72 @@ func (r *objectiveRepository) Reposition(
 		return err
 	}
 
+	// Both sibling lists go in one placement call, since a move between parents
+	// renumbers the list it leaves as well as the one it joins.
 	oldParentID := objective.ParentID
-	objective.ParentID = newParentID
-	if _, err := tx.NewUpdate().Model(&objective).
-		Column("parent_id").WherePK().Exec(ctx); err != nil {
-		return fmt.Errorf("moving objective: %w", err)
+	placements, err := siblingPlacements(ctx, tx, newParentID)
+	if err != nil {
+		return err
 	}
+	// A move within one parent finds the row already in the list; a move
+	// between parents has to bring it across.
+	if oldParentID != newParentID {
+		placements = append(placements, Placement{
+			ObjectiveID: objectiveID, ParentID: newParentID, Position: len(placements),
+		})
+	}
+	placements = orderPlacements(placements, objectiveID, newPosition)
 
 	if oldParentID != newParentID {
-		if err := renumberSiblings(ctx, tx, oldParentID, "", 0); err != nil {
-			return err
+		vacated, vErr := siblingPlacements(ctx, tx, oldParentID)
+		if vErr != nil {
+			return vErr
+		}
+		placements = append(placements, withoutObjective(vacated, objectiveID)...)
+	}
+
+	return r.PlaceTx(ctx, tx, placements)
+}
+
+// orderPlacements moves one entry to an index and renumbers the list densely.
+func orderPlacements(placements []Placement, movedID string, movedTo int) []Placement {
+	from := -1
+	for i := range placements {
+		if placements[i].ObjectiveID == movedID {
+			from = i
+			break
 		}
 	}
-	return renumberSiblings(ctx, tx, newParentID, objectiveID, newPosition)
+	if from < 0 {
+		return placements
+	}
+	moved := placements[from]
+	rest := append(append([]Placement{}, placements[:from]...), placements[from+1:]...)
+
+	if movedTo < 0 {
+		movedTo = 0
+	}
+	if movedTo > len(rest) {
+		movedTo = len(rest)
+	}
+	ordered := append(append(append([]Placement{}, rest[:movedTo]...), moved), rest[movedTo:]...)
+	for i := range ordered {
+		ordered[i].Position = i
+	}
+	return ordered
+}
+
+// withoutObjective drops one entry and closes the gap it leaves.
+func withoutObjective(placements []Placement, objectiveID string) []Placement {
+	out := make([]Placement, 0, len(placements))
+	for _, placement := range placements {
+		if placement.ObjectiveID == objectiveID {
+			continue
+		}
+		placement.Position = len(out)
+		out = append(out, placement)
+	}
+	return out
 }
 
 // checkNewParent rejects every move that would corrupt the tree rather than
@@ -353,69 +425,63 @@ func checkNewParent(
 	return fmt.Errorf("%w: %q", ErrParentStranded, newParentID)
 }
 
-// renumberSiblings rewrites one parent's children as 0..n-1. When movedID names
-// one of them it is lifted out and reinserted at movedTo first, so the caller's
-// index is the one the objective ends up at rather than the one it displaces.
-func renumberSiblings(ctx context.Context, tx *bun.Tx, parentID, movedID string, movedTo int) error {
-	var siblings []models.Objective
-	err := tx.NewSelect().
-		Model(&siblings).
-		Where("parent_id = ?", parentID).
-		Order("position ASC", "id ASC").
-		Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("loading siblings: %w", err)
-	}
-
-	if movedID != "" {
-		siblings = insertAt(siblings, movedID, movedTo)
-	}
-
-	for i := range siblings {
-		if siblings[i].Position == i {
-			continue
+// PlaceTx implements ObjectiveRepository.
+//
+// Two passes. The first parks every row being placed at a number nothing else
+// is using, which also applies the parent change; the second settles each onto
+// the position it was given. Writing straight to the final position instead
+// would collide with whichever row is still sitting there, which is every
+// rearrangement that is not a pure append.
+func (r *objectiveRepository) PlaceTx(ctx context.Context, tx *bun.Tx, placements []Placement) error {
+	for i, placement := range placements {
+		if _, err := tx.NewUpdate().
+			Model((*models.Objective)(nil)).
+			Set("parent_id = ?", sql.NullString{String: placement.ParentID, Valid: placement.ParentID != ""}).
+			Set("position = ?", placementParkBase+i).
+			Where("id = ?", placement.ObjectiveID).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("parking objective %s: %w", placement.ObjectiveID, err)
 		}
-		siblings[i].Position = i
-		if _, err := tx.NewUpdate().Model(&siblings[i]).
-			Column("position").WherePK().Exec(ctx); err != nil {
-			return fmt.Errorf("renumbering sibling: %w", err)
+	}
+
+	for _, placement := range placements {
+		if _, err := tx.NewUpdate().
+			Model((*models.Objective)(nil)).
+			Set("position = ?", placement.Position).
+			Where("id = ?", placement.ObjectiveID).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("placing objective %s: %w", placement.ObjectiveID, err)
 		}
 	}
 	return nil
 }
 
-// insertAt pulls the named objective out of the ordered slice and puts it back
-// at index, clamped to the slice's bounds.
-func insertAt(siblings []models.Objective, movedID string, index int) []models.Objective {
-	from := -1
+// siblingPlacements returns one parent's children as a dense placement list in
+// their current order.
+func siblingPlacements(ctx context.Context, tx *bun.Tx, parentID string) ([]Placement, error) {
+	var siblings []models.Objective
+	err := tx.NewSelect().
+		Model(&siblings).
+		Column("id", "position").
+		Where("parent_id = ?", parentID).
+		Order("position ASC", "id ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("loading siblings: %w", err)
+	}
+
+	placements := make([]Placement, len(siblings))
 	for i := range siblings {
-		if siblings[i].ID == movedID {
-			from = i
-			break
-		}
+		placements[i] = Placement{ObjectiveID: siblings[i].ID, ParentID: parentID, Position: i}
 	}
-	if from < 0 {
-		return siblings
-	}
-
-	moved := siblings[from]
-	index = max(0, min(index, len(siblings)-1))
-
-	reordered := make([]models.Objective, 0, len(siblings))
-	for i, sibling := range siblings {
-		if i == from {
-			continue
-		}
-		if len(reordered) == index {
-			reordered = append(reordered, moved)
-		}
-		reordered = append(reordered, sibling)
-	}
-	if len(reordered) == index {
-		reordered = append(reordered, moved)
-	}
-	return reordered
+	return placements, nil
 }
+
+// placementParkBase is where rows wait between the two passes of a placement.
+// Every parked row gets a distinct number from this range regardless of parent,
+// so nothing collides while the tree is half-written, and it sits far above any
+// position a real sibling list reaches.
+const placementParkBase = 1_000_000
 
 func (r *objectiveRepository) LoadBlocks(ctx context.Context, objective *models.Objective) error {
 	err := r.db.NewSelect().
