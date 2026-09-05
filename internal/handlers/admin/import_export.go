@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/middlewares"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -138,10 +139,8 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 		_ = templates.ImportErrorResult("Could not load this game.").Render(r.Context(), w)
 		return
 	}
-	if quest.GetStatus() == models.Active {
-		_ = templates.ImportErrorResult(
-			"This game is running. Stop it before importing, or duplicate it to work on a copy.",
-		).Render(r.Context(), w)
+	if !middlewares.QuestEditable(quest, r) {
+		_ = templates.ImportErrorResult(middlewares.QuestRunningMessage).Render(r.Context(), w)
 		return
 	}
 
