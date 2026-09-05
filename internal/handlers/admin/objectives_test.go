@@ -424,3 +424,40 @@ func TestObjectiveEditPost_Visibility(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, reloaded.Draft, "and an absent checkbox parks it again")
 }
+
+// A refused move must leave the tree as it was. The handler answers 200 even
+// on refusal (the toast contract), so the test reloads the order instead of
+// trusting the status code.
+func TestObjectiveReposition_MalformedPositionIsRefused(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	first, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "First")
+	require.NoError(t, err)
+	second, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "Second")
+	require.NoError(t, err)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/reposition", strings.NewReader(
+		url.Values{
+			"objective_id": {first.ID},
+			"parent_id":    {root.ID},
+			"position":     {"not-a-number"},
+		}.Encode(),
+	))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	h.ObjectiveReposition(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code, "the toast contract answers 200 even on refusal")
+
+	children, err := h.objectiveService.FindChildren(ctx, user.CurrentQuestID, root.ID)
+	require.NoError(t, err)
+	require.Len(t, children, 2)
+	assert.Equal(t, first.ID, children[0].ID, "the malformed move left the order untouched")
+	assert.Equal(t, second.ID, children[1].ID)
+}

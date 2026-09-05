@@ -357,12 +357,16 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 	require.NoError(t, err)
 	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
 	require.NoError(t, err)
+	_, err = service.CreateObjective(ctx, root.QuestID, section.ID, "Child one")
+	require.NoError(t, err)
+	_, err = service.CreateObjective(ctx, root.QuestID, section.ID, "Child two")
+	require.NoError(t, err)
 
 	settings := services.ObjectiveUpdateData{
 		Routing:     strPtr("ordered"),
 		MaxNext:     intPtr(2),
 		ChildrenMin: intPtr(1),
-		ChildrenMax: intPtr(3),
+		ChildrenMax: intPtr(2),
 		FinishLabel: strPtr("Done"),
 		Color:       strPtr("amber"),
 		Depends:     []string{"objective." + root.Slug},
@@ -380,8 +384,68 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 	require.NotNil(t, reloaded.ChildrenMin)
 	assert.Equal(t, 1, *reloaded.ChildrenMin)
 	require.NotNil(t, reloaded.ChildrenMax)
-	assert.Equal(t, 3, *reloaded.ChildrenMax)
+	assert.Equal(t, 2, *reloaded.ChildrenMax)
 	assert.Equal(t, "Done", reloaded.FinishLabel)
 	assert.Equal(t, "amber", reloaded.Color)
 	assert.Equal(t, []string{"objective." + root.Slug}, []string(reloaded.Depends))
+}
+
+// A band above the child count can never be met, so the service refuses it
+// the way lint refuses a document (BAND_OUT_OF_RANGE).
+func TestObjectiveService_UpdateObjective_BandBeyondChildCountIsRefused(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+	_, err = service.CreateObjective(ctx, root.QuestID, section.ID, "Only child")
+	require.NoError(t, err)
+
+	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		ChildrenMin: intPtr(5),
+		ChildrenMax: intPtr(7),
+	})
+	require.ErrorIs(t, err, services.ErrInvalidBand)
+
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
+	require.NoError(t, err)
+	assert.Nil(t, reloaded.ChildrenMin, "the refused band was not written")
+	assert.Nil(t, reloaded.ChildrenMax)
+}
+
+// A depends entry naming one of the objective's own descendants is a gate
+// that can never open: nothing below can complete before the objective.
+func TestObjectiveService_UpdateObjective_DependsOnOwnDescendantIsRefused(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+	child, err := service.CreateObjective(ctx, root.QuestID, section.ID, "Child")
+	require.NoError(t, err)
+
+	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Depends: []string{"objective." + child.Slug},
+	})
+	require.ErrorIs(t, err, services.ErrDependsOnDescendant)
+
+	// A negated entry is refused too: the check cannot tell a deadlock from
+	// a trivially true gate, and both are mistakes.
+	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Depends: []string{"not objective." + child.Slug},
+	})
+	require.ErrorIs(t, err, services.ErrDependsOnDescendant)
+
+	// A sibling is fine.
+	other, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Sibling")
+	require.NoError(t, err)
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Depends: []string{"objective." + other.Slug},
+	}))
 }

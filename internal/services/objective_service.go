@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
@@ -49,6 +50,10 @@ var ErrInvalidRouting = errors.New("invalid routing")
 // ErrInvalidBand mirrors lint's BAND_MIN_EXCEEDS_MAX rule.
 var ErrInvalidBand = errors.New("invalid completion band")
 
+// ErrDependsOnDescendant means a depends entry names the objective it sits on,
+// or one of its descendants: a gate that can never open.
+var ErrDependsOnDescendant = errors.New("depends names the objective or one of its descendants")
+
 type objectiveService struct {
 	transactor    db.Transactor
 	objectiveRepo repositories.ObjectiveRepository
@@ -64,10 +69,78 @@ func NewObjectiveService(
 	}
 }
 
+// applySettings validates and applies the settings an update names, refusing
+// any that cannot stand: a depends entry naming its own subtree, or a band
+// its child count can never meet.
+func (s objectiveService) applySettings(
+	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
+) (bool, error) {
+	if data.Depends != nil {
+		if err := s.checkDependsNotOwnSubtree(ctx, objective, data.Depends); err != nil {
+			return false, err
+		}
+	}
+
+	childCount := 0
+	if data.ChildrenMin != nil || data.ChildrenMax != nil {
+		count, err := s.objectiveRepo.FindChildrenCount(ctx, objective.ID)
+		if err != nil {
+			return false, fmt.Errorf("counting children to check the band: %w", err)
+		}
+		childCount = count
+	}
+
+	return applyObjectiveSettings(objective, data, childCount)
+}
+
+// checkDependsNotOwnSubtree refuses a depends entry naming the objective or
+// one of its descendants: nothing below the objective can complete before the
+// objective itself, so such a gate never opens. Names that resolve to nothing
+// are left alone: that is lint's business.
+func (s objectiveService) checkDependsNotOwnSubtree(
+	ctx context.Context, objective *models.Objective, depends []string,
+) error {
+	var slugs []string
+	for _, entry := range depends {
+		name := strings.TrimSpace(entry)
+		name = strings.TrimPrefix(name, "not ")
+		if slug, ok := strings.CutPrefix(name, "objective."); ok {
+			slugs = append(slugs, slug)
+		}
+	}
+	if len(slugs) == 0 {
+		return nil
+	}
+
+	tree, err := s.objectiveRepo.FindTreeByQuestID(ctx, objective.QuestID)
+	if err != nil {
+		return fmt.Errorf("loading the tree to check depends: %w", err)
+	}
+	parentOf := make(map[string]string, len(tree))
+	slugToID := make(map[string]string, len(tree))
+	for _, obj := range tree {
+		parentOf[obj.ID] = obj.ParentID
+		slugToID[obj.Slug] = obj.ID
+	}
+
+	for _, slug := range slugs {
+		namedID, ok := slugToID[slug]
+		if !ok {
+			continue
+		}
+		for id := namedID; id != ""; id = parentOf[id] {
+			if id == objective.ID {
+				return fmt.Errorf("%w: %q", ErrDependsOnDescendant, slug)
+			}
+		}
+	}
+	return nil
+}
+
 // applyObjectiveSettings applies every setting the update data names, leaving
 // everything else alone. It is split out of UpdateObjective to keep that
 // function's branching readable.
-func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateData, childCount int) (bool, error) {
 	changed := false
 
 	if data.Routing != nil && *data.Routing != string(objective.Routing) {
@@ -88,7 +161,7 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 		changed = true
 	}
 
-	if bandChanged, err := applyObjectiveBand(objective, data); err != nil {
+	if bandChanged, err := applyObjectiveBand(objective, data, childCount); err != nil {
 		return false, err
 	} else if bandChanged {
 		changed = true
@@ -114,8 +187,10 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 
 // applyObjectiveBand validates the two bounds together, because min > max only
 // means something once both are known. A bound the update does not name checks
-// the one it does against the objective's current value.
-func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+// the one it does against the objective's current value. Lint's own rule
+// (BAND_OUT_OF_RANGE) is mirrored here because this mutation path bypasses it,
+// and a bound above the child count can never be met.
+func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData, childCount int) (bool, error) {
 	if data.ChildrenMin == nil && data.ChildrenMax == nil {
 		return false, nil
 	}
@@ -136,6 +211,18 @@ func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData) (
 	}
 	if minBound != nil && maxBound != nil && *minBound > *maxBound {
 		return false, fmt.Errorf("%w: min %d exceeds max %d", ErrInvalidBand, *minBound, *maxBound)
+	}
+	if minBound != nil && *minBound > childCount {
+		return false, fmt.Errorf(
+			"%w: children_min (%d) exceeds the %d children below this objective",
+			ErrInvalidBand, *minBound, childCount,
+		)
+	}
+	if maxBound != nil && *maxBound > childCount {
+		return false, fmt.Errorf(
+			"%w: children_max (%d) exceeds the %d children below this objective",
+			ErrInvalidBand, *maxBound, childCount,
+		)
 	}
 
 	objective.ChildrenMin = minBound
@@ -294,7 +381,7 @@ func (s objectiveService) UpdateObjective(
 		update = true
 	}
 
-	settingsChanged, err := applyObjectiveSettings(objective, data)
+	settingsChanged, err := s.applySettings(ctx, objective, data)
 	if err != nil {
 		return err
 	}

@@ -69,15 +69,22 @@ templ questLockScript(quest models.Quest) {
 
 			const lock = (on) => {
 				main.querySelectorAll(
-					'input, textarea, select, button:not([data-ignore-lock])'
+					'input:not([data-ignore-lock]), textarea, select, button:not([data-ignore-lock])'
 				).forEach((el) => {
 					if (el.closest('#quest-unlock, #confirm_unlock_modal')) return;
 					el.disabled = on;
+					// The cursor says "locked," not "broken": a disabled
+					// control that still invites a click reads as a bug.
+					el.classList.toggle('cursor-not-allowed', on);
 				});
 				// Drag handles are icons, not form controls, so the loop above
 				// misses them and a locked tree would still accept a drag. The
 				// server refuses the POST, but the card would sit where the
 				// database does not have it.
+				document.querySelectorAll('#objective-tree .objective-drag-handle').forEach((el) => {
+					el.classList.toggle('cursor-not-allowed', on);
+					el.classList.toggle('cursor-move', !on);
+				});
 				document.querySelectorAll('#objective-tree .objective-children').forEach((list) => {
 					if (list._objectiveSortable) list._objectiveSortable.option('disabled', on);
 				});

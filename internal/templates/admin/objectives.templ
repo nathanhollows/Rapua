@@ -95,7 +95,7 @@ templ EditObjective(data EditObjectiveData) {
 						remove .hidden from #visibility-eye
 						set #visibility-label's textContent to 'Published'
 					else
-						remove .hidden from #visibility-eye
+						add .hidden to #visibility-eye
 						remove .hidden from #visibility-eye-off
 						set #visibility-label's textContent to 'Draft'
 					end"
@@ -185,6 +185,10 @@ templ EditObjective(data EditObjectiveData) {
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Routing</legend>
 						<select name="routing" form="edit-objective" class="select w-full">
+							<!-- The zero value plays as free roam, and without
+							this entry any unrelated save would submit the first
+							listed strategy instead of what is stored. -->
+							<option value="" selected?={ data.Objective.Routing == "" }>Default (free roam)</option>
 							for _, rs := range models.GetRouteStrategies() {
 								<option value={ string(rs) } selected?={ data.Objective.Routing == rs }>{ rs.String() }</option>
 							}
@@ -384,7 +388,6 @@ templ EditObjective(data EditObjectiveData) {
 	@previewSortableScript()
 	@blockMoveScript()
 	@sortableStyles()
-	@bandExplainerScript()
 }
 
 // bandExplainerScript shows the band's plain-language meaning live: min==max

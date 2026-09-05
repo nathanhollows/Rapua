@@ -57,7 +57,9 @@ func (s *BlockService) FindByOwnerIDAndContext(
 }
 
 // FindPointsByOwnerIDs sums each owner's block points in one query, to avoid
-// an N+1 fetch per row. An owner with no points is absent from the map, not present with 0.
+// an N+1 fetch per row. An owner whose blocks carry no points is absent from
+// the map, not present with 0: the badge renders only for a nonzero total,
+// and membership by block row alone would claim one anyway.
 func (s *BlockService) FindPointsByOwnerIDs(ctx context.Context, ownerIDs []string) (map[string]int, error) {
 	blockModels, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
 	if err != nil {
@@ -66,6 +68,11 @@ func (s *BlockService) FindPointsByOwnerIDs(ctx context.Context, ownerIDs []stri
 	points := make(map[string]int, len(ownerIDs))
 	for _, b := range blockModels {
 		points[b.OwnerID] += b.Points
+	}
+	for ownerID, total := range points {
+		if total == 0 {
+			delete(points, ownerID)
+		}
 	}
 	return points, nil
 }
@@ -90,7 +97,10 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	// objective's proof/reveal zone. Reject it here, not just at import/lint
 	// time (game.Lint via blocks.Registry already covers that separate path).
 	if !blocks.CanBlockBeUsedInContext(blockType, blockContext) {
-		return nil, fmt.Errorf("%w: block type %q cannot be used in context %q", ErrBlockNotValidForContext, blockType, blockContext)
+		return nil, fmt.Errorf(
+			"%w: block type %q cannot be used in context %q",
+			ErrBlockNotValidForContext, blockType, blockContext,
+		)
 	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{

@@ -84,12 +84,10 @@ func TestBlockService_NewBlockWithOwnerAndContext_RejectsWrongContext(t *testing
 	// one mid-quest, in an objective's proof/reveal zone, must be rejected
 	// server-side, not just hidden by the admin dropdown's client-side filter.
 	_, err := svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, "team_name")
-	require.Error(t, err)
-	assert.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+	require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
 
 	_, err = svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextObjectiveReveal, "team_name")
-	require.Error(t, err)
-	assert.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+	require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
 
 	// Sanity check: team_name in its actual home context still works.
 	blk, err := svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextStart, "team_name")

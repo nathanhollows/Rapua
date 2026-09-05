@@ -30,7 +30,7 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	points, err := h.blockService.FindPointsByOwnerIDs(r.Context(), objectiveIDs)
 	if err != nil {
 		h.handleError(
-			w, r, "Locations: loading objective points", "Error loading quest",
+			w, r, "Locations: loading objective points", "Error loading point badges",
 			"error", err, "quest_id", user.CurrentQuestID,
 		)
 		return
@@ -68,6 +68,7 @@ func buildObjectiveTree(
 	}
 
 	var root models.Objective
+	attached := make(map[string]bool, len(objectives))
 	for _, obj := range objectives {
 		node := nodes[obj.ID]
 		if obj.ParentID == "" {
@@ -76,20 +77,30 @@ func buildObjectiveTree(
 			root = obj
 			continue
 		}
-		// An orphan or a cycle is left out of the tree rather than guessed at.
 		parent, ok := nodes[obj.ParentID]
 		if !ok {
 			continue
 		}
+		attached[obj.ID] = true
 		node.Draft = obj.Draft
 		node.OutOfPlay = obj.Draft || parent.OutOfPlay
 		parent.Children = append(parent.Children, node)
 	}
 
+	var topLevel []*templates.ObjectiveTreeNode
 	if node, ok := nodes[root.ID]; ok {
-		return root, node.Children
+		topLevel = node.Children
 	}
-	return root, nil
+	// A row whose parent is missing would otherwise vanish with its subtree,
+	// and damage nobody can see is damage nobody can mend: it is shown at the
+	// top level instead, so the operator can drag it back where it belongs.
+	for _, obj := range objectives {
+		if obj.ParentID == "" || attached[obj.ID] {
+			continue
+		}
+		topLevel = append(topLevel, nodes[obj.ID])
+	}
+	return root, topLevel
 }
 
 // StartPageEdit shows the start page editor.

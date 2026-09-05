@@ -189,7 +189,22 @@ func parseDepends(raw string) []string {
 }
 
 // dependsOptions is sorted so the picker doesn't reshuffle between renders.
+// The objective's own descendants are excluded: naming one is a gate that can
+// never open.
 func dependsOptions(objectives []models.Objective, excludeID string) []string {
+	parentOf := make(map[string]string, len(objectives))
+	for _, obj := range objectives {
+		parentOf[obj.ID] = obj.ParentID
+	}
+	isDescendant := func(id string) bool {
+		for p := id; p != ""; p = parentOf[p] {
+			if p == excludeID {
+				return true
+			}
+		}
+		return false
+	}
+
 	seen := make(map[string]bool)
 	var opts []string
 	add := func(name string) {
@@ -200,7 +215,7 @@ func dependsOptions(objectives []models.Objective, excludeID string) []string {
 		opts = append(opts, name)
 	}
 	for _, obj := range objectives {
-		if obj.ID != excludeID {
+		if obj.ID != excludeID && !isDescendant(obj.ID) {
 			add(obj.Slug)
 		}
 		for _, s := range obj.ProofSets {
@@ -274,7 +289,8 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 	if errors.Is(err, services.ErrParkingBreaksBand) ||
 		errors.Is(err, services.ErrCannotDraftRoot) ||
 		errors.Is(err, services.ErrInvalidRouting) ||
-		errors.Is(err, services.ErrInvalidBand) {
+		errors.Is(err, services.ErrInvalidBand) ||
+		errors.Is(err, services.ErrDependsOnDescendant) {
 		h.handleError(w, r, "ObjectiveEditPost: refused settings change", err.Error(), "error", err)
 		return
 	}
