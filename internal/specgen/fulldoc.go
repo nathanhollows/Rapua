@@ -154,20 +154,35 @@ func documentSpec() ObjectSpec { //nolint:funlen
 		},
 		dependsFieldSpec(),
 		{
+			Name: "draft",
+			Type: "bool",
+			Description: "Holds this objective out of play along with everything beneath it, without " +
+				"moving any of them: it keeps its place and its children, so publishing restores exactly " +
+				"what was there. The flag is never written downward, so a child of a draft carries none " +
+				"of its own. Omitting the key leaves an existing objective's state alone; only an " +
+				"explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section " +
+				"whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT).",
+		},
+		{
 			Name:     "proof",
 			Type:     "object",
 			Required: true,
 			Description: "Blocks and sets shown/fired while the objective is unproven. A non-empty proof " +
 				"must contain at least one interactive block, or it gates nothing. Proof gates children " +
-				"too: nothing below this objective is reachable until its proof clears.",
+				"too: nothing below this objective is reachable until its proof clears. Clearing the " +
+				"proof is what completes an objective, which is what the frontier, the journal and the " +
+				"leaderboard all count. The root carries no proof or reveal content of its own " +
+				"(ROOT_HAS_CONTENT).",
 			Fields: objectiveContextFields,
 		},
 		{
-			Name:        "reveal",
-			Type:        "object",
-			Required:    true,
-			Description: "Blocks and sets shown/fired once proof completes.",
-			Fields:      objectiveContextFields,
+			Name:     "reveal",
+			Type:     "object",
+			Required: true,
+			Description: "Blocks and sets shown/fired once proof completes. On a section this is its own " +
+				"content, and the section is offered to a player until they have seen it, then steps " +
+				"back and its children are offered in its place.",
+			Fields: objectiveContextFields,
 		},
 		{
 			Name: "routing",

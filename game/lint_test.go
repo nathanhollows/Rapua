@@ -176,6 +176,15 @@ func TestLint_InvalidRouting(t *testing.T) {
 	assert.Equal(t, "INVALID_ROUTING", result.Errors[0].Code)
 }
 
+// An empty routing falls to the same INVALID_ROUTING default as a bogus one:
+// there is no "not set" state for a section with published children.
+func TestLint_MissingRoutingOnSection(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.Children[0].Routing = ""
+	result := game.Lint(doc, newTestRegistry())
+	require.True(t, result.HasError("INVALID_ROUTING"))
+}
+
 func TestLint_UnknownBlockType(t *testing.T) {
 	doc := validDoc()
 	leaf(doc).Reveal = game.ObjectiveContextDoc{
