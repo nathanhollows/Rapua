@@ -227,7 +227,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Required:    true,
 				Description: "Game-wide settings.",
 				Fields: []game.FieldSpec{
-					{Name: "show_team_count", Type: "bool", Description: "Show how many teams are at each objective."},
 					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
 					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
 				},

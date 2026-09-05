@@ -17,7 +17,6 @@ type GameDoc struct {
 
 // SettingsDoc mirrors QuestSettings fields.
 type SettingsDoc struct {
-	ShowTeamCount   bool `json:"show_team_count"`
 	EnablePoints    bool `json:"enable_points"`
 	ShowLeaderboard bool `json:"show_leaderboard"`
 }

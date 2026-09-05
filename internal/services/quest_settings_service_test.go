@@ -26,9 +26,8 @@ func createTestQuestSettings(t *testing.T) *models.QuestSettings {
 	t.Helper()
 
 	return &models.QuestSettings{
-		QuestID:       gofakeit.UUID(),
-		ShowTeamCount: false,
-		EnablePoints:  true,
+		QuestID:      gofakeit.UUID(),
+		EnablePoints: true,
 	}
 }
 
@@ -79,8 +78,6 @@ func TestQuestSettingsService_SaveSettings(t *testing.T) {
 			name   string
 			modify func(*models.QuestSettings)
 		}{
-			{"ShowTeamCount true", func(s *models.QuestSettings) { s.ShowTeamCount = true }},
-			{"ShowTeamCount false", func(s *models.QuestSettings) { s.ShowTeamCount = false }},
 			{"EnablePoints true", func(s *models.QuestSettings) { s.EnablePoints = true }},
 			{"EnablePoints false", func(s *models.QuestSettings) { s.EnablePoints = false }},
 		}

@@ -223,7 +223,6 @@ func (s *ImportService) importCreate(
 	// Create QuestSettings
 	settings := &models.QuestSettings{
 		QuestID:         newInstance.ID,
-		ShowTeamCount:   doc.Settings.ShowTeamCount,
 		EnablePoints:    doc.Settings.EnablePoints,
 		ShowLeaderboard: doc.Settings.ShowLeaderboard,
 	}
@@ -371,7 +370,6 @@ func (s *ImportService) importUpdate(
 	if err != nil {
 		return nil, fmt.Errorf("load settings: %w", err)
 	}
-	settings.ShowTeamCount = doc.Settings.ShowTeamCount
 	settings.EnablePoints = doc.Settings.EnablePoints
 	settings.ShowLeaderboard = doc.Settings.ShowLeaderboard
 	if err := s.instanceSettingsRepo.UpdateTx(ctx, tx, settings); err != nil {

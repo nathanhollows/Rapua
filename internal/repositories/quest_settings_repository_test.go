@@ -101,7 +101,6 @@ func TestQuestSettingsRepository_GetByQuestID(t *testing.T) {
 	// Create test settings
 	settings := &models.QuestSettings{
 		QuestID:         parents.QuestID,
-		ShowTeamCount:   gofakeit.Bool(),
 		EnablePoints:    true,
 		ShowLeaderboard: gofakeit.Bool(),
 	}

@@ -100,7 +100,6 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		ID:    questID,
 		Name:  instance.Name,
 		Settings: game.SettingsDoc{
-			ShowTeamCount:   settings.ShowTeamCount,
 			EnablePoints:    settings.EnablePoints,
 			ShowLeaderboard: settings.ShowLeaderboard,
 		},

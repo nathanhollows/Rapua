@@ -84,11 +84,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "required": true,
         "fields": [
           {
-            "name": "show_team_count",
-            "type": "bool",
-            "description": "Show how many teams are at each objective."
-          },
-          {
             "name": "enable_points",
             "type": "bool",
             "description": "Enable the points system."
