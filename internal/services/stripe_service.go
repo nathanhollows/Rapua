@@ -248,7 +248,7 @@ func (s *StripeService) ProcessWebhook(ctx context.Context, payload []byte, sign
 }
 
 // handleCheckoutSessionCompleted processes successful checkout sessions.
-func (s *StripeService) handleCheckoutSessionCompleted( //nolint:gocognit,funlen
+func (s *StripeService) handleCheckoutSessionCompleted( //nolint:funlen
 	ctx context.Context,
 	event *stripe.Event,
 ) error {
@@ -300,6 +300,11 @@ func (s *StripeService) handleCheckoutSessionCompleted( //nolint:gocognit,funlen
 		}
 	}
 
+	// Everything Stripe has to be asked for is resolved before the write: a
+	// network call inside the transaction holds the write lock for as long as
+	// Stripe takes to answer.
+	paymentID, receiptURL := s.paymentAndReceipt(ctx, sess, purchase.ID)
+
 	// Start transaction to ensure atomicity
 	tx, err := s.transactor.BeginTx(ctx, nil)
 	if err != nil {
@@ -337,33 +342,21 @@ func (s *StripeService) handleCheckoutSessionCompleted( //nolint:gocognit,funlen
 		return fmt.Errorf("updating purchase status: %w", err)
 	}
 
-	// Update payment ID and fetch receipt URL if available
-	if sess.PaymentIntent != nil { //nolint:nestif // payment intent and receipt URL retrieval requires nested nil checks
-		paymentID := sess.PaymentIntent.ID
+	// Stripe may not have both yet, so each is written only when present.
+	if paymentID != "" {
 		err = s.purchaseRepo.UpdateStripePaymentIDWithTx(ctx, tx, purchase.ID, paymentID)
 		if err != nil {
 			return fmt.Errorf("updating payment ID: %w", err)
 		}
-
-		// Fetch the charge to get the receipt URL
-		// Note: We retrieve the latest charge for this payment intent
-		chargeParams := &stripe.ChargeListParams{
-			PaymentIntent: stripe.String(paymentID),
-		}
-		chargeParams.Limit = stripe.Int64(1)
-		chargeIter := charge.List(chargeParams)
-		if chargeIter.Next() {
-			ch := chargeIter.Charge()
-			if ch.ReceiptURL != "" {
-				err = s.purchaseRepo.UpdateReceiptURLWithTx(ctx, tx, purchase.ID, ch.ReceiptURL)
-				if err != nil {
-					// Log error but don't fail the transaction - receipt URL is nice to have
-					s.logger.ErrorContext(ctx, "updating receipt URL",
-						"purchase_id", purchase.ID,
-						"error", err,
-					)
-				}
-			}
+	}
+	if receiptURL != "" {
+		err = s.purchaseRepo.UpdateReceiptURLWithTx(ctx, tx, purchase.ID, receiptURL)
+		if err != nil {
+			// The receipt is nice to have, not part of the payment.
+			s.logger.ErrorContext(ctx, "updating receipt URL",
+				"purchase_id", purchase.ID,
+				"error", err,
+			)
 		}
 	}
 
@@ -381,6 +374,34 @@ func (s *StripeService) handleCheckoutSessionCompleted( //nolint:gocognit,funlen
 	)
 
 	return nil
+}
+
+// paymentAndReceipt resolves what Stripe knows about a settled session. It
+// runs before the write transaction, because a network call inside one holds
+// the write lock open for as long as Stripe takes to answer. A missing receipt
+// is not an error: it is nice to have, and the purchase is paid either way.
+func (s *StripeService) paymentAndReceipt(
+	ctx context.Context, sess stripe.CheckoutSession, purchaseID string,
+) (string, string) {
+	if sess.PaymentIntent == nil {
+		return "", ""
+	}
+	paymentID := sess.PaymentIntent.ID
+	receiptURL := ""
+
+	chargeParams := &stripe.ChargeListParams{PaymentIntent: stripe.String(paymentID)}
+	chargeParams.Limit = stripe.Int64(1)
+	chargeIter := charge.List(chargeParams)
+	if chargeIter.Next() {
+		receiptURL = chargeIter.Charge().ReceiptURL
+	}
+	if err := chargeIter.Err(); err != nil {
+		s.logger.ErrorContext(ctx, "fetching charge for receipt URL",
+			"purchase_id", purchaseID,
+			"error", err,
+		)
+	}
+	return paymentID, receiptURL
 }
 
 // handleCheckoutSessionFailed processes failed checkout sessions.
