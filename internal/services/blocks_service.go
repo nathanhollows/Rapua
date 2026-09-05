@@ -56,6 +56,20 @@ func (s *BlockService) FindByOwnerIDAndContext(
 	return s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
 }
 
+// FindPointsByOwnerIDs sums each owner's block points in one query, to avoid
+// an N+1 fetch per row. An owner with no points is absent from the map, not present with 0.
+func (s *BlockService) FindPointsByOwnerIDs(ctx context.Context, ownerIDs []string) (map[string]int, error) {
+	blockModels, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("finding blocks: %w", err)
+	}
+	points := make(map[string]int, len(ownerIDs))
+	for _, b := range blockModels {
+		points[b.OwnerID] += b.Points
+	}
+	return points, nil
+}
+
 // NewBlockWithOwnerAndContext creates a new block for an owner with specific context.
 func (s *BlockService) NewBlockWithOwnerAndContext(
 	ctx context.Context,

@@ -187,6 +187,26 @@ p.label {
   @apply transition-transform duration-300;
 }
 
+/* <details>/<summary> replaces daisyUI's .dropdown here: its open/close and
+   placement depend on newer CSS that proved unreliable with many instances
+   on one page. This just hides the native disclosure marker. */
+.settings-picker > summary {
+  list-style: none;
+}
+.settings-picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Removes the native up/down spinner from a number input. */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
+
 /* Hover highlighting for admin blocks when preview is hovered */
 .admin-block-highlighted {
   @apply outline-2 outline-offset-4 outline-base-content rounded-2xl transition-all duration-100;
@@ -212,40 +232,6 @@ p.label {
   @apply link;
 }
 
-.card[data-group-color="secondary"] {
-  --p: var(--s);
-  --pc: var(--sc);
-}
-
-.card[data-group-color="accent"] {
-  --p: var(--a);
-  --pc: var(--ac);
-}
-
-.card[data-group-color="success"] {
-  --p: var(--su);
-  --pc: var(--suc);
-}
-
-.card[data-group-color="info"] {
-  --p: var(--in);
-  --pc: var(--inc);
-}
-
-.card[data-group-color="warning"] {
-  --p: var(--wa);
-  --pc: var(--wac);
-}
-
-.card[data-group-color="error"] {
-  --p: var(--er);
-  --pc: var(--erc);
-}
-
-.card[data-group-color="base"] {
-  --p: var(--b2);
-  --pc: var(--b2c);
-}
 
 /* Basics */
 .mapboxgl-ctrl-geocoder,
@@ -537,31 +523,7 @@ p.label {
   @apply opacity-100 pointer-events-auto;
 }
 
-/* Ensure empty groups have a visible drop target */
-.locations-area:not([data-unassigned]) {
-  @apply min-h-12;
-}
-
-/* Border-radius and border-collapse for objective items.
-   Uses general sibling combinator (~) to skip insert zone elements. */
-.locations-area > .objective-item {
-  @apply rounded-none;
-}
-.locations-area > .objective-item:not(.objective-item ~ .objective-item) {
-  @apply rounded-t-2xl;
-}
-.locations-area > .objective-item:not(:has(~ .objective-item)) {
-  @apply rounded-b-2xl;
-}
-.locations-area > .objective-item ~ .objective-item {
-  @apply -mt-px;
-}
-
-/* Unassigned items: subdued appearance */
-.locations-area[data-unassigned] > .objective-item {
-  @apply text-sm opacity-70;
-}
-.locations-area[data-unassigned] > .objective-item:hover {
-  @apply opacity-90;
-}
+/* Leaf run corner-rounding is computed and applied as inline styles by
+   updateJoinRounding (objective_tree.templ), not here: CSS-only attempts
+   kept losing to daisyUI's own cascade at a run's edges. */
 

@@ -340,3 +340,48 @@ func TestObjectiveService_UpdateObjective_ParkingUnderAnOmittedBandIsFine(t *tes
 	require.NoError(t, service.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: &parked}))
 	assert.True(t, child.Draft)
 }
+
+func strPtr(s string) *string { return &s }
+
+func intPtr(v int) *int { return &v }
+
+// The tree's eye toggle posts Draft alone, so a nil field must mean
+// "unchanged," or one click wipes the section's routing, band, colour, label
+// and depends.
+func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+
+	settings := services.ObjectiveUpdateData{
+		Routing:     strPtr("ordered"),
+		MaxNext:     intPtr(2),
+		ChildrenMin: intPtr(1),
+		ChildrenMax: intPtr(3),
+		FinishLabel: strPtr("Done"),
+		Color:       strPtr("amber"),
+		Depends:     []string{"objective." + root.Slug},
+	}
+	require.NoError(t, service.UpdateObjective(ctx, &section, settings))
+
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{Draft: &published}))
+
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
+	require.NoError(t, err)
+	assert.False(t, reloaded.Draft, "the toggle publishes")
+	assert.Equal(t, "ordered", string(reloaded.Routing), "routing survives the toggle")
+	assert.Equal(t, 2, reloaded.MaxNext)
+	require.NotNil(t, reloaded.ChildrenMin)
+	assert.Equal(t, 1, *reloaded.ChildrenMin)
+	require.NotNil(t, reloaded.ChildrenMax)
+	assert.Equal(t, 3, *reloaded.ChildrenMax)
+	assert.Equal(t, "Done", reloaded.FinishLabel)
+	assert.Equal(t, "amber", reloaded.Color)
+	assert.Equal(t, []string{"objective." + root.Slug}, []string(reloaded.Depends))
+}

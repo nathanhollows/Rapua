@@ -2,69 +2,638 @@ package templates
 
 import (
 	"fmt"
+
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// ObjectiveTreeNode is one row of the quest builder: an objective and the
-// depth it sits at, flattened for rendering.
+// ObjectiveTreeNode is one objective in the tree. Root has no node of its
+// own; its children are the tree's top level.
 type ObjectiveTreeNode struct {
 	Objective models.Objective
-	Depth     int
-	IsSection bool
+	Children  []*ObjectiveTreeNode
 	// Draft is the flag on this row: the author parked this one.
 	Draft bool
-	// OutOfPlay is true for a draft and for everything beneath one. Drafting
-	// gates a subtree without marking it, so a row can be invisible to players
-	// while carrying no flag of its own, and the builder has to show that or
-	// the operator edits content they cannot see the state of.
+	// OutOfPlay is true for this row or an ancestor being drafted.
 	OutOfPlay bool
+	// Points sums this objective's own proof+reveal blocks; never a rollup
+	// of children.
+	Points int
 }
 
-// ObjectiveTree lists a quest's objectives in tree order. Reordering and
-// reparenting are not offered here: an objective's place is changed by editing
-// it, and the drag-and-drop editor is its own screen.
-templ ObjectiveTree(nodes []ObjectiveTreeNode) {
-	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5">
+// visibilityTip names what a click on the eye toggle will do.
+func visibilityTip(node *ObjectiveTreeNode) string {
+	switch {
+	case node.Draft:
+		return "Draft: click to publish"
+	case node.OutOfPlay:
+		return "Hidden: a parent is a draft"
+	default:
+		return "Published: click to park"
+	}
+}
+
+// maxNextValue renders 0 as blank: 0 means no limit, not an explicit cap.
+func maxNextValue(v int) string {
+	if v == 0 {
+		return ""
+	}
+	return fmt.Sprint(v)
+}
+
+// routingIcon and routingLabel show the routing currently chosen, not a
+// generic settings icon.
+func routingIcon(r models.RouteStrategy) string {
+	switch r {
+	case models.RouteStrategyOrdered:
+		return "milestone"
+	case models.RouteStrategyFreeRoam:
+		return "footprints"
+	case models.RouteStrategyRandomised:
+		return "shuffle"
+	default:
+		return "route"
+	}
+}
+
+func routingLabel(r models.RouteStrategy) string {
+	if r == "" {
+		return "Routing"
+	}
+	return r.String()
+}
+
+// bandSummary is the completion band in player-facing words, not a raw
+// fraction.
+func bandSummary(min, max *int, childCount int) string {
+	if min == nil && max == nil {
+		return "Complete all"
+	}
+	lo := 0
+	if min != nil {
+		lo = *min
+	}
+	hi := childCount
+	if max != nil {
+		hi = *max
+	}
+	switch {
+	case lo >= hi && hi == childCount:
+		return "Complete all"
+	case lo >= hi:
+		return fmt.Sprintf("Complete %d", hi)
+	case lo == 0 && hi == childCount:
+		return "Complete any"
+	case lo == 0:
+		return fmt.Sprintf("Complete up to %d", hi)
+	case hi == childCount:
+		return fmt.Sprintf("Complete %d+", lo)
+	default:
+		return fmt.Sprintf("Complete %d–%d", lo, hi)
+	}
+}
+
+// ObjectiveTree renders the quest builder tree. A drop posts to
+// /admin/objective/reposition and the tree is re-fetched, since a refused
+// move must be shown as it actually landed.
+//
+// root gets no card of its own, but still needs a routing picker for the
+// quest's top-level routing; the bar above the tree reuses the section
+// routing picker for that.
+templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
+	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5" hx-boost="true">
 		<h1 class="text-2xl font-bold">Quest</h1>
-		<a href="/admin/objectives/new" class="btn btn-primary btn-sm">
+		<a href="/admin/objective/new" class="btn btn-primary btn-sm">
 			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
 			New objective
 		</a>
 	</div>
-	if len(nodes) == 0 {
-		<div class="p-5">
+	@objectiveSystemPageLink("Start", "/admin/quest/start")
+	<div id="objective-tree" class="px-6" hx-boost="true">
+		<div class="flex flex-wrap items-center justify-between gap-3 pb-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(len(nodes)) }>
+			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root})
+			<label class="input input-sm flex items-center gap-2 w-60">
+				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
+				<input
+					id="search-objectives"
+					type="text"
+					class="grow"
+					placeholder="Search objectives"
+					autocomplete="off"
+				/>
+				<button
+					id="clear-search-objectives"
+					type="button"
+					class="btn btn-xs btn-circle invisible -mr-2"
+				>
+					@icon("x", templ.Attributes{"class": "w-4 h-4 opacity-80"})
+				</button>
+			</label>
+		</div>
+		if len(nodes) == 0 {
 			<div role="alert" class="alert">
 				@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 				<span>This quest has no objectives yet.</span>
 			</div>
+		} else {
+			<ul class="objective-children join join-vertical flex flex-col w-full" data-parent-id={ root.ID }>
+				for _, node := range nodes {
+					@objectiveNode(node, enablePoints)
+				}
+			</ul>
+		}
+	</div>
+	@objectiveSystemPageLink("Complete", "/admin/quest/complete")
+	@objectiveSortableScript()
+}
+
+// objectiveSystemPageLink sits outside #objective-tree: it never changes on a tree refresh.
+templ objectiveSystemPageLink(label, href string) {
+	<div class="px-6 py-4">
+		<div class="bg-base-200 p-4 border border-primary/20 rounded-2xl">
+			<div class="flex items-center gap-3">
+				<span class="tooltip tooltip-right" data-tip="System page: cannot be moved">
+					@icon("lock", templ.Attributes{"class": "w-5 h-5 text-primary"})
+				</span>
+				<span class="badge badge-primary badge-sm tooltip tooltip-right" data-tip="Automatically included in the game">
+					System Page
+				</span>
+				<a href={ templ.URL(href) } class="link link-hover font-medium text-sm" hx-boost="true">{ label }</a>
+				<div class="flex-grow"></div>
+				<span class="tooltip tooltip-left" data-tip="System page: cannot be deleted">
+					@icon("lock", templ.Attributes{"class": "w-4 h-4 text-base-content/40"})
+				</span>
+			</div>
 		</div>
-	} else {
-		<ul class="list p-5">
-			for _, node := range nodes {
-				<li class={ "list-row items-center", templ.KV("text-base-content/40", node.OutOfPlay) }>
-					<div style={ fmt.Sprintf("padding-left: %drem", node.Depth) }>
-						if node.IsSection {
-							@icon("folder", templ.Attributes{"class": "w-5 h-5 opacity-60"})
-						} else {
-							@icon("target", templ.Attributes{"class": "w-5 h-5 opacity-60"})
-						}
-					</div>
-					<div class="min-w-0 grow">
-						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="font-medium hover:underline">
-							{ node.Objective.Title }
-						</a>
-						<p class="text-xs opacity-60">{ node.Objective.Slug }</p>
-					</div>
-					if node.Draft {
-						<span class="badge badge-warning badge-sm">Draft</span>
-					} else if node.OutOfPlay {
-						<span class="badge badge-ghost badge-sm">In a draft</span>
-					}
-					if node.IsSection && node.Objective.Routing != "" {
-						<span class="badge badge-ghost badge-sm">{ node.Objective.Routing.String() }</span>
-					}
+	</div>
+}
+
+// objectiveAddChildButton adds a child to this node specifically, unlike the
+// header's own button which always appends under root. Hidden until hover.
+templ objectiveAddChildButton(node *ObjectiveTreeNode) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", node.Objective.ID)) }
+		class="btn btn-xs btn-ghost btn-circle tooltip shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+		data-tip="Add child objective"
+	>
+		@icon("plus", templ.Attributes{"class": "w-4 h-4 opacity-70"})
+	</a>
+}
+
+// objectiveVisibilityToggle posts straight to
+// /admin/objective/{slug}/draft; a single click, not a menu.
+templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
+	<button
+		type="button"
+		class="btn btn-xs btn-ghost btn-circle tooltip objective-visibility-toggle shrink-0"
+		data-tip={ visibilityTip(node) }
+		data-objective-slug={ node.Objective.Slug }
+		data-published={ fmt.Sprint(!node.Draft) }
+		disabled?={ node.OutOfPlay && !node.Draft }
+	>
+		if node.Draft {
+			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-warning"})
+		} else if node.OutOfPlay {
+			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+		} else {
+			@icon("eye", templ.Attributes{"class": "w-4 h-4 opacity-60"})
+		}
+	</button>
+}
+
+// objectiveColorPicker's dot is always styled bg-primary; [data-group-color]
+// on the card remaps what "primary" means (see main.css).
+templ objectiveColorPicker(node *ObjectiveTreeNode) {
+	<details class="settings-picker relative inline-block">
+		<summary
+			class="settings-color-trigger w-4 h-4 rounded-full bg-primary cursor-pointer tooltip shrink-0"
+			data-tip="Color"
+			data-color={ node.Objective.Color }
+		></summary>
+		<ul class="absolute left-0 top-full mt-1 z-20 flex flex-wrap gap-1 bg-base-100 rounded-box p-2 shadow-lg w-32">
+			<li>
+				<a class="settings-color-option block p-1 rounded hover:bg-base-200" data-color="">
+					<div class="w-4 h-4 rounded-full bg-base-300 border border-base-content/30"></div>
+				</a>
+			</li>
+			for _, c := range objectiveColors {
+				<li>
+					<a class="settings-color-option block p-1 rounded hover:bg-base-200" data-color={ c }>
+						<div class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s", c) }></div>
+					</a>
 				</li>
 			}
 		</ul>
+	</details>
+}
+
+// objectiveRoutingPicker's trigger shows the routing currently chosen, not a
+// generic icon. Options are clickable rows, not a <select>; data-routing on
+// the trigger holds the current value for currentSettingsValues/syncSettings
+// to read. See objectiveColorPicker for why this is <details>.
+templ objectiveRoutingPicker(node *ObjectiveTreeNode) {
+	<details class="settings-picker relative inline-block">
+		<summary
+			class="settings-routing-trigger btn btn-sm btn-ghost gap-1 shrink-0"
+			data-routing={ string(node.Objective.Routing) }
+		>
+			@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "w-3.5 h-3.5 opacity-70"})
+			<span class="text-xs">{ routingLabel(node.Objective.Routing) }</span>
+			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
+		</summary>
+		<div class="absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden">
+			<ul class="menu p-2">
+				for _, rs := range models.GetRouteStrategies() {
+					<li>
+						<a class="settings-routing-option items-start" data-value={ string(rs) }>
+							@icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"})
+							<span class="flex flex-col">
+								<span class="text-sm font-medium">{ rs.String() }</span>
+								<span class="text-xs text-base-content/60 text-pretty">{ rs.Description() }</span>
+							</span>
+						</a>
+					</li>
+				}
+			</ul>
+			<div class={ "settings-maxnext flex items-center gap-2 px-3 py-2 border-t border-base-300", templ.KV("hidden", node.Objective.Routing != models.RouteStrategyRandomised) }>
+				<span class="text-xs whitespace-nowrap opacity-70">Show at once</span>
+				<input
+					type="number"
+					min="0"
+					class="input input-xs w-16 settings-maxnext-input no-spinner"
+					value={ maxNextValue(node.Objective.MaxNext) }
+					placeholder="All"
+				/>
+			</div>
+		</div>
+	</details>
+}
+
+// objectiveBandPicker's trigger shows the resolved band, not a generic icon.
+// See objectiveColorPicker for why this is <details>.
+templ objectiveBandPicker(node *ObjectiveTreeNode) {
+	<details class="settings-picker relative inline-block">
+		<summary class="btn btn-sm btn-ghost gap-1 shrink-0">
+			<span class="text-xs settings-band-summary">
+				{ bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, len(node.Children)) }
+			</span>
+			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
+		</summary>
+		<div class="absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3">
+			<p class="text-xs font-medium opacity-70 mb-2">Completion band</p>
+			<div class="flex items-center gap-2">
+				<input
+					type="number"
+					min="0"
+					class="input input-sm w-16 settings-min no-spinner"
+					value={ bandValueStr(node.Objective.ChildrenMin) }
+					placeholder="0"
+				/>
+				<span class="opacity-60">to</span>
+				<input
+					type="number"
+					min="0"
+					class="input input-sm w-16 settings-max no-spinner"
+					value={ bandValueStr(node.Objective.ChildrenMax) }
+					placeholder={ fmt.Sprint(len(node.Children)) }
+				/>
+			</div>
+			<p class="text-xs opacity-70 mt-2 settings-band-explainer"></p>
+		</div>
+	</details>
+}
+
+// objectivePointsBadge sums this objective's own blocks; never a rollup of
+// children.
+templ objectivePointsBadge(points int, enablePoints bool) {
+	if enablePoints && points != 0 {
+		<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", points) }</span>
 	}
+}
+
+// objectiveNode renders a section (has children) as a card, or a leaf as a
+// daisyUI .join-item so adjacent leaves collapse into one block (see main.css).
+templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool) {
+	if len(node.Children) > 0 {
+		<li
+			class="list-none my-3 group"
+			data-objective-id={ node.Objective.ID }
+			data-objective-slug={ node.Objective.Slug }
+			data-child-count={ fmt.Sprint(len(node.Children)) }
+		>
+			<div
+				class={ "card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("saturate-0 opacity-70", node.OutOfPlay) }
+				data-group-color={ node.Objective.Color }
+			>
+				<div class="card-body p-5 gap-3">
+					<div class="flex items-center gap-3">
+						<span class="tooltip tooltip-right" data-tip="Drag to move">
+							@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
+						</span>
+						@objectiveColorPicker(node)
+						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-bold">
+							{ node.Objective.Title }
+						</a>
+						<div class="flex-grow"></div>
+						@objectivePointsBadge(node.Points, enablePoints)
+						@objectiveRoutingPicker(node)
+						@objectiveBandPicker(node)
+						@objectiveAddChildButton(node)
+						@objectiveVisibilityToggle(node)
+					</div>
+					<ul class="objective-children join join-vertical flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
+						for _, child := range node.Children {
+							@objectiveNode(child, enablePoints)
+						}
+					</ul>
+				</div>
+			</div>
+		</li>
+	} else {
+		<li
+			class={ "list-none join-item objective-searchable group relative bg-base-100/60 hover:bg-base-200/60 p-4 border-primary/30 text-sm", templ.KV("saturate-0 opacity-70", node.OutOfPlay) }
+			data-objective-id={ node.Objective.ID }
+			data-search-text={ node.Objective.Title }
+		>
+			<div class="flex items-center gap-3">
+				<span class="tooltip tooltip-right" data-tip="Drag to move">
+					@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
+				</span>
+				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
+					{ node.Objective.Title }
+				</a>
+				<div class="flex-grow"></div>
+				@objectivePointsBadge(node.Points, enablePoints)
+				@objectiveAddChildButton(node)
+				@objectiveVisibilityToggle(node)
+			</div>
+			<!-- Plain flow, not absolute: lets Sortable grow this to show the
+			     incoming item on hover. emptyInsertThreshold below makes a
+			     target this thin reachable. -->
+			<ul class="objective-children" data-parent-id={ node.Objective.ID }></ul>
+		</li>
+	}
+}
+
+// objectiveSortableScript wires drag/drop and settings-picker delegation on
+// document.body, once.
+//
+// initObjectiveTree rebuilds every Sortable instance after a refresh
+// (they're tied to DOM nodes an outerHTML swap replaces) and is called
+// directly rather than on DOMContentLoaded, which only fires once and misses
+// hx-boost navigations back into this page.
+templ objectiveSortableScript() {
+	<script src="/static/js/Sortable.min.js"></script>
+	<script>
+	// postObjectiveUpdate posts, then always re-fetches the tree: a refused
+	// move must show as it landed, and htmx.ajax (not fetch) is what
+	// delivers the response's out-of-band toast.
+	function postObjectiveUpdate(url, values) {
+		return htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {
+			htmx.ajax('GET', '/admin/quest', {
+				select: '#objective-tree',
+				target: '#objective-tree',
+				swap: 'outerHTML',
+			}).finally(initObjectiveTree);
+		});
+	}
+
+	function bandSummaryText(n, minRaw, maxRaw) {
+		var minV = minRaw === '' ? null : parseInt(minRaw, 10);
+		var maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);
+		if (minV === null && maxV === null) return 'Complete all';
+		var lo = minV === null ? 0 : minV;
+		var hi = maxV === null ? n : maxV;
+		if (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi);
+		if (lo === 0 && hi === n) return 'Complete any';
+		if (lo === 0) return 'Complete up to ' + hi;
+		if (hi === n) return 'Complete ' + lo + '+';
+		return 'Complete ' + lo + '–' + hi;
+	}
+
+	function bandExplainerText(n, minRaw, maxRaw) {
+		var minV = minRaw === '' ? null : parseInt(minRaw, 10);
+		var maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);
+		if (minV === null && maxV === null) {
+			return 'Requires all ' + n + ' children.';
+		}
+		var lo = minV === null ? 0 : minV;
+		var hi = maxV === null ? n : maxV;
+		return lo >= hi
+			? 'Completes automatically at ' + hi + ' of ' + n + '.'
+			: 'Finish button from ' + lo + '; auto at ' + hi + ' of ' + n + '.';
+	}
+
+	// settingsScope finds the nearest element carrying the objective's
+	// slug/child-count; not restricted to li, since root's picker sits in a
+	// plain div.
+	function settingsScope(el) {
+		return el.closest('[data-objective-slug]');
+	}
+
+	// syncSettings updates the band trigger's text and the randomised-window
+	// field's visibility.
+	function syncSettings(scope) {
+		var n = parseInt(scope.dataset.childCount, 10) || 0;
+		var min = scope.querySelector('.settings-min');
+		var max = scope.querySelector('.settings-max');
+		if (min && max) {
+			var summary = scope.querySelector('.settings-band-summary');
+			var explainer = scope.querySelector('.settings-band-explainer');
+			if (summary) summary.textContent = bandSummaryText(n, min.value, max.value);
+			if (explainer) explainer.textContent = bandExplainerText(n, min.value, max.value);
+		}
+		var routingTrigger = scope.querySelector('.settings-routing-trigger');
+		var maxNextField = scope.querySelector('.settings-maxnext');
+		if (routingTrigger && maxNextField) {
+			maxNextField.classList.toggle('hidden', routingTrigger.dataset.routing !== 'randomised');
+		}
+	}
+
+	// currentSettingsValues reads color/routing from their trigger's data
+	// attribute, not a <select>; null-checked since root has no band or
+	// color picker.
+	function currentSettingsValues(scope) {
+		var colorTrigger = scope.querySelector('.settings-color-trigger');
+		var routingTrigger = scope.querySelector('.settings-routing-trigger');
+		var maxNextInput = scope.querySelector('.settings-maxnext-input');
+		var minInput = scope.querySelector('.settings-min');
+		var maxInput = scope.querySelector('.settings-max');
+		return {
+			routing: routingTrigger ? routingTrigger.dataset.routing : '',
+			max_next: maxNextInput ? maxNextInput.value : '',
+			children_min: minInput ? minInput.value : '',
+			children_max: maxInput ? maxInput.value : '',
+			color: colorTrigger ? colorTrigger.dataset.color : '',
+		};
+	}
+
+	// submitSettings posts every field together; overrides lets a click pass
+	// its value before it's written to the DOM.
+	function submitSettings(scope, overrides) {
+		var values = currentSettingsValues(scope);
+		if (overrides) {
+			for (var key in overrides) values[key] = overrides[key];
+		}
+		postObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);
+	}
+
+	// closeSettingsPicker closes the <details> a control sits in; <details>
+	// doesn't do this itself.
+	function closeSettingsPicker(el) {
+		var details = el.closest('details.settings-picker');
+		if (details) details.open = false;
+	}
+
+	// normalizeSearchText strips diacritics so accented and unaccented
+	// spellings both match.
+	function normalizeSearchText(str) {
+		return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+	}
+
+	// applyObjectiveSearch hides non-matching leaves only: hiding a section
+	// could bury a matching leaf nested inside it.
+	function applyObjectiveSearch() {
+		var input = document.getElementById('search-objectives');
+		if (!input) return;
+		var term = normalizeSearchText(input.value);
+		document.querySelectorAll('#objective-tree .objective-searchable').forEach(function(row) {
+			var text = normalizeSearchText(row.dataset.searchText || '');
+			row.classList.toggle('hidden', term !== '' && text.indexOf(term) === -1);
+		});
+		var clearBtn = document.getElementById('clear-search-objectives');
+		if (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);
+	}
+
+	// updateJoinRounding sets each run's corner radii as inline styles:
+	// CSS-only versions kept losing to daisyUI's own .join/.join-item
+	// cascade for a solo leaf or a run's edge.
+	function updateJoinRounding(list) {
+		var ROUND = '1rem';
+		var SQUARE = '0px';
+		var run = [];
+		function flushRun() {
+			run.forEach(function(el, i) {
+				var first = i === 0;
+				var last = i === run.length - 1;
+				el.style.borderStartStartRadius = first ? ROUND : SQUARE;
+				el.style.borderStartEndRadius = first ? ROUND : SQUARE;
+				el.style.borderEndStartRadius = last ? ROUND : SQUARE;
+				el.style.borderEndEndRadius = last ? ROUND : SQUARE;
+			});
+			run = [];
+		}
+		Array.prototype.forEach.call(list.children, function(el) {
+			if (el.classList && el.classList.contains('join-item')) {
+				run.push(el);
+			} else {
+				flushRun();
+			}
+		});
+		flushRun();
+	}
+
+	function initObjectiveTree() {
+		document.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {
+			if (list._objectiveSortable) {
+				list._objectiveSortable.destroy();
+			}
+			list._objectiveSortable = new Sortable(list, {
+				group: 'objectives',
+				handle: '.objective-drag-handle',
+				animation: 150,
+				fallbackOnBody: true,
+				swapThreshold: 0.65,
+				// Default 5px; 56 lets a leaf's own empty nested list be
+				// reached from anywhere in that leaf's row.
+				emptyInsertThreshold: 56,
+				ghostClass: 'sortable-ghost-preview',
+				chosenClass: 'sortable-chosen-preview',
+				dragClass: 'sortable-drag-preview',
+				onEnd: function(evt) {
+					postObjectiveUpdate('/admin/objective/reposition', {
+						objective_id: evt.item.dataset.objectiveId,
+						parent_id: evt.to.dataset.parentId,
+						position: evt.newIndex,
+					});
+				},
+			});
+			updateJoinRounding(list);
+		});
+		document.querySelectorAll('#objective-tree [data-objective-slug]').forEach(syncSettings);
+		// Re-applied here since #objective-tree's rows are replaced on every
+		// refresh, but the search box outside it isn't.
+		applyObjectiveSearch();
+	}
+	initObjectiveTree();
+
+	// Capture phase, before the handler below: closes any open picker the
+	// click landed outside of.
+	document.addEventListener('click', function(evt) {
+		document.querySelectorAll('#objective-tree details.settings-picker[open]').forEach(function(details) {
+			if (!details.contains(evt.target)) details.open = false;
+		});
+	}, true);
+
+	// Delegated on body: #objective-tree itself is replaced on every
+	// refresh.
+	document.body.addEventListener('click', function(evt) {
+		if (evt.target.closest('#clear-search-objectives')) {
+			var searchInput = document.getElementById('search-objectives');
+			if (searchInput) {
+				searchInput.value = '';
+				applyObjectiveSearch();
+			}
+			return;
+		}
+		var toggle = evt.target.closest('.objective-visibility-toggle');
+		if (toggle) {
+			if (toggle.disabled) return;
+			var nowPublished = toggle.dataset.published !== 'true';
+			postObjectiveUpdate('/admin/objective/' + toggle.dataset.objectiveSlug + '/draft', {
+				published: nowPublished ? 'true' : 'false',
+			});
+			return;
+		}
+		var colorOption = evt.target.closest('.settings-color-option');
+		if (colorOption) {
+			evt.preventDefault();
+			var colorScope = settingsScope(colorOption);
+			if (!colorScope) return;
+			var colorTrigger = colorScope.querySelector('.settings-color-trigger');
+			if (colorTrigger) colorTrigger.dataset.color = colorOption.dataset.color;
+			closeSettingsPicker(colorOption);
+			submitSettings(colorScope, { color: colorOption.dataset.color });
+			return;
+		}
+		var routingOption = evt.target.closest('.settings-routing-option');
+		if (routingOption) {
+			evt.preventDefault();
+			var routingScope = settingsScope(routingOption);
+			if (!routingScope) return;
+			var routingTrigger = routingScope.querySelector('.settings-routing-trigger');
+			if (routingTrigger) routingTrigger.dataset.routing = routingOption.dataset.value;
+			syncSettings(routingScope);
+			closeSettingsPicker(routingOption);
+			submitSettings(routingScope, { routing: routingOption.dataset.value });
+		}
+	});
+
+	document.body.addEventListener('input', function(evt) {
+		if (evt.target.id === 'search-objectives') {
+			applyObjectiveSearch();
+			return;
+		}
+		if (!evt.target.matches('.settings-min, .settings-max')) return;
+		var scope = settingsScope(evt.target);
+		if (scope) syncSettings(scope);
+	});
+
+	document.body.addEventListener('change', function(evt) {
+		if (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;
+		var scope = settingsScope(evt.target);
+		if (!scope) return;
+		syncSettings(scope);
+		submitSettings(scope);
+	});
+	</script>
 }

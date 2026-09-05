@@ -2,6 +2,8 @@ package templates
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -13,6 +15,11 @@ type EditObjectiveData struct {
 	Objective    models.Objective
 	ProofBlocks  blocks.Blocks
 	RevealBlocks blocks.Blocks
+	// ChildCount: routing/band/max_next mean nothing without children, but a
+	// leaf can gain them later, so they're shown regardless.
+	ChildCount int
+	// DependsOptions lists valid depends values: other objective slugs plus sets vars.
+	DependsOptions []string
 }
 
 // TotalPoints is the objective's point value: the sum of its proof and reveal
@@ -27,6 +34,35 @@ func (data EditObjectiveData) TotalPoints() int {
 	}
 	return total
 }
+
+// visibilityBtnTip names what a click on the visibility button does.
+func visibilityBtnTip(draft bool) string {
+	if draft {
+		return "Draft: click to publish"
+	}
+	return "Published: click to park"
+}
+
+// bandValueStr renders nil as blank, so the input's own placeholder shows
+// through instead of a literal "0".
+func bandValueStr(bound *int) string {
+	if bound == nil {
+		return ""
+	}
+	return fmt.Sprint(*bound)
+}
+
+// MaxNextBound renders 0 as nil: 0 means no limit, not an explicit cap.
+func (data EditObjectiveData) MaxNextBound() *int {
+	if data.Objective.MaxNext == 0 {
+		return nil
+	}
+	v := data.Objective.MaxNext
+	return &v
+}
+
+// objectiveColors matches the [data-group-color=...] rules in main.css.
+var objectiveColors = []string{"primary", "secondary", "accent", "warning", "error", "info", "success", "base-content"}
 
 // EditObjective mirrors EditLocation's two-zone layout. The zones keep the
 // literal #nav-blocks/#content-blocks/#nav-tab/#content-tab ids so
@@ -45,6 +81,48 @@ templ EditObjective(data EditObjectiveData) {
 			}
 		</div>
 		<div class="flex gap-3">
+			<button
+				id="visibility-btn"
+				type="button"
+				class="btn btn-ghost tooltip"
+				data-tip={ visibilityBtnTip(data.Objective.Draft) }
+				_="on click
+					set cb to #published-checkbox
+					set cb.checked to not cb.checked
+					send change to cb
+					if cb.checked
+						add .hidden to #visibility-eye-off
+						remove .hidden from #visibility-eye
+						set #visibility-label's textContent to 'Published'
+					else
+						remove .hidden from #visibility-eye
+						remove .hidden from #visibility-eye-off
+						set #visibility-label's textContent to 'Draft'
+					end"
+			>
+				<span id="visibility-eye" class={ templ.KV("hidden", data.Objective.Draft) }>
+					@icon("eye", templ.Attributes{"class": "w-4 h-4"})
+				</span>
+				<span id="visibility-eye-off" class={ templ.KV("hidden", !data.Objective.Draft) }>
+					@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-warning"})
+				</span>
+				<span id="visibility-label">
+					if data.Objective.Draft {
+						Draft
+					} else {
+						Published
+					}
+				</span>
+			</button>
+			<input
+				type="checkbox"
+				id="published-checkbox"
+				name="published"
+				value="true"
+				form="edit-objective"
+				class="hidden"
+				checked?={ !data.Objective.Draft }
+			/>
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
 				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
 				Delete
@@ -84,7 +162,7 @@ templ EditObjective(data EditObjectiveData) {
 	>
 		<div class="flex flex-col flex-grow min-w-0">
 			<div class="flex flex-col sm:flex-row gap-5 mb-5">
-				<fieldset class="fieldset w-full md:w-1/2">
+				<fieldset class="fieldset w-full">
 					<legend class="fieldset-legend">Objective Title</legend>
 					<input
 						type="text"
@@ -99,28 +177,113 @@ templ EditObjective(data EditObjectiveData) {
 						set #objective-title's textContent to my value"
 					/>
 				</fieldset>
-				<fieldset class="fieldset w-full md:w-1/2">
-					<legend class="fieldset-legend">Visibility</legend>
-					<label class="label cursor-pointer justify-start gap-3">
-						<input
-							type="checkbox"
-							name="published"
-							value="true"
-							form="edit-objective"
-							class="toggle toggle-primary"
-							checked?={ !data.Objective.Draft }
-						/>
-						<span>Visible to players</span>
-					</label>
-					<p class="label">
-						if data.Objective.Draft {
-							A draft: this objective and everything under it is hidden from players.
-						} else {
-							Turning this off hides this objective and everything under it.
-						}
-					</p>
-				</fieldset>
 			</div>
+			<!-- Structural settings -->
+			<section class="mb-5">
+				<h2 class="font-bold mb-3">Settings</h2>
+				<div class="grid sm:grid-cols-2 gap-5">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Routing</legend>
+						<select name="routing" form="edit-objective" class="select w-full">
+							for _, rs := range models.GetRouteStrategies() {
+								<option value={ string(rs) } selected?={ data.Objective.Routing == rs }>{ rs.String() }</option>
+							}
+						</select>
+						<p class="label">
+							if data.ChildCount == 0 {
+								Order children are offered in. This objective has none yet.
+							} else {
+								{ fmt.Sprintf("Order %d children are offered in.", data.ChildCount) }
+							}
+						</p>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Color</legend>
+						<select name="color" form="edit-objective" class="select w-full">
+							<option value="" selected?={ data.Objective.Color == "" }>Default</option>
+							for _, c := range objectiveColors {
+								<option value={ c } selected?={ data.Objective.Color == c }>{ c }</option>
+							}
+						</select>
+						<p class="label">A display hint only.</p>
+					</fieldset>
+					<fieldset class="fieldset sm:col-span-2" id="band-inputs" data-child-count={ fmt.Sprint(data.ChildCount) }>
+						<legend class="fieldset-legend">Completion band</legend>
+						<div class="flex items-center gap-3 flex-wrap">
+							<input
+								type="number"
+								name="children_min"
+								form="edit-objective"
+								min="0"
+								class="input w-24"
+								value={ bandValueStr(data.Objective.ChildrenMin) }
+								placeholder="0"
+							/>
+							<span class="opacity-60">to</span>
+							<input
+								type="number"
+								name="children_max"
+								form="edit-objective"
+								min="0"
+								class="input w-24"
+								value={ bandValueStr(data.Objective.ChildrenMax) }
+								placeholder={ fmt.Sprint(data.ChildCount) }
+							/>
+							<span id="band-explainer" class="text-sm opacity-70"></span>
+						</div>
+						<p class="label">
+							{ fmt.Sprintf("Leave both blank to require all %d children.", data.ChildCount) }
+						</p>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Randomised window</legend>
+						<input
+							type="number"
+							name="max_next"
+							form="edit-objective"
+							min="0"
+							class="input w-full"
+							value={ bandValueStr(data.MaxNextBound()) }
+							placeholder="No limit"
+						/>
+						<p class="label">Children offered at once, when routing is Randomised.</p>
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Finish button label</legend>
+						<input
+							type="text"
+							name="finish_label"
+							form="edit-objective"
+							class="input w-full"
+							value={ data.Objective.FinishLabel }
+							placeholder="Finish"
+						/>
+						<p class="label">Shown only when the band lets a player finish early.</p>
+					</fieldset>
+					<fieldset class="fieldset sm:col-span-2">
+						<legend class="fieldset-legend">Depends on</legend>
+						<input
+							type="text"
+							name="depends"
+							form="edit-objective"
+							list="depends-options"
+							class="input w-full"
+							value={ strings.Join(data.Objective.Depends, ", ") }
+							placeholder="top-notes, not heart-notes"
+						/>
+						<datalist id="depends-options">
+							for _, opt := range data.DependsOptions {
+								<option value={ opt }></option>
+							}
+						</datalist>
+						<p class="label">
+							Comma-separated. An objective slug or a sets var; prefix an entry with "not " to negate it.
+							All must hold for this objective to be reachable.
+						</p>
+					</fieldset>
+				</div>
+			</section>
+			@bandExplainerScript()
 		@deleteBlockModal()
 			<!-- Proof -->
 			<section>
@@ -221,4 +384,42 @@ templ EditObjective(data EditObjectiveData) {
 	@previewSortableScript()
 	@blockMoveScript()
 	@sortableStyles()
+	@bandExplainerScript()
+}
+
+// bandExplainerScript shows the band's plain-language meaning live: min==max
+// vs min<max is easy to misread from raw numbers alone.
+templ bandExplainerScript() {
+	<script>
+	(function() {
+		var wrap = document.getElementById('band-inputs');
+		if (!wrap) return;
+		var min = wrap.querySelector('[name="children_min"]');
+		var max = wrap.querySelector('[name="children_max"]');
+		var explainer = document.getElementById('band-explainer');
+		var n = parseInt(wrap.dataset.childCount, 10) || 0;
+
+		function update() {
+			var minV = min.value === '' ? null : parseInt(min.value, 10);
+			var maxV = max.value === '' ? null : parseInt(max.value, 10);
+			var text;
+			if (minV === null && maxV === null) {
+				text = 'Requires all ' + n + ' children.';
+			} else {
+				var lo = minV === null ? 0 : minV;
+				var hi = maxV === null ? n : maxV;
+				if (lo >= hi) {
+					text = 'Completes automatically once ' + hi + ' of ' + n + ' are done.';
+				} else {
+					text = 'Finish button from ' + lo + '; completes automatically at ' + hi + ' of ' + n + '.';
+				}
+			}
+			explainer.textContent = text;
+		}
+
+		min.addEventListener('input', update);
+		max.addEventListener('input', update);
+		update();
+	})();
+	</script>
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
@@ -27,6 +28,9 @@ type ObjectiveService interface {
 	FindRoot(ctx context.Context, questID string) (*models.Objective, error)
 	// FindChildren returns one objective's direct children in position order.
 	FindChildren(ctx context.Context, questID, parentID string) ([]models.Objective, error)
+	// Reposition moves an objective under newParentID at index newPosition.
+	// Both must belong to questID: a drag-and-drop caller can't reach across quests.
+	Reposition(ctx context.Context, questID, objectiveID, newParentID string, newPosition int) error
 }
 
 // ErrParkingBreaksBand is returned when parking an objective would leave its
@@ -37,6 +41,13 @@ var ErrParkingBreaksBand = errors.New("parking this objective would leave its se
 // ErrCannotDraftRoot is returned when an edit would park a quest's root. Lint
 // refuses the same shape in a document (ROOT_DRAFT).
 var ErrCannotDraftRoot = errors.New("the root objective cannot be a draft")
+
+// ErrInvalidRouting mirrors lint's own rejection of a bad routing value, for
+// the one mutation path that bypasses lint.
+var ErrInvalidRouting = errors.New("invalid routing")
+
+// ErrInvalidBand mirrors lint's BAND_MIN_EXCEEDS_MAX rule.
+var ErrInvalidBand = errors.New("invalid completion band")
 
 type objectiveService struct {
 	transactor    db.Transactor
@@ -51,6 +62,85 @@ func NewObjectiveService(
 		transactor:    transactor,
 		objectiveRepo: objectiveRepo,
 	}
+}
+
+// applyObjectiveSettings applies every setting the update data names, leaving
+// everything else alone. It is split out of UpdateObjective to keep that
+// function's branching readable.
+func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+	changed := false
+
+	if data.Routing != nil && *data.Routing != string(objective.Routing) {
+		if *data.Routing != "" {
+			if _, err := models.ParseRouteStrategy(*data.Routing); err != nil {
+				return false, fmt.Errorf("%w: %q", ErrInvalidRouting, *data.Routing)
+			}
+		}
+		objective.Routing = models.RouteStrategy(*data.Routing)
+		changed = true
+	}
+
+	if data.MaxNext != nil && *data.MaxNext != objective.MaxNext {
+		if *data.MaxNext < 0 {
+			return false, fmt.Errorf("%w: max_next cannot be negative", ErrInvalidBand)
+		}
+		objective.MaxNext = *data.MaxNext
+		changed = true
+	}
+
+	if bandChanged, err := applyObjectiveBand(objective, data); err != nil {
+		return false, err
+	} else if bandChanged {
+		changed = true
+	}
+
+	if data.FinishLabel != nil && *data.FinishLabel != objective.FinishLabel {
+		objective.FinishLabel = *data.FinishLabel
+		changed = true
+	}
+
+	if data.Color != nil && *data.Color != objective.Color {
+		objective.Color = *data.Color
+		changed = true
+	}
+
+	if data.Depends != nil && !slices.Equal(data.Depends, []string(objective.Depends)) {
+		objective.Depends = data.Depends
+		changed = true
+	}
+
+	return changed, nil
+}
+
+// applyObjectiveBand validates the two bounds together, because min > max only
+// means something once both are known. A bound the update does not name checks
+// the one it does against the objective's current value.
+func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+	if data.ChildrenMin == nil && data.ChildrenMax == nil {
+		return false, nil
+	}
+	minBound := objective.ChildrenMin
+	if data.ChildrenMin != nil {
+		minBound = data.ChildrenMin
+	}
+	maxBound := objective.ChildrenMax
+	if data.ChildrenMax != nil {
+		maxBound = data.ChildrenMax
+	}
+
+	if minBound != nil && *minBound < 0 {
+		return false, fmt.Errorf("%w: children_min cannot be negative", ErrInvalidBand)
+	}
+	if maxBound != nil && *maxBound < 0 {
+		return false, fmt.Errorf("%w: children_max cannot be negative", ErrInvalidBand)
+	}
+	if minBound != nil && maxBound != nil && *minBound > *maxBound {
+		return false, fmt.Errorf("%w: min %d exceeds max %d", ErrInvalidBand, *minBound, *maxBound)
+	}
+
+	objective.ChildrenMin = minBound
+	objective.ChildrenMax = maxBound
+	return true, nil
 }
 
 // generateUniqueSlug returns a slug unique within questID, excluding excludeID from conflict checks.
@@ -204,6 +294,12 @@ func (s objectiveService) UpdateObjective(
 		update = true
 	}
 
+	settingsChanged, err := applyObjectiveSettings(objective, data)
+	if err != nil {
+		return err
+	}
+	update = update || settingsChanged
+
 	if !update {
 		return nil
 	}
@@ -235,4 +331,38 @@ func (s objectiveService) FindChildren(
 	ctx context.Context, questID, parentID string,
 ) ([]models.Objective, error) {
 	return s.objectiveRepo.FindChildren(ctx, questID, parentID)
+}
+
+func (s objectiveService) Reposition(
+	ctx context.Context, questID, objectiveID, newParentID string, newPosition int,
+) error {
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
+	if err != nil {
+		return fmt.Errorf("finding objective: %w", err)
+	}
+	if objective.QuestID != questID {
+		return fmt.Errorf("%w: %q", ErrObjectiveNotInQuest, objectiveID)
+	}
+
+	newParent, err := s.objectiveRepo.GetByID(ctx, newParentID)
+	if err != nil {
+		return fmt.Errorf("finding new parent: %w", err)
+	}
+	if newParent.QuestID != questID {
+		return fmt.Errorf("%w: %q", ErrObjectiveNotInQuest, newParentID)
+	}
+
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	if err := s.objectiveRepo.Reposition(ctx, tx, objectiveID, newParentID, newPosition); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("repositioning objective: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+
+	return nil
 }

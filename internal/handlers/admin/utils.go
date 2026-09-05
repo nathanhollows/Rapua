@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/middlewares"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/internal/sessions"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
@@ -58,6 +59,9 @@ type BlockService interface {
 	) (blocks.Blocks, error)
 	// FindByOwnerID fetches all content blocks for an owner
 	FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error)
+	// FindPointsByOwnerIDs sums each owner's block points in one query, to
+	// avoid an N+1 fetch per row when badging many objectives at once.
+	FindPointsByOwnerIDs(ctx context.Context, ownerIDs []string) (map[string]int, error)
 	// FindByOwnerIDAndRunCodeWithState fetches all blocks and their states
 	// for the given owner and team
 	FindByOwnerIDAndRunCodeWithState(
@@ -355,6 +359,13 @@ func (h *Handler) handleError(
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), logMsg+" - rendering template", "error", err)
 	}
+}
+
+// QuestRunningToast reports an edit refused because the game is running, in the
+// same out-of-band toast every other refusal uses. Exported because the
+// middleware that makes the decision sits below the templates.
+func (h *Handler) QuestRunningToast(w http.ResponseWriter, r *http.Request) error {
+	return templates.Toast(*flash.NewError(middlewares.QuestRunningMessage)).Render(r.Context(), w)
 }
 
 func (h *Handler) handleSuccess(w http.ResponseWriter, r *http.Request, flashMsg string) {

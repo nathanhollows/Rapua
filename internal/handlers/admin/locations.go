@@ -23,117 +23,110 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.ObjectiveTree(objectiveTreeNodes(objectives))
+	objectiveIDs := make([]string, len(objectives))
+	for i, obj := range objectives {
+		objectiveIDs[i] = obj.ID
+	}
+	points, err := h.blockService.FindPointsByOwnerIDs(r.Context(), objectiveIDs)
+	if err != nil {
+		h.handleError(
+			w, r, "Locations: loading objective points", "Error loading quest",
+			"error", err, "quest_id", user.CurrentQuestID,
+		)
+		return
+	}
+
+	root, nodes := buildObjectiveTree(objectives, points)
+
+	c := templates.LockedEditor(
+		user.CurrentQuest,
+		templates.ObjectiveTree(root, nodes, user.CurrentQuest.Settings.EnablePoints),
+	)
 	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
 	}
 }
 
-// objectiveTreeNodes flattens the tree for rendering. The rows arrive with each
-// parent ahead of its children, so depth is the parent's depth plus one, and
-// the root is dropped: it holds everything, so listing it says nothing.
+// buildObjectiveTree nests FindTree's flat, parent-first rows by pointer, so
+// a parent built early still picks up children appended later in the same
+// pass. Root is returned separately: it's the quest itself, not a row, but
+// still needs somewhere to carry its own settings.
 //
-// Draft is carried in two parts because the operator needs both: which row was
-// parked, and everything that is out of play as a result. A row that is hidden
-// only because of an ancestor must look hidden, or every edit, delete and
-// reorder below a parked section is made blind to what players can see.
-func objectiveTreeNodes(objectives []models.Objective) []templates.ObjectiveTreeNode {
-	depths := make(map[string]int, len(objectives))
-	drafted := make(map[string]bool, len(objectives))
-	hasChildren := make(map[string]bool, len(objectives))
-	for _, obj := range objectives {
-		hasChildren[obj.ParentID] = true
+// Draft is split from OutOfPlay because a row hidden only by an ancestor
+// must still look hidden, or edits below a parked section go blind to what
+// players can see.
+func buildObjectiveTree(
+	objectives []models.Objective, points map[string]int,
+) (models.Objective, []*templates.ObjectiveTreeNode) {
+	nodes := make(map[string]*templates.ObjectiveTreeNode, len(objectives))
+	for i := range objectives {
+		nodes[objectives[i].ID] = &templates.ObjectiveTreeNode{
+			Objective: objectives[i],
+			Points:    points[objectives[i].ID],
+		}
 	}
 
-	nodes := make([]templates.ObjectiveTreeNode, 0, len(objectives))
+	var root models.Objective
 	for _, obj := range objectives {
-		drafted[obj.ID] = obj.Draft || drafted[obj.ParentID]
+		node := nodes[obj.ID]
 		if obj.ParentID == "" {
-			depths[obj.ID] = 0
+			node.Draft = obj.Draft
+			node.OutOfPlay = obj.Draft
+			root = obj
 			continue
 		}
-		depth := depths[obj.ParentID] + 1
-		depths[obj.ID] = depth
-		nodes = append(nodes, templates.ObjectiveTreeNode{
-			Objective: obj,
-			Depth:     depth - 1,
-			IsSection: hasChildren[obj.ID],
-			Draft:     obj.Draft,
-			OutOfPlay: drafted[obj.ID],
-		})
+		// An orphan or a cycle is left out of the tree rather than guessed at.
+		parent, ok := nodes[obj.ParentID]
+		if !ok {
+			continue
+		}
+		node.Draft = obj.Draft
+		node.OutOfPlay = obj.Draft || parent.OutOfPlay
+		parent.Children = append(parent.Children, node)
 	}
-	return nodes
+
+	if node, ok := nodes[root.ID]; ok {
+		return root, node.Children
+	}
+	return root, nil
 }
 
 // StartPageEdit shows the start page editor.
 func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	// Get blocks for the start page.
-	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		user.CurrentQuestID,
-		blocks.ContextStart,
-	)
-	if err != nil {
-		h.logger.ErrorContext(r.Context(),
-			"StartPageEdit: getting blocks",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		h.redirect(w, r, "/admin/quest")
-		return
-	}
-
-	data := templates.EditPageData{
-		Settings:   user.CurrentQuest.Settings,
-		PageBlocks: pageBlocks,
-		PageTitle:  "Start",
-		PageType:   "start",
-	}
-
-	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Quest", "Edit Start Page").Render(r.Context(), w)
-	if err != nil {
-		h.handleError(w, r, "StartPageEdit: rendering template", "Error rendering template", "error", err)
-	}
+	h.systemPageEdit(w, r, blocks.ContextStart, "Start", "start")
 }
 
 // CompletePageEdit shows the complete page editor.
 func (h *Handler) CompletePageEdit(w http.ResponseWriter, r *http.Request) {
+	h.systemPageEdit(w, r, blocks.ContextFinish, "Complete", "complete")
+}
+
+// systemPageEdit covers Start and Complete: they differ only in block
+// context and naming.
+func (h *Handler) systemPageEdit(
+	w http.ResponseWriter,
+	r *http.Request,
+	blockContext blocks.BlockContext,
+	pageTitle, pageType string,
+) {
 	user := h.UserFromContext(r.Context())
 
-	// Get blocks for the complete page
-	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		user.CurrentQuestID,
-		blocks.ContextFinish,
-	)
+	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(r.Context(), user.CurrentQuestID, blockContext)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(),
-			"completePageEdit: getting blocks",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-		)
+		h.logger.ErrorContext(r.Context(), pageType+"PageEdit: getting blocks",
+			"error", err, "quest_id", user.CurrentQuestID)
 		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
-	data := templates.EditPageData{
+	c := templates.LockedEditor(user.CurrentQuest, templates.EditPage(templates.EditPageData{
 		Settings:   user.CurrentQuest.Settings,
 		PageBlocks: pageBlocks,
-		PageTitle:  "Complete",
-		PageType:   "complete",
-	}
-
-	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Quest", "Edit Complete Page").Render(r.Context(), w)
-	if err != nil {
-		h.handleError(w, r, "CompletePageEdit: rendering template", "Error rendering template", "error", err)
+		PageTitle:  pageTitle,
+		PageType:   pageType,
+	}))
+	if err := templates.Layout(c, *user, "Quest", "Edit "+pageTitle+" Page").Render(r.Context(), w); err != nil {
+		h.handleError(w, r, pageType+"PageEdit: rendering template", "Error rendering template", "error", err)
 	}
 }

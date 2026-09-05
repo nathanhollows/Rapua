@@ -2,12 +2,14 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -811,4 +813,44 @@ func TestBlockService_UpdateBlock(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBlockService_FindPointsByOwnerIDs(t *testing.T) {
+	svc, dbc, cleanup := setupBlocksService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	ownerA := gofakeit.UUID()
+	ownerB := gofakeit.UUID()
+	ownerC := gofakeit.UUID() // owns no blocks at all
+
+	insertBlock := func(ownerID string, points int) {
+		t.Helper()
+		blk := &models.Block{
+			ID:      gofakeit.UUID(),
+			OwnerID: ownerID,
+			Type:    "checklist",
+			Context: blocks.ContextObjectiveProof,
+			Data:    json.RawMessage(`{}`),
+			Points:  points,
+		}
+		_, err := dbc.NewInsert().Model(blk).Exec(ctx)
+		require.NoError(t, err)
+	}
+	insertBlock(ownerA, 5)
+	insertBlock(ownerA, 3)
+	insertBlock(ownerB, 10)
+
+	points, err := svc.FindPointsByOwnerIDs(ctx, []string{ownerA, ownerB, ownerC})
+	require.NoError(t, err)
+	assert.Equal(t, 8, points[ownerA], "an owner's points are its own blocks summed")
+	assert.Equal(t, 10, points[ownerB])
+	_, hasC := points[ownerC]
+	assert.False(t, hasC, "an owner with no blocks is absent from the map rather than present with 0")
+
+	t.Run("empty ownerIDs returns nothing without erroring", func(t *testing.T) {
+		points, err := svc.FindPointsByOwnerIDs(ctx, nil)
+		require.NoError(t, err)
+		assert.Empty(t, points)
+	})
 }

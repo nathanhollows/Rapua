@@ -371,19 +371,21 @@ func TestObjectiveTreeNodes_MarksWhatIsOutOfPlay(t *testing.T) {
 	parked := models.Objective{ID: "parked", ParentID: "root", Slug: "parked", Title: "Parked", Draft: true}
 	buried := models.Objective{ID: "buried", ParentID: "parked", Slug: "buried", Title: "Buried"}
 
-	nodes := objectiveTreeNodes([]models.Objective{root, live, parked, buried})
+	_, nodes := buildObjectiveTree([]models.Objective{root, live, parked, buried}, nil)
 
-	bySlug := map[string]templates.ObjectiveTreeNode{}
+	bySlug := map[string]*templates.ObjectiveTreeNode{}
 	for _, node := range nodes {
 		bySlug[node.Objective.Slug] = node
 	}
-	require.Len(t, nodes, 3, "the root holds everything, so listing it says nothing")
+	require.Len(t, nodes, 2, "the root holds everything, so listing it says nothing")
 
 	assert.False(t, bySlug["live"].OutOfPlay)
 	assert.True(t, bySlug["parked"].Draft)
 	assert.True(t, bySlug["parked"].OutOfPlay)
-	assert.False(t, bySlug["buried"].Draft, "the flag stays where the author put it")
-	assert.True(t, bySlug["buried"].OutOfPlay, "but the builder still shows it as hidden")
+	require.Len(t, bySlug["parked"].Children, 1, "buried nests under its parked parent")
+	buriedNode := bySlug["parked"].Children[0]
+	assert.False(t, buriedNode.Draft, "the flag stays where the author put it")
+	assert.True(t, buriedNode.OutOfPlay, "but the builder still shows it as hidden")
 }
 
 // The visibility toggle is a checkbox, and an unticked checkbox is absent from

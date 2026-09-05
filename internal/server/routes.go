@@ -360,18 +360,21 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 		// are the routes a stopped-game rule has to cover.
 		r.Route("/objective", func(r chi.Router) {
 			r.Use(func(next http.Handler) http.Handler {
-				return middlewares.QuestEditableMiddleware(logger, next)
+				return middlewares.QuestEditableMiddleware(logger, adminHandler.QuestRunningToast, next)
 			})
 			r.Get("/new", adminHandler.ObjectiveNew)
+			r.Post("/reposition", adminHandler.ObjectiveReposition)
 			r.Get("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEdit)
 			r.Post("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEditPost)
+			r.Post("/{slug:[a-z0-9-]+}/settings", adminHandler.ObjectiveSettingsPost)
+			r.Post("/{slug:[a-z0-9-]+}/draft", adminHandler.ObjectiveDraftTogglePost)
 			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveDelete)
 		})
 
 		// RESTful blocks API
 		r.Route("/blocks", func(r chi.Router) {
 			r.Use(func(next http.Handler) http.Handler {
-				return middlewares.QuestEditableMiddleware(logger, next)
+				return middlewares.QuestEditableMiddleware(logger, adminHandler.QuestRunningToast, next)
 			})
 			// Primary RESTful endpoints
 			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
