@@ -3,8 +3,14 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"slices"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v83"
+	"github.com/uptrace/bun"
 )
 
 func setupStripeService(
@@ -403,4 +410,138 @@ func createMockCheckoutSessionCompletedEvent(sessionID string) stripe.Event {
 			Raw: sessionJSON,
 		},
 	}
+}
+
+// TestStripeService_ProcessWebhook_FetchesChargeBeforeTransaction pins the
+// ordering this path depends on: the charge lookup that fills the receipt URL
+// is a network call, and a network call inside the write transaction holds the
+// lock for as long as Stripe takes to answer.
+func TestStripeService_ProcessWebhook_FetchesChargeBeforeTransaction(t *testing.T) {
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_ordering")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_ordering")
+
+	log := &eventLog{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		log.add("charge-fetch")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(
+			`{"object":"list","data":[{"id":"ch_test_order","object":"charge",` +
+				`"receipt_url":"https://pay.stripe.com/receipt/test"}],` +
+				`"has_more":false,"url":"/v1/charges"}`,
+		))
+	}))
+	defer server.Close()
+
+	originalBackend := stripe.GetBackend(stripe.APIBackend)
+	stripe.SetBackend(stripe.APIBackend, stripe.GetBackendWithConfig(
+		stripe.APIBackend,
+		&stripe.BackendConfig{
+			URL:        stripe.String(server.URL),
+			HTTPClient: server.Client(),
+		},
+	))
+	t.Cleanup(func() { stripe.SetBackend(stripe.APIBackend, originalBackend) })
+
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	transactor := &recordingTransactor{inner: db.NewTransactor(dbc), log: log}
+	creditRepo := repositories.NewCreditRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
+	userRepo := repositories.NewUserRepository(dbc)
+	purchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
+
+	creditService := services.NewCreditService(db.NewTransactor(dbc), creditRepo, runStartLogRepo, userRepo)
+	svc := services.NewStripeService(transactor, creditService, purchaseRepo, userRepo, newTLogger(t))
+
+	ctx := context.Background()
+
+	user := &models.User{
+		ID:          gofakeit.UUID(),
+		Email:       gofakeit.Email(),
+		Name:        gofakeit.Name(),
+		FreeCredits: 10,
+		PaidCredits: 0,
+	}
+	require.NoError(t, userRepo.Create(ctx, user))
+
+	purchase := &models.CreditPurchase{
+		ID:               gofakeit.UUID(),
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+		UserID:           user.ID,
+		Credits:          25,
+		AmountPaid:       25 * config.CreditPriceCents(),
+		StripeSessionID:  "cs_test_" + gofakeit.UUID(),
+		StripeCustomerID: sql.NullString{String: "cus_test_" + gofakeit.UUID(), Valid: true},
+		Status:           models.CreditPurchaseStatusPending,
+	}
+	require.NoError(t, purchaseRepo.Create(ctx, purchase))
+
+	session := stripe.CheckoutSession{
+		ID:            purchase.StripeSessionID,
+		AmountTotal:   int64(purchase.AmountPaid),
+		PaymentIntent: &stripe.PaymentIntent{ID: "pi_test_" + gofakeit.UUID()},
+		Metadata:      map[string]string{"credits": strconv.Itoa(purchase.Credits)},
+	}
+	sessionJSON, err := json.Marshal(session)
+	require.NoError(t, err)
+	payload, err := json.Marshal(stripe.Event{
+		Object: "event",
+		Type:   "checkout.session.completed",
+		Data:   &stripe.EventData{Raw: sessionJSON},
+	})
+	require.NoError(t, err)
+
+	now := time.Now()
+	signature := fmt.Sprintf(
+		"t=%d,v1=%s",
+		now.Unix(),
+		hex.EncodeToString(stripe.ComputeSignature(now, payload, "whsec_test_ordering")),
+	)
+	require.NoError(t, svc.ProcessWebhook(ctx, payload, signature))
+
+	events := log.snapshot()
+	fetchIdx := slices.Index(events, "charge-fetch")
+	beginIdx := slices.Index(events, "begin-tx")
+	require.NotEqual(t, -1, fetchIdx, "the charge fetch never happened")
+	require.NotEqual(t, -1, beginIdx, "the transaction never opened")
+	assert.Less(t, fetchIdx, beginIdx, "the charge fetch happened inside the write transaction")
+
+	got, err := purchaseRepo.GetByStripeSessionID(ctx, purchase.StripeSessionID)
+	require.NoError(t, err)
+	assert.Equal(t, models.CreditPurchaseStatusCompleted, got.Status)
+	assert.Equal(t, session.PaymentIntent.ID, got.StripePaymentID.String)
+	assert.Equal(t, "https://pay.stripe.com/receipt/test", got.ReceiptURL.String)
+}
+
+// eventLog records events the test cares about in order. The webhook handler
+// and the fake Stripe server run in different goroutines, so access is guarded.
+type eventLog struct {
+	mu     sync.Mutex
+	events []string
+}
+
+func (l *eventLog) add(event string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.events = append(l.events, event)
+}
+
+func (l *eventLog) snapshot() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.events)
+}
+
+// recordingTransactor wraps a real transactor and notes each BeginTx in the
+// shared log, so the test can see where the transaction falls in the order.
+type recordingTransactor struct {
+	inner db.Transactor
+	log   *eventLog
+}
+
+func (t *recordingTransactor) BeginTx(ctx context.Context, opts *sql.TxOptions) (*bun.Tx, error) {
+	t.log.add("begin-tx")
+	return t.inner.BeginTx(ctx, opts)
 }

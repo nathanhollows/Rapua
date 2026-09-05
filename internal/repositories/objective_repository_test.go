@@ -99,6 +99,42 @@ func TestObjectiveRepository_GetByQuestIDAndSlug_WrongQuest(t *testing.T) {
 	require.Error(t, err, "same slug under a different quest must not match")
 }
 
+func TestObjectiveRepository_SlugAvailable(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	taken := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "find-the-key",
+		Title:   "Find the key",
+	}
+	_, err := dbc.NewInsert().Model(taken).Exec(context.Background())
+	require.NoError(t, err)
+
+	otherParents := createTestParents(t, dbc)
+
+	repo := repositories.NewObjectiveRepository(dbc)
+	ctx := context.Background()
+
+	available, err := repo.SlugAvailable(ctx, parents.QuestID, "fresh-slug", "")
+	require.NoError(t, err)
+	assert.True(t, available, "an unused slug is free")
+
+	available, err = repo.SlugAvailable(ctx, otherParents.QuestID, "find-the-key", "")
+	require.NoError(t, err)
+	assert.True(t, available, "the same slug is free in another quest")
+
+	available, err = repo.SlugAvailable(ctx, parents.QuestID, "find-the-key", "")
+	require.NoError(t, err)
+	assert.False(t, available, "a taken slug is not free")
+
+	available, err = repo.SlugAvailable(ctx, parents.QuestID, "find-the-key", taken.ID)
+	require.NoError(t, err)
+	assert.True(t, available, "an objective keeps its own slug through a rename")
+}
+
 func TestObjectiveRepository_FindByIDs(t *testing.T) {
 	dbc, cleanup := setupDB(t)
 	defer cleanup()
