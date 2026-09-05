@@ -38,3 +38,8 @@ assets/codes/*
 tmp/*
 static/uploads/*
 internal/templates/**/*.txt
+
+# Scratch/thinking space
+/converse/
+/templates/
+/dev.sh
