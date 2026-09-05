@@ -28,6 +28,11 @@ var (
 type ObjectiveRepository interface {
 	GetByID(ctx context.Context, objectiveID string) (*models.Objective, error)
 	GetByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	// SlugAvailable reports whether a slug is free within a quest, ignoring
+	// excludeID so an objective keeps its own slug through a rename. It answers
+	// the question rather than returning a not-found error, because "no rows"
+	// is a storage detail.
+	SlugAvailable(ctx context.Context, questID, slug, excludeID string) (bool, error)
 	FindByIDs(ctx context.Context, questID string, objectiveIDs []string) ([]*models.Objective, error)
 	FindByQuestID(ctx context.Context, questID string) ([]models.Objective, error)
 	// FindTreeByQuestID returns every objective in a quest ordered so a parent
@@ -120,6 +125,24 @@ func (r *objectiveRepository) GetByQuestIDAndSlug(
 		return nil, fmt.Errorf("finding objective: %w", err)
 	}
 	return &objective, nil
+}
+
+func (r *objectiveRepository) SlugAvailable(
+	ctx context.Context,
+	questID, slug, excludeID string,
+) (bool, error) {
+	query := r.db.NewSelect().
+		Model((*models.Objective)(nil)).
+		Where("quest_id = ? AND slug = ?", questID, slug)
+	if excludeID != "" {
+		query = query.Where("id != ?", excludeID)
+	}
+
+	count, err := query.Count(ctx)
+	if err != nil {
+		return false, fmt.Errorf("checking slug availability: %w", err)
+	}
+	return count == 0, nil
 }
 
 func (r *objectiveRepository) FindByIDs(

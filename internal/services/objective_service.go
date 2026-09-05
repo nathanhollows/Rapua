@@ -62,14 +62,11 @@ func (s objectiveService) generateUniqueSlug(ctx context.Context, questID, title
 	candidate := base
 	const maxAttempts = 100
 	for range maxAttempts {
-		existing, err := s.objectiveRepo.GetByQuestIDAndSlug(ctx, questID, candidate)
+		available, err := s.objectiveRepo.SlugAvailable(ctx, questID, candidate, excludeID)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return candidate, nil
-			}
 			return "", fmt.Errorf("checking slug availability: %w", err)
 		}
-		if existing.ID == excludeID {
+		if available {
 			return candidate, nil
 		}
 		candidate = fmt.Sprintf("%s-%s", base, uuid.New().String()[:6])
