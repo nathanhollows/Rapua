@@ -64,7 +64,7 @@ Invite participants to join the game by sharing the team codes. Teams can be add
 
 Customize the gameplay experience.  
 
-1. Open the [Experience](/admin/experience) tab under your instance.  
+1. Open the [Quest](/admin/quest) tab under your instance.  
 2. Adjust the following options:  
    - **Route Strategy:** How will participants move between locations? Select free movement, random selection, or guided paths.
    - **Navigation Display:** How will participants know where to go? Choose from map, list, or clues.

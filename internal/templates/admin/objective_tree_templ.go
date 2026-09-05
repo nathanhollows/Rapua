@@ -144,49 +144,33 @@ func ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoin
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Outside #objective-tree: the tree is outerHTML-swapped after every\n\tdrop and settings change, and a search term should survive that. --><div class=\"px-6 pb-3 flex justify-end\"><label class=\"input input-sm flex items-center gap-2 w-60\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"}).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<input id=\"search-objectives\" type=\"text\" class=\"grow\" placeholder=\"Search objectives\" autocomplete=\"off\" data-ignore-lock> <button id=\"clear-search-objectives\" type=\"button\" class=\"btn btn-xs btn-circle invisible -mr-2\" data-ignore-lock>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = icon("x", templ.Attributes{"class": "w-4 h-4 opacity-80"}).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</button></label></div><div id=\"objective-tree\" class=\"px-6\" hx-boost=\"true\"><div class=\"flex flex-wrap items-center justify-between gap-3 pb-3\" data-objective-slug=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Outside #objective-tree: the tree is outerHTML-swapped after every\n\tdrop and settings change, and the toolbar's own state (the search term,\n\tthe routing picker, the points toggle) should survive that. --><div class=\"px-6 pb-3 flex flex-wrap items-center justify-between gap-3\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 135, Col: 101}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 114, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" data-child-count=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" data-child-count=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(len(nodes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 135, Col: 145}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 114, Col: 149}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><div class=\"flex items-center gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -194,12 +178,38 @@ func ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoin
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Lives here rather than on a settings page: it decides whether\n\t\t\tthe badges on this very tree render, so the author sees the choice\n\t\t\twhere it lands. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-top\" data-tip=\"Teams earn points for checking into locations and completing activities\"><input type=\"checkbox\" name=\"enablePoints\" class=\"toggle toggle-sm points-toggle\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if enablePoints {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "> <span class=\"text-xs font-medium\">Points</span></label></div><label class=\"input input-sm flex items-center gap-2 w-60\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<input id=\"search-objectives\" type=\"text\" class=\"grow\" placeholder=\"Search objectives\" autocomplete=\"off\" data-ignore-lock> <button id=\"clear-search-objectives\" type=\"button\" class=\"btn btn-xs btn-circle invisible -mr-2\" data-ignore-lock>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("x", templ.Attributes{"class": "w-4 h-4 opacity-80"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</button></label></div><div id=\"objective-tree\" class=\"px-6\" hx-boost=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(nodes) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div role=\"alert\" class=\"alert\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div role=\"alert\" class=\"alert\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -207,25 +217,25 @@ func ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span>This quest has no objectives yet.</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span>This quest has no objectives yet.</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<ul class=\"objective-children join join-vertical flex flex-col w-full\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<ul class=\"objective-children join join-vertical flex flex-col w-full\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 144, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 157, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -235,12 +245,12 @@ func ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoin
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -278,7 +288,7 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"px-6 py-4\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"System page: cannot be moved\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"px-6 py-4\"><div class=\"bg-base-200 p-4 border border-primary/20 rounded-2xl\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"System page: cannot be moved\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -286,33 +296,33 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span> <span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in the game\">System Page</span> <a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span> <span class=\"badge badge-primary badge-sm tooltip tooltip-right\" data-tip=\"Automatically included in the game\">System Page</span> <a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 templ.SafeURL
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 166, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 179, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"link link-hover font-medium text-sm\" hx-boost=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 166, Col: 99}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 179, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</a><div class=\"flex-grow\"></div><span class=\"tooltip tooltip-left\" data-tip=\"System page: cannot be deleted\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</a><div class=\"flex-grow\"></div><span class=\"tooltip tooltip-left\" data-tip=\"System page: cannot be deleted\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -320,7 +330,7 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -351,20 +361,20 @@ func objectiveAddChildButton(node *ObjectiveTreeNode) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 templ.SafeURL
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", node.Objective.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 180, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 193, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" class=\"btn btn-xs btn-ghost btn-circle tooltip shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity\" data-tip=\"Add child objective\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"btn btn-xs btn-ghost btn-circle tooltip shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity\" data-tip=\"Add child objective\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -372,7 +382,7 @@ func objectiveAddChildButton(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -403,56 +413,56 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-visibility-toggle shrink-0\" data-tip=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-visibility-toggle shrink-0\" data-tip=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(visibilityTip(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 194, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 207, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" data-objective-slug=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 195, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 208, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" data-published=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" data-published=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(!node.Draft))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 196, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 209, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if node.OutOfPlay && !node.Draft {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, " disabled")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " disabled")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -472,7 +482,7 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -503,38 +513,38 @@ func objectiveColorPicker(node *ObjectiveTreeNode) templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<details class=\"settings-picker relative inline-block\"><summary class=\"settings-color-trigger w-4 h-4 rounded-full bg-primary cursor-pointer tooltip shrink-0\" data-tip=\"Color\" data-color=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<details class=\"settings-picker relative inline-block\"><summary class=\"settings-color-trigger w-4 h-4 rounded-full bg-primary cursor-pointer tooltip shrink-0\" data-tip=\"Color\" data-color=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Color)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 216, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 229, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"></summary><ul class=\"absolute left-0 top-full mt-1 z-20 flex flex-wrap gap-1 bg-base-100 rounded-box p-2 shadow-lg w-32\"><li><a class=\"settings-color-option block p-1 rounded hover:bg-base-200\" data-color=\"\"><div class=\"w-4 h-4 rounded-full bg-base-300 border border-base-content/30\"></div></a></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></summary><ul class=\"absolute left-0 top-full mt-1 z-20 flex flex-wrap gap-1 bg-base-100 rounded-box p-2 shadow-lg w-32\"><li><a class=\"settings-color-option block p-1 rounded hover:bg-base-200\" data-color=\"\"><div class=\"w-4 h-4 rounded-full bg-base-300 border border-base-content/30\"></div></a></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, c := range objectiveColors {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<li><a class=\"settings-color-option block p-1 rounded hover:bg-base-200\" data-color=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<li><a class=\"settings-color-option block p-1 rounded hover:bg-base-200\" data-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(c)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 226, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 239, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -543,7 +553,7 @@ func objectiveColorPicker(node *ObjectiveTreeNode) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -556,12 +566,12 @@ func objectiveColorPicker(node *ObjectiveTreeNode) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"></div></a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\"></div></a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</ul></details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</ul></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -594,20 +604,20 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<details class=\"settings-picker relative inline-block\"><summary class=\"settings-routing-trigger btn btn-sm btn-ghost gap-1 shrink-0\" data-routing=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<details class=\"settings-picker relative inline-block\"><summary class=\"settings-routing-trigger btn btn-sm btn-ghost gap-1 shrink-0\" data-routing=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 243, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 256, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -615,20 +625,20 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"text-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(routingLabel(node.Objective.Routing))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 246, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 259, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -636,25 +646,25 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</summary><div class=\"absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden\"><ul class=\"menu p-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</summary><div class=\"absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden\"><ul class=\"menu p-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, rs := range models.GetRouteStrategies() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<li><a class=\"settings-routing-option items-start\" data-value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<li><a class=\"settings-routing-option items-start\" data-value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 253, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 266, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -662,38 +672,38 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<span class=\"flex flex-col\"><span class=\"text-sm font-medium\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<span class=\"flex flex-col\"><span class=\"text-sm font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(rs.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 256, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 269, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</span> <span class=\"text-xs text-base-content/60 text-pretty\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span> <span class=\"text-xs text-base-content/60 text-pretty\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(rs.Description())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 257, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 270, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</span></span></a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</span></span></a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</ul>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -702,7 +712,7 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -715,20 +725,20 @@ func objectiveRoutingPicker(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"><span class=\"text-xs whitespace-nowrap opacity-70\">Show at once</span> <input type=\"number\" min=\"0\" class=\"input input-xs w-16 settings-maxnext-input no-spinner\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\"><span class=\"text-xs whitespace-nowrap opacity-70\">Show at once</span> <input type=\"number\" min=\"0\" class=\"input input-xs w-16 settings-maxnext-input no-spinner\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(maxNextValue(node.Objective.MaxNext))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 269, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 282, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" placeholder=\"All\"></div></div></details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" placeholder=\"All\"></div></div></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -759,20 +769,20 @@ func objectiveBandPicker(node *ObjectiveTreeNode) templ.Component {
 			templ_7745c5c3_Var28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<details class=\"settings-picker relative inline-block\"><summary class=\"btn btn-sm btn-ghost gap-1 shrink-0\"><span class=\"text-xs settings-band-summary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<details class=\"settings-picker relative inline-block\"><summary class=\"btn btn-sm btn-ghost gap-1 shrink-0\"><span class=\"text-xs settings-band-summary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, len(node.Children)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 283, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 296, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -780,46 +790,46 @@ func objectiveBandPicker(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</summary><div class=\"absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3\"><p class=\"text-xs font-medium opacity-70 mb-2\">Completion band</p><div class=\"flex items-center gap-2\"><input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-min no-spinner\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</summary><div class=\"absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3\"><p class=\"text-xs font-medium opacity-70 mb-2\">Completion band</p><div class=\"flex items-center gap-2\"><input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-min no-spinner\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandValueStr(node.Objective.ChildrenMin))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 294, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 307, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" placeholder=\"0\"> <span class=\"opacity-60\">to</span> <input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-max no-spinner\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" placeholder=\"0\"> <span class=\"opacity-60\">to</span> <input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-max no-spinner\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandValueStr(node.Objective.ChildrenMax))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 302, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 315, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\" placeholder=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" placeholder=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(len(node.Children)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 303, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 316, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\"></div><p class=\"text-xs opacity-70 mt-2 settings-band-explainer\"></p></div></details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"></div><p class=\"text-xs opacity-70 mt-2 settings-band-explainer\"></p></div></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -851,20 +861,20 @@ func objectivePointsBadge(points int, enablePoints bool) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if enablePoints && points != 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d pts", points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 315, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 328, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -897,46 +907,46 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(node.Children) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<li class=\"list-none my-3 group\" data-objective-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<li class=\"list-none my-3 group\" data-objective-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 325, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 338, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\" data-objective-slug=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" data-objective-slug=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 326, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 339, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" data-child-count=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" data-child-count=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(len(node.Children)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 327, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 340, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -945,7 +955,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -958,20 +968,20 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" data-group-color=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" data-group-color=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Color)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 331, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 344, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\"><div class=\"card-body p-5 gap-3\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\"><div class=\"card-body p-5 gap-3\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -979,7 +989,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -987,33 +997,33 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var42 templ.SafeURL
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 339, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 352, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\" class=\"link link-hover font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" class=\"link link-hover font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 340, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 353, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</a><div class=\"flex-grow\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</a><div class=\"flex-grow\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1037,20 +1047,20 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</div><ul class=\"objective-children join join-vertical flex flex-col w-full min-h-8\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div><ul class=\"objective-children join join-vertical flex flex-col w-full min-h-8\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 349, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 362, Col: 118}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1060,7 +1070,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</ul></div></div></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</ul></div></div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1070,7 +1080,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<li class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<li class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1083,33 +1093,33 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" data-objective-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\" data-objective-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 360, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 373, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\" data-search-text=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\" data-search-text=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 361, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 374, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var48)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\"><div class=\"flex items-center gap-3\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1117,33 +1127,33 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</span> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</span> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var49 templ.SafeURL
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 367, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 380, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\" class=\"link link-hover font-medium\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "\" class=\"link link-hover font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var50 string
 			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 368, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 381, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</a><div class=\"flex-grow\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</a><div class=\"flex-grow\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1159,20 +1169,20 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</div><!-- Plain flow, not absolute: lets Sortable grow this to show the\n\t\t\t     incoming item on hover. emptyInsertThreshold below makes a\n\t\t\t     target this thin reachable. --><ul class=\"objective-children\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</div><!-- Plain flow, not absolute: lets Sortable grow this to show the\n\t\t\t     incoming item on hover. emptyInsertThreshold below makes a\n\t\t\t     target this thin reachable. --><ul class=\"objective-children\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var51 string
 			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 378, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 391, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\"></ul></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\"></ul></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1209,7 +1219,7 @@ func objectiveSortableScript() templ.Component {
 			templ_7745c5c3_Var52 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t// postObjectiveUpdate posts, then always re-fetches the tree: a refused\n\t// move must show as it landed, and htmx.ajax (not fetch) is what\n\t// delivers the response's out-of-band toast.\n\tfunction postObjectiveUpdate(url, values) {\n\t\treturn htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {\n\t\t\thtmx.ajax('GET', '/admin/quest', {\n\t\t\t\tselect: '#objective-tree',\n\t\t\t\ttarget: '#objective-tree',\n\t\t\t\tswap: 'outerHTML',\n\t\t\t}).finally(initObjectiveTree);\n\t\t});\n\t}\n\n\tfunction bandSummaryText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) return 'Complete all';\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\tif (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi);\n\t\tif (lo === 0 && hi === n) return 'Complete any';\n\t\tif (lo === 0) return 'Complete up to ' + hi;\n\t\tif (hi === n) return 'Complete ' + lo + '+';\n\t\treturn 'Complete ' + lo + '–' + hi;\n\t}\n\n\tfunction bandExplainerText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) {\n\t\t\treturn 'Requires all ' + n + ' children.';\n\t\t}\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\treturn lo >= hi\n\t\t\t? 'Completes automatically at ' + hi + ' of ' + n + '.'\n\t\t\t: 'Finish button from ' + lo + '; auto at ' + hi + ' of ' + n + '.';\n\t}\n\n\t// settingsScope finds the nearest element carrying the objective's\n\t// slug/child-count; not restricted to li, since root's picker sits in a\n\t// plain div.\n\tfunction settingsScope(el) {\n\t\treturn el.closest('[data-objective-slug]');\n\t}\n\n\t// syncSettings keeps the picker's summary and the randomised-window field\n\t// honest after any edit, without a round trip.\n\tfunction syncSettings(scope) {\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar min = scope.querySelector('.settings-min');\n\t\tvar max = scope.querySelector('.settings-max');\n\t\tif (min && max) {\n\t\t\tvar summary = scope.querySelector('.settings-band-summary');\n\t\t\tvar explainer = scope.querySelector('.settings-band-explainer');\n\t\t\tif (summary) summary.textContent = bandSummaryText(n, min.value, max.value);\n\t\t\tif (explainer) explainer.textContent = bandExplainerText(n, min.value, max.value);\n\t\t}\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextField = scope.querySelector('.settings-maxnext');\n\t\tif (routingTrigger && maxNextField) {\n\t\t\tmaxNextField.classList.toggle('hidden', routingTrigger.dataset.routing !== 'randomised');\n\t\t}\n\t}\n\n\t// currentSettingsValues reads color/routing from their trigger's data\n\t// attribute, not a <select>; null-checked since root has no band or\n\t// color picker.\n\tfunction currentSettingsValues(scope) {\n\t\tvar colorTrigger = scope.querySelector('.settings-color-trigger');\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextInput = scope.querySelector('.settings-maxnext-input');\n\t\tvar minInput = scope.querySelector('.settings-min');\n\t\tvar maxInput = scope.querySelector('.settings-max');\n\t\treturn {\n\t\t\trouting: routingTrigger ? routingTrigger.dataset.routing : '',\n\t\t\tmax_next: maxNextInput ? maxNextInput.value : '',\n\t\t\tchildren_min: minInput ? minInput.value : '',\n\t\t\tchildren_max: maxInput ? maxInput.value : '',\n\t\t\tcolor: colorTrigger ? colorTrigger.dataset.color : '',\n\t\t};\n\t}\n\n\t// submitSettings posts every field together; overrides lets a click pass\n\t// its value before it's written to the DOM.\n\tfunction submitSettings(scope, overrides) {\n\t\tvar values = currentSettingsValues(scope);\n\t\tif (overrides) {\n\t\t\tfor (var key in overrides) values[key] = overrides[key];\n\t\t}\n\t\tpostObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);\n\t}\n\n\t// closeSettingsPicker closes the <details> a control sits in; <details>\n\t// doesn't do this itself.\n\tfunction closeSettingsPicker(el) {\n\t\tvar details = el.closest('details.settings-picker');\n\t\tif (details) details.open = false;\n\t}\n\n\t// normalizeSearchText strips diacritics so accented and unaccented\n\t// spellings both match.\n\tfunction normalizeSearchText(str) {\n\t\treturn str.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\t}\n\n\t// applyObjectiveSearch hides non-matching leaves only: hiding a section\n\t// could bury a matching leaf nested inside it.\n\tfunction applyObjectiveSearch() {\n\t\tvar input = document.getElementById('search-objectives');\n\t\tif (!input) return;\n\t\tvar term = normalizeSearchText(input.value);\n\t\tdocument.querySelectorAll('#objective-tree .objective-searchable').forEach(function(row) {\n\t\t\tvar text = normalizeSearchText(row.dataset.searchText || '');\n\t\t\trow.classList.toggle('hidden', term !== '' && text.indexOf(term) === -1);\n\t\t});\n\t\tvar clearBtn = document.getElementById('clear-search-objectives');\n\t\tif (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);\n\t}\n\n\t// updateJoinRounding sets each run's corner radii as inline styles:\n\t// CSS-only versions kept losing to daisyUI's own .join/.join-item\n\t// cascade for a solo leaf or a run's edge.\n\tfunction updateJoinRounding(list) {\n\t\tvar ROUND = '1rem';\n\t\tvar SQUARE = '0px';\n\t\tvar run = [];\n\t\tfunction flushRun() {\n\t\t\trun.forEach(function(el, i) {\n\t\t\t\tvar first = i === 0;\n\t\t\t\tvar last = i === run.length - 1;\n\t\t\t\tel.style.borderStartStartRadius = first ? ROUND : SQUARE;\n\t\t\t\tel.style.borderStartEndRadius = first ? ROUND : SQUARE;\n\t\t\t\tel.style.borderEndStartRadius = last ? ROUND : SQUARE;\n\t\t\t\tel.style.borderEndEndRadius = last ? ROUND : SQUARE;\n\t\t\t});\n\t\t\trun = [];\n\t\t}\n\t\tArray.prototype.forEach.call(list.children, function(el) {\n\t\t\tif (el.classList && el.classList.contains('join-item')) {\n\t\t\t\trun.push(el);\n\t\t\t} else {\n\t\t\t\tflushRun();\n\t\t\t}\n\t\t});\n\t\tflushRun();\n\t}\n\n\tfunction initObjectiveTree() {\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tif (list._objectiveSortable) {\n\t\t\t\tlist._objectiveSortable.destroy();\n\t\t\t}\n\t\t\tlist._objectiveSortable = new Sortable(list, {\n\t\t\t\tgroup: 'objectives',\n\t\t\t\thandle: '.objective-drag-handle',\n\t\t\t\tanimation: 150,\n\t\t\t\tfallbackOnBody: true,\n\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t// Default 5px; 56 lets a leaf's own empty nested list be\n\t\t\t\t// reached from anywhere in that leaf's row.\n\t\t\t\temptyInsertThreshold: 56,\n\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\tdragClass: 'sortable-drag-preview',\n\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\tpostObjectiveUpdate('/admin/objective/reposition', {\n\t\t\t\t\t\tobjective_id: evt.item.dataset.objectiveId,\n\t\t\t\t\t\tparent_id: evt.to.dataset.parentId,\n\t\t\t\t\t\tposition: evt.newIndex,\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t});\n\t\t\tupdateJoinRounding(list);\n\t\t});\n\t\tdocument.querySelectorAll('#objective-tree [data-objective-slug]').forEach(syncSettings);\n\t\t// Re-applied here since #objective-tree's rows are replaced on every\n\t\t// refresh, but the search box outside it isn't.\n\t\tapplyObjectiveSearch();\n\t}\n\t// Bound once: the script re-runs on every hx-boost navigation back into\n\t// this page, and a second registration would stack a second POST on\n\t// every click.\n\tif (!window.__objectiveTreeDelegationBound) {\n\t\twindow.__objectiveTreeDelegationBound = true;\n\n\t\t// Capture phase, before the handler below: closes any open picker\n\t\t// the click landed outside of.\n\t\tdocument.addEventListener('click', function(evt) {\n\t\t\tdocument.querySelectorAll('#objective-tree details.settings-picker[open]').forEach(function(details) {\n\t\t\t\tif (!details.contains(evt.target)) details.open = false;\n\t\t\t});\n\t\t}, true);\n\n\t\t// Delegated on body: #objective-tree itself is replaced on every\n\t\t// refresh.\n\t\tdocument.body.addEventListener('click', function(evt) {\n\t\tif (evt.target.closest('#clear-search-objectives')) {\n\t\t\tvar searchInput = document.getElementById('search-objectives');\n\t\t\tif (searchInput) {\n\t\t\t\tsearchInput.value = '';\n\t\t\t\tapplyObjectiveSearch();\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tvar toggle = evt.target.closest('.objective-visibility-toggle');\n\t\tif (toggle) {\n\t\t\tif (toggle.disabled) return;\n\t\t\tvar nowPublished = toggle.dataset.published !== 'true';\n\t\t\tpostObjectiveUpdate('/admin/objective/' + toggle.dataset.objectiveSlug + '/draft', {\n\t\t\t\tpublished: nowPublished ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar colorOption = evt.target.closest('.settings-color-option');\n\t\tif (colorOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar colorScope = settingsScope(colorOption);\n\t\t\tif (!colorScope) return;\n\t\t\tvar colorTrigger = colorScope.querySelector('.settings-color-trigger');\n\t\t\tif (colorTrigger) colorTrigger.dataset.color = colorOption.dataset.color;\n\t\t\tcloseSettingsPicker(colorOption);\n\t\t\tsubmitSettings(colorScope, { color: colorOption.dataset.color });\n\t\t\treturn;\n\t\t}\n\t\tvar routingOption = evt.target.closest('.settings-routing-option');\n\t\tif (routingOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar routingScope = settingsScope(routingOption);\n\t\t\tif (!routingScope) return;\n\t\t\tvar routingTrigger = routingScope.querySelector('.settings-routing-trigger');\n\t\t\tif (routingTrigger) routingTrigger.dataset.routing = routingOption.dataset.value;\n\t\t\tsyncSettings(routingScope);\n\t\t\tcloseSettingsPicker(routingOption);\n\t\t\tsubmitSettings(routingScope, { routing: routingOption.dataset.value });\n\t\t}\n\t});\n\n\tdocument.body.addEventListener('input', function(evt) {\n\t\tif (evt.target.id === 'search-objectives') {\n\t\t\tapplyObjectiveSearch();\n\t\t\treturn;\n\t\t}\n\t\tif (!evt.target.matches('.settings-min, .settings-max')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (scope) syncSettings(scope);\n\t});\n\n\tdocument.body.addEventListener('change', function(evt) {\n\t\tif (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (!scope) return;\n\t\tsyncSettings(scope);\n\t\tsubmitSettings(scope);\n\t});\n\t}\n\n\tinitObjectiveTree();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t// postObjectiveUpdate posts, then always re-fetches the tree: a refused\n\t// move must show as it landed, and htmx.ajax (not fetch) is what\n\t// delivers the response's out-of-band toast.\n\tfunction postObjectiveUpdate(url, values) {\n\t\treturn htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {\n\t\t\thtmx.ajax('GET', '/admin/quest', {\n\t\t\t\tselect: '#objective-tree',\n\t\t\t\ttarget: '#objective-tree',\n\t\t\t\tswap: 'outerHTML',\n\t\t\t}).finally(initObjectiveTree);\n\t\t});\n\t}\n\n\tfunction bandSummaryText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) return 'Complete all';\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\tif (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi);\n\t\tif (lo === 0 && hi === n) return 'Complete any';\n\t\tif (lo === 0) return 'Complete up to ' + hi;\n\t\tif (hi === n) return 'Complete ' + lo + '+';\n\t\treturn 'Complete ' + lo + '–' + hi;\n\t}\n\n\tfunction bandExplainerText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) {\n\t\t\treturn 'Requires all ' + n + ' children.';\n\t\t}\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\treturn lo >= hi\n\t\t\t? 'Completes automatically at ' + hi + ' of ' + n + '.'\n\t\t\t: 'Finish button from ' + lo + '; auto at ' + hi + ' of ' + n + '.';\n\t}\n\n\t// settingsScope finds the nearest element carrying the objective's\n\t// slug/child-count; not restricted to li, since root's picker sits in a\n\t// plain div.\n\tfunction settingsScope(el) {\n\t\treturn el.closest('[data-objective-slug]');\n\t}\n\n\t// syncSettings keeps the picker's summary and the randomised-window field\n\t// honest after any edit, without a round trip.\n\tfunction syncSettings(scope) {\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar min = scope.querySelector('.settings-min');\n\t\tvar max = scope.querySelector('.settings-max');\n\t\tif (min && max) {\n\t\t\tvar summary = scope.querySelector('.settings-band-summary');\n\t\t\tvar explainer = scope.querySelector('.settings-band-explainer');\n\t\t\tif (summary) summary.textContent = bandSummaryText(n, min.value, max.value);\n\t\t\tif (explainer) explainer.textContent = bandExplainerText(n, min.value, max.value);\n\t\t}\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextField = scope.querySelector('.settings-maxnext');\n\t\tif (routingTrigger && maxNextField) {\n\t\t\tmaxNextField.classList.toggle('hidden', routingTrigger.dataset.routing !== 'randomised');\n\t\t}\n\t}\n\n\t// currentSettingsValues reads color/routing from their trigger's data\n\t// attribute, not a <select>; null-checked since root has no band or\n\t// color picker.\n\tfunction currentSettingsValues(scope) {\n\t\tvar colorTrigger = scope.querySelector('.settings-color-trigger');\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextInput = scope.querySelector('.settings-maxnext-input');\n\t\tvar minInput = scope.querySelector('.settings-min');\n\t\tvar maxInput = scope.querySelector('.settings-max');\n\t\treturn {\n\t\t\trouting: routingTrigger ? routingTrigger.dataset.routing : '',\n\t\t\tmax_next: maxNextInput ? maxNextInput.value : '',\n\t\t\tchildren_min: minInput ? minInput.value : '',\n\t\t\tchildren_max: maxInput ? maxInput.value : '',\n\t\t\tcolor: colorTrigger ? colorTrigger.dataset.color : '',\n\t\t};\n\t}\n\n\t// submitSettings posts every field together; overrides lets a click pass\n\t// its value before it's written to the DOM.\n\tfunction submitSettings(scope, overrides) {\n\t\tvar values = currentSettingsValues(scope);\n\t\tif (overrides) {\n\t\t\tfor (var key in overrides) values[key] = overrides[key];\n\t\t}\n\t\tpostObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);\n\t}\n\n\t// closeSettingsPicker closes the <details> a control sits in; <details>\n\t// doesn't do this itself.\n\tfunction closeSettingsPicker(el) {\n\t\tvar details = el.closest('details.settings-picker');\n\t\tif (details) details.open = false;\n\t}\n\n\t// normalizeSearchText strips diacritics so accented and unaccented\n\t// spellings both match.\n\tfunction normalizeSearchText(str) {\n\t\treturn str.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\t}\n\n\t// applyObjectiveSearch hides non-matching leaves only: hiding a section\n\t// could bury a matching leaf nested inside it.\n\tfunction applyObjectiveSearch() {\n\t\tvar input = document.getElementById('search-objectives');\n\t\tif (!input) return;\n\t\tvar term = normalizeSearchText(input.value);\n\t\tdocument.querySelectorAll('#objective-tree .objective-searchable').forEach(function(row) {\n\t\t\tvar text = normalizeSearchText(row.dataset.searchText || '');\n\t\t\trow.classList.toggle('hidden', term !== '' && text.indexOf(term) === -1);\n\t\t});\n\t\tvar clearBtn = document.getElementById('clear-search-objectives');\n\t\tif (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);\n\t}\n\n\t// updateJoinRounding sets each run's corner radii as inline styles:\n\t// CSS-only versions kept losing to daisyUI's own .join/.join-item\n\t// cascade for a solo leaf or a run's edge.\n\tfunction updateJoinRounding(list) {\n\t\tvar ROUND = '1rem';\n\t\tvar SQUARE = '0px';\n\t\tvar run = [];\n\t\tfunction flushRun() {\n\t\t\trun.forEach(function(el, i) {\n\t\t\t\tvar first = i === 0;\n\t\t\t\tvar last = i === run.length - 1;\n\t\t\t\tel.style.borderStartStartRadius = first ? ROUND : SQUARE;\n\t\t\t\tel.style.borderStartEndRadius = first ? ROUND : SQUARE;\n\t\t\t\tel.style.borderEndStartRadius = last ? ROUND : SQUARE;\n\t\t\t\tel.style.borderEndEndRadius = last ? ROUND : SQUARE;\n\t\t\t});\n\t\t\trun = [];\n\t\t}\n\t\tArray.prototype.forEach.call(list.children, function(el) {\n\t\t\tif (el.classList && el.classList.contains('join-item')) {\n\t\t\t\trun.push(el);\n\t\t\t} else {\n\t\t\t\tflushRun();\n\t\t\t}\n\t\t});\n\t\tflushRun();\n\t}\n\n\tfunction initObjectiveTree() {\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tif (list._objectiveSortable) {\n\t\t\t\tlist._objectiveSortable.destroy();\n\t\t\t}\n\t\t\tlist._objectiveSortable = new Sortable(list, {\n\t\t\t\tgroup: 'objectives',\n\t\t\t\thandle: '.objective-drag-handle',\n\t\t\t\tanimation: 150,\n\t\t\t\tfallbackOnBody: true,\n\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t// Default 5px; 56 lets a leaf's own empty nested list be\n\t\t\t\t// reached from anywhere in that leaf's row.\n\t\t\t\temptyInsertThreshold: 56,\n\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\tdragClass: 'sortable-drag-preview',\n\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\tpostObjectiveUpdate('/admin/objective/reposition', {\n\t\t\t\t\t\tobjective_id: evt.item.dataset.objectiveId,\n\t\t\t\t\t\tparent_id: evt.to.dataset.parentId,\n\t\t\t\t\t\tposition: evt.newIndex,\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t});\n\t\t\tupdateJoinRounding(list);\n\t\t});\n\t\tdocument.querySelectorAll('#objective-tree [data-objective-slug]').forEach(syncSettings);\n\t\t// Re-applied here since #objective-tree's rows are replaced on every\n\t\t// refresh, but the search box outside it isn't.\n\t\tapplyObjectiveSearch();\n\t}\n\t// Bound once: the script re-runs on every hx-boost navigation back into\n\t// this page, and a second registration would stack a second POST on\n\t// every click.\n\tif (!window.__objectiveTreeDelegationBound) {\n\t\twindow.__objectiveTreeDelegationBound = true;\n\n\t\t// Capture phase, before the handler below: closes any open picker\n\t\t// the click landed outside of.\n\t\tdocument.addEventListener('click', function(evt) {\n\t\t\tdocument.querySelectorAll('#objective-tree details.settings-picker[open]').forEach(function(details) {\n\t\t\t\tif (!details.contains(evt.target)) details.open = false;\n\t\t\t});\n\t\t}, true);\n\n\t\t// Delegated on body: #objective-tree itself is replaced on every\n\t\t// refresh.\n\t\tdocument.body.addEventListener('click', function(evt) {\n\t\tif (evt.target.closest('#clear-search-objectives')) {\n\t\t\tvar searchInput = document.getElementById('search-objectives');\n\t\t\tif (searchInput) {\n\t\t\t\tsearchInput.value = '';\n\t\t\t\tapplyObjectiveSearch();\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tvar toggle = evt.target.closest('.objective-visibility-toggle');\n\t\tif (toggle) {\n\t\t\tif (toggle.disabled) return;\n\t\t\tvar nowPublished = toggle.dataset.published !== 'true';\n\t\t\tpostObjectiveUpdate('/admin/objective/' + toggle.dataset.objectiveSlug + '/draft', {\n\t\t\t\tpublished: nowPublished ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar colorOption = evt.target.closest('.settings-color-option');\n\t\tif (colorOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar colorScope = settingsScope(colorOption);\n\t\t\tif (!colorScope) return;\n\t\t\tvar colorTrigger = colorScope.querySelector('.settings-color-trigger');\n\t\t\tif (colorTrigger) colorTrigger.dataset.color = colorOption.dataset.color;\n\t\t\tcloseSettingsPicker(colorOption);\n\t\t\tsubmitSettings(colorScope, { color: colorOption.dataset.color });\n\t\t\treturn;\n\t\t}\n\t\tvar routingOption = evt.target.closest('.settings-routing-option');\n\t\tif (routingOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar routingScope = settingsScope(routingOption);\n\t\t\tif (!routingScope) return;\n\t\t\tvar routingTrigger = routingScope.querySelector('.settings-routing-trigger');\n\t\t\tif (routingTrigger) routingTrigger.dataset.routing = routingOption.dataset.value;\n\t\t\tsyncSettings(routingScope);\n\t\t\tcloseSettingsPicker(routingOption);\n\t\t\tsubmitSettings(routingScope, { routing: routingOption.dataset.value });\n\t\t}\n\t});\n\n\tdocument.body.addEventListener('input', function(evt) {\n\t\tif (evt.target.id === 'search-objectives') {\n\t\t\tapplyObjectiveSearch();\n\t\t\treturn;\n\t\t}\n\t\tif (!evt.target.matches('.settings-min, .settings-max')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (scope) syncSettings(scope);\n\t});\n\n\tdocument.body.addEventListener('change', function(evt) {\n\t\tif (evt.target.matches('.points-toggle')) {\n\t\t\t// An unchecked checkbox is absent from the form rather than\n\t\t\t// false, and the server reads absence as \"off\".\n\t\t\tpostObjectiveUpdate('/admin/quest/settings', {\n\t\t\t\tenablePoints: evt.target.checked ? 'on' : '',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tif (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (!scope) return;\n\t\tsyncSettings(scope);\n\t\tsubmitSettings(scope);\n\t});\n\t}\n\n\tinitObjectiveTree();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

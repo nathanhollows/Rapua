@@ -354,6 +354,13 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 
 			r.Get("/start", adminHandler.StartPageEdit)
 			r.Get("/complete", adminHandler.CompletePageEdit)
+
+			r.Group(func(r chi.Router) {
+				r.Use(func(next http.Handler) http.Handler {
+					return middlewares.QuestEditableMiddleware(logger, adminHandler.QuestRunningToast, next)
+				})
+				r.Post("/settings", adminHandler.QuestSettingsPost)
+			})
 		})
 
 		// Structure and content are what a running game is made of, so these
@@ -390,11 +397,6 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/{runCode}", adminHandler.RunOverview)
 			r.Delete("/{runCode}", adminHandler.RunDelete)
 			r.Post("/{runCode}/reset", adminHandler.RunReset)
-		})
-
-		r.Route("/experience", func(r chi.Router) {
-			r.Get("/", adminHandler.Experience)
-			r.Post("/", adminHandler.ExperiencePost)
 		})
 
 		r.Route("/quests", func(r chi.Router) {

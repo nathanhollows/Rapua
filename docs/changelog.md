@@ -432,7 +432,7 @@ Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 tea
 ### Changed
 
 - Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now.
-- The [Experience Settings](/admin/experience) page is now much easier to read and nicer to look at.
+- The Experience Settings page is now much easier to read and nicer to look at.
 
 ### Fixed
 

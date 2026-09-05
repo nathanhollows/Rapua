@@ -45,7 +45,7 @@ templ QuickstartBar(quest models.Quest) {
 				if !quest.Settings.CreatedAt.Equal(quest.Settings.UpdatedAt) {
 					@completedStep("Update Settings")
 				} else {
-					@nextStep(4, "Update Settings", "/admin/experience", quest.ID == "")
+					@nextStep(4, "Update Settings", "/admin/quest", quest.ID == "")
 				}
 			</ol>
 			<button

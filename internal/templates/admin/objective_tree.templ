@@ -109,8 +109,24 @@ templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoi
 	</div>
 	@objectiveSystemPageLink("Start", "/admin/quest/start")
 	<!-- Outside #objective-tree: the tree is outerHTML-swapped after every
-	drop and settings change, and a search term should survive that. -->
-	<div class="px-6 pb-3 flex justify-end">
+	drop and settings change, and the toolbar's own state (the search term,
+	the routing picker, the points toggle) should survive that. -->
+	<div class="px-6 pb-3 flex flex-wrap items-center justify-between gap-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(len(nodes)) }>
+		<div class="flex items-center gap-3">
+			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root})
+			<!-- Lives here rather than on a settings page: it decides whether
+			the badges on this very tree render, so the author sees the choice
+			where it lands. -->
+			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-top" data-tip="Teams earn points for checking into locations and completing activities">
+				<input
+					type="checkbox"
+					name="enablePoints"
+					class="toggle toggle-sm points-toggle"
+					checked?={ enablePoints }
+				/>
+				<span class="text-xs font-medium">Points</span>
+			</label>
+		</div>
 		<label class="input input-sm flex items-center gap-2 w-60">
 			@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
 			<input
@@ -132,9 +148,6 @@ templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoi
 		</label>
 	</div>
 	<div id="objective-tree" class="px-6" hx-boost="true">
-		<div class="flex flex-wrap items-center justify-between gap-3 pb-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(len(nodes)) }>
-			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root})
-		</div>
 		if len(nodes) == 0 {
 			<div role="alert" class="alert">
 				@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
@@ -639,6 +652,14 @@ templ objectiveSortableScript() {
 	});
 
 	document.body.addEventListener('change', function(evt) {
+		if (evt.target.matches('.points-toggle')) {
+			// An unchecked checkbox is absent from the form rather than
+			// false, and the server reads absence as "off".
+			postObjectiveUpdate('/admin/quest/settings', {
+				enablePoints: evt.target.checked ? 'on' : '',
+			});
+			return;
+		}
 		if (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;
 		var scope = settingsScope(evt.target);
 		if (!scope) return;
