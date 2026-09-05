@@ -596,6 +596,50 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	assert.Equal(t, 0, count, "All uploads should be deleted after team deletion")
 }
 
+// A reset run must not keep its pressed finish buttons, or banded sections
+// stay complete on a run that just started over.
+func TestDeleteService_ResetTeams_ClearsSectionFinishes(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+	team := &models.Run{ID: gofakeit.UUID(), Code: "AAAAA", QuestID: instance.ID, HasStarted: true}
+	_, err = dbc.NewInsert().Model(team).Exec(ctx)
+	require.NoError(t, err)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Slug:    "section",
+		Title:   "Section",
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	finish := &models.SectionFinish{
+		RunCode:     team.Code,
+		ObjectiveID: objective.ID,
+	}
+	_, err = dbc.NewInsert().Model(finish).Exec(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.ResetTeams(ctx, instance.ID, []string{team.Code}))
+
+	count, err := dbc.NewSelect().
+		Model((*models.SectionFinish)(nil)).
+		Where("run_code = ?", team.Code).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "the reset leaves no section finishes behind")
+}
+
 func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()

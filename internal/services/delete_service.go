@@ -509,6 +509,17 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		return fmt.Errorf("deleting block states: %w", err)
 	}
 
+	// Without this, a reset run keeps every finish button it pressed, so
+	// banded sections stay complete on a run that just started over.
+	_, err = tx.NewDelete().
+		Model((*models.SectionFinish)(nil)).
+		Where("run_code IN (?)", bun.In(teamCodes)).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting section finishes: %w", err)
+	}
+
 	_, err = tx.NewDelete().
 		Model((*models.Upload)(nil)).
 		Where("run_code IN (?)", bun.In(teamCodes)).
