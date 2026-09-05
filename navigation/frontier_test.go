@@ -511,25 +511,33 @@ func TestInPlay(t *testing.T) {
 	assert.ElementsMatch(t, []string{"root", "live", "parked", "buried", "deeper"}, slugs)
 }
 
-// Parking a section must not finish the quest. Completion is derived over every
-// row, so an ancestor's band still counts the parked children: work already
-// done cannot satisfy a band that shrank under it.
-func TestComputeFrontier_DraftingASectionDoesNotCompleteItsAncestors(t *testing.T) {
+// Parking a child removes a requirement without manufacturing completion. The
+// band counts what is in play on both sides, so the section still needs
+// whatever is left, and only finishes when a run has done it.
+//
+// This reverses the mid-run protection that once lived here. It had to: with
+// the parked child still counted, an author who parked the last piece of
+// content left the section unfinishable and every run behind it dead-ended,
+// with nothing said at edit time. What now stops a run being surprised is that
+// a running game cannot be edited at all.
+func TestComputeFrontier_ParkingRemovesARequirement(t *testing.T) {
 	objectives := []models.Objective{
 		node("root", "", 0),
-		node("done", "root", 0),
-		node("parked", "root", 1),
+		node("one", "root", 0),
+		node("two", "root", 1),
 	}
-	state := runState(objectives, "root", "done")
+	state := runState(objectives, "root")
 
-	frontier := frontierOf(objectives, state)
-	require.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
-		"one of two children done, so the root is not finished")
+	require.NotEqual(t, navigation.StatusComplete, frontierOf(objectives, state).StatusOf("root"),
+		"neither child is done")
 
 	objectives[2].Draft = true
-	frontier = frontierOf(objectives, state)
-	assert.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
-		"and parking the other one must not finish it either")
+	assert.NotEqual(t, navigation.StatusComplete, frontierOf(objectives, state).StatusOf("root"),
+		"parking one does not finish the other")
+
+	state = runState(objectives, "root", "one")
+	assert.Equal(t, navigation.StatusComplete, frontierOf(objectives, state).StatusOf("root"),
+		"but once the child still in play is done, nothing is left to require")
 }
 
 // The other direction of the same rule: what a run cleared before a section was
@@ -553,23 +561,90 @@ func TestComputeFrontier_CompletionOutlivesDrafting(t *testing.T) {
 		"what it unlocked stays unlocked")
 }
 
-// A section whose children are all parked looks childless once the tree is
-// pruned, but it is not a leaf: its band still counts them, so clearing its
-// proof would not complete it. Offering it hands a player a dead end.
-func TestComputeFrontier_SectionWithOnlyParkedChildrenIsNotOffered(t *testing.T) {
+// A section whose children are all parked has nothing in play below it, so its
+// own proof is the whole of its completion: it is a leaf, and is offered and
+// cleared like one. Lint says the same about a document (ALL_CHILDREN_DRAFT).
+func TestComputeFrontier_SectionWithOnlyParkedChildrenIsALeaf(t *testing.T) {
 	objectives := []models.Objective{
 		node("root", "", 0),
 		node("section", "root", 0),
 		node("one", "section", 0),
 	}
-	state := runState(objectives, "root", "section")
-
-	require.Equal(t, []string{"one"}, availableSlugs(frontierOf(objectives, state)))
+	require.Equal(t, []string{"one"},
+		availableSlugs(frontierOf(objectives, runState(objectives, "root", "section"))))
 
 	objectives[2].Draft = true
+	assert.Equal(t, []string{"section"},
+		availableSlugs(frontierOf(objectives, runState(objectives, "root"))),
+		"with nothing below it in play, the section is the thing to do")
+
+	// Clearing its own proof completes it, where before it was offered nothing
+	// and the quest could not be finished at all.
+	frontier := frontierOf(objectives, runState(objectives, "root", "section"))
+	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("section"))
+	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("root"))
+}
+
+// A section with content of its own is somewhere to go before it is a heading
+// over its children. Without this a chapter introduction is authored and never
+// read, because the children are listed in its place from the start.
+func TestComputeFrontier_SectionWithUnseenContentIsOffered(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("heart", "root", 0),
+		node("rose", "heart", 0),
+		node("jasmine", "heart", 1),
+	}
+
+	// No gate: the section's proof is empty, so its children are reachable
+	// straight away. It has a card to show, though.
+	state := runState(objectives)
+	state.HasProofBlocks["root"] = false
+	state.HasProofBlocks["heart"] = false
+	state.HasRevealBlocks = map[string]bool{"heart": true}
+	state.RevealSeen = map[string]bool{}
+
+	assert.Equal(t, []string{"heart"}, availableSlugs(frontierOf(objectives, state)),
+		"the section is offered while it still has something to say")
+
+	state.RevealSeen["heart"] = true
+	assert.Equal(t, []string{"rose", "jasmine"}, availableSlugs(frontierOf(objectives, state)),
+		"and steps back to being a heading once it has said it")
+}
+
+// A section with nothing of its own stays navigation, so its children are
+// listed in its place from the start.
+func TestComputeFrontier_SectionWithoutContentStaysAHeading(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("heart", "root", 0),
+		node("rose", "heart", 0),
+	}
+	state := runState(objectives)
+	state.HasProofBlocks["root"] = false
+	state.HasProofBlocks["heart"] = false
+
+	assert.Equal(t, []string{"rose"}, availableSlugs(frontierOf(objectives, state)))
+}
+
+// The band is the reason ErrParkingBreaksBand exists, so the runtime has to
+// agree with what the toggle and lint promise: a section with no explicit
+// bounds needs whatever is left in play, not everything ever authored.
+func TestComputeFrontier_OmittedBandNeedsWhatRemains(t *testing.T) {
+	objectives := []models.Objective{
+		node("root", "", 0),
+		node("section", "root", 0),
+		node("one", "section", 0),
+		node("two", "section", 1),
+	}
+	objectives[3].Draft = true
+
+	// One is the only child left in play, and it is done.
+	state := runState(objectives, "root", "section", "one")
 	frontier := frontierOf(objectives, state)
-	assert.Empty(t, availableSlugs(frontier),
-		"nothing is offered: the only content is parked and the section cannot be cleared")
-	assert.NotEqual(t, navigation.StatusComplete, frontier.StatusOf("root"),
-		"and the quest is not finished, because its content was never played")
+
+	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("section"),
+		"the parked child cannot be required: no run can ever complete it")
+	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("root"))
+	assert.Empty(t, availableSlugs(frontier), "and the quest is finished rather than dead-ended")
 }

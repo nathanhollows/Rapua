@@ -40,6 +40,10 @@ type RunState struct {
 	// reading it the other way would put a whole subtree out of reach and leave
 	// the quest unfinishable.
 	HasProofBlocks map[string]bool
+	// HasRevealBlocks holds the objectives with content of their own to show.
+	HasRevealBlocks map[string]bool
+	// RevealSeen holds the objectives whose reveal this run has been shown.
+	RevealSeen map[string]bool
 	// SectionFinished holds the objectives whose finish button the player has
 	// pressed, from the append-only section-finish log.
 	SectionFinished map[string]bool
@@ -80,11 +84,21 @@ type tree struct {
 	byID     map[string]models.Objective
 	children map[string][]models.Objective
 	roots    []models.Objective
-	// hasParkedChildren names the objectives whose children are all out of
-	// play. The pruned tree cannot tell those from a leaf, and the difference
-	// matters: a leaf is cleared by being seen, while one of these still has a
-	// band counting children no run can reach.
-	hasParkedChildren map[string]bool
+	// inPlay is right either way: given the whole tree it excludes drafts,
+	// given a pruned one everything is in play.
+	inPlay map[string]bool
+}
+
+// publishedChildCount is what a band counts: a parked child can never earn a
+// completion row, so a band counting one is one no run can meet.
+func (t tree) publishedChildCount(objectiveID string) int {
+	count := 0
+	for _, child := range t.children[objectiveID] {
+		if t.inPlay[child.ID] {
+			count++
+		}
+	}
+	return count
 }
 
 func newTree(objectives []models.Objective) tree {
@@ -112,7 +126,30 @@ func newTree(objectives []models.Objective) tree {
 	for parentID := range t.children {
 		sortByPosition(t.children[parentID])
 	}
+
+	t.inPlay = t.reachableFromRoots()
 	return t
+}
+
+// reachableFromRoots stops at anything drafted, so a parked node takes its
+// subtree with it without any of them being marked.
+func (t tree) reachableFromRoots() map[string]bool {
+	inPlay := make(map[string]bool, len(t.byID))
+
+	var descend func(obj models.Objective)
+	descend = func(obj models.Objective) {
+		if obj.Draft {
+			return
+		}
+		inPlay[obj.ID] = true
+		for _, child := range t.children[obj.ID] {
+			descend(child)
+		}
+	}
+	for _, root := range t.roots {
+		descend(root)
+	}
+	return inPlay
 }
 
 func sortByPosition(objectives []models.Objective) {
@@ -132,59 +169,17 @@ func less(a, b models.Objective) bool {
 	return a.ID < b.ID
 }
 
-// parkedParents names the objectives that have children, none of them in play.
-// It is derived from the full set, which is the only place the distinction
-// exists: after pruning they look childless.
-func parkedParents(objectives []models.Objective) map[string]bool {
-	inPlay := make(map[string]bool, len(objectives))
-	for _, obj := range InPlay(objectives) {
-		inPlay[obj.ID] = true
-	}
-
-	hasChildren := make(map[string]bool, len(objectives))
-	hasChildInPlay := make(map[string]bool, len(objectives))
-	for _, obj := range objectives {
-		if obj.ParentID == "" {
-			continue
-		}
-		hasChildren[obj.ParentID] = true
-		if inPlay[obj.ID] {
-			hasChildInPlay[obj.ParentID] = true
-		}
-	}
-
-	parked := make(map[string]bool, len(objectives))
-	for parentID := range hasChildren {
-		if !hasChildInPlay[parentID] {
-			parked[parentID] = true
-		}
-	}
-	return parked
-}
-
-// InPlay returns the objectives a run can reach, which is every objective that
-// is not drafted and has no drafted ancestor.
-//
-// Drafting gates a node and everything under it without marking any of them:
-// the flag stays where the author set it, so publishing restores exactly what
-// was there. That makes "is this in play" a question about a node's ancestry
-// rather than about its own column, and this is the only place that answers it.
+// InPlay returns the objectives a run can reach. Drafting gates a node and
+// everything under it without marking any of them, so this is a question about
+// ancestry rather than about a node's own column.
 func InPlay(objectives []models.Objective) []models.Objective {
 	t := newTree(objectives)
-	inPlay := make([]models.Objective, 0, len(objectives))
 
-	var descend func(obj models.Objective)
-	descend = func(obj models.Objective) {
-		if obj.Draft {
-			return
+	inPlay := make([]models.Objective, 0, len(objectives))
+	for _, obj := range objectives {
+		if t.inPlay[obj.ID] {
+			inPlay = append(inPlay, obj)
 		}
-		inPlay = append(inPlay, obj)
-		for _, child := range t.children[obj.ID] {
-			descend(child)
-		}
-	}
-	for _, root := range t.roots {
-		descend(root)
 	}
 	return inPlay
 }
@@ -234,7 +229,6 @@ func ComputeFrontier(objectives []models.Objective, state RunState, complete map
 	// only the full set holds the difference: after pruning, a section whose
 	// children are all parked is indistinguishable from a leaf.
 	t := newTree(InPlay(objectives))
-	t.hasParkedChildren = parkedParents(objectives)
 
 	frontier := Frontier{Status: make(map[string]Status, len(objectives))}
 	for _, obj := range objectives {
@@ -255,21 +249,27 @@ func ComputeFrontier(objectives []models.Objective, state RunState, complete map
 // collectAvailable gathers what a player can act on, in tree order.
 //
 // A section that is merely open is somewhere to navigate rather than something
-// to do, so it is not listed. A section whose own proof is still uncleared is
-// the exception: its proof gates its children, so nothing beneath it is listed
-// either, and leaving it out too would put its whole subtree beyond reach.
+// to do, so it is not listed. There are two exceptions. One whose own proof is
+// still uncleared gates its children, so nothing beneath it is listed either
+// and leaving it out would put the subtree beyond reach. One with reveal content
+// this run has not seen has something to say before its children matter, and is
+// listed until it has said it.
 func collectAvailable(t tree, obj models.Objective, state RunState, frontier *Frontier) {
 	children := t.children[obj.ID]
 	status := frontier.StatusOf(obj.ID)
 
-	// A node whose children are all parked is not a leaf, whatever the pruned
-	// tree looks like: its band still counts them, so clearing its proof would
-	// not complete it and offering it hands a player a dead end.
-	leaf := len(children) == 0 && !t.hasParkedChildren[obj.ID]
+	// Nothing in play below it makes it a leaf, however it got that way.
+	leaf := t.publishedChildCount(obj.ID) == 0
 	actionable := status == StatusFinishable ||
-		(status == StatusAvailable && (leaf || !proofCleared(obj, state)))
+		(status == StatusAvailable && (leaf || !proofCleared(obj, state) || hasUnseenContent(obj, state)))
 	if actionable {
 		frontier.Available = append(frontier.Available, obj)
+	}
+
+	// The section keeps the floor until it has said its piece: listing its
+	// children beside it offers the same choice twice.
+	if hasUnseenContent(obj, state) && frontier.StatusOf(obj.ID) != StatusComplete {
+		return
 	}
 	for _, child := range children {
 		collectAvailable(t, child, state, frontier)
@@ -288,21 +288,22 @@ func markComplete(t tree, obj models.Objective, state RunState, complete map[str
 	if !proofCleared(obj, state) {
 		return
 	}
-	// An objective with no children has no band to complete it, so its proof
-	// context is the whole of its completion and the log has to say so. The
-	// trivially-cleared shortcut above is about not gating children behind a
-	// proof that does not exist; it is not a way to finish without being seen.
-	if len(children) == 0 && !state.ProofCompleted[obj.ID] {
+	published := t.publishedChildCount(obj.ID)
+	// Nothing in play below it: its proof is the whole of its completion, so
+	// the log has to say so.
+	if published == 0 && !state.ProofCompleted[obj.ID] {
 		return
 	}
 
+	// Both sides count the children in play: one already complete must not
+	// satisfy a band that no longer counts it.
 	completedChildren := 0
 	for _, child := range children {
-		if complete[child.ID] {
+		if t.inPlay[child.ID] && complete[child.ID] {
 			completedChildren++
 		}
 	}
-	if bandMet(bandOf(obj, len(children)), completedChildren, state.SectionFinished[obj.ID]) {
+	if bandMet(bandOf(obj, published), completedChildren, state.SectionFinished[obj.ID]) {
 		complete[obj.ID] = true
 	}
 }
@@ -369,11 +370,17 @@ func assignStatuses(
 	}
 }
 
+// hasUnseenContent reports whether a section still has content of its own to
+// show.
+func hasUnseenContent(obj models.Objective, state RunState) bool {
+	return state.HasRevealBlocks[obj.ID] && !state.RevealSeen[obj.ID]
+}
+
 // openStatus reports how an unfinished objective the run has reached presents
 // to it: offering a finish button, or simply there to work on.
 func openStatus(t tree, obj models.Objective, state RunState, complete map[string]bool) Status {
 	children := t.children[obj.ID]
-	band := bandOf(obj, len(children))
+	band := bandOf(obj, t.publishedChildCount(obj.ID))
 	// A band with no range has no decision to offer, and a section already
 	// finished is waiting on its children rather than on the player.
 	if band.AutoCompletes() || state.SectionFinished[obj.ID] {
