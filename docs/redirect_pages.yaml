@@ -7,3 +7,10 @@
 # page that explains a removal rather than pretending something replaced it.
 - from: /docs/user/blocks/broker
   to: /docs/deprecations
+
+# The task block pointed at a second location and completed when that location
+# did. Locations, location groups and the Task List display are all gone, and
+# what replaced them is a section rather than a block, so this lands on the
+# removal page rather than on a block that only half resembles it.
+- from: /docs/user/blocks/task
+  to: /docs/deprecations

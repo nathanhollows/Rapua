@@ -41,10 +41,6 @@ These blocks allow you to create interactive elements in your game that require 
 - [Rating](/docs/user/blocks/rating)
 - [Sorting](/docs/user/blocks/sorting)
 
-## Task blocks
-
-- [Task](/docs/user/blocks/task) - Defines a task players must complete at a location
-
 ## System blocks
 
 These blocks are automatically created for specific page types and provide essential functionality. They cannot be deleted but can be moved and customised.

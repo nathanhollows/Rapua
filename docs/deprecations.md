@@ -38,3 +38,7 @@ would not be reading this.
 ### Broker block
 
 *Removed in 8.0.0.* An interactive block that let players spend points to reveal a clue, without knowing what they were buying. I removed it because it was mechanically fun but pedagogically pointless. Also, no one used it.
+
+### Task block
+
+*Removed in 8.0.0.* A block that described something to do and pointed at a second location, marking itself complete once that location's own blocks were finished. It only worked under the Task List navigation display, on a location group, which has also been deprecated. Nothing replaces it as a block, because the structure now does the job.
