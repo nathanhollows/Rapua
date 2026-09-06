@@ -25,7 +25,7 @@ When configuring the start game button block, you can customise:
 
 ## Behaviour
 
-The button automatically adapts based on the game instance's status:
+The button automatically adapts based on the quest's status:
 
 - **Closed:** Button is hidden completely
 - **Scheduled:** Button is visible but disabled, showing the scheduled text

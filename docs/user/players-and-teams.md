@@ -61,7 +61,7 @@ Once you've copied the team codes, you can distribute them to your players by:
 Deleting and resetting teams can be done in the [Teams](/admin/runs) section of your dashboard. Here's how it works:
 
 - **Delete Teams**: Removes teams and all associated data from the system.
-- **Reset Teams**: Clears team progress and check-ins, but retains the team for future use.
+- **Reset Teams**: Clears team progress and completions, but keeps the team for future use.
 
 Delete teams when you no longer need them. Reset teams when you want to reuse them for another game, for example, after a [trial run](/docs/user/phases-of-game-setup#3-testing).
 

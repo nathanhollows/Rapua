@@ -69,7 +69,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       {
         "name": "id",
         "type": "string",
-        "description": "Instance UUID. Present on export; omit on create-import to generate a new UUID."
+        "description": "Quest UUID. Present on export; omit on create-import to generate a new UUID."
       },
       {
         "name": "name",
@@ -145,9 +145,14 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             }
           },
           {
+            "name": "draft",
+            "type": "bool",
+            "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
+          },
+          {
             "name": "proof",
             "type": "object",
-            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears.",
+            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
             "required": true,
             "fields": [
               {
@@ -169,7 +174,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "reveal",
             "type": "object",
-            "description": "Blocks and sets shown/fired once proof completes.",
+            "description": "Blocks and sets shown/fired once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
             "required": true,
             "fields": [
               {
@@ -257,9 +262,14 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             }
           },
           {
+            "name": "draft",
+            "type": "bool",
+            "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
+          },
+          {
             "name": "proof",
             "type": "object",
-            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears.",
+            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
             "required": true,
             "fields": [
               {
@@ -281,7 +291,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "reveal",
             "type": "object",
-            "description": "Blocks and sets shown/fired once proof completes.",
+            "description": "Blocks and sets shown/fired once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
             "required": true,
             "fields": [
               {
@@ -537,7 +547,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         {
           "name": "multi_select",
           "type": "bool",
-          "description": "Allow selecting multiple options (default: false — single choice)"
+          "description": "Allow selecting multiple options (default: false, a single choice)"
         },
         {
           "name": "options",
@@ -568,7 +578,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
     {
       "type": "clue",
       "name": "Clue",
-      "description": "A clue revealed behind a button — players tap to reveal the hint.",
+      "description": "A clue revealed behind a button: players tap to reveal the hint.",
       "contexts": [
         "objective_proof",
         "objective_reveal"

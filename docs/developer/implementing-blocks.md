@@ -57,7 +57,7 @@ func (b *YourBlock) GetType() string { return "your_block_type" }
 
 func (b *YourBlock) GetID() string { return b.ID }
 
-func (b *YourBlock) GetLocationID() string { return b.LocationID }
+func (b *YourBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *YourBlock) GetOrder() int { return b.Order }
 
@@ -204,7 +204,7 @@ import (
 )
 
 // Admin view
-templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
+templ yourBlockAdmin(settings models.QuestSettings, block blocks.YourBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
         hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
@@ -245,7 +245,7 @@ templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
 }
 
 // Player view
-templ yourBlockPlayer(settings models.InstanceSettings, block blocks.YourBlock, data blocks.PlayerState) {
+templ yourBlockPlayer(settings models.QuestSettings, block blocks.YourBlock, data blocks.PlayerState) {
     <div
         id={ fmt.Sprintf("player-block-%s", block.ID) }
         class="indicator w-full"
@@ -292,7 +292,7 @@ templ yourBlockPlayer(settings models.InstanceSettings, block blocks.YourBlock, 
 Add your block to the rendering functions in `/internal/templates/blocks/blocks.templ`:
 
 ```go
-func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
+func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -302,7 +302,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
     return nil
 }
 
-func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -312,7 +312,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
     return nil
 }
 
-func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -494,7 +494,7 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 Admin view:
 ```html
-templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) {
+templ sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
         hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

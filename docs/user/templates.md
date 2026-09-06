@@ -10,14 +10,14 @@ Templates are blueprints that you can use to launch new games quickly. They are 
 
 ## What are Templates?
 
-Templates contain all the settings, locations, and content of a game, but do not include any teams or historical play data. They're designed for:
+Templates contain all the settings, objectives, and content of a game, but do not include any teams or historical play data. They're designed for:
 
 - Creating historical snapshots of games (without play data)
 - Sharing game configurations with other facilitators
-- Quickly launching new instances of a game
+- Quickly launching new copies of a game
 - Standardising event setups
 
-By default, templates use the same location codes as the original game, allowing multiple instances to overlap with the same QR codes, posters, and check-ins. This is particularly useful for events with multiple sessions, for example, a museum with different groups of different ages.
+By default, templates keep the same codes as the original game, so several games can run against the same QR codes and posters. This is particularly useful for events with multiple sessions, for example a museum running the same trail for different age groups.
 
 ## Creating Templates
 
@@ -34,12 +34,12 @@ Once created, templates cannot be edited, but you can always create a new templa
 
 ## Launching Games from Templates
 
-To launch a new game instance from a template:
+To launch a new game from a template:
 
 1. Navigate to the Templates section
 2. Find the template you want to use
 3. Click the "Launch" button
-4. Choose a name for the new game instance
+4. Choose a name for the new game
 5. Click "Launch"
 
 The system will create a new game with all the settings, locations, and content from the template. You'll then be able to add teams and manage the game like any other.

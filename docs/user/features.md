@@ -23,17 +23,22 @@ This makes it easy to get started and ensures that your games are accessible to 
 Rapua makes it easy to design games that suit your content, audience, and space. Whether you have a few participants or hundreds, for a small space or a city-wide adventure, an hour or a month, Rapua has you covered.
 
 - **Content Types**: Add [text](/docs/user/blocks/text), [images](/docs/user/blocks/image), [videos](/docs/user/blocks/youtube), [checklists](/docs/user/blocks/checklist), and [more](/docs/user/blocks) to your game.
-- **Navigation Modes**: Use maps, names, or clues to guide participants.
-- **Movement Styles**: Choose between free movement, random selection, or guided paths.  
+- **Sections**: Group objectives into chapters, themed areas, or "any one of these will do" choices. See [Sections](/docs/user/sections).
+- **Movement Styles**: Choose a guided path, open exploration, or a randomised route, per section as well as for the quest as a whole.
+
 - **Competitive or Collaborative**: Design games that encourage competition or teamwork.
 
 Rapua was specifically designed to overcome the challenges of scaling educational games and avoiding congestion. By providing a range of options, Rapua gives you the flexibility to create games that meet your specific needs and learning objectives.
 
-## 3. Share locations between games
+## 3. Reuse a game with templates
 
-Rapua allows you to share locations between games, making it easy to create a series of games that build on each other.
+Save any game as a [template](/docs/user/templates) and launch new games from it,
+making it easy to build a series of games on the same ground.
 
-For example, you could create a series of games that explore different aspects of a city, with each game focusing on a different theme or learning objective. Players all start at the same location, but then branch out to explore different parts of the city based on the game they are playing. This allows you to easily piggyback off the work you have already done, saving you time and effort.
+A template keeps the same codes as the game it came from, so the QR codes and
+posters you have already put up work for every game launched from it. Run the
+same trail for a new school group each week, or build several games that explore
+different themes across the same city, without redoing the physical setup.
 
 ## 4. Helpful guidance and automation
 

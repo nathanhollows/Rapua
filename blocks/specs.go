@@ -67,7 +67,7 @@ func (b *ClueBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "clue",
 		Name:        "Clue",
-		Description: "A clue revealed behind a button — players tap to reveal the hint.",
+		Description: "A clue revealed behind a button: players tap to reveal the hint.",
 		Fields: []game.FieldSpec{
 			{
 				Name:        "clue",
@@ -348,7 +348,7 @@ func (b *ChoiceBlock) GetSpec() game.BlockSpec {
 			{Name: "button_text", Type: "string", Required: false,
 				Description: "Label for the submit button (default: \"Confirm choice\")"},
 			{Name: "multi_select", Type: "bool", Required: false,
-				Description: "Allow selecting multiple options (default: false — single choice)"},
+				Description: "Allow selecting multiple options (default: false, a single choice)"},
 			{Name: "options", Type: "list", Required: true,
 				Description: "Choices presented to the player",
 				Items: &game.FieldSpec{

@@ -8,7 +8,7 @@ order: 11
 
 *Markdown* is a lightweight markup language that turns plain text into formatted text.
 
-The two main places where you'll use Markdown are in **Location Clues** and **Content Blocks**. This lets you format your text in a way that's easy to read and write.
+You will use Markdown in **Content Blocks**, and anywhere else Rapua takes formatted text. This lets you format your text in a way that's easy to read and write.
 
 ## Headers
 

@@ -6,7 +6,7 @@ order: 20
 
 # Text Block
 
-The text block is a simple way to add text to a location page. You can use it to provide context, instructions, or information. Unlike other blocks, this block is *not* interactive and does not award points. It is a static block that displays text and images.
+The text block is a simple way to add text to an objective. You can use it to provide context, instructions, or information. Unlike other blocks, this block is *not* interactive and does not award points. It is a static block that displays text and images.
 
 All content is formatted using Markdown, a lightweight markup language with plain text formatting syntax. The system will automatically convert your Markdown into HTML for display. Check out the [Markdown Guide](/docs/user/markdown-guide) for more information.
 

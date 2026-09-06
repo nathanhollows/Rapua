@@ -12,18 +12,18 @@ The Amazing Trace is an alternative to traditional campus tours, designed to fos
 
 - **Run Time:** 60–120 minutes
 - **Participants:** 10–200 students
-- **Locations:** 10-25 key campus locations
+- **Places:** 10-25 key spots on campus
 - **Objective:** Promote navigational confidence and awareness of campus services.
 
 ---
 
 ## Setup and Planning
 
-### Step 1: Define Locations
+### Step 1: Choose the Places
 
 Identify 10–25 key locations that students should visit during the activity. These should include areas such academic buildings, student services, dining areas, and recreational facilities. Make sure only to include locations that are relevant to your cohort.
 
-As you add more locations, the activity will become more challenging and physically demanding. It can be tempting to add more locations, but remember that the goal is to promote familiarity, not overwhelm students.
+As you add more, the activity becomes more challenging and more physically demanding. It is tempting to keep adding, but the goal is to promote familiarity, not to overwhelm students.
 
 ![Locations for the Locals Collegiate Community's *The Amazing Trace*:](/static/images/docs/tat-map.webp)
 
@@ -39,22 +39,25 @@ For example, Campus Watch at the University of Otago created the following clues
 
 > 0800 479 5000, save the number.
 
-We asked each service to provide a set of clues in this format, and adjusted as necessary. This ensured that the clues were relevant and accurate. Each team will only receive one clue per location to reduce cheating between teams.
+We asked each service to provide a set of clues in this format, and adjusted as necessary. This ensured that the clues were relevant and accurate. Each team receives only one clue per objective, which reduces copying between teams.
 
-Each location may also have a unique challenges or tasks that students must complete to check in. For example, participants may need to answer a question, such as "What is the opening on Wednesday?" or "What is the phone number for the library?".
+Each objective may also carry a challenge or task that students must complete before it counts. For example, participants may need to answer a question, such as "What is the opening on Wednesday?" or "What is the phone number for the library?".
 
 ### Step 3: Craft the Experience
 
 *The Amazing Trace* is a team-based, competitive, timed activity. To set up the experience, you will need to set:
 
-- **Navigation Method:** Show Clues
-- **Navigation Mode:** Random
-- **Maximum number of locations to show:** 3
-- **Default Completion Method:** Check-in Only
-- **Enable Points:** Yes
-- **Bonus points for first to check in:** Yes
+- **Routing:** Randomised Route, on the quest itself
+- **Show at once:** 3
+- **Points:** on
 
-These settings will ensure that teams must navigate by solving challenges and checking in at locations. Rapua will give each team **three** locations at a time, with **one** clue per location. Teams must then solve the clues and decide which location to visit first.
+Give each objective a [clue block](/docs/user/blocks/clue) holding its problem
+statement, and a scan block so that reaching the place is what
+completes it.
+
+Together these mean teams navigate by solving challenges rather than by being
+told where to go. Rapua offers each team three objectives at a time, each with
+its own clue, and the team decides which to solve first.
 
 ![](/static/images/docs/tat-next.webp)
 
@@ -69,9 +72,9 @@ Team codes allow participants to join the game without needing to create an acco
 Run a test with a small group to ensure the platform works as expected.
 
 - [Add some teams](/admin/runs) for testing.
-- Print the QR codes for each [location](/admin/quest). They don't need to be in the correct location for testing.
+- Print the QR codes for each [objective](/admin/quest). They do not need to be in the right place for testing.
 - Ensure the clues are solvable and make sense.
-- Visit each location to get a feel for how long it takes to solve the clue and check in.
+- Visit each place to get a feel for how long it takes to solve the clue and scan in.
 
 ---
 
@@ -80,12 +83,12 @@ Run a test with a small group to ensure the platform works as expected.
 1. **Organise teams**
    - Divide students into small teams (3–5 members). I chose teams of 3 to reduce the likelihood of a team splitting up.
 2. **Put up the QR codes**
-   - Print the QR codes or posters from the Locations tab.
+   - Print the QR codes or posters from the Quest tab.
    - Place them in the correct locations around campus.
 3. **Organise staff** (optional)
    - Designate staff to assist with troubleshooting.
    - Equip staff with a basic FAQ for handling student questions.
-   - **Tip:** Student services staff might like to hold a small event or challenge which students must participate before checking in.
+   - **Tip:** Student services staff might like to hold a small event or challenge which students must take part in before scanning.
 
 ---
 
@@ -95,9 +98,9 @@ Run a test with a small group to ensure the platform works as expected.
    - Host a short introductory session to explain the activity.
    - Walk teams through accessing and using the platform.
    - Ensure all students can log in and navigate the first challenge.
-   - **Tip:** If players check in before the scheduled start time, they will be shown the game rules and a countdown timer.
+   - **Tip:** If players arrive before the scheduled start time, they will be shown the game rules and a countdown timer.
 2. **Monitor Progress**
-   - Use the platform’s admin tools to monitor team locations and progress in real-time.
+   - Use the platform’s admin tools to monitor where teams are and how they are progressing, in real time.
    - Address technical or logistical issues as they arise.
 3. **Promote Engagement**
    - Use announcements or live updates to encourage competition (e.g., “Team ## is in the lead!”).

@@ -17,16 +17,22 @@ Middleware in this application provides a way to intercept and process HTTP requ
 **File:** `/internal/middlewares/preview_middleware.go`
 
 **Purpose:**
-The Preview Middleware enables temporary preview functionality for administrators and developers, allowing them to render game content without affecting the live game.
+Lets an author see their own quest as a player would, without a real run
+existing. It builds a run named "Preview" in memory and never writes it.
 
 **Key Features:**
 - Detects HTMX preview requests from admin or template pages
-- Creates a temporary team instance with a preview context
-- Sets a short-lived game instance (1 hour duration), overriding the active instance
+- Builds an unsaved `models.Run` with the code `preview`, on the quest named
+  in the request
+- Gives that run a quest window open from now until an hour ahead, so status
+  checks downstream see an active game
+- Templates are public; any other quest is refused unless the requester owns it
+- Marks the request as a preview, which the middlewares below pass straight
+  through
 
 **Usage Example:**
 ```go
-middleware := PreviewMiddleware(teamService, nextHandler)
+middleware := PreviewMiddleware(logger, runService, questService, identityService, nextHandler)
 ```
 
 ### 2. Run Middleware
@@ -34,12 +40,12 @@ middleware := PreviewMiddleware(teamService, nextHandler)
 **File:** `/internal/middlewares/run_middleware.go`
 
 **Purpose:**
-The Run Middleware extracts the run code from the session and finds the matching quest.
+Extracts the run code from the session and finds the matching quest.
 
 **Key Features:**
 - Retrieves the run code from the session
 - Loads the run and its quest
-- Adds run context to the request
+- Adds the run to the request context
 - Passes preview requests straight through
 
 **Usage Example:**
@@ -52,49 +58,94 @@ middleware := RunMiddleware(logger, runService, nextHandler)
 **File:** `/internal/middlewares/start_middleware.go`
 
 **Purpose:**
-The Start Middleware manages team access based on the game instance status, redirecting users to the Start page when necessary.
+Holds players on the start page until the game is open and they have pressed
+Start. It reads the run that Run Middleware put in the context; it does not add
+one of its own.
 
 **Key Features:**
-- Checks game instance status
-- Redirects to Start page for inactive game instances
-- Adds team context to the request
+- Sends a request with no run in context to `/play`
+- Sends a player to `/start` while the quest is not active, or while their run
+  has not started
+- Lets the blocks the start page itself needs through regardless: the team name
+  block, the game status alert, and the start button
+- Passes preview requests straight through
 
 **Usage Example:**
 ```go
-middleware := StartMiddleware(teamService, nextHandler)
+middleware := StartMiddleware(runService, nextHandler)
 ```
 
 ### 4. Admin Authentication Middleware
 
-**File:** `admin.go`
+**File:** `/internal/middlewares/admin_auth_middleware.go`
 
 **Purpose:**
-Manages authentication and authorization for administrative routes.
+Manages authentication and authorisation for administrative routes.
 
 **Key Features:**
 - Verifies user authentication
 - Checks email verification status
-- Ensures users have selected an instance for admin actions
+- Ensures users have selected a quest for admin actions
 
 **Usage Example:**
 ```go
-middleware := AdminAuthMiddleware(authService, nextHandler)
+middleware := AdminAuthMiddleware(logger, authService, questLoader, nextHandler)
 middleware := AdminCheckInstanceMiddleware(nextHandler)
 ```
 
-### 5. Text HTML Middleware
+### 5. Auth Status Middleware
+
+**File:** `/internal/middlewares/auth_status_middleware.go`
+
+**Purpose:**
+Records whether an admin is logged in, for pages that are public but render
+differently when they are.
+
+**Key Features:**
+- Adds a `UserStatus` to the request context
+
+**Usage Example:**
+```go
+middleware := AuthStatusMiddleware(authService, nextHandler)
+```
+
+### 6. Quest Editable Middleware
+
+**File:** `/internal/middlewares/quest_editable_middleware.go`
+
+**Purpose:**
+Refuses edits to a running game. A change made mid-run reaches players
+immediately and cannot be taken back, so the editor is locked while a quest is
+active and the author has to stop it, or duplicate it and work on the copy.
+
+**Key Features:**
+- Read-only methods pass through untouched
+- Any other method is refused while the quest is active
+- An author who has confirmed they mean it sends an unlock header, which passes
+- What a refusal renders is the caller's to decide, via `onRefused`
+
+**Usage Example:**
+```go
+middleware := QuestEditableMiddleware(logger, onRefused, nextHandler)
+```
+
+### 7. Text HTML and HTMX-Only Middleware
 
 **File:** `/internal/middlewares/middleware.go`
 
 **Purpose:**
-A simple middleware to set the content type for responses.
+Two small guards: one sets the response content type, the other keeps
+fragment-only routes from being opened directly.
 
 **Key Features:**
-- Sets `Content-Type` header to `text/html`
+- `TextHTMLMiddleware` sets `Content-Type` to `text/html`
+- `HtmxOnlyMiddleware` redirects a request that did not come from HTMX, since a
+  fragment rendered on its own is not a page
 
 **Usage Example:**
 ```go
 middleware := TextHTMLMiddleware(nextHandler)
+middleware := HtmxOnlyMiddleware(logger, "/admin/quest", nextHandler)
 ```
 
 ---
@@ -111,9 +162,9 @@ middleware := TextHTMLMiddleware(nextHandler)
 
 ## Common Patterns
 
-### Adding Team to Context
+### Adding the Run to Context
 ```go
-ctx := context.WithValue(r.Context(), contextkeys.TeamKey, team)
+ctx := context.WithValue(r.Context(), contextkeys.RunKey, run)
 next.ServeHTTP(w, r.WithContext(ctx))
 ```
 

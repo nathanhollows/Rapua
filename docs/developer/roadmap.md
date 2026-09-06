@@ -10,15 +10,21 @@ The following is a list of features that I would like to add to Rapua. Some of t
 
 If you want to [request a feature](https://github.com/nathanhollows/Rapua/issues/new?assignees=&labels=&projects=&template=feature_request.md) or want to check the progress of a feature, please check out the project on [GitHub](https://github.com/nathanhollows/Rapua/issues).
 
-## Stage content and navigation embed
+## Content around a section's contents
 
-Stages (groups) become block owners with a new `stage` context. Admins click into a stage name to edit content blocks that appear around the navigation view on the player side. A new `navigation` block type acts as a positional marker. It has no fields, it just says "render the map/list here." If omitted, navigation is auto-appended at the end (current behaviour unchanged). This enables pre-navigation and post-navigation content.
+A section already carries its own blocks, but they always render before its
+contents. A new `navigation` block type would act as a positional marker: no
+fields, it just says "list the contents here". If omitted, the list is appended
+at the end, which is the current behaviour. That would allow content after the
+list as well as before it.
 
-Admin UI: group name becomes clickable, links to a stage block editor like a system or location page. The navigation block renders as a dashed placeholder showing the navigation mode.
+Admin UI: the navigation block renders as a dashed placeholder showing how the
+section routes its contents.
 
 ## Conditional visibility
 
-Blocks gain a `when` condition (the key is already reserved in the v7 spec). Conditions evaluate against player and game state. This enables content that adapts to the player's journey.
+Blocks gain a condition of their own, evaluated the way an objective's `depends`
+list already is. This enables content that adapts to the player's journey.
 
 ## Per-game theming
 
@@ -26,7 +32,7 @@ Each game can override DaisyUI CSS custom properties (`--p`, `--s`, `--a`, `--b1
 
 ## Content blocks
 
-- **Map:** Mapbox integration with arbitrary markers, zooming, and coordinates.
+- **Map:** extend the existing map block with arbitrary markers rather than a single centred one.
 - **Audio waveform:** A block for admins to upload audio files that users can listen to, with a waveform visualisation.
 
 ## Admin tools to help users

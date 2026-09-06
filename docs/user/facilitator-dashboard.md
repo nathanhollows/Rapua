@@ -15,8 +15,8 @@ The Facilitator Dashboard is a real-time monitoring tool designed to help game f
 The Facilitator Dashboard is intended for event staff managing stations to:
 
 - **Track team movement** and anticipate arrivals.
-- **Monitor station occupancy** and how long teams stay at a location.
-- **Identify completed locations** to determine when a station is no longer needed.
+- **Monitor station occupancy** and how long teams stay at an objective.
+- **Identify completed objectives** to determine when a station is no longer needed.
 - **Pack up stations early** once all teams have visited.
 
 ## Accessing the Dashboard
@@ -32,17 +32,17 @@ Facilitators can access the dashboard using a unique passwordless link, which is
 **Team Activity Overview**
 
 - Displays the total number of currently logged-in teams.
-- Shows the total number of locations in the event.
+- Shows the total number of objectives in the event.
 
-**Location List**
-- Provides a detailed list of all locations involved in the event.
+**Objective List**
+- Provides a detailed list of every objective in the event.
 
-**Location Details**
+**Objective Details**
 
-- **Location Name** – The name of the specific location.
-- **Teams Visited** – The number of teams that have visited the location out of the total teams.
-- **Teams Currently Checked-In** – The count of teams presently at the location.
-- **Completion Status** – Indicates if a location is complete, meaning all teams have visited and checked out.
+- **Objective Name**: the name of the specific objective.
+- **Teams Visited**: the number of teams that have reached it, out of the total.
+- **Teams Currently There**: the count of teams working on it now.
+- **Completion Status**: whether every team has finished with it, meaning the station is no longer needed.
 
 ## Data Refresh Rate
 

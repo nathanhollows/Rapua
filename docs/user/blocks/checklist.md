@@ -10,7 +10,7 @@ The checklist block allows you to create a list of items that participants can c
 
 ## Notes
 
-Participants cannot proceed to the next location until all items are checked off. If you want to allow participants to proceed without completing the checklist, consider using a [Text Block](/docs/user/blocks/text) to provide instructions instead.
+Participants cannot complete the objective until all items are checked off. If you want to allow participants to proceed without completing the checklist, consider using a [Text Block](/docs/user/blocks/text) to provide instructions instead.
 
 Players are awarded **full points** for the checklist block when all items are checked off, and the block is marked as complete.
 

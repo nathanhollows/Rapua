@@ -21,7 +21,7 @@ When configuring the game status alert block, you can customise:
 
 ## Behaviour
 
-The block automatically adapts based on the game instance's status:
+The block automatically adapts based on the quest's status:
 
 - **Closed:** Shows the closed message in a neutral alert style
 - **Scheduled:** Shows the scheduled message in an info alert style with optional countdown

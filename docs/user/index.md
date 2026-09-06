@@ -8,7 +8,7 @@ order: 20
 
 Welcome to **Rapua**, a platform designed to make it easy to create scavenger hunt games for education. Whether you’re an educator, trainer, or organiser, Rapua provides the tools to design place-based learning experiences that engage participants and enhance learning outcomes.
 
-A key assumption of Rapua is that each location in the game represents a physical location in the real world. What participants do at each location is up to you. You can create games that require participants to answer questions, solve puzzles, or complete tasks.
+A key assumption of Rapua is that an objective usually represents a physical place in the real world. What participants do at each one is up to you. You can create games that require participants to answer questions, solve puzzles, or complete tasks.
 
 I designed Rapua to scale from small groups to hundreds of participants with no additional effort on your part. The platform automatically manages the flow of participants, ensuring a smooth experience for everyone involved.
 
