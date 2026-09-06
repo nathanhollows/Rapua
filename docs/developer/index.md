@@ -19,7 +19,7 @@ Welcome to the Rapua developer documentation. This section contains technical in
 
 ## Core Systems
 
-- [Navigation Logic Reference](navigation-logic) - Routing strategies, navigation modes, and completion settings
+- [Navigation Logic Reference](navigation-logic) - The frontier: how the game decides what a run can do next
 - [Job Scheduler](job-scheduler) - Background job processing and scheduling
 - [Game Spec](game-spec) - Game specification format, authoring constraints, and import/export
 

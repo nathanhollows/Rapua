@@ -4,229 +4,52 @@ sidebar: true
 order: 9
 ---
 
-# Game Settings
+# Game settings
 
-## Quick Reference
+There are two, and they are on the quest page.
 
-| Setting | Options | What It Does |
-|---------|---------|--------------|
-| **Routing Strategy** | Randomised, Open Exploration, Guided Path, Secret | How players move between locations |
-| **Navigation Display** | Map, Labelled Map, Location List, Custom Clues, Task List | How locations appear to players |
-| **Completion Type** | All, Minimum | Whether all or some locations must be completed |
-| **Auto-Advance** | On/Off | Automatically move to next group when minimum met |
-| **Show Team Count** | On/Off | Display how many teams are at each location |
-| **Check Method** | Check-In Only, Check-In/Out | How players complete locations |
+| Setting | What it does |
+|---------|--------------|
+| **Points** | Blocks can award points, and teams accumulate a score. Off by default: a block's points are ignored entirely until this is on. |
+| **Leaderboard** | Players can see how teams compare. Needs points to be on to mean anything. |
 
----
+Everything else that shapes a game is a property of the game itself rather than
+a setting sitting beside it.
 
-## Example Game Structures
+## Where the rest went
 
-### Murder Mystery: Choice vs. Information
-**Structure:** Multiple location groups by area, each with low minimum
+**Routing** — how players are moved between things — belongs to each section,
+over its own contents. A guided path in one act and open exploration in the next
+is two sections with two settings, not one game-wide choice. See
+[Sections](/docs/user/sections).
 
-```
-Group 1: Crime Scene Area (5 locations, minimum 2)
-  - Routing: Open Exploration
-  - Auto-Advance: OFF
-  - Display: Custom Clues
+**How much is enough** is the completion band on a section: the least and the
+most of its contents a team needs. Where a game once had one completion rule,
+every section now has its own, and a range gives players a finish button instead
+of advancing them automatically. See [Sections](/docs/user/sections).
 
-Group 2: Witness District (4 locations, minimum 1)
-  - Routing: Open Exploration
-  - Auto-Advance: OFF
+**What unlocks what** is a `depends` list on an objective, naming what has to be
+done first. See [Sections](/docs/user/sections).
 
-Secret Group: Detective's Archives (3 bonus locations)
-  - Additional clues for thorough investigators
-  - Accessible anytime via QR codes hidden in main locations
-```
+**When the game runs** is scheduling. See
+[Scheduling Games](/docs/user/scheduling-games).
 
-**Why it works:** Players choose speed vs. thoroughness. Rush ahead and miss clues, or explore everything and get full information. No auto-advance means players control when they're ready to move on.
+## Points
 
-### Campus Scavenger Hunt with Bonuses
-**Structure:** Open exploration with optional secret challenges
+Points live on blocks, not on objectives. An objective is worth the sum of what
+its blocks award, so a quiz block worth 10 and a scan worth 5 make the objective
+worth 15. Turning points off does not remove them from the blocks; it stops them
+counting.
 
-```
-Main Group: Campus Landmarks (12 locations, minimum 8)
-  - Routing: Open Exploration
-  - Display: Labelled Map
-  - Team Count: ON
+A game with points off still tracks what every team completed, which is what the
+activity screen and each team's journal report.
 
-Secret Group: All Libraries (5 locations)
-  - Bonus points for collectors
-  - Doesn't affect game completion
-  - Serendipitous discovery via GPS radius
-```
+## Editing a game that is running
 
-**Why it works:** Complete freedom with optional challenges. Secret group adds depth for engaged players without blocking others from finishing.
+You cannot, by default. A change reaches players immediately and cannot be taken
+back: parking a section teams are working through, or removing an objective
+somebody is standing at.
 
-### Large Event: Spread and Guide
-**Structure:** Random start, then linear story
-
-```
-Group 1: Opening Locations (10 locations, max 3 shown)
-  - Routing: Randomised
-  - Display: Labelled Map
-  - Team Count: ON
-
-Group 2: Story Sequence (6 locations)
-  - Routing: Guided Path
-  - Display: Custom Clues
-  - Completion: All
-
-Secret Group: Easter Eggs (hidden throughout)
-  - Extra narrative or humor
-  - Not required
-```
-
-**Why it works:** Randomised routing spreads crowds at start, then everyone converges into narrative sequence. Secrets add replayability.
-
-### Progressive Challenge Hunt
-**Structure:** Each area unlocks the next with increasing difficulty
-
-```
-Group 1: Beginner Area (8 locations, minimum 5)
-  - Routing: Open Exploration
-  - Auto-Advance: ON
-
-Group 2: Intermediate Area (6 locations, minimum 4)
-  - Routing: Open Exploration
-  - Auto-Advance: ON
-
-Group 3: Expert Area (4 locations, all required)
-  - Routing: Guided Path
-  - Display: Custom Clues
-
-Secret Group: Master Challenge (2 locations)
-  - For experts seeking extra difficulty
-```
-
-**Why it works:** Progressive difficulty with auto-advance. Players move forward when ready. Secret group provides post-game challenge.
-
-### Classic Scavenger Hunt
-**Structure:** Task checklist with physical verification
-
-```
-Main Group: Campus Challenge (10 locations)
-  - Routing: Open Exploration
-  - Display: Task List
-  - Access Control: QR/NFC required
-  - Completion: Minimum 7
-
-Tasks include:
-  - "Take a photo with the founder's statue"
-  - "Find the hidden plaque in the library"
-  - "Record the inscription on the bell tower"
-```
-
-**Why it works:** Players see all tasks upfront as a checklist. Physical QR/NFC scanning ensures they actually visit locations. Completed tasks show progress visually with checkmarks.
-
----
-
-## Setting Details
-
-### Routing Strategy
-How players progress through your game.
-
-**Randomised Route**
-- Randomly assigns locations from available pool
-- Good for spreading players across large areas
-- Requires "Max Locations" setting (how many shown at once)
-
-**Open Exploration**
-- All locations visible simultaneously
-- Players choose their own path
-- Best for exploration-based experiences
-
-**Guided Path**
-- Players visit locations in specific order
-- Shows one location at a time
-- Forces "All" completion (can't skip locations)
-
-**Secret**
-- Hidden bonus locations
-- Never shown to players
-- Only accessible via QR code, link, or GPS
-- Doesn't affect game progression
-
-### Navigation Display
-How location information appears to players.
-
-**Map**
-- Visual map with unlabeled markers
-- Requires GPS coordinates for locations
-
-**Labelled Map**
-- Map with location names shown
-- Requires GPS coordinates
-
-**Location List**
-- Text list of location names
-- No map required
-
-**Custom Clues**
-- Block-based custom content
-- Show hints, images, puzzles instead of names/maps
-- Most flexible - you design what players see
-
-**Task List**
-- Scavenger hunt-style checklist of tasks
-- Shows all tasks with completion status
-- Completed tasks display checkmark and move to bottom
-- Progress indicator shows X/Y completed
-- Requires [Task blocks](/docs/user/blocks/task) on each location
-- Tasks can require QR/NFC scan or be directly clickable
-
-### Completion Type
-How many locations must be completed to advance.
-
-**All Locations**
-- Every location in the group must be completed
-- Automatically advances when group is complete
-- Required for Guided Path routing
-
-**Minimum N Locations**
-- Complete at least N locations to advance
-- Allows skipping some locations
-- Works with Auto-Advance setting
-
-### Auto-Advance
-When to move to the next location group.
-
-**Enabled**
-- Automatically advances when minimum completion met
-- Players don't manually trigger next group
-
-**Disabled**
-- Players stay in current group until all locations done
-- Even if minimum is met, they can complete extras
-
-### Structure Groups
-Organize locations into phases or chapters.
-
-- Each group has its own routing/navigation/completion settings
-- Players progress through groups in order
-- Use groups for multi-phase games or different gameplay styles
-- Secret groups can exist alongside regular groups
-
-### Show Team Count
-Display how many teams are at each location.
-
-**Enabled**
-- Shows "3 teams here" at each location
-- Helps with crowd management
-- Useful for collaborative or competitive games
-
-**Disabled**
-- Hides team presence
-- Maintains mystery/immersion
-
-### Check Method
-How players mark locations as complete.
-
-**Check-In Only**
-- Scan QR code once to complete
-- Simple, quick progression
-
-**Check-In and Check-Out**
-- Scan to arrive, scan again to leave
-- Tracks time spent at location
-- Prevents premature progression
+Stop the game to edit it, or duplicate it and work on the copy. If you mean to
+edit a running game anyway, the editor has an unlock that says so plainly and
+asks you to confirm.

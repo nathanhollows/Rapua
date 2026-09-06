@@ -15,6 +15,7 @@
 - /docs/developer/versioning
 - /docs/index
 - /docs/user/blocks/alert
+- /docs/user/blocks/broker
 - /docs/user/blocks/button
 - /docs/user/blocks/checklist
 - /docs/user/blocks/choice
@@ -52,4 +53,5 @@
 - /docs/user/players-and-teams
 - /docs/user/quickstart
 - /docs/user/scheduling-games
+- /docs/user/sections
 - /docs/user/templates

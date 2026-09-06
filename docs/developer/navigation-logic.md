@@ -6,145 +6,122 @@ order: 6
 
 # Navigation Logic Reference
 
-Quick reference for routing strategies, navigation modes, and completion settings.
+How the game decides what a run can do next.
+
+Nothing here is stored. Every status is derived from recorded fact each time it
+is asked for, because two stored facts about the same run can disagree and a
+derivation from them cannot.
 
 ---
 
-## Routing Strategies
+## The frontier
 
-| ID | Name | Description |
-|----|------|-------------|
-| 0 | Random | Randomized locations with configurable max_next |
-| 1 | FreeRoam | All locations available simultaneously |
-| 2 | Ordered | Sequential access, one at a time |
-| 3 | Secret | Never shown, accessible via direct access only |
+The frontier is every objective's status for one run:
 
-## Navigation Display Modes
+| Status | Meaning |
+|--------|---------|
+| `locked` | Out of reach. Something above it is unfinished, its parent's routing has not offered it, or its `depends` are unmet |
+| `available` | The run can work on it now |
+| `finishable` | Available, and its band has a range whose minimum is met: the player may finish it or carry on |
+| `complete` | Done, and its branch is closed |
 
-| ID | Name | Requires Coords? | Shows Names? |
-|----|------|------------------|--------------|
-| 0 | Map | Yes | No |
-| 1 | MapAndNames | Yes | Yes |
-| 2 | Names | No | Yes |
-| 3 | Clues | No | No (deprecated) |
-| 4 | Custom | No | No (uses blocks) |
+It is derived in two passes, because the two questions face opposite
+directions. **Completion rises**: an objective is complete once its own proof
+has cleared and enough of its children are complete, so children settle first.
+**Reachability descends**: an objective is reachable only if everything above it
+is open, so ancestors settle first.
 
-## Completion Types
+The frontier spans branches at different depths, deliberately. A run can have
+work available in several places at once.
 
-- **all**: All locations must be completed (forces auto-advance)
-- **minimum**: N locations required (allows partial completion)
+## What completes an objective
 
----
+Clearing its **proof** context, and meeting its band over its children.
 
-## Decision Tables
+- A leaf has no band, so its proof is the whole of its completion. Having
+  nothing to prove is not the same as being finished: a leaf with no proof
+  blocks still needs a completion row, or a run could finish it without ever
+  seeing it.
+- A section's proof gates its children as well as itself. Nothing beneath it is
+  reachable until its proof clears.
 
-### Route Strategy Behavior
+The reveal is the payoff afterwards. It can sit unfinished — behind an
+interactive block, or a player who navigated away — while the objective is done.
+Everything that counts completion counts the proof: the frontier, the journal,
+the outstanding-work list and the leaderboard.
 
-| Strategy | Visible? | Current Group? | Affects Progression? | Max Next? | Completion |
-|----------|----------|----------------|---------------------|-----------|------------|
-| Random   | ✓ | ✓ | ✓ | Required | Any |
-| FreeRoam | ✓ | ✓ | ✓ | - | Any |
-| Ordered  | ✓ | ✓ | ✓ | - | All (forced) |
-| Secret   | ✗ | ✗ | ✗ | - | Disabled |
+## Routing
 
-### UI Behavior
+An objective's `routing` decides which of its children it offers:
 
-| Route | Completion Dropdown | Navigation Dropdown | Max Next Slider |
-|-------|-------------------|-------------------|----------------|
-| Random | Enabled | Enabled | Visible |
-| FreeRoam | Enabled | Enabled | Hidden |
-| Ordered | Disabled (All) | Enabled | Hidden |
-| Secret | Disabled | Disabled | Hidden |
+| Strategy | Offers |
+|----------|--------|
+| `ordered` | One at a time, in position order. Every earlier sibling must be complete |
+| `free_roam` | All of them |
+| `randomised` | A window of `max_next`, shuffled deterministically from the run code so a team sees a stable order across requests |
 
----
+Routing governs every child alike, sections included. A section offered this way
+then routes its own contents by its own rule.
 
-## Key Constraints
+## The completion band
 
-1. **Ordered** routing always uses **CompletionAll**
-2. **Secret** groups are never the current group
-3. **Secret** groups don't affect progression or game completion
-4. **Secret** locations accessible when sibling or uncle to current group
-5. **Random** routing requires MaxNext > 0
-6. At least one non-secret group must exist
+`children_min` and `children_max` over an objective's children. Both optional,
+and the pair is filled before any rule reads it:
 
----
+- Omitting both means every child: `[n, n]`.
+- Naming either bound widens the other to its extreme — min to 0, max to the
+  child count — which is why an explicit `children_min: 0` is a different node
+  from an omitted one.
+- Where min equals max there is nothing to decide, and the objective completes
+  on its own at that count.
+- Where min is lower, reaching min offers a finish button, and **the press** is
+  what completes the objective. It also completes on its own at max.
 
-## Secret Location Access
+The band counts **published** children. A drafted child can never earn a
+completion row, so counting it would be a band no run could meet.
 
-Secret locations are accessible if they are **siblings of the current group or any ancestor** (walking up the tree to root).
+## What is in play
 
-**Accessible:**
-- Siblings (same parent)
-- Uncles (parent's siblings)
-- Great-uncles (grandparent's siblings)
-- Great-great-uncles... (any ancestor's siblings, recursively to root)
+Drafting gates an objective and everything beneath it, without marking any of
+them: the flag stays where the author set it, so publishing restores exactly
+what was there.
 
-**NOT accessible:**
-- Cousins (children of uncles - never goes DOWN the tree)
-- Nested children (descendants of any group)
+That makes "is this in play" a question about ancestry rather than about a
+column, and one function answers it — `navigation.InPlay`. The frontier prunes
+for itself, because it needs both views: a section whose children are all parked
+looks childless once pruned, and it is not a leaf unless the full tree says so.
 
-Example:
-```
-root[
-  secret_root[loc9],           ← great-uncle (accessible)
-  branch_a[
-    secret_a[loc7, loc8],      ← uncle (accessible)
-    branch_b[
-      current[loc1, loc2],     ← you are here
-      secret_b[loc3]           ← sibling (accessible)
-    ],
-    other_branch[
-      secret_cousin[loc10]     ← cousin (NOT accessible)
-    ]
-  ]
-]
-```
+Completion is derived over **every** row, drafts included, because it records
+what a run did rather than what it can still reach. An objective cleared before
+it was parked stays cleared, so the gates it opened stay open.
 
-If player in `current`:
-- ✓ `loc3` (sibling)
-- ✓ `loc7, loc8` (uncle - sibling of parent branch_b)
-- ✓ `loc9` (great-uncle - sibling of grandparent branch_a)
-- ✗ `loc10` (cousin - child of uncle, never accessible)
+## Depends
 
----
+A flat list of variable names on an objective, implicitly ANDed, each a truthy
+check. Prefix a name with `not ` to negate it. There are no comparison
+operators.
 
-## Adding New Routing Strategies
+A name is either `objective.<slug>` — true once that objective is complete — or
+a variable some block or context `sets`. A `depends` naming a draft resolves, so
+nothing looks wrong, but no run can complete it and the gate never opens; lint
+warns about exactly that.
 
-### Checklist
+This is where an AND of ORs comes from: the OR lives in the tree as a
+`min=max=1` section, and the AND lives in a depends list naming each one.
 
-1. **models/types.go** (5 updates required):
-   - Add constant to const block (uses iota)
-   - Add to `String()` method array
-   - Add to `Description()` method array
-   - Add to `GetRouteStrategies()` function
-   - Add to `ParseRouteStrategy()` switch
+## Reachability is a gate, not a filter
 
-2. **navigation/engine.go**:
-   - Update `GetAvailableLocationIDs()` switch case
-   - Update `GetFirstVisibleGroup()` if shouldn't be current group
-   - Update `GetNextGroup()` if should be skipped in progression
-
-3. **location_groups.templ**:
-   - Add route option button with data attributes:
-     - `data-routing="N"` (integer value)
-     - `data-disable-completion="true/false"`
-     - `data-disable-navigation="true/false"`
-     - `data-show-max-next="true/false"`
-
-4. **Update decision tables** in this doc
-
-5. **Write tests** in `navigation/engine_test.go`:
-   - Available locations behavior
-   - Current group logic
-   - Progression logic
-   - UI state behavior
-
----
+A list that merely leaves an objective out is not a gate: a guessed slug, a
+printed QR code or a stale bookmark reaches the page directly. So the page asks
+the frontier for the objective's status rather than re-deriving one piece of it,
+and every reason the list would omit an objective is a reason the page turns it
+away.
 
 ## Implementation Reference
 
-- **Engine**: `navigation/engine.go`
+- **Frontier**: `navigation/frontier.go`
+- **Loading a run's state**: `internal/services/run_state_loader.go`
 - **Service**: `internal/services/navigation_service.go`
-- **UI**: `internal/templates/admin/location_groups.templ`
-- **Types**: `models/types.go`
-- **Tests**: `navigation/engine_test.go`
+- **Grammar and lint rules**: [Game Spec](/docs/developer/game-spec)
+- **Tests**: `navigation/frontier_test.go`, and the conformance quest in
+  `internal/services/conformance_test.go`

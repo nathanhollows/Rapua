@@ -29,8 +29,12 @@ To locate the information you're looking for:
 
 If you believe documentation is missing by mistake, please [submit an issue](https://github.com/nathanhollows/rapua/issues) or contact support. We'll address it promptly.
 
-## Recently Deprecated Pages
+## Removed Pages
 
-The following pages have been completely removed (not including pages that were simply relocated):
+These pages documented something that no longer exists. Pages that were only
+moved or renamed are not listed: those redirect to their replacement, and you
+would not be reading this.
 
-- None yet! 🎉
+### Broker block
+
+*Removed in 8.0.0.* An interactive block that let players spend points to reveal a clue, without knowing what they were buying. I removed it because it was mechanically fun but pedagogically pointless. Also, no one used it.
