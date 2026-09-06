@@ -123,5 +123,5 @@ away.
 - **Loading a run's state**: `internal/services/run_state_loader.go`
 - **Service**: `internal/services/navigation_service.go`
 - **Grammar and lint rules**: [Game Spec](/docs/developer/game-spec)
-- **Tests**: `navigation/frontier_test.go`, and the conformance quest in
-  `internal/services/conformance_test.go`
+- **Tests**: `navigation/frontier_test.go`, which includes the perfumers
+  conformance shape

@@ -79,7 +79,7 @@ You will also need to have SQLite installed on your machine. If you don't have i
 [issues-shield]: https://img.shields.io/github/issues/nathanhollows/rapua.svg?style=for-the-badge
 [issues-url]: https://github.com/nathanhollows/Rapua/issues
 [license-shield]: https://img.shields.io/github/license/nathanhollows/Rapua.svg?style=for-the-badge
-[license-url]: https://github.com/nathanhollows/Rapua/blob/master/LICENSE
+[license-url]: https://github.com/nathanhollows/Rapua/blob/main/LICENSE
 [product-screenshot]: images/screenshot.png
 [go]: https://img.shields.io/github/go-mod/go-version/nathanhollows/Rapua?style=for-the-badge
 [go-url]: https://go.dev/

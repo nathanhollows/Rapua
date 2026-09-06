@@ -192,7 +192,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 
 ### 5. Create Block Templates
 
-Create a new template file in `/internal/templates/blocks/your_block.templ` with admin and player views:
+Create a new template file, `your_block.templ`, in `/internal/templates/blocks/` with admin and player views:
 
 ```html
 package blocks
@@ -325,7 +325,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 
 ### 7. Write Tests
 
-Create a test file (e.g., `/blocks/your_block_test.go`) to test your block implementation:
+Create a test file in `/blocks/` (e.g. `your_block_test.go`) to test your block implementation:
 
 ```go
 package blocks

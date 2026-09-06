@@ -29,21 +29,22 @@ The Preview Middleware enables temporary preview functionality for administrator
 middleware := PreviewMiddleware(teamService, nextHandler)
 ```
 
-### 2. Team Middleware
+### 2. Run Middleware
 
-**File:** `/internal/middlewares/team_middleware.go`
+**File:** `/internal/middlewares/run_middleware.go`
 
 **Purpose:**
-The Team Middleware extracts team information from the session and loads the associated game instance.
+The Run Middleware extracts the run code from the session and finds the matching quest.
 
 **Key Features:**
-- Retrieves team code from the session
-- Loads team and instance relationships
-- Adds team context to the request
+- Retrieves the run code from the session
+- Loads the run and its quest
+- Adds run context to the request
+- Passes preview requests straight through
 
 **Usage Example:**
 ```go
-middleware := TeamMiddleware(teamService, nextHandler)
+middleware := RunMiddleware(logger, runService, nextHandler)
 ```
 
 ### 3. Start Middleware

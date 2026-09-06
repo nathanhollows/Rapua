@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -394,5 +397,136 @@ func TestDocs_NoRedirectLoops(t *testing.T) {
 
 			current = redirectTo
 		}
+	}
+}
+
+// deprecationsPage is where a redirect points when a page was removed outright
+// rather than replaced.
+const deprecationsPage = "/docs/deprecations"
+
+// Landing on the deprecations page should tell a reader what happened to the
+// thing they were looking for. A redirect pointing there without an entry
+// naming it lands them on a page that does not mention it, which is worse than
+// a 404: it looks like an answer.
+func TestDocs_DeprecatedPagesAreListed(t *testing.T) {
+	dir := "../../docs"
+	docsService, err := services.NewDocsService(dir)
+	if err != nil {
+		t.Fatalf("failed to create DocsService: %v", err)
+	}
+
+	page, err := docsService.GetPage(deprecationsPage)
+	if err != nil {
+		t.Fatalf("loading %s: %v", deprecationsPage, err)
+	}
+
+	headings := make([]string, 0, len(page.Headings))
+	for _, heading := range page.Headings {
+		headings = append(headings, strings.ToLower(heading.Text))
+	}
+
+	for from, to := range docsService.Redirects {
+		if to != deprecationsPage {
+			continue
+		}
+
+		// The page's own headings name the thing rather than its URL, so the
+		// last path segment is what has to appear: /docs/user/blocks/broker
+		// wants a heading mentioning "broker".
+		name := strings.ReplaceAll(path.Base(from), "-", " ")
+		if !slices.ContainsFunc(headings, func(h string) bool { return strings.Contains(h, name) }) {
+			t.Errorf("%s redirects to %s, which has no heading naming %q:"+
+				" add an entry saying what was removed and what to use instead",
+				from, deprecationsPage, name)
+		}
+	}
+}
+
+// repoRoot is where the source paths named in the docs are resolved from. The
+// docs live two directories down, same as the dir the tests above read.
+const repoRoot = "../.."
+
+// sourcePathPattern finds a Go or templ file named anywhere in a page: in
+// prose, in a code span, in a bulleted reference list. Only paths carrying a
+// directory are checked, which is also the only form worth writing: a bare
+// filename is illustrative ("create your_block_test.go"), and there is nothing
+// for a reader to open.
+var sourcePathPattern = regexp.MustCompile(`[A-Za-z0-9_./-]+\.(?:go|templ)\b`)
+
+// urlPattern strips links before paths are read out of a page, so the tail of
+// a GitHub URL is not mistaken for a path in this tree. Those get their own
+// check below.
+var urlPattern = regexp.MustCompile(`https?://\S+`)
+
+// blobURLPattern matches a link into this repository's own source.
+var blobURLPattern = regexp.MustCompile(
+	`https://github\.com/nathanhollows/Rapua/blob/([^/\s]+)/([^)\s"']+)`)
+
+// Documentation that names a source file is documentation that goes stale
+// silently: the sentence around it stays plausible long after the file is
+// renamed. Reading is what finds a wrong description; nothing but a check
+// finds a wrong path.
+func TestDocs_SourcePathsExist(t *testing.T) {
+	forEachDocFile(t, func(t *testing.T, name, content string) {
+		t.Helper()
+		for _, match := range sourcePathPattern.FindAllString(urlPattern.ReplaceAllString(content, " "), -1) {
+			if !strings.Contains(match, "/") {
+				continue
+			}
+			// Written with a leading slash in places, meaning the repository
+			// root rather than the filesystem's.
+			relative := strings.TrimPrefix(match, "/")
+			if _, err := os.Stat(filepath.Join(repoRoot, relative)); err != nil {
+				t.Errorf("%s names %q, which does not exist:"+
+					" update the reference, or drop the directory if it is an example rather than a file",
+					name, match)
+			}
+		}
+	})
+}
+
+// A link into the repository's own source can die two ways, and the branch is
+// the one that leaves no trace here: the file is present, the path is right,
+// and the URL still 404s. This repository's default branch is main; master has
+// never existed on the remote, and a link naming it was live in these docs.
+func TestDocs_SourceLinksUseDefaultBranch(t *testing.T) {
+	const defaultBranch = "main"
+
+	forEachDocFile(t, func(t *testing.T, name, content string) {
+		t.Helper()
+		for _, match := range blobURLPattern.FindAllStringSubmatch(content, -1) {
+			branch, sourcePath := match[1], match[2]
+			if branch != defaultBranch {
+				t.Errorf("%s links to source on branch %q; use %q",
+					name, branch, defaultBranch)
+			}
+			if _, err := os.Stat(filepath.Join(repoRoot, sourcePath)); err != nil {
+				t.Errorf("%s links to %q, which does not exist in this repository", name, sourcePath)
+			}
+		}
+	})
+}
+
+// forEachDocFile reads the markdown as written rather than through DocsService,
+// since a path in a code span is not a link and never reaches the page tree.
+func forEachDocFile(t *testing.T, check func(t *testing.T, name, content string)) {
+	t.Helper()
+
+	err := filepath.Walk(filepath.Join(repoRoot, "docs"), func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || filepath.Ext(p) != ".md" {
+			return nil
+		}
+		content, readErr := os.ReadFile(p)
+		if readErr != nil {
+			return readErr
+		}
+		check(t, filepath.ToSlash(p), string(content))
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking docs: %v", err)
 	}
 }
