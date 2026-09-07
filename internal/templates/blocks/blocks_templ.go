@@ -308,7 +308,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" _=\"on mouseenter\n\t\t\tjs(me)\n\t\t\t\tconst blockId = me.id.substring(6);\n\t\t\t\tconst targetId = 'preview-block-' + blockId;\n\t\t\t\tconst previewBlock = document.getElementById(targetId);\n\t\t\t\tme.classList.add('admin-block-highlighted');\n\t\t\t\tif (previewBlock) {\n\t\t\t\t\tpreviewBlock.classList.add('preview-block-highlighted');\n\n\t\t\t\t\t// Find the scrolling container (mockup-phone-display)\n\t\t\t\t\tconst container = document.querySelector('.mockup-phone-display');\n\t\t\t\t\tif (container) {\n\t\t\t\t\t\t// Get positions relative to the scrolling container\n\t\t\t\t\t\tconst containerRect = container.getBoundingClientRect();\n\t\t\t\t\t\tconst blockRect = previewBlock.getBoundingClientRect();\n\n\t\t\t\t\t\t// Calculate if block is outside visible area\n\t\t\t\t\t\tconst isAbove = blockRect.top < containerRect.top;\n\t\t\t\t\t\tconst isBelow = blockRect.bottom > containerRect.bottom;\n\n\t\t\t\t\t\tif (isAbove || isBelow) {\n\t\t\t\t\t\t\t// Calculate scroll position to center the block\n\t\t\t\t\t\t\tconst relativeTop = previewBlock.offsetTop - document.getElementById('mobile-preview-container').offsetTop;\n\t\t\t\t\t\t\tconst centerOffset = (container.clientHeight / 2) - (blockRect.height / 2);\n\n\t\t\t\t\t\t\tcontainer.scrollTo({\n\t\t\t\t\t\t\t\ttop: relativeTop - centerOffset,\n\t\t\t\t\t\t\t\tbehavior: 'smooth'\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\tend\n\t\ton mouseleave\n\t\t\tjs(me)\n\t\t\t\tconst blockId = me.id.substring(6);\n\t\t\t\tconst targetId = 'preview-block-' + blockId;\n\t\t\t\tconst previewBlock = document.getElementById(targetId);\n\t\t\t\tme.classList.remove('admin-block-highlighted');\n\t\t\t\tif (previewBlock) {\n\t\t\t\t\tpreviewBlock.classList.remove('preview-block-highlighted');\n\t\t\t\t}\n\t\t\tend\"><input type=\"checkbox\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" _=\"on mouseenter\n\t\t\tjs(me)\n\t\t\t\tconst blockId = me.id.substring(6);\n\t\t\t\tconst targetId = 'preview-block-' + blockId;\n\t\t\t\tconst previewBlock = document.getElementById(targetId);\n\t\t\t\tme.classList.add('admin-block-highlighted');\n\t\t\t\tif (previewBlock) {\n\t\t\t\t\tpreviewBlock.classList.add('preview-block-highlighted');\n\n\t\t\t\t\t// Find the scrolling container (mockup-phone-display)\n\t\t\t\t\tconst container = document.querySelector('.mockup-phone-display');\n\t\t\t\t\tif (container) {\n\t\t\t\t\t\t// Get positions relative to the scrolling container\n\t\t\t\t\t\tconst containerRect = container.getBoundingClientRect();\n\t\t\t\t\t\tconst blockRect = previewBlock.getBoundingClientRect();\n\n\t\t\t\t\t\t// Calculate if block is outside visible area\n\t\t\t\t\t\tconst isAbove = blockRect.top < containerRect.top;\n\t\t\t\t\t\tconst isBelow = blockRect.bottom > containerRect.bottom;\n\n\t\t\t\t\t\tif (isAbove || isBelow) {\n\t\t\t\t\t\t\t// Calculate scroll position to center the block\n\t\t\t\t\t\t\tconst relativeTop = previewBlock.offsetTop - document.getElementById('mobile-preview-container').offsetTop;\n\t\t\t\t\t\t\tconst centerOffset = (container.clientHeight / 2) - (blockRect.height / 2);\n\n\t\t\t\t\t\t\tcontainer.scrollTo({\n\t\t\t\t\t\t\t\ttop: relativeTop - centerOffset,\n\t\t\t\t\t\t\t\tbehavior: 'smooth'\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\tend\n\t\ton mouseleave\n\t\t\tjs(me)\n\t\t\t\tconst blockId = me.id.substring(6);\n\t\t\t\tconst targetId = 'preview-block-' + blockId;\n\t\t\t\tconst previewBlock = document.getElementById(targetId);\n\t\t\t\tme.classList.remove('admin-block-highlighted');\n\t\t\t\tif (previewBlock) {\n\t\t\t\t\tpreviewBlock.classList.remove('preview-block-highlighted');\n\t\t\t\t}\n\t\t\tend\"><!-- data-ignore-lock: this checkbox is what opens the block, not\n\t\tanything that edits it. The quest lock disables every input, which left\n\t\ta locked page unreadable: an author looking at a running quest to work\n\t\tout what is wrong could not open a single block to see. --><input type=\"checkbox\" data-ignore-lock")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -329,7 +329,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 301, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 306, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -362,7 +362,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(block.GetPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 316, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 321, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -380,7 +380,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetOwnerID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 323, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 328, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -393,7 +393,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 324, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 329, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/reorder"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 334, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 339, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -419,7 +419,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 335, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 340, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
@@ -432,7 +432,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 338, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 343, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
@@ -445,7 +445,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/reorder"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 347, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 352, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
@@ -458,7 +458,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 348, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 353, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -471,7 +471,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 351, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 356, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -484,7 +484,7 @@ func RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open bo
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 357, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 362, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -572,7 +572,7 @@ func pointsBadge(enablePoints bool, points int) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(-points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 376, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 381, Col: 105}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -590,7 +590,7 @@ func pointsBadge(enablePoints bool, points int) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 378, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/blocks.templ`, Line: 383, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {

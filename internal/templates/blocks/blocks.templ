@@ -290,8 +290,13 @@ templ RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open b
 				}
 			end"
 	>
+		<!-- data-ignore-lock: this checkbox is what opens the block, not
+		anything that edits it. The quest lock disables every input, which left
+		a locked page unreadable: an author looking at a running quest to work
+		out what is wrong could not open a single block to see. -->
 		<input
 			type="checkbox"
+			data-ignore-lock
 			if open {
 				checked
 			}

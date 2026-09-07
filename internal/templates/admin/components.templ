@@ -172,7 +172,12 @@ templ previewSortableScript() {
 					}
 
 					// Initialize sortable.js
+					// This instance is destroyed and rebuilt on its own
+					// schedule, so the lock cannot hold a reference to it.
+					// It reads the lock's published state instead, and the
+					// listener below catches a change that arrives later.
 					sortableInstance = new Sortable(blocksContainer, {
+						disabled: document.body.dataset.questLocked === 'true',
 						animation: 150,
 						draggable: '.block-view',
 						handle: '.block-view',
@@ -263,6 +268,13 @@ templ previewSortableScript() {
 		document.addEventListener('DOMContentLoaded', initializePreviewSortable);
 
 		// Re-initialize after HTMX swaps content
+		document.body.addEventListener('quest-lock-change', function(evt) {
+			// A running quest refuses the reorder POST, but an
+			// accepted-looking drag leaves the block where the database does
+			// not have it.
+			if (sortableInstance) sortableInstance.option('disabled', evt.detail.locked);
+		});
+
 		document.addEventListener('htmx:afterSwap', function(evt) {
 			// Check if the swapped content contains the preview container
 			if (evt.detail.target.querySelector('#mobile-preview-container') ||
@@ -325,6 +337,13 @@ templ previewSortableScript() {
 		document.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);
 
 		// Re-attach after HTMX content updates
+		document.body.addEventListener('quest-lock-change', function(evt) {
+			// A running quest refuses the reorder POST, but an
+			// accepted-looking drag leaves the block where the database does
+			// not have it.
+			if (sortableInstance) sortableInstance.option('disabled', evt.detail.locked);
+		});
+
 		document.addEventListener('htmx:afterSwap', function(evt) {
 			if (evt.detail.target.querySelector('#mobile-preview-container') ||
 				evt.detail.target.id === 'mobile-preview-container') {
