@@ -30,6 +30,12 @@ type AccessService interface {
 	) (bool, error)
 }
 
+// LintService reports what is wrong with a quest as it currently stands, so the
+// builder can say so while it is being built rather than only at import.
+type LintService interface {
+	LintQuest(ctx context.Context, questID string) (services.QuestLint, error)
+}
+
 type BlockService interface {
 	// NewBlockWithOwnerAndContext creates a new content block for the given owner and context
 	NewBlockWithOwnerAndContext(
@@ -249,6 +255,7 @@ type Handler struct {
 	assetGenerator          services.AssetGenerator
 	identityService         IdentityService
 	blockService            BlockService
+	lintService             LintService
 	creditService           CreditService
 	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
@@ -277,6 +284,7 @@ func NewAdminHandler(
 	assetGenerator services.AssetGenerator,
 	identityService IdentityService,
 	blockService BlockService,
+	lintService LintService,
 	creditService CreditService,
 	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
@@ -304,6 +312,7 @@ func NewAdminHandler(
 		assetGenerator:          assetGenerator,
 		identityService:         identityService,
 		blockService:            blockService,
+		lintService:             lintService,
 		creditService:           creditService,
 		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,

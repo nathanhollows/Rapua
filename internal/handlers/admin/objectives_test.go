@@ -11,6 +11,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/migrations"
@@ -79,6 +80,13 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 			blockRepo,
 			objectiveRepo,
 		),
+		lintService: services.NewLintService(
+			instanceRepo,
+			instanceSettingsRepo,
+			objectiveRepo,
+			blockRepo,
+			blocks.Registry(),
+		),
 	}
 }
 
@@ -99,6 +107,12 @@ func objectiveTestQuest(t *testing.T, dbc *bun.DB) *models.User {
 		Name:   "test-quest",
 	}
 	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
+	require.NoError(t, err)
+
+	// Settings are not optional to the handlers under test: lint loads them,
+	// and a fixture without them sends every test down an error path where the
+	// success path renders nothing and asserts nothing.
+	_, err = dbc.NewInsert().Model(&models.QuestSettings{QuestID: quest.ID}).Exec(ctx)
 	require.NoError(t, err)
 
 	// Every quest has a root objective; the handler places new objectives
@@ -371,7 +385,7 @@ func TestObjectiveTreeNodes_MarksWhatIsOutOfPlay(t *testing.T) {
 	parked := models.Objective{ID: "parked", ParentID: "root", Slug: "parked", Title: "Parked", Draft: true}
 	buried := models.Objective{ID: "buried", ParentID: "parked", Slug: "buried", Title: "Buried"}
 
-	_, nodes := buildObjectiveTree([]models.Objective{root, live, parked, buried}, nil)
+	_, nodes := buildObjectiveTree([]models.Objective{root, live, parked, buried}, nil, services.QuestLint{})
 
 	bySlug := map[string]*templates.ObjectiveTreeNode{}
 	for _, node := range nodes {
@@ -460,4 +474,225 @@ func TestObjectiveReposition_MalformedPositionIsRefused(t *testing.T) {
 	require.Len(t, children, 2)
 	assert.Equal(t, first.ID, children[0].ID, "the malformed move left the order untouched")
 	assert.Equal(t, second.ID, children[1].ID)
+}
+
+// The fixture has to reach lint's success path. It did not, and that silence
+// was what let four defects through: every assertion about the builder page
+// was made against a render that had already given up.
+func TestObjectiveTestQuest_ReachesLint(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+
+	handler := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+
+	_, err := handler.lintService.LintQuest(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+}
+
+// A quest with two parentless rows is a state lint reports, so the tree has to
+// draw both: only one can be the root, and the other was dropped along with
+// everything under it, leaving a diagnostic about a row nobody could see.
+func TestBuildObjectiveTree_SecondRootIsStillDrawn(t *testing.T) {
+	first := models.Objective{ID: "first", Slug: "first", Title: "First"}
+	second := models.Objective{ID: "second", Slug: "second", Title: "Second"}
+	child := models.Objective{ID: "child", ParentID: "first", Slug: "child", Title: "Child"}
+
+	root, nodes := buildObjectiveTree(
+		[]models.Objective{first, second, child}, nil, services.QuestLint{})
+
+	drawn := map[string]bool{}
+	for _, node := range nodes {
+		drawn[node.Objective.ID] = true
+	}
+	assert.NotEmpty(t, root.ID, "one of them has to be the root")
+
+	other := "first"
+	if root.ID == "first" {
+		other = "second"
+	}
+	assert.True(t, drawn[other],
+		"the parentless row that is not the root must still have a place to be dragged from")
+}
+
+// The band picker and the save guard have to count the same children. They did
+// not: the picker offered every child and the guard accepted only the
+// published ones, so "require all 2" on a section with a parked child was
+// offered by the UI and refused by the save.
+func TestBuildObjectiveTree_PublishedChildCountExcludesDrafts(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	section := models.Objective{ID: "section", ParentID: "root", Slug: "section", Title: "Section"}
+	live := models.Objective{ID: "live", ParentID: "section", Slug: "live", Title: "Live"}
+	parked := models.Objective{ID: "parked", ParentID: "section", Slug: "parked", Title: "Parked", Draft: true}
+
+	_, nodes := buildObjectiveTree(
+		[]models.Objective{root, section, live, parked}, nil, services.QuestLint{})
+
+	require.Len(t, nodes, 1)
+	assert.Len(t, nodes[0].Children, 2, "both children are drawn")
+	assert.Equal(t, 1, nodes[0].PublishedChildren, "but only one counts toward the band")
+}
+
+// A row in a parent cycle is attached to something but reachable from nothing,
+// so the tree never drew it: lint named a row nobody could see or drag.
+//
+// Rendering, not just counting: the first version of this test asserted on the
+// slice and passed while the page it produced never returned.
+func TestBuildObjectiveTree_CycleRendersAndTerminates(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	// first and second point at each other, so neither hangs off the root.
+	first := models.Objective{ID: "first", ParentID: "second", Slug: "first", Title: "First"}
+	second := models.Objective{ID: "second", ParentID: "first", Slug: "second", Title: "Second"}
+
+	rootRow, nodes := buildObjectiveTree(
+		[]models.Objective{root, first, second}, nil, services.QuestLint{})
+
+	var out strings.Builder
+	require.NoError(t, templates.ObjectiveTree(
+		services.QuestLint{}, rootRow, nodes, false).Render(context.Background(), &out))
+
+	rendered := out.String()
+	assert.Equal(t, 1, strings.Count(rendered, `data-objective-id="first"`),
+		"each row is drawn once")
+	assert.Equal(t, 1, strings.Count(rendered, `data-objective-id="second"`),
+		"including the one whose parent edge was cut")
+}
+
+// An orphan's children are unreachable too, so appending every unreachable row
+// drew the same card once at the top level and again nested under its parent.
+func TestBuildObjectiveTree_OrphanChainIsNotDuplicated(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	orphan := models.Objective{ID: "orphan", ParentID: "gone", Slug: "orphan", Title: "Orphan"}
+	middle := models.Objective{ID: "middle", ParentID: "orphan", Slug: "middle", Title: "Middle"}
+	leaf := models.Objective{ID: "leaf", ParentID: "middle", Slug: "leaf", Title: "Leaf"}
+
+	rootRow, nodes := buildObjectiveTree(
+		[]models.Objective{root, orphan, middle, leaf}, nil, services.QuestLint{})
+
+	var out strings.Builder
+	require.NoError(t, templates.ObjectiveTree(
+		services.QuestLint{}, rootRow, nodes, false).Render(context.Background(), &out))
+
+	rendered := out.String()
+	for _, id := range []string{"orphan", "middle", "leaf"} {
+		assert.Equal(t, 1, strings.Count(rendered, `data-objective-id="`+id+`"`),
+			id+" is drawn once, nested where it belongs")
+	}
+}
+
+// A row whose parent is missing is still drafted or not. The attach loop set
+// that flag only on rows it could attach, so a parked orphan was drawn as
+// though players could see it.
+func TestBuildObjectiveTree_OrphanKeepsItsDraftState(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	parked := models.Objective{
+		ID: "parked", ParentID: "gone", Slug: "parked", Title: "Parked", Draft: true,
+	}
+
+	_, nodes := buildObjectiveTree(
+		[]models.Objective{root, parked}, nil, services.QuestLint{})
+
+	require.Len(t, nodes, 1)
+	assert.True(t, nodes[0].Draft, "the row's own flag survives losing its parent")
+	assert.True(t, nodes[0].OutOfPlay, "and it is drawn as out of play")
+}
+
+// The visibility button flips before the server has agreed. A refused park
+// used to leave it flipped, so every later autosave resubmitted the refusal
+// and the page quietly stopped saving anything.
+func TestObjectiveEditPost_RefusedParkRestoresVisibility(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+
+	// A section needing its one published child, so parking that child is
+	// refused.
+	section, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "Section")
+	require.NoError(t, err)
+	child, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, section.ID, "Child")
+	require.NoError(t, err)
+	published := false
+	require.NoError(t, h.objectiveService.UpdateObjective(ctx, &child,
+		services.ObjectiveUpdateData{Draft: &published}))
+	require.NoError(t, h.objectiveService.UpdateObjective(ctx, &section,
+		services.ObjectiveUpdateData{Band: &services.BandUpdate{Min: intPtr(1)}}))
+
+	// Park the child: the section could no longer reach its minimum.
+	form := url.Values{"title": {"Child"}}
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+child.Slug, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	req = withObjectiveSlug(req, child.Slug)
+
+	w := httptest.NewRecorder()
+	h.ObjectiveEditPost(w, req)
+
+	assert.Contains(t, w.Body.String(), `id="visibility-control"`,
+		"the refusal sends the control back")
+	assert.Contains(t, w.Body.String(), `hx-swap-oob`,
+		"as an out-of-band swap, so the form stops offering the rejected state")
+}
+
+// Unreachable rows arrive in query order, so a stranded row's subtree was
+// assembled before anyone knew the row itself was parked, and its children
+// rendered as though players could see them.
+func TestBuildObjectiveTree_ParkedOrphanDimsItsSubtree(t *testing.T) {
+	root := models.Objective{ID: "root", Slug: "root", Title: "Root"}
+	// The child is listed first, so the attach loop meets it before its parent.
+	child := models.Objective{ID: "child", ParentID: "parked", Slug: "child", Title: "Child"}
+	parked := models.Objective{
+		ID: "parked", ParentID: "gone", Slug: "parked", Title: "Parked", Draft: true,
+	}
+
+	_, nodes := buildObjectiveTree(
+		[]models.Objective{root, child, parked}, nil, services.QuestLint{})
+
+	require.Len(t, nodes, 1)
+	require.Len(t, nodes[0].Children, 1)
+	assert.True(t, nodes[0].OutOfPlay, "the stranded row is parked")
+	assert.True(t, nodes[0].Children[0].OutOfPlay, "and so is everything under it")
+}
+
+// A control the form never offered must not read as an instruction to clear
+// it. The root toolbar has routing but no band inputs, and synthesising blanks
+// for the band wiped the quest's own completion band on every routing change.
+func TestObjectiveSettingsPost_AbsentControlsLeaveTheirSettingsAlone(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+
+	published := false
+	for _, title := range []string{"One", "Two"} {
+		child, childErr := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, title)
+		require.NoError(t, childErr)
+		require.NoError(t, h.objectiveService.UpdateObjective(ctx, &child,
+			services.ObjectiveUpdateData{Draft: &published}))
+	}
+	require.NoError(t, h.objectiveService.UpdateObjective(ctx, root,
+		services.ObjectiveUpdateData{Band: &services.BandUpdate{Min: intPtr(1), Max: intPtr(2)}}))
+
+	// Exactly what the root toolbar submits: routing, no band keys.
+	form := url.Values{"routing": {"randomised"}}
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+root.Slug+"/settings",
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	req = withObjectiveSlug(req, root.Slug)
+	h.ObjectiveSettingsPost(httptest.NewRecorder(), req)
+
+	reloaded, err := h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, root.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, "randomised", string(reloaded.Routing), "the routing changed")
+	require.NotNil(t, reloaded.ChildrenMin, "and the band it never offered survived")
+	assert.Equal(t, 1, *reloaded.ChildrenMin)
 }

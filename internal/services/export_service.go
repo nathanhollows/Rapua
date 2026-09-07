@@ -69,7 +69,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		blocksByOwner[b.OwnerID] = append(blocksByOwner[b.OwnerID], b)
 	}
 
-	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[questID])
+	startDoc, finishDoc := buildStartFinish(blocksByOwner[questID])
 
 	// Every node is an objective row, so the document's recursion is the
 	// table's parent_id and position.
@@ -93,7 +93,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 	if rootRow == nil {
 		return nil, nil, fmt.Errorf("export: %w: quest %s", repositories.ErrNoRootObjective, questID)
 	}
-	root := s.buildObjectiveTree(*rootRow, childrenOf, blocksByOwner)
+	root := buildObjectiveTree(*rootRow, childrenOf, blocksByOwner)
 
 	doc := &game.GameDoc{
 		Rapua: "v8",
@@ -113,7 +113,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.
 // Always returns non-nil slices so "start" and "finish" are present in the output.
-func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.BlockDoc, []game.BlockDoc) {
+func buildStartFinish(instanceBlocks []models.Block) ([]game.BlockDoc, []game.BlockDoc) {
 	start := []game.BlockDoc{}
 	finish := []game.BlockDoc{}
 
@@ -139,19 +139,19 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) ([]game.
 
 // buildObjectiveTree converts one objective row and everything beneath it.
 // Children arrive already ordered by position from the repository.
-func (s *ExportService) buildObjectiveTree(
+func buildObjectiveTree(
 	row models.Objective,
 	childrenOf map[string][]models.Objective,
 	blocksByOwner map[string][]models.Block,
 ) game.ObjectiveDoc {
-	doc := s.buildObjectiveDoc(&row, blocksByOwner[row.ID])
+	doc := buildObjectiveDoc(&row, blocksByOwner[row.ID])
 	for _, child := range childrenOf[row.ID] {
-		doc.Children = append(doc.Children, s.buildObjectiveTree(child, childrenOf, blocksByOwner))
+		doc.Children = append(doc.Children, buildObjectiveTree(child, childrenOf, blocksByOwner))
 	}
 	return doc
 }
 
-func (s *ExportService) buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {
+func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {
 	sort.Slice(objBlocks, func(i, j int) bool {
 		return objBlocks[i].Ordering < objBlocks[j].Ordering
 	})
@@ -211,7 +211,10 @@ func modelBlockToDoc(b models.Block, includeID bool) game.BlockDoc {
 	// Inject promoted fields
 	doc["type"] = b.Type
 	if b.Points != 0 {
-		doc["points"] = b.Points
+		// float64 rather than int: the lint rules read the document as decoded
+		// JSON, where every number is a float64 or a json.Number. A Go int
+		// walks past both arms and the rule never fires.
+		doc["points"] = float64(b.Points)
 	}
 	if includeID && b.ID != "" {
 		doc["id"] = b.ID

@@ -6,8 +6,11 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/a-h/templ"
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	adminTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 )
 
@@ -92,6 +95,12 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "BlockCreate: rendering template", "error", err)
 	}
+
+	// After the block's own markup, since this rides the same response as an
+	// out-of-band swap. Adding the first interactive block or the first start
+	// button is precisely when the block-presence diagnostics clear, so
+	// without this the panel keeps telling the author their fix failed.
+	h.refreshLintPanel(w, r, ownerID, blockContext)
 }
 
 // BlockGet retrieves a single block by ID.
@@ -169,6 +178,7 @@ func (h *Handler) BlockUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.refreshLintPanel(w, r, block.GetOwnerID(), h.contextOfBlock(r, block))
 	h.handleSuccess(w, r, "Block updated")
 }
 
@@ -206,12 +216,17 @@ func (h *Handler) BlockDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Read before the delete: afterwards the row is gone and the lookup can
+	// only guess, which put finish-page diagnostics in the start-page panel.
+	blockContext := h.contextOfBlock(r, block)
+
 	err = h.deleteService.DeleteBlock(r.Context(), block.GetID())
 	if err != nil {
 		h.handleError(w, r, "BlockDeleteRESTful: deleting block", "Could not delete block", "error", err)
 		return
 	}
 
+	h.refreshLintPanel(w, r, block.GetOwnerID(), blockContext)
 	h.handleSuccess(w, r, "Block deleted")
 }
 
@@ -315,4 +330,55 @@ func (h *Handler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.handleSuccess(w, r, "Blocks reordered")
+}
+
+// contextOfBlock finds which context a block sits in by asking its owner for
+// each. Only the system pages need the answer, and the Block interface does
+// not carry a context: it is a property of the row, not of the block type.
+func (h *Handler) contextOfBlock(r *http.Request, block blocks.Block) blocks.BlockContext {
+	for _, candidate := range []blocks.BlockContext{blocks.ContextStart, blocks.ContextFinish} {
+		found, err := h.blockService.FindByOwnerIDAndContext(r.Context(), block.GetOwnerID(), candidate)
+		if err != nil {
+			continue
+		}
+		for _, b := range found {
+			if b.GetID() == block.GetID() {
+				return candidate
+			}
+		}
+	}
+	return blocks.ContextStart
+}
+
+// refreshLintPanel re-renders the lint panel for whichever editor the block
+// belongs to, as an out-of-band swap alongside the toast.
+//
+// Blocks are the one edit that can raise or clear a diagnostic without
+// touching an objective's own fields: PROOF_CONTEXT_NO_INTERACTIVE_BLOCK and
+// NO_START_BUTTON are both about which blocks are present, and both were
+// invisible on the page that could fix them.
+func (h *Handler) refreshLintPanel(
+	w http.ResponseWriter, r *http.Request, ownerID string, blockContext blocks.BlockContext,
+) {
+	user := h.UserFromContext(r.Context())
+
+	lintResult, err := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "refreshLintPanel: linting quest",
+			"error", err, "quest_id", user.CurrentQuestID)
+		lintResult = services.QuestLint{Unavailable: true}
+	}
+
+	// The quest owns the start and finish pages; any other owner is an
+	// objective, and QuestLint knows which of those is the root.
+	var panel templ.Component
+	if ownerID == user.CurrentQuestID {
+		panel = adminTemplates.SystemPageLintOOB(lintResult, systemPageLintPrefix(blockContext))
+	} else {
+		panel = adminTemplates.ObjectiveLintPanelOOB(lintResult, ownerID)
+	}
+
+	if renderErr := panel.Render(r.Context(), w); renderErr != nil {
+		h.logger.ErrorContext(r.Context(), "refreshLintPanel: rendering panel", "error", renderErr)
+	}
 }

@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -12,6 +13,15 @@ type EditPageData struct {
 	PageBlocks blocks.Blocks
 	PageTitle  string
 	PageType   string
+}
+
+// SystemPageEditor is EditPage with what the linter has to say about this page
+// above it.
+templ SystemPageEditor(lint services.QuestLint, pathPrefix string, data EditPageData) {
+	<div id="system-page-lint">
+		@SystemPageLint(lint, pathPrefix)
+	</div>
+	@EditPage(data)
 }
 
 templ EditPage(data EditPageData) {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -20,6 +21,10 @@ type EditObjectiveData struct {
 	ChildCount int
 	// DependsOptions lists valid depends values: other objective slugs plus sets vars.
 	DependsOptions []string
+	// Lint is the whole quest's run, not this objective's slice of it: the
+	// root's diagnostics live with the quest and this is the only page that
+	// can act on them.
+	Lint services.QuestLint
 }
 
 // TotalPoints is the objective's point value: the sum of its proof and reveal
@@ -81,56 +86,27 @@ templ EditObjective(data EditObjectiveData) {
 			}
 		</div>
 		<div class="flex gap-3">
-			<button
-				id="visibility-btn"
-				type="button"
-				class="btn btn-ghost tooltip"
-				data-tip={ visibilityBtnTip(data.Objective.Draft) }
-				_="on click
-					set cb to #published-checkbox
-					set cb.checked to not cb.checked
-					send change to cb
-					if cb.checked
-						add .hidden to #visibility-eye-off
-						remove .hidden from #visibility-eye
-						set #visibility-label's textContent to 'Published'
-					else
-						add .hidden to #visibility-eye
-						remove .hidden from #visibility-eye-off
-						set #visibility-label's textContent to 'Draft'
-					end"
-			>
-				<span id="visibility-eye" class={ templ.KV("hidden", data.Objective.Draft) }>
-					@icon("eye", templ.Attributes{"class": "w-4 h-4"})
-				</span>
-				<span id="visibility-eye-off" class={ templ.KV("hidden", !data.Objective.Draft) }>
-					@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-warning"})
-				</span>
-				<span id="visibility-label">
-					if data.Objective.Draft {
-						Draft
-					} else {
-						Published
-					}
-				</span>
-			</button>
-			<input
-				type="checkbox"
-				id="published-checkbox"
-				name="published"
-				value="true"
-				form="edit-objective"
-				class="hidden"
-				checked?={ !data.Objective.Draft }
-			/>
+			<div id="visibility-control" class="contents">
+				@objectiveVisibilityControl(data.Objective.Draft)
+			</div>
 			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
 				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
 				Delete
 			</button>
+			<!-- Typing waits a second, since every save re-lints the whole quest
+			and the panel only has to be right once the author pauses. Discrete
+			changes (a select, a checkbox) fire sooner: they are one decision,
+			not a stream.
+			
+			Enter is excluded from the keyup filter because it saves by
+			another path: implicit submission synthesises a click on the save
+			button, which fires the trigger above. Without the exclusion one
+			Enter posts twice, lints the quest twice, and races its own
+			redirect when the edit renamed the slug. -->
 			<form
 				id="edit-objective"
 				hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
-				hx-trigger="click, saveobjective delay:500ms, keyup from:[form=edit-objective] delay:500ms, change from:[form=edit-objective] delay:500ms"
+				hx-trigger="click from:#edit-objective-btn, keyup[key!='Enter'] from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms"
 				hx-swap="none"
 			>
 				<button
@@ -143,6 +119,9 @@ templ EditObjective(data EditObjectiveData) {
 				</button>
 			</form>
 		</div>
+	</div>
+	<div id="objective-lint">
+		@objectiveLintPanel(data.Lint, data.Objective.ID)
 	</div>
 	<div
 		class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0"
@@ -185,10 +164,15 @@ templ EditObjective(data EditObjectiveData) {
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Routing</legend>
 						<select name="routing" form="edit-objective" class="select w-full">
-							<!-- The zero value plays as free roam, and without
-							this entry any unrelated save would submit the first
-							listed strategy instead of what is stored. -->
-							<option value="" selected?={ data.Objective.Routing == "" }>Default (free roam)</option>
+							<!-- A row written before routing was required stores
+							the empty string. Without an entry for it the browser
+							shows the first strategy as though it were selected,
+							so an unrelated save would silently convert the row
+							to whatever the list happens to start with. Disabled:
+							it says what the row is, and cannot be submitted. -->
+							if data.Objective.Routing == "" {
+								<option value="" selected disabled>Choose routing</option>
+							}
 							for _, rs := range models.GetRouteStrategies() {
 								<option value={ string(rs) } selected?={ data.Objective.Routing == rs }>{ rs.String() }</option>
 							}
@@ -425,4 +409,63 @@ templ bandExplainerScript() {
 		update();
 	})();
 	</script>
+}
+
+
+// objectiveVisibilityControl is the eye toggle and the checkbox the form
+// actually submits. Factored out so the server can send it back when it
+// refuses a change: the button flips optimistically, and a refused park would
+// otherwise leave the form describing a state the database rejected, with
+// every later autosave resubmitting that same refusal.
+templ objectiveVisibilityControl(draft bool) {
+	<button
+		id="visibility-btn"
+		type="button"
+		class="btn btn-ghost tooltip"
+		data-tip={ visibilityBtnTip(draft) }
+		_="on click
+			set cb to #published-checkbox
+			set cb.checked to not cb.checked
+			send change to cb
+			if cb.checked
+				add .hidden to #visibility-eye-off
+				remove .hidden from #visibility-eye
+				set #visibility-label's textContent to 'Published'
+			else
+				add .hidden to #visibility-eye
+				remove .hidden from #visibility-eye-off
+				set #visibility-label's textContent to 'Draft'
+			end"
+	>
+		<span id="visibility-eye" class={ templ.KV("hidden", draft) }>
+			@icon("eye", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+		<span id="visibility-eye-off" class={ templ.KV("hidden", !draft) }>
+			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-warning"})
+		</span>
+		<span id="visibility-label">
+			if draft {
+				Draft
+			} else {
+				Published
+			}
+		</span>
+	</button>
+	<input
+		type="checkbox"
+		id="published-checkbox"
+		name="published"
+		value="true"
+		form="edit-objective"
+		class="hidden"
+		checked?={ !draft }
+	/>
+}
+
+// ObjectiveVisibilityOOB puts the stored visibility back on screen after a
+// refusal, so the form stops offering a state the database will not take.
+templ ObjectiveVisibilityOOB(draft bool) {
+	<div id="visibility-control" class="contents" hx-swap-oob="true">
+		@objectiveVisibilityControl(draft)
+	</div>
 }

@@ -133,13 +133,24 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Whole-quest lint for one objective's worth of it: a band is only wrong
+	// relative to its children, and a depends only dangles relative to the
+	// rest of the quest, so neither question can be asked of this row alone.
+	lintResult, err := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ObjectiveEdit: linting quest",
+			"error", err, "quest_id", user.CurrentQuestID)
+		lintResult = services.QuestLint{Unavailable: true}
+	}
+
 	data := templates.EditObjectiveData{
 		Settings:       user.CurrentQuest.Settings,
 		Objective:      *objective,
 		ProofBlocks:    proofBlocks,
 		RevealBlocks:   revealBlocks,
-		ChildCount:     len(children),
+		ChildCount:     publishedChildCount(children),
 		DependsOptions: dependsOptions(allObjectives, objective.ID),
+		Lint:           lintResult,
 	}
 
 	c := templates.LockedEditor(user.CurrentQuest, templates.EditObjective(data))
@@ -197,12 +208,7 @@ func dependsOptions(objectives []models.Objective, excludeID string) []string {
 		parentOf[obj.ID] = obj.ParentID
 	}
 	isDescendant := func(id string) bool {
-		for p := id; p != ""; p = parentOf[p] {
-			if p == excludeID {
-				return true
-			}
-		}
-		return false
+		return models.HasAncestor(id, excludeID, parentOf)
 	}
 
 	seen := make(map[string]bool)
@@ -276,10 +282,9 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 	data := services.ObjectiveUpdateData{
 		Title:       r.FormValue("title"),
 		Draft:       boolPtr(!published),
-		Routing:     strPtr(r.FormValue("routing")),
-		MaxNext:     intPtr(maxNext),
-		ChildrenMin: minBound,
-		ChildrenMax: maxBound,
+		Routing:     presentStrPtr(r, "routing"),
+		MaxNext:     presentIntPtr(r, "max_next", maxNext),
+		Band:        bandUpdate(r, minBound, maxBound),
 		FinishLabel: strPtr(r.FormValue("finish_label")),
 		Depends:     parseDepends(r.FormValue("depends")),
 		Color:       strPtr(r.FormValue("color")),
@@ -291,6 +296,13 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		errors.Is(err, services.ErrInvalidRouting) ||
 		errors.Is(err, services.ErrInvalidBand) ||
 		errors.Is(err, services.ErrDependsOnDescendant) {
+		// The visibility button flips before the server has agreed, so a
+		// refusal has to put the stored state back. Otherwise the form keeps
+		// submitting what was just rejected and nothing saves again.
+		if renderErr := templates.ObjectiveVisibilityOOB(objective.Draft).
+			Render(r.Context(), w); renderErr != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveEditPost: rendering visibility", "error", renderErr)
+		}
 		h.handleError(w, r, "ObjectiveEditPost: refused settings change", err.Error(), "error", err)
 		return
 	}
@@ -302,6 +314,20 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 	if objective.Slug != objectiveSlug {
 		h.redirect(w, r, "/admin/objective/"+objective.Slug)
 		return
+	}
+
+	// Re-lint and send the panel back with the toast. The form saves without a
+	// swap, so a panel rendered at page load would otherwise still be
+	// describing the objective as it was before this edit.
+	lintResult, lintErr := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
+	if lintErr != nil {
+		h.logger.ErrorContext(r.Context(), "ObjectiveEditPost: linting quest",
+			"error", lintErr, "quest_id", user.CurrentQuestID)
+		lintResult = services.QuestLint{Unavailable: true}
+	}
+	if renderErr := templates.ObjectiveLintPanelOOB(lintResult, objective.ID).
+		Render(r.Context(), w); renderErr != nil {
+		h.logger.ErrorContext(r.Context(), "ObjectiveEditPost: rendering lint panel", "error", renderErr)
 	}
 
 	h.handleSuccess(w, r, "Objective updated")
@@ -345,11 +371,10 @@ func (h *Handler) ObjectiveSettingsPost(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := services.ObjectiveUpdateData{
-		Routing:     strPtr(r.FormValue("routing")),
-		MaxNext:     intPtr(maxNext),
-		ChildrenMin: minBound,
-		ChildrenMax: maxBound,
-		Color:       strPtr(r.FormValue("color")),
+		Routing: presentStrPtr(r, "routing"),
+		MaxNext: presentIntPtr(r, "max_next", maxNext),
+		Band:    bandUpdate(r, minBound, maxBound),
+		Color:   strPtr(r.FormValue("color")),
 	}
 
 	err = h.objectiveService.UpdateObjective(r.Context(), objective, data)
@@ -447,4 +472,46 @@ func (h *Handler) ObjectiveDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/quest")
+}
+
+// presentStrPtr names a field only when the form carried it. Routing has no
+// legitimate empty value, so blanking it and never mentioning it have to read
+// differently: the update data leaves unnamed fields alone, and a form that
+// does not offer the control must not be taken to have cleared it.
+func presentStrPtr(r *http.Request, name string) *string {
+	if !r.Form.Has(name) {
+		return nil
+	}
+	return strPtr(r.FormValue(name))
+}
+
+// publishedChildCount is what the completion band counts: a band naming a row
+// no run loads is a band no run can meet, so the picker must not offer it.
+func publishedChildCount(children []models.Objective) int {
+	count := 0
+	for i := range children {
+		if !children[i].Draft {
+			count++
+		}
+	}
+	return count
+}
+
+// presentIntPtr names a field only when the form carried it, so a control the
+// form never offered is not read as an instruction to zero it.
+func presentIntPtr(r *http.Request, name string, value int) *int {
+	if !r.Form.Has(name) {
+		return nil
+	}
+	return intPtr(value)
+}
+
+// bandUpdate distinguishes a form that did not offer the band from one whose
+// fields the author emptied. Both editors always submit both keys, so their
+// presence is what says the band was on screen at all.
+func bandUpdate(r *http.Request, minBound, maxBound *int) *services.BandUpdate {
+	if !r.Form.Has("children_min") && !r.Form.Has("children_max") {
+		return nil
+	}
+	return &services.BandUpdate{Min: minBound, Max: maxBound}
 }

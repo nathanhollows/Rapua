@@ -3,6 +3,8 @@ package templates
 import (
 	"fmt"
 
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -18,7 +20,37 @@ type ObjectiveTreeNode struct {
 	// Points sums this objective's own proof+reveal blocks; never a rollup
 	// of children.
 	Points int
+	// Lint is what the linter has to say about this objective specifically.
+	// It rides on the node so the tree refresh brings the badges with it,
+	// rather than needing a second pass to put them back.
+	Lint game.LintResult
+	// PublishedChildren is how many of Children are in play. The band counts
+	// those and only those, so a picker offering the full count would offer
+	// numbers the save refuses.
+	PublishedChildren int
 }
+
+// publishedCount is how many of these rows are in play, which is what the
+// completion band counts.
+func publishedCount(nodes []*ObjectiveTreeNode) int {
+	count := 0
+	for _, node := range nodes {
+		if !node.Draft {
+			count++
+		}
+	}
+	return count
+}
+
+// maxRenderDepth bounds the recursion in objectiveNode, which walks Children
+// and would never return on a graph holding a loop, taking the process with
+// it. The tree builder cuts those edges; this makes the guarantee hold
+// whatever else calls in.
+//
+// Deliberately far past the four levels lint warns at: a quest this deep is
+// either broken or badly authored, and the row at the boundary is named and
+// linked rather than dropped so either can be fixed.
+const maxRenderDepth = 20
 
 // visibilityTip names what a click on the eye toggle will do.
 func visibilityTip(node *ObjectiveTreeNode) string {
@@ -57,7 +89,9 @@ func routingIcon(r models.RouteStrategy) string {
 
 func routingLabel(r models.RouteStrategy) string {
 	if r == "" {
-		return "Routing"
+		// Only reachable on a row written before routing was required. It reads
+		// as a prompt rather than a label because that is what it is.
+		return "Choose routing"
 	}
 	return r.String()
 }
@@ -99,10 +133,11 @@ func bandSummary(min, max *int, childCount int) string {
 // root gets no card of its own, but still needs a routing picker for the
 // quest's top-level routing; the bar above the tree reuses the section
 // routing picker for that.
-templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
+templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
+	{{ rootPublished := publishedCount(nodes) }}
 	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5" hx-boost="true">
 		<h1 class="text-2xl font-bold">Quest</h1>
-		<a href="/admin/objective/new" class="btn btn-primary btn-sm">
+		<a href="/admin/objective/new" class="btn btn-primary btn-sm" data-lock-hide>
 			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
 			New objective
 		</a>
@@ -111,7 +146,7 @@ templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoi
 	<!-- Outside #objective-tree: the tree is outerHTML-swapped after every
 	drop and settings change, and the toolbar's own state (the search term,
 	the routing picker, the points toggle) should survive that. -->
-	<div class="px-6 pb-3 flex flex-wrap items-center justify-between gap-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(len(nodes)) }>
+	<div class="px-6 pb-3 flex flex-wrap items-center justify-between gap-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(rootPublished) }>
 		<div class="flex items-center gap-3">
 			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root})
 			<!-- Lives here rather than on a settings page: it decides whether
@@ -147,19 +182,25 @@ templ ObjectiveTree(root models.Objective, nodes []*ObjectiveTreeNode, enablePoi
 			</button>
 		</label>
 	</div>
-	<div id="objective-tree" class="px-6" hx-boost="true">
-		if len(nodes) == 0 {
-			<div role="alert" class="alert">
-				@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
-				<span>This quest has no objectives yet.</span>
-			</div>
-		} else {
-			<ul class="objective-children join join-vertical flex flex-col w-full" data-parent-id={ root.ID }>
-				for _, node := range nodes {
-					@objectiveNode(node, enablePoints)
-				}
-			</ul>
-		}
+	<!-- Swapped as one after every edit: the panel and the rows it describes
+	are answers to the same question, and the page render already computes
+	both. The toolbar sits outside it so a search term survives the swap. -->
+	<div id="quest-builder">
+		@QuestLint(lint)
+		<div id="objective-tree" class="px-6" hx-boost="true">
+			if len(nodes) == 0 {
+				<div role="alert" class="alert">
+					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+					<span>This quest has no objectives yet.</span>
+				</div>
+			} else {
+				<ul class="objective-children join join-vertical flex flex-col w-full" data-parent-id={ root.ID }>
+					for _, node := range nodes {
+						@objectiveNode(node, enablePoints, 0)
+					}
+				</ul>
+			}
+		</div>
 	</div>
 	@objectiveSystemPageLink("Complete", "/admin/quest/complete")
 	@objectiveSortableScript()
@@ -193,6 +234,7 @@ templ objectiveAddChildButton(node *ObjectiveTreeNode) {
 		href={ templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", node.Objective.ID)) }
 		class="btn btn-xs btn-ghost btn-circle tooltip shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
 		data-tip="Add child objective"
+		data-lock-hide
 	>
 		@icon("plus", templ.Attributes{"class": "w-4 h-4 opacity-70"})
 	</a>
@@ -293,7 +335,7 @@ templ objectiveBandPicker(node *ObjectiveTreeNode) {
 	<details class="settings-picker relative inline-block">
 		<summary class="btn btn-sm btn-ghost gap-1 shrink-0">
 			<span class="text-xs settings-band-summary">
-				{ bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, len(node.Children)) }
+				{ bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren) }
 			</span>
 			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
 		</summary>
@@ -313,7 +355,7 @@ templ objectiveBandPicker(node *ObjectiveTreeNode) {
 					min="0"
 					class="input input-sm w-16 settings-max no-spinner"
 					value={ bandValueStr(node.Objective.ChildrenMax) }
-					placeholder={ fmt.Sprint(len(node.Children)) }
+					placeholder={ fmt.Sprint(node.PublishedChildren) }
 				/>
 			</div>
 			<p class="text-xs opacity-70 mt-2 settings-band-explainer"></p>
@@ -331,13 +373,28 @@ templ objectivePointsBadge(points int, enablePoints bool) {
 
 // objectiveNode renders a section (has children) as a card, or a leaf as a
 // daisyUI .join-item so adjacent leaves collapse into one block (see main.css).
-templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool) {
-	if len(node.Children) > 0 {
+templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
+	if depth > maxRenderDepth {
+		<!-- Named and linked rather than dropped: this depth is reachable by
+		dragging, since lint warns past four levels but does not refuse, and an
+		author who nested too far needs to find the row to drag it back out. -->
+		<li class="list-none join-item bg-base-100/60 p-4 border-primary/30 text-sm">
+			<div class="flex items-center gap-3">
+				@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 text-warning shrink-0"})
+				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
+					{ node.Objective.Title }
+				</a>
+				<span class="text-xs opacity-70">
+					{ fmt.Sprintf("nested %d levels deep, past what this view draws", depth) }
+				</span>
+			</div>
+		</li>
+	} else if len(node.Children) > 0 {
 		<li
 			class="list-none my-3 group"
 			data-objective-id={ node.Objective.ID }
 			data-objective-slug={ node.Objective.Slug }
-			data-child-count={ fmt.Sprint(len(node.Children)) }
+			data-child-count={ fmt.Sprint(node.PublishedChildren) }
 		>
 			<div
 				class={ "card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("saturate-0 opacity-70", node.OutOfPlay) }
@@ -354,6 +411,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool) {
 						</a>
 						<div class="flex-grow"></div>
 						@objectivePointsBadge(node.Points, enablePoints)
+						@objectiveLintBadge(node.Lint)
 						@objectiveRoutingPicker(node)
 						@objectiveBandPicker(node)
 						@objectiveAddChildButton(node)
@@ -361,7 +419,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool) {
 					</div>
 					<ul class="objective-children join join-vertical flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
 						for _, child := range node.Children {
-							@objectiveNode(child, enablePoints)
+							@objectiveNode(child, enablePoints, depth+1)
 						}
 					</ul>
 				</div>
@@ -382,6 +440,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool) {
 				</a>
 				<div class="flex-grow"></div>
 				@objectivePointsBadge(node.Points, enablePoints)
+				@objectiveLintBadge(node.Lint)
 				@objectiveAddChildButton(node)
 				@objectiveVisibilityToggle(node)
 			</div>
@@ -406,11 +465,15 @@ templ objectiveSortableScript() {
 	// postObjectiveUpdate posts, then always re-fetches the tree: a refused
 	// move must show as it landed, and htmx.ajax (not fetch) is what
 	// delivers the response's out-of-band toast.
+	//
+	// One request, not two. The page render already computes lint, and
+	// fetching the panel separately ran the whole pipeline a second time to
+	// arrive at an answer the first response was carrying.
 	function postObjectiveUpdate(url, values) {
 		return htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {
 			htmx.ajax('GET', '/admin/quest', {
-				select: '#objective-tree',
-				target: '#objective-tree',
+				select: '#quest-builder',
+				target: '#quest-builder',
 				swap: 'outerHTML',
 			}).finally(initObjectiveTree);
 		});
@@ -469,21 +532,30 @@ templ objectiveSortableScript() {
 	}
 
 	// currentSettingsValues reads color/routing from their trigger's data
-	// attribute, not a <select>; null-checked since root has no band or
-	// color picker.
+	// attribute rather than a <select>.
+	//
+	// A control this scope does not have contributes no key at all. The server
+	// reads a present key as "the author had this on screen", so sending an
+	// empty string for a missing control says they cleared it: the root
+	// toolbar has no band inputs, and synthesising blanks for them wiped the
+	// quest's own completion band every time its routing changed.
 	function currentSettingsValues(scope) {
+		var values = {};
 		var colorTrigger = scope.querySelector('.settings-color-trigger');
 		var routingTrigger = scope.querySelector('.settings-routing-trigger');
 		var maxNextInput = scope.querySelector('.settings-maxnext-input');
 		var minInput = scope.querySelector('.settings-min');
 		var maxInput = scope.querySelector('.settings-max');
-		return {
-			routing: routingTrigger ? routingTrigger.dataset.routing : '',
-			max_next: maxNextInput ? maxNextInput.value : '',
-			children_min: minInput ? minInput.value : '',
-			children_max: maxInput ? maxInput.value : '',
-			color: colorTrigger ? colorTrigger.dataset.color : '',
-		};
+		if (routingTrigger) values.routing = routingTrigger.dataset.routing;
+		if (maxNextInput) values.max_next = maxNextInput.value;
+		// Both bounds or neither: the band is one setting, and half of it is
+		// not a state the server can act on.
+		if (minInput && maxInput) {
+			values.children_min = minInput.value;
+			values.children_max = maxInput.value;
+		}
+		if (colorTrigger) values.color = colorTrigger.dataset.color;
+		return values;
 	}
 
 	// submitSettings posts every field together; overrides lets a click pass
@@ -557,6 +629,10 @@ templ objectiveSortableScript() {
 				list._objectiveSortable.destroy();
 			}
 			list._objectiveSortable = new Sortable(list, {
+				// Read at creation: these instances are rebuilt after every
+				// tree refresh, so a lock applied earlier would otherwise be
+				// undone by the rebuild.
+				disabled: document.body.dataset.questLocked === 'true',
 				group: 'objectives',
 				handle: '.objective-drag-handle',
 				animation: 150,
@@ -588,6 +664,12 @@ templ objectiveSortableScript() {
 	// every click.
 	if (!window.__objectiveTreeDelegationBound) {
 		window.__objectiveTreeDelegationBound = true;
+
+		document.body.addEventListener('quest-lock-change', function(evt) {
+			document.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {
+				if (list._objectiveSortable) list._objectiveSortable.option('disabled', evt.detail.locked);
+			});
+		});
 
 		// Capture phase, before the handler below: closes any open picker
 		// the click landed outside of.

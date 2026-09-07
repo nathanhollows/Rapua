@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/nathanhollows/Rapua/v8/blocks"
+
 	"github.com/joho/godotenv"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	admin "github.com/nathanhollows/Rapua/v8/internal/handlers/admin"
@@ -151,6 +153,9 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
+	lintService := services.NewLintService(
+		instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo, blocks.Registry(),
+	)
 	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo)
 	importService := services.NewImportService(
 		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
@@ -188,7 +193,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		navigationService, notificationService, runService, uploadService,
 	)
 	adminHandler := admin.NewAdminHandler(
-		logger, accessService, assetGenerator, identityService, blockService,
+		logger, accessService, assetGenerator, identityService, blockService, lintService,
 		creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
 		instanceRepo, questService, instanceSettingsService,
