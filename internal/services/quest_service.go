@@ -77,7 +77,10 @@ func (s *QuestService) CreateQuest(
 		QuestID: instance.ID,
 		Slug:    "start",
 		Title:   name,
-		Routing: models.RouteStrategyFreeRoam,
+		// Ordered, like every other objective: the root governs the opening,
+		// so it is the last row that should differ from the default the rest
+		// of the system applies.
+		Routing: models.RouteStrategyOrdered,
 	}
 	if err := s.objectiveRepo.CreateTx(ctx, tx, root); err != nil {
 		return nil, fmt.Errorf("creating root objective: %w", err)

@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -43,6 +44,18 @@ func TestObjectiveService_CreateObjective(t *testing.T) {
 	t.Run("Create objective with invalid title", func(t *testing.T) {
 		_, err := service.CreateObjective(context.Background(), validQuestID(t, dbc), "", "")
 		require.Error(t, err)
+	})
+
+	t.Run("carries a routing strategy", func(t *testing.T) {
+		// An empty routing played as free roam while reading as unset, so a
+		// gameplay decision was being made by omission. Lint refuses it, which
+		// means creation must not produce it.
+		objective, err := service.CreateObjective(
+			context.Background(), validQuestID(t, dbc), "", gofakeit.Sentence(3))
+		require.NoError(t, err)
+		assert.NotEmpty(t, objective.Routing, "a new objective must not be stored without a routing")
+		_, parseErr := models.ParseRouteStrategy(string(objective.Routing))
+		assert.NoError(t, parseErr, "and it must be one of the real strategies")
 	})
 }
 
@@ -357,23 +370,27 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 	require.NoError(t, err)
 	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
 	require.NoError(t, err)
-	_, err = service.CreateObjective(ctx, root.QuestID, section.ID, "Child one")
+	childOne, err := service.CreateObjective(ctx, root.QuestID, section.ID, "Child one")
 	require.NoError(t, err)
-	_, err = service.CreateObjective(ctx, root.QuestID, section.ID, "Child two")
+	childTwo, err := service.CreateObjective(ctx, root.QuestID, section.ID, "Child two")
 	require.NoError(t, err)
+
+	// New objectives arrive parked, and the band counts what is in play: a
+	// minimum of one against two drafts is a minimum no run could meet.
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &childOne, services.ObjectiveUpdateData{Draft: &published}))
+	require.NoError(t, service.UpdateObjective(ctx, &childTwo, services.ObjectiveUpdateData{Draft: &published}))
 
 	settings := services.ObjectiveUpdateData{
 		Routing:     strPtr("ordered"),
 		MaxNext:     intPtr(2),
-		ChildrenMin: intPtr(1),
-		ChildrenMax: intPtr(2),
+		Band:        &services.BandUpdate{Min: intPtr(1), Max: intPtr(2)},
 		FinishLabel: strPtr("Done"),
 		Color:       strPtr("amber"),
 		Depends:     []string{"objective." + root.Slug},
 	}
 	require.NoError(t, service.UpdateObjective(ctx, &section, settings))
 
-	published := false
 	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{Draft: &published}))
 
 	reloaded, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
@@ -405,8 +422,7 @@ func TestObjectiveService_UpdateObjective_BandBeyondChildCountIsRefused(t *testi
 	require.NoError(t, err)
 
 	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
-		ChildrenMin: intPtr(5),
-		ChildrenMax: intPtr(7),
+		Band: &services.BandUpdate{Min: intPtr(5), Max: intPtr(7)},
 	})
 	require.ErrorIs(t, err, services.ErrInvalidBand)
 
@@ -448,4 +464,141 @@ func TestObjectiveService_UpdateObjective_DependsOnOwnDescendantIsRefused(t *tes
 	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
 		Depends: []string{"objective." + other.Slug},
 	}))
+}
+
+// The editor tells authors that leaving both fields blank requires every
+// child. It did not: a nil bound read as "unchanged", so a band once set could
+// never be cleared and the page silently kept the old one.
+func TestObjectiveService_UpdateObjective_BandCanBeCleared(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+	published := false
+	for _, title := range []string{"One", "Two"} {
+		child, childErr := service.CreateObjective(ctx, root.QuestID, section.ID, title)
+		require.NoError(t, childErr)
+		require.NoError(t, service.UpdateObjective(ctx, &child,
+			services.ObjectiveUpdateData{Draft: &published}))
+	}
+
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Band: &services.BandUpdate{Min: intPtr(1), Max: intPtr(2)},
+	}))
+	stored, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
+	require.NoError(t, err)
+	require.NotNil(t, stored.ChildrenMin, "the band saved")
+
+	// Both fields emptied, which is what the form submits when the author
+	// clears them.
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Band: &services.BandUpdate{},
+	}))
+	stored, err = service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
+	require.NoError(t, err)
+	assert.Nil(t, stored.ChildrenMin, "and clearing it actually clears it")
+	assert.Nil(t, stored.ChildrenMax)
+}
+
+// A refused update must leave the caller's objective as it was. The handler
+// renders that objective straight back to the author, so a half-mutated one
+// puts the rejected state on screen and every later autosave resubmits it.
+func TestObjectiveService_RefusedUpdateLeavesTheObjectiveUntouched(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+
+	published := false
+	require.NoError(t, service.UpdateObjective(ctx, &section,
+		services.ObjectiveUpdateData{Draft: &published}))
+	require.False(t, section.Draft, "published to begin with")
+
+	// Parking is fine, but the band in the same update is not: a minimum of
+	// five against no children at all.
+	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Draft: boolPtr(true),
+		Band:  &services.BandUpdate{Min: intPtr(5)},
+	})
+	require.Error(t, err)
+
+	assert.False(t, section.Draft,
+		"the park is rolled back with the band it was refused alongside")
+	stored, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, section.Slug)
+	require.NoError(t, err)
+	assert.False(t, stored.Draft, "and nothing reached the database")
+}
+
+// A stranded row has no parent whose band could break. Parking one errored on
+// the missing parent, naming a row that is not in the quest.
+func TestObjectiveService_ParkingAStrandedRowIsAllowed(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	stranded, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Stranded")
+	require.NoError(t, err)
+
+	// Strand it: its parent is no longer a row in this quest.
+	_, err = dbc.NewUpdate().Model((*models.Objective)(nil)).
+		Set("parent_id = ?", gofakeit.UUID()).Where("id = ?", stranded.ID).Exec(ctx)
+	require.NoError(t, err)
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, root.QuestID, stranded.Slug)
+	require.NoError(t, err)
+
+	assert.NoError(t, service.UpdateObjective(ctx, reloaded,
+		services.ObjectiveUpdateData{Draft: boolPtr(true)}),
+		"the editor draws it so it can be repaired, which includes parking it")
+}
+
+// A maximum is where a section closes on its own, not a number a run has to
+// reach. With a lower minimum the player finishes by pressing the button, so
+// parking a child that leaves fewer than the maximum strands nothing.
+func TestObjectiveService_ParkingBelowMaxIsAllowedWhenMinIsLower(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
+	require.NoError(t, err)
+
+	published := false
+	children := make([]models.Objective, 0, 3)
+	for _, title := range []string{"One", "Two", "Three"} {
+		child, childErr := service.CreateObjective(ctx, root.QuestID, section.ID, title)
+		require.NoError(t, childErr)
+		require.NoError(t, service.UpdateObjective(ctx, &child,
+			services.ObjectiveUpdateData{Draft: &published}))
+		children = append(children, child)
+	}
+
+	// Finish anywhere from one to three: the button appears at one.
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Band: &services.BandUpdate{Min: intPtr(1), Max: intPtr(3)},
+	}))
+
+	// Two left is below the maximum and above the minimum, so the section can
+	// still be finished.
+	assert.NoError(t, service.UpdateObjective(ctx, &children[0],
+		services.ObjectiveUpdateData{Draft: boolPtr(true)}))
+
+	// One left still meets the minimum.
+	assert.NoError(t, service.UpdateObjective(ctx, &children[1],
+		services.ObjectiveUpdateData{Draft: boolPtr(true)}))
+
+	// None left cannot: there is nothing to complete and no button to press.
+	assert.ErrorIs(t, service.UpdateObjective(ctx, &children[2],
+		services.ObjectiveUpdateData{Draft: boolPtr(true)}), services.ErrParkingBreaksBand)
 }

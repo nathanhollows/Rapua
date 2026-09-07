@@ -82,8 +82,8 @@ func (s objectiveService) applySettings(
 	}
 
 	childCount := 0
-	if data.ChildrenMin != nil || data.ChildrenMax != nil {
-		count, err := s.objectiveRepo.FindChildrenCount(ctx, objective.ID)
+	if data.Band != nil {
+		count, err := s.objectiveRepo.FindPublishedChildrenCount(ctx, objective.ID)
 		if err != nil {
 			return false, fmt.Errorf("counting children to check the band: %w", err)
 		}
@@ -128,10 +128,8 @@ func (s objectiveService) checkDependsNotOwnSubtree(
 		if !ok {
 			continue
 		}
-		for id := namedID; id != ""; id = parentOf[id] {
-			if id == objective.ID {
-				return fmt.Errorf("%w: %q", ErrDependsOnDescendant, slug)
-			}
+		if models.HasAncestor(namedID, objective.ID, parentOf) {
+			return fmt.Errorf("%w: %q", ErrDependsOnDescendant, slug)
 		}
 	}
 	return nil
@@ -144,10 +142,11 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 	changed := false
 
 	if data.Routing != nil && *data.Routing != string(objective.Routing) {
-		if *data.Routing != "" {
-			if _, err := models.ParseRouteStrategy(*data.Routing); err != nil {
-				return false, fmt.Errorf("%w: %q", ErrInvalidRouting, *data.Routing)
-			}
+		// Empty is not a default, it is an unmade choice. Ordered, free roam
+		// and randomised produce quests that play nothing like one another,
+		// so the author picks and the picker offers no blank option.
+		if _, err := models.ParseRouteStrategy(*data.Routing); err != nil {
+			return false, fmt.Errorf("%w: %q", ErrInvalidRouting, *data.Routing)
 		}
 		objective.Routing = models.RouteStrategy(*data.Routing)
 		changed = true
@@ -191,16 +190,16 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 // (BAND_OUT_OF_RANGE) is mirrored here because this mutation path bypasses it,
 // and a bound above the child count can never be met.
 func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData, childCount int) (bool, error) {
-	if data.ChildrenMin == nil && data.ChildrenMax == nil {
+	if data.Band == nil {
 		return false, nil
 	}
-	minBound := objective.ChildrenMin
-	if data.ChildrenMin != nil {
-		minBound = data.ChildrenMin
-	}
-	maxBound := objective.ChildrenMax
-	if data.ChildrenMax != nil {
-		maxBound = data.ChildrenMax
+	// The band arrives whole. Carrying a bound over from the stored row would
+	// mean a blanked field could never clear it, which is the one thing the UI
+	// tells authors they can do.
+	minBound, maxBound := data.Band.Min, data.Band.Max
+	if minBound == nil && maxBound == nil &&
+		objective.ChildrenMin == nil && objective.ChildrenMax == nil {
+		return false, nil
 	}
 
 	if minBound != nil && *minBound < 0 {
@@ -212,15 +211,21 @@ func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData, c
 	if minBound != nil && maxBound != nil && *minBound > *maxBound {
 		return false, fmt.Errorf("%w: min %d exceeds max %d", ErrInvalidBand, *minBound, *maxBound)
 	}
-	if minBound != nil && *minBound > childCount {
+	// Only a bound the author is actually moving is checked against the child
+	// count. A stored bound can fall out of range without anyone touching it,
+	// by a child being parked or deleted, and re-litigating it here would
+	// refuse every later save of any field until the author noticed a band
+	// they never edited. Lint reports that state; the save does not have to
+	// hold the whole objective hostage to it.
+	if raisedAbove(objective.ChildrenMin, minBound, childCount) {
 		return false, fmt.Errorf(
-			"%w: children_min (%d) exceeds the %d children below this objective",
+			"%w: children_min (%d) exceeds the %d children in play below this objective",
 			ErrInvalidBand, *minBound, childCount,
 		)
 	}
-	if maxBound != nil && *maxBound > childCount {
+	if raisedAbove(objective.ChildrenMax, maxBound, childCount) {
 		return false, fmt.Errorf(
-			"%w: children_max (%d) exceeds the %d children below this objective",
+			"%w: children_max (%d) exceeds the %d children in play below this objective",
 			ErrInvalidBand, *maxBound, childCount,
 		)
 	}
@@ -228,6 +233,15 @@ func applyObjectiveBand(objective *models.Objective, data ObjectiveUpdateData, c
 	objective.ChildrenMin = minBound
 	objective.ChildrenMax = maxBound
 	return true, nil
+}
+
+// raisedAbove reports whether an incoming bound is out of range and is not
+// simply the stored one arriving back unchanged.
+func raisedAbove(stored, incoming *int, childCount int) bool {
+	if incoming == nil || *incoming <= childCount {
+		return false
+	}
+	return stored == nil || *stored != *incoming
 }
 
 // generateUniqueSlug returns a slug unique within questID, excluding excludeID from conflict checks.
@@ -277,6 +291,12 @@ func (s objectiveService) CreateObjective(
 		// it is the quest rather than a place in it, and drafting it would take
 		// the whole game out of play.
 		Draft: parentID != "",
+		// Routing is inert until this objective has children, but an empty
+		// value is not a value: it plays as free roam while reading as
+		// unset, which is a gameplay decision nobody made. Ordered is the
+		// default because it is the one strategy that cannot surprise a
+		// player by offering more than the author sequenced.
+		Routing: models.RouteStrategyOrdered,
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -306,11 +326,21 @@ func (s objectiveService) CreateObjective(
 func (s objectiveService) checkParkingLeavesBandSatisfiable(
 	ctx context.Context, objective *models.Objective,
 ) error {
+	// A stranded row has no parent whose band could break, and the editor
+	// draws it at the top level precisely so it can be parked or moved. An
+	// error here named a parent that is not in the quest, which is neither
+	// actionable nor visible.
+	if objective.ParentID == "" {
+		return nil
+	}
 	parent, err := s.objectiveRepo.GetByID(ctx, objective.ParentID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		return fmt.Errorf("loading parent to check its band: %w", err)
 	}
-	if parent.ChildrenMin == nil {
+	if parent.ChildrenMin == nil && parent.ChildrenMax == nil {
 		return nil
 	}
 
@@ -325,7 +355,13 @@ func (s objectiveService) checkParkingLeavesBandSatisfiable(
 			remaining++
 		}
 	}
-	if remaining < *parent.ChildrenMin {
+	// The minimum only. A maximum is the point a section closes on its own,
+	// not a number a run has to reach: where the minimum is lower, reaching it
+	// offers the player a finish button and their press completes the section,
+	// so a maximum nobody can get to costs the branch nothing. Where the two
+	// are equal there is no button, and the minimum check below is the same
+	// number anyway.
+	if parent.ChildrenMin != nil && remaining < *parent.ChildrenMin {
 		return fmt.Errorf("%w: %q needs %d of its children and would have %d left in play",
 			ErrParkingBreaksBand, parent.Title, *parent.ChildrenMin, remaining)
 	}
@@ -353,35 +389,41 @@ func (s objectiveService) UpdateObjective(
 	objective *models.Objective,
 	data ObjectiveUpdateData,
 ) error {
+	// Every change lands on a copy, and the caller's objective is replaced only
+	// once the whole update has been accepted. A refused update used to leave
+	// the fields it had already reached mutated, and the handler renders that
+	// objective straight back to the author: the form would then show, and
+	// keep resubmitting, the exact state the database had just rejected.
+	candidate := *objective
 	update := false
 
-	if data.Title != "" && data.Title != objective.Title {
-		objective.Title = data.Title
-		newSlug, slugErr := s.generateUniqueSlug(ctx, objective.QuestID, data.Title, objective.ID)
+	if data.Title != "" && data.Title != candidate.Title {
+		candidate.Title = data.Title
+		newSlug, slugErr := s.generateUniqueSlug(ctx, candidate.QuestID, data.Title, candidate.ID)
 		if slugErr != nil {
 			return fmt.Errorf("generating slug: %w", slugErr)
 		}
-		objective.Slug = newSlug
+		candidate.Slug = newSlug
 		update = true
 	}
 
-	if data.Draft != nil && *data.Draft != objective.Draft {
+	if data.Draft != nil && *data.Draft != candidate.Draft {
 		// The root is the quest rather than a place in it, so parking it takes
 		// every objective out of play at once, and the builder does not list
 		// the root, which leaves nothing on screen explaining why.
-		if *data.Draft && objective.ParentID == "" {
-			return fmt.Errorf("%w: %q", ErrCannotDraftRoot, objective.ID)
+		if *data.Draft && candidate.ParentID == "" {
+			return fmt.Errorf("%w: %q", ErrCannotDraftRoot, candidate.ID)
 		}
 		if *data.Draft {
-			if err := s.checkParkingLeavesBandSatisfiable(ctx, objective); err != nil {
+			if err := s.checkParkingLeavesBandSatisfiable(ctx, &candidate); err != nil {
 				return err
 			}
 		}
-		objective.Draft = *data.Draft
+		candidate.Draft = *data.Draft
 		update = true
 	}
 
-	settingsChanged, err := s.applySettings(ctx, objective, data)
+	settingsChanged, err := s.applySettings(ctx, &candidate, data)
 	if err != nil {
 		return err
 	}
@@ -395,7 +437,7 @@ func (s objectiveService) UpdateObjective(
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
-	if err := s.objectiveRepo.UpdateTx(ctx, tx, objective); err != nil {
+	if err := s.objectiveRepo.UpdateTx(ctx, tx, &candidate); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("updating objective: %w", err)
 	}
@@ -403,6 +445,7 @@ func (s objectiveService) UpdateObjective(
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
+	*objective = candidate
 	return nil
 }
 

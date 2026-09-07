@@ -44,8 +44,11 @@ type ObjectiveRepository interface {
 	// is an error for a quest to hold several, since then no row is
 	// identifiable as the root and picking one would be a guess.
 	FindRoot(ctx context.Context, questID string) (*models.Objective, error)
-	// FindChildrenCount returns how many direct children an objective has.
-	FindChildrenCount(ctx context.Context, parentID string) (int, error)
+	// FindPublishedChildrenCount returns how many direct children an objective
+	// has that are in play. Drafts are excluded because the only caller is the
+	// completion band, and lint counts the same way: a band that counts a row
+	// no run loads is a band no run can meet.
+	FindPublishedChildrenCount(ctx context.Context, parentID string) (int, error)
 	// FindChildren returns one objective's direct children in position order.
 	// It is scoped by quest because parent_id has no foreign key, so an id that
 	// leaked in from elsewhere would otherwise pull in another quest's rows.
@@ -267,10 +270,11 @@ func findUnattached(ctx context.Context, db bun.IDB, questID string) ([]models.O
 	return objectives, nil
 }
 
-func (r *objectiveRepository) FindChildrenCount(ctx context.Context, parentID string) (int, error) {
+func (r *objectiveRepository) FindPublishedChildrenCount(ctx context.Context, parentID string) (int, error) {
 	count, err := r.db.NewSelect().
 		Model((*models.Objective)(nil)).
 		Where("parent_id = ?", parentID).
+		Where("draft = ?", false).
 		Count(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("counting children: %w", err)
