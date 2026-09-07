@@ -218,7 +218,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			{
 				Name:        "id",
 				Type:        "string",
-				Description: "Instance UUID. Present on export; omit on create-import to generate a new UUID.",
+				Description: "Quest UUID. Present on export; omit on create-import to generate a new UUID.",
 			},
 			{Name: "name", Type: "string", Required: true, Description: "Game name."},
 			{

@@ -54,6 +54,24 @@ func (r LintResult) HasWarning(code string) bool {
 	return false
 }
 
+// Filter returns the diagnostics whose path starts with prefix. Quest-level
+// diagnostics are grouped only by where they came from, and "start" or
+// "finish" is the whole of that address.
+func (r LintResult) Filter(prefix string) LintResult {
+	var out LintResult
+	for _, e := range r.Errors {
+		if strings.HasPrefix(e.Path, prefix) {
+			out.Errors = append(out.Errors, e)
+		}
+	}
+	for _, w := range r.Warnings {
+		if strings.HasPrefix(w.Path, prefix) {
+			out.Warnings = append(out.Warnings, w)
+		}
+	}
+	return out
+}
+
 // Lint validates a GameDoc in three layers: schema, semantic, structural.
 // registry is used to check valid block types and contexts; pass blocks.Registry().
 func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
@@ -257,11 +275,13 @@ func (l *linter) checkBandBounds(path string, obj ObjectiveDoc, childCount int) 
 // checkLeafSettings warns about fields that govern children on a node with
 // none. They are inert rather than wrong, which is why these are warnings: an
 // author mid-edit may be about to add the children.
+//
+// Routing is not among them. Every objective is created with one, so a leaf
+// carrying routing is the normal state rather than something an author did,
+// and a warning on every leaf of every quest is noise that teaches people to
+// ignore the panel. An objective moved out of a section keeps its settings on
+// purpose: they are what it needs again the moment it gains children.
 func (l *linter) checkLeafSettings(path string, obj ObjectiveDoc) {
-	if obj.Routing != "" {
-		l.warnf(path+".routing", "ROUTING_ON_LEAF",
-			"routing has no effect on an objective with no children")
-	}
 	if obj.ChildrenMin != nil || obj.ChildrenMax != nil {
 		l.warnf(path+".children_min", "BAND_ON_LEAF",
 			"children_min/children_max have no effect on an objective with no children")
@@ -365,6 +385,14 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 		l.errorf(path, "INVALID_ROUTING",
 			"routing %q is retired; an objective is reachable by its parent's routing and its depends, "+
 				"and a scan block in its proof lets players reach it out of order", r)
+	case "":
+		// Its own arm because an omission is not a typo. The three strategies
+		// produce quests that play nothing like one another, so there is no
+		// default that could be assumed on the author's behalf.
+		l.errorf(path, "INVALID_ROUTING",
+			"routing is not set; choose how this objective offers what is inside it: "+
+				"%q one at a time in order, %q all at once, or %q a few at a time",
+			string(RouteStrategyOrdered), string(RouteStrategyFreeRoam), string(RouteStrategyRandomised))
 	default:
 		l.errorf(path, "INVALID_ROUTING", "invalid routing value %q", r)
 	}
@@ -490,39 +518,12 @@ func (l *linter) checkStructural() {
 			"start page has no start_button block; players won't be able to start the game")
 	}
 
-	if !l.doc.Settings.EnablePoints {
-		l.warnBlocksWithPoints("start", l.doc.Start)
-		l.warnBlocksWithPoints("finish", l.doc.Finish)
-		l.warnTreeBlockPoints("structure", l.doc.Structure)
-	}
-}
-
-func (l *linter) warnBlocksWithPoints(path string, blocks []BlockDoc) {
-	for i, b := range blocks {
-		if pointsVal, ok := b["points"]; ok {
-			var pts float64
-			switch v := pointsVal.(type) {
-			case float64:
-				pts = v
-			case json.Number:
-				pts, _ = v.Float64()
-			}
-			if pts > 0 {
-				l.warnf(fmt.Sprintf("%s[%d].points", path, i), "POINTS_DISABLED",
-					"block has points but enable_points is false in settings")
-			}
-		}
-	}
-}
-
-// warnTreeBlockPoints walks the tree. Objectives have no points field of their
-// own; points are block-level only.
-func (l *linter) warnTreeBlockPoints(path string, obj ObjectiveDoc) {
-	l.warnBlocksWithPoints(path+".proof.blocks", obj.Proof.Blocks)
-	l.warnBlocksWithPoints(path+".reveal.blocks", obj.Reveal.Blocks)
-	for i, child := range obj.Children {
-		l.warnTreeBlockPoints(fmt.Sprintf("%s.children[%d]", path, i), child)
-	}
+	// Points on a quest that has them switched off used to warn. The editor
+	// hides every points control while they are off, so the field that would
+	// clear the warning cannot be reached from the page the warning is on:
+	// the only way to act on it was to turn points on, which is the opposite
+	// of what it asked for. Stored points are simply inert until an author
+	// switches them back on, and then they are what that author wanted.
 }
 
 // --- Helpers ---

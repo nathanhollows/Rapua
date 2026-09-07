@@ -228,16 +228,17 @@ func TestLint_NoStartButton(t *testing.T) {
 	assert.Equal(t, "NO_START_BUTTON", result.Warnings[0].Code)
 }
 
-func TestLint_PointsDisabled(t *testing.T) {
+// Points on a quest with points switched off are left alone. The editor hides
+// every points control while they are off, so a warning about one asked an
+// author to fix something the page would not show them.
+func TestLint_PointsWithPointsDisabled_SaysNothing(t *testing.T) {
 	doc := validDoc()
 	doc.Settings.EnablePoints = false
-	leaf(doc).Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "text", "points": float64(10)}},
-	}
+	leaf(doc).Reveal.Blocks = []game.BlockDoc{{"type": "text", "points": float64(10)}}
+
 	result := game.Lint(doc, newTestRegistry())
 	assert.Empty(t, result.Errors)
-	require.Len(t, result.Warnings, 1)
-	assert.Equal(t, "POINTS_DISABLED", result.Warnings[0].Code)
+	assert.NotContains(t, warningCodes(result), "POINTS_DISABLED")
 }
 
 // --- IsValid ---
@@ -340,18 +341,6 @@ func TestLint_BlockIDDuplicate(t *testing.T) {
 }
 
 // --- Structural: nested group, group-level points disabled ---
-
-func TestLint_PointsDisabledJsonNumber(t *testing.T) {
-	doc := validDoc()
-	doc.Settings.EnablePoints = false
-	leaf(doc).Reveal = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "text", "points": json.Number("10")}},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	assert.Empty(t, result.Errors)
-	require.Len(t, result.Warnings, 1)
-	assert.Equal(t, "POINTS_DISABLED", result.Warnings[0].Code)
-}
 
 // --- When / variable resolution ---
 
@@ -826,20 +815,6 @@ func TestLint_ObjectiveBlockID_Duplicate_Error(t *testing.T) {
 	assert.Contains(t, codes, "BLOCK_ID_DUPLICATE")
 }
 
-func TestLint_ObjectiveBlockPoints_Disabled_Warning(t *testing.T) {
-	doc := validDoc()
-	doc.Settings.EnablePoints = false
-	leaf(doc).Proof = game.ObjectiveContextDoc{
-		Blocks: []game.BlockDoc{{"type": "quiz", "points": float64(10)}},
-	}
-	result := game.Lint(doc, newTestRegistry())
-	codes := make([]string, len(result.Warnings))
-	for i, w := range result.Warnings {
-		codes[i] = w.Code
-	}
-	assert.Contains(t, codes, "POINTS_DISABLED")
-}
-
 func TestLint_ObjectiveDepends_UndefinedVar_Warning(t *testing.T) {
 	doc := validDoc()
 	leaf(doc).Depends = game.DependsField{"nonexistent_var"}
@@ -986,10 +961,15 @@ func TestLint_BandOnLeaf_Warning(t *testing.T) {
 	assert.Empty(t, result.Errors, "an inert field is not an error")
 }
 
-func TestLint_RoutingOnLeaf_Warning(t *testing.T) {
+// Routing on a leaf says nothing: every objective is created with one, and an
+// objective moved out of a section keeps what it had. The band and max_next
+// below stay warnings because only an author can set those.
+func TestLint_RoutingOnLeaf_IsNotWorthSaying(t *testing.T) {
 	doc := validDoc()
 	leaf(doc).Routing = game.RouteStrategyOrdered
-	assert.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "ROUTING_ON_LEAF")
+	result := game.Lint(doc, newTestRegistry())
+	assert.NotContains(t, warningCodes(result), "ROUTING_ON_LEAF")
+	assert.Empty(t, result.Errors)
 }
 
 // The finish button only appears on a node in a range, so a label anywhere else

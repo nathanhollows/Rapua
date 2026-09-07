@@ -60,7 +60,6 @@ func TestWriteGameSpec_ContainsAuthConstraints(t *testing.T) {
 		"BAND_MIN_EXCEEDS_MAX",
 		"BAND_OUT_OF_RANGE",
 		"DEPENDS_CYCLE",
-		"POINTS_DISABLED",
 	}
 	for _, code := range checks {
 		if !strings.Contains(s, code) {

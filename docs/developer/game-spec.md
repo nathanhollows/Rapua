@@ -17,7 +17,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 **Structure**
 - The document is one recursive type. `structure` is the root objective, and every node under `children` has the same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them.
 - Objective slugs must be unique across the whole document, root and sections included. *(`SLUG_DUPLICATE`)*
-- `routing` is required on an objective with children and inert without them. *(`INVALID_ROUTING`, `ROUTING_ON_LEAF`)*
+- `routing` is required on an objective with children, and must name one of the three strategies: an empty value is an unmade choice, not a default. It is inert on an objective without children, which is not worth reporting: every objective carries one. *(`INVALID_ROUTING`)*
 - Nesting deeper than 4 levels warns: it is hard to navigate on a phone. *(`NESTING_TOO_DEEP`)*
 - An objective's `depends` must not lead back to itself. *(`DEPENDS_CYCLE`)*
 
@@ -29,7 +29,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - Every block must have a `type` field matching a registered block type.
 - A block may only appear in contexts listed in its spec. *(`INVALID_CONTEXT`)*
 - Block `id` values must be unique across the document. *(`BLOCK_ID_DUPLICATE`)*
-- Block `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)* An objective has no `points` field of its own: its total point value is the sum of its blocks' points.
+- Block `points` are ignored unless `settings.enable_points` is true, and are left alone rather than reported: the editor hides every points control while points are off, so nothing could be done about it from there. An objective has no `points` field of its own: its total point value is the sum of its blocks' points.
 
 **Start page**
 - A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
@@ -40,7 +40,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - `children_min` must not exceed `children_max`. *(`BAND_MIN_EXCEEDS_MAX`)*
 - Both bounds must lie between 0 and the child count. *(`BAND_OUT_OF_RANGE`)*
 - `children_max: 0` completes the objective before any child is reachable. *(`BAND_COMPLETES_AT_ZERO`)*
-- The band, `routing`, `max_next` and `finish_label` are inert on an objective with no children. *(`BAND_ON_LEAF`, `ROUTING_ON_LEAF`, `MAX_NEXT_ON_LEAF`, `FINISH_LABEL_UNREACHABLE`)*
+- The band, `max_next` and `finish_label` are inert on an objective with no children. *(`BAND_ON_LEAF`, `MAX_NEXT_ON_LEAF`, `FINISH_LABEL_UNREACHABLE`)*
 - `finish_label` only shows on an objective in a range. *(`FINISH_LABEL_UNREACHABLE`)*
 
 **Reachability (`depends` / `sets`)**
