@@ -146,7 +146,7 @@ func header(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/static/images/favicon.svg\"><link rel=\"icon\" type=\"image/png\" href=\"/static/images/favicon.png\"><link rel=\"icon\" type=\"image/x-icon\" href=\"/static/images/favicon.ico\"><link href=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css\" rel=\"stylesheet\"><!-- JS --><script src=\"https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js\"></script><script src=\"https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js\" defer></script><script src=\"https://unpkg.com/turndown@latest/dist/turndown.js\"></script><script src=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js\"></script><script src=\"/static/js/Sortable.min.js\"></script><script src=\"/static/js/htmx.min.js\"></script><script src=\"/static/js/csrf.js\"></script><script src=\"/static/js/app.js\"></script><script src=\"/static/js/mapbox-satellite-view.js\"></script><script src=\"https://unpkg.com/hyperscript.org@0.9.13\"></script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/static/images/favicon.svg\"><link rel=\"icon\" type=\"image/png\" href=\"/static/images/favicon.png\"><link rel=\"icon\" type=\"image/x-icon\" href=\"/static/images/favicon.ico\"><link href=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css\" rel=\"stylesheet\"><link href=\"https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css\" rel=\"stylesheet\"><!-- JS --><script src=\"https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js\"></script><script src=\"https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js\" defer></script><script src=\"https://unpkg.com/turndown@latest/dist/turndown.js\"></script><script src=\"https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js\"></script><script src=\"https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js\"></script><script src=\"/static/js/Sortable.min.js\"></script><script src=\"/static/js/htmx.min.js\"></script><script src=\"/static/js/csrf.js\"></script><script src=\"/static/js/app.js\"></script><script src=\"/static/js/mapbox-satellite-view.js\"></script><script src=\"/static/js/geofence-picker.js\" defer></script><script src=\"https://unpkg.com/hyperscript.org@0.9.13\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -330,7 +330,7 @@ func nav(user models.User, section string) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(user.CurrentQuest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 251, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 254, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -368,7 +368,7 @@ func nav(user models.User, section string) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(quest.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 269, Col: 25}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 272, Col: 25}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -386,7 +386,7 @@ func nav(user models.User, section string) templ.Component {
 					var templ_7745c5c3_Var10 templ.SafeURL
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/quests/%s/switch", quest.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 275, Col: 81}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 278, Col: 81}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -399,7 +399,7 @@ func nav(user models.User, section string) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(quest.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 276, Col: 25}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 279, Col: 25}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {

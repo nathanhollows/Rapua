@@ -146,6 +146,35 @@ func (b *PasswordBlock) GetSpec() game.BlockSpec {
 	}
 }
 
+func (b *GeofenceBlock) GetSpec() game.BlockSpec {
+	return game.BlockSpec{
+		Type:        geofenceBlockType,
+		Name:        "Location check",
+		Description: "Players must be standing in a place for this to pass.",
+		Contexts:    []string{string(game.ContextObjectiveProof)},
+		Fields: []game.FieldSpec{
+			{Name: "prompt", Type: "string", Description: "Instruction shown to the player"},
+			{
+				Name: "area", Type: "object",
+				Description: "Where the player must be: a circle with a centre and a " +
+					"radius in metres, or a GeoJSON Polygon",
+			},
+			{
+				Name: "max_accuracy", Type: "float", Default: "50",
+				Description: "Widest margin in metres still worth testing. A vaguer " +
+					"reading is refused rather than guessed at",
+			},
+			{
+				Name: "map_mode", Type: "enum", Default: "button",
+				Enum: []string{"button", "map", "map_area"},
+				Description: "What the player sees while checking: \"button\" hides the area " +
+					"(finding it is the challenge), \"map\" shows their live position, " +
+					"\"map_area\" also draws the target area",
+			},
+		},
+	}
+}
+
 func (b *ScanBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "scan",

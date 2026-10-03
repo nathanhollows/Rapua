@@ -129,6 +129,9 @@ func init() {
 		&ScanBlock{},
 		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
 	)
+	// Proof only. A geofence asks whether the player is standing somewhere,
+	// which is a thing to prove rather than a thing to reveal.
+	registerBlock(&GeofenceBlock{}, []BlockContext{ContextObjectiveProof})
 	registerBlock(
 		&RatingBlock{},
 		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
@@ -274,6 +277,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewAnswerBlock(baseBlock), nil
 	case scanBlockType:
 		return NewScanBlock(baseBlock), nil
+	case geofenceBlockType:
+		return NewGeofenceBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
 	case checklistBlockType:
@@ -338,6 +343,12 @@ func NewAlertBlock(base BaseBlock) *AlertBlock {
 
 func NewScanBlock(base BaseBlock) *ScanBlock {
 	return &ScanBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewGeofenceBlock(base BaseBlock) *GeofenceBlock {
+	return &GeofenceBlock{
 		BaseBlock: base,
 	}
 }

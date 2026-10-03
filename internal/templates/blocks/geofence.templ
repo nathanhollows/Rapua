@@ -1,0 +1,265 @@
+package blocks
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Rendered once. geofencePlayerUpdate only ever touches the badge and the
+// "done" message below; the map and the button live outside their reach, so a
+// background recheck can never tear them down, which used to reset the map's
+// view and shake the card on every miss.
+templ geofencePlayer(settings models.QuestSettings, block blocks.GeofenceBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="w-full">
+		if block.MapMode == blocks.GeofenceMapButton {
+			<div class="indicator w-full">
+				@geofenceBadge(settings, block, data)
+				<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+					@geofencePrompt(block)
+					@geofenceLiveOrDone(block, data)
+				</div>
+			</div>
+		} else {
+			<div class="indicator w-full">
+				@geofenceBadge(settings, block, data)
+				<div
+					id={ fmt.Sprintf("geofence-player-map-%s", block.ID) }
+					class="geofence-player-map-uninit w-full h-64 rounded-box overflow-hidden bg-base-300"
+					data-area={ geofenceMapAreaJSON(block) }
+				></div>
+			</div>
+			<div class="w-full mt-3">
+				@geofencePrompt(block)
+				@geofenceLiveOrDone(block, data)
+			</div>
+		}
+	</div>
+}
+
+// The only two things a validate response ever changes: the completion badge
+// and whether the "done" message shows. A miss (the common case, since a
+// player is usually still searching) renders the same content that was
+// already there, so nothing visibly moves.
+templ geofencePlayerUpdate(settings models.QuestSettings, block blocks.GeofenceBlock, data blocks.PlayerState) {
+	<span id={ fmt.Sprintf("geofence-badge-%s", block.ID) } hx-swap-oob="true" class="contents">
+		@pointsBadge(settings.EnablePoints, block.Points)
+		@completionBadge(data)
+	</span>
+	<div
+		id={ fmt.Sprintf("geofence-done-%s", block.ID) }
+		hx-swap-oob="true"
+		class={ "not-prose", templ.KV("hidden", !data.IsComplete()) }
+	>
+		if data.IsComplete() {
+			<p class="text-success">You made it.</p>
+		}
+	</div>
+}
+
+templ geofenceBadge(settings models.QuestSettings, block blocks.GeofenceBlock, data blocks.PlayerState) {
+	<span id={ fmt.Sprintf("geofence-badge-%s", block.ID) } class="contents">
+		@pointsBadge(settings.EnablePoints, block.Points)
+		@completionBadge(data)
+	</span>
+}
+
+templ geofencePrompt(block blocks.GeofenceBlock) {
+	if block.Prompt != "" {
+		<div class="prose">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+		</div>
+	}
+}
+
+// The initial state comes straight from data.IsComplete(); a completion
+// reached later, while the page is open, instead arrives as the oob-swapped
+// #geofence-done-<id> filling in, and geofence.js hides this div in response
+// rather than the server re-rendering it away.
+templ geofenceLiveOrDone(block blocks.GeofenceBlock, data blocks.PlayerState) {
+	if data.IsComplete() {
+		<div id={ fmt.Sprintf("geofence-done-%s", block.ID) } class="not-prose">
+			<p class="text-success">You made it.</p>
+		</div>
+	} else {
+		<div id={ fmt.Sprintf("geofence-done-%s", block.ID) } class="hidden"></div>
+		<div id={ fmt.Sprintf("geofence-live-%s", block.ID) }>
+			@geofenceForm(block)
+		</div>
+	}
+}
+
+// The area only reaches the page when the author has switched this block into
+// GeofenceMapArea; every other mode keeps it off, so finding it stays part of
+// the challenge. The accuracy limit is always here regardless, because the
+// browser needs it to know when a fix is worth posting. How far off a miss
+// landed never reaches the page, in any mode: a few readings from different
+// spots would be enough to triangulate a hidden shape.
+templ geofenceForm(block blocks.GeofenceBlock) {
+	<form
+		id={ fmt.Sprintf("geofence-form-%s", block.ID) }
+		hx-post="/blocks/validate"
+		hx-swap="none"
+		data-max-accuracy={ geofenceAccuracyLimit(block) }
+	>
+		<input type="hidden" name="block" value={ block.ID }/>
+		<input type="hidden" name="lat" value=""/>
+		<input type="hidden" name="lng" value=""/>
+		<input type="hidden" name="accuracy" value=""/>
+		<div class="flex flex-col gap-3 not-prose">
+			<button type="button" class="btn btn-primary w-full" data-geofence-check={ block.ID }>
+				@icon("map-pin", templ.Attributes{"class": "w-5 h-5"})
+				Check where I am
+			</button>
+			<button type="button" class="btn btn-ghost btn-sm hidden" data-geofence-cancel={ block.ID }>
+				Stop
+			</button>
+			<p id={ fmt.Sprintf("geofence-status-%s", block.ID) } class="text-sm text-center opacity-70 hidden"></p>
+		</div>
+	</form>
+}
+
+templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		if settings.EnablePoints {
+			@adminPointsField(block.Points)
+		}
+		@TextareaField(geofencePromptTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset" data-geofence-picker>
+			<legend class="fieldset-legend">Area</legend>
+			<input type="hidden" name="area" value={ geofenceAreaJSON(block) }/>
+			<div class="flex items-center gap-2 mb-2">
+				<div class="join shadow">
+					<button type="button" class="btn btn-xs join-item btn-active" data-geofence-tool="pin">Pin</button>
+					<button type="button" class="btn btn-xs join-item" data-geofence-tool="shape">Shape</button>
+				</div>
+				<button type="button" class="btn btn-xs btn-error shadow hidden" data-geofence-clear data-geofence-shape-only>Clear</button>
+			</div>
+			<div class="relative">
+				<div
+					id={ fmt.Sprintf("geofence-map-%s", block.ID) }
+					class="geofence-map-uninit w-full h-64 rounded-box overflow-hidden bg-base-300"
+					data-form-id={ fmt.Sprintf("form-%s", block.ID) }
+					data-area={ geofenceAreaJSON(block) }
+				></div>
+				<div
+					data-geofence-crosshair
+					class="absolute inset-0 flex items-center justify-center pointer-events-none"
+				>
+					@icon("map-pin", templ.Attributes{"class": "w-8 h-8 -mt-8 text-primary drop-shadow"})
+				</div>
+			</div>
+			<div class="flex items-center justify-end mt-2">
+				<span class="badge badge-neutral badge-sm font-mono" data-geofence-readout></span>
+			</div>
+			<p class="fieldset-label hidden text-error" data-geofence-warning></p>
+			<div data-geofence-pin-only>
+				<label class="fieldset-label">How close counts</label>
+				<div class="flex items-center gap-4">
+					<input
+						type="range"
+						min="5"
+						max="500"
+						step="5"
+						value={ geofenceRadiusValue(block) }
+						class="range range-primary range-sm grow"
+						data-geofence-radius
+					/>
+				</div>
+			</div>
+			<p class="fieldset-label" data-geofence-shape-only>
+				Click the map to drop corners, then click the first one again to close the shape. Drag a corner to move it.
+			</p>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Accuracy limit</legend>
+			<label class="input w-full">
+				<input
+					type="number"
+					name="max_accuracy"
+					min="1"
+					step="1"
+					value={ geofenceAccuracyValue(block) }
+					placeholder="50"
+					class="grow"
+				/>
+				<span class="opacity-60">metres</span>
+			</label>
+			<p class="fieldset-label">
+				A reading vaguer than this is refused rather than guessed at. Good outdoor GPS lands within 10 m; under
+				cover or indoors it can exceed 50 m, so raise it there rather than leaving players stuck.
+			</p>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">What players see</legend>
+			<select name="map_mode" class="select w-full">
+				<option value="button" selected?={ block.MapMode != blocks.GeofenceMapShow && block.MapMode != blocks.GeofenceMapArea }>Just a button</option>
+				<option value="map" selected?={ block.MapMode == blocks.GeofenceMapShow }>Live map of their position</option>
+				<option value="map_area" selected?={ block.MapMode == blocks.GeofenceMapArea }>Live map with the target area shown</option>
+			</select>
+			<p class="fieldset-label">
+				"Just a button" keeps the target hidden, so finding it is part of the challenge. The map options turn
+				on the player's live GPS position; "with the target area" also draws the area itself, guiding them there.
+			</p>
+		</fieldset>
+	</form>
+	<script src="/static/js/geofence-picker.js" defer></script>
+}
+
+var geofencePromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Stand by the fountain",
+	Markdown:    true,
+}
+
+func geofenceAreaJSON(block blocks.GeofenceBlock) string {
+	if block.Area.IsZero() {
+		return ""
+	}
+	data, err := json.Marshal(block.Area)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+// geofenceMapAreaJSON is empty in every mode but GeofenceMapArea, so the area
+// only reaches the player-facing page when the author has explicitly chosen to
+// show it.
+func geofenceMapAreaJSON(block blocks.GeofenceBlock) string {
+	if block.MapMode != blocks.GeofenceMapArea {
+		return ""
+	}
+	return geofenceAreaJSON(block)
+}
+
+func geofenceAccuracyValue(block blocks.GeofenceBlock) string {
+	if block.MaxAccuracy <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%g", block.MaxAccuracy)
+}
+
+// The browser needs a threshold even when the author left one unset, and it has to
+// be the same number the server will apply, so it comes from the server's own.
+func geofenceAccuracyLimit(block blocks.GeofenceBlock) string {
+	if block.MaxAccuracy > 0 {
+		return fmt.Sprintf("%g", block.MaxAccuracy)
+	}
+	return fmt.Sprintf("%g", blocks.DefaultMaxAccuracy)
+}
+
+func geofenceRadiusValue(block blocks.GeofenceBlock) string {
+	if block.Area != nil && block.Area.Type == blocks.GeometryCircle && block.Area.Radius > 0 {
+		return fmt.Sprintf("%g", block.Area.Radius)
+	}
+	return "40"
+}

@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+)
+
+const (
+	// earthRadiusMetres is the mean radius, which is what haversine assumes.
+	earthRadiusMetres = 6371000.0
+	halfTurnDegrees   = 180.0
+	// metresPerDegreeLat is constant; longitude shrinks with the cosine of latitude.
+	metresPerDegreeLat = earthRadiusMetres * math.Pi / halfTurnDegrees
 )
 
 type GeometryType string
@@ -214,6 +223,125 @@ func validateLinearRings(rings []LinearRing) error {
 		}
 	}
 	return nil
+}
+
+func (g *Geometry) Contains(p Position) bool {
+	if g == nil {
+		return false
+	}
+	switch g.Type {
+	case GeometryCircle:
+		return g.Radius > 0 && MetresBetween(g.Center, p) <= g.Radius
+	case GeometryPolygon:
+		return ringsContain(g.LinearRings, p)
+	}
+	return false
+}
+
+// MetresBetween is the great-circle distance, which stays honest at any scale.
+//
+//nolint:mnd // the halves and the doubling are the haversine formula itself
+func MetresBetween(a, b Position) float64 {
+	lat1 := radians(a.Lat())
+	lat2 := radians(b.Lat())
+	halfDLat := (lat2 - lat1) / 2
+	halfDLng := radians(b.Lng()-a.Lng()) / 2
+
+	h := math.Sin(halfDLat)*math.Sin(halfDLat) +
+		math.Cos(lat1)*math.Cos(lat2)*math.Sin(halfDLng)*math.Sin(halfDLng)
+	// Clamped because rounding can push h a hair above 1, where Asin is undefined.
+	return 2 * earthRadiusMetres * math.Asin(math.Sqrt(math.Min(1, h)))
+}
+
+func radians(degrees float64) float64 {
+	return degrees * math.Pi / halfTurnDegrees
+}
+
+// MetresOutside is how far the position lies beyond the geometry, and zero once
+// inside it. A polygon measures to its nearest edge, so a shape reports a near
+// miss the same way a circle does.
+func (g *Geometry) MetresOutside(p Position) float64 {
+	if g == nil || g.Contains(p) {
+		return 0
+	}
+	switch g.Type {
+	case GeometryCircle:
+		return math.Max(0, MetresBetween(g.Center, p)-g.Radius)
+	case GeometryPolygon:
+		return metresToRings(g.LinearRings, p)
+	}
+	return 0
+}
+
+// metresToRings measures to the nearest edge of any ring. A hole counts, so a
+// position in a courtyard is told how far it is to the building around it.
+func metresToRings(rings []LinearRing, p Position) float64 {
+	nearest := math.Inf(1)
+	for _, ring := range rings {
+		for i := 1; i < len(ring); i++ {
+			if d := metresToSegment(p, ring[i-1], ring[i]); d < nearest {
+				nearest = d
+			}
+		}
+	}
+	if math.IsInf(nearest, 1) {
+		return 0
+	}
+	return nearest
+}
+
+// metresToSegment works in a plane centred on the position: over the span of a
+// geofence a degree is a fixed number of metres, so the error stays far inside
+// GPS noise, and this avoids a great-circle solve per edge.
+func metresToSegment(p, a, b Position) float64 {
+	lngScale := metresPerDegreeLat * math.Cos(radians(p.Lat()))
+
+	px, py := 0.0, 0.0
+	ax, ay := (a.Lng()-p.Lng())*lngScale, (a.Lat()-p.Lat())*metresPerDegreeLat
+	bx, by := (b.Lng()-p.Lng())*lngScale, (b.Lat()-p.Lat())*metresPerDegreeLat
+
+	dx, dy := bx-ax, by-ay
+	if dx == 0 && dy == 0 {
+		return math.Hypot(px-ax, py-ay)
+	}
+
+	// How far along the edge the closest point sits, clamped to its ends.
+	t := ((px-ax)*dx + (py-ay)*dy) / (dx*dx + dy*dy)
+	t = math.Max(0, math.Min(1, t))
+	return math.Hypot(px-(ax+t*dx), py-(ay+t*dy))
+}
+
+// GeoJSON puts the outer boundary first and treats any later ring as a hole, so
+// a position inside a hole is outside the polygon.
+func ringsContain(rings []LinearRing, p Position) bool {
+	if len(rings) == 0 || !ringContains(rings[0], p) {
+		return false
+	}
+	for _, hole := range rings[1:] {
+		if ringContains(hole, p) {
+			return false
+		}
+	}
+	return true
+}
+
+// ringContains is even-odd ray casting, treating longitude and latitude as plane
+// coordinates. That is wrong near the poles and across the antimeridian, but at
+// the scale a geofence covers the error stays far inside GPS noise.
+func ringContains(ring LinearRing, p Position) bool {
+	inside := false
+	for i, j := 0, len(ring)-1; i < len(ring); j, i = i, i+1 {
+		xi, yi := ring[i].Lng(), ring[i].Lat()
+		xj, yj := ring[j].Lng(), ring[j].Lat()
+
+		if (yi > p.Lat()) == (yj > p.Lat()) {
+			continue
+		}
+		if p.Lng() < (xj-xi)*(p.Lat()-yi)/(yj-yi)+xi {
+			inside = !inside
+		}
+	}
+	return inside
 }
 
 func validatePosition(p Position) error {

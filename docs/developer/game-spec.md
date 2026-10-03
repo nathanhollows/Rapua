@@ -676,6 +676,47 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ]
     },
     {
+      "type": "geofence",
+      "name": "Location check",
+      "description": "Players must be standing in a place for this to pass.",
+      "contexts": [
+        "objective_proof"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Instruction shown to the player"
+        },
+        {
+          "name": "area",
+          "type": "object",
+          "description": "Where the player must be: a circle with a centre and a radius in metres, or a GeoJSON Polygon"
+        },
+        {
+          "name": "max_accuracy",
+          "type": "float",
+          "description": "Widest margin in metres still worth testing. A vaguer reading is refused rather than guessed at",
+          "default": "50"
+        },
+        {
+          "name": "map_mode",
+          "type": "enum",
+          "description": "What the player sees while checking: \"button\" hides the area (finding it is the challenge), \"map\" shows their live position, \"map_area\" also draws the target area",
+          "default": "button",
+          "enum": [
+            "button",
+            "map",
+            "map_area"
+          ]
+        }
+      ]
+    },
+    {
       "type": "header",
       "name": "Header",
       "description": "A page header with an icon and title.",

@@ -66,16 +66,19 @@ templ header(title string) {
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
+		<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" rel="stylesheet"/>
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
 		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js" defer></script>
 		<script src="https://unpkg.com/turndown@latest/dist/turndown.js"></script>
 		<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
 		<script src="/static/js/Sortable.min.js"></script>
 		<script src="/static/js/htmx.min.js"></script>
 		<script src="/static/js/csrf.js"></script>
 		<script src="/static/js/app.js"></script>
 		<script src="/static/js/mapbox-satellite-view.js"></script>
+		<script src="/static/js/geofence-picker.js" defer></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
 		if os.Getenv("IS_PROD") != "1" {
 			<script>

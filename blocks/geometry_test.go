@@ -249,3 +249,150 @@ func TestGeometry_ScanEdgeCases(t *testing.T) {
 
 	assert.Error(t, g.Scan(42), "unsupported type errors")
 }
+
+func TestGeometry_CircleContains(t *testing.T) {
+	within100m := blocks.NewCircle(octagon.Lat(), octagon.Lng(), 100)
+
+	assert.True(t, within100m.Contains(octagon), "the centre is inside")
+	assert.False(t, within100m.Contains(railway), "530m away is outside a 100m circle")
+	assert.True(t,
+		blocks.NewCircle(octagon.Lat(), octagon.Lng(), 1000).Contains(railway),
+		"530m away is inside a 1km circle")
+}
+
+func TestGeometry_ContainsNothingWhenEmpty(t *testing.T) {
+	var nilGeom *blocks.Geometry
+	assert.False(t, nilGeom.Contains(octagon))
+	assert.False(t, (&blocks.Geometry{}).Contains(octagon))
+	assert.False(t, (&blocks.Geometry{Type: blocks.GeometryPolygon}).Contains(octagon))
+}
+
+func TestGeometry_MetresOutsideCircle(t *testing.T) {
+	within100m := blocks.NewCircle(octagon.Lat(), octagon.Lng(), 100)
+
+	assert.Zero(t, within100m.MetresOutside(octagon), "inside is not outside")
+	// The railway station is ~530m away, so ~430m beyond a 100m circle.
+	assert.InDelta(t, 430, within100m.MetresOutside(railway), 60)
+}
+
+func TestGeometry_MetresOutsideEmpty(t *testing.T) {
+	var nilGeom *blocks.Geometry
+	assert.Zero(t, nilGeom.MetresOutside(octagon))
+	assert.Zero(t, (&blocks.Geometry{}).MetresOutside(octagon))
+}
+
+// A position in a courtyard is outside the building, so it is told how far it is
+// back to the wall rather than nothing.
+func TestGeometry_MetresOutsideHole(t *testing.T) {
+	withCourtyard := &blocks.Geometry{
+		Type: blocks.GeometryPolygon,
+		LinearRings: []blocks.LinearRing{
+			{
+				blocks.NewPosition(-45.880, 170.500),
+				blocks.NewPosition(-45.880, 170.510),
+				blocks.NewPosition(-45.870, 170.510),
+				blocks.NewPosition(-45.870, 170.500),
+				blocks.NewPosition(-45.880, 170.500),
+			},
+			{
+				blocks.NewPosition(-45.876, 170.504),
+				blocks.NewPosition(-45.876, 170.506),
+				blocks.NewPosition(-45.874, 170.506),
+				blocks.NewPosition(-45.874, 170.504),
+				blocks.NewPosition(-45.876, 170.504),
+			},
+		},
+	}
+
+	inCourtyard := blocks.NewPosition(-45.875, 170.505)
+	assert.False(t, withCourtyard.Contains(inCourtyard))
+	assert.Greater(t, withCourtyard.MetresOutside(inCourtyard), 0.0, "the wall is a measurable distance away")
+	assert.Less(t, withCourtyard.MetresOutside(inCourtyard), 200.0)
+}
+
+// A polygon measures to its nearest edge, so a shape reports a near miss the same
+// way a circle does rather than staying silent.
+func TestGeometry_MetresOutsidePolygon(t *testing.T) {
+	// A box spanning 0.004 degrees of latitude, about 445m tall.
+	box := blocks.NewPolygon(blocks.LinearRing{
+		blocks.NewPosition(-45.876, 170.501),
+		blocks.NewPosition(-45.876, 170.506),
+		blocks.NewPosition(-45.872, 170.506),
+		blocks.NewPosition(-45.872, 170.501),
+		blocks.NewPosition(-45.876, 170.501),
+	})
+
+	assert.Zero(t, box.MetresOutside(octagon), "inside reports nothing")
+
+	// 0.001 degrees of latitude north of the top edge is about 111m.
+	justNorth := blocks.NewPosition(-45.871, 170.5035)
+	assert.InDelta(t, 111, box.MetresOutside(justNorth), 15)
+
+	// Far away should read far away, not zero.
+	assert.Greater(t, box.MetresOutside(portobello), 10000.0)
+}
+
+func TestGeometry_PolygonContains(t *testing.T) {
+	// A square roughly around the Octagon.
+	square := blocks.NewPolygon(blocks.LinearRing{
+		blocks.NewPosition(-45.876, 170.501),
+		blocks.NewPosition(-45.876, 170.506),
+		blocks.NewPosition(-45.872, 170.506),
+		blocks.NewPosition(-45.872, 170.501),
+		blocks.NewPosition(-45.876, 170.501),
+	})
+
+	assert.True(t, square.Contains(octagon))
+	assert.False(t, square.Contains(railway))
+	assert.False(t, square.Contains(portobello))
+}
+
+// GeoJSON treats a second ring as a hole, so the courtyard in the middle of a
+// building is outside the building.
+func TestGeometry_PolygonHoleIsOutside(t *testing.T) {
+	withCourtyard := &blocks.Geometry{
+		Type: blocks.GeometryPolygon,
+		LinearRings: []blocks.LinearRing{
+			{
+				blocks.NewPosition(-45.880, 170.500),
+				blocks.NewPosition(-45.880, 170.510),
+				blocks.NewPosition(-45.870, 170.510),
+				blocks.NewPosition(-45.870, 170.500),
+				blocks.NewPosition(-45.880, 170.500),
+			},
+			{
+				blocks.NewPosition(-45.876, 170.504),
+				blocks.NewPosition(-45.876, 170.506),
+				blocks.NewPosition(-45.874, 170.506),
+				blocks.NewPosition(-45.874, 170.504),
+				blocks.NewPosition(-45.876, 170.504),
+			},
+		},
+	}
+
+	assert.True(t, withCourtyard.Contains(blocks.NewPosition(-45.8790, 170.5020)), "inside the building")
+	assert.False(t, withCourtyard.Contains(blocks.NewPosition(-45.8750, 170.5050)), "inside the courtyard")
+}
+
+// A circle with no radius is a point, and nothing can stand on a point.
+func TestGeometry_ZeroRadiusContainsNothing(t *testing.T) {
+	assert.False(t, blocks.NewCircle(octagon.Lat(), octagon.Lng(), 0).Contains(octagon))
+}
+
+// Dunedin, so the distances below are real ones on the ground.
+var (
+	octagon    = blocks.NewPosition(-45.8742, 170.5036)
+	railway    = blocks.NewPosition(-45.8748, 170.5104) // ~530m east of the Octagon
+	portobello = blocks.NewPosition(-45.8500, 170.6600) // ~12km away
+)
+
+func TestMetresBetween(t *testing.T) {
+	assert.InDelta(t, 0, blocks.MetresBetween(octagon, octagon), 0.001)
+	assert.InDelta(t, 530, blocks.MetresBetween(octagon, railway), 40)
+	assert.InDelta(t, 12600, blocks.MetresBetween(octagon, portobello), 400)
+
+	// Distance does not care which way round it is asked.
+	assert.InDelta(t,
+		blocks.MetresBetween(octagon, railway),
+		blocks.MetresBetween(railway, octagon), 0.001)
+}
