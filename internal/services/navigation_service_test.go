@@ -36,7 +36,6 @@ func setupNavigationService(t *testing.T) (
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 
 	navigationService := services.NewNavigationService(
 		objectiveRepo,
@@ -44,7 +43,6 @@ func setupNavigationService(t *testing.T) (
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
-		varStateRepo,
 		newTLogger(t),
 	)
 
@@ -132,41 +130,6 @@ func TestNavigationService_GetPlayerObjectiveView_ListsWhatThePlayerCanDo(t *tes
 	assert.False(t, view.Complete)
 }
 
-// objective.<slug> is the only built-in, and a section has no completion row of
-// its own: the resolver has to read the derived completed set, not the log.
-func TestNavigationService_GetPlayerObjectiveView_ObjectiveSlugGateOpensOnCompletion(t *testing.T) {
-	navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	quest, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
-	gateway := insertTestObjective(t, dbc, quest.ID, root.ID, "The Gateway", "gateway")
-
-	locked := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: quest.ID, ParentID: root.ID, Position: 1,
-		Title: "The Inner Room", Slug: "inner-room",
-		Depends: game.DependsField{"objective.gateway"},
-	}
-	_, err := dbc.NewInsert().Model(locked).Exec(ctx)
-	require.NoError(t, err)
-
-	view, err := navService.GetPlayerObjectiveView(ctx, run)
-	require.NoError(t, err)
-	assert.NotContains(t, availableSlugs(view), "inner-room",
-		"the gate is shut before its objective completes")
-
-	_, err = repositories.NewObjectiveContextCompletionRepository(dbc).
-		Insert(ctx, run.Code, gateway.ID, game.ContextObjectiveProof)
-	require.NoError(t, err)
-
-	view, err = navService.GetPlayerObjectiveView(ctx, run)
-	require.NoError(t, err)
-	assert.Contains(t, availableSlugs(view), "inner-room",
-		"the gate opens once its objective completes")
-}
-
-// A run is finished when its root completes, which is not the same as having
-// nothing available: everything left may be waiting on something.
 func TestNavigationService_GetPlayerObjectiveView_CompleteWhenTheRootCompletes(t *testing.T) {
 	navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
 	defer cleanup()
@@ -236,71 +199,4 @@ func TestNavigationService_GetPreviewObjectiveView(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"previewed"}, availableSlugs(view),
 		"a preview shows the one objective it was asked for")
-}
-
-// Drafting is a gate on a node evaluated with its ancestors, never written
-// downward, so these cover the two directions of that: what it takes out of
-// play, and what it leaves behind.
-func TestNavigationService_Draft(t *testing.T) {
-	t.Run("a drafted section takes its subtree out of play", func(t *testing.T) {
-		navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
-		defer cleanup()
-		ctx := context.Background()
-
-		quest, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
-		insertTestObjective(t, dbc, quest.ID, root.ID, "Live", "live")
-		parked := insertTestObjective(t, dbc, quest.ID, root.ID, "Parked", "parked")
-		draftObjective(t, dbc, parked.ID)
-		insertTestObjective(t, dbc, quest.ID, parked.ID, "Buried", "buried")
-
-		view, err := navService.GetPlayerObjectiveView(ctx, run)
-		require.NoError(t, err)
-		assert.Equal(t, []string{"live"}, availableSlugs(view))
-	})
-
-	// The gate is what a run cannot reach, not what it did not do. A team that
-	// cleared an objective before it was drafted keeps what that opened.
-	t.Run("completion survives its objective being drafted", func(t *testing.T) {
-		navService, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
-		defer cleanup()
-		ctx := context.Background()
-
-		quest, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
-		gateway := insertTestObjective(t, dbc, quest.ID, root.ID, "Gateway", "gateway")
-
-		gated := insertTestObjective(t, dbc, quest.ID, root.ID, "Gated", "gated")
-		gated.Depends = game.DependsField{"objective.gateway"}
-		_, err := dbc.NewUpdate().Model(gated).Column("depends").WherePK().Exec(ctx)
-		require.NoError(t, err)
-
-		completeObjectiveProof(t, dbc, run.Code, gateway.ID)
-		view, err := navService.GetPlayerObjectiveView(ctx, run)
-		require.NoError(t, err)
-		require.Contains(t, availableSlugs(view), "gated", "the gate opens once its objective completes")
-
-		draftObjective(t, dbc, gateway.ID)
-		view, err = navService.GetPlayerObjectiveView(ctx, run)
-		require.NoError(t, err)
-		assert.NotContains(t, availableSlugs(view), "gateway", "the drafted objective is gone")
-		assert.Contains(t, availableSlugs(view), "gated",
-			"but what it unlocked stays unlocked: the team did the thing")
-	})
-}
-
-func draftObjective(t *testing.T, dbc *bun.DB, objectiveID string) {
-	t.Helper()
-	_, err := dbc.NewUpdate().
-		Model((*models.Objective)(nil)).
-		Set("draft = ?", true).
-		Where("id = ?", objectiveID).
-		Exec(context.Background())
-	require.NoError(t, err)
-}
-
-func completeObjectiveProof(t *testing.T, dbc *bun.DB, runCode, objectiveID string) {
-	t.Helper()
-	_, err := dbc.NewInsert().Model(&models.ObjectiveContextCompletion{
-		RunCode: runCode, ObjectiveID: objectiveID, Context: game.ContextObjectiveProof,
-	}).Exec(context.Background())
-	require.NoError(t, err)
 }

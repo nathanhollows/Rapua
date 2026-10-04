@@ -36,9 +36,6 @@ func GenerateBlockSpecs() []game.BlockSpec {
 			if reg.Prototype.RequiresValidation() {
 				spec.SharedFields = append(spec.SharedFields, "points")
 			}
-			if reg.Prototype.SupportsVariableSets() {
-				spec.SharedFields = append(spec.SharedFields, "sets")
-			}
 			specs = append(specs, spec)
 		}
 	}

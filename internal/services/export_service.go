@@ -177,7 +177,6 @@ func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.Obj
 		Title:       obj.Title,
 		Draft:       &obj.Draft,
 		Color:       obj.Color,
-		Depends:     obj.Depends,
 		Routing:     obj.Routing,
 		ChildrenMin: obj.ChildrenMin,
 		ChildrenMax: obj.ChildrenMax,
@@ -185,11 +184,9 @@ func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.Obj
 		FinishLabel: obj.FinishLabel,
 		Proof: game.ObjectiveContextDoc{
 			Blocks: proof,
-			Sets:   obj.ProofSets,
 		},
 		Reveal: game.ObjectiveContextDoc{
 			Blocks: reveal,
-			Sets:   obj.RevealSets,
 		},
 	}
 }

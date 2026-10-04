@@ -48,7 +48,6 @@ func NewNavigationService(
 	sectionFinishRepo repositories.SectionFinishRepository,
 	blockRepo repositories.BlockRepository,
 	teamRepo repositories.RunRepository,
-	varStateRepo repositories.RunVarStateRepository,
 	logger *slog.Logger,
 ) *NavigationService {
 	return &NavigationService{
@@ -57,7 +56,6 @@ func NewNavigationService(
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 			sectionFinishRepo:              sectionFinishRepo,
 			blockRepo:                      blockRepo,
-			varStateRepo:                   varStateRepo,
 		},
 		objectiveRepo:     objectiveRepo,
 		sectionFinishRepo: sectionFinishRepo,

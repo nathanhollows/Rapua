@@ -85,8 +85,8 @@ func importedChildren(
 // docWithObjective returns a GameDoc with a single objective: an interactive
 // proof block (satisfies PROOF_CONTEXT_NO_INTERACTIVE_BLOCK) and a content
 // reveal block.
-func docWithObjective(gameName, slug, title string) *game.GameDoc {
-	doc := minimalValidDoc(gameName)
+func docWithObjective(slug, title string) *game.GameDoc {
+	doc := minimalValidDoc("Hunt")
 	doc.Structure.Children = []game.ObjectiveDoc{
 		{
 			Slug:  slug,
@@ -95,7 +95,6 @@ func docWithObjective(gameName, slug, title string) *game.GameDoc {
 				Blocks: []game.BlockDoc{
 					{"type": "free_text", "prompt": "What is the answer?"},
 				},
-				Sets: game.SetsField{"door_unlocked"},
 			},
 			Reveal: game.ObjectiveContextDoc{
 				Blocks: []game.BlockDoc{
@@ -145,38 +144,6 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 	assert.True(t, settings.EnablePoints)
 }
 
-func TestImportService_ImportCreate_WithObjectiveAndBlocks(t *testing.T) {
-	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	doc := docWithObjective("Hunt", "find-the-key", "Find the key")
-	result, err := svc.ImportCreate(ctx, userID, doc)
-	require.NoError(t, err)
-
-	assert.Equal(t, 1, result.Created.Objectives)
-	assert.Equal(t, 2, result.Created.Blocks)
-
-	objectives := importedChildren(t, objectiveRepo, result.QuestID)
-	require.Len(t, objectives, 1)
-	assert.Equal(t, "find-the-key", objectives[0].Slug)
-	assert.Equal(t, "Find the key", objectives[0].Title)
-	assert.Equal(t, game.SetsField{"door_unlocked"}, objectives[0].ProofSets)
-
-	proofBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives[0].ID, game.ContextObjectiveProof)
-	require.NoError(t, err)
-	require.Len(t, proofBlocks, 1)
-	assert.Equal(t, "free_text", proofBlocks[0].GetType())
-
-	revealBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives[0].ID, game.ContextObjectiveReveal)
-	require.NoError(t, err)
-	require.Len(t, revealBlocks, 1)
-	assert.Equal(t, "text", revealBlocks[0].GetType())
-}
-
 func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
@@ -185,7 +152,7 @@ func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	doc := docWithObjective("Hunt", "find-the-key", "Find the key")
+	doc := docWithObjective("find-the-key", "Find the key")
 	createResult, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
@@ -193,7 +160,7 @@ func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
 	require.Len(t, objectivesBefore, 1)
 
 	// Re-import the same slug with a changed title: must update, not duplicate.
-	updateDoc := docWithObjective("Hunt", "find-the-key", "Find the hidden key")
+	updateDoc := docWithObjective("find-the-key", "Find the hidden key")
 	updateResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
 	require.NoError(t, err)
 	assert.Equal(t, 2, updateResult.Updated.Objectives, "the root is reconciled alongside its child")
@@ -350,68 +317,6 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	assert.True(t, settings.ShowLeaderboard)
 }
 
-func TestImportService_ImportCreate_ObjectiveDepends(t *testing.T) {
-	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	doc := minimalValidDoc("Depends Objective Game")
-	doc.Structure.Children = []game.ObjectiveDoc{
-		{
-			Slug:    "secret",
-			Title:   "Secret Spot",
-			Depends: game.DependsField{"unlocked"},
-		},
-	}
-
-	result, err := svc.ImportCreate(ctx, userID, doc)
-	require.NoError(t, err)
-
-	objs := importedChildren(t, objectiveRepo, result.QuestID)
-	require.Len(t, objs, 1)
-	assert.Equal(t, game.DependsField{"unlocked"}, objs[0].Depends)
-}
-
-func TestImportService_ImportUpdate_ObjectiveDependsUpdated(t *testing.T) {
-	svc, instanceRepo, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	// Set up existing instance with an objective (no depends).
-	createDoc := docWithObjective("Depends Update Game", "spot", "The Spot")
-	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
-	require.NoError(t, err)
-
-	objs := importedChildren(t, objectiveRepo, createResult.QuestID)
-	require.Len(t, objs, 1)
-	assert.Nil(t, objs[0].Depends)
-
-	// Load instance for update
-	inst, err := instanceRepo.GetByID(ctx, createResult.QuestID)
-	require.NoError(t, err)
-
-	// Update doc: add depends to same objective (matched by slug).
-	updateDoc := docWithObjective("Depends Update Game", "spot", "The Spot")
-	updateDoc.Structure.Children[0].ID = objs[0].ID
-	updateDoc.Structure.Children[0].Depends = game.DependsField{"gate"}
-
-	_, err = svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
-	require.NoError(t, err)
-
-	updatedObjs := importedChildren(t, objectiveRepo, inst.ID)
-	require.Len(t, updatedObjs, 1)
-	assert.Equal(t, game.DependsField{"gate"}, updatedObjs[0].Depends)
-}
-
-// A document carrying an objective id from some other quest is a document about
-// something else. Matching it to a same-slugged row here would silently move
-// content the author never named.
 func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {
 	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
@@ -420,13 +325,13 @@ func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	createResult, err := svc.ImportCreate(ctx, userID, docWithObjective("Hunt", "spot", "The Spot"))
+	createResult, err := svc.ImportCreate(ctx, userID, docWithObjective("spot", "The Spot"))
 	require.NoError(t, err)
 
 	before := importedChildren(t, objectiveRepo, createResult.QuestID)
 	require.Len(t, before, 1)
 
-	updateDoc := docWithObjective("Hunt", "spot", "Renamed")
+	updateDoc := docWithObjective("spot", "Renamed")
 	updateDoc.Structure.Children[0].ID = gofakeit.UUID()
 
 	_, err = svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)

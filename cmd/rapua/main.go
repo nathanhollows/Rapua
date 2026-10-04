@@ -96,7 +96,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
-	teamVarStateRepo := repositories.NewRunVarStateRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
@@ -129,11 +128,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
-		teamVarStateRepo,
 		logger,
 	)
 	checkInService := services.NewCheckInService(
-		teamRepo, blockService, teamVarStateRepo,
+		teamRepo, blockService,
 		objectiveRepo, objectiveContextCompletionRepo,
 		sectionFinishRepo, blockRepo,
 	)
@@ -145,7 +143,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
 	runService := services.NewRunService(
-		transactor, teamRepo, creditService, blockStateRepo, teamVarStateRepo,
+		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()

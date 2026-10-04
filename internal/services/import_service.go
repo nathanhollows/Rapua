@@ -295,14 +295,11 @@ func (s *ImportService) createObjective(
 		Title:       objDoc.Title,
 		Draft:       objDoc.IsDraft(),
 		Color:       objDoc.Color,
-		Depends:     objDoc.Depends,
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
 		ChildrenMax: objDoc.ChildrenMax,
 		MaxNext:     objDoc.MaxNext,
 		FinishLabel: objDoc.FinishLabel,
-		ProofSets:   objDoc.Proof.Sets,
-		RevealSets:  objDoc.Reveal.Sets,
 	}
 	if err := s.objectiveRepo.CreateTx(ctx, tx, obj); err != nil {
 		return "", 0, fmt.Errorf("create objective %q: %w", objDoc.Slug, err)
@@ -529,14 +526,11 @@ func (s *ImportService) reconcileObjective(
 		existingObj.Draft = *objDoc.Draft
 	}
 	existingObj.Color = objDoc.Color
-	existingObj.Depends = objDoc.Depends
 	existingObj.Routing = objDoc.Routing
 	existingObj.ChildrenMin = objDoc.ChildrenMin
 	existingObj.ChildrenMax = objDoc.ChildrenMax
 	existingObj.MaxNext = objDoc.MaxNext
 	existingObj.FinishLabel = objDoc.FinishLabel
-	existingObj.ProofSets = objDoc.Proof.Sets
-	existingObj.RevealSets = objDoc.Reveal.Sets
 
 	if err := s.objectiveRepo.UpdateTx(ctx, tx, existingObj); err != nil {
 		return "", fmt.Errorf("update objective %q: %w", objDoc.Slug, err)

@@ -28,7 +28,6 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 	teamRepo := repositories.NewRunRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
-	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
@@ -37,7 +36,6 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 		teamRepo,
 		creditService,
 		blockStateRepo,
-		varStateRepo,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 	)

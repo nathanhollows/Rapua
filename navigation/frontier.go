@@ -47,11 +47,6 @@ type RunState struct {
 	// SectionFinished holds the objectives whose finish button the player has
 	// pressed, from the append-only section-finish log.
 	SectionFinished map[string]bool
-	// Vars resolves the names an objective's depends list can reference. It is
-	// required wherever any objective has a depends list, and is not defaulted:
-	// a resolver that answers nothing would lock those objectives silently,
-	// which is harder to notice than the missing wiring itself.
-	Vars game.VarResolver
 	// RunCode seeds the shuffle for randomised routing, so a run sees a stable
 	// order across requests.
 	RunCode string
@@ -363,9 +358,7 @@ func assignStatuses(
 	childrenOpen := open && !complete[obj.ID] && proofCleared(obj, state)
 	admitted := admittedChildren(obj, children, complete, state.RunCode)
 	for _, child := range children {
-		childOpen := childrenOpen &&
-			admitted[child.ID] &&
-			game.EvaluateDepends(child.Depends, state.Vars)
+		childOpen := childrenOpen && admitted[child.ID]
 		assignStatuses(t, child, childOpen, state, complete, frontier)
 	}
 }

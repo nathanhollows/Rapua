@@ -134,18 +134,6 @@ func TestChoiceBlock_GetButtonText(t *testing.T) {
 	assert.Equal(t, "Go!", block.GetButtonText())
 }
 
-func TestChoiceBlock_GetSets(t *testing.T) {
-	block := blocks.ChoiceBlock{
-		Options: []blocks.ChoiceOption{
-			{Label: "Left", Sets: "went_left"},
-			{Label: "Right", Sets: "went_right"},
-			{Label: "Empty", Sets: ""},
-		},
-	}
-	sets := block.GetSets()
-	assert.Equal(t, game.SetsField{"went_left", "went_right"}, sets)
-}
-
 func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
 	block := blocks.ChoiceBlock{
 		BaseBlock: blocks.BaseBlock{Points: 20},
@@ -259,41 +247,6 @@ func TestChoiceBlock_ValidatePlayerInput_MultiSelect(t *testing.T) {
 	})
 }
 
-func TestChoiceBlock_GetTriggeredVars(t *testing.T) {
-	block := blocks.ChoiceBlock{
-		Options: []blocks.ChoiceOption{
-			{Label: "Forest", Sets: "forest"},
-			{Label: "Mountain", Sets: "mountain"},
-		},
-	}
-
-	t.Run("incomplete returns nil", func(t *testing.T) {
-		state := &blocks.MockPlayerState{}
-		assert.Nil(t, block.GetTriggeredVars(state))
-	})
-
-	t.Run("only the chosen var is returned", func(t *testing.T) {
-		state := choiceState("mountain")
-		state.SetComplete(true)
-
-		assert.Equal(t, []string{"mountain"}, block.GetTriggeredVars(state))
-	})
-
-	t.Run("multiple chosen vars are all returned", func(t *testing.T) {
-		state := choiceState("forest", "mountain")
-		state.SetComplete(true)
-
-		assert.ElementsMatch(t, []string{"forest", "mountain"}, block.GetTriggeredVars(state))
-	})
-
-	t.Run("malformed player data returns nil", func(t *testing.T) {
-		state := &blocks.MockPlayerState{}
-		state.SetPlayerData([]byte("not json"))
-		state.SetComplete(true)
-		assert.Nil(t, block.GetTriggeredVars(state))
-	})
-}
-
 func TestChoiceBlock_GetChosenVars(t *testing.T) {
 	block := blocks.ChoiceBlock{}
 
@@ -359,26 +312,6 @@ func TestChoiceBlock_ToYAML(t *testing.T) {
 			Options:     []blocks.ChoiceOption{{Label: "A", Sets: "a"}},
 		}
 		assert.Equal(t, true, block.ToYAML()["multi_select"])
-	})
-}
-
-func TestChoiceBlock_DocSetsVars(t *testing.T) {
-	block := blocks.ChoiceBlock{}
-
-	t.Run("extracts vars from options", func(t *testing.T) {
-		doc := game.BlockDoc{
-			"options": []any{
-				map[string]any{"label": "Forest", "sets": "forest"},
-				map[string]any{"label": "Mountain", "sets": "mountain"},
-				map[string]any{"label": "No var", "sets": ""},
-			},
-		}
-		vars := block.DocSetsVars(doc)
-		assert.ElementsMatch(t, []string{"forest", "mountain"}, vars)
-	})
-
-	t.Run("no options returns nil", func(t *testing.T) {
-		assert.Nil(t, block.DocSetsVars(game.BlockDoc{}))
 	})
 }
 

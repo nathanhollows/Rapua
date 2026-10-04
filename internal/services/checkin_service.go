@@ -16,7 +16,6 @@ import (
 type CheckInService struct {
 	teamRepo                       repositories.RunRepository
 	blockService                   *BlockService
-	varStateRepo                   repositories.RunVarStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 	loader                         runStateLoader
@@ -25,7 +24,6 @@ type CheckInService struct {
 func NewCheckInService(
 	teamRepo repositories.RunRepository,
 	blockService *BlockService,
-	varStateRepo repositories.RunVarStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 	sectionFinishRepo repositories.SectionFinishRepository,
@@ -34,7 +32,6 @@ func NewCheckInService(
 	return &CheckInService{
 		teamRepo:                       teamRepo,
 		blockService:                   blockService,
-		varStateRepo:                   varStateRepo,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 		loader: runStateLoader{
@@ -42,7 +39,6 @@ func NewCheckInService(
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 			sectionFinishRepo:              sectionFinishRepo,
 			blockRepo:                      blockRepo,
-			varStateRepo:                   varStateRepo,
 		},
 	}
 }
@@ -105,9 +101,6 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		if err != nil {
 			return nil, nil, fmt.Errorf("updating block state: %w", err)
 		}
-		if err = s.writeSetsVars(ctx, team, block, state); err != nil {
-			return nil, nil, err
-		}
 	}
 
 	// Preview never awards points.
@@ -122,38 +115,6 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 	}
 
 	return state, block, nil
-}
-
-func (s *CheckInService) writeSetsVars(
-	ctx context.Context,
-	team models.Run,
-	block blocks.Block,
-	state blocks.PlayerState,
-) error {
-	if setter, ok := block.(blocks.ChoiceVarSetter); ok {
-		// GetTriggeredVars already filters to the options the player chose, so
-		// every returned value is written: matching the GetSets path below.
-		for _, varName := range setter.GetTriggeredVars(state) {
-			if game.IsReservedVarName(varName) {
-				continue
-			}
-			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
-				return fmt.Errorf("writing sets var %q: %w", varName, err)
-			}
-		}
-		return nil
-	}
-	if state.IsComplete() {
-		for _, varName := range block.GetSets() {
-			if game.IsReservedVarName(varName) {
-				continue
-			}
-			if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
-				return fmt.Errorf("writing sets var %q: %w", varName, err)
-			}
-		}
-	}
-	return nil
 }
 
 // awardPointsAndComplete awards points and, for objective contexts, logs
@@ -240,7 +201,7 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	return s.logCompletionAndApplySets(ctx, team, objective, blockContext)
+	return s.logObjectiveContextCompletion(ctx, team, objective, blockContext)
 }
 
 // completeReachableObjectiveContext is CompleteObjectiveContext for a caller
@@ -263,35 +224,19 @@ func (s *CheckInService) completeReachableObjectiveContext(
 		return nil
 	}
 
-	return s.logCompletionAndApplySets(ctx, team, objective, blockContext)
+	return s.logObjectiveContextCompletion(ctx, team, objective, blockContext)
 }
 
 // logCompletionAndApplySets writes the completion row and, if that row is new,
 // fires the context's sets. The insert is the idempotency guard: sets belong to
 // the call that recorded the completion, not to every call that finds it done.
-func (s *CheckInService) logCompletionAndApplySets(
+func (s *CheckInService) logObjectiveContextCompletion(
 	ctx context.Context, team *models.Run, objective *models.Objective, blockContext game.BlockContext,
 ) error {
-	inserted, err := s.objectiveContextCompletionRepo.Insert(ctx, team.Code, objective.ID, blockContext)
-	if err != nil {
+	if _, err := s.objectiveContextCompletionRepo.Insert(
+		ctx, team.Code, objective.ID, blockContext,
+	); err != nil {
 		return fmt.Errorf("logging objective context completion: %w", err)
-	}
-	if !inserted {
-		// Already logged by an earlier call; its sets were applied then.
-		return nil
-	}
-
-	sets := objective.ProofSets
-	if blockContext == game.ContextObjectiveReveal {
-		sets = objective.RevealSets
-	}
-	for _, varName := range sets {
-		if game.IsReservedVarName(varName) {
-			continue
-		}
-		if err := s.varStateRepo.Upsert(ctx, team.Code, team.QuestID, varName, game.SetsValueTrue); err != nil {
-			return fmt.Errorf("writing context sets var %q: %w", varName, err)
-		}
 	}
 	return nil
 }

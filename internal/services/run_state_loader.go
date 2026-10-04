@@ -22,7 +22,6 @@ type runStateLoader struct {
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 	sectionFinishRepo              repositories.SectionFinishRepository
 	blockRepo                      repositories.BlockRepository
-	varStateRepo                   repositories.RunVarStateRepository
 }
 
 // load returns a quest's objectives and one run's state against them.
@@ -59,11 +58,6 @@ func (l runStateLoader) load(
 	}
 	state.SectionFinished = setOf(finished)
 
-	varStates, err := l.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
-	if err != nil {
-		return nil, navigation.RunState{}, nil, fmt.Errorf("loading var states: %w", err)
-	}
-
 	// Completion is derived once, over every row, drafts included: what a run
 	// did, it did, and a gate it opened stays open even once the objective is
 	// taken out of play. Deriving it from what is still in play would answer a
@@ -74,7 +68,6 @@ func (l runStateLoader) load(
 	// itself because it needs both views, and pruning here would take the
 	// difference away before it got there.
 	complete := navigation.ComputeCompleted(objectives, state)
-	state.Vars = NewPlayerVarResolver(varStates, completedSlugsFrom(objectives, complete))
 
 	return objectives, state, complete, nil
 }
@@ -94,18 +87,6 @@ func (l runStateLoader) proofBlockOwners(
 		return nil, fmt.Errorf("loading proof block owners: %w", err)
 	}
 	return setOf(owners), nil
-}
-
-// completedSlugsFrom names the completed objectives by slug, which is how a
-// depends list refers to them.
-func completedSlugsFrom(objectives []models.Objective, completed map[string]bool) map[string]bool {
-	slugs := make(map[string]bool, len(completed))
-	for _, obj := range objectives {
-		if completed[obj.ID] && obj.Slug != "" {
-			slugs[obj.Slug] = true
-		}
-	}
-	return slugs
 }
 
 func setOf(ids []string) map[string]bool {

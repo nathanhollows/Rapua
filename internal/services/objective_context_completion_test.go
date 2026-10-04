@@ -6,7 +6,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
-	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -30,7 +29,6 @@ func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *
 	svc := services.NewCheckInService(
 		repositories.NewRunRepository(dbc),
 		blockService,
-		repositories.NewRunVarStateRepository(dbc),
 		repositories.NewObjectiveRepository(dbc),
 		repositories.NewObjectiveContextCompletionRepository(dbc),
 		repositories.NewSectionFinishRepository(dbc),
@@ -53,11 +51,10 @@ func TestCheckInService_ObjectiveProofContext_CompletesOnceAllBlocksDone(t *test
 	insertTestTeam(t, dbc, runCode, parents.QuestID)
 
 	objective := &models.Objective{
-		ID:        gofakeit.UUID(),
-		QuestID:   parents.QuestID,
-		Slug:      "find-the-key",
-		Title:     "Find the key",
-		ProofSets: game.SetsField{"door_unlocked"},
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "find-the-key",
+		Title:   "Find the key",
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -88,7 +85,6 @@ func TestCheckInService_ObjectiveProofContext_CompletesOnceAllBlocksDone(t *test
 	require.NoError(t, err)
 
 	team := models.Run{Code: runCode, QuestID: parents.QuestID}
-	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 
 	countCompletions := func() int {
 		count, cErr := dbc.NewSelect().
@@ -105,19 +101,13 @@ func TestCheckInService_ObjectiveProofContext_CompletesOnceAllBlocksDone(t *test
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 0, countCompletions(), "context should not complete with only one of two blocks done")
-	vars, err := varStateRepo.GetAll(ctx, runCode, parents.QuestID)
-	require.NoError(t, err)
-	assert.NotContains(t, vars, "door_unlocked")
 
-	// Second block completes the context: log it, and apply proof sets.
+	// Second block completes the context: log it.
 	_, _, err = svc.ValidateAndUpdateBlockState(ctx, team, map[string][]string{
 		"block": {block2.GetID()}, "response": {"answer two"},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 1, countCompletions(), "context should complete exactly once, all blocks now done")
-	vars, err = varStateRepo.GetAll(ctx, runCode, parents.QuestID)
-	require.NoError(t, err)
-	assert.Equal(t, "true", vars["door_unlocked"])
 }
 
 // TestCheckInService_ObjectiveContext_NoSetsDefined_StillLogsCompletion asserts that
@@ -187,11 +177,10 @@ func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *t
 	insertTestTeam(t, dbc, runCode, parents.QuestID)
 
 	objective := &models.Objective{
-		ID:         gofakeit.UUID(),
-		QuestID:    parents.QuestID,
-		Slug:       "flavour-text",
-		Title:      "Flavour text",
-		RevealSets: game.SetsField{"story_seen"},
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "flavour-text",
+		Title:   "Flavour text",
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -215,11 +204,7 @@ func TestCheckInService_CompleteObjectiveContext_ContentOnly_CalledDirectly(t *t
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "viewing a content-only context must be enough to complete it")
 
-	vars, err := repositories.NewRunVarStateRepository(dbc).GetAll(ctx, runCode, parents.QuestID)
-	require.NoError(t, err)
-	assert.Equal(t, "true", vars["story_seen"])
-
-	// Calling it again (e.g. a second page view) must not duplicate the log row or re-apply sets.
+	// Calling it again (e.g. a second page view) must not duplicate the log row.
 	err = svc.CompleteObjectiveContext(ctx, team, objective.ID, blocks.ContextObjectiveReveal)
 	require.NoError(t, err)
 	count, err = dbc.NewSelect().
@@ -246,11 +231,10 @@ func TestCheckInService_CompleteObjectiveContext_PreviewIsNoOp(t *testing.T) {
 	parents := createTestParents(t, dbc)
 
 	objective := &models.Objective{
-		ID:         gofakeit.UUID(),
-		QuestID:    parents.QuestID,
-		Slug:       "flavour-text",
-		Title:      "Flavour text",
-		RevealSets: game.SetsField{"story_seen"},
+		ID:      gofakeit.UUID(),
+		QuestID: parents.QuestID,
+		Slug:    "flavour-text",
+		Title:   "Flavour text",
 	}
 	_, err := dbc.NewInsert().Model(objective).Exec(ctx)
 	require.NoError(t, err)
@@ -266,10 +250,6 @@ func TestCheckInService_CompleteObjectiveContext_PreviewIsNoOp(t *testing.T) {
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, count, "preview must not log a completion")
-
-	vars, err := repositories.NewRunVarStateRepository(dbc).GetAll(ctx, team.Code, parents.QuestID)
-	require.NoError(t, err)
-	assert.NotContains(t, vars, "story_seen", "preview must not apply context sets")
 }
 
 func TestCheckInService_IsObjectiveContextPending(t *testing.T) {
@@ -341,89 +321,6 @@ func TestCheckInService_GetObjectiveByQuestIDAndSlug(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets covers the
-// hole the objectives list alone leaves open: the list can hide a gated
-// objective, but a player who reaches it another way (a guessed slug, a stale
-// link) must not be able to complete it. Completing early would fire its sets,
-// opening every downstream gate out of order with nothing to rewind.
-func TestCheckInService_UnreachableObjective_DoesNotCompleteOrFireSets(t *testing.T) {
-	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	parents := createTestParents(t, dbc)
-	runCode := gofakeit.LetterN(6)
-	insertTestTeam(t, dbc, runCode, parents.QuestID)
-
-	// A real tree: both hang off the quest's root. Parentless rows read as
-	// roots, and a root is open by definition, so a flat fixture would not
-	// exercise the gate at all.
-	root := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID,
-		Slug: "root", Title: "Root", Routing: models.RouteStrategyFreeRoam,
-	}
-	_, err := dbc.NewInsert().Model(root).Exec(ctx)
-	require.NoError(t, err)
-
-	gateway := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 0,
-		Slug: "gateway", Title: "The Gateway",
-	}
-	_, err = dbc.NewInsert().Model(gateway).Exec(ctx)
-	require.NoError(t, err)
-
-	gated := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 1,
-		Slug: "inner-room", Title: "The Inner Room",
-		Depends:   game.DependsField{"objective.gateway"},
-		ProofSets: game.SetsField{"inner_room_seen"},
-	}
-	_, err = dbc.NewInsert().Model(gated).Exec(ctx)
-	require.NoError(t, err)
-
-	team := models.Run{Code: runCode, QuestID: parents.QuestID}
-	varStateRepo := repositories.NewRunVarStateRepository(dbc)
-	countCompletions := func(objectiveID string) int {
-		count, cErr := dbc.NewSelect().
-			Model((*models.ObjectiveContextCompletion)(nil)).
-			Where("objective_id = ?", objectiveID).
-			Count(ctx)
-		require.NoError(t, cErr)
-		return count
-	}
-
-	reachable, err := svc.ObjectiveIsReachable(ctx, &team, gated)
-	require.NoError(t, err)
-	assert.False(t, reachable, "gateway is not complete, so the gated objective is out of reach")
-
-	// The content-only GET path: no blocks, so the context reads as done and
-	// this is exactly the call the objective view makes.
-	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
-	assert.Equal(t, 0, countCompletions(gated.ID), "an unreachable objective must not be logged complete")
-	vars, err := varStateRepo.GetAll(ctx, runCode, parents.QuestID)
-	require.NoError(t, err)
-	assert.NotContains(t, vars, "inner_room_seen", "an unreachable objective must not fire its sets")
-
-	// Completing the gateway opens the gate. Both contexts, because that is what
-	// viewing an objective with no interactive proof does, and completion is
-	// derived from the proof context: a reveal row alone is the player having
-	// read the payoff, not having cleared the gate.
-	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gateway.ID, blocks.ContextObjectiveProof))
-	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gateway.ID, blocks.ContextObjectiveReveal))
-
-	reachable, err = svc.ObjectiveIsReachable(ctx, &team, gated)
-	require.NoError(t, err)
-	assert.True(t, reachable, "gate opens once its objective completes")
-
-	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
-	assert.Equal(t, 1, countCompletions(gated.ID))
-	vars, err = varStateRepo.GetAll(ctx, runCode, parents.QuestID)
-	require.NoError(t, err)
-	assert.Equal(t, "true", vars["inner_room_seen"])
-}
-
-// An objective with no depends must not pay for the reachability check, and
-// must never be gated by it.
 func TestCheckInService_ObjectiveWithoutDepends_IsAlwaysReachable(t *testing.T) {
 	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
 	defer cleanup()
@@ -445,49 +342,4 @@ func TestCheckInService_ObjectiveWithoutDepends_IsAlwaysReachable(t *testing.T) 
 	)
 	require.NoError(t, err)
 	assert.True(t, reachable)
-}
-
-// Points are credited only for work the game will record. They used to be
-// written before the reachability gate ran, so a team could be paid for
-// finishing an objective that then produced no completion row and fired no
-// sets: paid for something that, as far as the game is concerned, never
-// happened.
-func TestCheckInService_UnreachableObjective_AwardsNoPoints(t *testing.T) {
-	svc, dbc, cleanup := setupCheckInServiceForObjectives(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	parents := createTestParents(t, dbc)
-	runCode := gofakeit.LetterN(6)
-	insertTestTeam(t, dbc, runCode, parents.QuestID)
-
-	root := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID,
-		Slug: "root", Title: "Root", Routing: models.RouteStrategyFreeRoam,
-	}
-	_, err := dbc.NewInsert().Model(root).Exec(ctx)
-	require.NoError(t, err)
-	gated := &models.Objective{
-		ID: gofakeit.UUID(), QuestID: parents.QuestID, ParentID: root.ID, Position: 0,
-		Slug: "inner-room", Title: "The Inner Room",
-		Depends: game.DependsField{"objective.never"},
-	}
-	_, err = dbc.NewInsert().Model(gated).Exec(ctx)
-	require.NoError(t, err)
-
-	team := models.Run{Code: runCode, QuestID: parents.QuestID}
-	reachable, err := svc.ObjectiveIsReachable(ctx, &team, gated)
-	require.NoError(t, err)
-	require.False(t, reachable, "its depends names something that never completes")
-
-	before := team.Points
-	require.NoError(t, svc.CompleteObjectiveContext(ctx, &team, gated.ID, blocks.ContextObjectiveProof))
-	assert.Equal(t, before, team.Points, "no points for an objective the gate turns away")
-
-	count, err := dbc.NewSelect().
-		Model((*models.ObjectiveContextCompletion)(nil)).
-		Where("objective_id = ?", gated.ID).
-		Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count, "and no completion row either")
 }

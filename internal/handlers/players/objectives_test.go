@@ -32,7 +32,6 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
-	varStateRepo := repositories.NewRunVarStateRepository(dbc)
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
@@ -48,12 +47,11 @@ func setupObjectivesHandlerServices(t *testing.T) (
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
-		varStateRepo,
 		newTLogger(t),
 	)
 
 	runService := services.NewRunService(
-		transactor, teamRepo, creditService, blockStateRepo, varStateRepo,
+		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 	)
 

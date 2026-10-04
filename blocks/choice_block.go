@@ -181,28 +181,6 @@ func (b *ChoiceBlock) ValidatePlayerInput(
 	return state, nil
 }
 
-// GetSets overrides BaseBlock to return all option var names.
-// Var-writing is handled exclusively by GetTriggeredVars (ChoiceVarSetter).
-// This method exists for: (1) admin variables endpoint listing, (2) UNUSED_VAR lint.
-func (b *ChoiceBlock) GetSets() game.SetsField {
-	vars := make(game.SetsField, 0, len(b.Options))
-	for _, opt := range b.Options {
-		if opt.Sets != "" {
-			vars = append(vars, opt.Sets)
-		}
-	}
-	return vars
-}
-
-// GetTriggeredVars implements ChoiceVarSetter. Returns the var names of the
-// options the player chose, or nil if the block is not yet complete.
-func (b *ChoiceBlock) GetTriggeredVars(state PlayerState) []string {
-	if !state.IsComplete() {
-		return nil
-	}
-	return b.GetChosenVars(state)
-}
-
 // GetChosenVars extracts all chosen option var names from state.
 func (b *ChoiceBlock) GetChosenVars(state PlayerState) []string {
 	if state == nil || state.GetPlayerData() == nil {
@@ -241,26 +219,6 @@ func (b *ChoiceBlock) GetChosenLabels(state PlayerState) []string {
 // GetChosenLabel returns all chosen option labels as a comma-joined string.
 func (b *ChoiceBlock) GetChosenLabel(state PlayerState) string {
 	return strings.Join(b.GetChosenLabels(state), ", ")
-}
-
-// DocSetsVars implements game.BlockDocVarsProvider. Extracts var names from
-// options[*].sets in the raw block doc (used by the linter before ParseData runs).
-func (b *ChoiceBlock) DocSetsVars(doc game.BlockDoc) []string {
-	opts, ok := doc["options"].([]any)
-	if !ok {
-		return nil
-	}
-	var vars []string
-	for _, opt := range opts {
-		m, ok := opt.(map[string]any)
-		if !ok {
-			continue
-		}
-		if s, ok := m["sets"].(string); ok && s != "" {
-			vars = append(vars, s)
-		}
-	}
-	return vars
 }
 
 // ValidateBlockDoc implements game.BlockDocValidator. Returns structural lint

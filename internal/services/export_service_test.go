@@ -117,13 +117,11 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
 	insertObjective(t, dbc, root)
 	obj := &models.Objective{
-		ID:         gofakeit.UUID(),
-		QuestID:    inst.ID,
-		ParentID:   root.ID,
-		Slug:       "find-the-key",
-		Title:      "Find the key",
-		ProofSets:  game.SetsField{"door_unlocked"},
-		RevealSets: game.SetsField{"story_seen"},
+		ID:       gofakeit.UUID(),
+		QuestID:  inst.ID,
+		ParentID: root.ID,
+		Slug:     "find-the-key",
+		Title:    "Find the key",
 	}
 	insertObjective(t, dbc, obj)
 
@@ -149,11 +147,9 @@ func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
 
 	require.Len(t, child.Proof.Blocks, 1)
 	assert.Equal(t, proofBlock.GetID(), child.Proof.Blocks[0]["id"])
-	assert.Equal(t, game.SetsField{"door_unlocked"}, child.Proof.Sets)
 
 	require.Len(t, child.Reveal.Blocks, 1)
 	assert.Equal(t, revealBlock.GetID(), child.Reveal.Blocks[0]["id"])
-	assert.Equal(t, game.SetsField{"story_seen"}, child.Reveal.Sets)
 }
 
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
@@ -226,36 +222,6 @@ func TestExportService_ExportInstance_NestedSection(t *testing.T) {
 	assert.Equal(t, "primary", child.Color)
 	require.Len(t, child.Children, 1)
 	assert.Equal(t, "spot", child.Children[0].Slug)
-}
-
-func TestExportService_ObjectiveDependsRoundTrip(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-	userID := gofakeit.UUID()
-	insertTestUser(t, dbc, userID)
-
-	inst := &models.Quest{Name: "Depends Test", UserID: userID}
-	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
-
-	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
-	insertObjective(t, dbc, root)
-	insertObjective(t, dbc, &models.Objective{
-		ID:       gofakeit.UUID(),
-		QuestID:  inst.ID,
-		ParentID: root.ID,
-		Slug:     "gated",
-		Title:    "Gated Spot",
-		Depends:  game.DependsField{"gate", "not decoy"},
-	})
-
-	doc, _, err := svc.ExportInstance(ctx, inst.ID)
-	require.NoError(t, err)
-
-	require.Len(t, doc.Structure.Children, 1)
-	assert.Equal(t, game.DependsField{"gate", "not decoy"}, doc.Structure.Children[0].Depends)
 }
 
 // A quest with two parentless rows has no single tree. Picking one and dropping

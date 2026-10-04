@@ -10,14 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mapResolver resolves depends names from a plain map.
-type mapResolver map[string]string
-
-func (m mapResolver) ResolveVar(name string) (string, bool) {
-	v, ok := m[name]
-	return v, ok
-}
-
 // node builds one objective. Tests name objectives by slug and use the slug as
 // the id too, so assertions read as the tree does.
 func node(slug, parentID string, position int) models.Objective {
@@ -37,7 +29,6 @@ func runState(all []models.Objective, proofCompleted ...string) navigation.RunSt
 		ProofCompleted:  map[string]bool{},
 		HasProofBlocks:  map[string]bool{},
 		SectionFinished: map[string]bool{},
-		Vars:            mapResolver{},
 		RunCode:         "RUN1",
 	}
 	for _, obj := range all {
@@ -45,15 +36,6 @@ func runState(all []models.Objective, proofCompleted ...string) navigation.RunSt
 	}
 	for _, id := range proofCompleted {
 		state.ProofCompleted[id] = true
-	}
-	return state
-}
-
-// withoutProof marks objectives as pure containers: nothing to prove, so their
-// children are reachable without any row being written for them.
-func withoutProof(state navigation.RunState, ids ...string) navigation.RunState {
-	for _, id := range ids {
-		state.HasProofBlocks[id] = false
 	}
 	return state
 }
@@ -81,73 +63,6 @@ func availableSlugs(f navigation.Frontier) []string {
 	return slugs
 }
 
-// --- The perfumers shape ---
-//
-// intro, then three categories each requiring exactly one of their three
-// plants, then an outro gated on all three categories. This is the shape the
-// whole design exists to express: the unwritable AND-of-ORs dissolves because
-// OR lives in the tree (a min=max=1 parent) and AND is the depends list.
-func perfumers() []models.Objective {
-	objectives := []models.Objective{
-		node("root", "", 0),
-		node("intro", "root", 0),
-	}
-
-	for i, category := range []string{"top", "heart", "base"} {
-		section := node(category, "root", i+1)
-		section.ChildrenMin = intPtr(1)
-		section.ChildrenMax = intPtr(1)
-		objectives = append(objectives, section)
-		for j, plant := range []string{"a", "b", "c"} {
-			objectives = append(objectives, node(category+"-"+plant, category, j))
-		}
-	}
-
-	outro := node("outro", "root", 4)
-	outro.Depends = game.DependsField{"objective.top", "objective.heart", "objective.base"}
-	return append(objectives, outro)
-}
-
-func TestComputeFrontier_Perfumers_OutroWaitsForEveryCategory(t *testing.T) {
-	objectives := perfumers()
-
-	containers := []string{"root", "top", "heart", "base"}
-
-	// Nothing done yet: every category is open, the outro is not.
-	frontier := frontierOf(objectives, withoutProof(runState(objectives), containers...))
-	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("outro"))
-	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("top-a"))
-
-	// One plant proves its category, and closes its siblings with it.
-	state := withoutProof(runState(objectives, "top-a"), containers...)
-	state.Vars = mapResolver{"objective.top": "done"}
-	frontier = frontierOf(objectives, state)
-
-	assert.Equal(t, navigation.StatusComplete, frontier.StatusOf("top"),
-		"one plant of three completes a min=max=1 category")
-	assert.Equal(t,
-		[]navigation.Status{navigation.StatusLocked, navigation.StatusLocked},
-		statuses(frontier, "top-b", "top-c"),
-		"completion closes the branch in the same step")
-	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("outro"),
-		"two categories still outstanding")
-
-	// All three categories proved.
-	state = withoutProof(runState(objectives, "top-a", "heart-b", "base-c"), containers...)
-	state.Vars = mapResolver{
-		"objective.top": "done", "objective.heart": "done", "objective.base": "done",
-	}
-	frontier = frontierOf(objectives, state)
-
-	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("outro"),
-		"the depends list is the AND the tree cannot express")
-	assert.Equal(t, []string{"intro", "outro"}, availableSlugs(frontier),
-		"closed categories leave the frontier entirely")
-}
-
-// --- The completion band ---
-
-// bandTree is one section of three children, banded as the test wants.
 func bandTree(minChildren, maxChildren *int) []models.Objective {
 	section := node("section", "root", 0)
 	section.ChildrenMin = minChildren
@@ -365,37 +280,6 @@ func TestComputeFrontier_RandomisedRoutingWindowIsStable(t *testing.T) {
 	assert.Equal(t, first, second, "the window must not move between requests")
 }
 
-// --- Depends ---
-
-func TestComputeFrontier_DependsGatesAnObjective(t *testing.T) {
-	locked := node("locked", "root", 1)
-	locked.Depends = game.DependsField{"found_key"}
-	objectives := []models.Objective{node("root", "", 0), node("open", "root", 0), locked}
-
-	state := runState(objectives, "root")
-	assert.Equal(t, navigation.StatusLocked,
-		frontierOf(objectives, state).StatusOf("locked"))
-
-	state.Vars = mapResolver{"found_key": "true"}
-	assert.Equal(t, navigation.StatusAvailable,
-		frontierOf(objectives, state).StatusOf("locked"))
-}
-
-// A negated depends is met until the thing it names happens.
-func TestComputeFrontier_NegatedDependsClosesOnceMet(t *testing.T) {
-	shortcut := node("shortcut", "root", 1)
-	shortcut.Depends = game.DependsField{"not took_long_way"}
-	objectives := []models.Objective{node("root", "", 0), node("open", "root", 0), shortcut}
-
-	state := runState(objectives, "root")
-	assert.Equal(t, navigation.StatusAvailable,
-		frontierOf(objectives, state).StatusOf("shortcut"))
-
-	state.Vars = mapResolver{"took_long_way": "true"}
-	assert.Equal(t, navigation.StatusLocked,
-		frontierOf(objectives, state).StatusOf("shortcut"))
-}
-
 // --- Damaged trees ---
 
 // A cycle is rejected at import, but the engine must tolerate one rather than
@@ -540,30 +424,6 @@ func TestComputeFrontier_ParkingRemovesARequirement(t *testing.T) {
 		"but once the child still in play is done, nothing is left to require")
 }
 
-// The other direction of the same rule: what a run cleared before a section was
-// parked still counts, so the gates it opened stay open.
-func TestComputeFrontier_CompletionOutlivesDrafting(t *testing.T) {
-	objectives := []models.Objective{
-		node("root", "", 0),
-		node("gateway", "root", 0),
-		node("gated", "root", 1),
-	}
-	objectives[2].Depends = game.DependsField{"objective.gateway"}
-
-	state := runState(objectives, "root", "gateway")
-	state.Vars = mapResolver{"objective.gateway": "done"}
-	require.Equal(t, navigation.StatusAvailable, frontierOf(objectives, state).StatusOf("gated"))
-
-	objectives[1].Draft = true
-	frontier := frontierOf(objectives, state)
-	assert.Equal(t, navigation.StatusLocked, frontier.StatusOf("gateway"), "the parked one is gone")
-	assert.Equal(t, navigation.StatusAvailable, frontier.StatusOf("gated"),
-		"what it unlocked stays unlocked")
-}
-
-// A section whose children are all parked has nothing in play below it, so its
-// own proof is the whole of its completion: it is a leaf, and is offered and
-// cleared like one. Lint says the same about a document (ALL_CHILDREN_DRAFT).
 func TestComputeFrontier_SectionWithOnlyParkedChildrenIsALeaf(t *testing.T) {
 	objectives := []models.Objective{
 		node("root", "", 0),

@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
@@ -50,10 +48,6 @@ var ErrInvalidRouting = errors.New("invalid routing")
 // ErrInvalidBand mirrors lint's BAND_MIN_EXCEEDS_MAX rule.
 var ErrInvalidBand = errors.New("invalid completion band")
 
-// ErrDependsOnDescendant means a depends entry names the objective it sits on,
-// or one of its descendants: a gate that can never open.
-var ErrDependsOnDescendant = errors.New("depends names the objective or one of its descendants")
-
 type objectiveService struct {
 	transactor    db.Transactor
 	objectiveRepo repositories.ObjectiveRepository
@@ -75,12 +69,6 @@ func NewObjectiveService(
 func (s objectiveService) applySettings(
 	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
 ) (bool, error) {
-	if data.Depends != nil {
-		if err := s.checkDependsNotOwnSubtree(ctx, objective, data.Depends); err != nil {
-			return false, err
-		}
-	}
-
 	childCount := 0
 	if data.Band != nil {
 		count, err := s.objectiveRepo.FindPublishedChildrenCount(ctx, objective.ID)
@@ -91,48 +79,6 @@ func (s objectiveService) applySettings(
 	}
 
 	return applyObjectiveSettings(objective, data, childCount)
-}
-
-// checkDependsNotOwnSubtree refuses a depends entry naming the objective or
-// one of its descendants: nothing below the objective can complete before the
-// objective itself, so such a gate never opens. Names that resolve to nothing
-// are left alone: that is lint's business.
-func (s objectiveService) checkDependsNotOwnSubtree(
-	ctx context.Context, objective *models.Objective, depends []string,
-) error {
-	var slugs []string
-	for _, entry := range depends {
-		name := strings.TrimSpace(entry)
-		name = strings.TrimPrefix(name, "not ")
-		if slug, ok := strings.CutPrefix(name, "objective."); ok {
-			slugs = append(slugs, slug)
-		}
-	}
-	if len(slugs) == 0 {
-		return nil
-	}
-
-	tree, err := s.objectiveRepo.FindTreeByQuestID(ctx, objective.QuestID)
-	if err != nil {
-		return fmt.Errorf("loading the tree to check depends: %w", err)
-	}
-	parentOf := make(map[string]string, len(tree))
-	slugToID := make(map[string]string, len(tree))
-	for _, obj := range tree {
-		parentOf[obj.ID] = obj.ParentID
-		slugToID[obj.Slug] = obj.ID
-	}
-
-	for _, slug := range slugs {
-		namedID, ok := slugToID[slug]
-		if !ok {
-			continue
-		}
-		if models.HasAncestor(namedID, objective.ID, parentOf) {
-			return fmt.Errorf("%w: %q", ErrDependsOnDescendant, slug)
-		}
-	}
-	return nil
 }
 
 // applyObjectiveSettings applies every setting the update data names, leaving
@@ -173,11 +119,6 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 
 	if data.Color != nil && *data.Color != objective.Color {
 		objective.Color = *data.Color
-		changed = true
-	}
-
-	if data.Depends != nil && !slices.Equal(data.Depends, []string(objective.Depends)) {
-		objective.Depends = data.Depends
 		changed = true
 	}
 

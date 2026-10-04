@@ -221,23 +221,15 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	return names
 }
 
+// IsInteractive reports whether a block asks something of the player. It reads
+// RequiresValidation because that is what the question means: a block the
+// player has to satisfy before the context clears.
 func (r *registryImpl) IsInteractive(blockType string) bool {
 	reg := blockRegistry[blockType]
 	if reg == nil {
 		return false
 	}
-	return reg.Prototype.SupportsVariableSets()
-}
-
-func (r *registryImpl) DocSetsVars(blockType string, doc game.BlockDoc) []string {
-	reg := blockRegistry[blockType]
-	if reg == nil {
-		return nil
-	}
-	if p, ok := reg.Prototype.(game.BlockDocVarsProvider); ok {
-		return p.DocSetsVars(doc)
-	}
-	return nil
+	return reg.Prototype.RequiresValidation()
 }
 
 func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
@@ -249,13 +241,6 @@ func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) 
 		return v.ValidateBlockDoc(path, doc)
 	}
 	return nil, nil
-}
-
-// ChoiceVarSetter is implemented by blocks that determine which vars to write
-// based on runtime player state. Used when per-option var selection is needed
-// (e.g. only the chosen option's var, not all listed vars).
-type ChoiceVarSetter interface {
-	GetTriggeredVars(state PlayerState) []string
 }
 
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen

@@ -34,7 +34,6 @@ type RunService struct {
 	teamRepo                       repositories.RunRepository
 	creditService                  RunCreditService
 	blockStateRepo                 repositories.BlockStateRepository
-	varStateRepo                   repositories.RunVarStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 	batchSize                      int
@@ -45,7 +44,6 @@ func NewRunService(
 	tr repositories.RunRepository,
 	creditService RunCreditService,
 	bsr repositories.BlockStateRepository,
-	varStateRepo repositories.RunVarStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 ) *RunService {
@@ -54,7 +52,6 @@ func NewRunService(
 		teamRepo:                       tr,
 		creditService:                  creditService,
 		blockStateRepo:                 bsr,
-		varStateRepo:                   varStateRepo,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 		batchSize:                      batchSize,
@@ -156,12 +153,6 @@ func (s *RunService) LoadRelations(ctx context.Context, team *models.Run) error 
 	if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
 		return err
 	}
-
-	varStates, err := s.varStateRepo.GetAll(ctx, team.Code, team.QuestID)
-	if err != nil {
-		return err
-	}
-	team.VarStates = varStates
 
 	return nil
 }

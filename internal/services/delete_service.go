@@ -529,15 +529,6 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		return fmt.Errorf("deleting uploads: %w", err)
 	}
 
-	_, err = tx.NewDelete().
-		Model((*models.RunVarState)(nil)).
-		Where("run_code IN (?)", bun.In(teamCodes)).
-		Exec(ctx)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("deleting team var states: %w", err)
-	}
-
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
 	}

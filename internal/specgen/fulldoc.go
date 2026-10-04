@@ -7,7 +7,6 @@ type FullSpec struct {
 	Version           string           `json:"version"`
 	Document          ObjectSpec       `json:"document"`
 	Enums             EnumDefs         `json:"enums"`
-	BuiltInVars       []BuiltInVarSpec `json:"built_in_vars"`
 	Contexts          []ContextDef     `json:"contexts"`
 	BlockSharedFields []game.FieldSpec `json:"block_shared_fields"` // fields shared by all/some blocks; referenced by name in BlockSpec.shared_fields
 	Blocks            []game.BlockSpec `json:"blocks"`
@@ -31,13 +30,6 @@ type EnumValue struct {
 	Description string `json:"description"`
 }
 
-// BuiltInVarSpec documents a single built-in variable available in depends lists.
-type BuiltInVarSpec struct {
-	Var         string `json:"var"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-}
-
 // ContextDef describes a block context.
 type ContextDef struct {
 	Value       string `json:"value"`
@@ -50,63 +42,11 @@ func GenerateFullSpec() FullSpec {
 		Version:           "v8",
 		Document:          documentSpec(),
 		Enums:             enumDefs(),
-		BuiltInVars:       builtInVarSpecs(),
 		Contexts:          contextDefs(),
-		BlockSharedFields: []game.FieldSpec{setsFieldSpec(), pointsFieldSpec()},
+		BlockSharedFields: []game.FieldSpec{pointsFieldSpec()},
 		Blocks:            GenerateBlockSpecs(),
 	}
 }
-
-// dependsFieldSpec returns the `depends` field spec used on objectives.
-func dependsFieldSpec() game.FieldSpec {
-	return game.FieldSpec{
-		Name: "depends",
-		Type: "list",
-		Description: "Variable names gating this objective's reachability, implicitly ANDed. " +
-			"Each name is a truthy check with no comparison operators; prefix a name with " +
-			"\"not \" to negate it. A name is either objective.<slug> or a variable written " +
-			"by a block or context \"sets\". Absent or empty means always reachable.",
-		Items: &game.FieldSpec{Type: "string"},
-	}
-}
-
-// setsFieldSpec returns the `sets` field spec used on interactive blocks.
-func setsFieldSpec() game.FieldSpec {
-	return game.FieldSpec{
-		Name: "sets",
-		Type: "list",
-		Description: setsSharedDescription +
-			"Only valid on interactive blocks: linter emits SETS_ON_CONTENT_BLOCK warning otherwise. " +
-			setsReservedDescription,
-		Items: &game.FieldSpec{Type: "string"},
-	}
-}
-
-// contextSetsFieldSpec returns the `sets` field spec used on an objective's
-// proof and reveal contexts. A context's sets fire when every block in it
-// completes, which is not the same event as any one block completing, and a
-// content-only context fires them with no interactive block present at all.
-// The interactive-block restriction therefore does not apply here.
-func contextSetsFieldSpec() game.FieldSpec {
-	return game.FieldSpec{
-		Name: "sets",
-		Type: "list",
-		Description: setsSharedDescription +
-			"Fires once, the moment every block in this context is complete; a context with " +
-			"no blocks fires immediately. " +
-			setsReservedDescription,
-		Items: &game.FieldSpec{Type: "string"},
-	}
-}
-
-const (
-	setsSharedDescription = "Variable names written on completion, as a list of names. " +
-		"Sets are presence-only: each name is stored with the value \"true\". " +
-		"Any other shape emits SETS_NOT_LIST. "
-	setsReservedDescription = "Writing to the reserved \"objective.*\" namespace emits " +
-		"SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically " +
-		"when objectives complete."
-)
 
 // pointsFieldSpec returns the `points` field spec used on interactive blocks
 // (RequiresValidation() true). Content blocks (markdown, alert, divider, etc.)
@@ -131,7 +71,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "list",
 			Description: "Blocks shown to players while this context is active.",
 		},
-		contextSetsFieldSpec(),
 	}
 
 	objectiveFields := []game.FieldSpec{
@@ -144,7 +83,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Name:        "slug",
 			Type:        "string",
 			Required:    true,
-			Description: "Short alphanumeric code referenced by objective.<slug> in depends lists. Must be unique within the game.",
+			Description: "Short alphanumeric code identifying this objective. Must be unique within the game.",
 		},
 		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
 		{
@@ -152,7 +91,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Type:        "string",
 			Description: "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart.",
 		},
-		dependsFieldSpec(),
 		{
 			Name: "draft",
 			Type: "bool",
@@ -167,7 +105,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Name:     "proof",
 			Type:     "object",
 			Required: true,
-			Description: "Blocks and sets shown/fired while the objective is unproven. A non-empty proof " +
+			Description: "Blocks shown while the objective is unproven. A non-empty proof " +
 				"must contain at least one interactive block, or it gates nothing. Proof gates children " +
 				"too: nothing below this objective is reachable until its proof clears. Clearing the " +
 				"proof is what completes an objective, which is what the frontier, the journal and the " +
@@ -179,7 +117,7 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Name:     "reveal",
 			Type:     "object",
 			Required: true,
-			Description: "Blocks and sets shown/fired once proof completes. On a section this is its own " +
+			Description: "Blocks shown once proof completes. On a section this is its own " +
 				"content, and the section is offered to a player until they have seen it, then steps " +
 				"back and its children are offered in its place.",
 			Fields: objectiveContextFields,
@@ -306,21 +244,6 @@ func enumDefs() EnumDefs {
 	}
 
 	return EnumDefs{Routing: routingValues}
-}
-
-// BuiltInVars returns the list of built-in variables available in depends lists.
-func BuiltInVars() []BuiltInVarSpec {
-	return builtInVarSpecs()
-}
-
-func builtInVarSpecs() []BuiltInVarSpec {
-	return []BuiltInVarSpec{
-		{
-			Var:         "objective.<slug>",
-			Type:        "string",
-			Description: "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise.",
-		},
-	}
 }
 
 func contextDefs() []ContextDef {

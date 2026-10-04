@@ -136,22 +136,6 @@ func TestLintService_DocumentRulesReachStoredRows(t *testing.T) {
 	assert.True(t, f.lint(t).HasError("BAND_OUT_OF_RANGE"))
 }
 
-// A depends naming an objective that is parked resolves, so nothing looks
-// wrong, and the gate never opens. The editor is where that gets built.
-func TestLintService_WarnsOnDependsOnDraft(t *testing.T) {
-	f, cleanup := setupLintService(t)
-	defer cleanup()
-
-	root := f.insert(t, models.Objective{Slug: "root", Routing: models.RouteStrategyFreeRoam})
-	f.insert(t, models.Objective{Slug: "parked", ParentID: root.ID, Position: 0, Draft: true})
-	f.insert(t, models.Objective{
-		Slug: "gated", ParentID: root.ID, Position: 1,
-		Depends: game.DependsField{"objective.parked"},
-	})
-
-	assert.True(t, f.lint(t).HasWarning("DEPENDS_ON_DRAFT"))
-}
-
 // Rows reach shapes a document cannot: a document is a tree by construction, so
 // none of these four have a rule in the document's own grammar.
 func TestLintService_ShapesOnlyRowsCanReach(t *testing.T) {

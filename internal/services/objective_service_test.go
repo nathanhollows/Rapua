@@ -387,7 +387,6 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 		Band:        &services.BandUpdate{Min: intPtr(1), Max: intPtr(2)},
 		FinishLabel: strPtr("Done"),
 		Color:       strPtr("amber"),
-		Depends:     []string{"objective." + root.Slug},
 	}
 	require.NoError(t, service.UpdateObjective(ctx, &section, settings))
 
@@ -404,7 +403,6 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 	assert.Equal(t, 2, *reloaded.ChildrenMax)
 	assert.Equal(t, "Done", reloaded.FinishLabel)
 	assert.Equal(t, "amber", reloaded.Color)
-	assert.Equal(t, []string{"objective." + root.Slug}, []string(reloaded.Depends))
 }
 
 // A band above the child count can never be met, so the service refuses it
@@ -432,43 +430,6 @@ func TestObjectiveService_UpdateObjective_BandBeyondChildCountIsRefused(t *testi
 	assert.Nil(t, reloaded.ChildrenMax)
 }
 
-// A depends entry naming one of the objective's own descendants is a gate
-// that can never open: nothing below can complete before the objective.
-func TestObjectiveService_UpdateObjective_DependsOnOwnDescendantIsRefused(t *testing.T) {
-	service, dbc, cleanup := setupObjectiveService(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	root, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Root")
-	require.NoError(t, err)
-	section, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Section")
-	require.NoError(t, err)
-	child, err := service.CreateObjective(ctx, root.QuestID, section.ID, "Child")
-	require.NoError(t, err)
-
-	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
-		Depends: []string{"objective." + child.Slug},
-	})
-	require.ErrorIs(t, err, services.ErrDependsOnDescendant)
-
-	// A negated entry is refused too: the check cannot tell a deadlock from
-	// a trivially true gate, and both are mistakes.
-	err = service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
-		Depends: []string{"not objective." + child.Slug},
-	})
-	require.ErrorIs(t, err, services.ErrDependsOnDescendant)
-
-	// A sibling is fine.
-	other, err := service.CreateObjective(ctx, root.QuestID, root.ID, "Sibling")
-	require.NoError(t, err)
-	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
-		Depends: []string{"objective." + other.Slug},
-	}))
-}
-
-// The editor tells authors that leaving both fields blank requires every
-// child. It did not: a nil bound read as "unchanged", so a band once set could
-// never be cleared and the page silently kept the old one.
 func TestObjectiveService_UpdateObjective_BandCanBeCleared(t *testing.T) {
 	service, dbc, cleanup := setupObjectiveService(t)
 	defer cleanup()

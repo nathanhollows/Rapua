@@ -386,7 +386,8 @@ func (b *ChoiceBlock) GetSpec() game.BlockSpec {
 						{Name: "label", Type: "string", Required: true,
 							Description: "Display text for this choice"},
 						{Name: "sets", Type: "string", Required: true,
-							Description: "Variable name set to \"true\" when this choice is selected"},
+							Description: "Identifies this option. Recorded in player state when the " +
+								"option is chosen, and used to find its label again"},
 					},
 				}},
 		},

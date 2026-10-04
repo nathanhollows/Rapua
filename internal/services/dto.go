@@ -41,11 +41,7 @@ type ObjectiveUpdateData struct {
 	// not express: nil meant both "unchanged" and "cleared".
 	Band        *BandUpdate
 	FinishLabel *string
-	// Depends is objective slugs and/or sets vars, each optionally "not "
-	// prefixed. Nil leaves it alone; a non-nil slice, empty included,
-	// replaces it.
-	Depends []string
-	Color   *string
+	Color       *string
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.
