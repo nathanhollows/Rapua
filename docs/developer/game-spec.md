@@ -19,7 +19,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - Objective slugs must be unique across the whole document, root and sections included. *(`SLUG_DUPLICATE`)*
 - `routing` is required on an objective with children, and must name one of the three strategies: an empty value is an unmade choice, not a default. It is inert on an objective without children, which is not worth reporting: every objective carries one. *(`INVALID_ROUTING`)*
 - Nesting deeper than 4 levels warns: it is hard to navigate on a phone. *(`NESTING_TOO_DEEP`)*
-- An objective's `depends` must not lead back to itself. *(`DEPENDS_CYCLE`)*
 
 **Import modes**
 - **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.
@@ -43,14 +42,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - The band, `max_next` and `finish_label` are inert on an objective with no children. *(`BAND_ON_LEAF`, `MAX_NEXT_ON_LEAF`, `FINISH_LABEL_UNREACHABLE`)*
 - `finish_label` only shows on an objective in a range. *(`FINISH_LABEL_UNREACHABLE`)*
 
-**Reachability (`depends` / `sets`)**
-- `depends` is a flat list of variable names on an objective, implicitly ANDed. Each name is a truthy check: there are no comparison operators. Prefix a name with `not ` to negate it.
-- A name is either `objective.<slug>` or a variable written by a block or context `sets`. Anything else warns. *(`UNDEFINED_VAR`, `UNDEFINED_OBJECTIVE_VAR`)*
-- A `depends` entry that names no variable is an error. *(`DEPENDS_EMPTY_NAME`)*
-- `sets` is a list of variable names, each written as `"true"` when the block or context completes. Any other shape is an error. *(`SETS_NOT_LIST`)*
-- `sets` must not write to the runtime-owned `objective.*` namespace. *(`SETS_RESERVED_NAMESPACE`)*
-- `sets` on a content block (text, alert, image, etc.) is ignored. *(`SETS_ON_CONTENT_BLOCK` warning)*
-- A `sets` variable that no `depends` list references produces a warning. *(`UNUSED_VAR` warning)*
 
 ## Full spec
 
@@ -121,7 +112,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "slug",
             "type": "string",
-            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e in depends lists. Must be unique within the game.",
+            "description": "Short alphanumeric code identifying this objective. Must be unique within the game.",
             "required": true
           },
           {
@@ -136,15 +127,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
           },
           {
-            "name": "depends",
-            "type": "list",
-            "description": "Variable names gating this objective's reachability, implicitly ANDed. Each name is a truthy check with no comparison operators; prefix a name with \"not \" to negate it. A name is either objective.\u003cslug\u003e or a variable written by a block or context \"sets\". Absent or empty means always reachable.",
-            "items": {
-              "name": "",
-              "type": "string"
-            }
-          },
-          {
             "name": "draft",
             "type": "bool",
             "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
@@ -152,44 +134,26 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "proof",
             "type": "object",
-            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
+            "description": "Blocks shown while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
             "required": true,
             "fields": [
               {
                 "name": "blocks",
                 "type": "list",
                 "description": "Blocks shown to players while this context is active."
-              },
-              {
-                "name": "sets",
-                "type": "list",
-                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
-                "items": {
-                  "name": "",
-                  "type": "string"
-                }
               }
             ]
           },
           {
             "name": "reveal",
             "type": "object",
-            "description": "Blocks and sets shown/fired once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
+            "description": "Blocks shown once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
             "required": true,
             "fields": [
               {
                 "name": "blocks",
                 "type": "list",
                 "description": "Blocks shown to players while this context is active."
-              },
-              {
-                "name": "sets",
-                "type": "list",
-                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
-                "items": {
-                  "name": "",
-                  "type": "string"
-                }
               }
             ]
           },
@@ -238,7 +202,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "slug",
             "type": "string",
-            "description": "Short alphanumeric code referenced by objective.\u003cslug\u003e in depends lists. Must be unique within the game.",
+            "description": "Short alphanumeric code identifying this objective. Must be unique within the game.",
             "required": true
           },
           {
@@ -253,15 +217,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
           },
           {
-            "name": "depends",
-            "type": "list",
-            "description": "Variable names gating this objective's reachability, implicitly ANDed. Each name is a truthy check with no comparison operators; prefix a name with \"not \" to negate it. A name is either objective.\u003cslug\u003e or a variable written by a block or context \"sets\". Absent or empty means always reachable.",
-            "items": {
-              "name": "",
-              "type": "string"
-            }
-          },
-          {
             "name": "draft",
             "type": "bool",
             "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
@@ -269,44 +224,26 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "proof",
             "type": "object",
-            "description": "Blocks and sets shown/fired while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
+            "description": "Blocks shown while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
             "required": true,
             "fields": [
               {
                 "name": "blocks",
                 "type": "list",
                 "description": "Blocks shown to players while this context is active."
-              },
-              {
-                "name": "sets",
-                "type": "list",
-                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
-                "items": {
-                  "name": "",
-                  "type": "string"
-                }
               }
             ]
           },
           {
             "name": "reveal",
             "type": "object",
-            "description": "Blocks and sets shown/fired once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
+            "description": "Blocks shown once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
             "required": true,
             "fields": [
               {
                 "name": "blocks",
                 "type": "list",
                 "description": "Blocks shown to players while this context is active."
-              },
-              {
-                "name": "sets",
-                "type": "list",
-                "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Fires once, the moment every block in this context is complete; a context with no blocks fires immediately. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
-                "items": {
-                  "name": "",
-                  "type": "string"
-                }
               }
             ]
           },
@@ -363,13 +300,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       }
     ]
   },
-  "built_in_vars": [
-    {
-      "var": "objective.\u003cslug\u003e",
-      "type": "string",
-      "description": "Resolves to \"done\" when the objective with the given slug is completed, empty string otherwise."
-    }
-  ],
   "contexts": [
     {
       "value": "start",
@@ -389,15 +319,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
     }
   ],
   "block_shared_fields": [
-    {
-      "name": "sets",
-      "type": "list",
-      "description": "Variable names written on completion, as a list of names. Sets are presence-only: each name is stored with the value \"true\". Any other shape emits SETS_NOT_LIST. Only valid on interactive blocks: linter emits SETS_ON_CONTENT_BLOCK warning otherwise. Writing to the reserved \"objective.*\" namespace emits SETS_RESERVED_NAMESPACE: that prefix is owned by the runtime and set automatically when objectives complete.",
-      "items": {
-        "name": "",
-        "type": "string"
-      }
-    },
     {
       "name": "points",
       "type": "int",
@@ -481,8 +402,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -529,8 +449,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -567,7 +486,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
               {
                 "name": "sets",
                 "type": "string",
-                "description": "Variable name set to \"true\" when this choice is selected",
+                "description": "Identifies this option. Recorded in player state when the option is chosen, and used to find its label again",
                 "required": true
               }
             ]
@@ -584,8 +503,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -634,8 +552,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -683,8 +600,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_proof"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -836,8 +752,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -868,8 +783,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -893,8 +807,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -924,8 +837,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -1016,8 +928,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -1041,8 +952,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {
@@ -1091,8 +1001,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
         "objective_reveal"
       ],
       "shared_fields": [
-        "points",
-        "sets"
+        "points"
       ],
       "fields": [
         {

@@ -73,18 +73,6 @@ was under it, drafts included.
 
 The quest itself cannot be a draft: that would take the whole game out of play.
 
-## Unlocking on something else
-
-An objective can wait for another. Give it a `depends` list naming what has to
-be done first, and it stays locked until all of them are.
-
-This is what makes "one of each" possible. Three categories, each needing one of
-its own contents, and a final objective depending on all three: the choice lives
-in the sections, and the requirement lives in the list.
-
-A depends naming a draft is flagged — the name resolves, so nothing looks wrong,
-but no team can complete it and the gate never opens.
-
 ## Example: a perfumer's garden
 
 **Find a top note** (Open Exploration, 1 of 3) — a card on what a top note is,
@@ -92,6 +80,5 @@ then bergamot, lemon verbena, pink pepper.
 **Find a heart note** (Open Exploration, 1 of 3) — rose, jasmine, ylang-ylang.
 **Find a base note** (Open Exploration, 1 of 3) — vetiver, oakmoss, labdanum.
 **The still room** (Open Exploration, 2 to 4) — optional, with a finish button.
-**The blending bench** — depends on all three categories.
 
-One from each layer, in any order, and the bench opens when a team has all three.
+One from each layer, in any order.

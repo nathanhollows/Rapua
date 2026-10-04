@@ -83,9 +83,6 @@ the quest rather than a place in it and is never rendered to a player.
 | title | string | Name of the objective |
 | color | string | Accent colour, for a section heading its children |
 | draft | bool | Held out of play along with everything beneath it, without moving any of it |
-| depends | text | Truthy-only condition list gating reachability, JSON array of names |
-| proof_sets | text | Variables set when the proof context completes |
-| reveal_sets | text | Variables set when the reveal context completes |
 | routing | string | How children are offered: `ordered`, `free_roam` or `randomised`. Inert without children |
 | children_min | int | Completion band lower bound. NULL and 0 differ: see the [game spec](/docs/developer/game-spec) |
 | children_max | int | Completion band upper bound |
@@ -352,5 +349,5 @@ Dropped since the previous version of this document: `Location`, `Marker`,
 `CheckIn` and `Clue` (removed entirely), the `quests.game_structure` blob and
 its `GameStructure`/`CompletionType` types (the tree is `objectives.parent_id`
 and `position` now), `runs.skipped_group_ids`, `locations.when_clause` (replaced
-by `objectives.depends`), the `secret` route strategy, and
+the `secret` route strategy, and
 `quest_settings.show_team_count`.

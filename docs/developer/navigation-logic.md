@@ -20,7 +20,7 @@ The frontier is every objective's status for one run:
 
 | Status | Meaning |
 |--------|---------|
-| `locked` | Out of reach. Something above it is unfinished, its parent's routing has not offered it, or its `depends` are unmet |
+| `locked` | Out of reach. Something above it is unfinished, or its parent's routing has not offered it |
 | `available` | The run can work on it now |
 | `finishable` | Available, and its band has a range whose minimum is met: the player may finish it or carry on |
 | `complete` | Done, and its branch is closed |
@@ -94,20 +94,6 @@ looks childless once pruned, and it is not a leaf unless the full tree says so.
 Completion is derived over **every** row, drafts included, because it records
 what a run did rather than what it can still reach. An objective cleared before
 it was parked stays cleared, so the gates it opened stay open.
-
-## Depends
-
-A flat list of variable names on an objective, implicitly ANDed, each a truthy
-check. Prefix a name with `not ` to negate it. There are no comparison
-operators.
-
-A name is either `objective.<slug>` — true once that objective is complete — or
-a variable some block or context `sets`. A `depends` naming a draft resolves, so
-nothing looks wrong, but no run can complete it and the gate never opens; lint
-warns about exactly that.
-
-This is where an AND of ORs comes from: the OR lives in the tree as a
-`min=max=1` section, and the AND lives in a depends list naming each one.
 
 ## Reachability is a gate, not a filter
 
