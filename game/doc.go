@@ -39,11 +39,10 @@ type ObjectiveDoc struct {
 	// statements. A document that never mentions draft (one exported before the
 	// field existed, or written by other tooling) leaves the stored state
 	// alone; only "draft": false publishes something.
-	Draft   *bool               `json:"draft,omitempty"`
-	Color   string              `json:"color,omitempty"`
-	Depends DependsField        `json:"depends,omitempty"`
-	Proof   ObjectiveContextDoc `json:"proof"`
-	Reveal  ObjectiveContextDoc `json:"reveal"`
+	Draft  *bool               `json:"draft,omitempty"`
+	Color  string              `json:"color,omitempty"`
+	Proof  ObjectiveContextDoc `json:"proof"`
+	Reveal ObjectiveContextDoc `json:"reveal"`
 
 	// Routing orders the children below. Meaningless without them.
 	Routing RouteStrategy `json:"routing,omitempty"`
@@ -62,10 +61,8 @@ type ObjectiveDoc struct {
 }
 
 // ObjectiveContextDoc is one of an objective's two contexts (proof or reveal).
-// Its Sets fire once, the moment every block in the context completes.
 type ObjectiveContextDoc struct {
 	Blocks []BlockDoc `json:"blocks,omitempty"`
-	Sets   SetsField  `json:"sets,omitempty"`
 }
 
 // Band is the resolved completion range over a node's children.

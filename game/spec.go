@@ -23,20 +23,9 @@ type BlockRegistry interface {
 	// (i.e. RequiresValidation returns true). Only interactive blocks may
 	// carry a "sets" field; the linter warns otherwise.
 	IsInteractive(blockType string) bool
-	// DocSetsVars returns variable names that a specific block doc instance
-	// defines. Used for blocks (e.g. choice) whose vars live in sub-fields
-	// rather than a top-level "sets" map.
-	DocSetsVars(blockType string, doc BlockDoc) []string
 	// ValidateBlock runs block-type-specific structural lint on a block doc,
 	// returning separate error and warning diagnostics.
 	ValidateBlock(blockType, path string, doc BlockDoc) (errors, warnings []LintDiag)
-}
-
-// BlockDocVarsProvider is implemented by block types that expose settable
-// variable names through their doc representation (e.g. per-option sets fields)
-// rather than the standard top-level "sets" map.
-type BlockDocVarsProvider interface {
-	DocSetsVars(doc BlockDoc) []string
 }
 
 // BlockDocValidator is implemented by block types that perform structural lint

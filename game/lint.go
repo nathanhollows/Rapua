@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 )
 
@@ -86,27 +85,13 @@ type linter struct {
 	result         LintResult
 	slugs          map[string]bool
 	objectiveSlugs map[string]bool // slugs of objectives specifically, a subset of slugs.
-	// draftSlugs are the objectives out of play: drafted, or anywhere beneath
-	// something drafted. They exist in the document and take a slug, but no run
-	// ever reaches them, so a depends naming one can never be satisfied.
-	draftSlugs   map[string]bool
-	blockIDs     map[string]bool
-	definedVars  map[string]bool     // all variable names set by any block in the doc.
-	usedVars     map[string]bool     // all variable names referenced in any depends list.
-	dependsEdges map[string][]string // objective slug -> slugs its depends list names.
-	dependsPaths map[string]string   // objective slug -> its document path, for diagnostics.
+	blockIDs       map[string]bool
 }
 
 func (l *linter) run() {
 	l.slugs = make(map[string]bool)
 	l.objectiveSlugs = make(map[string]bool)
-	l.draftSlugs = make(map[string]bool)
 	l.blockIDs = make(map[string]bool)
-	l.definedVars = make(map[string]bool)
-	l.usedVars = make(map[string]bool)
-	l.dependsEdges = make(map[string][]string)
-	l.dependsPaths = make(map[string]string)
-	l.collectAllDefinedVars()
 
 	// Layer 1: Schema
 	l.checkSchema()
@@ -300,16 +285,9 @@ func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDo
 	for i, b := range objCtx.Blocks {
 		l.checkBlockDoc(fmt.Sprintf("%s.blocks[%d]", path, i), b, ctx)
 	}
-	for _, name := range objCtx.Sets {
-		l.checkReservedVarName(path+".sets", name)
-	}
 }
 
 func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //nolint:gocognit
-	// Runs before the type checks below so that a malformed "sets" still gets
-	// its own diagnostic on a block whose type is missing or unknown.
-	l.checkSetsShape(path, b)
-
 	typVal, ok := b["type"]
 	if !ok {
 		l.errorf(path+".type", "MISSING_BLOCK_TYPE", "block is missing required \"type\" field")
@@ -323,11 +301,6 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 	if l.registry != nil && !l.registry.IsValidType(typStr) {
 		l.errorf(path+".type", "UNKNOWN_BLOCK_TYPE", "unknown block type %q", typStr)
 		return
-	}
-	// Check registry-sourced set vars for reserved namespaces (e.g. choice
-	// block options[*].sets). Direct b["sets"] is handled by checkSetsShape above.
-	if l.registry != nil {
-		l.checkRegistrySetsReserved(typStr, b, path)
 	}
 	if pointsVal, ok := b["points"]; ok {
 		switch v := pointsVal.(type) {
@@ -401,37 +374,29 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 // --- Layer 2: Semantic ---
 
 func (l *linter) checkSemantic() {
-	l.collectAndCheckSlugs("structure", l.doc.Structure, false)
+	l.collectAndCheckSlugs("structure", l.doc.Structure)
 	l.checkBlockContexts("start", l.doc.Start, ContextStart)
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
 	l.trackBlockIDs("finish", l.doc.Finish)
-	l.checkDependsInDoc()
 }
 
 // collectAndCheckSlugs walks the tree recording slugs. The root is included:
 // it is an ordinary node whose slug can collide like any other. Drafts are
 // included too: a slug is taken whether or not the objective is in play, and
 // publishing must not be the moment a collision appears.
-//
-// drafted carries down from any drafted ancestor, since drafting a section
-// takes everything beneath it out of play without marking those rows.
-func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc, drafted bool) {
-	drafted = drafted || obj.IsDraft()
+func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc) {
 	if obj.Slug != "" {
 		if l.slugs[obj.Slug] {
 			l.errorf(path+".slug", "SLUG_DUPLICATE", "duplicate slug %q", obj.Slug)
 		}
 		l.slugs[obj.Slug] = true
 		l.objectiveSlugs[obj.Slug] = true
-		if drafted {
-			l.draftSlugs[obj.Slug] = true
-		}
 	}
 	l.checkObjectiveContexts(path, obj)
 
 	for i, child := range obj.Children {
-		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child, drafted)
+		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
 }
 
@@ -445,12 +410,11 @@ func (l *linter) checkRootIsContainer() {
 	for _, context := range []struct {
 		name   string
 		blocks []BlockDoc
-		sets   SetsField
 	}{
-		{"proof", l.doc.Structure.Proof.Blocks, l.doc.Structure.Proof.Sets},
-		{"reveal", l.doc.Structure.Reveal.Blocks, l.doc.Structure.Reveal.Sets},
+		{"proof", l.doc.Structure.Proof.Blocks},
+		{"reveal", l.doc.Structure.Reveal.Blocks},
 	} {
-		if len(context.blocks) == 0 && len(context.sets) == 0 {
+		if len(context.blocks) == 0 {
 			continue
 		}
 		l.errorf("structure."+context.name, "ROOT_HAS_CONTENT",
@@ -545,302 +509,3 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 }
 
 // --- Depends / variable resolution checks ---
-
-// collectAllDefinedVars records every var any block can set (via "sets").
-// Must run before semantic checks.
-func (l *linter) collectAllDefinedVars() {
-	l.collectVarsFromBlocks(l.doc.Start)
-	l.collectVarsFromBlocks(l.doc.Finish)
-	l.collectVarsFromTree(l.doc.Structure, l.definedVars)
-}
-
-func (l *linter) collectVarsFromBlocks(blocks []BlockDoc) {
-	for _, b := range blocks {
-		for _, v := range l.blockDocSetsVars(b) {
-			l.definedVars[v] = true
-		}
-	}
-}
-
-func (l *linter) collectVarsFromTree(obj ObjectiveDoc, vars map[string]bool) {
-	l.collectVarsFromObjectiveContext(obj.Proof, vars)
-	l.collectVarsFromObjectiveContext(obj.Reveal, vars)
-	for _, child := range obj.Children {
-		l.collectVarsFromTree(child, vars)
-	}
-}
-
-// collectVarsFromObjectiveContext records vars set by an objective context's
-// blocks and by the context's own Sets field, which fires directly (not via a
-// block) when every block in the context completes.
-func (l *linter) collectVarsFromObjectiveContext(objCtx ObjectiveContextDoc, vars map[string]bool) {
-	for _, v := range l.objectiveContextSelfVars(objCtx) {
-		vars[v] = true
-	}
-}
-
-func (l *linter) blockDocsSetsVars(blocks []BlockDoc) []string {
-	var vars []string
-	for _, b := range blocks {
-		vars = append(vars, l.blockDocSetsVars(b)...)
-	}
-	return vars
-}
-
-// objectiveContextSelfVars returns every var name an objective context defines:
-// its blocks' sets and the context's own Sets field.
-func (l *linter) objectiveContextSelfVars(objCtx ObjectiveContextDoc) []string {
-	return append(l.blockDocsSetsVars(objCtx.Blocks), objCtx.Sets...)
-}
-
-func (l *linter) checkDependsInDoc() {
-	l.checkDependsInTree("structure", l.doc.Structure)
-	l.checkDependsCycles()
-	l.checkUnusedVars()
-}
-
-func (l *linter) checkUnusedVars() {
-	for varName := range l.definedVars {
-		if !l.usedVars[varName] {
-			l.warnf("", "UNUSED_VAR",
-				"variable %q is set by a block but never referenced in any depends list", varName)
-		}
-	}
-}
-
-func (l *linter) checkDependsInTree(path string, obj ObjectiveDoc) {
-	l.checkDepends(path+".depends", obj.Depends)
-	// Every edge is recorded, drafts included. A drafted node is inert today,
-	// but publishing it is one checkbox and nothing re-lints the document at
-	// that point, so a cycle admitted here would go live with no diagnostic
-	// anywhere. DEPENDS_ON_DRAFT still says the softer thing about a reference
-	// to parked content, which is a different question: that one resolves once
-	// the objective is published, where a cycle never does.
-	l.recordDependsEdges(path, obj)
-	for i, child := range obj.Children {
-		l.checkDependsInTree(fmt.Sprintf("%s.children[%d]", path, i), child)
-	}
-}
-
-func (l *linter) checkDepends(path string, deps DependsField) {
-	for i, entry := range deps {
-		name, _ := ParseDependsName(entry)
-		if name == "" {
-			l.errorf(fmt.Sprintf("%s[%d]", path, i), "DEPENDS_EMPTY_NAME",
-				"depends entry %q names no variable", entry)
-			continue
-		}
-		l.usedVars[name] = true
-		l.checkVarReference(fmt.Sprintf("%s[%d]", path, i), name)
-	}
-}
-
-// recordDependsEdges stores the objective.<slug> references an objective makes,
-// for the cycle check once the whole document has been walked. Negation is
-// irrelevant here: "not other" still cannot be evaluated until other is, so it
-// is the same edge for reachability purposes.
-func (l *linter) recordDependsEdges(path string, obj ObjectiveDoc) {
-	if obj.Slug == "" {
-		return
-	}
-	l.dependsPaths[obj.Slug] = path
-	for _, entry := range obj.Depends {
-		name, _ := ParseDependsName(entry)
-		if slug, ok := strings.CutPrefix(name, objectiveVarPrefix); ok && slug != "" {
-			l.dependsEdges[obj.Slug] = append(l.dependsEdges[obj.Slug], slug)
-		}
-	}
-}
-
-// checkDependsCycles reports objectives that can never be reached because their
-// depends chain leads back to themselves. The self-reference case (an objective
-// naming its own slug) is just the one-node cycle.
-//
-// Only objective.<slug> edges are in this graph. Ordered-sibling edges are not:
-// sibling order is a property of the tree, which this grammar does not
-// express, so a cycle that only closes through sibling ordering is not caught
-// here. Depth-first search over a human-authored document is fast enough that
-// nothing here needs to be cleverer than it looks.
-func (l *linter) checkDependsCycles() {
-	const (
-		unvisited = 0
-		onStack   = 1
-		done      = 2
-	)
-	state := make(map[string]int, len(l.dependsEdges))
-
-	// Sorted so a document with several cycles reports them in a stable order
-	// rather than whatever the map iteration happens to produce.
-	roots := make([]string, 0, len(l.dependsEdges))
-	for slug := range l.dependsEdges {
-		roots = append(roots, slug)
-	}
-	sort.Strings(roots)
-
-	var walk func(slug string, trail []string)
-	walk = func(slug string, trail []string) {
-		switch state[slug] {
-		case onStack:
-			l.errorf(l.dependsPaths[slug]+".depends", "DEPENDS_CYCLE",
-				"objective %q can never be reached: its depends chain leads back to itself (%s)",
-				slug, strings.Join(append(trail, slug), " -> "))
-			return
-		case done:
-			return
-		}
-		state[slug] = onStack
-		targets := append([]string(nil), l.dependsEdges[slug]...)
-		sort.Strings(targets)
-		for _, target := range targets {
-			walk(target, append(trail, slug))
-		}
-		state[slug] = done
-	}
-
-	for _, slug := range roots {
-		walk(slug, nil)
-	}
-}
-
-// checkVarReference validates a single depends variable reference. An
-// objective.<slug> reference is checked against known objective slugs
-// specifically: isBuiltInVar accepts any non-empty suffix, so without this a
-// typo'd slug would silently never match at runtime instead of being caught here.
-func (l *linter) checkVarReference(path, varName string) {
-	if slug, ok := strings.CutPrefix(varName, objectiveVarPrefix); ok && slug != "" {
-		switch {
-		case !l.objectiveSlugs[slug]:
-			l.warnf(path, "UNDEFINED_OBJECTIVE_VAR",
-				"depends references objective %q, which does not exist in this game", slug)
-		case l.draftSlugs[slug]:
-			// The slug resolves, so the reference is not a typo, which is what
-			// makes this worth its own diagnostic: nothing looks wrong and the
-			// gate never opens.
-			l.warnf(path, "DEPENDS_ON_DRAFT",
-				"depends references objective %q, which is a draft: no run can complete it, "+
-					"so this stays locked until it is published", slug)
-		}
-		return
-	}
-	if !l.definedVars[varName] && !isBuiltInVar(varName) {
-		l.warnf(path, "UNDEFINED_VAR",
-			"depends references variable %q which is never set by any block in this game", varName)
-	}
-}
-
-// blockDocSetsVars reads from the standard top-level "sets" map and, via the
-// registry, from block-type-specific sub-fields (e.g. options[*].sets).
-func (l *linter) blockDocSetsVars(b BlockDoc) []string {
-	vars := collectSetsFromBlockDoc(b)
-	if l.registry != nil {
-		if t, ok := b["type"].(string); ok {
-			vars = append(vars, l.registry.DocSetsVars(t, b)...)
-		}
-	}
-	return vars
-}
-
-// checkSetsShape validates the "sets" field on a block: it must be a list of
-// variable names and must not write into reserved runtime namespaces.
-func (l *linter) checkSetsShape(path string, b BlockDoc) {
-	raw, ok := b["sets"]
-	if !ok {
-		return
-	}
-	names, ok := setsNames(raw)
-	if !ok {
-		l.errorf(path+".sets", "SETS_NOT_LIST",
-			`"sets" must be a list of variable names`)
-		return
-	}
-	for _, name := range names {
-		l.checkReservedVarName(path+".sets", name)
-	}
-}
-
-// checkRegistrySetsReserved checks registry-sourced set var names for reserved
-// namespaces (e.g. choice block options[*].sets). Direct b["sets"] is handled
-// by checkSetsShape. The path points to the block itself because DocSetsVars
-// returns bare names with no sub-path index.
-func (l *linter) checkRegistrySetsReserved(typStr string, b BlockDoc, path string) {
-	for _, name := range l.registry.DocSetsVars(typStr, b) {
-		l.checkReservedVarName(path, name)
-	}
-}
-
-func (l *linter) checkReservedVarName(path string, name string) {
-	if IsReservedVarName(name) {
-		l.errorf(path, "SETS_RESERVED_NAMESPACE",
-			`cannot write to reserved namespace: %q; this var is set automatically by the runtime`, name)
-	}
-}
-
-// collectSetsFromBlockDoc: malformed "sets" shapes are reported by
-// checkSetsShape and contribute no vars.
-func collectSetsFromBlockDoc(b BlockDoc) []string {
-	raw, ok := b["sets"]
-	if !ok {
-		return nil
-	}
-	names, ok := setsNames(raw)
-	if !ok {
-		return nil
-	}
-	var vars []string
-	for _, name := range names {
-		if name != "" {
-			vars = append(vars, name)
-		}
-	}
-	return vars
-}
-
-// setsNames reads a block doc's "sets" value, which arrives either as []any
-// from a JSON decode or as []string when a doc is built in Go. Reports false
-// for any other shape, including a list holding a non-string element.
-func setsNames(raw any) ([]string, bool) {
-	switch v := raw.(type) {
-	case []string:
-		return v, true
-	case []any:
-		names := make([]string, 0, len(v))
-		for _, elem := range v {
-			name, ok := elem.(string)
-			if !ok {
-				return nil, false
-			}
-			names = append(names, name)
-		}
-		return names, true
-	}
-	return nil, false
-}
-
-// isBuiltInVar reports whether name is a built-in variable provided by the
-// runtime (not set by any block in the game doc). Referencing a built-in in a
-// depends list is valid even though it never appears in definedVars.
-//
-// objective.<slug> is the only built-in namespace: conditions are truthy-only,
-// so the numeric built-ins that only comparisons could read are gone.
-//
-// checkVarReference validates objective.<slug> against real objective slugs
-// before ever consulting this function, so its objective.* branch is presently
-// unreachable from that caller. Kept as the canonical definition of the
-// built-in namespace shape (see TestIsBuiltInVar_CanonicalSet) rather than
-// narrowed to what one caller currently needs.
-func isBuiltInVar(name string) bool {
-	after, ok := strings.CutPrefix(name, objectiveVarPrefix)
-	return ok && len(after) > 0
-}
-
-// objectiveVarPrefix is the runtime-owned namespace. Blocks must not write to
-// it (the runtime sets it automatically), and depends entries read it to gate
-// on another objective's completion.
-const objectiveVarPrefix = "objective."
-
-// IsReservedVarName guards the runtime-owned namespace: a block that sets or
-// triggers such a var is rejected.
-func IsReservedVarName(name string) bool {
-	after, ok := strings.CutPrefix(name, objectiveVarPrefix)
-	return ok && len(after) > 0
-}

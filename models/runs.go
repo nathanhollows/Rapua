@@ -18,8 +18,4 @@ type Run struct {
 	Quest    Quest           `bun:"rel:has-one,join:quest_id=id"`
 	Messages []Notification  `bun:"rel:has-many,join:code=run_code"`
 	Blocks   []RunBlockState `bun:"rel:has-many,join:code=run_code"`
-
-	// VarStates holds creator-defined variable values for this run.
-	// Populated by RunService.LoadRelations(); not a DB column.
-	VarStates map[string]string `bun:"-"`
 }

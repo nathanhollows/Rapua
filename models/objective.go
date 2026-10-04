@@ -20,13 +20,10 @@ type Objective struct {
 	// Draft keeps an objective out of play without moving it. The player engine
 	// never loads a draft row, so a drafted section is absent rather than
 	// locked, and publishing it again puts it back where it sat.
-	Draft      bool              `bun:"draft,type:boolean"`
-	Slug       string            `bun:"slug,type:varchar(255)"`
-	Title      string            `bun:"title,type:varchar(255)"`
-	Color      string            `bun:"color,type:varchar(255)"`
-	Depends    game.DependsField `bun:"depends,type:text,nullzero"     json:"depends,omitempty"`
-	ProofSets  game.SetsField    `bun:"proof_sets,type:text,nullzero"  json:"proof_sets,omitempty"`
-	RevealSets game.SetsField    `bun:"reveal_sets,type:text,nullzero" json:"reveal_sets,omitempty"`
+	Draft bool   `bun:"draft,type:boolean"`
+	Slug  string `bun:"slug,type:varchar(255)"`
+	Title string `bun:"title,type:varchar(255)"`
+	Color string `bun:"color,type:varchar(255)"`
 
 	// Routing, the band, MaxNext and FinishLabel all govern children, and mean
 	// nothing on an objective without any.

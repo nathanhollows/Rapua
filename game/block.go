@@ -46,13 +46,6 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
-	// SupportsVariableSets returns true when the block can carry a "sets" field.
-	// Only blocks that fire sets triggers on validation should return true;
-	// the linter warns if a "sets" field appears on a block that returns false.
-	SupportsVariableSets() bool
-
-	// GetSets returns the variables this block sets on completion.
-	GetSets() SetsField
 }
 
 // Blocks is a slice of Block.
@@ -66,14 +59,7 @@ type BaseBlock struct {
 	Data    json.RawMessage `json:"-"`
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
-	Sets    SetsField       `json:"sets,omitempty"`
 }
-
-// SupportsVariableSets returns false by default; interactive blocks override this.
-func (b *BaseBlock) SupportsVariableSets() bool { return false }
-
-// GetSets returns the variables this block sets on completion.
-func (b *BaseBlock) GetSets() SetsField { return b.Sets }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
