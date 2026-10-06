@@ -108,8 +108,7 @@ func buildObjectiveTree(
 
 	cutCycleEdges(objectives, nodes, hasParent)
 
-	// After the tree is assembled, since a node's published count is a fact
-	// about the children now hanging off it.
+	// After assembly: both are facts about a node's children, not the node.
 	for _, node := range nodes {
 		node.PublishedChildren = 0
 		for _, child := range node.Children {
@@ -117,6 +116,7 @@ func buildObjectiveTree(
 				node.PublishedChildren++
 			}
 		}
+		templates.MarkChildren(node.Objective, node.Children)
 	}
 
 	var topLevel []*templates.ObjectiveTreeNode
@@ -140,6 +140,8 @@ func buildObjectiveTree(
 		markOutOfPlay(nodes[obj.ID], nodes[obj.ID].Draft)
 		topLevel = append(topLevel, nodes[obj.ID])
 	}
+	// Last, because strays are appended to topLevel after the root's children.
+	templates.MarkChildren(root, topLevel)
 	return root, topLevel
 }
 

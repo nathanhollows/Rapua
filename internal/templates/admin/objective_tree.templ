@@ -24,6 +24,10 @@ type ObjectiveTreeNode struct {
 	// It rides on the node so the tree refresh brings the badges with it,
 	// rather than needing a second pass to put them back.
 	Lint game.LintResult
+	// Mark depends on the parent's routing, not on the objective.
+	Mark RailMark
+	// Step is skipped for drafts: a player never meets them.
+	Step int
 	// PublishedChildren is how many of Children are in play. The band counts
 	// those and only those, so a picker offering the full count would offer
 	// numbers the save refuses.
@@ -52,6 +56,44 @@ func publishedCount(nodes []*ObjectiveTreeNode) int {
 // linked rather than dropped so either can be fixed.
 const maxRenderDepth = 20
 
+// RailMark is what the rail draws beside a row.
+type RailMark string
+
+const (
+	RailStep   RailMark = "step"
+	RailDot    RailMark = "dot"
+	RailWindow RailMark = "window"
+	RailPool   RailMark = "pool"
+	RailParked RailMark = "parked"
+)
+
+// MarkChildren sets each child's rail mark from the parent's routing. Drafts
+// are skipped when filling a randomised window because runs never load them.
+func MarkChildren(parent models.Objective, children []*ObjectiveTreeNode) {
+	step := 0
+	shown := 0
+	for _, child := range children {
+		if child.Draft {
+			child.Mark = RailParked
+			continue
+		}
+		switch parent.Routing {
+		case models.RouteStrategyOrdered:
+			step++
+			child.Mark, child.Step = RailStep, step
+		case models.RouteStrategyRandomised:
+			shown++
+			if parent.MaxNext > 0 && shown > parent.MaxNext {
+				child.Mark = RailPool
+			} else {
+				child.Mark = RailWindow
+			}
+		default:
+			child.Mark = RailDot
+		}
+	}
+}
+
 // visibilityTip names what a click on the eye toggle will do.
 func visibilityTip(node *ObjectiveTreeNode) string {
 	switch {
@@ -72,6 +114,19 @@ func maxNextValue(v int) string {
 	return fmt.Sprint(v)
 }
 
+// defaultMaxNext is non-zero because no limit makes randomised identical to
+// open exploration, leaving the author's choice with no visible effect.
+const defaultMaxNext = 3
+
+// settingsAlign anchors a picker's menu away from its trigger's side, so it
+// does not open back across the card's edge.
+type settingsAlign string
+
+const (
+	alignLeft  settingsAlign = "left-0"
+	alignRight settingsAlign = "right-0"
+)
+
 // routingIcon and routingLabel show the routing currently chosen, not a
 // generic settings icon.
 func routingIcon(r models.RouteStrategy) string {
@@ -87,13 +142,36 @@ func routingIcon(r models.RouteStrategy) string {
 	}
 }
 
-func routingLabel(r models.RouteStrategy) string {
-	if r == "" {
-		// Only reachable on a row written before routing was required. It reads
-		// as a prompt rather than a label because that is what it is.
+func routingLabel(r models.RouteStrategy, maxNext int) string {
+	switch r {
+	case "":
+		// Only rows written before routing was required.
 		return "Choose routing"
+	case models.RouteStrategyRandomised:
+		return randomisedLabel(maxNext)
+	default:
+		return r.String()
 	}
-	return r.String()
+}
+
+// randomisedLabel states the whole rule ("Random 3") rather than the mechanism.
+func randomisedLabel(maxNext int) string {
+	if maxNext <= 0 {
+		// No cap: only the shuffle distinguishes this from open exploration.
+		return "Random order"
+	}
+	return fmt.Sprintf("Random %d", maxNext)
+}
+
+// routingOptionLabel names the window a click on randomised would apply.
+func routingOptionLabel(rs models.RouteStrategy, current models.Objective) string {
+	if rs != models.RouteStrategyRandomised {
+		return rs.String()
+	}
+	if current.Routing == models.RouteStrategyRandomised {
+		return randomisedLabel(current.MaxNext)
+	}
+	return randomisedLabel(defaultMaxNext)
 }
 
 // bandSummary is the completion band in player-facing words, not a raw
@@ -135,23 +213,31 @@ func bandSummary(min, max *int, childCount int) string {
 // routing picker for that.
 templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
 	{{ rootPublished := publishedCount(nodes) }}
-	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full p-5" hx-boost="true">
-		<h1 class="text-2xl font-bold">Quest</h1>
+	<!-- Grouped because the lock badge is appended here at runtime; loose, it
+	pushes the primary action to the middle of the row. -->
+	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 pt-5 pb-3" hx-boost="true">
+		<div id="quest-title-group" class="flex items-center gap-3">
+			<h1 class="text-2xl font-bold">Quest</h1>
+		</div>
 		<a href="/admin/objective/new" class="btn btn-primary btn-sm" data-lock-hide>
 			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
 			New objective
 		</a>
 	</div>
-	@objectiveSystemPageLink("Start", "/admin/quest/start")
-	<!-- Outside #objective-tree: the tree is outerHTML-swapped after every
-	drop and settings change, and the toolbar's own state (the search term,
-	the routing picker, the points toggle) should survive that. -->
-	<div class="px-6 pb-3 flex flex-wrap items-center justify-between gap-3" data-objective-slug={ root.Slug } data-child-count={ fmt.Sprint(rootPublished) }>
+	<!-- Outside #objective-tree so its state survives the swap. The top-level
+	list carries its own data-routing for the rails, since only it is swapped. -->
+	<div
+		id="quest-toolbar"
+		class="px-6 pb-4 flex flex-wrap items-center justify-between gap-3"
+		data-objective-slug={ root.Slug }
+		data-child-count={ fmt.Sprint(rootPublished) }
+		data-routing={ string(root.Routing) }
+	>
 		<div class="flex items-center gap-3">
-			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root})
-			<!-- Lives here rather than on a settings page: it decides whether
-			the badges on this very tree render, so the author sees the choice
-			where it lands. -->
+			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root}, alignLeft)
+			@objectiveBandPicker(&ObjectiveTreeNode{Objective: root, PublishedChildren: rootPublished}, alignLeft)
+			<span class="w-px h-5 bg-base-content/15 mx-1" aria-hidden="true"></span>
+			<!-- Here because it controls whether this tree's badges render. -->
 			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-top" data-tip="Teams earn points for checking into locations and completing activities">
 				<input
 					type="checkbox"
@@ -187,6 +273,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 	both. The toolbar sits outside it so a search term survives the swap. -->
 	<div id="quest-builder">
 		@QuestLint(lint)
+		@objectiveSystemPageLink("Start", "/admin/quest/start")
 		<div id="objective-tree" class="px-6" hx-boost="true">
 			if len(nodes) == 0 {
 				<div role="alert" class="alert">
@@ -194,35 +281,37 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 					<span>This quest has no objectives yet.</span>
 				</div>
 			} else {
-				<ul class="objective-children join join-vertical flex flex-col w-full" data-parent-id={ root.ID }>
+				<ul class="objective-children flex flex-col w-full" data-parent-id={ root.ID } data-routing={ string(root.Routing) }>
 					for _, node := range nodes {
 						@objectiveNode(node, enablePoints, 0)
 					}
 				</ul>
 			}
 		</div>
+		@objectiveSystemPageLink("Complete", "/admin/quest/complete")
 	</div>
-	@objectiveSystemPageLink("Complete", "/admin/quest/complete")
 	@objectiveSortableScript()
 }
 
-// objectiveSystemPageLink sits outside #objective-tree: it never changes on a tree refresh.
+// objectiveSystemPageLink bookends the tree. The padlock shares the rail's
+// column but no rail joins it: top-level routing governs what is between these
+// pages, not the pages.
 templ objectiveSystemPageLink(label, href string) {
-	<div class="px-6 py-4">
-		<div class="bg-base-200 p-4 border border-primary/20 rounded-2xl">
-			<div class="flex items-center gap-3">
-				<span class="tooltip tooltip-right" data-tip="System page: cannot be moved">
-					@icon("lock", templ.Attributes{"class": "w-5 h-5 text-primary"})
-				</span>
-				<span class="badge badge-primary badge-sm tooltip tooltip-right" data-tip="Automatically included in the game">
-					System Page
-				</span>
-				<a href={ templ.URL(href) } class="link link-hover font-medium text-sm" hx-boost="true">{ label }</a>
+	<div class="px-6 py-3">
+		<div class="objective-outside relative pl-7">
+			<span class="objective-outside-mark tooltip tooltip-right" data-tip="System page: always shown, never routed">
+				@icon("lock", templ.Attributes{"class": "w-3.5 h-3.5"})
+			</span>
+			<!-- Untinted: every hue here belongs to a routing strategy. -->
+			<a
+				href={ templ.URL(href) }
+				class="flex items-center gap-3 rounded-xl bg-base-100 hover:bg-base-200 border border-base-content/35 px-4 py-2.5 transition-colors"
+				hx-boost="true"
+			>
+				<span class="link link-hover font-medium text-sm">{ label }</span>
 				<div class="flex-grow"></div>
-				<span class="tooltip tooltip-left" data-tip="System page: cannot be deleted">
-					@icon("lock", templ.Attributes{"class": "w-4 h-4 text-base-content/40"})
-				</span>
-			</div>
+				<span class="text-xs opacity-50">System page</span>
+			</a>
 		</div>
 	</div>
 }
@@ -261,54 +350,32 @@ templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
 	</button>
 }
 
-// objectiveColorPicker's dot is always styled bg-primary; [data-group-color]
-// on the card remaps what "primary" means (see main.css).
-templ objectiveColorPicker(node *ObjectiveTreeNode) {
-	<details class="settings-picker relative inline-block">
-		<summary
-			class="settings-color-trigger w-4 h-4 rounded-full bg-primary cursor-pointer tooltip shrink-0"
-			data-tip="Color"
-			data-color={ node.Objective.Color }
-		></summary>
-		<ul class="absolute left-0 top-full mt-1 z-20 flex flex-wrap gap-1 bg-base-100 rounded-box p-2 shadow-lg w-32">
-			<li>
-				<a class="settings-color-option block p-1 rounded hover:bg-base-200" data-color="">
-					<div class="w-4 h-4 rounded-full bg-base-300 border border-base-content/30"></div>
-				</a>
-			</li>
-			for _, c := range objectiveColors {
-				<li>
-					<a class="settings-color-option block p-1 rounded hover:bg-base-200" data-color={ c }>
-						<div class={ fmt.Sprintf("w-4 h-4 rounded-full bg-%s", c) }></div>
-					</a>
-				</li>
-			}
-		</ul>
-	</details>
-}
-
 // objectiveRoutingPicker's trigger shows the routing currently chosen, not a
 // generic icon. Options are clickable rows, not a <select>; data-routing on
 // the trigger holds the current value for currentSettingsValues/syncSettings
-// to read. See objectiveColorPicker for why this is <details>.
-templ objectiveRoutingPicker(node *ObjectiveTreeNode) {
-	<details class="settings-picker relative inline-block">
+// to read. A <details> because the tree is replaced often and this keeps no
+// state outside the markup.
+templ objectiveRoutingPicker(node *ObjectiveTreeNode, align settingsAlign) {
+	<details class="settings-picker relative">
+		<!-- Outlined so it reads as a control at rest. Primary because the
+		surrounding routing remaps it to the strategy's hue. -->
 		<summary
-			class="settings-routing-trigger btn btn-sm btn-ghost gap-1 shrink-0"
+			class="settings-routing-trigger btn btn-sm btn-outline btn-primary gap-1 shrink-0"
 			data-routing={ string(node.Objective.Routing) }
 		>
-			@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "w-3.5 h-3.5 opacity-70"})
-			<span class="text-xs">{ routingLabel(node.Objective.Routing) }</span>
+			@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "settings-routing-icon w-3.5 h-3.5 opacity-70"})
+			<span class="text-xs settings-routing-label">{ routingLabel(node.Objective.Routing, node.Objective.MaxNext) }</span>
 			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
 		</summary>
-		<div class="absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden">
+		<div class={ "absolute top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden",
+			string(align) }>
 			<ul class="menu p-2">
 				for _, rs := range models.GetRouteStrategies() {
 					<li>
 						<a class="settings-routing-option items-start" data-value={ string(rs) }>
 							@icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"})
 							<span class="flex flex-col">
-								<span class="text-sm font-medium">{ rs.String() }</span>
+								<span class="text-sm font-medium settings-routing-option-label">{ routingOptionLabel(rs, node.Objective) }</span>
 								<span class="text-xs text-base-content/60 text-pretty">{ rs.Description() }</span>
 							</span>
 						</a>
@@ -322,6 +389,7 @@ templ objectiveRoutingPicker(node *ObjectiveTreeNode) {
 					min="0"
 					class="input input-xs w-16 settings-maxnext-input no-spinner"
 					value={ maxNextValue(node.Objective.MaxNext) }
+					data-default={ fmt.Sprint(defaultMaxNext) }
 					placeholder="All"
 				/>
 			</div>
@@ -330,16 +398,22 @@ templ objectiveRoutingPicker(node *ObjectiveTreeNode) {
 }
 
 // objectiveBandPicker's trigger shows the resolved band, not a generic icon.
-// See objectiveColorPicker for why this is <details>.
-templ objectiveBandPicker(node *ObjectiveTreeNode) {
-	<details class="settings-picker relative inline-block">
-		<summary class="btn btn-sm btn-ghost gap-1 shrink-0">
+//
+// Hidden rather than omitted under guided routing, where "complete any 3" has
+// nothing to choose between: the toolbar is never re-rendered, so the element
+// must already exist when the author switches strategy.
+templ objectiveBandPicker(node *ObjectiveTreeNode, align settingsAlign) {
+	<details
+		class={ "settings-picker settings-band-picker relative",
+			templ.KV("hidden", node.Objective.Routing == models.RouteStrategyOrdered) }
+	>
+		<summary class="btn btn-sm btn-outline btn-primary gap-1 shrink-0">
 			<span class="text-xs settings-band-summary">
 				{ bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren) }
 			</span>
 			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
 		</summary>
-		<div class="absolute right-0 top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3">
+		<div class={ "absolute top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3", string(align) }>
 			<p class="text-xs font-medium opacity-70 mb-2">Completion band</p>
 			<div class="flex items-center gap-2">
 				<input
@@ -359,8 +433,56 @@ templ objectiveBandPicker(node *ObjectiveTreeNode) {
 				/>
 			</div>
 			<p class="text-xs opacity-70 mt-2 settings-band-explainer"></p>
+			<div class={ "settings-finish-label mt-3 pt-3 border-t border-base-300",
+				templ.KV("hidden", !bandOffersFinish(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren)) }>
+				<p class="text-xs font-medium opacity-70 mb-1">Finish button label</p>
+				<input
+					type="text"
+					class="input input-sm w-full settings-finish-label-input"
+					value={ node.Objective.FinishLabel }
+					placeholder="Finish"
+				/>
+			</div>
 		</div>
 	</details>
+}
+
+// bandOffersFinish reports whether a finish button is shown, the only time its
+// label matters.
+func bandOffersFinish(min, max *int, childCount int) bool {
+	lo := 0
+	if min != nil {
+		lo = *min
+	}
+	hi := childCount
+	if max != nil {
+		hi = *max
+	}
+	return lo < hi
+}
+
+// objectiveCollapseToggle sits last, after the controls that change the quest,
+// because it only changes this author's view.
+templ objectiveCollapseToggle(node *ObjectiveTreeNode) {
+	<button
+		type="button"
+		class="btn btn-xs btn-ghost btn-circle shrink-0 objective-collapse"
+		data-collapse-for={ node.Objective.ID }
+		data-ignore-lock
+		aria-label="Collapse section"
+	>
+		@icon("chevron-down", templ.Attributes{"class": "w-4 h-4 opacity-60 transition-transform"})
+	</button>
+}
+
+// objectiveRailMark keeps the marker out of the row so a drag into another
+// parent redraws it without touching the row.
+templ objectiveRailMark(node *ObjectiveTreeNode) {
+	<span class="objective-mark" data-mark={ string(node.Mark) }>
+		if node.Mark == RailStep {
+			{ fmt.Sprint(node.Step) }
+		}
+	</span>
 }
 
 // objectivePointsBadge sums this objective's own blocks; never a rollup of
@@ -371,14 +493,14 @@ templ objectivePointsBadge(points int, enablePoints bool) {
 	}
 }
 
-// objectiveNode renders a section (has children) as a card, or a leaf as a
-// daisyUI .join-item so adjacent leaves collapse into one block (see main.css).
+// objectiveNode renders a section as a card and a leaf as a row, each beside a
+// rail mark.
 templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 	if depth > maxRenderDepth {
 		<!-- Named and linked rather than dropped: this depth is reachable by
 		dragging, since lint warns past four levels but does not refuse, and an
 		author who nested too far needs to find the row to drag it back out. -->
-		<li class="list-none join-item bg-base-100/60 p-4 border-primary/30 text-sm">
+		<li class="list-none rounded-xl bg-base-100/60 border border-base-content/10 p-4 text-sm">
 			<div class="flex items-center gap-3">
 				@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 text-warning shrink-0"})
 				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
@@ -391,47 +513,56 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 		</li>
 	} else if len(node.Children) > 0 {
 		<li
-			class="list-none my-3 group"
+			class="list-none group objective-rail-item"
 			data-objective-id={ node.Objective.ID }
 			data-objective-slug={ node.Objective.Slug }
 			data-child-count={ fmt.Sprint(node.PublishedChildren) }
+			data-mark={ string(node.Mark) }
 		>
+			@objectiveRailMark(node)
 			<div
-				class={ "card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("saturate-0 opacity-70", node.OutOfPlay) }
-				data-group-color={ node.Objective.Color }
+				class={ "objective-group card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay) }
+				data-routing={ string(node.Objective.Routing) }
 			>
-				<div class="card-body p-5 gap-3">
-					<div class="flex items-center gap-3">
+				<div class="card-body p-0 gap-0">
+					<div class="objective-group-header flex items-center gap-3 px-4 py-2.5 rounded-t-2xl bg-primary/10 border-b border-primary/25">
 						<span class="tooltip tooltip-right" data-tip="Drag to move">
 							@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
 						</span>
-						@objectiveColorPicker(node)
 						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-bold">
 							{ node.Objective.Title }
 						</a>
 						<div class="flex-grow"></div>
 						@objectivePointsBadge(node.Points, enablePoints)
 						@objectiveLintBadge(node.Lint)
-						@objectiveRoutingPicker(node)
-						@objectiveBandPicker(node)
+						<!-- The settings sit together past the title, routing then the
+						band: the title is what you scan a tree for, and a control before
+						it pushes every name out of line with the one above. -->
+						@objectiveRoutingPicker(node, alignRight)
+						@objectiveBandPicker(node, alignRight)
 						@objectiveAddChildButton(node)
 						@objectiveVisibilityToggle(node)
+						@objectiveCollapseToggle(node)
 					</div>
-					<ul class="objective-children join join-vertical flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
-						for _, child := range node.Children {
-							@objectiveNode(child, enablePoints, depth+1)
-						}
-					</ul>
+					<div class="p-4 pt-3 objective-group-body">
+						<ul class="objective-children flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
+							for _, child := range node.Children {
+								@objectiveNode(child, enablePoints, depth+1)
+							}
+						</ul>
+					</div>
 				</div>
 			</div>
 		</li>
 	} else {
 		<li
-			class={ "list-none join-item objective-searchable group relative bg-base-100/60 hover:bg-base-200/60 p-4 border-primary/30 text-sm", templ.KV("saturate-0 opacity-70", node.OutOfPlay) }
+			class="list-none objective-searchable group objective-rail-item"
 			data-objective-id={ node.Objective.ID }
 			data-search-text={ node.Objective.Title }
+			data-mark={ string(node.Mark) }
 		>
-			<div class="flex items-center gap-3">
+			@objectiveRailMark(node)
+			<div class={ "flex items-center gap-3 rounded-xl bg-base-100/60 hover:bg-base-200/60 border border-base-content/10 px-4 py-2.5 text-sm", templ.KV("objective-parked", node.OutOfPlay) }>
 				<span class="tooltip tooltip-right" data-tip="Drag to move">
 					@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
 				</span>
@@ -466,9 +597,7 @@ templ objectiveSortableScript() {
 	// move must show as it landed, and htmx.ajax (not fetch) is what
 	// delivers the response's out-of-band toast.
 	//
-	// One request, not two. The page render already computes lint, and
-	// fetching the panel separately ran the whole pipeline a second time to
-	// arrive at an answer the first response was carrying.
+	// One request: the page render already computes lint.
 	function postObjectiveUpdate(url, values) {
 		return htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {
 			htmx.ajax('GET', '/admin/quest', {
@@ -524,24 +653,77 @@ templ objectiveSortableScript() {
 			if (summary) summary.textContent = bandSummaryText(n, min.value, max.value);
 			if (explainer) explainer.textContent = bandExplainerText(n, min.value, max.value);
 		}
-		var routingTrigger = scope.querySelector('.settings-routing-trigger');
-		var maxNextField = scope.querySelector('.settings-maxnext');
-		if (routingTrigger && maxNextField) {
-			maxNextField.classList.toggle('hidden', routingTrigger.dataset.routing !== 'randomised');
+		var finishLabelField = scope.querySelector('.settings-finish-label');
+		if (finishLabelField && min && max) {
+			var n = parseInt(scope.dataset.childCount, 10) || 0;
+			var lo = min.value === '' ? 0 : parseInt(min.value, 10);
+			var hi = max.value === '' ? n : parseInt(max.value, 10);
+			// Only a band that lets a player finish early ever shows the button.
+			finishLabelField.classList.toggle('hidden', !(lo < hi));
 		}
+		var routingTrigger = scope.querySelector('.settings-routing-trigger');
+		if (!routingTrigger) return;
+		var routing = routingTrigger.dataset.routing;
+		var maxNextField = scope.querySelector('.settings-maxnext');
+		if (maxNextField) {
+			maxNextField.classList.toggle('hidden', routing !== 'randomised');
+		}
+		// Guided play fixes order and count, so there is no band to pick.
+		var bandPicker = scope.querySelector('.settings-band-picker');
+		if (bandPicker) {
+			bandPicker.classList.toggle('hidden', routing === 'ordered');
+			if (routing === 'ordered') bandPicker.open = false;
+		}
+		// The card (or the toolbar, for the quest) carries the hue, never the
+		// row: a row's rail answers to its parent's routing.
+		var hueTarget = scope.querySelector('.objective-group') || scope;
+		if (hueTarget.dataset.routing !== undefined) hueTarget.dataset.routing = routing;
+		repaintRoutingTrigger(scope, routing);
 	}
 
-	// currentSettingsValues reads color/routing from their trigger's data
-	// attribute rather than a <select>.
+	// labelRandomisedOption updates the option, not the trigger, so the window
+	// wording lives in one place and the trigger copies it. Skipped unless
+	// randomised: otherwise the option advertises the default window, not what
+	// the field holds.
+	function labelRandomisedOption(scope, routing) {
+		if (routing !== 'randomised') return;
+		var label = scope.querySelector('.settings-routing-option[data-value="randomised"] .settings-routing-option-label');
+		var windowInput = scope.querySelector('.settings-maxnext-input');
+		if (!label || !windowInput) return;
+		var n = parseInt(windowInput.value, 10);
+		label.textContent = n > 0 ? 'Random ' + n : 'Random order';
+	}
+
+	// repaintRoutingTrigger exists because the quest's picker is outside the
+	// swapped tree, so no render corrects it. Copying from the matching option
+	// avoids a second list of strategies in the script.
+	function repaintRoutingTrigger(scope, routing) {
+		labelRandomisedOption(scope, routing);
+		var option = scope.querySelector('.settings-routing-option[data-value="' + routing + '"]');
+		var label = scope.querySelector('.settings-routing-label');
+		if (!option || !label) return;
+		var wanted = option.querySelector('.settings-routing-option-label');
+		if (!wanted || label.textContent === wanted.textContent) return;
+		label.textContent = wanted.textContent;
+		var from = option.querySelector('svg');
+		var to = scope.querySelector('.settings-routing-icon');
+		if (!from || !to) return;
+		// The trigger's class list carries the size difference.
+		var replacement = from.cloneNode(true);
+		replacement.setAttribute('class', to.getAttribute('class'));
+		to.replaceWith(replacement);
+	}
+
+	// currentSettingsValues reads routing from its trigger's data attribute
+	// rather than a <select>.
 	//
-	// A control this scope does not have contributes no key at all. The server
-	// reads a present key as "the author had this on screen", so sending an
-	// empty string for a missing control says they cleared it: the root
-	// toolbar has no band inputs, and synthesising blanks for them wiped the
-	// quest's own completion band every time its routing changed.
+	// A control this scope lacks contributes no key: the server reads a
+	// present key as "on screen", so a blank would wipe the setting.
+	//
+	// A hidden control still counts, so the band survives a switch to guided
+	// routing and back.
 	function currentSettingsValues(scope) {
 		var values = {};
-		var colorTrigger = scope.querySelector('.settings-color-trigger');
 		var routingTrigger = scope.querySelector('.settings-routing-trigger');
 		var maxNextInput = scope.querySelector('.settings-maxnext-input');
 		var minInput = scope.querySelector('.settings-min');
@@ -554,7 +736,8 @@ templ objectiveSortableScript() {
 			values.children_min = minInput.value;
 			values.children_max = maxInput.value;
 		}
-		if (colorTrigger) values.color = colorTrigger.dataset.color;
+		var finishLabel = scope.querySelector('.settings-finish-label-input');
+		if (finishLabel) values.finish_label = finishLabel.value;
 		return values;
 	}
 
@@ -595,32 +778,81 @@ templ objectiveSortableScript() {
 		if (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);
 	}
 
-	// updateJoinRounding sets each run's corner radii as inline styles:
-	// CSS-only versions kept losing to daisyUI's own .join/.join-item
-	// cascade for a solo leaf or a run's edge.
-	function updateJoinRounding(list) {
-		var ROUND = '1rem';
-		var SQUARE = '0px';
-		var run = [];
-		function flushRun() {
-			run.forEach(function(el, i) {
-				var first = i === 0;
-				var last = i === run.length - 1;
-				el.style.borderStartStartRadius = first ? ROUND : SQUARE;
-				el.style.borderStartEndRadius = first ? ROUND : SQUARE;
-				el.style.borderEndStartRadius = last ? ROUND : SQUARE;
-				el.style.borderEndEndRadius = last ? ROUND : SQUARE;
+	// Kept by id because the tree is replaced after every edit.
+	var collapsedGroups = window.__collapsedGroups || (window.__collapsedGroups = new Set());
+
+	function applyCollapse(button) {
+		var id = button.dataset.collapseFor;
+		var card = document.querySelector('[data-objective-id="' + id + '"]');
+		var body = card && card.querySelector('.objective-group-body');
+		if (!body) return;
+		var closed = collapsedGroups.has(id);
+		body.classList.toggle('hidden', closed);
+		button.querySelector('svg').style.transform = closed ? 'rotate(-90deg)' : '';
+		button.setAttribute('aria-label', closed ? 'Expand section' : 'Collapse section');
+	}
+
+	// reopenRoutingPicker restores the menu a randomised pick left open: the
+	// refresh replaces a section's <details>. The quest's picker survives the
+	// swap and is left alone.
+	function reopenRoutingPicker() {
+		var slug = window.__reopenRoutingFor;
+		if (!slug) return;
+		window.__reopenRoutingFor = null;
+		var scope = document.querySelector('[data-objective-slug="' + slug + '"]');
+		var trigger = scope && scope.querySelector('.settings-routing-trigger');
+		var details = trigger && trigger.closest('details.settings-picker');
+		if (!details) return;
+		details.open = true;
+		var input = details.querySelector('.settings-maxnext-input');
+		if (input) input.focus();
+	}
+
+	// The shuffle shows that a randomised window is a sample, not a fixed set.
+	// Only the marker's data-mark moves; the row's stays as stored.
+	var RAIL_SHUFFLE_MIN_MS = 3000;
+	var RAIL_SHUFFLE_MAX_MS = 6000;
+
+	// railWindows returns lists with both a window and a pool, the only ones
+	// with anything to swap. Direct children only, so a nested randomised group
+	// is not shuffled by its ancestor too.
+	function railWindows() {
+		var lists = [];
+		document.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {
+			var windows = [];
+			var pool = [];
+			list.querySelectorAll(':scope > li > .objective-mark').forEach(function(mark) {
+				if (mark.dataset.mark === 'window') windows.push(mark);
+				else if (mark.dataset.mark === 'pool') pool.push(mark);
 			});
-			run = [];
-		}
-		Array.prototype.forEach.call(list.children, function(el) {
-			if (el.classList && el.classList.contains('join-item')) {
-				run.push(el);
-			} else {
-				flushRun();
-			}
+			if (windows.length && pool.length) lists.push({ windows: windows, pool: pool });
 		});
-		flushRun();
+		return lists;
+	}
+
+	function pickOne(items) {
+		return items[Math.floor(Math.random() * items.length)];
+	}
+
+	function shuffleRailWindows() {
+		// Read fresh: a refresh replaces every row, detaching held nodes.
+		railWindows().forEach(function(list) {
+			var leaving = pickOne(list.windows);
+			var entering = pickOne(list.pool);
+			leaving.dataset.mark = 'pool';
+			entering.dataset.mark = 'window';
+		});
+	}
+
+	function scheduleRailShuffle() {
+		clearTimeout(window.__railShuffle);
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		var wait = RAIL_SHUFFLE_MIN_MS + Math.random() * (RAIL_SHUFFLE_MAX_MS - RAIL_SHUFFLE_MIN_MS);
+		window.__railShuffle = setTimeout(function() {
+			// Hidden tabs still fire timers; animating them is wasted work.
+			if (!document.hidden) shuffleRailWindows();
+			scheduleRailShuffle();
+		}, wait);
 	}
 
 	function initObjectiveTree() {
@@ -652,9 +884,13 @@ templ objectiveSortableScript() {
 					});
 				},
 			});
-			updateJoinRounding(list);
 		});
-		document.querySelectorAll('#objective-tree [data-objective-slug]').forEach(syncSettings);
+		// The toolbar is outside #objective-tree, so it is named explicitly.
+		document.querySelectorAll('#objective-tree [data-objective-slug], #quest-toolbar')
+			.forEach(syncSettings);
+		document.querySelectorAll('#objective-tree .objective-collapse').forEach(applyCollapse);
+		reopenRoutingPicker();
+		scheduleRailShuffle();
 		// Re-applied here since #objective-tree's rows are replaced on every
 		// refresh, but the search box outside it isn't.
 		applyObjectiveSearch();
@@ -672,9 +908,9 @@ templ objectiveSortableScript() {
 		});
 
 		// Capture phase, before the handler below: closes any open picker
-		// the click landed outside of.
+		// the click landed outside of. Unscoped so the toolbar's pickers close.
 		document.addEventListener('click', function(evt) {
-			document.querySelectorAll('#objective-tree details.settings-picker[open]').forEach(function(details) {
+			document.querySelectorAll('details.settings-picker[open]').forEach(function(details) {
 				if (!details.contains(evt.target)) details.open = false;
 			});
 		}, true);
@@ -690,6 +926,17 @@ templ objectiveSortableScript() {
 			}
 			return;
 		}
+		var collapse = evt.target.closest('.objective-collapse');
+		if (collapse) {
+			var groupID = collapse.dataset.collapseFor;
+			if (collapsedGroups.has(groupID)) {
+				collapsedGroups.delete(groupID);
+			} else {
+				collapsedGroups.add(groupID);
+			}
+			applyCollapse(collapse);
+			return;
+		}
 		var toggle = evt.target.closest('.objective-visibility-toggle');
 		if (toggle) {
 			if (toggle.disabled) return;
@@ -699,27 +946,29 @@ templ objectiveSortableScript() {
 			});
 			return;
 		}
-		var colorOption = evt.target.closest('.settings-color-option');
-		if (colorOption) {
-			evt.preventDefault();
-			var colorScope = settingsScope(colorOption);
-			if (!colorScope) return;
-			var colorTrigger = colorScope.querySelector('.settings-color-trigger');
-			if (colorTrigger) colorTrigger.dataset.color = colorOption.dataset.color;
-			closeSettingsPicker(colorOption);
-			submitSettings(colorScope, { color: colorOption.dataset.color });
-			return;
-		}
 		var routingOption = evt.target.closest('.settings-routing-option');
 		if (routingOption) {
 			evt.preventDefault();
 			var routingScope = settingsScope(routingOption);
 			if (!routingScope) return;
+			var chosen = routingOption.dataset.value;
 			var routingTrigger = routingScope.querySelector('.settings-routing-trigger');
-			if (routingTrigger) routingTrigger.dataset.routing = routingOption.dataset.value;
+			if (routingTrigger) routingTrigger.dataset.routing = chosen;
+			var windowInput = routingScope.querySelector('.settings-maxnext-input');
+			if (chosen === 'randomised') {
+				// An empty window is open exploration, so the pick would do nothing.
+				if (windowInput && !(parseInt(windowInput.value, 10) > 0)) {
+					windowInput.value = windowInput.dataset.default;
+				}
+				// The window field is in this menu; closing would hide it.
+				window.__reopenRoutingFor = routingScope.dataset.objectiveSlug;
+			} else {
+				window.__reopenRoutingFor = null;
+				closeSettingsPicker(routingOption);
+			}
 			syncSettings(routingScope);
-			closeSettingsPicker(routingOption);
-			submitSettings(routingScope, { routing: routingOption.dataset.value });
+			if (chosen === 'randomised' && windowInput) windowInput.focus();
+			submitSettings(routingScope, { routing: chosen });
 		}
 	});
 
@@ -728,7 +977,7 @@ templ objectiveSortableScript() {
 			applyObjectiveSearch();
 			return;
 		}
-		if (!evt.target.matches('.settings-min, .settings-max')) return;
+		if (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;
 		var scope = settingsScope(evt.target);
 		if (scope) syncSettings(scope);
 	});

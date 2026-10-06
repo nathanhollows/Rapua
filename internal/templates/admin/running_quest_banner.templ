@@ -142,9 +142,11 @@ templ questLockScript(quest models.Quest) {
 			main.querySelectorAll('[data-lock-hide]').forEach((el) => {
 				el.classList.toggle('hidden', on);
 			});
+			// Dimmed as well as inert: outlined buttons that ignore clicks look broken.
 			main.querySelectorAll('details.settings-picker').forEach((el) => {
 				if (on) el.open = false;
 				el.classList.toggle('pointer-events-none', on);
+				el.classList.toggle('opacity-50', on);
 			});
 			main.querySelectorAll('.objective-drag-handle').forEach((el) => {
 				el.classList.toggle('cursor-not-allowed', on);
@@ -160,8 +162,10 @@ templ questLockScript(quest models.Quest) {
 			const button = document.getElementById('quest-unlock');
 			if (!main || !button) return;
 
-			// The page nav is the row holding the page title.
-			const header = main.querySelector('h1')?.parentElement;
+			// Beside the title: loose in the justify-between row it pushes the
+			// primary action to the middle.
+			const header = main.querySelector('#quest-title-group')
+				|| main.querySelector('h1')?.parentElement;
 			if (header) header.appendChild(button);
 
 			window.questLock.set(true);

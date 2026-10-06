@@ -8,14 +8,6 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// lintCountLabel keeps the panel readable at one as well as at many.
-func lintCountLabel(n int) string {
-	if n == 1 {
-		return "1 objective"
-	}
-	return fmt.Sprintf("%d objectives", n)
-}
-
 // QuestLint reports what is wrong with the quest itself: the start and finish
 // pages, the settings, and the shape of the tree. What is wrong with a
 // particular objective is marked on that objective, where it can be acted on.
@@ -43,7 +35,6 @@ templ QuestLint(lint services.QuestLint) {
 		if len(lint.Quest.Warnings) > 0 {
 			@questLintList("warning", "triangle-alert", "Worth a look", lint.Quest.Warnings)
 		}
-		@questLintCounts(lint)
 	</div>
 }
 
@@ -59,29 +50,6 @@ templ questLintList(style, iconName, heading string, diagnostics []game.LintDiag
 			</ul>
 		</div>
 	</div>
-}
-
-// questLintCounts counts the rows carrying a badge rather than repeating what
-// those badges say. Without it a clean-looking header and a broken objective
-// forty rows down read the same, which is the one thing a tree this long
-// cannot be asked at a glance.
-templ questLintCounts(lint services.QuestLint) {
-	if lint.ObjectivesWithErrors() > 0 || lint.ObjectivesWithWarnings() > 0 {
-		<p class="flex flex-wrap items-center gap-4 text-sm mb-3">
-			if lint.ObjectivesWithErrors() > 0 {
-				<span class="flex items-center gap-1.5 text-error">
-					@icon("circle-alert", templ.Attributes{"class": "w-4 h-4"})
-					Needs fixing: { lintCountLabel(lint.ObjectivesWithErrors()) }
-				</span>
-			}
-			if lint.ObjectivesWithWarnings() > 0 {
-				<span class="flex items-center gap-1.5 text-warning">
-					@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4"})
-					Worth a look: { lintCountLabel(lint.ObjectivesWithWarnings()) }
-				</span>
-			}
-		</p>
-	}
 }
 
 // objectiveLintBadge marks a row the linter has something to say about, and

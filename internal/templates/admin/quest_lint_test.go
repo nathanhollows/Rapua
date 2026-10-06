@@ -49,7 +49,9 @@ func TestQuestLint_ShowsOnlyWhatBelongsToNoRow(t *testing.T) {
 	rendered := out.String()
 	assert.Contains(t, rendered, "start page problem")
 	assert.NotContains(t, rendered, "a row problem", "that one is badged on its row")
-	assert.Contains(t, rendered, "Needs fixing: 1 objective", "and counted here")
+	// No row count: it made the panel appear and vanish as lint changed,
+	// shifting the tree under the cursor.
+	assert.NotContains(t, rendered, "1 objective")
 }
 
 // The system page editors take their own share and nobody else's: a missing
