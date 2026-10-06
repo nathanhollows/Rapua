@@ -282,6 +282,15 @@ func (s *CheckInService) ObjectiveIsReachable(
 	return false, nil
 }
 
+// GetObjectiveByID finds an objective by id, for the places that hold a parent
+// reference rather than a slug. Like the slug lookup it asks nothing about
+// reachability: the caller has already decided what it is allowed to show.
+func (s *CheckInService) GetObjectiveByID(
+	ctx context.Context, objectiveID string,
+) (*models.Objective, error) {
+	return s.objectiveRepo.GetByID(ctx, objectiveID)
+}
+
 // GetObjectiveByQuestIDAndSlug finds an objective by slug without asking
 // whether a run can reach it. Drafts included: preview is for looking at
 // content mid-edit, and ObjectiveIsReachable is what gates a real player.

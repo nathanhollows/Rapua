@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/nathanhollows/Rapua/v8/blocks"
+
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/nathanhollows/Rapua/v8/navigation"
@@ -39,6 +41,30 @@ type PlayerObjectiveView struct {
 	// the only thing that means the run is finished. An empty available list
 	// does not: everything below may simply be waiting on a depends.
 	Complete bool
+	// Objectives is the quest's whole tree. The frontier is flat by design, and
+	// a row in it carries only its parent's ID, so the player view needs this
+	// to draw the section a row came out of.
+	Objectives []models.Objective
+	// HasProof names the objectives whose proof gates them. One without has
+	// nothing to do but be opened, which the player view says rather than
+	// promising work that is not there.
+	HasProof map[string]bool
+	// FirstProofBlock names, per objective on offer, the first block in its
+	// proof that asks the player for something. The row draws that block's own
+	// icon, so a card says what is coming without anyone classifying
+	// objectives into kinds.
+	FirstProofBlock map[string]string
+	// OfferedProof names every block type the frontier asks for, which is what
+	// the quest screen's own actions are derived from: a scanner is offered
+	// because something on offer can be scanned.
+	OfferedProof map[string]bool
+}
+
+// Offers reports whether anything the run can work on now asks for this kind of
+// block, which is how the quest screen decides what to put under the player's
+// thumb.
+func (v PlayerObjectiveView) Offers(blockType string) bool {
+	return v.OfferedProof[blockType]
 }
 
 // NewNavigationService creates a NavigationService.
@@ -79,10 +105,23 @@ func (s *NavigationService) GetPlayerObjectiveView(
 	}
 
 	frontier := navigation.ComputeFrontier(objectives, state, complete)
+
+	// Icons are looked up only for what is on offer. A missing icon costs a
+	// row its glyph and nothing else, so a failure here is logged rather than
+	// taken out on a page that is otherwise fine.
+	icons, offered, err := s.proofIcons(ctx, frontier.Available, blocks.Registry())
+	if err != nil {
+		s.logger.WarnContext(ctx, "loading proof blocks", "error", err, "run", team.Code)
+	}
+
 	return &PlayerObjectiveView{
-		Settings: team.Quest.Settings,
-		Frontier: frontier,
-		Complete: rootComplete(objectives, frontier),
+		Settings:        team.Quest.Settings,
+		Frontier:        frontier,
+		Complete:        rootComplete(objectives, frontier),
+		Objectives:      objectives,
+		HasProof:        state.HasProofBlocks,
+		FirstProofBlock: icons,
+		OfferedProof:    offered,
 	}, nil
 }
 

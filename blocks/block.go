@@ -178,6 +178,17 @@ func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
 	return false
 }
 
+// IconSVGForType returns the icon a block type draws itself with, for the
+// places that hold a type string rather than a block. Empty for a type nothing
+// registered, which a caller renders as nothing rather than guessing.
+func IconSVGForType(blockType string) string {
+	registration := blockRegistry[blockType]
+	if registration == nil {
+		return ""
+	}
+	return registration.Prototype.GetIconSVG()
+}
+
 // Registry returns a game.BlockRegistry backed by this package's block registry.
 // Used by the linter and import service so they don't need to import blocks/ directly.
 func Registry() game.BlockRegistry {
