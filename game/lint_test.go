@@ -109,7 +109,6 @@ func validDoc() *game.GameDoc {
 				{
 					Slug:    "stage-one",
 					Title:   "Stage One",
-					Color:   "primary",
 					Routing: game.RouteStrategyFreeRoam,
 					Children: []game.ObjectiveDoc{
 						{

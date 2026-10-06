@@ -117,11 +117,6 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 		changed = true
 	}
 
-	if data.Color != nil && *data.Color != objective.Color {
-		objective.Color = *data.Color
-		changed = true
-	}
-
 	return changed, nil
 }
 

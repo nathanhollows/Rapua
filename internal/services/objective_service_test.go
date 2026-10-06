@@ -386,7 +386,6 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 		MaxNext:     intPtr(2),
 		Band:        &services.BandUpdate{Min: intPtr(1), Max: intPtr(2)},
 		FinishLabel: strPtr("Done"),
-		Color:       strPtr("amber"),
 	}
 	require.NoError(t, service.UpdateObjective(ctx, &section, settings))
 
@@ -402,7 +401,6 @@ func TestObjectiveService_UpdateObjective_DraftOnlyLeavesSettingsUntouched(t *te
 	require.NotNil(t, reloaded.ChildrenMax)
 	assert.Equal(t, 2, *reloaded.ChildrenMax)
 	assert.Equal(t, "Done", reloaded.FinishLabel)
-	assert.Equal(t, "amber", reloaded.Color)
 }
 
 // A band above the child count can never be met, so the service refuses it

@@ -40,7 +40,6 @@ type ObjectiveDoc struct {
 	// field existed, or written by other tooling) leaves the stored state
 	// alone; only "draft": false publishes something.
 	Draft  *bool               `json:"draft,omitempty"`
-	Color  string              `json:"color,omitempty"`
 	Proof  ObjectiveContextDoc `json:"proof"`
 	Reveal ObjectiveContextDoc `json:"reveal"`
 

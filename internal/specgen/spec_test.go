@@ -239,3 +239,51 @@ func TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks(t *testing.T) {
 		}
 	}
 }
+
+func jsonFieldNames(t reflect.Type) map[string]bool {
+	names := make(map[string]bool, t.NumField())
+	for i := range t.NumField() {
+		field := t.Field(i)
+		if field.Anonymous {
+			continue
+		}
+		name := strings.Split(field.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
+		}
+		names[name] = true
+	}
+	return names
+}
+
+// TestSpecStaleness_ObjectiveFields checks both directions because the spec's
+// field list is hand-written and drifts when ObjectiveDoc changes.
+func TestSpecStaleness_ObjectiveFields(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+
+	var documented map[string]bool
+	for _, field := range spec.Document.Fields {
+		if field.Name != "objective" {
+			continue
+		}
+		documented = make(map[string]bool, len(field.Fields))
+		for _, f := range field.Fields {
+			documented[f.Name] = true
+		}
+	}
+	if documented == nil {
+		t.Fatal(`GenerateFullSpec().Document.Fields has no "objective" entry`)
+	}
+
+	actual := jsonFieldNames(reflect.TypeOf(game.ObjectiveDoc{}))
+	for name := range actual {
+		if !documented[name] {
+			t.Errorf("ObjectiveDoc has field %q, which the objective spec does not document", name)
+		}
+	}
+	for name := range documented {
+		if !actual[name] {
+			t.Errorf("the objective spec documents %q, which ObjectiveDoc no longer has", name)
+		}
+	}
+}

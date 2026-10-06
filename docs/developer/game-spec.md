@@ -122,11 +122,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "required": true
           },
           {
-            "name": "color",
-            "type": "string",
-            "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
-          },
-          {
             "name": "draft",
             "type": "bool",
             "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
@@ -210,11 +205,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "type": "string",
             "description": "Display title shown to players.",
             "required": true
-          },
-          {
-            "name": "color",
-            "type": "string",
-            "description": "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart."
           },
           {
             "name": "draft",

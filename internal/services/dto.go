@@ -41,7 +41,6 @@ type ObjectiveUpdateData struct {
 	// not express: nil meant both "unchanged" and "cleared".
 	Band        *BandUpdate
 	FinishLabel *string
-	Color       *string
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.

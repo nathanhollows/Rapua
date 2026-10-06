@@ -115,7 +115,6 @@ func TestGameDoc_RoundTrip(t *testing.T) {
 				{
 					Slug:        "east-wing",
 					Title:       "East Wing",
-					Color:       "primary",
 					Routing:     game.RouteStrategyFreeRoam,
 					ChildrenMin: &minChildren,
 					FinishLabel: "Leave the wing",

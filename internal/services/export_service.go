@@ -176,7 +176,6 @@ func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.Obj
 		Slug:        obj.Slug,
 		Title:       obj.Title,
 		Draft:       &obj.Draft,
-		Color:       obj.Color,
 		Routing:     obj.Routing,
 		ChildrenMin: obj.ChildrenMin,
 		ChildrenMax: obj.ChildrenMax,

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -127,15 +126,8 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allObjectives, err := h.objectiveService.FindByQuestID(r.Context(), user.CurrentQuestID)
-	if err != nil {
-		h.handleError(w, r, "ObjectiveEdit: finding quest objectives", "Error finding objective", "error", err)
-		return
-	}
-
-	// Whole-quest lint for one objective's worth of it: a band is only wrong
-	// relative to its children, and a depends only dangles relative to the
-	// rest of the quest, so neither question can be asked of this row alone.
+	// Whole-quest lint: a band is only wrong relative to its children, so this
+	// row cannot be judged alone.
 	lintResult, err := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ObjectiveEdit: linting quest",
@@ -144,13 +136,12 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := templates.EditObjectiveData{
-		Settings:       user.CurrentQuest.Settings,
-		Objective:      *objective,
-		ProofBlocks:    proofBlocks,
-		RevealBlocks:   revealBlocks,
-		ChildCount:     publishedChildCount(children),
-		DependsOptions: dependsOptions(allObjectives, objective.ID),
-		Lint:           lintResult,
+		Settings:     user.CurrentQuest.Settings,
+		Objective:    *objective,
+		ProofBlocks:  proofBlocks,
+		RevealBlocks: revealBlocks,
+		ChildCount:   publishedChildCount(children),
+		Lint:         lintResult,
 	}
 
 	c := templates.LockedEditor(user.CurrentQuest, templates.EditObjective(data))
@@ -184,55 +175,6 @@ func parseBandBound(raw string) (*int, error) {
 		return nil, err
 	}
 	return &v, nil
-}
-
-// parseDepends splits on comma only: a "not " prefix must stay inside its
-// entry (see game.ParseDependsName), so whitespace can't also be a separator.
-func parseDepends(raw string) []string {
-	var entries []string
-	for _, part := range strings.Split(raw, ",") {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			entries = append(entries, part)
-		}
-	}
-	return entries
-}
-
-// dependsOptions is sorted so the picker doesn't reshuffle between renders.
-// The objective's own descendants are excluded: naming one is a gate that can
-// never open.
-func dependsOptions(objectives []models.Objective, excludeID string) []string {
-	parentOf := make(map[string]string, len(objectives))
-	for _, obj := range objectives {
-		parentOf[obj.ID] = obj.ParentID
-	}
-	isDescendant := func(id string) bool {
-		return models.HasAncestor(id, excludeID, parentOf)
-	}
-
-	seen := make(map[string]bool)
-	var opts []string
-	add := func(name string) {
-		if name == "" || seen[name] {
-			return
-		}
-		seen[name] = true
-		opts = append(opts, name)
-	}
-	for _, obj := range objectives {
-		if obj.ID != excludeID && !isDescendant(obj.ID) {
-			add(obj.Slug)
-		}
-		for _, s := range obj.ProofSets {
-			add(s)
-		}
-		for _, s := range obj.RevealSets {
-			add(s)
-		}
-	}
-	slices.Sort(opts)
-	return opts
 }
 
 func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
@@ -285,17 +227,14 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		Routing:     presentStrPtr(r, "routing"),
 		MaxNext:     presentIntPtr(r, "max_next", maxNext),
 		Band:        bandUpdate(r, minBound, maxBound),
-		FinishLabel: strPtr(r.FormValue("finish_label")),
-		Depends:     parseDepends(r.FormValue("depends")),
-		Color:       strPtr(r.FormValue("color")),
+		FinishLabel: presentStrPtr(r, "finish_label"),
 	}
 
 	err = h.objectiveService.UpdateObjective(r.Context(), objective, data)
 	if errors.Is(err, services.ErrParkingBreaksBand) ||
 		errors.Is(err, services.ErrCannotDraftRoot) ||
 		errors.Is(err, services.ErrInvalidRouting) ||
-		errors.Is(err, services.ErrInvalidBand) ||
-		errors.Is(err, services.ErrDependsOnDescendant) {
+		errors.Is(err, services.ErrInvalidBand) {
 		// The visibility button flips before the server has agreed, so a
 		// refusal has to put the stored state back. Otherwise the form keeps
 		// submitting what was just rejected and nothing saves again.
@@ -371,10 +310,10 @@ func (h *Handler) ObjectiveSettingsPost(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := services.ObjectiveUpdateData{
-		Routing: presentStrPtr(r, "routing"),
-		MaxNext: presentIntPtr(r, "max_next", maxNext),
-		Band:    bandUpdate(r, minBound, maxBound),
-		Color:   strPtr(r.FormValue("color")),
+		Routing:     presentStrPtr(r, "routing"),
+		MaxNext:     presentIntPtr(r, "max_next", maxNext),
+		Band:        bandUpdate(r, minBound, maxBound),
+		FinishLabel: presentStrPtr(r, "finish_label"),
 	}
 
 	err = h.objectiveService.UpdateObjective(r.Context(), objective, data)

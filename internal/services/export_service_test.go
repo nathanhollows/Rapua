@@ -203,7 +203,6 @@ func TestExportService_ExportInstance_NestedSection(t *testing.T) {
 		ParentID: root.ID,
 		Slug:     "wave-1",
 		Title:    "Wave 1",
-		Color:    "primary",
 		Routing:  game.RouteStrategyOrdered,
 	}
 	insertObjective(t, dbc, section)
@@ -219,7 +218,6 @@ func TestExportService_ExportInstance_NestedSection(t *testing.T) {
 	assert.Equal(t, section.ID, child.ID)
 	assert.Equal(t, "wave-1", child.Slug)
 	assert.Equal(t, "Wave 1", child.Title)
-	assert.Equal(t, "primary", child.Color)
 	require.Len(t, child.Children, 1)
 	assert.Equal(t, "spot", child.Children[0].Slug)
 }

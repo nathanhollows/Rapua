@@ -221,7 +221,6 @@ func TestImportService_ImportCreate_WithSection(t *testing.T) {
 		{
 			Slug:    "wave-1",
 			Title:   "Wave 1",
-			Color:   "primary",
 			Routing: game.RouteStrategyOrdered,
 			Children: []game.ObjectiveDoc{
 				{Slug: "checkpoint-a", Title: "Checkpoint A"},
@@ -244,7 +243,6 @@ func TestImportService_ImportCreate_WithSection(t *testing.T) {
 	}
 	section := bySlug["wave-1"]
 	assert.Equal(t, "Wave 1", section.Title)
-	assert.Equal(t, "primary", section.Color)
 	assert.Equal(t, game.RouteStrategyOrdered, section.Routing)
 	assert.Equal(t, section.ID, bySlug["checkpoint-a"].ParentID)
 }

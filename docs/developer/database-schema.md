@@ -81,7 +81,6 @@ the quest rather than a place in it and is never rendered to a player.
 | position | int | Order among siblings. Unique with parent_id, so two siblings cannot share one |
 | slug | string | URL-safe slug, unique per quest |
 | title | string | Name of the objective |
-| color | string | Accent colour, for a section heading its children |
 | draft | bool | Held out of play along with everything beneath it, without moving any of it |
 | routing | string | How children are offered: `ordered`, `free_roam` or `randomised`. Inert without children |
 | children_min | int | Completion band lower bound. NULL and 0 differ: see the [game spec](/docs/developer/game-spec) |

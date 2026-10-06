@@ -214,7 +214,6 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 // screens that show where a player's outstanding work belongs.
 type ObjectiveSectionInfo struct {
 	SectionTitle string
-	SectionColor string
 }
 
 // BuildObjectiveSectionMap maps each objective to the section holding it. The
@@ -239,10 +238,7 @@ func (s *RunService) BuildObjectiveSectionMap(
 		if !ok || parent.ParentID == "" {
 			continue
 		}
-		sections[obj.ID] = ObjectiveSectionInfo{
-			SectionTitle: parent.Title,
-			SectionColor: parent.Color,
-		}
+		sections[obj.ID] = ObjectiveSectionInfo{SectionTitle: parent.Title}
 	}
 	return sections, nil
 }

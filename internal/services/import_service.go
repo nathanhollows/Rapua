@@ -294,7 +294,6 @@ func (s *ImportService) createObjective(
 		Slug:        objDoc.Slug,
 		Title:       objDoc.Title,
 		Draft:       objDoc.IsDraft(),
-		Color:       objDoc.Color,
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
 		ChildrenMax: objDoc.ChildrenMax,
@@ -525,7 +524,6 @@ func (s *ImportService) reconcileObjective(
 	if objDoc.Draft != nil {
 		existingObj.Draft = *objDoc.Draft
 	}
-	existingObj.Color = objDoc.Color
 	existingObj.Routing = objDoc.Routing
 	existingObj.ChildrenMin = objDoc.ChildrenMin
 	existingObj.ChildrenMax = objDoc.ChildrenMax

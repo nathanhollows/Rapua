@@ -328,7 +328,6 @@ func TestObjectiveRepository_BandBoundsRoundTrip(t *testing.T) {
 		QuestID:     parents.QuestID,
 		Slug:        "wing",
 		Title:       "Wing",
-		Color:       "primary",
 		Routing:     "free_roam",
 		ChildrenMin: &zero,
 		ChildrenMax: &three,
@@ -344,7 +343,6 @@ func TestObjectiveRepository_BandBoundsRoundTrip(t *testing.T) {
 	assert.Equal(t, 0, *got.ChildrenMin, "an explicit zero must not read back as absent")
 	require.NotNil(t, got.ChildrenMax)
 	assert.Equal(t, 3, *got.ChildrenMax)
-	assert.Equal(t, "primary", got.Color)
 	assert.Equal(t, 2, got.MaxNext)
 	assert.Equal(t, "Leave the wing", got.FinishLabel)
 }

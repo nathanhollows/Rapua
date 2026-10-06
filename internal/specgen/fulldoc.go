@@ -87,11 +87,6 @@ func documentSpec() ObjectSpec { //nolint:funlen
 		},
 		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
 		{
-			Name:        "color",
-			Type:        "string",
-			Description: "Display colour (e.g. \"primary\", \"secondary\"), used to tell concurrent branches apart.",
-		},
-		{
 			Name: "draft",
 			Type: "bool",
 			Description: "Holds this objective out of play along with everything beneath it, without " +

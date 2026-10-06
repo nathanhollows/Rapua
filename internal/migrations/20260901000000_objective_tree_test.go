@@ -18,10 +18,9 @@ func m20260901000000_addedColumns() []string {
 	return names
 }
 
-// The full auto-migrate in setupDB has already run this, so the up path is
-// asserted against its real result rather than a hand-built schema.
+// Stops at this migration because later ones retire columns it adds.
 func TestObjectiveTreeMigration_AddsTheTreeColumns(t *testing.T) {
-	dbc := m20260827_setupDB(t)
+	dbc := m20260827_setupDBThrough(t, "20260901000000")
 	ctx := context.Background()
 
 	for _, name := range m20260901000000_addedColumns() {

@@ -23,7 +23,6 @@ type Objective struct {
 	Draft bool   `bun:"draft,type:boolean"`
 	Slug  string `bun:"slug,type:varchar(255)"`
 	Title string `bun:"title,type:varchar(255)"`
-	Color string `bun:"color,type:varchar(255)"`
 
 	// Routing, the band, MaxNext and FinishLabel all govern children, and mean
 	// nothing on an objective without any.
