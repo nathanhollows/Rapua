@@ -12,6 +12,20 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
+// containerTitle names the section an objective sits in, for the breadcrumb. A
+// failed lookup only costs the crumb its words, so it does not fail the page.
+func (h *PlayerHandler) containerTitle(r *http.Request, parentID string) string {
+	if parentID == "" {
+		return ""
+	}
+	parent, err := h.checkInService.GetObjectiveByID(r.Context(), parentID)
+	if err != nil {
+		h.logger.WarnContext(r.Context(), "loading breadcrumb parent", "error", err.Error(), "objective", parentID)
+		return ""
+	}
+	return parent.Title
+}
+
 // ObjectiveView shows the page for a specific objective: proof content while
 // unproven, reveal content once proof completes.
 func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
@@ -123,14 +137,50 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 
 	data := templates.ObjectiveViewData{
 		Settings: team.Quest.Settings,
+		Title:    objective.Title,
 		Zone:     zone,
 		Blocks:   contentBlocks,
 		States:   blockStates,
 	}
+	// Only the reveal reads Next, so proof pages skip the frontier lookup.
+	if zone == blocks.ContextObjectiveReveal {
+		data.Next = h.nextUp(r, team, objective.ID)
+	}
+	h.renderObjective(w, r, team, objective, data)
+}
 
-	c := templates.ObjectiveView(data)
-	err = templates.Layout(c, objective.Title, team.Messages).Render(r.Context(), w)
+// nextUp recomputes the frontier rather than reusing one from earlier, because
+// clearing this objective can have opened something. A failure only costs the
+// reveal its forward offer: the way back to the list is always on the page.
+func (h *PlayerHandler) nextUp(
+	r *http.Request, team *models.Run, currentID string,
+) templates.NextUp {
+	view, err := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
 	if err != nil {
+		h.logger.WarnContext(r.Context(), "loading next objective", "error", err.Error(), "team", team.Code)
+		return templates.NextUp{}
+	}
+	for _, candidate := range view.Frontier.Available {
+		if candidate.ID != currentID {
+			return templates.NextUp{Title: candidate.Title, Slug: candidate.Slug}
+		}
+	}
+	return templates.NextUp{}
+}
+
+// renderObjective wraps the page in the run's chrome.
+func (h *PlayerHandler) renderObjective(
+	w http.ResponseWriter,
+	r *http.Request,
+	team *models.Run,
+	objective *models.Objective,
+	data templates.ObjectiveViewData,
+) {
+	page := templates.ObjectiveView(data)
+	chrome := templates.ObjectiveChrome(*team, h.containerTitle(r, objective.ParentID))
+	if err := templates.AppLayout(
+		page, chrome, objective.Title, team.Messages,
+	).Render(r.Context(), w); err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering objective view", "error", err.Error())
 	}
 }

@@ -7,19 +7,62 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
+// NextUp is the objective to offer after this one. Zero when the frontier has
+// nothing left, as on the last reveal of a quest.
+type NextUp struct {
+	Title string
+	Slug  string
+}
+
 type ObjectiveViewData struct {
 	Settings models.QuestSettings
-	Zone     game.BlockContext
-	Blocks   blocks.Blocks
-	States   map[string]blocks.PlayerState
+	// Title is the task being asked for, not a label for a place.
+	Title  string
+	Zone   game.BlockContext
+	Blocks blocks.Blocks
+	States map[string]blocks.PlayerState
+	// Next is read on the reveal only: the way on from proof is to do the task.
+	Next NextUp
 }
 
 templ ObjectiveView(data ObjectiveViewData) {
-	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+	<div class="flex flex-col gap-6">
+		<h1 class="text-xl font-bold leading-snug text-pretty">{ data.Title }</h1>
 		<div id="objective-zone" class="flex flex-col gap-8">
 			@objectiveZoneContents(data)
 		</div>
+		if data.Zone == game.ContextObjectiveReveal {
+			@revealFooter(data.Next)
+		}
 	</div>
+}
+
+// revealFooter offers the next task rather than sending the player back to the
+// list: the frontier was just recomputed, so the app knows what is next. The
+// way back stays, quieter, for when the offer is not wanted.
+templ revealFooter(next NextUp) {
+	<div class="flex flex-col gap-2 pt-2">
+		if next.Slug != "" {
+			<a href={ templ.URL("/objective/" + next.Slug) } hx-boost="true" class="btn btn-primary">
+				<span class="truncate">{ next.Title }</span>
+				@icon("arrow-right", templ.Attributes{"class": "w-4 h-4 shrink-0"})
+			</a>
+		}
+		<a href="/objectives" hx-boost="true" class="btn btn-ghost btn-sm">
+			@icon("compass", templ.Attributes{"class": "w-4 h-4"})
+			Back to the quest
+		</a>
+	</div>
+}
+
+// ObjectiveChrome names the parent above the task. A task with no parent gets a
+// plain way back to the quest.
+func ObjectiveChrome(team models.Run, parentTitle string) AppChrome {
+	back := parentTitle
+	if back == "" {
+		back = "Quest"
+	}
+	return AppChrome{Run: team, Active: "quest", BackHref: "/objectives", Back: back}
 }
 
 templ ObjectiveZoneUpdate(data ObjectiveViewData) {
