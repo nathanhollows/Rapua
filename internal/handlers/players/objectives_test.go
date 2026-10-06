@@ -202,5 +202,8 @@ func TestPlayerHandler_Journal_EmptyWhenNothingCompleted(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NotContains(t, w.Body.String(), "Find the key")
-	assert.Contains(t, w.Body.String(), "Nothing to show yet")
+	// What the empty state has to do, rather than the words it does it in: say
+	// there is nothing, and offer the way to the thing that fills it.
+	assert.Contains(t, w.Body.String(), "Nothing here yet")
+	assert.Contains(t, w.Body.String(), `href="/objectives"`)
 }

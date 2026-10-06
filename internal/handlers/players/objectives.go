@@ -48,7 +48,9 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 	}
 
 	template := templates.Objectives(data)
-	template = templates.Layout(template, "Objectives", team.Messages)
+	template = templates.AppLayout(
+		template, templates.QuestChrome(*team, view), "Quest", team.Messages,
+	)
 	err = template.Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
@@ -131,7 +133,9 @@ func (h *PlayerHandler) Journal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Journal(*team, completed)
-	err = templates.Layout(c, "My Journal", team.Messages).Render(r.Context(), w)
+	err = templates.AppLayout(
+		c, templates.JournalChrome(*team), "Journal", team.Messages,
+	).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering journal", "error", err.Error())
 	}

@@ -6,74 +6,169 @@ import (
 	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
-// finishLabel is what the button on a finishable section says. An author may
-// name it; otherwise it says the plainest true thing.
-func finishLabel(objective models.Objective) string {
-	if objective.FinishLabel != "" {
-		return objective.FinishLabel
-	}
-	return "Finish"
-}
-
 type ObjectivesParams struct {
 	Run  models.Run
 	View *services.PlayerObjectiveView
 }
 
-// Objectives is Next's Objective-built quest counterpart. Unlike /next, it renders
-// no block content: just each objective's title linking through to its own
-// proof/reveal page, per the deliberate "lighter than /next" scope decision.
+// Objectives is the quest screen: what the run can work on now, grouped under
+// the section each row came out of. The frontier is flat, so without grouping
+// three parts of one task read as three unrelated tasks.
 templ Objectives(data ObjectivesParams) {
-	<div class="sm:mx-auto sm:w-full sm:max-w-sm">
-		@icon("compass", templ.Attributes{"class": "w-16 h-16 m-auto"})
-		<h2
-			class="mt-5 mb-10 text-center text-2xl font-bold leading-9 tracking-tight"
-		>
-			Next objectives
-		</h2>
-		if len(data.View.Frontier.Available) == 0 {
-			<div role="alert" class="alert">
-				@icon("circle-alert", templ.Attributes{"class": "w-5 h-5 text-info"})
-				<span>Nothing to show right now.</span>
-			</div>
-		} else {
-			<div class="w-full join join-vertical">
-				for _, objective := range data.View.Frontier.Available {
-					if data.View.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
-						<div class="flex flex-row justify-start items-center gap-2 bg-base-200 p-4 w-full join-item border border-base-300">
-							@icon("flag", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
-							<span class="break-after-auto wrap-break-word grow">
-								{ objective.Title }
-							</span>
-							<button
-								hx-post={ "/objective/" + objective.Slug + "/finish" }
-								hx-swap="none"
-								class="btn btn-sm btn-neutral"
-							>
-								{ finishLabel(objective) }
-							</button>
-						</div>
-					} else {
-						<a
-							href={ templ.URL("/objective/" + objective.Slug) }
-							hx-boost="true"
-							class="flex flex-row justify-start items-center gap-2 bg-base-200 hover:bg-base-300 p-4 w-full join-item border border-base-300"
-						>
-							@icon("target", templ.Attributes{"class": "inline-block mr-2 min-w-5 h-5"})
-							<span class="break-after-auto wrap-break-word grow">
-								{ objective.Title }
-							</span>
-						</a>
+	{{ view := BuildQuestView(data.View) }}
+	if len(view.Groups) == 0 {
+		<div role="alert" class="alert alert-info alert-soft">
+			@icon("hourglass", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+			<span>Nothing to do right now. Check back once your team finishes something.</span>
+		</div>
+	} else {
+		<div class="flex flex-col gap-4">
+			for _, group := range view.Groups {
+				if group.IsSection {
+					@questSection(group)
+				} else {
+					for _, row := range group.Rows {
+						@questRow(row)
 					}
 				}
-			</div>
-		}
-		<div id="player-nav" class="flex flex-row justify-center mt-10">
-			<a href="/journal" hx-boost="true" class="btn btn-ghost btn-outline">
-				@icon("book-check", templ.Attributes{})
-				My Journal
-			</a>
+			}
+			if data.View.Offers("scan") {
+				@questScanAction()
+			}
 		</div>
-		@footer(data.Run)
-	</div>
+	}
+	@foldScript()
+}
+
+// questScanAction lets a player scan a code without first finding its card.
+// It sits in the flow rather than floating, since a pinned bar would hide the
+// last row. /scan checks one code against every objective on offer.
+templ questScanAction() {
+	<a href="/scan" hx-boost="true" class="btn btn-outline btn-primary btn-block">
+		@icon("scan-qr-code", templ.Attributes{"class": "w-5 h-5"})
+		Scan a code
+	</a>
+}
+
+// foldScript keeps folds on the device only. They are a reading position, not
+// progress, so nothing server-side should read them.
+templ foldScript() {
+	<script>
+	(() => {
+		const KEY = "rapua.folded";
+		const read = () => {
+			try { return new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); }
+			catch { return new Set(); }
+		};
+		const write = (set) => {
+			// Storage can be unavailable or full; a lost fold just reopens.
+			try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch {}
+		};
+
+		const apply = () => {
+			const folded = read();
+			document.querySelectorAll(".objective-fold").forEach((el) => {
+				el.open = !folded.has(el.dataset.fold);
+			});
+		};
+
+		// Delegated, because hx-boost replaces this list on every navigation
+		// and a listener bound to a section would go with it.
+		if (!window.__objectiveFoldBound) {
+			window.__objectiveFoldBound = true;
+			document.addEventListener("toggle", (evt) => {
+				const el = evt.target;
+				if (!el.classList || !el.classList.contains("objective-fold")) return;
+				const folded = read();
+				el.open ? folded.delete(el.dataset.fold) : folded.add(el.dataset.fold);
+				write(folded);
+			}, true);
+			document.body.addEventListener("htmx:afterSwap", apply);
+		}
+		apply();
+	})();
+	</script>
+}
+
+// questSection groups the rows that came out of one container and states its
+// routing in a player's words ("Three picked for your team"), never as
+// "randomised". It folds rather than trimming, so every row the author wrote
+// stays and folding is reversible.
+//
+// A <details> so it works before any script runs and keeps keyboard behaviour.
+// Open by default so a player sees what is in the quest.
+templ questSection(group QuestGroup) {
+	<details open class="objective-fold card card-border border-base-300 bg-base-100" data-fold={ group.ID }>
+		<summary class="list-none [&::-webkit-details-marker]:hidden cursor-pointer p-4 flex items-start gap-3">
+			<div class="grow flex flex-col gap-0.5">
+				<h2 class="font-bold text-base leading-snug text-pretty">{ group.Title }</h2>
+				if group.Rule != "" {
+					<p class="text-xs opacity-60">{ group.Rule }</p>
+				}
+			</div>
+			@icon("chevron-down", templ.Attributes{
+				"class": "w-4 h-4 shrink-0 mt-1 opacity-40 transition-transform [details[open]_&]:rotate-180",
+			})
+		</summary>
+		<div class="px-4 pb-4 flex flex-col gap-2">
+			for _, row := range group.Rows {
+				@questRow(row)
+			}
+		</div>
+	</details>
+}
+
+// questRow is one objective on offer.
+templ questRow(row QuestRow) {
+	if row.CanFinish {
+		<div class="flex items-center gap-3 rounded-box border border-success/40 bg-success/5 p-3">
+			@icon("flag", templ.Attributes{"class": "w-5 h-5 shrink-0 text-success"})
+			<span class="grow text-sm font-medium text-pretty">{ row.Title }</span>
+			<button
+				type="button"
+				hx-post={ "/objective/" + row.Slug + "/finish" }
+				hx-swap="none"
+				class="btn btn-sm btn-success shrink-0"
+			>
+				{ row.FinishLabel }
+			</button>
+		</div>
+	} else {
+		<a
+			href={ templ.URL("/objective/" + row.Slug) }
+			hx-boost="true"
+			class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3 hover:bg-base-200 transition-colors"
+		>
+			<!-- Derived from the proof's first block, so the row shows what it will
+			ask for rather than an author-chosen marker. -->
+			if row.IconSVG != "" {
+				<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
+					@templ.Raw(row.IconSVG)
+				</span>
+			} else if row.IsDoor {
+				@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-50"})
+			} else {
+				@icon("circle-dot", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-primary"})
+			}
+			<span class="grow text-sm font-medium text-pretty">{ row.Title }</span>
+			@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 mt-0.5 opacity-30"})
+		</a>
+	}
+}
+
+// QuestChrome counts what the run has finished, not what it can see, so the bar
+// measures the quest and not the frontier.
+func QuestChrome(run models.Run, view *services.PlayerObjectiveView) AppChrome {
+	done, total := 0, 0
+	for _, objective := range view.Objectives {
+		// The root is never complete, so counting it would cap the bar short.
+		if objective.ParentID == "" {
+			continue
+		}
+		total++
+		if view.Frontier.StatusOf(objective.ID) == navigation.StatusComplete {
+			done++
+		}
+	}
+	return AppChrome{Run: run, Active: "quest", Done: done, Total: total}
 }
