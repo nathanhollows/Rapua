@@ -245,6 +245,21 @@ func setupPlayerRoutes(
 		r.NotFound(publicHandler.NotFound)
 	})
 
+	router.Route("/team", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
+				adminHandler.GetIdentityService(),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
+			)
+		})
+		r.Get("/", playerHandler.Team)
+		r.NotFound(publicHandler.NotFound)
+	})
+
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
 }
 

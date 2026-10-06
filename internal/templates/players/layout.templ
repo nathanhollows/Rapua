@@ -13,24 +13,7 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 		class="h-full"
 	>
 		<head>
-			<meta charset="UTF-8"/>
-			<meta
-				name="viewport"
-				content="width=device-width, initial-scale=1.0"
-			/>
-			<title>{ title } | Rapua</title>
-			<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
-			<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
-			<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
-			<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
-			<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
-			<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-			<script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous" defer></script>
-			<script src="/static/js/csrf.js"></script>
-			<script src="/static/js/mapbox-satellite-view.js"></script>
-			<script src="/static/js/scan.js" defer></script>
-			<script src="/static/js/geofence.js" defer></script>
-			<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+			@appHead(title)
 		</head>
 		<body class="h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
@@ -72,6 +55,117 @@ templ Messages(messages []models.Notification) {
 			</div>
 		</div>
 	}
+}
+
+// appHead is shared so a change to one layout cannot leave the other behind.
+templ appHead(title string) {
+		<meta charset="UTF-8"/>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>{ title } | Rapua</title>
+		<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
+		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
+		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
+		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
+		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
+		<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+		<script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous" defer></script>
+		<script src="/static/js/csrf.js"></script>
+		<script src="/static/js/mapbox-satellite-view.js"></script>
+		<script src="/static/js/scan.js" defer></script>
+		<script src="/static/js/geofence.js" defer></script>
+		<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+}
+
+// AppChrome is what the status bar and dock need.
+type AppChrome struct {
+	Run models.Run
+	// Active names the dock tab to light: "quest", "journal", "team", or "" on
+	// a page that is on none of them. The dock shows regardless, since one that
+	// comes and goes is more disorienting than one that is always there.
+	Active string
+	// Back and BackHref name the parent above an objective's title. Empty on
+	// the three tabs, which are already the top.
+	Back     string
+	BackHref string
+	// Total of zero hides the progress bar: it has no denominator to show.
+	Done  int
+	Total int
+}
+
+// AppLayout wraps a run in progress. Pre-game pages keep Layout because a dock
+// of dead tabs is worse than none.
+templ AppLayout(contents templ.Component, chrome AppChrome, title string, messages []models.Notification) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			@appHead(title)
+		</head>
+		<body class="min-h-lvh bg-base-200" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
+			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
+			@appTopBar(chrome)
+			<!-- pb-24 clears the fixed dock. -->
+			<main class="mx-auto w-full max-w-md px-4 pt-4 pb-24">
+				@Messages(messages)
+				@contents
+			</main>
+			@appDock(chrome.Active)
+		</body>
+	</html>
+}
+
+// appTopBar carries identity and progress. Only the breadcrumb is a link.
+templ appTopBar(chrome AppChrome) {
+	<header class="sticky top-0 z-20 bg-base-100 border-b border-base-300">
+		<div class="mx-auto w-full max-w-md px-4 py-3 flex flex-col gap-2">
+			if chrome.Back != "" {
+				<a href={ templ.URL(chrome.BackHref) } hx-boost="true" class="flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100">
+					@icon("chevron-left", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
+					<span class="truncate">{ chrome.Back }</span>
+				</a>
+			}
+			<div class="flex items-baseline gap-3">
+				<span class="font-bold text-sm truncate">{ chrome.Run.Quest.Name }</span>
+				<span class="ml-auto shrink-0 text-xs opacity-60 tabular-nums">
+					if chrome.Total > 0 {
+						{ fmt.Sprintf("%d/%d", chrome.Done, chrome.Total) }
+					}
+					if chrome.Run.Quest.Settings.EnablePoints {
+						if chrome.Total > 0 {
+							&nbsp;&middot;&nbsp;
+						}
+						{ fmt.Sprintf("%d pts", chrome.Run.Points) }
+					}
+				</span>
+			</div>
+			if chrome.Total > 0 {
+				<progress class="progress progress-primary h-1" value={ fmt.Sprint(chrome.Done) } max={ fmt.Sprint(chrome.Total) }></progress>
+			}
+		</div>
+	</header>
+}
+
+// appDock is the only navigation, placed where a thumb reaches while walking.
+templ appDock(active string) {
+	<!-- Padding aligns the items with the content column (28rem is max-w-md)
+	without a wrapper, which would break daisyUI's direct-child styling. -->
+	<nav class="dock dock-sm bg-base-100 border-t border-base-300 px-[max(0.5rem,calc((100%-28rem)/2))]">
+		<a href="/objectives" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "quest") }>
+			@icon("compass", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">Quest</span>
+		</a>
+		<a href="/journal" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "journal") }>
+			@icon("book-check", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">Journal</span>
+		</a>
+		<a href="/team" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "team") }>
+			@icon("users", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">Team</span>
+		</a>
+	</nav>
 }
 
 templ footer(team models.Run) {

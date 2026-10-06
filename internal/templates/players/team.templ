@@ -1,0 +1,74 @@
+package templates
+
+import (
+	"fmt"
+
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+type TeamParams struct {
+	Run models.Run
+	// Leaderboard is empty when points are off or the setting hides it, leaving
+	// the page a name and a code.
+	Leaderboard []services.LeaderBoardTeamData
+}
+
+// Team shows the run's name, its join code, and the leaderboard if the quest
+// keeps score.
+templ Team(data TeamParams) {
+	<div class="flex flex-col gap-4">
+		<div class="card card-border border-base-300 bg-base-100">
+			<div class="card-body p-4 gap-3">
+				@teamNameField(data.Run)
+				<div class="flex items-center gap-2 text-xs opacity-60">
+					@icon("hash", templ.Attributes{"class": "w-3.5 h-3.5"})
+					<span class="font-mono tracking-widest">{ data.Run.Code }</span>
+					if data.Run.Quest.Settings.EnablePoints {
+						<span class="ml-auto font-semibold tabular-nums opacity-100">
+							{ fmt.Sprintf("%d pts", data.Run.Points) }
+						</span>
+					}
+				</div>
+			</div>
+		</div>
+		if len(data.Leaderboard) > 0 {
+			<div class="card card-border border-base-300 bg-base-100">
+				<div class="card-body p-4 gap-2">
+					<h2 class="font-bold text-sm">Leaderboard</h2>
+					<ul class="flex flex-col gap-1">
+						for position, entry := range data.Leaderboard {
+							<li class={ "flex items-center gap-3 rounded-box px-2 py-1.5 text-sm",
+								templ.KV("bg-primary/10 font-semibold", entry.Code == data.Run.Code) }>
+								<span class="w-5 shrink-0 text-xs opacity-50 tabular-nums">{ fmt.Sprint(position + 1) }</span>
+								<span class="grow truncate">
+									if entry.Name != "" {
+										{ entry.Name }
+									} else {
+										{ entry.Code }
+									}
+								</span>
+								<span class="shrink-0 tabular-nums">{ fmt.Sprint(entry.Points) }</span>
+							</li>
+						}
+					</ul>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// teamNameField only displays the name: teams are asked for one on the start
+// page.
+templ teamNameField(team models.Run) {
+	if team.Name != "" {
+		<p class="font-bold text-lg leading-snug text-pretty">{ team.Name }</p>
+	} else {
+		<p class="font-bold text-lg leading-snug opacity-50">Your team</p>
+	}
+}
+
+// TeamChrome carries no breadcrumb or progress bar.
+func TeamChrome(team models.Run) AppChrome {
+	return AppChrome{Run: team, Active: "team"}
+}
