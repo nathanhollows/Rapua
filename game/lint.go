@@ -221,6 +221,8 @@ func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
 				"omit it to require all of them", childCount)
 	}
 	if obj.MaxNext > 0 && obj.Routing != RouteStrategyRandomised {
+		// Import only: the editor hides the field once routing moves away, so
+		// the lint service filters this out (importOnly).
 		l.warnf(path+".max_next", "MAX_NEXT_IGNORED",
 			"max_next only applies to %q routing", string(RouteStrategyRandomised))
 	}

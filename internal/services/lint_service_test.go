@@ -442,3 +442,36 @@ func TestLintService_OrphanSubtreeStillGetsContentDiagnostics(t *testing.T) {
 	assert.True(t, result.For(stranded.ID).HasError("BAND_OUT_OF_RANGE"),
 		"and its band is checked like any other, on the row itself")
 }
+
+// MAX_NEXT_IGNORED belongs to import. The editor only shows the randomised
+// window while routing is randomised, so a row carrying one under another
+// strategy got there by import or by switching strategy afterwards: nothing on
+// the page is wrong, and there is no control to clear. A document can still
+// name both, which is worth saying at the point it is read.
+func TestLintService_StaleRandomisedWindowIsNotReported(t *testing.T) {
+	f, cleanup := setupLintService(t)
+	defer cleanup()
+
+	root := f.insert(t, models.Objective{Slug: "root", Routing: models.RouteStrategyFreeRoam})
+	section := f.insert(t, models.Objective{
+		Slug: "section", ParentID: root.ID,
+		Routing: models.RouteStrategyOrdered, MaxNext: 3,
+	})
+	f.insert(t, models.Objective{Slug: "leaf", ParentID: section.ID})
+
+	assert.False(t, f.lint(t).HasWarning("MAX_NEXT_IGNORED"))
+
+	doc := game.GameDoc{
+		Rapua: "v8", Name: "Doc",
+		Structure: game.ObjectiveDoc{
+			Slug: "root", Title: "Root", Routing: game.RouteStrategyFreeRoam,
+			Children: []game.ObjectiveDoc{{
+				Slug: "section", Title: "Section",
+				Routing: game.RouteStrategyOrdered, MaxNext: 3,
+				Children: []game.ObjectiveDoc{{Slug: "leaf", Title: "Leaf"}},
+			}},
+		},
+	}
+	assert.True(t, game.Lint(&doc, blocks.Registry()).HasWarning("MAX_NEXT_IGNORED"),
+		"an import still reads the pair, where the document is the thing being judged")
+}

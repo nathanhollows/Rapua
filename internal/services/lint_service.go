@@ -178,6 +178,35 @@ const (
 // the one thing a broken tree does not have.
 const objectivePrefix = "objective:"
 
+// importOnly names diagnostics about states the editor cannot produce or clear.
+// They stay in the game linter because an imported document can still hit them.
+func importOnly(code string) bool {
+	switch code {
+	// The window field is hidden once routing leaves randomised.
+	case "MAX_NEXT_IGNORED":
+		return true
+	default:
+		return false
+	}
+}
+
+func dropImportOnly(result game.LintResult) game.LintResult {
+	return game.LintResult{
+		Errors:   actionable(result.Errors),
+		Warnings: actionable(result.Warnings),
+	}
+}
+
+func actionable(diagnostics []game.LintDiag) []game.LintDiag {
+	var kept []game.LintDiag
+	for _, diag := range diagnostics {
+		if !importOnly(diag.Code) {
+			kept = append(kept, diag)
+		}
+	}
+	return kept
+}
+
 // LintQuest reports what is wrong with a quest as stored.
 //
 // Only the absence of a single root stops the document rules running, because
@@ -267,7 +296,7 @@ func (s *LintService) LintQuest(ctx context.Context, questID string) (QuestLint,
 	result := game.Lint(doc, s.registry)
 	result.Errors = append(result.Errors, structural.Errors...)
 	result.Warnings = append(result.Warnings, structural.Warnings...)
-	return groupByObjective(result, doc.Structure, idBySlug, root.ID), nil
+	return groupByObjective(dropImportOnly(result), doc.Structure, idBySlug, root.ID), nil
 }
 
 // groupByObjective attaches each diagnostic to the row it is about, leaving
