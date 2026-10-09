@@ -12,6 +12,9 @@ import "github.com/nathanhollows/Rapua/v8/models"
 
 // LockedEditor prefixes the lock onto the pages the route middleware guards.
 // Elsewhere the warning would only teach people to ignore it.
+//
+// The scope marker lets the lock tell editor pages apart after an hx-boost
+// navigation, which keeps the lock's state and listeners alive across pages.
 func LockedEditor(quest models.Quest, contents templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -33,11 +36,19 @@ func LockedEditor(quest models.Quest, contents templ.Component) templ.Component 
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-quest-lock-scope class=\"contents\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = questLock(quest).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = contents.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -49,7 +60,7 @@ func LockedEditor(quest models.Quest, contents templ.Component) templ.Component 
 	})
 }
 
-// questLock is one button and a confirmation.
+// questLock is the unlock control and its confirmation.
 func questLock(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -72,15 +83,23 @@ func questLock(quest models.Quest) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if quest.GetStatus() == models.Active {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button type=\"button\" id=\"quest-unlock\" class=\"btn btn-sm btn-outline btn-info\" onclick=\"confirm_unlock_modal.showModal()\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Both states are rendered and the script toggles them. Restyling one\n\t\tbutton in script left it with neither state's classes. --> <span id=\"quest-unlock\" class=\"inline-flex items-center shrink-0\"><span data-lock-state=\"locked\" class=\"tooltip tooltip-bottom\" data-tip=\"Editing is locked while the game is running. Click to unlock.\"><button type=\"button\" class=\"btn btn-sm btn-warning btn-outline gap-1.5\" onclick=\"confirm_unlock_modal.showModal()\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = icon("lock", templ.Attributes{"class": "w-4 h-4"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = icon("lock", templ.Attributes{"class": "w-4 h-4 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "Unlock editing</button> <dialog id=\"confirm_unlock_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Edit a game that is running?</h3><p class=\"pt-4\">Players are in this game now. Changes reach them straight away and cannot be taken back: an objective you remove disappears from under whoever is standing at it.</p><p>The safe alternative is to duplicate the game and edit the copy.</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_unlock_modal.close()\">Leave it locked</button> <button type=\"button\" id=\"quest-unlock-confirm\" class=\"btn btn-warning\">Unlock editing</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span class=\"hidden sm:inline\">Unlock</span></button></span> <span data-lock-state=\"unlocked\" class=\"tooltip tooltip-bottom hidden\" data-tip=\"You are editing a running game. Click to lock it again.\"><button type=\"button\" id=\"quest-relock\" class=\"btn btn-sm btn-warning gap-1.5\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = icon("lock-open", templ.Attributes{"class": "w-4 h-4 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span class=\"hidden sm:inline\">Editing</span></button></span></span> <dialog id=\"confirm_unlock_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Edit a game that is running?</h3><p class=\"pt-4\">Players are in this game now. Changes reach them straight away and cannot be taken back: an objective you remove disappears from under whoever is standing at it.</p><p>The safe alternative is to duplicate the game and edit the copy.</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_unlock_modal.close()\">Leave it locked</button> <button type=\"button\" id=\"quest-unlock-confirm\" class=\"btn btn-warning\">Unlock editing</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -89,12 +108,8 @@ func questLock(quest models.Quest) templ.Component {
 	})
 }
 
-// questLockScript relocates the button into the page's own nav and disables the
-// editing controls until the unlock is confirmed.
-//
-// Both are done here rather than per page: there are four of these pages with
-// four different headers. A reload drops the header, so the unlock cannot
-// outlive the page that warned them.
+// questLockScript moves the unlock button into the nav and disables the editing
+// controls until the unlock is confirmed.
 func questLockScript(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -116,17 +131,30 @@ func questLockScript(quest models.Quest) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<script>\n\t// The lock publishes one fact and broadcasts when it changes: whether this\n\t// page may be edited, on document.body as data-quest-locked.\n\t//\n\t// Earlier versions held references to the drag surfaces they had to\n\t// disable. Those surfaces are destroyed and rebuilt by htmx swaps and by a\n\t// MutationObserver, on their own schedule, so every reference went stale\n\t// and the lock kept missing one. Reading a fact at creation time cannot go\n\t// stale: whoever builds last reads what is true then, and a change reaches\n\t// anything already built through the event.\n\twindow.questLock = window.questLock || (() => {\n\t\tconst state = { locked: false, unlocked: false };\n\n\t\tconst publish = () => {\n\t\t\tdocument.body.dataset.questLocked = state.locked ? 'true' : 'false';\n\t\t\tdocument.body.dispatchEvent(new CustomEvent('quest-lock-change', {\n\t\t\t\tdetail: { locked: state.locked },\n\t\t\t}));\n\t\t};\n\n\t\treturn {\n\t\t\tisLocked: () => state.locked,\n\t\t\t// Re-apply what is already true, for markup that arrived without\n\t\t\t// it. Distinct from set(): a swap is not a statement about\n\t\t\t// whether this quest is running, and treating it as one revoked\n\t\t\t// an unlock the author had confirmed on this very page.\n\t\t\treapply: publish,\n\t\t\t// Called by the page: a quest that is not running unlocks and stays\n\t\t\t// that way, so navigating between quests cannot leave an earlier\n\t\t\t// page's state behind.\n\t\t\tset(locked) {\n\t\t\t\tstate.locked = locked;\n\t\t\t\tif (!locked) state.unlocked = false;\n\t\t\t\tpublish();\n\t\t\t},\n\t\t\t// The author confirmed they mean it. Separate from set() because\n\t\t\t// this is what authorises the bypass header, and only a dialog the\n\t\t\t// author accepted on this page may do that.\n\t\t\trelease() {\n\t\t\t\tstate.unlocked = true;\n\t\t\t\tstate.locked = false;\n\t\t\t\tpublish();\n\t\t\t},\n\t\t\tbypasses: () => state.unlocked,\n\t\t};\n\t})();\n\n\tif (!window.__questLockBound) {\n\t\twindow.__questLockBound = true;\n\n\t\t// One listener, not one per render: the script re-runs on every\n\t\t// hx-boost navigation, and stacked listeners kept an earlier page's\n\t\t// closure deciding what this one may do.\n\t\tdocument.body.addEventListener('htmx:configRequest', (event) => {\n\t\t\tif (window.questLock.bypasses()) event.detail.headers['X-Quest-Unlock'] = 'true';\n\t\t});\n\n\t\t// htmx swaps in markup carrying no lock state, so a refreshed tree\n\t\t// renders unlocked-looking and hidden controls come back.\n\t\tdocument.body.addEventListener('htmx:afterSwap', () => {\n\t\t\twindow.questLock.reapply();\n\t\t});\n\n\t\t// Form controls and links are the lock's own business; drag surfaces\n\t\t// belong to whoever built them and are reached by the event.\n\t\tdocument.body.addEventListener('quest-lock-change', (event) => {\n\t\t\tconst on = event.detail.locked;\n\t\t\tconst main = document.querySelector('main');\n\t\t\tif (!main) return;\n\n\t\t\tmain.querySelectorAll(\n\t\t\t\t'input:not([data-ignore-lock]), textarea, select, button:not([data-ignore-lock])'\n\t\t\t).forEach((el) => {\n\t\t\t\tif (el.closest('#quest-unlock, #confirm_unlock_modal')) return;\n\t\t\t\tel.disabled = on;\n\t\t\t\t// The cursor says \"locked,\" not \"broken\": a disabled control\n\t\t\t\t// that still invites a click reads as a bug.\n\t\t\t\tel.classList.toggle('cursor-not-allowed', on);\n\t\t\t});\n\t\t\t// Links and <summary> are neither form controls nor disableable.\n\t\t\t// Hidden rather than dimmed for the add-child control, which only\n\t\t\t// appears on hover: a disabled-looking one would still invite the\n\t\t\t// hover that reveals it.\n\t\t\tmain.querySelectorAll('[data-lock-hide]').forEach((el) => {\n\t\t\t\tel.classList.toggle('hidden', on);\n\t\t\t});\n\t\t\t// Dimmed as well as inert: outlined buttons that ignore clicks look broken.\n\t\t\tmain.querySelectorAll('details.settings-picker').forEach((el) => {\n\t\t\t\tif (on) el.open = false;\n\t\t\t\tel.classList.toggle('pointer-events-none', on);\n\t\t\t\tel.classList.toggle('opacity-50', on);\n\t\t\t});\n\t\t\tmain.querySelectorAll('.objective-drag-handle').forEach((el) => {\n\t\t\t\tel.classList.toggle('cursor-not-allowed', on);\n\t\t\t\tel.classList.toggle('cursor-move', !on);\n\t\t\t});\n\t\t});\n\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Passed as data so a value that decides what may be edited is never\n\tspliced into script source. --><span id=\"quest-lock-meta\" class=\"hidden\" data-quest-id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.ID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/running_quest_banner.templ`, Line: 77, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"></span><script>\n\t// The lock publishes whether the page may be edited as data-quest-locked on\n\t// body and a quest-lock-change event. Holding references to the drag\n\t// surfaces went stale as htmx swaps rebuilt them; reading the fact when a\n\t// surface is built cannot.\n\twindow.questLock = window.questLock || (() => {\n\t\tconst state = { locked: false, unlocked: false, questID: '' };\n\n\t\t// sessionStorage, not localStorage: an unlock must not survive to a\n\t\t// later day. Keyed by quest so one unlock does not cover another.\n\t\tconst key = (id) => 'rapua.unlock.' + id;\n\t\tconst remember = (id) => {\n\t\t\t// Failing to store only means confirming again, the safe direction.\n\t\t\ttry { sessionStorage.setItem(key(id), '1'); } catch {}\n\t\t};\n\t\tconst forget = (id) => {\n\t\t\ttry { sessionStorage.removeItem(key(id)); } catch {}\n\t\t};\n\t\tconst remembered = (id) => {\n\t\t\ttry { return !!id && sessionStorage.getItem(key(id)) === '1'; } catch { return false; }\n\t\t};\n\n\t\tconst publish = () => {\n\t\t\tdocument.body.dataset.questLocked = state.locked ? 'true' : 'false';\n\t\t\tdocument.body.dispatchEvent(new CustomEvent('quest-lock-change', {\n\t\t\t\tdetail: { locked: state.locked },\n\t\t\t}));\n\t\t};\n\n\t\treturn {\n\t\t\tisLocked: () => state.locked,\n\t\t\t// Not set(): a swap says nothing about whether the quest is\n\t\t\t// running, and set() revoked unlocks confirmed on this page.\n\t\t\treapply: publish,\n\t\t\t// A stopped quest forgets its unlock so restarting it asks again.\n\t\t\tset(locked, questID) {\n\t\t\t\tif (questID) state.questID = questID;\n\t\t\t\tstate.locked = locked;\n\t\t\t\tif (!locked) {\n\t\t\t\t\tstate.unlocked = false;\n\t\t\t\t\t// Only when the page names a quest: leaving for a page\n\t\t\t\t\t// without one must not erase the unlock it left behind.\n\t\t\t\t\tif (questID) forget(questID);\n\t\t\t\t} else if (remembered(state.questID)) {\n\t\t\t\t\tstate.locked = false;\n\t\t\t\t\tstate.unlocked = true;\n\t\t\t\t}\n\t\t\t\tpublish();\n\t\t\t},\n\t\t\t// Separate from set() because this authorises the bypass header,\n\t\t\t// which only an accepted dialog may do.\n\t\t\trelease() {\n\t\t\t\tstate.unlocked = true;\n\t\t\t\tstate.locked = false;\n\t\t\t\tremember(state.questID);\n\t\t\t\tpublish();\n\t\t\t},\n\t\t\trelock() {\n\t\t\t\tstate.unlocked = false;\n\t\t\t\tstate.locked = true;\n\t\t\t\tforget(state.questID);\n\t\t\t\tpublish();\n\t\t\t},\n\t\t\tbypasses: () => state.unlocked,\n\t\t};\n\t})();\n\n\tif (!window.__questLockBound) {\n\t\twindow.__questLockBound = true;\n\n\t\t// Bound once: the script re-runs on every hx-boost navigation, and\n\t\t// stacked listeners kept an earlier page's closure in charge.\n\t\tdocument.body.addEventListener('htmx:configRequest', (event) => {\n\t\t\tif (window.questLock.bypasses()) event.detail.headers['X-Quest-Unlock'] = 'true';\n\t\t});\n\n\t\t// Swapped-in markup carries no lock state. Off the editor pages the\n\t\t// lock is released instead, so it does not disable unrelated controls.\n\t\tdocument.body.addEventListener('htmx:afterSwap', () => {\n\t\t\tif (!document.querySelector('[data-quest-lock-scope]')) {\n\t\t\t\twindow.questLock.set(false);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\twindow.questLock.reapply();\n\t\t});\n\n\t\t// Drag surfaces belong to whoever built them and react to the event.\n\t\tdocument.body.addEventListener('quest-lock-change', (event) => {\n\t\t\tconst on = event.detail.locked;\n\t\t\tconst main = document.querySelector('main');\n\t\t\tif (!main) return;\n\n\t\t\tmain.querySelectorAll(\n\t\t\t\t'input:not([data-ignore-lock]), textarea, select, button:not([data-ignore-lock])'\n\t\t\t).forEach((el) => {\n\t\t\t\tif (el.closest('#quest-unlock, #confirm_unlock_modal')) return;\n\t\t\t\tel.disabled = on;\n\t\t\t\tel.classList.toggle('cursor-not-allowed', on);\n\t\t\t});\n\t\t\t// Links and <summary> cannot be disabled. Hidden rather than dimmed,\n\t\t\t// since a dimmed hover-only control still invites the hover.\n\t\t\tmain.querySelectorAll('[data-lock-hide]').forEach((el) => {\n\t\t\t\tel.classList.toggle('hidden', on);\n\t\t\t});\n\t\t\t// Dimmed as well: inert outlined buttons look broken.\n\t\t\tmain.querySelectorAll('details.settings-picker').forEach((el) => {\n\t\t\t\tif (on) el.open = false;\n\t\t\t\tel.classList.toggle('pointer-events-none', on);\n\t\t\t\tel.classList.toggle('opacity-50', on);\n\t\t\t});\n\t\t\tmain.querySelectorAll('.objective-drag-handle').forEach((el) => {\n\t\t\t\tel.classList.toggle('cursor-not-allowed', on);\n\t\t\t\tel.classList.toggle('cursor-move', !on);\n\t\t\t});\n\t\t});\n\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if quest.GetStatus() == models.Active {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<script>\n\t\t(() => {\n\t\t\tconst main = document.querySelector('main');\n\t\t\tconst button = document.getElementById('quest-unlock');\n\t\t\tif (!main || !button) return;\n\n\t\t\t// Beside the title: loose in the justify-between row it pushes the\n\t\t\t// primary action to the middle.\n\t\t\tconst header = main.querySelector('#quest-title-group')\n\t\t\t\t|| main.querySelector('h1')?.parentElement;\n\t\t\tif (header) header.appendChild(button);\n\n\t\t\twindow.questLock.set(true);\n\n\t\t\tdocument.getElementById('quest-unlock-confirm')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.release();\n\t\t\t\tconfirm_unlock_modal.close();\n\t\t\t\t// Not disabled: daisyUI drops the colour modifier on a\n\t\t\t\t// disabled button, and the warning is the point.\n\t\t\t\tbutton.classList.remove('btn-outline', 'btn-info');\n\t\t\t\tbutton.classList.add('btn-warning', 'pointer-events-none');\n\t\t\t\tbutton.setAttribute('aria-disabled', 'true');\n\t\t\t\t// The button is its own label: an earlier version wrote to a\n\t\t\t\t// separate element no template renders, so every unlock threw\n\t\t\t\t// here and the warning state never appeared.\n\t\t\t\tbutton.textContent = 'Editing a running game';\n\t\t\t});\n\t\t})();\n\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\t(() => {\n\t\t\tconst main = document.querySelector('main');\n\t\t\tconst button = document.getElementById('quest-unlock');\n\t\t\tif (!main || !button) return;\n\n\t\t\t// Lives in the nav beside the status: it is about the quest, not\n\t\t\t// the page.\n\t\t\tconst slot = document.getElementById('quest-unlock-slot');\n\t\t\tif (slot) slot.appendChild(button);\n\n\t\t\tconst questID = document.getElementById('quest-lock-meta')?.dataset.questId;\n\n\t\t\tconst locked = button.querySelector('[data-lock-state=\"locked\"]');\n\t\t\tconst unlocked = button.querySelector('[data-lock-state=\"unlocked\"]');\n\t\t\tconst show = (which) => {\n\t\t\t\tlocked?.classList.toggle('hidden', which !== 'locked');\n\t\t\t\tunlocked?.classList.toggle('hidden', which !== 'unlocked');\n\t\t\t};\n\t\t\tconst showUnlocked = () => show('unlocked');\n\n\t\t\twindow.questLock.set(true, questID);\n\t\t\t// An unlock restored from an earlier page must show as unlocked, or\n\t\t\t// the page looks locked while edits save.\n\t\t\tif (window.questLock.bypasses()) showUnlocked();\n\n\t\t\tdocument.getElementById('quest-unlock-confirm')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.release();\n\t\t\t\tconfirm_unlock_modal.close();\n\t\t\t\tshowUnlocked();\n\t\t\t});\n\n\t\t\t// No confirmation: relocking is the safe direction.\n\t\t\tdocument.getElementById('quest-relock')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.relock();\n\t\t\t\tshow('locked');\n\t\t\t});\n\t\t})();\n\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n\t\t\t// A quest that is not running is editable, and says so rather than\n\t\t\t// inheriting whatever the last page decided.\n\t\t\twindow.questLock.set(false);\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<script>\n\t\t\t// The id lets set() drop a remembered unlock once the game stops.\n\t\t\twindow.questLock.set(\n\t\t\t\tfalse,\n\t\t\t\tdocument.getElementById('quest-lock-meta')?.dataset.questId,\n\t\t\t);\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

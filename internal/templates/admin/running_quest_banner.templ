@@ -4,26 +4,46 @@ import "github.com/nathanhollows/Rapua/v8/models"
 
 // LockedEditor prefixes the lock onto the pages the route middleware guards.
 // Elsewhere the warning would only teach people to ignore it.
+//
+// The scope marker lets the lock tell editor pages apart after an hx-boost
+// navigation, which keeps the lock's state and listeners alive across pages.
 templ LockedEditor(quest models.Quest, contents templ.Component) {
-	@questLock(quest)
-	@contents
-	// After the contents: an inline script runs as the parser reaches it, and
-	// there is nothing to lock until the page it locks exists.
+	<div data-quest-lock-scope class="contents">
+		@questLock(quest)
+		@contents
+	</div>
+	// After the contents: the script runs as the parser reaches it, and needs
+	// the page it locks to exist.
 	@questLockScript(quest)
 }
 
-// questLock is one button and a confirmation.
+// questLock is the unlock control and its confirmation.
 templ questLock(quest models.Quest) {
 	if quest.GetStatus() == models.Active {
-		<button
-			type="button"
-			id="quest-unlock"
-			class="btn btn-sm btn-outline btn-info"
-			onclick="confirm_unlock_modal.showModal()"
-		>
-			@icon("lock", templ.Attributes{"class": "w-4 h-4"})
-			Unlock editing
-		</button>
+		<!-- Both states are rendered and the script toggles them. Restyling one
+		button in script left it with neither state's classes. -->
+		<span id="quest-unlock" class="inline-flex items-center shrink-0">
+			<span
+				data-lock-state="locked"
+				class="tooltip tooltip-bottom"
+				data-tip="Editing is locked while the game is running. Click to unlock."
+			>
+				<button type="button" class="btn btn-sm btn-warning btn-outline gap-1.5" onclick="confirm_unlock_modal.showModal()">
+					@icon("lock", templ.Attributes{"class": "w-4 h-4 shrink-0"})
+					<span class="hidden sm:inline">Unlock</span>
+				</button>
+			</span>
+			<span
+				data-lock-state="unlocked"
+				class="tooltip tooltip-bottom hidden"
+				data-tip="You are editing a running game. Click to lock it again."
+			>
+				<button type="button" id="quest-relock" class="btn btn-sm btn-warning gap-1.5">
+					@icon("lock-open", templ.Attributes{"class": "w-4 h-4 shrink-0"})
+					<span class="hidden sm:inline">Editing</span>
+				</button>
+			</span>
+		</span>
 		<dialog id="confirm_unlock_modal" class="modal modal-bottom sm:modal-middle">
 			<div class="modal-box prose outline-2 outline-offset-1 outline-warning">
 				<h3 class="text-lg font-bold">Edit a game that is running?</h3>
@@ -49,25 +69,33 @@ templ questLock(quest models.Quest) {
 	}
 }
 
-// questLockScript relocates the button into the page's own nav and disables the
-// editing controls until the unlock is confirmed.
-//
-// Both are done here rather than per page: there are four of these pages with
-// four different headers. A reload drops the header, so the unlock cannot
-// outlive the page that warned them.
+// questLockScript moves the unlock button into the nav and disables the editing
+// controls until the unlock is confirmed.
 templ questLockScript(quest models.Quest) {
+	<!-- Passed as data so a value that decides what may be edited is never
+	spliced into script source. -->
+	<span id="quest-lock-meta" class="hidden" data-quest-id={ quest.ID }></span>
 	<script>
-	// The lock publishes one fact and broadcasts when it changes: whether this
-	// page may be edited, on document.body as data-quest-locked.
-	//
-	// Earlier versions held references to the drag surfaces they had to
-	// disable. Those surfaces are destroyed and rebuilt by htmx swaps and by a
-	// MutationObserver, on their own schedule, so every reference went stale
-	// and the lock kept missing one. Reading a fact at creation time cannot go
-	// stale: whoever builds last reads what is true then, and a change reaches
-	// anything already built through the event.
+	// The lock publishes whether the page may be edited as data-quest-locked on
+	// body and a quest-lock-change event. Holding references to the drag
+	// surfaces went stale as htmx swaps rebuilt them; reading the fact when a
+	// surface is built cannot.
 	window.questLock = window.questLock || (() => {
-		const state = { locked: false, unlocked: false };
+		const state = { locked: false, unlocked: false, questID: '' };
+
+		// sessionStorage, not localStorage: an unlock must not survive to a
+		// later day. Keyed by quest so one unlock does not cover another.
+		const key = (id) => 'rapua.unlock.' + id;
+		const remember = (id) => {
+			// Failing to store only means confirming again, the safe direction.
+			try { sessionStorage.setItem(key(id), '1'); } catch {}
+		};
+		const forget = (id) => {
+			try { sessionStorage.removeItem(key(id)); } catch {}
+		};
+		const remembered = (id) => {
+			try { return !!id && sessionStorage.getItem(key(id)) === '1'; } catch { return false; }
+		};
 
 		const publish = () => {
 			document.body.dataset.questLocked = state.locked ? 'true' : 'false';
@@ -78,25 +106,36 @@ templ questLockScript(quest models.Quest) {
 
 		return {
 			isLocked: () => state.locked,
-			// Re-apply what is already true, for markup that arrived without
-			// it. Distinct from set(): a swap is not a statement about
-			// whether this quest is running, and treating it as one revoked
-			// an unlock the author had confirmed on this very page.
+			// Not set(): a swap says nothing about whether the quest is
+			// running, and set() revoked unlocks confirmed on this page.
 			reapply: publish,
-			// Called by the page: a quest that is not running unlocks and stays
-			// that way, so navigating between quests cannot leave an earlier
-			// page's state behind.
-			set(locked) {
+			// A stopped quest forgets its unlock so restarting it asks again.
+			set(locked, questID) {
+				if (questID) state.questID = questID;
 				state.locked = locked;
-				if (!locked) state.unlocked = false;
+				if (!locked) {
+					state.unlocked = false;
+					// Only when the page names a quest: leaving for a page
+					// without one must not erase the unlock it left behind.
+					if (questID) forget(questID);
+				} else if (remembered(state.questID)) {
+					state.locked = false;
+					state.unlocked = true;
+				}
 				publish();
 			},
-			// The author confirmed they mean it. Separate from set() because
-			// this is what authorises the bypass header, and only a dialog the
-			// author accepted on this page may do that.
+			// Separate from set() because this authorises the bypass header,
+			// which only an accepted dialog may do.
 			release() {
 				state.unlocked = true;
 				state.locked = false;
+				remember(state.questID);
+				publish();
+			},
+			relock() {
+				state.unlocked = false;
+				state.locked = true;
+				forget(state.questID);
 				publish();
 			},
 			bypasses: () => state.unlocked,
@@ -106,21 +145,23 @@ templ questLockScript(quest models.Quest) {
 	if (!window.__questLockBound) {
 		window.__questLockBound = true;
 
-		// One listener, not one per render: the script re-runs on every
-		// hx-boost navigation, and stacked listeners kept an earlier page's
-		// closure deciding what this one may do.
+		// Bound once: the script re-runs on every hx-boost navigation, and
+		// stacked listeners kept an earlier page's closure in charge.
 		document.body.addEventListener('htmx:configRequest', (event) => {
 			if (window.questLock.bypasses()) event.detail.headers['X-Quest-Unlock'] = 'true';
 		});
 
-		// htmx swaps in markup carrying no lock state, so a refreshed tree
-		// renders unlocked-looking and hidden controls come back.
+		// Swapped-in markup carries no lock state. Off the editor pages the
+		// lock is released instead, so it does not disable unrelated controls.
 		document.body.addEventListener('htmx:afterSwap', () => {
+			if (!document.querySelector('[data-quest-lock-scope]')) {
+				window.questLock.set(false);
+				return;
+			}
 			window.questLock.reapply();
 		});
 
-		// Form controls and links are the lock's own business; drag surfaces
-		// belong to whoever built them and are reached by the event.
+		// Drag surfaces belong to whoever built them and react to the event.
 		document.body.addEventListener('quest-lock-change', (event) => {
 			const on = event.detail.locked;
 			const main = document.querySelector('main');
@@ -131,18 +172,14 @@ templ questLockScript(quest models.Quest) {
 			).forEach((el) => {
 				if (el.closest('#quest-unlock, #confirm_unlock_modal')) return;
 				el.disabled = on;
-				// The cursor says "locked," not "broken": a disabled control
-				// that still invites a click reads as a bug.
 				el.classList.toggle('cursor-not-allowed', on);
 			});
-			// Links and <summary> are neither form controls nor disableable.
-			// Hidden rather than dimmed for the add-child control, which only
-			// appears on hover: a disabled-looking one would still invite the
-			// hover that reveals it.
+			// Links and <summary> cannot be disabled. Hidden rather than dimmed,
+			// since a dimmed hover-only control still invites the hover.
 			main.querySelectorAll('[data-lock-hide]').forEach((el) => {
 				el.classList.toggle('hidden', on);
 			});
-			// Dimmed as well as inert: outlined buttons that ignore clicks look broken.
+			// Dimmed as well: inert outlined buttons look broken.
 			main.querySelectorAll('details.settings-picker').forEach((el) => {
 				if (on) el.open = false;
 				el.classList.toggle('pointer-events-none', on);
@@ -162,34 +199,46 @@ templ questLockScript(quest models.Quest) {
 			const button = document.getElementById('quest-unlock');
 			if (!main || !button) return;
 
-			// Beside the title: loose in the justify-between row it pushes the
-			// primary action to the middle.
-			const header = main.querySelector('#quest-title-group')
-				|| main.querySelector('h1')?.parentElement;
-			if (header) header.appendChild(button);
+			// Lives in the nav beside the status: it is about the quest, not
+			// the page.
+			const slot = document.getElementById('quest-unlock-slot');
+			if (slot) slot.appendChild(button);
 
-			window.questLock.set(true);
+			const questID = document.getElementById('quest-lock-meta')?.dataset.questId;
+
+			const locked = button.querySelector('[data-lock-state="locked"]');
+			const unlocked = button.querySelector('[data-lock-state="unlocked"]');
+			const show = (which) => {
+				locked?.classList.toggle('hidden', which !== 'locked');
+				unlocked?.classList.toggle('hidden', which !== 'unlocked');
+			};
+			const showUnlocked = () => show('unlocked');
+
+			window.questLock.set(true, questID);
+			// An unlock restored from an earlier page must show as unlocked, or
+			// the page looks locked while edits save.
+			if (window.questLock.bypasses()) showUnlocked();
 
 			document.getElementById('quest-unlock-confirm')?.addEventListener('click', () => {
 				window.questLock.release();
 				confirm_unlock_modal.close();
-				// Not disabled: daisyUI drops the colour modifier on a
-				// disabled button, and the warning is the point.
-				button.classList.remove('btn-outline', 'btn-info');
-				button.classList.add('btn-warning', 'pointer-events-none');
-				button.setAttribute('aria-disabled', 'true');
-				// The button is its own label: an earlier version wrote to a
-				// separate element no template renders, so every unlock threw
-				// here and the warning state never appeared.
-				button.textContent = 'Editing a running game';
+				showUnlocked();
+			});
+
+			// No confirmation: relocking is the safe direction.
+			document.getElementById('quest-relock')?.addEventListener('click', () => {
+				window.questLock.relock();
+				show('locked');
 			});
 		})();
 	</script>
 	} else {
 		<script>
-			// A quest that is not running is editable, and says so rather than
-			// inheriting whatever the last page decided.
-			window.questLock.set(false);
+			// The id lets set() drop a remembered unlock once the game stops.
+			window.questLock.set(
+				false,
+				document.getElementById('quest-lock-meta')?.dataset.questId,
+			);
 		</script>
 	}
 }
