@@ -2,8 +2,11 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v8/models"
+	"math"
 	"os"
+	"time"
+
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 templ Layout(contents templ.Component, user models.User, section string, title string) {
@@ -22,6 +25,7 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 					@contents
 				</main>
 			</div>
+			@localStartTimes()
 		</body>
 	</html>
 }
@@ -90,13 +94,162 @@ templ header(title string) {
 	</head>
 }
 
+// startsAt is the label for when a scheduled game opens.
+func startsAt(quest models.Quest) string {
+	if quest.StartTime.IsZero() {
+		return "Scheduled"
+	}
+	return startsAtFrom(quest.StartTime.Time.Local(), time.Now().Local())
+}
+
+// startsAtFrom uses a weekday only inside a week, where it is unambiguous, and
+// the year only when it differs. now is a parameter for testing.
+func startsAtFrom(start, now time.Time) string {
+	clock := start.Format("3:04pm")
+	if start.Minute() == 0 {
+		clock = start.Format("3pm")
+	}
+
+	switch days := daysApart(now, start); {
+	case days == 0:
+		return "Starts " + clock
+	case days == 1:
+		return "Starts tomorrow, " + clock
+	case days > 1 && days < 7:
+		return "Starts " + start.Format("Mon") + ", " + clock
+	case start.Year() == now.Year():
+		// Past dates land here on purpose: a weekday in the past reads as the
+		// coming one. No clock at this distance, only the day matters.
+		return "Starts " + start.Format("2 Jan")
+	default:
+		return "Starts " + start.Format("2 Jan 2006")
+	}
+}
+
+// daysApart counts calendar days, not elapsed hours.
+//
+// Rounded rather than truncated: a day is not always twenty-four hours, and
+// across a daylight-saving change two midnights are 23 or 25 apart. Truncating
+// lost a day at exactly the time of year a quest is most likely to span.
+func daysApart(from, to time.Time) int {
+	fromDay := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location())
+	toDay := time.Date(to.Year(), to.Month(), to.Day(), 0, 0, 0, 0, to.Location())
+	return int(math.Round(toDay.Sub(fromDay).Hours() / 24))
+}
+
+// questStatusIndicator shows the quest's state on every admin page. It is flat
+// text so the unlock button beside it is the only thing that looks pressable.
+//
+// compact drops the word on narrow screens and keeps the dot. The drawer is
+// never compact.
+templ questStatusIndicator(quest models.Quest, compact bool) {
+	switch quest.GetStatus() {
+		case models.Active:
+			@statusLabel("status-success", "text-success", "Live", compact)
+		case models.Scheduled:
+			@statusTimeLabel("status-info", "text-info", quest, compact)
+		default:
+			@statusLabel("status-neutral", "opacity-45", "Closed", compact)
+	}
+}
+
+// statusLabel is the dot and the word. shrink-0 because a nowrap flex item that
+// shrinks spills over its neighbour instead of wrapping.
+templ statusLabel(dot, tone, label string, compact bool) {
+	<span
+		class={ "inline-flex items-center gap-1.5 text-sm font-medium whitespace-nowrap shrink-0", tone }
+		title={ label }
+	>
+		<span aria-label={ label } class={ "status shrink-0", dot }></span>
+		<span class={ templ.KV("hidden sm:inline", compact) }>{ label }</span>
+	</span>
+}
+
+// statusTimeLabel is statusLabel for a start time. The instant is sent as-is
+// and the browser rewrites the words in the reader's timezone; the server's
+// wording is the fallback when no script runs.
+templ statusTimeLabel(dot, tone string, quest models.Quest, compact bool) {
+	{{ fallback := startsAt(quest) }}
+	<span
+		class={ "inline-flex items-center gap-1.5 text-sm font-medium whitespace-nowrap shrink-0", tone }
+		title={ fallback }
+	>
+		<span aria-label={ fallback } class={ "status shrink-0", dot }></span>
+		if quest.StartTime.IsZero() {
+			<span class={ templ.KV("hidden sm:inline", compact) }>{ fallback }</span>
+		} else {
+			<time
+				datetime={ quest.StartTime.Time.UTC().Format(time.RFC3339) }
+				data-starts-at
+				class={ templ.KV("hidden sm:inline", compact) }
+			>{ fallback }</time>
+		}
+	</span>
+}
+
+// localStartTimes rewrites scheduled starts in the reader's timezone. The rules
+// mirror startsAtFrom, which stays the source of the wording. en-GB so the
+// spelling matches the server's.
+templ localStartTimes() {
+	<script>
+	(() => {
+		const clockOf = (d) => (d.getMinutes() === 0
+			? d.toLocaleTimeString('en-GB', { hour: 'numeric', hour12: true })
+			: d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })
+		).replace(/\s/g, '');
+
+		const daysApart = (from, to) => Math.round(
+			(new Date(to.getFullYear(), to.getMonth(), to.getDate()) -
+			 new Date(from.getFullYear(), from.getMonth(), from.getDate())) / 86400000
+		);
+
+		const label = (start, now) => {
+			const days = daysApart(now, start);
+			if (days === 0) return 'Starts ' + clockOf(start);
+			if (days === 1) return 'Starts tomorrow, ' + clockOf(start);
+			if (days > 1 && days < 7) {
+				return 'Starts ' + start.toLocaleDateString('en-GB', { weekday: 'short' }) +
+					', ' + clockOf(start);
+			}
+			if (start.getFullYear() === now.getFullYear()) {
+				return 'Starts ' + start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+			}
+			return 'Starts ' + start.toLocaleDateString('en-GB',
+				{ day: 'numeric', month: 'short', year: 'numeric' });
+		};
+
+		const apply = () => {
+			document.querySelectorAll('[data-starts-at]').forEach((el) => {
+				const start = new Date(el.getAttribute('datetime'));
+				if (isNaN(start)) return;
+				const words = label(start, new Date());
+				el.textContent = words;
+				const wrap = el.closest('span');
+				if (wrap) {
+					wrap.title = words;
+					const dot = wrap.querySelector('.status');
+					if (dot) dot.setAttribute('aria-label', words);
+				}
+			});
+		};
+
+		// The boosted nav re-renders with the server's wording on every navigation.
+		if (!window.__localStartTimesBound) {
+			window.__localStartTimesBound = true;
+			document.body.addEventListener('htmx:afterSwap', apply);
+		}
+		apply();
+	})();
+	</script>
+}
+
 templ nav(user models.User, section string) {
 	<div class="bg-base-200">
 		<div
 			class="navbar max-w-7xl m-auto"
 			hx-boost="true"
 		>
-			<div class="navbar-start w-min sm:w-1/2">
+			<div class="navbar-start w-auto flex items-center gap-1">
 				<div class="drawer lg:hidden">
 					<input id="my-drawer" type="checkbox" class="drawer-toggle"/>
 					<div class="drawer-content">
@@ -114,6 +267,17 @@ templ nav(user models.User, section string) {
 									<span class="-mt-1">Rapua</span>
 								</li>
 								if user.CurrentQuestID != "" {
+									<!-- No unlock here: the bar keeps it, and offering it twice
+									invites pressing it by accident. -->
+									<li class="mb-2">
+										<div class="flex flex-col gap-2 rounded-box bg-base-content/5 border border-base-content/10 p-3 hover:bg-base-content/5 cursor-default">
+											<span class="flex items-center gap-2 font-semibold">
+												@icon("compass", templ.Attributes{"class": "w-4 h-4 opacity-60 shrink-0"})
+												<span class="min-w-0 break-words">{ user.CurrentQuest.Name }</span>
+											</span>
+											@questStatusIndicator(user.CurrentQuest, false)
+										</div>
+									</li>
 									<li>
 										<a
 											href="/admin/"
@@ -192,14 +356,11 @@ templ nav(user models.User, section string) {
 						</div>
 					</div>
 				</div>
-				<a href="/admin" class="btn btn-ghost text-xl hidden sm:inline-flex">
-					<svg class="w-6 h-6 stroke-base-content fill-base-content" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
-					Rapua
+				<a href="/admin" class="btn btn-ghost btn-square btn-sm hidden sm:inline-flex" aria-label="Rapua">
+					<svg class="w-5 h-5 stroke-base-content fill-base-content" viewBox="0 0 31.622 38.219" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke-width:2.14931;stroke:none" d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 				</a>
-			</div>
-			<div class="navbar-center hidden lg:flex">
 				<ul
-					class="menu menu-horizontal px-1 gap-x-1 font-bold"
+					class="menu menu-horizontal hidden lg:flex px-1 gap-x-1 font-semibold ml-1"
 				>
 					if user.CurrentQuestID != "" {
 						<li>
@@ -238,8 +399,15 @@ templ nav(user models.User, section string) {
 					}
 				</ul>
 			</div>
-			<div class="navbar-end w-auto ml-auto sm:w-1/2">
-				<div class="dropdown dropdown-end mr-2">
+			<div class="navbar-end w-auto ml-auto flex items-center gap-3">
+				if user.CurrentQuestID != "" {
+					<!-- Left of the status so the status does not shift when the
+					button appears. Filled by questLockScript on editor pages only. -->
+					<span id="quest-unlock-slot" class="contents"></span>
+					@questStatusIndicator(user.CurrentQuest, true)
+					<span class="w-px h-5 bg-base-content/15 shrink-0" aria-hidden="true"></span>
+				}
+				<div class="dropdown dropdown-end">
 					<button
 						tabindex="0"
 						if section == "Games and Templates" {
