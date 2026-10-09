@@ -27,6 +27,9 @@ type ObjectiveService interface {
 	FindRoot(ctx context.Context, questID string) (*models.Objective, error)
 	// FindChildren returns one objective's direct children in position order.
 	FindChildren(ctx context.Context, questID, parentID string) ([]models.Objective, error)
+	// GetByID finds one objective, for callers holding a parent reference
+	// rather than a slug.
+	GetByID(ctx context.Context, objectiveID string) (*models.Objective, error)
 	// Reposition moves an objective under newParentID at index newPosition.
 	// Both must belong to questID: a drag-and-drop caller can't reach across quests.
 	Reposition(ctx context.Context, questID, objectiveID, newParentID string, newPosition int) error
@@ -335,11 +338,6 @@ func (s objectiveService) UpdateObjective(
 
 	if data.Title != "" && data.Title != candidate.Title {
 		candidate.Title = data.Title
-		newSlug, slugErr := s.generateUniqueSlug(ctx, candidate.QuestID, data.Title, candidate.ID)
-		if slugErr != nil {
-			return fmt.Errorf("generating slug: %w", slugErr)
-		}
-		candidate.Slug = newSlug
 		update = true
 	}
 
@@ -391,6 +389,12 @@ func (s objectiveService) FindRoot(ctx context.Context, questID string) (*models
 
 func (s objectiveService) FindTree(ctx context.Context, questID string) ([]models.Objective, error) {
 	return s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+}
+
+// GetByID finds one objective by id. No reachability or ownership check: the
+// caller already decided what it is allowed to show.
+func (s objectiveService) GetByID(ctx context.Context, objectiveID string) (*models.Objective, error) {
+	return s.objectiveRepo.GetByID(ctx, objectiveID)
 }
 
 func (s objectiveService) FindChildren(

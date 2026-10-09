@@ -12,6 +12,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/middlewares"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	pTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -135,8 +136,13 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 		lintResult = services.QuestLint{Unavailable: true}
 	}
 
+	parentTitle, parentRule := h.containerContext(r, user.CurrentQuestID, *objective)
+
 	data := templates.EditObjectiveData{
 		Settings:     user.CurrentQuest.Settings,
+		QuestName:    user.CurrentQuest.Name,
+		ParentTitle:  parentTitle,
+		ParentRule:   parentRule,
 		Objective:    *objective,
 		ProofBlocks:  proofBlocks,
 		RevealBlocks: revealBlocks,
@@ -175,6 +181,31 @@ func parseBandBound(raw string) (*int, error) {
 		return nil, err
 	}
 	return &v, nil
+}
+
+// containerContext names the section this objective sits in, and how that
+// section offers its children, so the preview can show the row inside it.
+func (h *Handler) containerContext(
+	r *http.Request, questID string, objective models.Objective,
+) (string, string) {
+	if objective.ParentID == "" {
+		return "", ""
+	}
+	parent, err := h.objectiveService.GetByID(r.Context(), objective.ParentID)
+	if err != nil || parent.ParentID == "" {
+		return "", ""
+	}
+	siblings, err := h.objectiveService.FindChildren(r.Context(), questID, parent.ID)
+	if err != nil {
+		return parent.Title, ""
+	}
+	offered := 0
+	for _, sibling := range siblings {
+		if !sibling.Draft {
+			offered++
+		}
+	}
+	return parent.Title, pTemplates.RoutingRule(*parent, offered)
 }
 
 func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
@@ -247,11 +278,6 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		h.handleError(w, r, "ObjectiveEditPost: updating objective", "Error updating objective", "error", err)
-		return
-	}
-
-	if objective.Slug != objectiveSlug {
-		h.redirect(w, r, "/admin/objective/"+objective.Slug)
 		return
 	}
 

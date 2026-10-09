@@ -306,7 +306,11 @@ func TestObjectiveEditPost(t *testing.T) {
 		assert.Equal(t, "Original Title", reloaded.Title)
 	})
 
-	t.Run("slug change redirects to the new path", func(t *testing.T) {
+	// A rename used to move the objective's address, so the handler had to send
+	// the author to the new one. That redirect is a full page load, and a full
+	// page load drops the unlock on a running quest: the autosave appeared to
+	// relock the page mid-edit. With the address fixed there is nowhere to go.
+	t.Run("renaming does not move the author", func(t *testing.T) {
 		root, rootErr := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
 		require.NoError(t, rootErr)
 		objective, err := h.objectiveService.CreateObjective(
@@ -327,7 +331,13 @@ func TestObjectiveEditPost(t *testing.T) {
 		w := httptest.NewRecorder()
 		h.ObjectiveEditPost(w, req)
 
-		assert.Equal(t, "/admin/objective/brand-new-title", w.Header().Get("Hx-Redirect"))
+		assert.Empty(t, w.Header().Get("Hx-Redirect"))
+
+		// Still reachable where it was, and renamed.
+		reloaded, err := h.objectiveService.GetByQuestIDAndSlug(
+			context.Background(), user.CurrentQuestID, objective.Slug)
+		require.NoError(t, err)
+		assert.Equal(t, "Brand New Title", reloaded.Title)
 	})
 }
 

@@ -2,9 +2,8 @@ package services_test
 
 import (
 	"context"
-	"testing"
-
 	"database/sql"
+	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
@@ -133,15 +132,35 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	t.Run("slug updates when title changes", func(t *testing.T) {
+	// The slug is set once and no longer updated to match the title.
+	t.Run("renaming leaves the link alone", func(t *testing.T) {
 		objective, err := service.CreateObjective(ctx, validQuestID(t, dbc), "", "Original Title")
 		require.NoError(t, err)
 		assert.Equal(t, "original-title", objective.Slug)
 
-		err = service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{Title: "New Title"})
+		err = service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+			Title: "Find the plan chest in the Architecture Library",
+		})
 		require.NoError(t, err)
-		assert.Equal(t, "new-title", objective.Slug)
-		assert.Equal(t, "New Title", objective.Title)
+		assert.Equal(t, "original-title", objective.Slug)
+		assert.Equal(t, "Find the plan chest in the Architecture Library", objective.Title)
+	})
+
+	// Renaming has to be savable: the slug no longer moves, so nothing should
+	// make the save conditional on it being free.
+	t.Run("two objectives may share a title", func(t *testing.T) {
+		questID := validQuestID(t, dbc)
+		first, err := service.CreateObjective(ctx, questID, "", "Ask at the desk")
+		require.NoError(t, err)
+		second, err := service.CreateObjective(ctx, questID, "", "Something else")
+		require.NoError(t, err)
+
+		err = service.UpdateObjective(ctx, &second, services.ObjectiveUpdateData{
+			Title: "Ask at the desk",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Ask at the desk", second.Title)
+		assert.NotEqual(t, first.Slug, second.Slug, "the links were already distinct")
 	})
 
 	t.Run("slug unchanged when title not provided", func(t *testing.T) {
@@ -154,19 +173,6 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 		assert.Equal(t, originalSlug, objective.Slug)
 	})
 
-	t.Run("duplicate title in same instance gets unique slug on rename", func(t *testing.T) {
-		questID := validQuestID(t, dbc)
-		_, err := service.CreateObjective(ctx, questID, "", "Garden Walk")
-		require.NoError(t, err)
-		obj2, err := service.CreateObjective(ctx, questID, "", gofakeit.Sentence(3))
-		require.NoError(t, err)
-
-		err = service.UpdateObjective(ctx, &obj2, services.ObjectiveUpdateData{Title: "Garden Walk"})
-		require.NoError(t, err)
-		assert.NotEqual(t, "garden-walk", obj2.Slug) // collision resolved with suffix.
-		assert.Contains(t, obj2.Slug, "garden-walk")
-	})
-
 	t.Run("update persists to storage", func(t *testing.T) {
 		questID := validQuestID(t, dbc)
 		objective, err := service.CreateObjective(ctx, questID, "", "Original Title")
@@ -175,7 +181,9 @@ func TestObjectiveService_UpdateObjective(t *testing.T) {
 		err = service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{Title: "New Title"})
 		require.NoError(t, err)
 
-		reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, "new-title")
+		// Looked up by the slug it was created with, which is the point: the
+		// address an objective is reached at outlives its wording.
+		reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, "original-title")
 		require.NoError(t, err)
 		assert.Equal(t, "New Title", reloaded.Title)
 	})
