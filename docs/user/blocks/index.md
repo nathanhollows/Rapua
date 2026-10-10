@@ -34,6 +34,7 @@ These blocks allow you to create interactive elements in your game that require 
 - [Checklist](/docs/user/blocks/checklist)
 - [Choice](/docs/user/blocks/choice)
 - [Clue](/docs/user/blocks/clue)
+- [Free Text](/docs/user/blocks/free-text)
 - [Password](/docs/user/blocks/password)
 - [Photo](/docs/user/blocks/photo)
 - [Pincode](/docs/user/blocks/pincode)
