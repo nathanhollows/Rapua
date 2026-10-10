@@ -323,26 +323,16 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 			for _, f := range known {
 				knownSet[f] = true
 			}
-			// Promoted fields always valid on every block; sets handled below.
+			// Promoted fields valid on every block.
 			knownSet["type"] = true
 			knownSet["id"] = true
 			knownSet["points"] = true
-			knownSet["sets"] = true
 			for k := range b {
 				if !knownSet[k] {
 					l.warnf(path+"."+k, "UNKNOWN_FIELD",
 						"block type %q has no field %q; possible typo", typStr, k)
 				}
 			}
-		}
-		// sets is only valid on interactive blocks.
-		if _, hasSets := b["sets"]; hasSets && !l.registry.IsInteractive(typStr) {
-			l.warnf(
-				path+".sets",
-				"SETS_ON_CONTENT_BLOCK",
-				"block type %q does not support \"sets\"; only interactive blocks (quiz, password, pincode, etc.) may set variables",
-				typStr,
-			)
 		}
 		errs, warns := l.registry.ValidateBlock(typStr, path, b)
 		l.result.Errors = append(l.result.Errors, errs...)
@@ -358,7 +348,7 @@ func (l *linter) checkRouting(path string, r RouteStrategy) {
 		// Named rather than left to the default arm so a document carrying the
 		// retired value is told so directly.
 		l.errorf(path, "INVALID_ROUTING",
-			"routing %q is retired; an objective is reachable by its parent's routing and its depends, "+
+			"routing %q is retired; an objective is reachable by its parent's routing, "+
 				"and a scan block in its proof lets players reach it out of order", r)
 	case "":
 		// Its own arm because an omission is not a typo. The three strategies

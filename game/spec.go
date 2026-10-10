@@ -20,8 +20,7 @@ type BlockRegistry interface {
 	// Returns nil if the block type is unknown or has no spec.
 	KnownFields(blockType string) []string
 	// IsInteractive returns true when the block type requires player input
-	// (i.e. RequiresValidation returns true). Only interactive blocks may
-	// carry a "sets" field; the linter warns otherwise.
+	// (i.e. RequiresValidation returns true).
 	IsInteractive(blockType string) bool
 	// ValidateBlock runs block-type-specific structural lint on a block doc,
 	// returning separate error and warning diagnostics.

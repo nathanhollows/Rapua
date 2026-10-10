@@ -37,12 +37,14 @@ var (
 		"enable_points": true, "show_leaderboard": true,
 	}
 	knownObjectiveDocFields = map[string]bool{
-		"id": true, "slug": true, "title": true, "color": true,
-		"depends": true, "proof": true, "reveal": true,
+		"id": true, "slug": true, "title": true, "description": true, "draft": true,
+		"proof": true, "reveal": true,
 		"routing": true, "children_min": true, "children_max": true,
 		"max_next": true, "finish_label": true, "children": true,
 	}
-	knownObjectiveContextDocFields = map[string]bool{"blocks": true, "sets": true}
+	// "sets" left with the variable system: a document still naming it is
+	// naming something that will be read and dropped.
+	knownObjectiveContextDocFields = map[string]bool{"blocks": true}
 )
 
 func checkUnknownFieldsRaw(data []byte) []LintDiag {

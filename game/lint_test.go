@@ -795,3 +795,93 @@ func TestLint_SectionContentIsUntouchedByTheRootRule(t *testing.T) {
 	result := game.Lint(doc, newTestRegistry())
 	assert.False(t, result.HasError("ROOT_HAS_CONTENT"))
 }
+
+// A field the model no longer has must be named, not swallowed. An import that
+// accepts "color" and drops it tells an author their document worked, and the
+// quest they get back is not the one they wrote.
+func TestLint_NamesFieldsTheModelHasRetired(t *testing.T) {
+	raw := []byte(`{
+		"rapua": "v8",
+		"name": "Retired fields",
+		"settings": {},
+		"start": [], "finish": [],
+		"structure": {
+			"slug": "root", "title": "Root", "routing": "free_roam",
+			"color": "primary",
+			"depends": ["something"],
+			"proof": {"blocks": [], "sets": ["a-var"]},
+			"reveal": {"blocks": []},
+			"children": [
+				{"slug": "one", "title": "One", "proof": {"blocks": []}, "reveal": {"blocks": []}}
+			]
+		}
+	}`)
+
+	result := game.LintJSON(raw, newTestRegistry())
+
+	var named []string
+	for _, diag := range append(result.Errors, result.Warnings...) {
+		if diag.Code == "UNKNOWN_FIELD" {
+			named = append(named, diag.Path)
+		}
+	}
+	assert.Contains(t, named, "structure.color")
+	assert.Contains(t, named, "structure.depends")
+	assert.Contains(t, named, "structure.proof.sets")
+}
+
+// draft and description are current fields, and both were missing from the
+// known set: a document using one was told the field did not exist. The two
+// directions are one rule, so they are tested together.
+func TestLint_AcceptsTheFieldsTheModelStillHas(t *testing.T) {
+	raw := []byte(`{
+		"rapua": "v8",
+		"name": "Current fields",
+		"settings": {},
+		"start": [], "finish": [],
+		"structure": {
+			"slug": "root", "title": "Root", "routing": "ordered",
+			"description": "Root detail",
+			"proof": {"blocks": []}, "reveal": {"blocks": []},
+			"children_min": 1, "children_max": 2, "max_next": 0,
+			"finish_label": "Done",
+			"children": [
+				{"slug": "one", "title": "One", "draft": false,
+				 "proof": {"blocks": []}, "reveal": {"blocks": []}}
+			]
+		}
+	}`)
+
+	for _, diag := range game.LintJSON(raw, newTestRegistry()).Warnings {
+		assert.NotEqual(t, "UNKNOWN_FIELD", diag.Code, "unexpected: %s", diag.Path)
+	}
+}
+
+// Block-level "sets" went with the variable system. A block still carrying one
+// is naming a field nothing reads.
+func TestLint_NamesBlockLevelSets(t *testing.T) {
+	raw := []byte(`{
+		"rapua": "v8", "name": "Sets", "settings": {},
+		"start": [], "finish": [],
+		"structure": {
+			"slug": "root", "title": "Root",
+			"proof": {"blocks": [{"type": "quiz", "sets": "answered"}]},
+			"reveal": {"blocks": []}
+		}
+	}`)
+
+	// The field check only runs for a type whose fields are known, so the mock
+	// has to declare them the way the real registry does.
+	registry := newTestRegistry()
+	registry.knownFields = map[string][]string{"quiz": {"question", "options"}}
+
+	result := game.LintJSON(raw, registry)
+
+	var named []string
+	for _, diag := range append(result.Errors, result.Warnings...) {
+		if diag.Code == "UNKNOWN_FIELD" {
+			named = append(named, diag.Path)
+		}
+	}
+	assert.Equal(t, []string{"structure.proof.blocks[0].sets"}, named)
+}

@@ -7,7 +7,7 @@ tag: new
 
 # Choice Block
 
-The choice block presents participants with a set of labelled options. Each option maps to a variable name you define — selecting it sets that variable to `true`, which other blocks and locations can respond to via `when` conditions.
+The choice block presents participants with a set of labelled options. Each option carries a short name that identifies it, which is what gets recorded when a participant picks it.
 
 In single-select mode participants pick exactly one option; enable **Allow multiple selections** to let them pick any number. Once confirmed the choice is final and cannot be changed.
 
