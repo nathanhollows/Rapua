@@ -154,9 +154,15 @@ templ blockReorderForm() {
 	</form>
 }
 
-// previewSortableScript renders the sortable.js initialization for preview
-// previewHoverScript lights the block in the editor that a preview block
-// belongs to, and the other way about.
+// previewHoverScript ties a block in the preview to its block in the editor,
+// both ways: the hover outline lights both ends, and whatever is pointed at is
+// brought into view.
+//
+// The two directions scroll differently. The preview is pinned and the page
+// moves underneath it, so pointing at a preview block scrolls the editor block
+// to you on the page. Pointing at an editor block scrolls the preview's own
+// pane instead: moving the page would slide the block out from under the
+// pointer, and the pane, not the window, is what hides the block.
 //
 // Separate from previewSortableScript because the two have nothing to do with
 // each other: the objective editor dropped drag-to-reorder when its preview
@@ -170,20 +176,21 @@ templ previewHoverScript() {
 		// carries data-preview. Hovering works the same in either.
 		const PREVIEW_PANES = '[data-blocks-target], [data-preview]';
 
-		function attachPreviewHoverHandlers() {
-			document.querySelectorAll(PREVIEW_PANES).forEach(attachHoverTo);
-		}
+		// The editor half of the pairing. Both pages that host a preview
+		// render their blocks through this shape.
+		const ADMIN_BLOCKS = '.content-block[data-block-id]';
+
+		// A sweep across either list crosses several blocks; only the one
+		// settled on is worth a scroll, so leaving clears what entering set.
+		let dwell = null;
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const scrollBehavior = () => (reduced.matches ? 'auto' : 'smooth');
 
 		// Pointing at a block in the preview brings its fields to you. The
 		// preview is pinned, so moving the page underneath it does not move the
 		// thing being pointed at: the mouse stays where it was.
-		let dwell = null;
-		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
 		function revealInEditor(adminBlock) {
 			clearTimeout(dwell);
-			// A sweep across the preview crosses several blocks; only the one
-			// settled on is worth a scroll.
 			dwell = setTimeout(function() {
 				const box = adminBlock.getBoundingClientRect();
 				const visible = box.top >= 0 && box.bottom <= window.innerHeight;
@@ -191,53 +198,110 @@ templ previewHoverScript() {
 				// own sake.
 				if (visible) return;
 				adminBlock.scrollIntoView({
-					behavior: reduced.matches ? 'auto' : 'smooth',
+					behavior: scrollBehavior(),
 					block: 'center',
 				});
 			}, 150);
 		}
 
+		// The element the preview block scrolls within: the objective editor's
+		// panes scroll themselves, and the system pages scroll the phone's
+		// display. An element only counts if it has overflow to scroll: on the
+		// system pages the inner container says overflow but grows to fit its
+		// content, and the display above it is the one that moves.
+		function scrollerFor(block) {
+			for (let node = block.parentElement; node; node = node.parentElement) {
+				const overflow = getComputedStyle(node).overflowY;
+				const scrolls = overflow === 'auto' || overflow === 'scroll';
+				if (scrolls && node.scrollHeight > node.clientHeight) return node;
+			}
+			return null;
+		}
+
+		// The mirror of revealInEditor, contained to the pane: bringing the
+		// preview block into view must not move the page around the preview.
+		function revealInPreview(previewBlock) {
+			clearTimeout(dwell);
+			dwell = setTimeout(function() {
+				const scroller = scrollerFor(previewBlock);
+				if (!scroller) return;
+				const box = previewBlock.getBoundingClientRect();
+				const view = scroller.getBoundingClientRect();
+				// Already readable inside the pane, so nothing needs to move.
+				if (box.top >= view.top && box.bottom <= view.bottom) return;
+				const centered =
+					scroller.scrollTop + (box.top - view.top) - (view.height - box.height) / 2;
+				scroller.scrollTo({ top: Math.max(0, centered), behavior: scrollBehavior() });
+			}, 150);
+		}
+
+		function previewBlockFor(blockId) {
+			return document.getElementById('preview-block-' + blockId);
+		}
+
 		function attachHoverTo(previewContainer) {
+			previewContainer.querySelectorAll('.block-view').forEach(previewBlock => {
+				if (previewBlock._hoverBound) return;
 
-			const previewBlocks = previewContainer.querySelectorAll('.block-view');
-
-			previewBlocks.forEach(previewBlock => {
-				// Extract UUID from preview-block-{uuid}
+				// Extract UUID from preview-block-{uuid}.
 				const blockId = previewBlock.id.replace('preview-block-', '');
 				if (!blockId) return;
 
-				// Find corresponding admin block
+				// Find corresponding admin block.
 				const adminBlock = document.getElementById('block-' + blockId) ||
-				                  document.querySelector(`[data-block-id="${blockId}"]`);
+					document.querySelector(`[data-block-id="${blockId}"]`);
+				if (!adminBlock) return;
+				previewBlock._hoverBound = true;
 
-				if (adminBlock) {
-					previewBlock.addEventListener('mouseenter', function() {
-						previewBlock.classList.add('preview-block-highlighted');
-						adminBlock.classList.add('admin-block-highlighted');
-						revealInEditor(adminBlock);
-					});
+				previewBlock.addEventListener('mouseenter', function() {
+					previewBlock.classList.add('preview-block-highlighted');
+					adminBlock.classList.add('admin-block-highlighted');
+					revealInEditor(adminBlock);
+				});
 
-					previewBlock.addEventListener('mouseleave', function() {
-						previewBlock.classList.remove('preview-block-highlighted');
-						adminBlock.classList.remove('admin-block-highlighted');
-						// Leaving before the dwell elapses cancels the scroll,
-						// so passing over a block never moves the page.
-						clearTimeout(dwell);
-					});
-				}
+				previewBlock.addEventListener('mouseleave', function() {
+					previewBlock.classList.remove('preview-block-highlighted');
+					adminBlock.classList.remove('admin-block-highlighted');
+					// Leaving before the dwell elapses cancels the scroll,
+					// so passing over a block never moves the page.
+					clearTimeout(dwell);
+				});
 			});
 		}
 
-		// Re-attach after HTMX content updates. The lock is handled once,
-		// above: this listener was a second copy of it.
-		document.addEventListener('htmx:afterSwap', function(evt) {
-			// The swap lands inside a pane rather than on it: htmx replaces the
-			// pane's children, so the pane itself is the thing to look up from.
-			if (evt.detail.target.closest(PREVIEW_PANES) ||
-				evt.detail.target.querySelector(PREVIEW_PANES)) {
-				attachPreviewHoverHandlers();
-			}
-		});
+		function attachHoverToAdmin(adminBlock) {
+			if (adminBlock._hoverBound) return;
+			const blockId = adminBlock.dataset.blockId;
+			if (!blockId) return;
+			adminBlock._hoverBound = true;
+
+			adminBlock.addEventListener('mouseenter', function() {
+				adminBlock.classList.add('admin-block-highlighted');
+				const previewBlock = previewBlockFor(blockId);
+				if (!previewBlock) return;
+				previewBlock.classList.add('preview-block-highlighted');
+				revealInPreview(previewBlock);
+			});
+
+			adminBlock.addEventListener('mouseleave', function() {
+				adminBlock.classList.remove('admin-block-highlighted');
+				const previewBlock = previewBlockFor(blockId);
+				if (previewBlock) previewBlock.classList.remove('preview-block-highlighted');
+				clearTimeout(dwell);
+			});
+		}
+
+		function attachHoverHandlers() {
+			document.querySelectorAll(PREVIEW_PANES).forEach(attachHoverTo);
+			document.querySelectorAll(ADMIN_BLOCKS).forEach(attachHoverToAdmin);
+		}
+
+		// Previews fetch their blocks into the panes after the page renders,
+		// and adding a block appends to the editor's list, so both sides are
+		// re-scanned after every swap. The per-element guards keep the
+		// listeners from stacking.
+		attachHoverHandlers();
+		document.addEventListener('htmx:afterSwap', attachHoverHandlers);
 	})();
 	</script>
 }
