@@ -12946,6 +12946,11 @@ p.label {
 .no-spinner {
   -moz-appearance: textfield;
 }
+.input :is(input[type="radio"], input[type="checkbox"]) {
+  width: var(--size);
+  height: var(--size);
+  border: var(--border) solid var(--input-color, currentColor);
+}
 .prose blockquote {
   --tw-font-weight: var(--font-weight-normal);
   font-weight: var(--font-weight-normal);

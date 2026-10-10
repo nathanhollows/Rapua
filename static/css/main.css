@@ -255,6 +255,17 @@ p.label {
   -moz-appearance: textfield;
 }
 
+/* daisyUI's `.input input` rule matches every input inside a field wrapper,
+   which is right for the wrapper's own text field but also catches radios and
+   checkboxes placed in the same wrapper: it strips their border and stretches
+   them to the full row, leaving a blank bar where the field should be. Give
+   those back the component's own box. */
+.input :is(input[type="radio"], input[type="checkbox"]) {
+  width: var(--size);
+  height: var(--size);
+  border: var(--border) solid var(--input-color, currentColor);
+}
+
 .prose blockquote {
   @apply font-normal not-italic;
 }
