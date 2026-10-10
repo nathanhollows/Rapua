@@ -241,7 +241,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		}
 		ctx = templ.ClearChildren(ctx)
 		rootPublished := publishedCount(nodes)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Grouped because the lock badge is appended here at runtime; loose, it\n\tpushes the primary action to the middle of the row. --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 pt-5 pb-3\" hx-boost=\"true\"><div id=\"quest-title-group\" class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold\">Quest</h1></div><a href=\"/admin/objective/new\" class=\"btn btn-primary btn-sm\" data-lock-hide>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Grouped because the lock badge is appended here at runtime; loose, it\n\tpushes the primary action to the middle of the row. --><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 py-5\" hx-boost=\"true\"><div id=\"quest-title-group\" class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold\">Quest</h1></div><a href=\"/admin/objective/new\" class=\"btn btn-primary\" data-lock-hide>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -200,6 +200,9 @@ func TestObjectiveTree_HeaderHasATitleGroupForTheLockBadge(t *testing.T) {
 	html := renderTree(t, models.Objective{ID: "root", Slug: "root"}, nil)
 
 	assert.Contains(t, html, `id="quest-title-group"`)
-	assert.Equal(t, 2, strings.Count(html, "px-6 pt-5 pb-3")+strings.Count(html, "px-6 pb-4"),
-		"the title row and the options row share one left edge with the tree")
+	// Rows above the tree share its left edge; the header padding matches the
+	// other pages'.
+	assert.Contains(t, html, `items-center w-full px-6 py-5`)
+	assert.Contains(t, html, `class="px-6 pb-4 flex flex-wrap`)
+	assert.Contains(t, html, `id="objective-tree" class="px-6"`)
 }
