@@ -111,6 +111,10 @@ func init() {
 		[]BlockContext{ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
+		&ChoiceBlock{},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
 		&ClueBlock{},
 		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
 	)
@@ -137,7 +141,6 @@ func init() {
 		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(&SortingBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
-	registerBlock(&ChoiceBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
