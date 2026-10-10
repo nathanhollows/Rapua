@@ -443,7 +443,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
     {
       "type": "choice",
       "name": "Choice",
-      "description": "Presents labelled options; the chosen one is recorded in player state.",
+      "description": "Presents labelled options; selecting one sets a boolean variable.",
       "contexts": [
         "objective_proof",
         "objective_reveal"
@@ -898,18 +898,18 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       ]
     },
     {
-      "type": "random_clue",
-      "name": "Random Clue",
-      "description": "Shows a randomly selected clue from a list, deterministically chosen per team.",
+      "type": "random_text",
+      "name": "Random Text",
+      "description": "Shows one randomly selected text from a list, deterministically chosen per team.",
       "contexts": [
         "objective_proof",
         "objective_reveal"
       ],
       "fields": [
         {
-          "name": "clues",
+          "name": "texts",
           "type": "list",
-          "description": "List of clue strings to randomly select from",
+          "description": "List of texts to randomly select from",
           "required": true,
           "items": {
             "name": "",

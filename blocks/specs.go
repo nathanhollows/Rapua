@@ -254,13 +254,13 @@ func (b *QuizBlock) GetSpec() game.BlockSpec {
 	}
 }
 
-func (b *RandomClueBlock) GetSpec() game.BlockSpec {
+func (b *RandomTextBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
-		Type:        "random_clue",
-		Name:        "Random Clue",
-		Description: "Shows a randomly selected clue from a list, deterministically chosen per team.",
+		Type:        "random_text",
+		Name:        "Random Text",
+		Description: "Shows one randomly selected text from a list, deterministically chosen per team.",
 		Fields: []game.FieldSpec{
-			{Name: "clues", Type: "list", Required: true, Description: "List of clue strings to randomly select from",
+			{Name: "texts", Type: "list", Required: true, Description: "List of texts to randomly select from",
 				Items: &game.FieldSpec{Type: "string"}},
 		},
 	}

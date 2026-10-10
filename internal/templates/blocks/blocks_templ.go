@@ -64,9 +64,9 @@ func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Co
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonAdmin(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomClueAdmin(settings, *b)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextAdmin(settings, *b)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerAdmin(settings, *b)
@@ -145,9 +145,9 @@ func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state b
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomCluePlayer(settings, *b, state)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextPlayer(settings, *b, state)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
@@ -226,9 +226,9 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomCluePlayer(settings, *b, state)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextPlayer(settings, *b, state)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)

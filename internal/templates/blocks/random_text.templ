@@ -6,15 +6,15 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-templ randomCluePlayer(_ models.QuestSettings, block blocks.RandomClueBlock, state blocks.PlayerState) {
-	if len(block.Clues) > 0 {
+templ randomTextPlayer(_ models.QuestSettings, block blocks.RandomTextBlock, state blocks.PlayerState) {
+	if len(block.Texts) > 0 {
 		<div class="prose">
-			@templ.Raw(stringToMarkdown(block.GetClue(state.GetPlayerID())))
+			@templ.Raw(stringToMarkdown(block.GetText(state.GetPlayerID())))
 		</div>
 	}
 }
 
-templ randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) {
+templ randomTextAdmin(_ models.QuestSettings, block blocks.RandomTextBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
@@ -25,39 +25,39 @@ templ randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) {
 			<legend class="fieldset-legend w-full">
 				<div class="flex items-center gap-2">
 					@markdownBadge()
-					Clues
+					Texts
 				</div>
 				<button
 					class="btn btn-outline btn-xs"
 					type="button"
 					_="on click
 							set :group to closest <form />
-							put #clue-item-template's innerHTML at the end of :group.querySelector('.clue-items')
+							put #text-item-template's innerHTML at the end of :group.querySelector('.text-items')
 						"
 				>
-					Add Clue
+					Add Text
 				</button>
 			</legend>
-			<div class="clue-items join join-vertical">
-				for _, clue := range block.Clues {
-					@clueItem(clue)
+			<div class="text-items join join-vertical">
+				for _, text := range block.Texts {
+					@textItem(text)
 				}
-				if len(block.Clues) == 0 {
-					@clueItem("")
+				if len(block.Texts) == 0 {
+					@textItem("")
 				}
 			</div>
 			<span class="label inline-block">
-				Each team is shown one randomly selected clue.
+				Each team is shown one of these texts.
 			</span>
 		</fieldset>
-		<template id="clue-item-template">
-			<label class="clue-item input flex flex-row items-top gap-2 h-auto join-item w-full">
+		<template id="text-item-template">
+			<label class="text-item input flex flex-row items-top gap-2 h-auto join-item w-full">
 				<textarea
-					name="clues"
+					name="texts"
 					class="w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent"
 					style="field-sizing: content;"
 					rows="1"
-					placeholder="Add a clue..."
+					placeholder="Add a text..."
 					autoComplete="off"
 					_="on keyup send updated to closest parent <form />"
 				></textarea>
@@ -65,11 +65,11 @@ templ randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) {
 					type="button"
 					class="btn btn-xs btn-circle hover:btn-error tooltip"
 					data-tip="Delete"
-					_="on click 
-						set :group to closest <form /> then 
-						remove closest parent <label/> then 
-						if :group.querySelectorAll('.clue-item').length == 0 then
-							put #clue-item-template's innerHTML at the end of :group.querySelector('.clue-items')
+					_="on click
+						set :group to closest <form /> then
+						remove closest parent <label/> then
+						if :group.querySelectorAll('.text-item').length == 0 then
+							put #text-item-template's innerHTML at the end of :group.querySelector('.text-items')
 						end then
 						send trigger to :group
 					end
@@ -82,28 +82,28 @@ templ randomClueAdmin(_ models.QuestSettings, block blocks.RandomClueBlock) {
 	</form>
 }
 
-templ clueItem(clue string) {
-	<label class="clue-item input flex flex-row items-top gap-2 h-auto join-item w-full">
+templ textItem(text string) {
+	<label class="text-item input flex flex-row items-top gap-2 h-auto join-item w-full">
 		<textarea
-			name="clues"
+			name="texts"
 			class="w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent"
 			style="field-sizing: content;"
 			rows="1"
-			value={ clue }
-			placeholder="Add a clue..."
+			value={ text }
+			placeholder="Add a text..."
 			autoComplete="off"
 		>
-			{ clue }
+			{ text }
 		</textarea>
 		<button
 			type="button"
 			class="btn btn-xs btn-circle hover:btn-error tooltip delete"
 			data-tip="Delete"
-			_="on click 
-				set :group to closest <form /> then 
-				remove closest parent <label/> then 
-				if :group.querySelectorAll('.clue-item').length == 0 then
-					put #clue-item-template's innerHTML at the end of :group.querySelector('.clue-items')
+			_="on click
+				set :group to closest <form /> then
+				remove closest parent <label/> then
+				if :group.querySelectorAll('.text-item').length == 0 then
+					put #text-item-template's innerHTML at the end of :group.querySelector('.text-items')
 				end then
 				send trigger to :group
 			end

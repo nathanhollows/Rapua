@@ -95,7 +95,7 @@ func init() {
 		&MapBlock{},
 		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&RandomClueBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&RandomTextBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 	registerBlock(
 		&ToggleTextBlock{},
 		[]BlockContext{ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
@@ -294,8 +294,8 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 		return NewClueBlock(baseBlock), nil
 	case "button":
 		return NewButtonBlock(baseBlock), nil
-	case "random_clue":
-		return NewRandomClueBlock(baseBlock), nil
+	case "random_text":
+		return NewRandomTextBlock(baseBlock), nil
 	case "free_text":
 		return NewFreeTextBlock(baseBlock), nil
 	case "photo":
@@ -400,8 +400,8 @@ func NewButtonBlock(base BaseBlock) *ButtonBlock {
 	}
 }
 
-func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
-	return &RandomClueBlock{
+func NewRandomTextBlock(base BaseBlock) *RandomTextBlock {
+	return &RandomTextBlock{
 		BaseBlock: base,
 	}
 }
