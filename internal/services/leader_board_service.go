@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -16,12 +17,14 @@ func NewLeaderBoardService() *LeaderBoardService {
 }
 
 // GetLeaderBoardData returns sorted and ranked leaderboard data. completedCounts
-// is keyed by run code and holds each team's completed-objective count.
+// and lastSeen are keyed by run code: each team's completed-objective count and
+// the time it last touched a block (see RunService.LastSeenByRun).
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
 	teams []models.Run,
 	objectiveCount int,
 	completedCounts map[string]int,
+	lastSeen map[string]time.Time,
 	rankingScheme string,
 	sortField string,
 	sortOrder string,
@@ -38,7 +41,12 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 			continue
 		}
 
-		teamData := s.convertTeamToLeaderBoardData(team, objectiveCount, completedCounts[team.Code])
+		teamData := s.convertTeamToLeaderBoardData(
+			team,
+			objectiveCount,
+			completedCounts[team.Code],
+			lastSeen[team.Code],
+		)
 		leaderBoardData = append(leaderBoardData, teamData)
 	}
 
@@ -52,15 +60,22 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 }
 
 // convertTeamToLeaderBoardData converts a models.Run to LeaderBoardTeamData.
+// A run that has touched no block falls back to when it started, which is the
+// last thing known about it. A zero value there would read as older than every
+// other run and quietly win the ranking tiebreak.
 func (s *LeaderBoardService) convertTeamToLeaderBoardData(
-	team models.Run, objectiveCount, completedCount int,
+	team models.Run, objectiveCount, completedCount int, lastSeen time.Time,
 ) LeaderBoardTeamData {
+	if lastSeen.IsZero() {
+		lastSeen = team.StartedAt
+	}
+
 	return LeaderBoardTeamData{
 		ID:         team.ID,
 		Code:       team.Code,
 		Name:       team.Name,
 		Points:     team.Points,
-		LastSeen:   team.UpdatedAt,
+		LastSeen:   lastSeen,
 		Progress:   completedCount,
 		Status:     s.determineTeamStatus(objectiveCount, completedCount),
 		HasStarted: team.HasStarted,

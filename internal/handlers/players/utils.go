@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
@@ -85,6 +86,7 @@ type LeaderBoardService interface {
 		teams []models.Run,
 		objectiveCount int,
 		completedCounts map[string]int,
+		lastSeen map[string]time.Time,
 		rankingScheme string,
 		sortField string,
 		sortOrder string,
@@ -100,6 +102,7 @@ type RunService interface {
 	GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
+	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 }
 
 type UploadService interface {

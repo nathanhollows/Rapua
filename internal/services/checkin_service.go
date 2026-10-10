@@ -8,32 +8,40 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/nathanhollows/Rapua/v8/navigation"
+	"github.com/uptrace/bun"
 )
 
 type CheckInService struct {
+	transactor                     db.Transactor
 	teamRepo                       repositories.RunRepository
 	blockService                   *BlockService
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	runEventRepo                   repositories.RunEventRepository
 	loader                         runStateLoader
 }
 
 func NewCheckInService(
+	transactor db.Transactor,
 	teamRepo repositories.RunRepository,
 	blockService *BlockService,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 	sectionFinishRepo repositories.SectionFinishRepository,
 	blockRepo repositories.BlockRepository,
+	runEventRepo repositories.RunEventRepository,
 ) *CheckInService {
 	return &CheckInService{
+		transactor:                     transactor,
 		teamRepo:                       teamRepo,
 		blockService:                   blockService,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		runEventRepo:                   runEventRepo,
 		loader: runStateLoader{
 			objectiveRepo:                  objectiveRepo,
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
@@ -43,7 +51,7 @@ func NewCheckInService(
 	}
 }
 
-func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
+func (s *CheckInService) ValidateAndUpdateBlockState(
 	ctx context.Context,
 	team models.Run,
 	data map[string][]string,
@@ -53,41 +61,42 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		return nil, nil, errors.New("blockID must be set")
 	}
 
-	// Preview mode should use fresh mock state.
-	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
-
-	var block blocks.Block
-	var state blocks.PlayerState
-	var err error
-
-	if isPreview {
-		block, err = s.blockService.GetByBlockID(ctx, blockID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
-		}
-
-		state, err = s.blockService.NewMockBlockState(ctx, blockID, team.Code, team.QuestID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
-		}
-	} else {
-		block, state, err = s.blockService.GetBlockWithStateByBlockIDAndRunCode(ctx, blockID, team.Code, team.QuestID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("getting block with state: %w", err)
-		}
+	// Preview uses fresh mock state and writes nothing, events included. It
+	// carries the run code "preview", which has no row in runs, so anything
+	// written against it trips a foreign key.
+	if ctx.Value(contextkeys.PreviewKey) != nil {
+		return s.validateInPreview(ctx, team, blockID, data)
 	}
 
+	// Every read happens before the transaction opens, and the transaction holds
+	// nothing but writes. Holding the write lock across the reachability and
+	// frontier work would serialize every submission in the quest behind a full
+	// tree load, and in shared-cache mode a read on another connection while the
+	// lock is held does not wait, it deadlocks.
+	block, state, err := s.blockService.GetBlockWithStateByBlockIDAndRunCode(
+		ctx, blockID, team.Code, team.QuestID,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting block with state: %w", err)
+	}
 	if block == nil {
 		return nil, nil, errors.New("block not found")
 	}
-
 	if state == nil {
 		return nil, nil, errors.New("block state not found")
 	}
 
-	// Prevent duplicate points for completed blocks in regular play.
-	if !isPreview && state.IsComplete() {
+	// Already complete: a resubmission writes nothing, the event included, so a
+	// second click is not a second attempt.
+	if state.IsComplete() {
 		return state, block, nil
+	}
+
+	// Read on every submission, not only on a completing one: both the plan and
+	// the event need the context.
+	blockContext, err := s.blockService.GetBlockContext(ctx, blockID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting block context: %w", err)
 	}
 
 	state, err = block.ValidatePlayerInput(state, data)
@@ -95,64 +104,178 @@ func (s *CheckInService) ValidateAndUpdateBlockState( //nolint:gocognit
 		return nil, nil, fmt.Errorf("validating block: %w", err)
 	}
 
-	// Preview never persists state.
-	if !isPreview {
-		state, err = s.blockService.UpdateState(ctx, state)
-		if err != nil {
-			return nil, nil, fmt.Errorf("updating block state: %w", err)
-		}
+	plan, err := s.planCompletion(ctx, &team, block, blockContext, state.IsComplete())
+	if err != nil {
+		return nil, nil, err
 	}
 
-	// Preview never awards points.
-	if !isPreview && state.IsComplete() {
-		blockContext, err := s.blockService.GetBlockContext(ctx, blockID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("getting block context: %w", err)
-		}
-		if err = s.awardPointsAndComplete(ctx, &team, block, blockContext); err != nil {
-			return nil, nil, err
-		}
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	won, err := s.applyAnswer(ctx, tx, &team, block, blockContext, state, plan)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !won {
+		return state, block, nil
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, nil, fmt.Errorf("committing block validation: %w", err)
 	}
 
 	return state, block, nil
 }
 
-// awardPointsAndComplete awards points and, for objective contexts, logs
-// completion once every block in the context is done.
-func (s *CheckInService) awardPointsAndComplete(
-	ctx context.Context, team *models.Run, block blocks.Block, blockContext game.BlockContext,
-) error {
-	if blockContext != game.ContextObjectiveProof && blockContext != game.ContextObjectiveReveal {
-		team.Points += block.GetPoints()
-		if err := s.teamRepo.Update(ctx, team); err != nil {
-			return fmt.Errorf("awarding points: %w", err)
-		}
-		return nil
+// applyAnswer writes everything one submission changes, inside the caller's
+// transaction: the block state, the points, the completion row and the events. It
+// reports false, with nothing written, when the block was already complete.
+func (s *CheckInService) applyAnswer(
+	ctx context.Context,
+	tx *bun.Tx,
+	team *models.Run,
+	block blocks.Block,
+	blockContext game.BlockContext,
+	state blocks.PlayerState,
+	plan completionPlan,
+) (bool, error) {
+	// The read that decided the block was incomplete happened outside this
+	// transaction, so the condition is re-checked where it cannot go stale: a
+	// second submission that lands after the first commits matches no row.
+	won, err := s.blockService.UpdateStateIfIncompleteWithTx(ctx, tx, state)
+	if err != nil {
+		return false, fmt.Errorf("updating block state: %w", err)
+	}
+	if !won {
+		return false, nil
 	}
 
-	// Reachability first, and once. Points used to be credited before the gate
-	// ran, so a team could be paid for finishing an objective the gate then
-	// turned away without a completion row: paid for work the game does not
-	// record. The answer is passed down rather than asked for again, since each
-	// ask is a full tree load and a frontier.
+	if plan.awardPoints {
+		// Incremented in the database, not by writing a total read before this
+		// transaction opened: two submissions landing together would each write
+		// their own total and one award would be lost.
+		if err := s.teamRepo.AddPointsWithTx(ctx, tx, team.Code, block.GetPoints()); err != nil {
+			return false, fmt.Errorf("awarding points: %w", err)
+		}
+	}
+
+	completedContext := false
+	if plan.objective != nil {
+		inserted, err := s.objectiveContextCompletionRepo.InsertWithTx(
+			ctx, tx, team.Code, plan.objective.ID, blockContext,
+		)
+		if err != nil {
+			return false, fmt.Errorf("logging objective context completion: %w", err)
+		}
+		completedContext = inserted
+	}
+
+	// objectiveID is empty for a block the quest owns rather than an objective, so
+	// the column never carries a quest ID.
+	objectiveID := ""
+	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
+		objectiveID = block.GetOwnerID()
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, answeredEvent(
+		team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded(),
+	)); err != nil {
+		return false, fmt.Errorf("recording answer: %w", err)
+	}
+
+	if completedContext {
+		if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
+			team, block.GetOwnerID(), blockContext,
+		)); err != nil {
+			return false, fmt.Errorf("recording objective completion: %w", err)
+		}
+	}
+
+	return true, nil
+}
+
+func (s *CheckInService) validateInPreview(
+	ctx context.Context, team models.Run, blockID string, data map[string][]string,
+) (blocks.PlayerState, blocks.Block, error) {
+	block, err := s.blockService.GetByBlockID(ctx, blockID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting block in preview mode: %w", err)
+	}
+
+	state, err := s.blockService.NewMockBlockState(ctx, blockID, team.Code, team.QuestID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating mock state in preview mode: %w", err)
+	}
+
+	if block == nil {
+		return nil, nil, errors.New("block not found")
+	}
+	if state == nil {
+		return nil, nil, errors.New("block state not found")
+	}
+
+	state, err = block.ValidatePlayerInput(state, data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validating block: %w", err)
+	}
+
+	return state, block, nil
+}
+
+// completionPlan is what a completing submission is entitled to: awardPoints for
+// a start or finish block, which the quest owns and which has no gate to pass, and
+// objective once the context is complete.
+type completionPlan struct {
+	awardPoints bool
+	objective   *models.Objective
+}
+
+// planCompletion runs the gates before anything is written, so points are never
+// credited for work the game does not record. The gate is asked once, and its
+// answer carried into the transaction.
+func (s *CheckInService) planCompletion(
+	ctx context.Context,
+	team *models.Run,
+	block blocks.Block,
+	blockContext game.BlockContext,
+	complete bool,
+) (completionPlan, error) {
+	if !complete {
+		return completionPlan{}, nil
+	}
+
+	if blockContext != game.ContextObjectiveProof && blockContext != game.ContextObjectiveReveal {
+		return completionPlan{awardPoints: true}, nil
+	}
+
 	objective, err := s.objectiveRepo.GetByID(ctx, block.GetOwnerID())
 	if err != nil {
-		return fmt.Errorf("loading objective: %w", err)
+		return completionPlan{}, fmt.Errorf("loading objective: %w", err)
 	}
+
 	reachable, err := s.ObjectiveIsReachable(ctx, team, objective)
 	if err != nil {
-		return err
+		return completionPlan{}, err
 	}
 	if !reachable {
-		return nil
+		return completionPlan{}, nil
 	}
 
-	team.Points += block.GetPoints()
-	if err := s.teamRepo.Update(ctx, team); err != nil {
-		return fmt.Errorf("awarding points: %w", err)
+	stillRequired, err := s.blockService.checkValidationRequiredExcluding(
+		ctx, objective.ID, team.Code, team.QuestID, blockContext, block.GetID(),
+	)
+	if err != nil {
+		return completionPlan{}, fmt.Errorf("checking if objective context is complete: %w", err)
 	}
 
-	return s.completeReachableObjectiveContext(ctx, team, objective, blockContext)
+	plan := completionPlan{awardPoints: true}
+	if !stillRequired {
+		plan.objective = objective
+	}
+	return plan, nil
 }
 
 // CompleteObjectiveContext logs the completion and applies the context's sets
@@ -182,9 +305,6 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	// Loaded before the insert, not after, so the depends check below runs
-	// before anything is written. Only reached once the context is actually
-	// complete, so this is not a per-validation cost.
 	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
 	if err != nil {
 		return fmt.Errorf("loading objective: %w", err)
@@ -201,44 +321,32 @@ func (s *CheckInService) CompleteObjectiveContext(
 		return nil
 	}
 
-	return s.logObjectiveContextCompletion(ctx, team, objective, blockContext)
-}
-
-// completeReachableObjectiveContext is CompleteObjectiveContext for a caller
-// that has already established the objective is reachable, so the gate is not
-// paid for twice: each check loads the quest's tree and derives a frontier.
-func (s *CheckInService) completeReachableObjectiveContext(
-	ctx context.Context, team *models.Run, objective *models.Objective, blockContext game.BlockContext,
-) error {
-	if ctx.Value(contextkeys.PreviewKey) != nil {
-		return nil
+	// Only the writes are transactional, for the same reason the check-in path
+	// keeps its reads outside: the lock is not held across a tree load. Two
+	// concurrent completions both get this far; the insert's conflict clause
+	// decides which one recorded it.
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
 	}
+	defer func() { _ = tx.Rollback() }()
 
-	stillRequired, err := s.blockService.checkValidationRequiredForCheckIn(
-		ctx, objective.ID, team.Code, team.QuestID, blockContext,
+	inserted, err := s.objectiveContextCompletionRepo.InsertWithTx(
+		ctx, tx, team.Code, objective.ID, blockContext,
 	)
 	if err != nil {
-		return fmt.Errorf("checking if objective context is complete: %w", err)
-	}
-	if stillRequired {
-		return nil
-	}
-
-	return s.logObjectiveContextCompletion(ctx, team, objective, blockContext)
-}
-
-// logCompletionAndApplySets writes the completion row and, if that row is new,
-// fires the context's sets. The insert is the idempotency guard: sets belong to
-// the call that recorded the completion, not to every call that finds it done.
-func (s *CheckInService) logObjectiveContextCompletion(
-	ctx context.Context, team *models.Run, objective *models.Objective, blockContext game.BlockContext,
-) error {
-	if _, err := s.objectiveContextCompletionRepo.Insert(
-		ctx, team.Code, objective.ID, blockContext,
-	); err != nil {
 		return fmt.Errorf("logging objective context completion: %w", err)
 	}
-	return nil
+
+	if inserted {
+		if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
+			team, objective.ID, blockContext,
+		)); err != nil {
+			return fmt.Errorf("recording objective completion: %w", err)
+		}
+	}
+
+	return tx.Commit()
 }
 
 // IsObjectiveContextPending reports whether an objective's proof or reveal

@@ -258,9 +258,13 @@ templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, lead
 							<td>{ fmt.Sprint(teamData.Points) }</td>
 						}
 						<td>
-							<span class="tooltip" data-tip={ teamData.LastSeen.Local().Format("02 Jan 03:04 PM") }>
-								{ timeago.Parse(teamData.LastSeen) }
-							</span>
+							if !teamData.LastSeen.IsZero() {
+								<span class="tooltip" data-tip={ teamData.LastSeen.Local().Format("02 Jan 03:04 PM") }>
+									{ timeago.Parse(teamData.LastSeen) }
+								</span>
+							} else {
+								<em class="opacity-50">No activity yet</em>
+							}
 						</td>
 						<td>
 							if objectiveCount > 0 {

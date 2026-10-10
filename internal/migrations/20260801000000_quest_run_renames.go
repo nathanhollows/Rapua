@@ -189,3 +189,14 @@ func columnExists(ctx context.Context, db *bun.DB, table, column string) bool {
 	}
 	return count > 0
 }
+
+// indexExists checks whether an index exists in the SQLite database.
+func indexExists(ctx context.Context, db *bun.DB, name string) bool {
+	var count int
+	if err := db.QueryRowContext(ctx,
+		"SELECT count(*) FROM sqlite_master WHERE type='index' AND name=?", name,
+	).Scan(&count); err != nil {
+		return false
+	}
+	return count > 0
+}

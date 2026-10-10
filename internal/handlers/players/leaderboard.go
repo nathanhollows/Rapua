@@ -41,6 +41,13 @@ func (h *PlayerHandler) leaderboard(
 		h.logger.ErrorContext(r.Context(), "leaderboard: counting completions", "error", err)
 		return nil
 	}
+	// Loaded for the ranking tiebreak, not for display: the board shows no
+	// timestamps, but tied teams are ordered by who got there first.
+	lastSeen, err := h.runService.LastSeenByRun(r.Context(), team.QuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "leaderboard: loading last seen times", "error", err)
+		return nil
+	}
 
 	// Ranked, and sorted by that rank: a player is shown one board rather than
 	// the admin's sortable table, so nothing here comes from the URL.
@@ -49,6 +56,7 @@ func (h *PlayerHandler) leaderboard(
 		teams,
 		len(team.Quest.Objectives),
 		completed,
+		lastSeen,
 		leaderboardScheme(team.Quest.Settings),
 		"rank",
 		"asc",

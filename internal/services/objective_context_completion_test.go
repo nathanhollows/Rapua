@@ -7,6 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -27,12 +28,14 @@ func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	svc := services.NewCheckInService(
+		db.NewTransactor(dbc),
 		repositories.NewRunRepository(dbc),
 		blockService,
 		repositories.NewObjectiveRepository(dbc),
 		repositories.NewObjectiveContextCompletionRepository(dbc),
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
+		repositories.NewRunEventRepository(dbc),
 	)
 	return svc, dbc, cleanup
 }

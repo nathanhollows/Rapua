@@ -10,6 +10,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/uptrace/bun"
 )
 
 type BlockService struct {
@@ -337,6 +338,18 @@ func (s *BlockService) checkValidationRequiredForCheckIn(
 	ownerID, runCode, questID string,
 	blockContext game.BlockContext,
 ) (bool, error) {
+	return s.checkValidationRequiredExcluding(ctx, ownerID, runCode, questID, blockContext, "")
+}
+
+// checkValidationRequiredExcluding is the same check with one block treated as
+// done: a completion is planned before its own state is written, so the block
+// asking would otherwise read as outstanding and its context could never finish.
+func (s *BlockService) checkValidationRequiredExcluding(
+	ctx context.Context,
+	ownerID, runCode, questID string,
+	blockContext game.BlockContext,
+	excludingBlockID string,
+) (bool, error) {
 	blocks, state, err := s.FindByOwnerIDAndRunCodeWithStateAndContext(
 		ctx,
 		ownerID,
@@ -349,13 +362,13 @@ func (s *BlockService) checkValidationRequiredForCheckIn(
 	}
 
 	for _, block := range blocks {
-		if block.RequiresValidation() {
-			if state[block.GetID()] == nil {
-				return true, nil
-			}
-			if state[block.GetID()].IsComplete() {
-				continue
-			}
+		if !block.RequiresValidation() {
+			continue
+		}
+		if block.GetID() == excludingBlockID {
+			continue
+		}
+		if state[block.GetID()] == nil || !state[block.GetID()].IsComplete() {
 			return true, nil
 		}
 	}
@@ -366,4 +379,10 @@ func (s *BlockService) checkValidationRequiredForCheckIn(
 // UpdateState updates the player state for a block.
 func (s *BlockService) UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
 	return s.blockStateRepo.Update(ctx, state)
+}
+
+func (s *BlockService) UpdateStateIfIncompleteWithTx(
+	ctx context.Context, tx *bun.Tx, state blocks.PlayerState,
+) (bool, error) {
+	return s.blockStateRepo.UpdateIfIncompleteWithTx(ctx, tx, state)
 }

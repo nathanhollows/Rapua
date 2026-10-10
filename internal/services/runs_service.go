@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"math/rand/v2"
 
@@ -347,6 +348,11 @@ func (s *RunService) GetCompletedObjectives(ctx context.Context, questID, runCod
 // GetIncompleteObjectives' definition of "complete" and the frontier's.
 func (s *RunService) CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error) {
 	return s.objectiveContextCompletionRepo.CountCompletedObjectivesByRun(ctx, questID, game.ContextObjectiveProof)
+}
+
+// LastSeenByRun reports each run's most recent block interaction, keyed by run code.
+func (s *RunService) LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error) {
+	return s.blockStateRepo.LastSeenByRun(ctx, questID)
 }
 
 // newCode generates an alpha string of easily recognisable characters.

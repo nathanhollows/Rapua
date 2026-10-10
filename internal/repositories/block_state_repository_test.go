@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -134,6 +136,82 @@ func TestBlockStateRepository(t *testing.T) {
 			}
 		})
 	}
+}
+
+// LastSeenByRun is what the activity page's "last seen" reads, because
+// runs.updated_at is stamped once at insert and never advanced.
+func TestBlockStateRepository_LastSeenByRun(t *testing.T) {
+	repo, _, dbc, cleanup := setupBlockStateRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+
+	active := createTestTeam(t, dbc, parents.QuestID)
+	quiet := createTestTeam(t, dbc, parents.QuestID)
+	idle := createTestTeam(t, dbc, parents.QuestID)
+
+	older := time.Now().UTC().Add(-time.Hour).Truncate(time.Second)
+	newer := time.Now().UTC().Add(-time.Minute).Truncate(time.Second)
+
+	// Touched directly rather than through Create, which leaves updated_at to
+	// the schema default and so cannot express "an hour ago".
+	touch := func(runCode string, at time.Time) {
+		t.Helper()
+		state := &models.RunBlockState{
+			RunCode: runCode,
+			BlockID: createTestBlock(t, dbc, gofakeit.UUID()),
+			QuestID: parents.QuestID,
+		}
+		state.UpdatedAt = at
+		_, err := dbc.NewInsert().Model(state).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	touch(active, older)
+	touch(active, newer)
+	touch(quiet, older)
+
+	lastSeen, err := repo.LastSeenByRun(ctx, parents.QuestID)
+	require.NoError(t, err)
+
+	// The newer of a run's two touches is the one that answers "last seen".
+	assert.WithinDuration(t, newer, lastSeen[active], time.Second)
+	assert.WithinDuration(t, older, lastSeen[quiet], time.Second)
+
+	_, ok := lastSeen[idle]
+	assert.False(t, ok, "a run with no block state is absent from the map rather than reported as zero")
+}
+
+// The guard against two submissions completing one block: the loser matches no row
+// and says so.
+func TestBlockStateRepository_UpdateIfIncompleteOnlyWritesOnce(t *testing.T) {
+	repo, transactor, dbc, cleanup := setupBlockStateRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+	blockID := createTestBlock(t, dbc, gofakeit.UUID())
+	runCode := createTestTeam(t, dbc, parents.QuestID)
+
+	state, err := repo.NewBlockState(ctx, blockID, runCode, parents.QuestID)
+	require.NoError(t, err)
+	created, err := repo.Create(ctx, state)
+	require.NoError(t, err)
+
+	completeOnce := func() bool {
+		t.Helper()
+		tx, err := transactor.BeginTx(ctx, nil)
+		require.NoError(t, err)
+		created.SetComplete(true)
+		won, err := repo.UpdateIfIncompleteWithTx(ctx, tx, created)
+		require.NoError(t, err)
+		require.NoError(t, tx.Commit())
+		return won
+	}
+
+	assert.True(t, completeOnce(), "the first submission is the one that completes the block")
+	assert.False(t, completeOnce(), "a second submission matches no row and records nothing")
 }
 
 func verifyStatesDeleted(repo repositories.BlockStateRepository, states []blocks.PlayerState, questID string) error {

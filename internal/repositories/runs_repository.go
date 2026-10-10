@@ -31,6 +31,10 @@ type RunRepository interface {
 
 	// Update saves or updates a team in the database
 	Update(ctx context.Context, t *models.Run) error
+	// UpdateWithTx saves or updates a team inside a caller's transaction
+	UpdateWithTx(ctx context.Context, tx *bun.Tx, t *models.Run) error
+	// AddPointsWithTx adds delta to a team's points inside a caller's transaction
+	AddPointsWithTx(ctx context.Context, tx *bun.Tx, code string, delta int) error
 	// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction
 	UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error
 	// Reset wipes a team's progress for re-use
@@ -65,7 +69,31 @@ func NewRunRepository(db *bun.DB) RunRepository {
 
 // Update saves or updates a team in the database.
 func (r *teamRepository) Update(ctx context.Context, t *models.Run) error {
-	_, err := r.db.NewUpdate().Model(t).WherePK().Exec(ctx)
+	return r.update(ctx, r.db, t)
+}
+
+// UpdateWithTx saves or updates a team inside a caller's transaction.
+func (r *teamRepository) UpdateWithTx(ctx context.Context, tx *bun.Tx, t *models.Run) error {
+	return r.update(ctx, tx, t)
+}
+
+// AddPointsWithTx adds delta to a team's points inside a caller's transaction.
+//
+// The increment happens in SQL rather than by writing a total read earlier. A run
+// is read once at the start of a submission, before the transaction opens, so two
+// teammates answering on different devices at the same moment would otherwise both
+// write their own total and one award would vanish.
+func (r *teamRepository) AddPointsWithTx(ctx context.Context, tx *bun.Tx, code string, delta int) error {
+	_, err := tx.NewUpdate().
+		Model((*models.Run)(nil)).
+		Set("points = points + ?", delta).
+		Where("code = ?", code).
+		Exec(ctx)
+	return err
+}
+
+func (r *teamRepository) update(ctx context.Context, db bun.IDB, t *models.Run) error {
+	_, err := db.NewUpdate().Model(t).WherePK().Exec(ctx)
 	return err
 }
 

@@ -64,12 +64,26 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lastSeen, err := h.runService.LastSeenByRun(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.handleError(
+			w,
+			r,
+			"ActivityRunsOverview: getting last seen times",
+			"Error getting run activity",
+			"Could not load data",
+			err,
+		)
+		return
+	}
+
 	// Get leaderboard data using the new service
 	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(
 		r.Context(),
 		teams,
 		len(user.CurrentQuest.Objectives),
 		completedCounts,
+		lastSeen,
 		rankingScheme,
 		sortField,
 		sortOrder,

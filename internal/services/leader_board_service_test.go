@@ -70,7 +70,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("RankByProgress", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), "progress", "rank", "asc",
+			ctx, teams, locationCount, completedCounts(), nil, "progress", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -100,7 +100,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("RankByPoints", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), "points", "rank", "asc",
+			ctx, teams, locationCount, completedCounts(), nil, "points", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -124,7 +124,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("RankByCompletion", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), "completion", "rank", "asc",
+			ctx, teams, locationCount, completedCounts(), nil, "completion", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -148,7 +148,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("SortByName", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), "progress", "name", "asc",
+			ctx, teams, locationCount, completedCounts(), nil, "progress", "name", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -162,7 +162,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("SortDescending", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), "progress", "points", "desc",
+			ctx, teams, locationCount, completedCounts(), nil, "progress", "points", "desc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -193,7 +193,7 @@ func TestLeaderBoardService_TeamStatus(t *testing.T) {
 
 	ctx := context.Background()
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, locationCount, completedCounts(), "progress", "rank", "asc",
+		ctx, teams, locationCount, completedCounts(), nil, "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -360,9 +360,7 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 
 	ctx := context.Background()
 
-	// LastSeen mirrors team.UpdatedAt: check-in history no longer feeds it.
-	// UpdatedAt is promoted from the unexported baseModel, so it cannot be set
-	// in a composite literal.
+	// LastSeen comes from the caller's block-state map, not from the run row.
 	baseTime := time.Now().Add(-time.Hour * 3)
 	teams := []models.Run{
 		{
@@ -373,10 +371,9 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 			HasStarted: true,
 		},
 	}
-	teams[0].UpdatedAt = baseTime
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), "progress", "rank", "asc",
+		ctx, teams, 3, completedCounts(), map[string]time.Time{"T001": baseTime}, "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -391,6 +388,37 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 	}
 }
 
+// A run that has touched no block has nothing to report, so its start time
+// stands in. Falling through to the zero time instead would read as older than
+// every other run and hand it the tiebreak.
+func TestLeaderBoardService_LastSeenFallsBackToStartedAt(t *testing.T) {
+	service := setupLeaderboardService(t)
+
+	ctx := context.Background()
+	startedAt := time.Now().Add(-time.Hour * 2)
+	teams := []models.Run{
+		{
+			ID:         "team1",
+			Code:       "T001",
+			Name:       "Test Team",
+			Points:     100,
+			HasStarted: true,
+			StartedAt:  startedAt,
+		},
+	}
+
+	result, err := service.GetLeaderBoardData(
+		ctx, teams, 3, completedCounts(), nil, "progress", "rank", "asc",
+	)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if !result[0].LastSeen.Equal(startedAt) {
+		t.Errorf("Expected LastSeen to fall back to %v, got %v", startedAt, result[0].LastSeen)
+	}
+}
+
 func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	service := setupLeaderboardService(t)
 
@@ -398,7 +426,7 @@ func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	teams := []models.Run{}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), "progress", "rank", "asc",
+		ctx, teams, 3, completedCounts(), nil, "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -415,9 +443,7 @@ func TestLeaderBoardService_TieBreaker(t *testing.T) {
 	ctx := context.Background()
 	baseTime := time.Now().Add(-time.Hour)
 
-	// Create teams with same progress but different UpdatedAt (LastSeen) times.
-	// UpdatedAt is promoted from the unexported baseModel, so it cannot be set
-	// in a composite literal.
+	// Create teams with same progress but different LastSeen times.
 	teams := []models.Run{
 		{
 			ID:         "team1",
@@ -436,11 +462,13 @@ func TestLeaderBoardService_TieBreaker(t *testing.T) {
 	}
 	// T001 and T005 both map to 2 completed objectives in completedCounts(), so
 	// the tie must be broken by LastSeen alone.
-	teams[0].UpdatedAt = baseTime.Add(time.Minute * 10) // Later last seen.
-	teams[1].UpdatedAt = baseTime                       // Earlier last seen.
+	lastSeen := map[string]time.Time{
+		"T001": baseTime.Add(time.Minute * 10), // Later last seen.
+		"T005": baseTime,                       // Earlier last seen.
+	}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), "progress", "rank", "asc",
+		ctx, teams, 3, completedCounts(), lastSeen, "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

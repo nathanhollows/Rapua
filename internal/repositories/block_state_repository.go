@@ -22,11 +22,19 @@ type BlockStateRepository interface {
 
 	// Update updates an existing player state
 	Update(ctx context.Context, block blocks.PlayerState) (blocks.PlayerState, error)
+	// UpdateIfIncompleteWithTx writes the state only if the stored row is still
+	// incomplete, and reports whether this call is the one that wrote it.
+	UpdateIfIncompleteWithTx(ctx context.Context, tx *bun.Tx, state blocks.PlayerState) (bool, error)
 
 	// Delete deletes a player state by block ID, run code, and quest ID
 	Delete(ctx context.Context, blockID, runCode, questID string) error
 	// DeleteByBlockID deletes all player states for a block
 	DeleteByBlockID(ctx context.Context, tx *bun.Tx, blockID string) error
+
+	// LastSeenByRun returns the time of each run's most recent block
+	// interaction, keyed by run code. Runs that have touched no block yet are
+	// absent from the map.
+	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 }
 
 type blockStateRepository struct {
@@ -163,6 +171,38 @@ func (r *blockStateRepository) Update(ctx context.Context, state blocks.PlayerSt
 	return state, err
 }
 
+// UpdateIfIncompleteWithTx carries the incomplete check in the UPDATE's WHERE, so
+// the condition cannot go stale between a caller's read and this write.
+func (r *blockStateRepository) UpdateIfIncompleteWithTx(
+	ctx context.Context, tx *bun.Tx, state blocks.PlayerState,
+) (bool, error) {
+	modelState := convertPlayerStateToModelData(state)
+	if state.GetBlockID() == "" || state.GetPlayerID() == "" {
+		return false, errors.New("block_id and run_code must be set")
+	}
+
+	res, err := tx.NewUpdate().
+		Model(&modelState).
+		Set("player_data = ?", modelState.PlayerData).
+		Set("is_complete = ?", modelState.IsComplete).
+		Set("points_awarded = ?", modelState.PointsAwarded).
+		Set("updated_at = ?", time.Now()).
+		Where("block_id = ?", state.GetBlockID()).
+		Where("run_code = ?", state.GetPlayerID()).
+		Where("quest_id = ?", modelState.QuestID).
+		Where("is_complete = ?", false).
+		Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
 // NewBlockState creates a new block state.
 func (r *blockStateRepository) NewBlockState(
 	_ context.Context,
@@ -200,4 +240,32 @@ func (r *blockStateRepository) DeleteByBlockID(ctx context.Context, tx *bun.Tx, 
 		Where("block_id = ?", blockID).
 		Exec(ctx)
 	return err
+}
+
+// LastSeenByRun answers "when did this run last do anything", which the run's
+// own updated_at cannot: that column is stamped at insert and never advanced.
+// Every graded answer writes its block's state, so a playing run has a recent row.
+func (r *blockStateRepository) LastSeenByRun(
+	ctx context.Context, questID string,
+) (map[string]time.Time, error) {
+	var rows []struct {
+		RunCode  string    `bun:"run_code"`
+		LastSeen time.Time `bun:"last_seen"`
+	}
+	err := r.db.NewSelect().
+		Model((*models.RunBlockState)(nil)).
+		ColumnExpr("run_code").
+		ColumnExpr("MAX(updated_at) AS last_seen").
+		Where("quest_id = ?", questID).
+		Group("run_code").
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSeen := make(map[string]time.Time, len(rows))
+	for _, row := range rows {
+		lastSeen[row.RunCode] = row.LastSeen
+	}
+	return lastSeen, nil
 }

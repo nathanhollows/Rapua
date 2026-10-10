@@ -19,6 +19,14 @@ type ObjectiveContextCompletionRepository interface {
 		runCode, objectiveID string,
 		blockContext game.BlockContext,
 	) (inserted bool, err error)
+	// InsertWithTx is Insert inside a caller's transaction, so the completion and
+	// the event recording it commit or roll back together.
+	InsertWithTx(
+		ctx context.Context,
+		tx *bun.Tx,
+		runCode, objectiveID string,
+		blockContext game.BlockContext,
+	) (inserted bool, err error)
 	FindCompletedObjectiveIDs(
 		ctx context.Context,
 		runCode string,
@@ -52,12 +60,32 @@ func (r *objectiveContextCompletionRepository) Insert(
 	runCode, objectiveID string,
 	blockContext game.BlockContext,
 ) (bool, error) {
+	return insertCompletion(ctx, r.db, runCode, objectiveID, blockContext)
+}
+
+func (r *objectiveContextCompletionRepository) InsertWithTx(
+	ctx context.Context,
+	tx *bun.Tx,
+	runCode, objectiveID string,
+	blockContext game.BlockContext,
+) (bool, error) {
+	return insertCompletion(ctx, tx, runCode, objectiveID, blockContext)
+}
+
+// insertCompletion serves both callers: the conflict clause is the guard whether
+// it runs inside a transaction or not.
+func insertCompletion(
+	ctx context.Context,
+	db bun.IDB,
+	runCode, objectiveID string,
+	blockContext game.BlockContext,
+) (bool, error) {
 	row := &models.ObjectiveContextCompletion{
 		RunCode:     runCode,
 		ObjectiveID: objectiveID,
 		Context:     blockContext,
 	}
-	res, err := r.db.NewInsert().
+	res, err := db.NewInsert().
 		Model(row).
 		On("CONFLICT (run_code, objective_id, context) DO NOTHING").
 		Exec(ctx)

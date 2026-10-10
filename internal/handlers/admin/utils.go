@@ -210,6 +210,8 @@ type RunService interface {
 	BuildObjectiveSectionMap(ctx context.Context, questID string) (map[string]services.ObjectiveSectionInfo, error)
 	GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
+	// LastSeenByRun returns each run's most recent block interaction, keyed by run code.
+	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 }
 
 type UploadService interface {
@@ -242,6 +244,7 @@ type LeaderBoardService interface {
 		teams []models.Run,
 		objectiveCount int,
 		completedCounts map[string]int,
+		lastSeen map[string]time.Time,
 		rankingScheme string,
 		sortField string,
 		sortOrder string,

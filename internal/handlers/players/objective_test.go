@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -31,12 +32,14 @@ func setupObjectivePreviewServices(t *testing.T) (*services.CheckInService, *ser
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	checkInService := services.NewCheckInService(
+		db.NewTransactor(dbc),
 		repositories.NewRunRepository(dbc),
 		blockService,
 		repositories.NewObjectiveRepository(dbc),
 		repositories.NewObjectiveContextCompletionRepository(dbc),
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
+		repositories.NewRunEventRepository(dbc),
 	)
 	return checkInService, blockService, dbc, cleanup
 }
