@@ -600,7 +600,7 @@ func TestBuildObjectiveTree_CycleRendersAndTerminates(t *testing.T) {
 
 	var out strings.Builder
 	require.NoError(t, templates.ObjectiveTree(
-		services.QuestLint{}, rootRow, nodes, false).Render(context.Background(), &out))
+		services.QuestLint{}, rootRow, nodes, models.QuestSettings{}).Render(context.Background(), &out))
 
 	rendered := out.String()
 	assert.Equal(t, 1, strings.Count(rendered, `data-objective-id="first"`),
@@ -622,7 +622,7 @@ func TestBuildObjectiveTree_OrphanChainIsNotDuplicated(t *testing.T) {
 
 	var out strings.Builder
 	require.NoError(t, templates.ObjectiveTree(
-		services.QuestLint{}, rootRow, nodes, false).Render(context.Background(), &out))
+		services.QuestLint{}, rootRow, nodes, models.QuestSettings{}).Render(context.Background(), &out))
 
 	rendered := out.String()
 	for _, id := range []string{"orphan", "middle", "leaf"} {

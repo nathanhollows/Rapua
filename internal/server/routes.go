@@ -257,6 +257,8 @@ func setupPlayerRoutes(
 			)
 		})
 		r.Get("/", playerHandler.Team)
+		r.Get("/name", playerHandler.TeamNameForm)
+		r.Post("/name", playerHandler.TeamNamePost)
 		r.NotFound(publicHandler.NotFound)
 	})
 

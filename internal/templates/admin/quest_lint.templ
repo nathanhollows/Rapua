@@ -87,8 +87,8 @@ templ lintDiagLines(heading string, diagnostics []game.LintDiag) {
 // QuestBuilder is the quest page. The panel renders inside the tree rather
 // than above it, so one swap refreshes both: what is wrong and the rows it is
 // wrong about are answers to the same question.
-templ QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
-	@ObjectiveTree(lint, root, nodes, enablePoints)
+templ QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
+	@ObjectiveTree(lint, root, nodes, settings)
 }
 
 // SystemPageLintOOB re-renders the system page's panel after a block changes.

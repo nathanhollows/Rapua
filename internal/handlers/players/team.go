@@ -6,11 +6,8 @@ import (
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 )
 
-// Team is /team's handler: who the run is playing as.
-//
-// No leaderboard yet. The board needs the leaderboard service, which this
-// handler does not hold, and the page stands up without it: a name and the code
-// someone else joins with is the part a player comes here for.
+// Team is /team's handler: who the run is playing as, and where they sit if the
+// quest keeps a board.
 func (h *PlayerHandler) Team(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
@@ -23,7 +20,11 @@ func (h *PlayerHandler) Team(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := templates.Team(templates.TeamParams{Run: *team})
+	page := templates.Team(templates.TeamParams{
+		Run:         *team,
+		Leaderboard: h.leaderboard(r, team),
+		Objectives:  len(team.Quest.Objectives),
+	})
 	if err := templates.AppLayout(
 		page, templates.TeamChrome(*team), "Team", team.Messages,
 	).Render(r.Context(), w); err != nil {

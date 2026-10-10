@@ -76,6 +76,21 @@ type NotificationService interface {
 	DismissNotification(ctx context.Context, notificationID string) error
 }
 
+// LeaderBoardService ranks the runs of one quest. The player's copy is
+// read-only and takes no sort from the URL: a player is shown one board, the
+// way the quest's own settings decide it.
+type LeaderBoardService interface {
+	GetLeaderBoardData(
+		ctx context.Context,
+		teams []models.Run,
+		objectiveCount int,
+		completedCounts map[string]int,
+		rankingScheme string,
+		sortField string,
+		sortOrder string,
+	) ([]services.LeaderBoardTeamData, error)
+}
+
 type RunService interface {
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
 	Update(ctx context.Context, run *models.Run) error
@@ -83,6 +98,8 @@ type RunService interface {
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
 	GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
+	FindAll(ctx context.Context, questID string) ([]models.Run, error)
+	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 }
 
 type UploadService interface {
@@ -100,6 +117,7 @@ type PlayerHandler struct {
 	blockService        BlockService
 	checkInService      CheckInService
 	questService        QuestService
+	leaderBoardService  LeaderBoardService
 	navigationService   NavigationService
 	notificationService NotificationService
 	runService          RunService
@@ -111,6 +129,7 @@ func NewPlayerHandler(
 	blockService BlockService,
 	checkInService CheckInService,
 	questService QuestService,
+	leaderBoardService LeaderBoardService,
 	navigationService NavigationService,
 	notificationService NotificationService,
 	runService RunService,
@@ -121,6 +140,7 @@ func NewPlayerHandler(
 		blockService:        blockService,
 		checkInService:      checkInService,
 		questService:        questService,
+		leaderBoardService:  leaderBoardService,
 		navigationService:   navigationService,
 		notificationService: notificationService,
 		runService:          runService,

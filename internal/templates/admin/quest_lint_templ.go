@@ -319,7 +319,7 @@ func lintDiagLines(heading string, diagnostics []game.LintDiag) templ.Component 
 // QuestBuilder is the quest page. The panel renders inside the tree rather
 // than above it, so one swap refreshes both: what is wrong and the rows it is
 // wrong about are answers to the same question.
-func QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) templ.Component {
+func QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -340,7 +340,7 @@ func QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*Objec
 			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = ObjectiveTree(lint, root, nodes, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ObjectiveTree(lint, root, nodes, settings).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -60,7 +60,7 @@ func TestObjectiveTree_FinishLabelHiddenWhenTheBandAutoCompletes(t *testing.T) {
 func renderTree(t *testing.T, root models.Objective, nodes []*ObjectiveTreeNode) string {
 	t.Helper()
 	var out strings.Builder
-	require.NoError(t, ObjectiveTree(services.QuestLint{}, root, nodes, false).
+	require.NoError(t, ObjectiveTree(services.QuestLint{}, root, nodes, models.QuestSettings{}).
 		Render(context.Background(), &out))
 	return out.String()
 }

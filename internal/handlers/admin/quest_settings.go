@@ -14,8 +14,11 @@ func (h *Handler) QuestSettingsPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse points
-	user.CurrentQuest.Settings.EnablePoints = r.Form.Has("enablePoints") && r.Form.Get("enablePoints") == "on"
+	// An unchecked checkbox is absent from the form rather than false, so an
+	// absent key reads as off. The page sends both toggles on every change for
+	// that reason: one alone would switch the other off.
+	user.CurrentQuest.Settings.EnablePoints = r.Form.Get("enablePoints") == "on"
+	user.CurrentQuest.Settings.ShowLeaderboard = r.Form.Get("showLeaderboard") == "on"
 
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentQuest.Settings)
 	if err != nil {

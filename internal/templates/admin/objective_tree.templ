@@ -211,7 +211,7 @@ func bandSummary(min, max *int, childCount int) string {
 // root gets no card of its own, but still needs a routing picker for the
 // quest's top-level routing; the bar above the tree reuses the section
 // routing picker for that.
-templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, enablePoints bool) {
+templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
 	{{ rootPublished := publishedCount(nodes) }}
 	<!-- Grouped because the lock badge is appended here at runtime; loose, it
 	pushes the primary action to the middle of the row. -->
@@ -243,9 +243,21 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 					type="checkbox"
 					name="enablePoints"
 					class="toggle toggle-sm points-toggle"
-					checked?={ enablePoints }
+					checked?={ settings.EnablePoints }
 				/>
 				<span class="text-xs font-medium">Points</span>
+			</label>
+			<!-- Beside points because it reads off them: with points on the
+			board ranks by score, and with them off by how much of the quest
+			each team has done. -->
+			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-top" data-tip="Players can see how their team compares to the others">
+				<input
+					type="checkbox"
+					name="showLeaderboard"
+					class="toggle toggle-sm leaderboard-toggle"
+					checked?={ settings.ShowLeaderboard }
+				/>
+				<span class="text-xs font-medium">Leaderboard</span>
 			</label>
 		</div>
 		<label class="input input-sm flex items-center gap-2 w-60">
@@ -283,7 +295,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 			} else {
 				<ul class="objective-children flex flex-col w-full" data-parent-id={ root.ID } data-routing={ string(root.Routing) }>
 					for _, node := range nodes {
-						@objectiveNode(node, enablePoints, 0)
+						@objectiveNode(node, settings.EnablePoints, 0)
 					}
 				</ul>
 			}
@@ -983,11 +995,14 @@ templ objectiveSortableScript() {
 	});
 
 	document.body.addEventListener('change', function(evt) {
-		if (evt.target.matches('.points-toggle')) {
-			// An unchecked checkbox is absent from the form rather than
-			// false, and the server reads absence as "off".
+		if (evt.target.matches('.points-toggle, .leaderboard-toggle')) {
+			// Both are sent every time: an unchecked checkbox is absent from a
+			// form rather than false, and the server reads an absent key as
+			// "off", so sending one alone would switch the other off.
+			var toggles = document.querySelector('#quest-toolbar');
 			postObjectiveUpdate('/admin/quest/settings', {
-				enablePoints: evt.target.checked ? 'on' : '',
+				enablePoints: toggles.querySelector('.points-toggle').checked ? 'on' : '',
+				showLeaderboard: toggles.querySelector('.leaderboard-toggle').checked ? 'on' : '',
 			});
 			return;
 		}

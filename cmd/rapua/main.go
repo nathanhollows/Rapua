@@ -187,7 +187,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		&templateService, userService, magicTokenService,
 	)
 	playerHandler := players.NewPlayerHandler(
-		logger, blockService, checkInService, questService,
+		logger, blockService, checkInService, questService, leaderBoardService,
 		navigationService, notificationService, runService, uploadService,
 	)
 	adminHandler := admin.NewAdminHandler(

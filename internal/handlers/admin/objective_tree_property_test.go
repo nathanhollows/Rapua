@@ -58,7 +58,7 @@ func TestBuildObjectiveTree_TerminatesOnAnyShape(t *testing.T) {
 
 		var out strings.Builder
 		require.NoError(t, templates.ObjectiveTree(
-			services.QuestLint{}, root, nodes, false).Render(context.Background(), &out),
+			services.QuestLint{}, root, nodes, models.QuestSettings{}).Render(context.Background(), &out),
 			"seed %d", seed)
 
 		rendered := out.String()

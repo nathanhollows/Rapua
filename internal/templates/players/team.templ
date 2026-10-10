@@ -9,66 +9,199 @@ import (
 
 type TeamParams struct {
 	Run models.Run
-	// Leaderboard is empty when points are off or the setting hides it, leaving
-	// the page a name and a code.
+	// Leaderboard is empty when the quest does not show one.
 	Leaderboard []services.LeaderBoardTeamData
+	// Objectives is how many there are to finish, for the progress a board
+	// entry counts against.
+	Objectives int
 }
 
-// Team shows the run's name, its join code, and the leaderboard if the quest
-// keeps score.
-templ Team(data TeamParams) {
-	<div class="flex flex-col gap-4">
-		<div class="card card-border border-base-300 bg-base-100">
-			<div class="card-body p-4 gap-3">
-				@teamNameField(data.Run)
-				<div class="flex items-center gap-2 text-xs opacity-60">
-					@icon("hash", templ.Attributes{"class": "w-3.5 h-3.5"})
-					<span class="font-mono tracking-widest">{ data.Run.Code }</span>
-					if data.Run.Quest.Settings.EnablePoints {
-						<span class="ml-auto font-semibold tabular-nums opacity-100">
-							{ fmt.Sprintf("%d pts", data.Run.Points) }
-						</span>
-					}
-				</div>
-			</div>
-		</div>
-		if len(data.Leaderboard) > 0 {
-			<div class="card card-border border-base-300 bg-base-100">
-				<div class="card-body p-4 gap-2">
-					<h2 class="font-bold text-sm">Leaderboard</h2>
-					<ul class="flex flex-col gap-1">
-						for position, entry := range data.Leaderboard {
-							<li class={ "flex items-center gap-3 rounded-box px-2 py-1.5 text-sm",
-								templ.KV("bg-primary/10 font-semibold", entry.Code == data.Run.Code) }>
-								<span class="w-5 shrink-0 text-xs opacity-50 tabular-nums">{ fmt.Sprint(position + 1) }</span>
-								<span class="grow truncate">
-									if entry.Name != "" {
-										{ entry.Name }
-									} else {
-										{ entry.Code }
-									}
-								</span>
-								<span class="shrink-0 tabular-nums">{ fmt.Sprint(entry.Points) }</span>
-							</li>
-						}
-					</ul>
-				</div>
-			</div>
+// standing finds this run's own entry, so its position can be said plainly
+// rather than left for a player to find themselves in a list.
+func (data TeamParams) standing() (services.LeaderBoardTeamData, bool) {
+	for _, entry := range data.Leaderboard {
+		if entry.Code == data.Run.Code {
+			return entry, true
 		}
+	}
+	return services.LeaderBoardTeamData{}, false
+}
+
+// Team is who you are playing as, and where you stand.
+//
+// Rows rather than cards: each line is one fact and its value, and a list is
+// easier to run an eye down than four separate panels.
+//
+// The board is one setting and no further choices: with points it ranks by
+// score, and without them by how far through the quest each team is.
+templ Team(data TeamParams) {
+	<div class="flex flex-col gap-5">
+		<ul class="list bg-base-100 rounded-box border border-base-300">
+			<li id="team-name-slot" class="list-row items-center">
+				@TeamNameControl(data.Run)
+			</li>
+			<li class="list-row items-center">
+				<span class="opacity-60 text-sm">Join code</span>
+				<span class="list-col-grow"></span>
+				<span class="font-mono font-semibold tracking-[0.18em]">{ data.Run.Code }</span>
+			</li>
+			{{ me, ranked := data.standing() }}
+			<!-- Points and the board are separate settings: a quest can keep
+			score without showing anyone else's. The score is the run's own
+			either way, so it does not come from a board entry that may not
+			exist. -->
+			if data.Run.Quest.Settings.EnablePoints {
+				<li class="list-row items-center">
+					<span class="opacity-60 text-sm">Points</span>
+					<span class="list-col-grow"></span>
+					<span class="font-semibold tabular-nums">{ fmt.Sprint(data.Run.Points) }</span>
+				</li>
+			}
+			if ranked {
+				<li class="list-row items-center">
+					<span class="opacity-60 text-sm">Position</span>
+					<span class="list-col-grow"></span>
+					<span class="font-semibold tabular-nums">
+						{ ordinal(me.Rank) }
+						<span class="font-normal opacity-50">of { fmt.Sprint(len(data.Leaderboard)) }</span>
+					</span>
+				</li>
+				<!-- Only with a board, because the count comes from one. Not
+				said at all when points are on: the board is already ranking by
+				those, and two measures would compete. -->
+				if !data.Run.Quest.Settings.EnablePoints {
+					<li class="list-row items-center">
+						<span class="opacity-60 text-sm">Objectives done</span>
+						<span class="list-col-grow"></span>
+						<span class="font-semibold tabular-nums">
+							{ fmt.Sprint(me.Progress) }
+							if data.Objectives > 0 {
+								<span class="font-normal opacity-50">of { fmt.Sprint(data.Objectives) }</span>
+							}
+						</span>
+					</li>
+				}
+			}
+		</ul>
+		@teamBoard(data)
 	</div>
 }
 
-// teamNameField only displays the name: teams are asked for one on the start
-// page.
-templ teamNameField(team models.Run) {
-	if team.Name != "" {
-		<p class="font-bold text-lg leading-snug text-pretty">{ team.Name }</p>
-	} else {
-		<p class="font-bold text-lg leading-snug opacity-50">Your team</p>
+// TeamNameControl is the name as a row: the value on the right like every other
+// row here, and a button to change it.
+templ TeamNameControl(team models.Run) {
+	<span class="opacity-60 text-sm">Team</span>
+	<span class="list-col-grow"></span>
+	<button
+		type="button"
+		class="btn btn-sm btn-outline gap-2"
+		hx-get="/team/name"
+		hx-target="#team-name-slot"
+		hx-swap="innerHTML"
+	>
+		@icon("pencil", templ.Attributes{"class": "w-3.5 h-3.5 opacity-50"})
+		if team.Name != "" {
+			<span class="font-semibold">{ team.Name }</span>
+		} else {
+			Add a name
+		}
+	</button>
+}
+
+// TeamNameField swaps in where the value was, with the cursor already in it:
+// somebody who asked to rename their team meant to start typing.
+//
+// Its own endpoint rather than the start page's: that one saves through a block
+// a quest need not contain, and a rename failing for that reason would be a
+// mystery from here.
+templ TeamNameField(team models.Run) {
+	<form
+		hx-post="/team/name"
+		hx-target="#team-name-slot"
+		hx-swap="innerHTML"
+		class="list-col-grow flex gap-2"
+	>
+		<input
+			name="name"
+			type="text"
+			class="input input-sm grow"
+			value={ team.Name }
+			placeholder="The Quokkas"
+			maxlength="40"
+			autocomplete="off"
+			autofocus
+		/>
+		<button type="submit" class="btn btn-sm btn-primary">Save</button>
+	</form>
+}
+
+// teamBoard is every team, in the same list the quest's own screens use.
+templ teamBoard(data TeamParams) {
+	if len(data.Leaderboard) > 0 {
+		<section class="flex flex-col gap-2">
+			<div class="flex items-baseline gap-2 px-1">
+				<h2 class="font-bold">Leaderboard</h2>
+				<span class="text-xs opacity-50">
+					if data.Run.Quest.Settings.EnablePoints {
+						by points
+					} else {
+						by objectives done
+					}
+				</span>
+			</div>
+			if len(data.Leaderboard) == 1 {
+				<!-- One team is not a ranking: saying so beats a chart of one
+				bar. -->
+				<p class="rounded-box border border-dashed border-base-300 p-4 text-center text-sm opacity-60">
+					You are the only team so far. Others appear here as they join.
+				</p>
+			} else {
+				<ul class="list bg-base-100 rounded-box border border-base-300">
+					for _, entry := range data.Leaderboard {
+						{{ isMe := entry.Code == data.Run.Code }}
+						<li class={ "list-row items-center", templ.KV("bg-primary/5", isMe) }>
+							<span class="w-5 text-sm font-mono opacity-40 tabular-nums">{ fmt.Sprint(entry.Rank) }</span>
+							<span class={ "list-col-grow truncate", templ.KV("font-semibold", isMe) }>
+								if entry.Name != "" {
+									{ entry.Name }
+								} else {
+									{ entry.Code }
+								}
+								if isMe {
+									<span class="text-xs font-normal opacity-50">&nbsp;· you</span>
+								}
+							</span>
+							<span class="font-semibold tabular-nums">
+								if data.Run.Quest.Settings.EnablePoints {
+									{ fmt.Sprint(entry.Points) }
+								} else {
+									{ fmt.Sprint(entry.Progress) }
+								}
+							</span>
+						</li>
+					}
+				</ul>
+			}
+		</section>
 	}
 }
 
-// TeamChrome carries no breadcrumb or progress bar.
+// ordinal is for a position a player reads rather than sorts by.
+func ordinal(n int) string {
+	suffix := "th"
+	switch {
+	case n%100 >= 11 && n%100 <= 13:
+	case n%10 == 1:
+		suffix = "st"
+	case n%10 == 2:
+		suffix = "nd"
+	case n%10 == 3:
+		suffix = "rd"
+	}
+	return fmt.Sprint(n) + suffix
+}
+
+// TeamChrome: a destination of its own, so no breadcrumb and no progress bar.
 func TeamChrome(team models.Run) AppChrome {
 	return AppChrome{Run: team, Active: "team"}
 }

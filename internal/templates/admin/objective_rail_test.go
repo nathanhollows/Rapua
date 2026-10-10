@@ -119,7 +119,7 @@ func TestObjectiveTree_EveryChildListSharesTheSameSpacing(t *testing.T) {
 	var out strings.Builder
 	require.NoError(t, ObjectiveTree(
 		services.QuestLint{}, models.Objective{ID: "root", Slug: "root"},
-		[]*ObjectiveTreeNode{section}, false,
+		[]*ObjectiveTreeNode{section}, models.QuestSettings{},
 	).Render(context.Background(), &out))
 
 	rendered := out.String()
@@ -152,7 +152,7 @@ func TestObjectiveTree_RootListCarriesTheQuestRouting(t *testing.T) {
 	require.NoError(t, ObjectiveTree(
 		services.QuestLint{},
 		models.Objective{ID: "root", Slug: "root", Routing: models.RouteStrategyFreeRoam},
-		[]*ObjectiveTreeNode{leaf}, false,
+		[]*ObjectiveTreeNode{leaf}, models.QuestSettings{},
 	).Render(context.Background(), &out))
 
 	rendered := out.String()

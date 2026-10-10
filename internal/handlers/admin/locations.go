@@ -55,7 +55,7 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 
 	c := templates.LockedEditor(
 		user.CurrentQuest,
-		templates.QuestBuilder(lintResult, root, nodes, user.CurrentQuest.Settings.EnablePoints),
+		templates.QuestBuilder(lintResult, root, nodes, user.CurrentQuest.Settings),
 	)
 	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
