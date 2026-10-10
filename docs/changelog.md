@@ -53,6 +53,7 @@ A game document exported from v7 will not import into v8. The format changed sha
 - The run, activity, and facilitator dashboards report progress in terms of objectives completed rather than "next locations."
 - Pincode entry is now a single OTP-style field (still shown as boxed digits) instead of separate boxes that stretched to fit, fixing misaligned inputs on Chrome-based browsers.
 - Importing a game document applies everything in it, drafts included. A backup taken before you drafted something will publish it again on restore, the same way it restores the old titles and content.
+- The Random Clue block is now Random Text: same behaviour (each team sees one of the texts, chosen deterministically), renamed because the clue-and-QR vocabulary it came from is gone. Existing blocks are renamed on upgrade.
 
 ### Fixed
 

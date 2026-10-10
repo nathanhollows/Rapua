@@ -8,7 +8,7 @@ order: 24
 
 Rapua has a content block system that allows you to add different types of content to your game, whether static information, interactive challenges, or clues for participants to solve.
 
-Some blocks are for clues only (e.g. Random Clue Block), while others can be used anywhere.
+Some blocks can only be used inside objectives (e.g. Random Text), while others can be used anywhere.
 
 ![](/static/images/docs/user/blocks/block-picker.webp)
 
@@ -24,7 +24,7 @@ These blocks are the foundation of your game and are used to provide information
 - [Map](/docs/user/blocks/map)
 - [Text](/docs/user/blocks/text)
 - [Toggle Text](/docs/user/blocks/toggle-text)
-- [Random Clue](/docs/user/blocks/random-clue)
+- [Random Text](/docs/user/blocks/random-text)
 - [YouTube](/docs/user/blocks/youtube)
 
 ## Interactive blocks

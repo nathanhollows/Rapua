@@ -14,3 +14,9 @@
 # removal page rather than on a block that only half resembles it.
 - from: /docs/user/blocks/task
   to: /docs/deprecations
+
+# The random clue block kept the vocabulary of the retired clue-and-QR model in
+# its name. It was renamed for what it does: shows each team one of several
+# texts.
+- from: /docs/user/blocks/random-clue
+  to: /docs/user/blocks/random-text
