@@ -26,23 +26,9 @@ templ Objectives(data ObjectivesParams) {
 			for _, place := range view.Places {
 				@questPlace(place)
 			}
-			if data.View.Offers("scan") {
-				@questScanAction()
-			}
 		</div>
 	}
 }
-
-// questScanAction lets a player scan a code without first finding its card.
-// It sits in the flow rather than floating, since a pinned bar would hide the
-// last row. /scan checks one code against every objective on offer.
-templ questScanAction() {
-	<a href="/scan" hx-boost="true" class="btn btn-outline btn-primary btn-block">
-		@icon("scan-qr-code", templ.Attributes{"class": "w-5 h-5"})
-		Scan a code
-	</a>
-}
-
 
 // questPlace is one section the run is standing in, and what it is offering.
 //

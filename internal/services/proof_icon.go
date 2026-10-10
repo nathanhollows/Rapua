@@ -41,33 +41,16 @@ func firstInteractiveProof(rows []models.Block, registry game.BlockRegistry) map
 	return first
 }
 
-// proofBlockTypes names every block type the frontier's proof asks for, which
-// is what the quest screen's own actions are derived from: a universal scanner
-// is offered because something on offer can be scanned, and a quest with no
-// codes in it never shows one.
-//
-// Every type on every row, not just the first on each: a scan buried under a
-// paragraph is still a code somebody can walk up to.
-func proofBlockTypes(rows []models.Block) map[string]bool {
-	types := make(map[string]bool)
-	for _, row := range rows {
-		if row.Context == game.ContextObjectiveProof {
-			types[row.Type] = true
-		}
-	}
-	return types
-}
-
 // proofIcons loads the first interactive proof block for the objectives on
 // offer. Only those: the frontier is a handful of rows where the quest may be
 // hundreds, and nothing off it has a card to draw.
 func (s *NavigationService) proofIcons(
 	ctx context.Context, available []models.Objective, registry game.BlockRegistry,
-) (map[string]string, map[string]bool, error) {
+) (map[string]string, error) {
 	if len(available) == 0 {
 		// Nothing on offer asks for anything, which is an answer rather than an
-		// absence: empty maps read the same to every caller.
-		return map[string]string{}, map[string]bool{}, nil
+		// absence: an empty map reads the same to every caller.
+		return map[string]string{}, nil
 	}
 	ownerIDs := make([]string, 0, len(available))
 	for _, objective := range available {
@@ -76,7 +59,7 @@ func (s *NavigationService) proofIcons(
 
 	rows, err := s.loader.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
 	if err != nil {
-		return nil, nil, fmt.Errorf("loading proof blocks: %w", err)
+		return nil, fmt.Errorf("loading proof blocks: %w", err)
 	}
-	return firstInteractiveProof(rows, registry), proofBlockTypes(rows), nil
+	return firstInteractiveProof(rows, registry), nil
 }

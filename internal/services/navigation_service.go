@@ -54,17 +54,6 @@ type PlayerObjectiveView struct {
 	// icon, so a card says what is coming without anyone classifying
 	// objectives into kinds.
 	FirstProofBlock map[string]string
-	// OfferedProof names every block type the frontier asks for, which is what
-	// the quest screen's own actions are derived from: a scanner is offered
-	// because something on offer can be scanned.
-	OfferedProof map[string]bool
-}
-
-// Offers reports whether anything the run can work on now asks for this kind of
-// block, which is how the quest screen decides what to put under the player's
-// thumb.
-func (v PlayerObjectiveView) Offers(blockType string) bool {
-	return v.OfferedProof[blockType]
 }
 
 // NewNavigationService creates a NavigationService.
@@ -109,7 +98,7 @@ func (s *NavigationService) GetPlayerObjectiveView(
 	// Icons are looked up only for what is on offer. A missing icon costs a
 	// row its glyph and nothing else, so a failure here is logged rather than
 	// taken out on a page that is otherwise fine.
-	icons, offered, err := s.proofIcons(ctx, frontier.Available, blocks.Registry())
+	icons, err := s.proofIcons(ctx, frontier.Available, blocks.Registry())
 	if err != nil {
 		s.logger.WarnContext(ctx, "loading proof blocks", "error", err, "run", team.Code)
 	}
@@ -121,7 +110,6 @@ func (s *NavigationService) GetPlayerObjectiveView(
 		Objectives:      objectives,
 		HasProof:        state.HasProofBlocks,
 		FirstProofBlock: icons,
-		OfferedProof:    offered,
 	}, nil
 }
 

@@ -69,23 +69,3 @@ func TestFirstInteractiveProof_KeepsOwnersApart(t *testing.T) {
 	assert.Equal(t, "scan", got["a"])
 	assert.Equal(t, "password", got["b"])
 }
-
-// The quest screen's own actions are derived the same way a row's icon is:
-// from what the frontier actually asks for. A quest with no codes in it never
-// offers a scanner.
-func TestProofBlockTypes_NamesWhatTheFrontierAsksFor(t *testing.T) {
-	rows := []models.Block{
-		block("a", "text", 0, game.ContextObjectiveProof),
-		block("a", "scan", 1, game.ContextObjectiveProof),
-		block("b", "quiz", 0, game.ContextObjectiveProof),
-		block("b", "geofence", 1, game.ContextObjectiveProof),
-		block("c", "scan", 0, game.ContextObjectiveReveal),
-	}
-
-	got := proofBlockTypes(rows)
-	assert.True(t, got["scan"])
-	assert.True(t, got["geofence"])
-	assert.True(t, got["quiz"], "every type, not only the first on each objective")
-	assert.False(t, got["text"] && false)
-	assert.Len(t, got, 4, "reveal blocks are not what the quest is asking for")
-}
