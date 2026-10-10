@@ -341,6 +341,47 @@ func TestObjectiveEditPost(t *testing.T) {
 	})
 }
 
+// A rename must not change the slug or redirect: the redirect reloads the page,
+// which re-ran questLock.set(true) and relocked a quest the author had just
+// unlocked. Both are asserted because either alone passes the wrong way.
+func TestObjectiveEditPost_RenamingDoesNotMoveTheObjective(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+	objective, err := h.objectiveService.CreateObjective(
+		context.Background(), user.CurrentQuestID, root.ID, "Rose",
+	)
+	require.NoError(t, err)
+	before := objective.Slug
+
+	form := url.Values{"title": {"Scan the label at the rose bed"}}
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/admin/objective/"+before,
+		strings.NewReader(form.Encode()),
+	)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	req = withObjectiveSlug(req, before)
+
+	w := httptest.NewRecorder()
+	h.ObjectiveEditPost(w, req)
+
+	assert.Empty(t, w.Header().Get("Hx-Redirect"), "a rename must not send the page anywhere")
+	assert.NotEqual(t, http.StatusFound, w.Code, "nor redirect the hard way")
+
+	reloaded, err := h.objectiveService.GetByQuestIDAndSlug(
+		context.Background(), user.CurrentQuestID, before,
+	)
+	require.NoError(t, err, "the old link still resolves")
+	assert.Equal(t, "Scan the label at the rose bed", reloaded.Title)
+	assert.Equal(t, before, reloaded.Slug, "the link is the objective's, not the title's")
+}
+
 func TestObjectiveDelete(t *testing.T) {
 	dbc, cleanup := setupObjectiveTestDB(t)
 	defer cleanup()
@@ -705,4 +746,80 @@ func TestObjectiveSettingsPost_AbsentControlsLeaveTheirSettingsAlone(t *testing.
 	assert.Equal(t, "randomised", string(reloaded.Routing), "the routing changed")
 	require.NotNil(t, reloaded.ChildrenMin, "and the band it never offered survived")
 	assert.Equal(t, 1, *reloaded.ChildrenMin)
+}
+
+// The description reaches the database from the form, which the service tests
+// cannot show: they call UpdateObjective directly, so a handler that never
+// reads the field passes every one of them while the editor quietly discards
+// what was typed.
+func TestObjectiveEditPost_SavesTheDescription(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	objective, err := h.objectiveService.CreateObjective(
+		ctx, user.CurrentQuestID, root.ID, "Find the plan chest")
+	require.NoError(t, err)
+
+	post := func(form url.Values) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+objective.Slug,
+			strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req = withObjectiveUser(req, user)
+		req = withObjectiveSlug(req, objective.Slug)
+		h.ObjectiveEditPost(httptest.NewRecorder(), req)
+	}
+	reload := func() models.Objective {
+		t.Helper()
+		reloaded, err := h.objectiveService.GetByQuestIDAndSlug(
+			ctx, user.CurrentQuestID, objective.Slug)
+		require.NoError(t, err)
+		return *reloaded
+	}
+
+	post(url.Values{
+		"title":       {"Find the plan chest"},
+		"description": {"Level 2, past the model-making room."},
+	})
+	assert.Equal(t, "Level 2, past the model-making room.", reload().Description)
+
+	// Present and empty is an author clearing it, which has to save.
+	post(url.Values{"title": {"Find the plan chest"}, "description": {""}})
+	assert.Empty(t, reload().Description, "an empty field clears it")
+}
+
+// A form that does not offer the field leaves what another form stored alone:
+// the settings popover posts routing and bands, and must not wipe a
+// description written on the edit page.
+func TestObjectiveSettingsPost_LeavesTheDescriptionAlone(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	objective, err := h.objectiveService.CreateObjective(
+		ctx, user.CurrentQuestID, root.ID, "Find the plan chest")
+	require.NoError(t, err)
+	require.NoError(t, h.objectiveService.UpdateObjective(ctx, &objective,
+		services.ObjectiveUpdateData{Description: strPtr("Keep me.")}))
+
+	form := url.Values{"routing": {"free_roam"}}
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/"+objective.Slug+"/settings",
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	req = withObjectiveSlug(req, objective.Slug)
+	h.ObjectiveSettingsPost(httptest.NewRecorder(), req)
+
+	reloaded, err := h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, objective.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, "Keep me.", reloaded.Description)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	pTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -18,6 +19,12 @@ type EditObjectiveData struct {
 	// ChildCount: routing/band/max_next mean nothing without children, but a
 	// leaf can gain them later, so they're shown regardless.
 	ChildCount int
+	// QuestName labels the preview's chrome, which shows the player's view.
+	QuestName string
+	// ParentTitle and ParentRule describe the containing section, drawn around
+	// the preview row. Empty when the parent is the root.
+	ParentTitle string
+	ParentRule  string
 	// Lint is the whole quest's run, not this objective's slice of it: the
 	// root's diagnostics live with the quest and this is the only page that
 	// can act on them.
@@ -37,12 +44,56 @@ func (data EditObjectiveData) TotalPoints() int {
 	return total
 }
 
-// DefaultZone is Proof unless it is empty, to avoid opening on a blank preview.
-func (data EditObjectiveData) DefaultZone() string {
-	if len(data.ProofBlocks) == 0 {
-		return "reveal"
+// FirstProofIcon is the icon of the first proof block that asks the player for
+// something, matching the player's own row. Empty when none does.
+func (data EditObjectiveData) FirstProofIcon() string {
+	for _, block := range data.ProofBlocks {
+		if block.RequiresValidation() {
+			return block.GetIconSVG()
+		}
 	}
-	return "proof"
+	return ""
+}
+
+// zoneWords holds a zone's labels and element ids. The ids are written back
+// into by the preview's drag mirror: renaming them silently breaks reordering.
+type zoneWords struct {
+	Name      string
+	Why       string
+	AddLabel  string
+	Param     string
+	ListID    string
+	PreviewID string
+	proof     bool
+}
+
+func zoneWordsFor(zone blocks.BlockContext) zoneWords {
+	if zone == blocks.ContextObjectiveReveal {
+		return zoneWords{
+			Name:      "Reveal",
+			Why:       "what they get once the proof is cleared",
+			AddLabel:  "Add to Reveal",
+			Param:     "reveal",
+			ListID:    "nav-blocks",
+			PreviewID: "preview-reveal",
+		}
+	}
+	return zoneWords{
+		Name:      "Proof",
+		Why:       "what they do here to complete it",
+		AddLabel:  "Add to Proof",
+		Param:     "proof",
+		ListID:    "content-blocks",
+		PreviewID: "preview-proof",
+		proof:     true,
+	}
+}
+
+func (z zoneWords) Blocks(data EditObjectiveData) blocks.Blocks {
+	if z.proof {
+		return data.ProofBlocks
+	}
+	return data.RevealBlocks
 }
 
 // visibilityBtnTip names what a click on the visibility button does.
@@ -71,166 +122,292 @@ func (data EditObjectiveData) MaxNextBound() *int {
 	return &v
 }
 
-// EditObjective mirrors EditLocation's two-zone layout. The zones keep the
-// literal #nav-blocks/#content-blocks/#nav-tab/#content-tab ids so
-// previewSortableScript() works unmodified: #content-tab pairs with
-// #content-blocks (here: Proof), #nav-tab with #nav-blocks (here: Reveal).
-//
-// That script reads the live .tab-active, so DefaultZone may pick either.
-templ EditObjective(data EditObjectiveData) {
-	<!-- Header -->
-	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<div class="flex items-center gap-3">
-			<h1 id="objective-title" class="text-2xl font-bold">{ data.Objective.Title }</h1>
-			if data.Settings.EnablePoints && data.TotalPoints() != 0 {
-				<span class="badge badge-ghost tooltip tooltip-right" data-tip="Sum of this objective's proof and reveal block points">
-					{ fmt.Sprintf("%d pts", data.TotalPoints()) }
-				</span>
+// objectivePreview is the one preview phone, switched by scroll position. The
+// pills name the loaded view so the automatic switch does not read as a glitch,
+// and scroll the form to a zone when clicked.
+templ objectivePreview(data EditObjectiveData) {
+	<div class="hidden lg:block">
+		<div class="sticky top-3 flex flex-col gap-2">
+			<!-- The active pill carries the primary colour: it is the one piece of
+			state on this page that changes without being asked, so it has to be
+			unmissable rather than merely different. -->
+			<div id="preview-pills" role="tablist" class="tabs tabs-box tabs-sm w-full">
+				<a role="tab" data-pill="card" class="tab grow tab-active">In the list</a>
+				<a role="tab" data-pill="proof" class="tab grow">Proof</a>
+				<a role="tab" data-pill="reveal" class="tab grow">Reveal</a>
+			</div>
+			<div class="mockup-phone bg-black shadow-2xl">
+				<div class="mockup-phone-display overflow-hidden bg-base-200 w-96">
+					@pTemplates.PreviewChrome(data.QuestName) {
+						<!-- Stacked rather than swapped, so one can fade out while
+						the next fades in. display:none cannot be transitioned, so
+						the panes are always rendered and always in place. -->
+						<div class="relative h-full">
+						<div data-preview="card" class="absolute inset-0 p-4 flex flex-col justify-center transition-opacity duration-200 motion-reduce:transition-none">
+							if data.ParentTitle != "" {
+								@pTemplates.PreviewSection(data.ParentTitle, data.ParentRule) {
+									@objectiveCardRow(data)
+								}
+							} else {
+								@objectiveCardRow(data)
+							}
+						</div>
+						<!-- Refetched when blocks change, not on view change, so
+						scrolling does not flicker. -->
+						<div
+							data-preview="proof"
+							data-blocks-target="content-blocks"
+							class="absolute inset-0 p-4 overflow-y-auto overflow-x-hidden opacity-0 pointer-events-none transition-opacity duration-200 motion-reduce:transition-none"
+							hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=proof") }
+							hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-objective, htmx:afterRequest from:#delete-block-btn"
+							hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
+							hx-swap="innerHTML"
+						></div>
+						<div
+							data-preview="reveal"
+							data-blocks-target="nav-blocks"
+							class="absolute inset-0 p-4 overflow-y-auto overflow-x-hidden opacity-0 pointer-events-none transition-opacity duration-200 motion-reduce:transition-none"
+							hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=reveal") }
+							hx-trigger="load, htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-objective, htmx:afterRequest from:#delete-block-btn"
+							hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
+							hx-swap="innerHTML"
+						></div>
+						</div>
+					}
+				</div>
+			</div>
+			if data.FirstProofIcon() == "" {
+				<p class="text-xs opacity-40 text-center">No proof yet, so this opens straight to its reveal.</p>
 			}
 		</div>
-		<div class="flex gap-3">
-			<div id="visibility-control" class="contents">
-				@objectiveVisibilityControl(data.Objective.Draft)
-			</div>
-			<button type="button" class="btn btn-error" onclick="confirm_delete_modal.showModal();">
-				@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
-				Delete
-			</button>
-			<!-- Typing waits a second, since every save re-lints the whole quest
-			and the panel only has to be right once the author pauses. Discrete
-			changes (a select, a checkbox) fire sooner: they are one decision,
-			not a stream.
-			
-			Enter is excluded from the keyup filter because it saves by
-			another path: implicit submission synthesises a click on the save
-			button, which fires the trigger above. Without the exclusion one
-			Enter posts twice, lints the quest twice, and races its own
-			redirect when the edit renamed the slug. -->
-			<form
-				id="edit-objective"
-				hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
-				hx-trigger="click from:#edit-objective-btn, keyup[key!='Enter'] from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms"
-				hx-swap="none"
-			>
-				<button
-					id="edit-objective-btn"
-					class="btn btn-primary"
-					type="submit"
+	</div>
+	@objectivePreviewScript()
+	@previewHoverScript()
+	@previewSortableScript()
+}
+
+// objectiveCardRow is the row itself, drawn the same whether or not it sits
+// inside a container.
+templ objectiveCardRow(data EditObjectiveData) {
+	<div id="objective-card" class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3">
+			if proofIcon := data.FirstProofIcon(); proofIcon != "" {
+				<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
+					@templ.Raw(proofIcon)
+				</span>
+			} else {
+				@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-40"})
+			}
+			<span class="grow min-w-0 flex flex-col gap-0.5">
+				<span id="objective-card-title" class="text-sm font-medium text-pretty">
+					{ data.Objective.Title }
+				</span>
+				<span
+					id="objective-card-description"
+					class={ "text-xs opacity-60 text-pretty", templ.KV("hidden", data.Objective.Description == "") }
 				>
-					@icon("save", templ.Attributes{"class": "w-4 h-4"})
-					Save
-				</button>
-			</form>
+					{ data.Objective.Description }
+				</span>
+			</span>
+			if data.Settings.EnablePoints && data.TotalPoints() != 0 {
+				<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", data.TotalPoints()) }</span>
+			}
+	</div>
+}
+
+// objectiveDescription is the second half of the task: the detail a player
+// needs once they are there. Called description rather than context, this
+// codebase's word for proof and reveal, and rather than instruction, which is
+// what the title is.
+templ objectiveDescription(data EditObjectiveData) {
+	<fieldset class="fieldset w-full">
+		<legend class="fieldset-legend">Description</legend>
+		<textarea
+			id="description"
+			name="description"
+			form="edit-objective"
+			rows="2"
+			maxlength="280"
+			class="textarea w-full"
+			placeholder="Second bed on the left, past the glasshouse. The label is on a metal stake."
+			_="on input
+				set #objective-card-description's textContent to my value
+				then if my value is '' then
+					add .hidden to #objective-card-description
+				else
+					remove .hidden from #objective-card-description
+				end"
+		>{ data.Objective.Description }</textarea>
+		<p class="label text-xs">Shown under the task when they open it, and on the quest list.</p>
+	</fieldset>
+}
+
+// objectiveLinkRow shows the objective's URL and makes changing it explicit.
+// The slug is visible to players, and a title that names the task would give
+// the answer away in the address bar. Scan codes belong to the scan block, so
+// printed QRs survive a slug change.
+templ objectiveLinkRow(data EditObjectiveData) {
+	<div class="flex flex-col gap-1">
+		<div class="flex items-center gap-2 text-sm">
+			@icon("link", templ.Attributes{"class": "w-3.5 h-3.5 opacity-40 shrink-0"})
+			<code class="font-mono text-xs opacity-70">
+				{ fmt.Sprint("/objective/", data.Objective.Slug) }
+			</code>
+		</div>
+		<p class="label text-xs">
+			Players can see this. Keep it vague if the task name would give the answer away.
+		</p>
+	</div>
+}
+
+// objectivePreviewScript shows the preview for the zone in view. The topmost
+// intersecting section wins, so the handover happens as a zone reaches the top
+// rather than when it covers the most pixels.
+templ objectivePreviewScript() {
+	<script>
+	(() => {
+		const sections = [...document.querySelectorAll('[data-zone]')];
+		const panes = [...document.querySelectorAll('[data-preview]')];
+		const pills = [...document.querySelectorAll('[data-pill]')];
+		if (!sections.length || !panes.length) return;
+
+		let current = null;
+		const show = (zone) => {
+			if (zone === current) return;
+			current = zone;
+			panes.forEach((p) => {
+				const off = p.dataset.preview !== zone;
+				p.classList.toggle('opacity-0', off);
+				p.classList.toggle('pointer-events-none', off);
+			});
+			pills.forEach((p) => p.classList.toggle('tab-active', p.dataset.pill === zone));
+		};
+
+		pills.forEach((pill) => {
+			pill.addEventListener('click', () => {
+				const target = document.getElementById('zone-' + pill.dataset.pill);
+				if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			});
+		});
+
+		const seen = new Set();
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach((entry) => {
+				entry.isIntersecting ? seen.add(entry.target) : seen.delete(entry.target);
+			});
+			// Document order keeps the handover the same in both directions.
+			const top = sections.find((section) => seen.has(section));
+			if (top) show(top.dataset.zone);
+		}, { rootMargin: '-10% 0px -60% 0px' });
+
+		sections.forEach((section) => observer.observe(section));
+		show('card');
+	})();
+	</script>
+}
+
+// objectiveSaveState confirms an autosave landed, since there is no save button.
+templ objectiveSaveState() {
+	<span
+		id="save-state"
+		class="text-xs opacity-0 transition-opacity flex items-center gap-1.5"
+		_="on htmx:beforeRequest from #edit-objective
+			set my textContent to 'Saving'
+			then remove .opacity-0 from me
+		on htmx:afterRequest from #edit-objective
+			set my textContent to 'Saved'
+			then wait 2s
+			then add .opacity-0 to me"
+	></span>
+}
+
+templ objectiveZone(data EditObjectiveData, zone blocks.BlockContext) {
+	{{ z := zoneWordsFor(zone) }}
+	<section id={ "zone-" + z.Param } data-zone={ z.Param } class="min-w-0 scroll-mt-4">
+		<!-- Not sticky: a pinned bar cut off the hover outline of blocks
+		scrolling under it. -->
+		<h2 class="pb-3 flex items-baseline gap-3">
+			<span class="font-bold">{ z.Name }</span>
+			<span class="text-xs opacity-60">{ z.Why }</span>
+		</h2>
+		<div id={ z.ListID } class="blocks flex flex-col gap-5">
+			for _, block := range z.Blocks(data) {
+				@bTemplates.RenderAdminBlock(data.Settings, block, len(z.Blocks(data)) < 4)
+			}
+		</div>
+		@blockAddButton(data.Objective.ID, zone, ".blocks", z.AddLabel)
+	</section>
+}
+
+// EditObjective autosaves: there is no save button.
+templ EditObjective(data EditObjectiveData) {
+	<!-- Typing waits a second because every save re-lints the whole quest.
+	Discrete changes fire sooner. -->
+	<form
+		id="edit-objective"
+		hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
+		hx-trigger="keyup from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms"
+		hx-swap="none"
+	></form>
+	<!-- Matches the quest page's header so the lock badge, appended into
+	#quest-title-group at runtime, lands in the same place on both. -->
+	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 pt-5 pb-3">
+		<div id="quest-title-group" class="flex items-center gap-3 min-w-0">
+			<h1 class="text-2xl font-bold">Objective</h1>
+			if data.ParentTitle != "" {
+				<span class="text-sm opacity-50 truncate hidden sm:inline">in { data.ParentTitle }</span>
+			}
+		</div>
+		<div class="flex items-center gap-2">
+		@objectiveSaveState()
+		<div id="visibility-control" class="contents">
+			@objectiveVisibilityControl(data.Objective.Draft)
+		</div>
+		<!-- In a menu so an irreversible action is not at primary weight. -->
+		<details class="dropdown dropdown-end">
+			<summary class="btn btn-sm btn-ghost btn-circle" aria-label="More actions">
+				@icon("ellipsis", templ.Attributes{"class": "w-4 h-4"})
+			</summary>
+			<ul class="dropdown-content menu bg-base-100 rounded-box z-20 w-56 p-2 shadow-lg border border-base-300">
+				<li>
+					<button type="button" class="text-error" onclick="confirm_delete_modal.showModal();">
+						@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
+						Delete objective
+					</button>
+				</li>
+			</ul>
+		</details>
 		</div>
 	</div>
 	<div id="objective-lint">
 		@objectiveLintPanel(data.Lint, data.Objective.ID)
 	</div>
-	<div
-		class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0"
-		_="on click in #nav-blocks
-			if #nav-tab does not match .tab-active
-				send click to #nav-tab
-			end
-		on click in #content-blocks
-			if #content-tab does not match .tab-active
-				send click to #content-tab
-			end
-		on htmx:afterSwap from #nav-blocks
-			call _hyperscript.processNode(event.detail.target)
-		on htmx:afterSwap from #content-blocks
-			call _hyperscript.processNode(event.detail.target)
-		"
-	>
-		<div class="flex flex-col flex-grow min-w-0">
-			<div class="flex flex-col sm:flex-row gap-5 mb-5">
+	<!-- No items-start: the sticky preview needs a column as tall as the form. -->
+	<div class="w-full px-6 pb-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-8">
+		<!-- Wide gaps so expanded zones read as separate. -->
+		<div class="flex flex-col gap-50 pb-50 min-w-0">
+			<section id="zone-card" data-zone="card" class="flex flex-col gap-1 scroll-mt-4">
 				<fieldset class="fieldset w-full">
-					<legend class="fieldset-legend">Objective Title</legend>
+					<legend class="fieldset-legend">The task &mdash; what the player is asked to do</legend>
 					<input
 						type="text"
 						id="title"
 						name="title"
 						form="edit-objective"
-						class="input w-full"
+						class="input input-lg w-full font-semibold"
 						value={ data.Objective.Title }
-						placeholder="Objective title"
-						_="
-						on input
-						set #objective-title's textContent to my value"
+						placeholder="Find the plan chest in the Architecture Library"
+						_="on input set #objective-card-title's textContent to my value"
 					/>
+					<p class="label text-xs">Say what they have to do, not where it is. The place can go in the words.</p>
 				</fieldset>
-			</div>
-		@deleteBlockModal()
-			<!-- Proof -->
-			<section>
-				@blockAddButton(data.Objective.ID, blocks.ContextObjectiveProof, ".blocks")
-				<div
-					id="content-blocks"
-					class="blocks flex flex-col gap-5"
-				>
-					for _, block := range data.ProofBlocks {
-						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.ProofBlocks) < 4)
-					}
-				</div>
+				@objectiveDescription(data)
+				@objectiveLinkRow(data)
 			</section>
-			<!-- Reveal -->
-			@blockAddButton(data.Objective.ID, blocks.ContextObjectiveReveal, ".blocks")
-			<div
-				id="nav-blocks"
-				class="blocks flex flex-col gap-5"
-			>
-				for _, block := range data.RevealBlocks {
-					@bTemplates.RenderAdminBlock(data.Settings, block, len(data.RevealBlocks) < 4)
-				}
-			</div>
+			@deleteBlockModal()
+			@objectiveZone(data, blocks.ContextObjectiveProof)
+			@objectiveZone(data, blocks.ContextObjectiveReveal)
 		</div>
-		<!-- Preview -->
-		<div class="h-min sticky top-3">
-			<div id="preview-nav" role="tablist" class="tabs tabs-box tabs-sm font-bold m-auto mb-3">
-				<a
-					id="content-tab"
-					role="tab"
-					data-url={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=proof") }
-					class={ "tab transition-colors grow", templ.KV("tab-active", data.DefaultZone() == "proof") }
-					_="on click
-					remove .tab-active from <#preview-nav a.tab-active />
-					add .tab-active to me
-					trigger changePreviewPage
-				"
-				>
-					Proof
-				</a>
-				<a
-					id="nav-tab"
-					role="tab"
-					class={ "tab transition-colors grow", templ.KV("tab-active", data.DefaultZone() == "reveal") }
-					data-url={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=reveal") }
-					_="on click
-					remove .tab-active from <#preview-nav a.tab-active />
-					add .tab-active to me
-					trigger changePreviewPage
-				"
-				>
-					Reveal
-				</a>
-			</div>
-			<div class="mockup-phone bg-black h-min shadow-2xl">
-				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
-					<div
-						id="mobile-preview-container"
-						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll p-5 py-12 bg-base-200/50 min-h-full"
-						hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=", data.DefaultZone()) }
-						hx-trigger={ fmt.Sprintf("load, %s", "htmx:afterRequest from:.blocks, htmx:afterRequest from:#edit-objective-btn, htmx:afterRequest from:#delete-block-btn") }
-						hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
-						hx-swap="innerHTML"
-						_="on changePreviewPage from <body/>
-					set @hx-get to event.detail.sender.dataset.url
-					then call htmx.process(me)
-					then trigger load"
-					></div>
-				</div>
-			</div>
-		</div>
+		@objectivePreview(data)
 	</div>
 	<!-- Hidden form for block reordering via HTMX -->
 	@blockReorderForm()
@@ -257,7 +434,6 @@ templ EditObjective(data EditObjectiveData) {
 			</form>
 		</div>
 	</dialog>
-	@previewSortableScript()
 	@blockMoveScript()
 	@sortableStyles()
 }

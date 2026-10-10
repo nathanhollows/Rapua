@@ -31,6 +31,13 @@ type ObjectiveDoc struct {
 	ID    string `json:"id,omitempty"`
 	Slug  string `json:"slug"`
 	Title string `json:"title"`
+	// Description is the detail a player needs on arrival, which the title has
+	// no room for.
+	//
+	// A pointer for the same reason Draft is one: omitting the key and writing
+	// an empty one are different statements. A document that never mentions it
+	// leaves the stored description alone; only an explicit "" clears one.
+	Description *string `json:"description,omitempty"`
 	// Draft holds an objective out of play without moving it, gating it and
 	// everything beneath it. A drafted node keeps its place in the tree and its
 	// children, so publishing puts back exactly what was there.

@@ -85,7 +85,20 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Required:    true,
 			Description: "Short alphanumeric code identifying this objective. Must be unique within the game.",
 		},
-		{Name: "title", Type: "string", Required: true, Description: "Display title shown to players."},
+		{
+			Name:     "title",
+			Type:     "string",
+			Required: true,
+			Description: "What the player is asked to do, shown on the quest list and at the top of " +
+				"the page they open. The task, not the place: \"Find the plan chest\" rather than " +
+				"\"Architecture Library\".",
+		},
+		{
+			Name: "description",
+			Type: "string",
+			Description: "The detail a player needs once they are there, shown under the title. " +
+				"What will not fit in a name short enough to read in a list.",
+		},
 		{
 			Name: "draft",
 			Type: "bool",

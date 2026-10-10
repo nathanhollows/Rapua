@@ -118,8 +118,13 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "title",
             "type": "string",
-            "description": "Display title shown to players.",
+            "description": "What the player is asked to do, shown on the quest list and at the top of the page they open. The task, not the place: \"Find the plan chest\" rather than \"Architecture Library\".",
             "required": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "The detail a player needs once they are there, shown under the title. What will not fit in a name short enough to read in a list."
           },
           {
             "name": "draft",
@@ -203,8 +208,13 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           {
             "name": "title",
             "type": "string",
-            "description": "Display title shown to players.",
+            "description": "What the player is asked to do, shown on the quest list and at the top of the page they open. The task, not the place: \"Find the plan chest\" rather than \"Architecture Library\".",
             "required": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "The detail a player needs once they are there, shown under the title. What will not fit in a name short enough to read in a list."
           },
           {
             "name": "draft",
@@ -433,7 +443,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
     {
       "type": "choice",
       "name": "Choice",
-      "description": "Presents labelled options; selecting one sets a boolean variable.",
+      "description": "Presents labelled options; the chosen one is recorded in player state.",
       "contexts": [
         "objective_proof",
         "objective_reveal"

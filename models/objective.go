@@ -23,6 +23,10 @@ type Objective struct {
 	Draft bool   `bun:"draft,type:boolean"`
 	Slug  string `bun:"slug,type:varchar(255)"`
 	Title string `bun:"title,type:varchar(255)"`
+	// Description is the detail a player needs once they are there. The title
+	// is the task and has to stay short enough to read in a list; this is what
+	// will not fit in it.
+	Description string `bun:"description,type:text"`
 
 	// Routing, the band, MaxNext and FinishLabel all govern children, and mean
 	// nothing on an objective without any.

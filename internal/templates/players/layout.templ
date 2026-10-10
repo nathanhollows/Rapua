@@ -117,6 +117,49 @@ templ AppLayout(contents templ.Component, chrome AppChrome, title string, messag
 	</html>
 }
 
+// PreviewChrome wraps content in the player's own bars, for an admin previewing
+// a page they are editing.
+//
+// The same markup as the real chrome rather than a drawing of it, so the
+// preview cannot drift from the app. Nothing inside is a link: this is a
+// picture, and a click that navigated would take an author out of the editor
+// into the game. The dock is fixed to the viewport in its own component, which
+// is right in the app and wrong inside a phone frame, so it is made static
+// here.
+templ PreviewChrome(questName string) {
+	<div class="flex flex-col h-full">
+		<!-- The quest's name and nothing else. A progress bar here would have to
+		invent a position in a run that is not happening, and pt-8 keeps the name
+		clear of the frame's own corner, which was cropping it. -->
+		<div class="bg-base-100 border-b border-base-300 px-5 pt-8 pb-3 shrink-0">
+			<p class="font-bold text-sm truncate text-center">{ questName }</p>
+		</div>
+		<!-- No padding here: what is inside scrolls, and a hover outline drawn
+		past a block's edge has to have room within the scrolling box or it is
+		clipped and pushes a horizontal scrollbar out. -->
+		<div class="grow overflow-hidden">
+			{ children... }
+		</div>
+		<nav class="dock dock-sm static bg-base-100 border-t border-base-300 shrink-0" aria-hidden="true">
+			<!-- Quest, because that is where every page this previews is reached
+			from: the list, an objective's proof, its reveal. The journal is
+			somewhere else entirely. -->
+			<span class="dock-active text-primary">
+				@icon("compass", templ.Attributes{"class": "w-5 h-5"})
+				<span class="dock-label">Quest</span>
+			</span>
+			<span>
+				@icon("book-check", templ.Attributes{"class": "w-5 h-5"})
+				<span class="dock-label">Journal</span>
+			</span>
+			<span>
+				@icon("users", templ.Attributes{"class": "w-5 h-5"})
+				<span class="dock-label">Team</span>
+			</span>
+		</nav>
+	</div>
+}
+
 // appTopBar carries identity and progress. Only the breadcrumb is a link.
 templ appTopBar(chrome AppChrome) {
 	<header class="sticky top-0 z-20 bg-base-100 border-b border-base-300">

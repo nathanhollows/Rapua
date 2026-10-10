@@ -474,3 +474,47 @@ func TestImportService_ImportUpdate_OmittedDraftKeyLeavesStateAlone(t *testing.T
 	require.Len(t, published, 1)
 	assert.False(t, published[0].Draft)
 }
+
+// A document that never mentions the description leaves the stored one alone.
+// Omitting a key and writing an empty one are different statements, the same
+// rule draft follows: a document written by other tooling, or before the field
+// existed, must not wipe what an author typed.
+func TestImportService_OmittedDescriptionLeavesTheStoredOne(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	described := "Level 2, past the model-making room."
+	doc := minimalValidDoc("Described")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "chest", Title: "Find the plan chest", Description: &described},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	stored, err := objectiveRepo.FindByQuestID(ctx, created.QuestID)
+	require.NoError(t, err)
+	for _, objective := range stored {
+		if objective.ParentID == "" {
+			doc.Structure.ID = objective.ID
+			continue
+		}
+		doc.Structure.Children[0].ID = objective.ID
+	}
+
+	// The same document with the key gone, as hand-written tooling would send.
+	doc.Structure.Children[0].Description = nil
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, doc)
+	require.NoError(t, err)
+
+	after, err := objectiveRepo.FindByQuestID(ctx, created.QuestID)
+	require.NoError(t, err)
+	for _, objective := range after {
+		if objective.Slug == "chest" {
+			assert.Equal(t, described, objective.Description,
+				"an omitted key is not an instruction to clear")
+		}
+	}
+}

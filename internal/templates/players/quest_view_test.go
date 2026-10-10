@@ -2,6 +2,7 @@ package templates
 
 import (
 	"testing"
+	"time"
 
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -16,7 +17,8 @@ func obj(id, parent, title string) models.Objective {
 	return models.Objective{ID: id, Slug: id, Title: title, ParentID: parent}
 }
 
-// viewOf builds the service output the grouping takes.
+// viewOf is the service's own output, which is what the grouping takes: the
+// value the handler already holds, rather than four arguments pulled out of it.
 func viewOf(available, objectives []models.Objective) *services.PlayerObjectiveView {
 	status := map[string]navigation.Status{}
 	for _, row := range available {
@@ -28,46 +30,101 @@ func viewOf(available, objectives []models.Objective) *services.PlayerObjectiveV
 	}
 }
 
-// The frontier omits an open section, so the view must put it back or three
-// parts of one task read as three tasks.
-func TestQuestView_RebuildsTheContainerTheFrontierFlattened(t *testing.T) {
+// The frontier is flat on purpose: a section that is merely open does not
+// appear, because its children are listed in its place. The view has to put
+// that section back, or three parts of one task read as three unrelated tasks.
+func TestQuestView_RebuildsTheSectionTheFrontierFlattened(t *testing.T) {
 	rows := tree(
 		obj("root", "", "The Perfumer's Garden"),
-		obj("top", "root", "Find a top note"),
+		obj("top", "root", "Choose your top note"),
 		obj("bergamot", "top", "Bergamot"),
 		obj("pepper", "top", "Pink pepper"),
 	)
 
 	view := BuildQuestView(viewOf([]models.Objective{rows[2], rows[3]}, rows))
 
-	require.Len(t, view.Groups, 1, "both rows came out of one section")
-	group := view.Groups[0]
-	assert.Equal(t, "Find a top note", group.Title)
-	assert.Equal(t, "top", group.ID)
-	require.Len(t, group.Rows, 2)
-	assert.Equal(t, "Bergamot", group.Rows[0].Title)
-	assert.Equal(t, "Pink pepper", group.Rows[1].Title)
+	require.Len(t, view.Places, 1)
+	place := view.Places[0]
+	assert.Equal(t, "Choose your top note", place.Title)
+	assert.Empty(t, place.Path, "nothing above it but the quest")
+	require.Len(t, place.Rows, 2)
+	assert.Equal(t, "Bergamot", place.Rows[0].Title)
 }
 
-// Wrapping a row under the root would invent a container the author never wrote.
-func TestQuestView_TopLevelRowsStandAlone(t *testing.T) {
+// A section inside a section is the path, not a box: the ancestor is named in
+// small type above the heading and costs no indent at all.
+func TestQuestView_AncestorsBecomeThePath(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("scent", "root", "Make your scent"),
+		obj("top", "scent", "Choose your top note"),
+		obj("bergamot", "top", "Bergamot"),
+	)
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[3]}, rows))
+
+	require.Len(t, view.Places, 1)
+	assert.Equal(t, "Choose your top note", view.Places[0].Title)
+	assert.Equal(t, []string{"Make your scent"}, view.Places[0].Path)
+}
+
+// Past the drawn depth a container passes through: it still bands and routes,
+// it simply has no place on the screen, and its rows join the last section that
+// does. The author's tree has no depth limit; the screen has a fixed one.
+func TestQuestView_DeeperSectionsPassThrough(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("one", "root", "Level one"),
+		obj("two", "one", "Level two"),
+		obj("three", "two", "Level three"),
+		obj("leaf", "three", "A task"),
+	)
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[4]}, rows))
+
+	require.Len(t, view.Places, 1)
+	assert.Equal(t, "Level two", view.Places[0].Title, "the deepest drawn section")
+	assert.Equal(t, []string{"Level one"}, view.Places[0].Path)
+	require.Len(t, view.Places[0].Rows, 1)
+	assert.Equal(t, "A task", view.Places[0].Rows[0].Title, "and the row is still offered")
+}
+
+// Rows from two passed-through sections meet in the place above them, which is
+// the whole point: the screen shows where the player is, not every box the
+// author drew around it.
+func TestQuestView_PassedThroughRowsMerge(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("one", "root", "Level one"), obj("two", "one", "Level two"),
+		obj("a", "two", "Deep A"), obj("leafa", "a", "Task A"),
+		obj("b", "two", "Deep B"), obj("leafb", "b", "Task B"),
+	)
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[4], rows[6]}, rows))
+
+	require.Len(t, view.Places, 1)
+	assert.Len(t, view.Places[0].Rows, 2)
+}
+
+// A row under the root belongs to no section a player would recognise, and
+// wrapping it in one would invent a container the author never wrote.
+func TestQuestView_RowsUnderTheRootStandAlone(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
 		obj("intro", "root", "Find out how to play"),
-		obj("top", "root", "Find a top note"),
-		obj("bergamot", "top", "Bergamot"),
+		obj("sect", "root", "A section"), obj("inner", "sect", "Inside"),
 	)
 
 	view := BuildQuestView(viewOf([]models.Objective{rows[1], rows[3]}, rows))
 
-	require.Len(t, view.Groups, 2)
-	assert.False(t, view.Groups[0].IsSection, "a row under the root is its own task")
-	assert.Equal(t, "Find out how to play", view.Groups[0].Rows[0].Title)
-	assert.True(t, view.Groups[1].IsSection)
-	assert.Equal(t, "Find a top note", view.Groups[1].Title)
+	require.Len(t, view.Places, 2)
+	assert.False(t, view.Places[0].IsSection)
+	assert.Equal(t, "Find out how to play", view.Places[0].Rows[0].Title)
+	assert.True(t, view.Places[1].IsSection)
 }
 
-// Re-sorting would put the quest in an order the author never arranged.
+// Places keep the frontier's order, which is the tree order the engine already
+// walked: re-sorting would rearrange a quest the author laid out by hand.
 func TestQuestView_KeepsTheFrontierOrder(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -77,44 +134,37 @@ func TestQuestView_KeepsTheFrontierOrder(t *testing.T) {
 
 	view := BuildQuestView(viewOf([]models.Objective{rows[4], rows[2]}, rows))
 
-	require.Len(t, view.Groups, 2)
-	assert.Equal(t, "Section B", view.Groups[0].Title, "B's row came first, so B's group does")
-	assert.Equal(t, "Section A", view.Groups[1].Title)
+	require.Len(t, view.Places, 2)
+	assert.Equal(t, "Section B", view.Places[0].Title)
+	assert.Equal(t, "Section A", view.Places[1].Title)
 }
 
-// An objective with no proof is a door: the row must not promise work.
+// An objective with no proof is a door: opening it is the whole of what there
+// is to do, so the row must not promise work.
 func TestQuestView_RowWithoutProofIsADoor(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("read", "root", "Read the safety notice"))
 
-	assert.True(t, BuildQuestView(viewOf([]models.Objective{rows[1]}, rows)).Groups[0].Rows[0].IsDoor)
+	assert.True(t, BuildQuestView(viewOf([]models.Objective{rows[1]}, rows)).Places[0].Rows[0].IsDoor)
 
 	withProof := viewOf([]models.Objective{rows[1]}, rows)
 	withProof.HasProof = map[string]bool{"read": true}
-	assert.False(t, BuildQuestView(withProof).Groups[0].Rows[0].IsDoor)
+	assert.False(t, BuildQuestView(withProof).Places[0].Rows[0].IsDoor)
 }
 
-// The icon comes from the first proof block, so no one has to classify
-// objectives into kinds.
+// The row's icon is the first block in its proof that asks for something, so a
+// card says what is coming without anyone classifying objectives into kinds.
 func TestQuestView_RowBorrowsItsProofBlocksIcon(t *testing.T) {
-	rows := tree(obj("root", "", "Quest"), obj("gate", "root", "Scan the tag on the plan chest"))
+	rows := tree(obj("root", "", "Quest"), obj("gate", "root", "Scan the tag"))
 
 	view := viewOf([]models.Objective{rows[1]}, rows)
 	view.FirstProofBlock = map[string]string{"gate": "scan"}
 
-	icon := BuildQuestView(view).Groups[0].Rows[0].IconSVG
-	assert.Contains(t, icon, "<svg")
+	icon := BuildQuestView(view).Places[0].Rows[0].IconSVG
 	assert.Contains(t, icon, "scan-qr-code")
 }
 
-// With no named block the row draws its own marker rather than a misleading one.
-func TestQuestView_RowWithNoNamedBlockHasNoIcon(t *testing.T) {
-	rows := tree(obj("root", "", "Quest"), obj("read", "root", "Read the notice"))
-
-	view := BuildQuestView(viewOf([]models.Objective{rows[1]}, rows))
-	assert.Empty(t, view.Groups[0].Rows[0].IconSVG)
-}
-
-// A finishable section is a row in its own right; its button is its only control.
+// A finishable section arrives in the frontier as a row in its own right, and
+// its finish button is the only control on it.
 func TestQuestView_FinishableSectionCarriesItsButton(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("wing", "root", "Visit the east wing"))
 	rows[1].FinishLabel = "Leave the wing"
@@ -122,33 +172,54 @@ func TestQuestView_FinishableSectionCarriesItsButton(t *testing.T) {
 	view := viewOf([]models.Objective{rows[1]}, rows)
 	view.Frontier.Status["wing"] = navigation.StatusFinishable
 
-	row := BuildQuestView(view).Groups[0].Rows[0]
+	row := BuildQuestView(view).Places[0].Rows[0]
 	assert.True(t, row.CanFinish)
 	assert.Equal(t, "Leave the wing", row.FinishLabel)
 }
 
-// A blank label would render an empty button.
+// An author who names no label still gets a button: the band decides one
+// appears, and a blank label would render an empty one.
 func TestQuestView_FinishLabelFallsBackToPlainWords(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("wing", "root", "Visit the east wing"))
 
 	view := viewOf([]models.Objective{rows[1]}, rows)
 	view.Frontier.Status["wing"] = navigation.StatusFinishable
 
-	assert.Equal(t, "Finish", BuildQuestView(view).Groups[0].Rows[0].FinishLabel)
+	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].Rows[0].FinishLabel)
 }
 
-// Without the tree there are no sections, but every row must still appear.
+// A quest whose tree failed to load must not lose its rows: with no tree there
+// are no sections to find, but every row still has to appear.
 func TestQuestView_SurvivesAMissingTree(t *testing.T) {
 	orphan := obj("lost", "nowhere", "Still a task")
 
 	view := BuildQuestView(viewOf([]models.Objective{orphan}, nil))
 
-	require.Len(t, view.Groups, 1)
-	assert.False(t, view.Groups[0].IsSection)
-	assert.Equal(t, "Still a task", view.Groups[0].Rows[0].Title)
+	require.Len(t, view.Places, 1)
+	assert.False(t, view.Places[0].IsSection)
+	assert.Equal(t, "Still a task", view.Places[0].Rows[0].Title)
 }
 
-// The bar counts finished objectives against the whole quest, not the frontier.
+// A parent chain that loops must not hang the page, and must not swallow the
+// row: storage can hold a cycle and lint reports one, but the work underneath
+// it is still work the run can do.
+func TestQuestView_SurvivesAParentCycle(t *testing.T) {
+	rows := tree(obj("a", "b", "A"), obj("b", "a", "B"), obj("leaf", "a", "A task"))
+
+	done := make(chan QuestView, 1)
+	go func() { done <- BuildQuestView(viewOf([]models.Objective{rows[2]}, rows)) }()
+
+	select {
+	case view := <-done:
+		require.Len(t, view.Places, 1)
+		assert.Equal(t, "A task", view.Places[0].Rows[0].Title)
+	case <-time.After(2 * time.Second):
+		t.Fatal("BuildQuestView did not return: the parent walk has no guard")
+	}
+}
+
+// The bar measures the quest, not the frontier: what the run has finished
+// against everything there is to finish.
 func TestQuestChrome_CountsTheQuestNotTheFrontier(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -167,4 +238,16 @@ func TestQuestChrome_CountsTheQuestNotTheFrontier(t *testing.T) {
 	assert.Equal(t, 1, chrome.Done)
 	assert.Equal(t, 3, chrome.Total, "the root is the quest, not a step in it")
 	assert.Equal(t, "quest", chrome.Active)
+}
+
+// A row carries the description under its title, which is what the second
+// field is for: the name is read in a list, the description is read standing
+// in front of the thing.
+func TestQuestView_RowCarriesItsDescription(t *testing.T) {
+	rows := tree(obj("root", "", "Quest"), obj("chest", "root", "Find the plan chest"))
+	rows[1].Description = "Level 2, past the model-making room."
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[1]}, rows))
+
+	assert.Equal(t, "Level 2, past the model-making room.", view.Places[0].Rows[0].Description)
 }

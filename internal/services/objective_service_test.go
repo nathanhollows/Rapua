@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -568,4 +569,102 @@ func TestObjectiveService_ParkingBelowMaxIsAllowedWhenMinIsLower(t *testing.T) {
 	// None left cannot: there is nothing to complete and no button to press.
 	assert.ErrorIs(t, service.UpdateObjective(ctx, &children[2],
 		services.ObjectiveUpdateData{Draft: boolPtr(true)}), services.ErrParkingBreaksBand)
+}
+
+// describedObjective is a saved objective to edit, made the way the editor
+// makes one.
+func describedObjective(t *testing.T, service services.ObjectiveService, questID string) models.Objective {
+	t.Helper()
+	objective, err := service.CreateObjective(context.Background(), questID, "", "Find the plan chest")
+	require.NoError(t, err)
+	return objective
+}
+
+// The description is the detail a player needs on arrival, and it saves like
+// any other field the editor offers.
+func TestObjectiveService_UpdateObjective_SavesTheDescription(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+	objective := describedObjective(t, service, questID)
+
+	require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+		Description: strPtr("Level 2, past the model-making room."),
+	}))
+
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, objective.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, "Level 2, past the model-making room.", reloaded.Description)
+}
+
+// Nil leaves it alone, so a form that does not offer the field cannot wipe one
+// an author wrote on a form that did.
+func TestObjectiveService_UpdateObjective_DescriptionUntouchedWhenAbsent(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+	objective := describedObjective(t, service, questID)
+
+	require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+		Description: strPtr("Keep me."),
+	}))
+	require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+		Title: "A new title",
+	}))
+
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, objective.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, "Keep me.", reloaded.Description)
+}
+
+// An author clearing the field means it, which a pointer can say and a bare
+// string cannot.
+func TestObjectiveService_UpdateObjective_DescriptionCanBeCleared(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+	objective := describedObjective(t, service, questID)
+
+	require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+		Description: strPtr("Written then thought better of."),
+	}))
+	require.NoError(t, service.UpdateObjective(ctx, &objective, services.ObjectiveUpdateData{
+		Description: strPtr(""),
+	}))
+
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, objective.Slug)
+	require.NoError(t, err)
+	assert.Empty(t, reloaded.Description)
+}
+
+// A description runs in a list row on a phone. Past a couple of lines it stops
+// being the detail you read on arrival and becomes content, which belongs in a
+// text block in the proof where it has room.
+func TestObjectiveService_UpdateObjective_RefusesAnOverlongDescription(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	objective := describedObjective(t, service, validQuestID(t, dbc))
+
+	err := service.UpdateObjective(context.Background(), &objective, services.ObjectiveUpdateData{
+		Description: strPtr(strings.Repeat("x", 281)),
+	})
+
+	require.ErrorIs(t, err, services.ErrFieldTooLong)
+}
+
+// The title's column is varchar(255), so a longer one is a storage error
+// surfacing as a save failure rather than a refusal anyone can act on.
+func TestObjectiveService_UpdateObjective_RefusesAnOverlongTitle(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	objective := describedObjective(t, service, validQuestID(t, dbc))
+
+	err := service.UpdateObjective(context.Background(), &objective, services.ObjectiveUpdateData{
+		Title: strings.Repeat("x", 256),
+	})
+
+	require.ErrorIs(t, err, services.ErrFieldTooLong)
 }

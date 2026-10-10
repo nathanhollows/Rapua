@@ -136,11 +136,12 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := templates.ObjectiveViewData{
-		Settings: team.Quest.Settings,
-		Title:    objective.Title,
-		Zone:     zone,
-		Blocks:   contentBlocks,
-		States:   blockStates,
+		Settings:    team.Quest.Settings,
+		Title:       objective.Title,
+		Description: objective.Description,
+		Zone:        zone,
+		Blocks:      contentBlocks,
+		States:      blockStates,
 	}
 	// Only the reveal reads Next, so proof pages skip the frontier lookup.
 	if zone == blocks.ContextObjectiveReveal {

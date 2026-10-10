@@ -51,6 +51,21 @@ var ErrInvalidRouting = errors.New("invalid routing")
 // ErrInvalidBand mirrors lint's BAND_MIN_EXCEEDS_MAX rule.
 var ErrInvalidBand = errors.New("invalid completion band")
 
+// ErrFieldTooLong means a field exceeded what its column, or its place on the
+// screen, can hold.
+var ErrFieldTooLong = errors.New("field is too long")
+
+// maxTitleLength is the title column's own width. Checked here so an overlong
+// title is refused with a sentence, rather than surfacing as a driver error on
+// save or being silently truncated by a database that does that.
+const maxTitleLength = 255
+
+// maxDescriptionLength keeps the description to what a player reads in a list
+// row. The column is TEXT and would take a chapter; past a couple of lines this
+// stops being the detail you need on arrival and becomes content, which belongs
+// in a text block in the proof where it has the room.
+const maxDescriptionLength = 280
+
 type objectiveService struct {
 	transactor    db.Transactor
 	objectiveRepo repositories.ObjectiveRepository
@@ -117,6 +132,17 @@ func applyObjectiveSettings(objective *models.Objective, data ObjectiveUpdateDat
 
 	if data.FinishLabel != nil && *data.FinishLabel != objective.FinishLabel {
 		objective.FinishLabel = *data.FinishLabel
+		changed = true
+	}
+
+	if data.Description != nil && *data.Description != objective.Description {
+		if len(*data.Description) > maxDescriptionLength {
+			return false, fmt.Errorf(
+				"%w: description is %d characters, and the limit is %d",
+				ErrFieldTooLong, len(*data.Description), maxDescriptionLength,
+			)
+		}
+		objective.Description = *data.Description
 		changed = true
 	}
 
@@ -337,6 +363,12 @@ func (s objectiveService) UpdateObjective(
 	update := false
 
 	if data.Title != "" && data.Title != candidate.Title {
+		if len(data.Title) > maxTitleLength {
+			return fmt.Errorf(
+				"%w: title is %d characters, and the column holds %d",
+				ErrFieldTooLong, len(data.Title), maxTitleLength,
+			)
+		}
 		candidate.Title = data.Title
 		update = true
 	}

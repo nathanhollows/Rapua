@@ -252,6 +252,10 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		maxNext = *maxNextBound
 	}
 
+	// presentStrPtr, not strPtr: an absent key leaves the stored description
+	// alone and an empty one clears it, which is the distinction the pointer
+	// exists to carry. Only this form offers the field; the settings popover
+	// does not, and must not wipe what was written here.
 	data := services.ObjectiveUpdateData{
 		Title:       r.FormValue("title"),
 		Draft:       boolPtr(!published),
@@ -259,6 +263,7 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		MaxNext:     presentIntPtr(r, "max_next", maxNext),
 		Band:        bandUpdate(r, minBound, maxBound),
 		FinishLabel: presentStrPtr(r, "finish_label"),
+		Description: presentStrPtr(r, "description"),
 	}
 
 	err = h.objectiveService.UpdateObjective(r.Context(), objective, data)

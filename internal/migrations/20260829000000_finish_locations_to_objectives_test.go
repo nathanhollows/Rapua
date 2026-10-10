@@ -73,6 +73,10 @@ func m20260829_writeTree(t *testing.T, dbc *bun.DB, questID string, tree map[str
 	require.NoError(t, err)
 }
 
+// The migration's own m20260829_objective is used for reading here, not the
+// live model: a test pinned to an older schema cannot select through a model
+// that has gained columns since, and it asks this database for fields it has
+// never heard of.
 func TestFinishMigration_StripsLocationIDsForAlreadyConvertedLocation(t *testing.T) {
 	dbc := m20260829_setupDB(t)
 	ctx := context.Background()
@@ -81,13 +85,13 @@ func TestFinishMigration_StripsLocationIDsForAlreadyConvertedLocation(t *testing
 	// Mimics 20260827 having already run.
 	require.NoError(t, m20260827_up(ctx, dbc))
 
-	var before []models.Objective
+	var before []m20260829_objective
 	require.NoError(t, dbc.NewSelect().Model(&before).Where("quest_id = ?", questID).Scan(ctx))
 	require.Len(t, before, 1)
 
 	require.NoError(t, m20260829_up(ctx, dbc))
 
-	var after []models.Objective
+	var after []m20260829_objective
 	require.NoError(t, dbc.NewSelect().Model(&after).Where("quest_id = ?", questID).Scan(ctx))
 	require.Len(t, after, 1, "no duplicate objective created for an already-converted location")
 	assert.Equal(t, before[0].ID, after[0].ID)
@@ -149,7 +153,7 @@ func TestFinishMigration_SweepsStrandedMarkerlessLocationOnceItGetsAMarker(t *te
 
 	require.NoError(t, m20260829_up(ctx, dbc), "must succeed once every location is convertible")
 
-	var objectives []models.Objective
+	var objectives []m20260829_objective
 	require.NoError(t, dbc.NewSelect().Model(&objectives).Where("quest_id = ?", questID).Scan(ctx))
 	require.Len(t, objectives, 2, "both the originally-seeded and the stranded location are now objectives")
 
@@ -188,7 +192,7 @@ func TestDropLocationMigration_DropsTablesOnceConversionComplete(t *testing.T) {
 	require.NoError(t, m20260827_up(ctx, dbc))
 	require.NoError(t, m20260829_up(ctx, dbc))
 
-	var objectivesBefore []models.Objective
+	var objectivesBefore []m20260829_objective
 	require.NoError(t, dbc.NewSelect().Model(&objectivesBefore).Where("quest_id = ?", questID).Scan(ctx))
 	require.Len(t, objectivesBefore, 1)
 	var blocksBefore []models.Block
@@ -205,7 +209,7 @@ func TestDropLocationMigration_DropsTablesOnceConversionComplete(t *testing.T) {
 	assert.False(t, columnExists(ctx, dbc, "quest_settings", "must_check_out"), "must_check_out column dropped")
 
 	// The converted content survived the table drop untouched.
-	var objectivesAfter []models.Objective
+	var objectivesAfter []m20260829_objective
 	require.NoError(t, dbc.NewSelect().Model(&objectivesAfter).Where("quest_id = ?", questID).Scan(ctx))
 	require.Len(t, objectivesAfter, 1)
 	assert.Equal(t, objectivesBefore[0].ID, objectivesAfter[0].ID)

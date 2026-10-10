@@ -17,7 +17,10 @@ type NextUp struct {
 type ObjectiveViewData struct {
 	Settings models.QuestSettings
 	// Title is the task being asked for, not a label for a place.
-	Title  string
+	Title string
+	// Description is the detail that will not fit in a title short enough to
+	// read in a list, shown under it on arrival.
+	Description string
 	Zone   game.BlockContext
 	Blocks blocks.Blocks
 	States map[string]blocks.PlayerState
@@ -27,7 +30,12 @@ type ObjectiveViewData struct {
 
 templ ObjectiveView(data ObjectiveViewData) {
 	<div class="flex flex-col gap-6">
-		<h1 class="text-xl font-bold leading-snug text-pretty">{ data.Title }</h1>
+		<div class="flex flex-col gap-2">
+			<h1 class="text-xl font-bold leading-snug text-pretty">{ data.Title }</h1>
+			if data.Description != "" {
+				<p class="text-sm opacity-70 text-pretty">{ data.Description }</p>
+			}
+		</div>
 		<div id="objective-zone" class="flex flex-col gap-8">
 			@objectiveZoneContents(data)
 		</div>

@@ -34,6 +34,16 @@ func NewExportService(
 	}
 }
 
+// optionalString omits an empty description rather than writing "": the key's
+// absence is what tells an import to leave a stored one alone, and an export
+// of nothing should not instruct anybody to clear anything.
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
 func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, []string, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
@@ -175,6 +185,7 @@ func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.Obj
 		ID:          obj.ID,
 		Slug:        obj.Slug,
 		Title:       obj.Title,
+		Description: optionalString(obj.Description),
 		Draft:       &obj.Draft,
 		Routing:     obj.Routing,
 		ChildrenMin: obj.ChildrenMin,

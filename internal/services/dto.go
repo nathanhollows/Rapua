@@ -41,6 +41,10 @@ type ObjectiveUpdateData struct {
 	// not express: nil meant both "unchanged" and "cleared".
 	Band        *BandUpdate
 	FinishLabel *string
+	// Description is the detail shown under the title. A pointer, because a
+	// form that does not offer the field must leave one written on a form that
+	// did alone, and an author clearing it means it.
+	Description *string
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.

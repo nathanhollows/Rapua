@@ -5,19 +5,23 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 )
 
-// blockAddButton renders a dropdown for adding blocks to a container
-templ blockAddButton(ownerID string, context blocks.BlockContext, targetSelector string) {
-	@blockAddDropdownForContext(ownerID, context, targetSelector)
+// blockAddButton renders a dropdown for adding blocks to a container.
+//
+// label names the zone being added to. A page with one zone has no name worth
+// saying and passes "Add content"; a page with two has to say which, or the
+// author is choosing between two identical controls.
+templ blockAddButton(ownerID string, context blocks.BlockContext, targetSelector, label string) {
+	@blockAddDropdownForContext(ownerID, context, targetSelector, label)
 }
 
 // blockAddDropdownForContext renders the dropdown options for adding blocks based on context
-templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector string) {
+templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector, label string) {
 	<div class="divider my-10">
 		<div class="dropdown dropdown-center">
 			<div class="block">
 				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
 					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
-					Add content
+					{ label }
 				</div>
 			</div>
 			<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
@@ -151,32 +155,121 @@ templ blockReorderForm() {
 }
 
 // previewSortableScript renders the sortable.js initialization for preview
+// previewHoverScript lights the block in the editor that a preview block
+// belongs to, and the other way about.
+//
+// Separate from previewSortableScript because the two have nothing to do with
+// each other: the objective editor dropped drag-to-reorder when its preview
+// started following the scroll, and took the highlighting with it, because they
+// happened to live in one script.
+templ previewHoverScript() {
+	<script>
+	(function() {
+		// Both preview shapes: the system pages mirror one list and carry
+		// data-blocks-target; the objective editor has a pane per zone and
+		// carries data-preview. Hovering works the same in either.
+		const PREVIEW_PANES = '[data-blocks-target], [data-preview]';
+
+		function attachPreviewHoverHandlers() {
+			document.querySelectorAll(PREVIEW_PANES).forEach(attachHoverTo);
+		}
+
+		// Pointing at a block in the preview brings its fields to you. The
+		// preview is pinned, so moving the page underneath it does not move the
+		// thing being pointed at: the mouse stays where it was.
+		let dwell = null;
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+		function revealInEditor(adminBlock) {
+			clearTimeout(dwell);
+			// A sweep across the preview crosses several blocks; only the one
+			// settled on is worth a scroll.
+			dwell = setTimeout(function() {
+				const box = adminBlock.getBoundingClientRect();
+				const visible = box.top >= 0 && box.bottom <= window.innerHeight;
+				// Already readable, so moving the page would be motion for its
+				// own sake.
+				if (visible) return;
+				adminBlock.scrollIntoView({
+					behavior: reduced.matches ? 'auto' : 'smooth',
+					block: 'center',
+				});
+			}, 150);
+		}
+
+		function attachHoverTo(previewContainer) {
+
+			const previewBlocks = previewContainer.querySelectorAll('.block-view');
+
+			previewBlocks.forEach(previewBlock => {
+				// Extract UUID from preview-block-{uuid}
+				const blockId = previewBlock.id.replace('preview-block-', '');
+				if (!blockId) return;
+
+				// Find corresponding admin block
+				const adminBlock = document.getElementById('block-' + blockId) ||
+				                  document.querySelector(`[data-block-id="${blockId}"]`);
+
+				if (adminBlock) {
+					previewBlock.addEventListener('mouseenter', function() {
+						previewBlock.classList.add('preview-block-highlighted');
+						adminBlock.classList.add('admin-block-highlighted');
+						revealInEditor(adminBlock);
+					});
+
+					previewBlock.addEventListener('mouseleave', function() {
+						previewBlock.classList.remove('preview-block-highlighted');
+						adminBlock.classList.remove('admin-block-highlighted');
+						// Leaving before the dwell elapses cancels the scroll,
+						// so passing over a block never moves the page.
+						clearTimeout(dwell);
+					});
+				}
+			});
+		}
+
+		// Re-attach after HTMX content updates. The lock is handled once,
+		// above: this listener was a second copy of it.
+		document.addEventListener('htmx:afterSwap', function(evt) {
+			// The swap lands inside a pane rather than on it: htmx replaces the
+			// pane's children, so the pane itself is the thing to look up from.
+			if (evt.detail.target.closest(PREVIEW_PANES) ||
+				evt.detail.target.querySelector(PREVIEW_PANES)) {
+				attachPreviewHoverHandlers();
+			}
+		});
+	})();
+	</script>
+}
+
 templ previewSortableScript() {
 	<script src="/static/js/Sortable.min.js"></script>
 	<script>
 	(function() {
-		let sortableInstance = null;
-
 		function initializePreviewSortable() {
-			const previewContainer = document.getElementById('mobile-preview-container');
-			if (!previewContainer) return;
+			// A preview per zone, each naming the admin list its reordering
+			// belongs to. This used to be one preview reading the active tab;
+			// there are no tabs now, and a preview that owns one zone cannot
+			// write into the wrong list.
+			document.querySelectorAll('[data-blocks-target]').forEach(initPreviewPane);
+		}
+
+		function initPreviewPane(previewContainer) {
+			if (previewContainer._sortableBound) return;
+			previewContainer._sortableBound = true;
 
 			// Wait for HTMX to load preview content
 			const observer = new MutationObserver((mutations, obs) => {
 				const blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');
 
-				if (blocksContainer && !sortableInstance) {
-					// Clean up any existing instance
-					if (sortableInstance) {
-						sortableInstance.destroy();
-					}
+				if (blocksContainer && !previewContainer._sortable) {
 
 					// Initialize sortable.js
 					// This instance is destroyed and rebuilt on its own
 					// schedule, so the lock cannot hold a reference to it.
 					// It reads the lock's published state instead, and the
 					// listener below catches a change that arrives later.
-					sortableInstance = new Sortable(blocksContainer, {
+					previewContainer._sortable = new Sortable(blocksContainer, {
 						disabled: document.body.dataset.questLocked === 'true',
 						animation: 150,
 						draggable: '.block-view',
@@ -199,10 +292,9 @@ templ previewSortableScript() {
 
 							// First, visually reorder admin blocks to match preview
 							// Determine which admin container to update based on active tab
-							const navTabActive = document.getElementById('nav-tab').classList.contains('tab-active');
-							const adminBlocksContainer = navTabActive
-								? document.getElementById('nav-blocks')
-								: document.getElementById('content-blocks');
+							const adminBlocksContainer = document.getElementById(
+								previewContainer.dataset.blocksTarget
+							);
 
 							if (adminBlocksContainer) {
 								// Get all admin block elements
@@ -267,89 +359,45 @@ templ previewSortableScript() {
 		// Initialize on page load
 		document.addEventListener('DOMContentLoaded', initializePreviewSortable);
 
-		// Re-initialize after HTMX swaps content
-		document.body.addEventListener('quest-lock-change', function(evt) {
-			// A running quest refuses the reorder POST, but an
-			// accepted-looking drag leaves the block where the database does
-			// not have it.
-			if (sortableInstance) sortableInstance.option('disabled', evt.detail.locked);
-		});
-
-		document.addEventListener('htmx:afterSwap', function(evt) {
-			// Check if the swapped content contains the preview container
-			if (evt.detail.target.querySelector('#mobile-preview-container') ||
-				evt.detail.target.id === 'mobile-preview-container') {
-				// Reset and reinitialize
-				if (sortableInstance) {
-					sortableInstance.destroy();
-					sortableInstance = null;
-				}
-				initializePreviewSortable();
-			}
-		});
-
-		// Re-initialize after browser back/forward navigation
-		document.addEventListener('htmx:historyRestore', function(evt) {
-			// Clear existing sortable instance since it's stale after history restore
-			if (sortableInstance) {
-				sortableInstance.destroy();
-				sortableInstance = null;
-			}
-			initializePreviewSortable();
-		});
-
-		// Cleanup on page unload
-		window.addEventListener('beforeunload', function() {
-			if (sortableInstance) {
-				sortableInstance.destroy();
-			}
-		});
-
-		// Hover highlighting between preview and admin blocks
-		function attachPreviewHoverHandlers() {
-			const previewContainer = document.getElementById('mobile-preview-container');
-			if (!previewContainer) return;
-
-			const previewBlocks = previewContainer.querySelectorAll('.block-view');
-
-			previewBlocks.forEach(previewBlock => {
-				// Extract UUID from preview-block-{uuid}
-				const blockId = previewBlock.id.replace('preview-block-', '');
-				if (!blockId) return;
-
-				// Find corresponding admin block
-				const adminBlock = document.getElementById('block-' + blockId) ||
-				                  document.querySelector(`[data-block-id="${blockId}"]`);
-
-				if (adminBlock) {
-					previewBlock.addEventListener('mouseenter', function() {
-						adminBlock.classList.add('admin-block-highlighted');
-					});
-
-					previewBlock.addEventListener('mouseleave', function() {
-						adminBlock.classList.remove('admin-block-highlighted');
-					});
-				}
+		// Each pane keeps its own instance, so the lock and the swap handlers
+		// reach them through the DOM rather than through one shared variable.
+		function eachPane(fn) {
+			document.querySelectorAll('[data-blocks-target]').forEach(function(pane) {
+				if (pane._sortable) fn(pane);
 			});
 		}
 
-		// Attach hover handlers on page load
-		document.addEventListener('DOMContentLoaded', attachPreviewHoverHandlers);
-
-		// Re-attach after HTMX content updates
 		document.body.addEventListener('quest-lock-change', function(evt) {
 			// A running quest refuses the reorder POST, but an
 			// accepted-looking drag leaves the block where the database does
 			// not have it.
-			if (sortableInstance) sortableInstance.option('disabled', evt.detail.locked);
+			eachPane(function(pane) { pane._sortable.option('disabled', evt.detail.locked); });
 		});
 
+		function resetPanes() {
+			eachPane(function(pane) {
+				pane._sortable.destroy();
+				pane._sortable = null;
+				pane._sortableBound = false;
+			});
+			initializePreviewSortable();
+		}
+
 		document.addEventListener('htmx:afterSwap', function(evt) {
-			if (evt.detail.target.querySelector('#mobile-preview-container') ||
-				evt.detail.target.id === 'mobile-preview-container') {
-				attachPreviewHoverHandlers();
+			if (evt.detail.target.querySelector('[data-blocks-target]') ||
+				evt.detail.target.dataset.blocksTarget) {
+				resetPanes();
 			}
 		});
+
+		document.addEventListener('htmx:historyRestore', resetPanes);
+
+		// Cleanup on page unload
+		window.addEventListener('beforeunload', function() {
+			eachPane(function(pane) { pane._sortable.destroy(); });
+		});
+
+		// Hover highlighting between preview and admin blocks
 	})();
 	</script>
 }

@@ -61,6 +61,15 @@ func NewImportService(
 	}
 }
 
+// valueOrEmpty reads an optional document string, where absent means empty on
+// a create: there is nothing stored yet to leave alone.
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
 // ImportCreate parses a GameDoc and creates a brand-new instance.
 // The doc ID field is ignored; a fresh UUID is always assigned.
 func (s *ImportService) ImportCreate(ctx context.Context, userID string, doc *game.GameDoc) (*ImportResult, error) {
@@ -293,6 +302,7 @@ func (s *ImportService) createObjective(
 		Position:    position,
 		Slug:        objDoc.Slug,
 		Title:       objDoc.Title,
+		Description: valueOrEmpty(objDoc.Description),
 		Draft:       objDoc.IsDraft(),
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
@@ -518,6 +528,11 @@ func (s *ImportService) reconcileObjective(
 
 	state.seenObjIDs[existingObj.ID] = true
 	existingObj.Title = objDoc.Title
+	// Only when the document says so: an omitted key leaves what is stored,
+	// the same way an omitted draft does.
+	if objDoc.Description != nil {
+		existingObj.Description = *objDoc.Description
+	}
 	existingObj.Slug = objDoc.Slug
 	// An omitted key leaves the stored state alone: a document with no opinion
 	// about draft must not publish a section somebody deliberately parked.
