@@ -69,6 +69,7 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 			instanceRepo,
 			teamRepo,
 			uploadsRepo, objectiveRepo,
+			repositories.NewRunEventRepository(dbc),
 			dbc,
 			t.TempDir(),
 			logger,

@@ -181,8 +181,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	team.Name = teamName
-	err = h.runService.Update(r.Context(), team)
+	err = h.runService.RenameRun(r.Context(), team, teamName)
 	if err != nil {
 		h.handleError(w, r, "Error updating team", "Error updating team", "error", err)
 		return

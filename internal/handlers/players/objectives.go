@@ -42,6 +42,14 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// After the redirect, so a run that is finished is not recorded as having
+	// opened a list it was never shown. A failure here costs a data point, not
+	// the page.
+	err = h.navigationService.RecordObjectivesListed(r.Context(), team)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "recording objectives listed", "error", err)
+	}
+
 	data := templates.ObjectivesParams{
 		Run:  *team,
 		View: view,

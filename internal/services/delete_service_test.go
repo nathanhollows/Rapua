@@ -36,6 +36,7 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 		teamRepo,
 		uploadRepo,
 		repositories.NewObjectiveRepository(dbc),
+		repositories.NewRunEventRepository(dbc),
 		dbc,
 		uploadsDir,
 		newTLogger(t),

@@ -107,10 +107,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	accessService := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
 	quickstartService := services.NewQuickstartService(instanceRepo)
-	uploadService := services.NewUploadService(uploadRepo, localStorage)
+	uploadService := services.NewUploadService(transactor, uploadRepo, runEventRepo, localStorage)
 	deleteService := services.NewDeleteService(
 		transactor, instanceRepo,
-		teamRepo, uploadRepo, objectiveRepo, dbc, uploadsDir, logger,
+		teamRepo, uploadRepo, objectiveRepo, runEventRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
 		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
@@ -125,11 +125,13 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	sectionFinishRepo := repositories.NewSectionFinishRepository(dbc)
 	navigationService := services.NewNavigationService(
+		transactor,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
+		runEventRepo,
 		logger,
 	)
 	checkInService := services.NewCheckInService(
@@ -139,7 +141,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		sectionFinishRepo, blockRepo,
 		runEventRepo,
 	)
-	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
+	notificationService := services.NewNotificationService(transactor, notificationRepo, teamRepo, runEventRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo, logger)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
@@ -149,6 +151,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	runService := services.NewRunService(
 		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
+		runEventRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
 	questService := services.NewQuestService(transactor, instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo)

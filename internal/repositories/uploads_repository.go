@@ -18,13 +18,23 @@ func NewUploadRepository(db *bun.DB) UploadsRepository {
 }
 
 func (r *UploadsRepository) Create(ctx context.Context, upload *models.Upload) error {
+	return createUpload(ctx, r.db, upload)
+}
+
+// CreateWithTx saves an upload's metadata inside a caller's transaction, so the
+// row and the event recording it commit together.
+func (r *UploadsRepository) CreateWithTx(ctx context.Context, tx *bun.Tx, upload *models.Upload) error {
+	return createUpload(ctx, tx, upload)
+}
+
+func createUpload(ctx context.Context, db bun.IDB, upload *models.Upload) error {
 	if upload == nil {
 		return errors.New("upload is nil")
 	}
 	if upload.ID == "" {
 		upload.ID = uuid.New().String()
 	}
-	_, err := r.db.NewInsert().Model(upload).Exec(ctx)
+	_, err := db.NewInsert().Model(upload).Exec(ctx)
 	return err
 }
 

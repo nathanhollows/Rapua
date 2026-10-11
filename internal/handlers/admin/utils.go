@@ -84,8 +84,6 @@ type BlockService interface {
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
-	// UpdateState updates the player state for a block
-	UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
 	// ReorderBlocks changes the display/order of blocks at a location
 	ReorderBlocks(ctx context.Context, blockIDs []string) error
 }

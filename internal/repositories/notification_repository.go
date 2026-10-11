@@ -11,18 +11,20 @@ import (
 )
 
 type NotificationRepository interface {
-	//	Create saves a notification to the database
-	Create(context.Context, *models.Notification) error
-
 	//	GetByID finds a notification by its ID
 	GetByID(ctx context.Context, id string) (models.Notification, error)
 	// FindByRunCode finds all notifications for a specific run code
 	FindByRunCode(ctx context.Context, runCode string) ([]models.Notification, error)
 
+	// CreateWithTx saves a notification inside a caller's transaction, so the
+	// message and the event recording it commit together.
+	CreateWithTx(ctx context.Context, tx *bun.Tx, notification *models.Notification) error
+	// DismissWithTx marks a notification dismissed inside a caller's transaction, so
+	// the dismissal and its event commit together.
+	DismissWithTx(ctx context.Context, tx *bun.Tx, id string) error
+
 	//	Update updates a notification in the database
 	Update(context.Context, *models.Notification) error
-	// Dismiss marks a notification as dismissed
-	Dismiss(ctx context.Context, id string) error
 
 	//	Delete deletes a notification from the database
 	Delete(ctx context.Context, id string) error
@@ -38,8 +40,14 @@ func NewNotificationRepository(db *bun.DB) NotificationRepository {
 	}
 }
 
-// Create inserts a new notification into the database.
-func (r *notificationRepository) Create(ctx context.Context, notification *models.Notification) error {
+// CreateWithTx inserts a new notification inside a caller's transaction.
+func (r *notificationRepository) CreateWithTx(
+	ctx context.Context, tx *bun.Tx, notification *models.Notification,
+) error {
+	return createNotification(ctx, tx, notification)
+}
+
+func createNotification(ctx context.Context, db bun.IDB, notification *models.Notification) error {
 	// Validate the notification
 	if notification.Content == "" {
 		return errors.New("message is required")
@@ -54,16 +62,20 @@ func (r *notificationRepository) Create(ctx context.Context, notification *model
 	}
 
 	// Save the notification
-	_, err := r.db.NewInsert().Model(notification).Exec(ctx)
+	_, err := db.NewInsert().Model(notification).Exec(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// Dismiss marks a notification as dismissed.
-func (r *notificationRepository) Dismiss(ctx context.Context, id string) error {
-	_, err := r.db.NewUpdate().Model(&models.Notification{}).Set("dismissed = true").Where("id = ?", id).Exec(ctx)
+// DismissWithTx marks a notification as dismissed inside a caller's transaction.
+func (r *notificationRepository) DismissWithTx(ctx context.Context, tx *bun.Tx, id string) error {
+	return dismissNotification(ctx, tx, id)
+}
+
+func dismissNotification(ctx context.Context, db bun.IDB, id string) error {
+	_, err := db.NewUpdate().Model(&models.Notification{}).Set("dismissed = true").Where("id = ?", id).Exec(ctx)
 	return err
 }
 

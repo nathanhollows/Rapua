@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,9 @@ func setupUploadService(t *testing.T) (services.UploadService, func()) {
 	uploadsRepository := repositories.NewUploadRepository(dbc)
 	mockStorage := &mockUploadStorage{}
 
-	uploadService := services.NewUploadService(uploadsRepository, mockStorage)
+	uploadService := services.NewUploadService(
+		db.NewTransactor(dbc), uploadsRepository, repositories.NewRunEventRepository(dbc), mockStorage,
+	)
 	return *uploadService, cleanup
 }
 

@@ -42,17 +42,20 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, nil)
 
 	navigationService := services.NewNavigationService(
+		transactor,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
+		repositories.NewRunEventRepository(dbc),
 		newTLogger(t),
 	)
 
 	runService := services.NewRunService(
 		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
+		repositories.NewRunEventRepository(dbc),
 	)
 
 	return navigationService, runService, instanceRepo, dbc, cleanup

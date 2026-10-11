@@ -466,62 +466,6 @@ func TestBlockService_FindByOwnerIDAndRunCodeWithState(t *testing.T) {
 	}
 }
 
-func TestBlockService_UpdateState(t *testing.T) {
-	testCases := []struct {
-		name    string
-		setupFn func(svc services.BlockService) (blocks.PlayerState, error)
-		wantErr bool
-	}{
-		{
-			name: "Valid state update",
-			setupFn: func(svc services.BlockService) (blocks.PlayerState, error) {
-				// Create block
-				blk, err := svc.NewBlockWithOwnerAndContext(
-					context.Background(),
-					gofakeit.UUID(),
-					blocks.ContextObjectiveProof,
-					"checklist",
-				)
-				if err != nil {
-					return nil, err
-				}
-				// Create state
-				st, err := svc.NewBlockState(context.Background(), blk.GetID(), "TEAMUP", "test-quest")
-				if err != nil {
-					return nil, err
-				}
-				// Modify st as desired
-				st.SetComplete(true)
-				return st, nil
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			svc, dbc, cleanup := setupBlocksService(t)
-			defer cleanup()
-
-			// Create parent chain for team code "TEAMUP"
-			parents := createTestParents(t, dbc)
-			insertTestTeam(t, dbc, "TEAMUP", parents.QuestID)
-
-			initialState, err := tc.setupFn(svc)
-			require.NoError(t, err, "setup should not fail")
-
-			updated, err := svc.UpdateState(context.Background(), initialState)
-			if tc.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, initialState.GetBlockID(), updated.GetBlockID())
-				assert.True(t, updated.IsComplete(), "Expected state to be updated to 'Complete'")
-			}
-		})
-	}
-}
-
 func TestBlockService_ReorderBlocks(t *testing.T) {
 	testCases := []struct {
 		name       string

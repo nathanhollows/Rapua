@@ -20,8 +20,6 @@ type BlockStateRepository interface {
 	// GetByBlockAndRun gets a player state by block ID, run code, and quest ID
 	GetByBlockAndRun(ctx context.Context, blockID, runCode, questID string) (blocks.PlayerState, error)
 
-	// Update updates an existing player state
-	Update(ctx context.Context, block blocks.PlayerState) (blocks.PlayerState, error)
 	// UpdateIfIncompleteWithTx writes the state only if the stored row is still
 	// incomplete, and reports whether this call is the one that wrote it.
 	UpdateIfIncompleteWithTx(ctx context.Context, tx *bun.Tx, state blocks.PlayerState) (bool, error)
@@ -148,27 +146,6 @@ func (r *blockStateRepository) Create(ctx context.Context, state blocks.PlayerSt
 	}
 
 	return convertModelToPlayerStateData(modelState), nil
-}
-
-// Update modifies an existing run block state in the database.
-func (r *blockStateRepository) Update(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
-	modelState := convertPlayerStateToModelData(state)
-	if state.GetBlockID() == "" || state.GetPlayerID() == "" {
-		return nil, errors.New("block_id and run_code must be set")
-	}
-
-	_, err := r.db.NewUpdate().
-		Model(&modelState).
-		Set("player_data = ?", modelState.PlayerData).
-		Set("is_complete = ?", modelState.IsComplete).
-		Set("points_awarded = ?", modelState.PointsAwarded).
-		Set("updated_at = ?", time.Now()).
-		Where("block_id = ?", state.GetBlockID()).
-		Where("run_code = ?", state.GetPlayerID()).
-		Where("quest_id = ?", modelState.QuestID).
-		Exec(ctx)
-
-	return state, err
 }
 
 // UpdateIfIncompleteWithTx carries the incomplete check in the UPDATE's WHERE, so

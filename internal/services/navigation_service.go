@@ -8,6 +8,7 @@ import (
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/nathanhollows/Rapua/v8/navigation"
@@ -25,10 +26,12 @@ var (
 )
 
 type NavigationService struct {
+	transactor        db.Transactor
 	loader            runStateLoader
 	objectiveRepo     repositories.ObjectiveRepository
 	sectionFinishRepo repositories.SectionFinishRepository
 	teamRepo          repositories.RunRepository
+	runEventRepo      repositories.RunEventRepository
 	logger            *slog.Logger
 }
 
@@ -58,14 +61,17 @@ type PlayerObjectiveView struct {
 
 // NewNavigationService creates a NavigationService.
 func NewNavigationService(
+	transactor db.Transactor,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
 	sectionFinishRepo repositories.SectionFinishRepository,
 	blockRepo repositories.BlockRepository,
 	teamRepo repositories.RunRepository,
+	runEventRepo repositories.RunEventRepository,
 	logger *slog.Logger,
 ) *NavigationService {
 	return &NavigationService{
+		transactor: transactor,
 		loader: runStateLoader{
 			objectiveRepo:                  objectiveRepo,
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
@@ -75,6 +81,7 @@ func NewNavigationService(
 		objectiveRepo:     objectiveRepo,
 		sectionFinishRepo: sectionFinishRepo,
 		teamRepo:          teamRepo,
+		runEventRepo:      runEventRepo,
 		logger:            logger,
 	}
 }
@@ -149,7 +156,40 @@ func (s *NavigationService) FinishSection(
 		return false, fmt.Errorf("%w: %q", ErrSectionNotFinishable, objectiveID)
 	}
 
-	return s.sectionFinishRepo.Insert(ctx, team.Code, objectiveID)
+	// The insert's conflict clause decides whether this call finished the section,
+	// so it is also the one that records it: a double press gives one event.
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return false, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	inserted, err := s.sectionFinishRepo.InsertWithTx(ctx, tx, team.Code, objectiveID)
+	if err != nil {
+		return false, err
+	}
+	if !inserted {
+		return false, nil
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, sectionFinishedEvent(team, objectiveID)); err != nil {
+		return false, fmt.Errorf("recording section finish: %w", err)
+	}
+
+	return true, tx.Commit()
+}
+
+// RecordObjectiveView notes that a run opened an objective. Callers gate
+// reachability first, so a guessed slug never counts as a visit.
+func (s *NavigationService) RecordObjectiveView(
+	ctx context.Context, team *models.Run, objectiveID string,
+) error {
+	return s.runEventRepo.Record(ctx, objectiveViewedEvent(team, objectiveID))
+}
+
+// RecordObjectivesListed notes that a run opened the list of objectives.
+func (s *NavigationService) RecordObjectivesListed(ctx context.Context, team *models.Run) error {
+	return s.runEventRepo.Record(ctx, objectivesListedEvent(team))
 }
 
 // ensureObjectiveTeamRelationsLoaded loads the quest and messages: the player

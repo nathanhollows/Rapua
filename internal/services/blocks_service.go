@@ -376,11 +376,10 @@ func (s *BlockService) checkValidationRequiredExcluding(
 	return false, nil
 }
 
-// UpdateState updates the player state for a block.
-func (s *BlockService) UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
-	return s.blockStateRepo.Update(ctx, state)
-}
-
+// UpdateStateIfIncompleteWithTx writes the state only if the stored row is still
+// incomplete, and reports whether this call is the one that wrote it. Two
+// submissions can both read a block as incomplete, and only one of them may be
+// the one that completes it, so the guard has to live in the write.
 func (s *BlockService) UpdateStateIfIncompleteWithTx(
 	ctx context.Context, tx *bun.Tx, state blocks.PlayerState,
 ) (bool, error) {

@@ -82,6 +82,12 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A failure here costs a data point, not the page.
+	err = h.navigationService.RecordObjectiveView(r.Context(), team, objective.ID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "recording objective view", "error", err)
+	}
+
 	pending, err := h.checkInService.IsObjectiveContextPending(r.Context(), team, objective.ID, blocks.ContextObjectiveProof)
 	if err != nil {
 		h.handleError(

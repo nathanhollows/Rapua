@@ -38,6 +38,7 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 		blockStateRepo,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
+		repositories.NewRunEventRepository(dbc),
 	)
 
 	return *runService, dbc, cleanup

@@ -7,21 +7,31 @@ import (
 	"mime/multipart"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // UploadService provides methods for uploading files and managing metadata.
 type UploadService struct {
-	repo    repositories.UploadsRepository
-	storage UploadStorage
+	transactor   db.Transactor
+	repo         repositories.UploadsRepository
+	runEventRepo repositories.RunEventRepository
+	storage      UploadStorage
 }
 
 // NewUploadService creates a new UploadService.
-func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage) *UploadService {
+func NewUploadService(
+	transactor db.Transactor,
+	repo repositories.UploadsRepository,
+	runEventRepo repositories.RunEventRepository,
+	storage UploadStorage,
+) *UploadService {
 	return &UploadService{
-		repo:    repo,
-		storage: storage,
+		transactor:   transactor,
+		repo:         repo,
+		runEventRepo: runEventRepo,
+		storage:      storage,
 	}
 }
 
@@ -92,9 +102,31 @@ func (s *UploadService) UploadFile(
 		BlockID:     data.BlockID,
 	}
 
-	// Save metadata to database
-	if err = s.repo.Create(ctx, upload); err != nil {
+	// The row and its event commit together, so a saved upload is always one the
+	// stream knows about.
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err = s.repo.CreateWithTx(ctx, tx, upload); err != nil {
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
+	}
+
+	// Only a run's own upload belongs in its stream: the block editor's media
+	// carries no run code.
+	if upload.RunCode != "" {
+		event := uploadAddedEvent(
+			upload.RunCode, upload.QuestID, upload.BlockID, upload.OriginalURL, string(upload.Type),
+		)
+		if err = s.runEventRepo.RecordWithTx(ctx, tx, event); err != nil {
+			return nil, fmt.Errorf("recording upload: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("committing upload: %w", err)
 	}
 
 	return upload, nil

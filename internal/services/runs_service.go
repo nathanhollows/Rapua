@@ -37,6 +37,7 @@ type RunService struct {
 	blockStateRepo                 repositories.BlockStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	runEventRepo                   repositories.RunEventRepository
 	batchSize                      int
 }
 
@@ -47,6 +48,7 @@ func NewRunService(
 	bsr repositories.BlockStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
+	runEventRepo repositories.RunEventRepository,
 ) *RunService {
 	return &RunService{
 		transactor:                     transactor,
@@ -55,6 +57,7 @@ func NewRunService(
 		blockStateRepo:                 bsr,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		runEventRepo:                   runEventRepo,
 		batchSize:                      batchSize,
 	}
 }
@@ -128,15 +131,31 @@ func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run
 	return s.teamRepo.GetByCode(ctx, code)
 }
 
-// Update updates a team in the database.
-func (s *RunService) Update(ctx context.Context, team *models.Run) error {
-	return s.teamRepo.Update(ctx, team)
-}
-
 // AwardPoints awards points to a team.
 func (s *RunService) AwardPoints(ctx context.Context, team *models.Run, points int) error {
 	team.Points += points
 	return s.teamRepo.Update(ctx, team)
+}
+
+// RenameRun sets a run's name and records the change in one transaction. Naming
+// is the first thing most teams do, so the stream should be able to say when.
+func (s *RunService) RenameRun(ctx context.Context, team *models.Run, name string) error {
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	team.Name = name
+	if err := s.teamRepo.UpdateWithTx(ctx, tx, team); err != nil {
+		return fmt.Errorf("saving run name: %w", err)
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, runNamedEvent(team, name)); err != nil {
+		return fmt.Errorf("recording run name: %w", err)
+	}
+
+	return tx.Commit()
 }
 
 // LoadQuest loads the run's quest, along with its settings.
@@ -179,33 +198,20 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 	if err != nil {
 		return errors.New("beginning transaction: " + err.Error())
 	}
-	// Ensure rollback on failure
-	defer func() {
-		if p := recover(); p != nil {
-			err = tx.Rollback()
-			if err != nil {
-				panic("rolling back transaction after panic: " + err.Error())
-			}
-			panic(p)
-		}
-	}()
+	// Runs on every exit, panic included, so no branch can leave the write lock
+	// held until the finaliser gets around to it.
+	defer func() { _ = tx.Rollback() }()
 
-	err = s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID)
-	if err != nil {
-		txErr := tx.Rollback()
-		if txErr != nil {
-			panic("rolling back transaction after credit deduction failure: " + txErr.Error())
-		}
+	if err := s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID); err != nil {
 		return fmt.Errorf("deducting credit for team start: %w", err)
 	}
 
-	err = s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
-	if err != nil {
-		txErr := tx.Rollback()
-		if txErr != nil {
-			return errors.New("rolling back transaction after team start update failure: " + txErr.Error())
-		}
-		return errors.New("updating team as started: " + err.Error())
+	if err := s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code); err != nil {
+		return fmt.Errorf("updating team as started: %w", err)
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, runStartedEvent(team)); err != nil {
+		return fmt.Errorf("recording run start: %w", err)
 	}
 
 	return tx.Commit()

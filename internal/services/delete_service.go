@@ -38,6 +38,7 @@ type DeleteService struct {
 	teamRepo      repositories.RunRepository
 	uploadsRepo   repositories.UploadsRepository
 	objectiveRepo repositories.ObjectiveRepository
+	runEventRepo  repositories.RunEventRepository
 	db            *bun.DB
 	uploadsDir    string
 	logger        *slog.Logger
@@ -50,6 +51,7 @@ func NewDeleteService(
 	teamRepo repositories.RunRepository,
 	uploadsRepo repositories.UploadsRepository,
 	objectiveRepo repositories.ObjectiveRepository,
+	runEventRepo repositories.RunEventRepository,
 	db *bun.DB,
 	uploadsDir string,
 	logger *slog.Logger,
@@ -60,6 +62,7 @@ func NewDeleteService(
 		teamRepo:      teamRepo,
 		uploadsRepo:   uploadsRepo,
 		objectiveRepo: objectiveRepo,
+		runEventRepo:  runEventRepo,
 		db:            db,
 		uploadsDir:    uploadsDir,
 		logger:        logger,
@@ -527,6 +530,15 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("deleting uploads: %w", err)
+	}
+
+	// One event per run: the batch has no run code of its own, and a reset that
+	// covered three runs is three things that happened.
+	for _, runCode := range teamCodes {
+		if err := s.runEventRepo.RecordWithTx(ctx, tx, runResetEvent(runCode, questID)); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("recording run reset: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

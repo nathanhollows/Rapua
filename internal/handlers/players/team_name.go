@@ -53,8 +53,7 @@ func (h *PlayerHandler) TeamNamePost(w http.ResponseWriter, r *http.Request) {
 
 	// An empty name is a team going back to its code, which is a thing somebody
 	// may well want: the code is a name everyone already knows them by.
-	team.Name = trimTeamName(r.FormValue("name"))
-	if err := h.runService.Update(r.Context(), team); err != nil {
+	if err := h.runService.RenameRun(r.Context(), team, trimTeamName(r.FormValue("name"))); err != nil {
 		h.handleError(w, r, "TeamNamePost: saving", "Could not save that name", "error", err)
 		return
 	}

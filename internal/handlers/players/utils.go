@@ -65,6 +65,10 @@ type QuestService interface {
 type NavigationService interface {
 	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
 	FinishSection(ctx context.Context, team *models.Run, objectiveID string) (bool, error)
+	// RecordObjectiveView notes a run opening an objective.
+	RecordObjectiveView(ctx context.Context, team *models.Run, objectiveID string) error
+	// RecordObjectivesListed notes a run opening the list of objectives.
+	RecordObjectivesListed(ctx context.Context, team *models.Run) error
 	GetPreviewObjectiveView(
 		ctx context.Context,
 		team *models.Run,
@@ -95,7 +99,7 @@ type LeaderBoardService interface {
 
 type RunService interface {
 	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
-	Update(ctx context.Context, run *models.Run) error
+	RenameRun(ctx context.Context, team *models.Run, name string) error
 	LoadRelations(ctx context.Context, run *models.Run) error
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error

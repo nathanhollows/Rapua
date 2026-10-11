@@ -16,6 +16,9 @@ type SectionFinishRepository interface {
 	// this call is the one that recorded it: false means the press was already
 	// logged, which is the caller's guard against acting on it twice.
 	Insert(ctx context.Context, runCode, objectiveID string) (inserted bool, err error)
+	// InsertWithTx is Insert inside a caller's transaction, so the finish and the
+	// event recording it commit or roll back together.
+	InsertWithTx(ctx context.Context, tx *bun.Tx, runCode, objectiveID string) (inserted bool, err error)
 	// FindFinishedObjectiveIDs returns every objective this run has finished.
 	FindFinishedObjectiveIDs(ctx context.Context, runCode string) ([]string, error)
 }
@@ -31,11 +34,27 @@ func NewSectionFinishRepository(db *bun.DB) SectionFinishRepository {
 func (r *sectionFinishRepository) Insert(
 	ctx context.Context, runCode, objectiveID string,
 ) (bool, error) {
+	return insertSectionFinish(ctx, r.db, runCode, objectiveID)
+}
+
+// InsertWithTx records a section finish inside a caller's transaction.
+func (r *sectionFinishRepository) InsertWithTx(
+	ctx context.Context, tx *bun.Tx, runCode, objectiveID string,
+) (bool, error) {
+	return insertSectionFinish(ctx, tx, runCode, objectiveID)
+}
+
+// insertSectionFinish reports whether this call is the one that recorded the
+// finish. The conflict clause is the guard, so it holds inside a transaction
+// exactly as it does outside one.
+func insertSectionFinish(
+	ctx context.Context, db bun.IDB, runCode, objectiveID string,
+) (bool, error) {
 	row := &models.SectionFinish{
 		RunCode:     runCode,
 		ObjectiveID: objectiveID,
 	}
-	res, err := r.db.NewInsert().
+	res, err := db.NewInsert().
 		Model(row).
 		On("CONFLICT (run_code, objective_id) DO NOTHING").
 		Exec(ctx)

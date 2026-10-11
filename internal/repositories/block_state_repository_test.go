@@ -82,32 +82,6 @@ func TestBlockStateRepository(t *testing.T) {
 			},
 		},
 		{
-			name: "Update player state",
-			setup: func() (blocks.PlayerState, error) {
-				blockID := createTestBlock(t, dbc, gofakeit.UUID())
-				runCode := createTestTeam(t, dbc, parents.QuestID)
-				state, _ := repo.NewBlockState(context.Background(), blockID, runCode, parents.QuestID)
-				createdState, _ := repo.Create(context.Background(), state)
-				return createdState, nil
-			},
-			action: func(state blocks.PlayerState) (any, error) {
-				state.SetPlayerData([]byte(`{"key":"value"}`))
-				state.SetComplete(true)
-				state.SetPointsAwarded(100)
-				return repo.Update(context.Background(), state)
-			},
-			assertion: func(result any, err error) {
-				require.NoError(t, err)
-				updatedState := result.(blocks.PlayerState)
-				assert.True(t, updatedState.IsComplete())
-				assert.Equal(t, 100, updatedState.GetPointsAwarded())
-			},
-			cleanupFunc: func(state blocks.PlayerState) {
-				err := repo.Delete(context.Background(), state.GetBlockID(), state.GetPlayerID(), parents.QuestID)
-				require.NoError(t, err)
-			},
-		},
-		{
 			name: "Delete player state",
 			setup: func() (blocks.PlayerState, error) {
 				blockID := createTestBlock(t, dbc, gofakeit.UUID())

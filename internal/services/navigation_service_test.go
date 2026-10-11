@@ -7,6 +7,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -36,13 +37,16 @@ func setupNavigationService(t *testing.T) (
 	instanceRepo := repositories.NewQuestRepository(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
+	transactor := db.NewTransactor(dbc)
 
 	navigationService := services.NewNavigationService(
+		transactor,
 		objectiveRepo,
 		objectiveContextCompletionRepo,
 		sectionFinishRepo,
 		blockRepo,
 		teamRepo,
+		repositories.NewRunEventRepository(dbc),
 		newTLogger(t),
 	)
 
