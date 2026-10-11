@@ -2,6 +2,7 @@ package players_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -166,7 +167,9 @@ func TestPlayerHandler_Objectives_RedirectsToCompleteWhenAllVisited(t *testing.T
 	assert.Equal(t, "/complete", w.Header().Get("Hx-Redirect"))
 }
 
-func TestPlayerHandler_Journal_RendersCompletedObjectives(t *testing.T) {
+// The diary reads the event stream, so a find renders only when the stream
+// recorded it, not merely the completion row.
+func TestPlayerHandler_Journal_RendersFindsFromTheStream(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -176,6 +179,19 @@ func TestPlayerHandler_Journal_RendersCompletedObjectives(t *testing.T) {
 	completionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveProof)
 	require.NoError(t, err)
+
+	events := repositories.NewRunEventRepository(dbc)
+	require.NoError(t, events.Record(ctx, &models.RunEvent{
+		RunCode: team.Code, QuestID: team.QuestID, Type: models.EventRunStarted,
+	}))
+	completion := &models.RunEvent{
+		RunCode: team.Code, QuestID: team.QuestID,
+		Type: models.EventObjectiveContextCompleted, ObjectiveID: objective.ID,
+	}
+	completion.Data, _ = json.Marshal(models.ObjectiveContextCompletedData{
+		Context: game.ContextObjectiveProof, Points: 10,
+	})
+	require.NoError(t, events.Record(ctx, completion))
 
 	handler := players.NewTestPlayerHandler(
 		players.WithNavigationService(navigationService),
@@ -187,6 +203,8 @@ func TestPlayerHandler_Journal_RendersCompletedObjectives(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Find the key")
+	assert.Contains(t, w.Body.String(), "/objective/find-the-key",
+		"the find reopens its own page, where the reveal survives")
 }
 
 func TestPlayerHandler_Journal_EmptyWhenNothingCompleted(t *testing.T) {

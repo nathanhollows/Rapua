@@ -3,45 +3,242 @@ package templates
 import (
 	"fmt"
 
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// Journal lists what the run has completed. Each row reopens its own reveal,
-// which is the only place that content survives once its task is behind you.
-templ Journal(team models.Run, completed []models.Objective) {
-	if len(completed) == 0 {
-		<div role="alert" class="alert alert-info alert-soft">
-			@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0"})
-			<span>
-				Nothing here yet.
-				<a href="/objectives" hx-boost="true" class="link">Finish your first objective</a>
-				and it will show up.
-			</span>
-		</div>
-	} else {
-		<ul class="list bg-base-100 rounded-box border border-base-300">
-			<li class="p-4 pb-2 text-xs tracking-wide opacity-50">
-				{ fmt.Sprintf("%d collected", len(completed)) }
-			</li>
-			for _, objective := range completed {
-				<li class="list-row">
-					<div>
-						@icon("circle-check-big", templ.Attributes{"class": "w-5 h-5 text-success"})
-					</div>
-					<div class="list-col-grow">
-						<a href={ templ.URL("/objective/" + objective.Slug) } hx-boost="true" class="link link-hover text-sm font-medium text-pretty">
-							{ objective.Title }
-						</a>
-					</div>
-					@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 opacity-30"})
-				</li>
+type JournalParams struct {
+	Run  models.Run
+	View services.JournalView
+	// Show is the active filter tab; empty is everything.
+	Show string
+}
+
+// Journal is the run's diary: what happened, in order, curated from the event
+// stream. Newest first, and strictly time-ordered: no chapters, no visits, no
+// containers. Play is frontier traversal, so a run may be on objectives in two
+// sections at once, and any grouping would invent a serial story the log does
+// not contain. The admin's structure still appears as milestones, entries at
+// their own times.
+templ Journal(data JournalParams) {
+	{{ shown := filteredEntries(data.View.Entries, data.Show) }}
+	<div class="flex flex-col gap-3">
+		@journalTabs(data.Show)
+		if len(shown) == 0 {
+			if len(data.View.Entries) == 0 {
+				<div role="alert" class="alert alert-info alert-soft">
+					@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+					<span>
+						Nothing here yet.
+						<a href="/objectives" hx-boost="true" class="link">Finish your first objective</a>
+						and it will show up.
+					</span>
+				</div>
+			} else {
+				<div role="alert" class="alert alert-info alert-soft">
+					@icon("hourglass", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+					<span>Nothing in this filter yet.</span>
+				</div>
 			}
-		</ul>
+		} else {
+			for _, entry := range shown {
+				@journalEntry(entry, data.Run.Quest.Settings.EnablePoints)
+			}
+		}
+	</div>
+}
+
+templ journalTabs(show string) {
+	<div role="tablist" class="tabs tabs-box">
+		for _, chip := range journalChipsList() {
+			<a
+				role="tab"
+				href={ templ.URL(journalChipHref(chip.Slug)) }
+				hx-boost="true"
+				class={ "tab", templ.KV("tab-active", show == chip.Slug) }
+			>
+				{ chip.Label }
+			</a>
+		}
+	</div>
+}
+
+// journalEntry draws one line of the diary.
+templ journalEntry(entry services.JournalEntry, showPoints bool) {
+	switch entry.Kind {
+		case services.JournalFind:
+			@journalMoment(entry, showPoints, "circle-check-big", "text-success")
+		case services.JournalMiss:
+			@journalMiss(entry)
+		case services.JournalPhoto:
+			@journalPhoto(entry)
+		case services.JournalMessage:
+			@journalMessage(entry)
+		case services.JournalMilestone:
+			@journalMilestone(entry)
+		case services.JournalStart:
+			@journalStart(entry)
+		case services.JournalFinish:
+			@journalFinish(entry)
+		case services.JournalReset:
+			@journalReset(entry)
 	}
 }
 
-// JournalChrome carries no breadcrumb or progress bar: progress belongs to the
-// quest screen.
-func JournalChrome(team models.Run) AppChrome {
-	return AppChrome{Run: team, Active: "journal"}
+// journalTimeTag is the clock in the top right corner of a row. It floats so
+// the title wraps around it rather than being pushed onto its own line.
+templ journalTimeTag(entry services.JournalEntry) {
+	<span class="float-right ml-3 text-xs leading-5 opacity-60 tabular-nums">{ journalTime(entry.Time) }</span>
+}
+
+// journalMoment is a find: the one entry that reopens an objective's own page,
+// which is where a reveal's content survives.
+templ journalMoment(entry services.JournalEntry, showPoints bool, iconName, iconClass string) {
+	if entry.Slug != "" {
+		<a
+			href={ templ.URL("/objective/" + entry.Slug) }
+			hx-boost="true"
+			class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3 hover:bg-base-200 transition-colors"
+		>
+			@journalMomentBody(entry, showPoints, iconName, iconClass)
+		</a>
+	} else {
+		<div class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3">
+			@journalMomentBody(entry, showPoints, iconName, iconClass)
+		</div>
+	}
+}
+
+templ journalMomentBody(entry services.JournalEntry, showPoints bool, iconName, iconClass string) {
+	<span class={ "shrink-0 mt-0.5", iconClass }>
+		@icon(iconName, templ.Attributes{"class": "w-5 h-5"})
+	</span>
+	<span class="grow min-w-0">
+		@journalTimeTag(entry)
+		<span class="block text-sm font-medium text-pretty">{ entry.Title }</span>
+		if showPoints {
+			<span class="mt-0.5 flex items-center gap-2 text-xs opacity-60">
+				if entry.Points != 0 {
+					<span class="badge badge-success badge-soft badge-sm font-semibold tabular-nums">
+						{ fmt.Sprintf("+%d", entry.Points) }
+					</span>
+				} else {
+					<span>Finished without points</span>
+				}
+			</span>
+		}
+	</span>
+}
+
+// journalMiss is a submission that did not finish its block, kept so a find's
+// points have the attempts beside them.
+templ journalMiss(entry services.JournalEntry) {
+	<div class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3">
+		<span class="shrink-0 mt-0.5 text-base-content/40">
+			@icon("circle-x", templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<span class="grow min-w-0">
+			@journalTimeTag(entry)
+			if entry.Title != "" {
+				<span class="block text-sm font-medium text-pretty">{ entry.Title }</span>
+				<span class="mt-0.5 block text-xs opacity-60">Attempted, not finished</span>
+			} else {
+				<span class="block text-sm font-medium text-pretty">Attempted, not finished</span>
+			}
+		</span>
+	</div>
+}
+
+templ journalPhoto(entry services.JournalEntry) {
+	<div class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3">
+		<span class="shrink-0 mt-0.5 text-info">
+			@icon("camera", templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<span class="grow min-w-0">
+			@journalTimeTag(entry)
+			<span class="block text-sm font-medium">{ journalPhotoLabel(entry.MediaType) }</span>
+			if entry.MediaURL != "" && journalIsImage(entry.MediaType) {
+				<img
+					src={ entry.MediaURL }
+					alt=""
+					class="mt-1.5 max-h-40 w-auto max-w-full rounded-box border border-base-300 object-cover"
+				/>
+			}
+		</span>
+	</div>
+}
+
+// journalMessage is a message from the organisers, where it landed in the day.
+// The read line is a dismissal, which is what the log records.
+templ journalMessage(entry services.JournalEntry) {
+	<div class="rounded-box border border-base-300 bg-base-200 p-3">
+		@journalTimeTag(entry)
+		<p class="text-sm text-pretty">{ entry.Message }</p>
+		<p class="mt-1 text-xs opacity-60">From the organisers &middot; { journalReadLabel(entry) }</p>
+	</div>
+}
+
+// journalMilestone is a section closing. It is an entry at its own time, never
+// a heading over the entries around it.
+templ journalMilestone(entry services.JournalEntry) {
+	<div class="flex items-start gap-3 rounded-box border border-success/40 bg-success/5 p-3">
+		<span class="shrink-0 mt-0.5 text-success">
+			@icon("flag", templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<span class="grow min-w-0">
+			@journalTimeTag(entry)
+			<span class="block text-sm font-medium text-pretty">{ "You closed out " + entry.Title }</span>
+			<span class="mt-0.5 block text-xs opacity-60">{ journalMilestoneLabel(entry) }</span>
+		</span>
+	</div>
+}
+
+// journalStart is the opening line: the greeting and the name folded into the
+// one thing that happened.
+templ journalStart(entry services.JournalEntry) {
+	<div class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3">
+		<span class="shrink-0 mt-0.5 text-primary">
+			@icon("footprints", templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<span class="grow min-w-0">
+			@journalTimeTag(entry)
+			<span class="block text-sm font-medium text-pretty">
+				if entry.Title != "" {
+					{ entry.Title + " set off" }
+				} else {
+					You set off
+				}
+			</span>
+			<span class="mt-0.5 block text-xs opacity-60">The quest begins</span>
+		</span>
+	</div>
+}
+
+// journalFinish is the story's last line: the root objective completing. The
+// log records it as a moment, though completion itself is always derived.
+templ journalFinish(entry services.JournalEntry) {
+	<div class="flex items-start gap-3 rounded-box border border-success/60 bg-success/10 p-3">
+		<span class="shrink-0 mt-0.5 text-success">
+			@icon("trophy", templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<span class="grow min-w-0">
+			@journalTimeTag(entry)
+			<span class="block text-sm font-semibold text-pretty">You finished the run.</span>
+		</span>
+	</div>
+}
+
+// journalReset is the floor of the player's view: everything older is hidden.
+templ journalReset(entry services.JournalEntry) {
+	<div class="flex items-center gap-3 px-1 text-xs opacity-50">
+		<span class="grow border-t border-dashed border-base-content/40"></span>
+		<span>You started over here &middot; { journalTime(entry.Time) }</span>
+		<span class="grow border-t border-dashed border-base-content/40"></span>
+	</div>
+}
+
+// JournalChrome carries the run's progress, the same account the quest screen
+// shows: the bar is about now, the feed below it is about then.
+func JournalChrome(team models.Run, view services.JournalView) AppChrome {
+	return AppChrome{Run: team, Active: "journal", Done: view.Done, Total: view.Total}
 }

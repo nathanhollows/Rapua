@@ -64,6 +64,8 @@ type QuestService interface {
 
 type NavigationService interface {
 	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
+	// GetJournal builds the run's diary from its event stream.
+	GetJournal(ctx context.Context, team *models.Run) (services.JournalView, error)
 	FinishSection(ctx context.Context, team *models.Run, objectiveID string) (bool, error)
 	// RecordObjectiveView notes a run opening an objective.
 	RecordObjectiveView(ctx context.Context, team *models.Run, objectiveID string) error
@@ -103,7 +105,6 @@ type RunService interface {
 	LoadRelations(ctx context.Context, run *models.Run) error
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
-	GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
