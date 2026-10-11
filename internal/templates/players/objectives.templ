@@ -1,9 +1,10 @@
 package templates
 
 import (
+	"fmt"
+
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
-	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 type ObjectivesParams struct {
@@ -43,6 +44,7 @@ templ questPlace(place QuestPlace) {
 			for _, row := range place.Rows {
 				@questRow(row)
 			}
+			@questPlaceFooter(place)
 		</div>
 	} else {
 		<section class="flex flex-col gap-2">
@@ -66,13 +68,55 @@ templ questPlace(place QuestPlace) {
 				}
 			</div>
 			<!-- One rail, at any depth: the path carries how deep this is, so
-			the layout never has to spend width on it. -->
+			the layout never has to spend width on it. The footer rides the same
+			rail, because it is the section's own account, not a task. -->
 			<div class="flex flex-col gap-2 border-l-2 border-base-300 ml-1 pl-3">
 				for _, row := range place.Rows {
 					@questRow(row)
 				}
+				@questPlaceFooter(place)
 			</div>
 		</section>
+	}
+}
+
+// questPlaceFooter is the section's own account: what is still owed, and the
+// finish press once the band's minimum is met.
+//
+// The heading above already names the section, so nothing here repeats the
+// name. The press says what pressing does, because "That's enough for now" on
+// its own promises neither the closing nor the skipping, and the whole point
+// of a ranged band is that the rest can be left.
+templ questPlaceFooter(place QuestPlace) {
+	if place.CanFinish {
+		<div class="flex flex-col gap-2.5 rounded-box border border-success/40 bg-success/5 p-3">
+			<div class="flex items-start gap-3">
+				@icon("flag", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-success"})
+				<span class="grow min-w-0 flex flex-col gap-0.5">
+					<span class="text-sm font-medium text-pretty">You have done enough to finish.</span>
+					<span class="text-xs opacity-70 text-pretty">
+						if place.IsSection {
+							Finishing now closes the section and skips what is left.
+						} else {
+							Finishing now ends the run: anything unfinished is left behind.
+						}
+					</span>
+				</span>
+			</div>
+			<!-- Full width under the copy: the author's own words for the press can
+			be long, and a label squeezed beside a paragraph is a squeeze for the
+			thumb too. -->
+			<button
+				type="button"
+				hx-post={ "/objective/" + place.FinishSlug + "/finish" }
+				hx-swap="none"
+				class="btn btn-sm btn-success w-full"
+			>
+				{ place.FinishLabel }
+			</button>
+		</div>
+	} else if place.IsSection && place.Total > 1 {
+		<p class="text-xs opacity-50 px-0.5">{ fmt.Sprintf("%d of %d found", place.Found, place.Total) }</p>
 	}
 }
 
@@ -96,60 +140,41 @@ templ PreviewSection(title, rule string) {
 
 // questRow is one objective on offer.
 templ questRow(row QuestRow) {
-	if row.CanFinish {
-		<div class="flex items-center gap-3 rounded-box border border-success/40 bg-success/5 p-3">
-			@icon("flag", templ.Attributes{"class": "w-5 h-5 shrink-0 text-success"})
-			<span class="grow text-sm font-medium text-pretty">{ row.Title }</span>
-			<button
-				type="button"
-				hx-post={ "/objective/" + row.Slug + "/finish" }
-				hx-swap="none"
-				class="btn btn-sm btn-success shrink-0"
-			>
-				{ row.FinishLabel }
-			</button>
-		</div>
-	} else {
-		<a
-			href={ templ.URL("/objective/" + row.Slug) }
-			hx-boost="true"
-			class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3 hover:bg-base-200 transition-colors"
-		>
-			<!-- Derived from the proof's first block, so the row shows what it will
-			ask for rather than an author-chosen marker. -->
-			if row.IconSVG != "" {
-				<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
-					@templ.Raw(row.IconSVG)
-				</span>
-			} else if row.IsDoor {
-				@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-50"})
-			} else {
-				@icon("circle-dot", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-primary"})
-			}
-			<span class="grow min-w-0 flex flex-col gap-0.5">
-				<span class="text-sm font-medium text-pretty">{ row.Title }</span>
-				if row.Description != "" {
-					<span class="text-xs opacity-60 text-pretty">{ row.Description }</span>
-				}
+	<a
+		href={ templ.URL("/objective/" + row.Slug) }
+		hx-boost="true"
+		class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3 hover:bg-base-200 transition-colors"
+	>
+		<!-- Derived from the proof's first block, so the row shows what it will
+		ask for rather than an author-chosen marker. -->
+		if row.IconSVG != "" {
+			<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
+				@templ.Raw(row.IconSVG)
 			</span>
-			@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 mt-0.5 opacity-30"})
-		</a>
-	}
+		} else if row.IsDoor {
+			@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-50"})
+		} else {
+			@icon("circle-dot", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-primary"})
+		}
+		<span class="grow min-w-0 flex flex-col gap-0.5">
+			<span class="text-sm font-medium text-pretty">{ row.Title }</span>
+			if row.Description != "" {
+				<span class="text-xs opacity-60 text-pretty">{ row.Description }</span>
+			}
+		</span>
+		@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 mt-0.5 opacity-30"})
+	</a>
 }
 
-// QuestChrome counts what the run has finished, not what it can see, so the bar
-// measures the quest and not the frontier.
+// QuestChrome carries the run's progress. The bar divides completions by what
+// the run still owes, not by the authored tree: bands cut branches and seeded
+// windows change what a team meets, so an authored total would cap the bar
+// short of its own end on some runs and overshoot on others.
 func QuestChrome(run models.Run, view *services.PlayerObjectiveView) AppChrome {
-	done, total := 0, 0
-	for _, objective := range view.Objectives {
-		// The root is never complete, so counting it would cap the bar short.
-		if objective.ParentID == "" {
-			continue
-		}
-		total++
-		if view.Frontier.StatusOf(objective.ID) == navigation.StatusComplete {
-			done++
-		}
+	return AppChrome{
+		Run:    run,
+		Active: "quest",
+		Done:   view.Progress.Done,
+		Total:  view.Progress.Total(),
 	}
-	return AppChrome{Run: run, Active: "quest", Done: done, Total: total}
 }

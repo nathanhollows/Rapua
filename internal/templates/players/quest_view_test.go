@@ -163,18 +163,37 @@ func TestQuestView_RowBorrowsItsProofBlocksIcon(t *testing.T) {
 	assert.Contains(t, icon, "scan-qr-code")
 }
 
-// A finishable section arrives in the frontier as a row in its own right, and
-// its finish button is the only control on it.
-func TestQuestView_FinishableSectionCarriesItsButton(t *testing.T) {
-	rows := tree(obj("root", "", "Quest"), obj("wing", "root", "Visit the east wing"))
-	rows[1].FinishLabel = "Leave the wing"
+func intPtr(n int) *int { return &n }
 
-	view := viewOf([]models.Objective{rows[1]}, rows)
+// A finishable section is the finish press on the section itself, not a row of
+// its own: the heading already names it, and a row would print the name a
+// second time.
+func TestQuestView_FinishableSectionCarriesThePressOnItsPlace(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("wing", "root", "Visit the east wing"),
+		obj("statue", "wing", "Find the statue"),
+	)
+	rows[1].FinishLabel = "Leave the wing"
+	rows[1].ChildrenMin = intPtr(1)
+	rows[1].ChildrenMax = intPtr(3)
+
+	view := viewOf([]models.Objective{rows[1], rows[2]}, rows)
 	view.Frontier.Status["wing"] = navigation.StatusFinishable
 
-	row := BuildQuestView(view).Places[0].Rows[0]
-	assert.True(t, row.CanFinish)
-	assert.Equal(t, "Leave the wing", row.FinishLabel)
+	quest := BuildQuestView(view)
+
+	require.Len(t, quest.Places, 1)
+	place := quest.Places[0]
+	assert.Equal(t, "Visit the east wing", place.Title)
+	assert.True(t, place.CanFinish)
+	assert.Equal(t, "Leave the wing", place.FinishLabel)
+	assert.Equal(t, "wing", place.FinishSlug)
+	require.Len(t, place.Rows, 1, "its children stay tasks; the section itself is not one")
+	assert.Equal(t, "Find the statue", place.Rows[0].Title)
+	assert.Equal(t, 0, place.Found)
+	assert.Equal(t, 1, place.Total)
+	assert.Equal(t, "Complete at least one", place.Rule, "a ranged band says what the least is")
 }
 
 // An author who names no label still gets a button: the band decides one
@@ -185,7 +204,54 @@ func TestQuestView_FinishLabelFallsBackToPlainWords(t *testing.T) {
 	view := viewOf([]models.Objective{rows[1]}, rows)
 	view.Frontier.Status["wing"] = navigation.StatusFinishable
 
-	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].Rows[0].FinishLabel)
+	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].FinishLabel)
+}
+
+// A section states its band and its progress, press or no press.
+func TestQuestView_SectionStatesItsBandAndProgress(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("garden", "root", "The garden"),
+		obj("rose", "garden", "Rose"), obj("fern", "garden", "Fern"), obj("oak", "garden", "Oak"),
+	)
+
+	view := viewOf([]models.Objective{rows[4]}, rows)
+	view.Frontier.Status["rose"] = navigation.StatusComplete
+	view.Frontier.Status["fern"] = navigation.StatusComplete
+
+	quest := BuildQuestView(view)
+
+	require.Len(t, quest.Places, 1)
+	place := quest.Places[0]
+	assert.Equal(t, "Complete all three", place.Rule)
+	assert.Equal(t, 2, place.Found)
+	assert.Equal(t, 3, place.Total)
+	assert.False(t, place.CanFinish, "a band with no range offers no choice")
+}
+
+// A band past nine children says the numeral: "Complete all several" is not a
+// rule a player can follow.
+func TestQuestView_BandPastNineChildrenUsesTheNumeral(t *testing.T) {
+	rule := questRule(models.Objective{Routing: models.RouteStrategyFreeRoam}, 12, 12)
+	assert.Equal(t, "Complete all 12 · in any order", rule)
+}
+
+// A finishable root is the quest-level press: the root draws no place of its
+// own, so the affordance lands in the loose group at the top.
+func TestQuestView_FinishableRootStaysAtTheTop(t *testing.T) {
+	rows := tree(obj("root", "", "Quest"), obj("intro", "root", "Say hello"))
+	rows[0].ChildrenMin = intPtr(1)
+	rows[0].ChildrenMax = intPtr(3)
+
+	view := viewOf([]models.Objective{rows[0], rows[1]}, rows)
+	view.Frontier.Status["root"] = navigation.StatusFinishable
+
+	quest := BuildQuestView(view)
+
+	require.Len(t, quest.Places, 1)
+	assert.False(t, quest.Places[0].IsSection)
+	assert.True(t, quest.Places[0].CanFinish)
+	assert.Equal(t, "root", quest.Places[0].FinishSlug)
 }
 
 // A quest whose tree failed to load must not lose its rows: with no tree there
@@ -218,25 +284,16 @@ func TestQuestView_SurvivesAParentCycle(t *testing.T) {
 	}
 }
 
-// The bar measures the quest, not the frontier: what the run has finished
-// against everything there is to finish.
-func TestQuestChrome_CountsTheQuestNotTheFrontier(t *testing.T) {
-	rows := tree(
-		obj("root", "", "Quest"),
-		obj("a", "root", "A"), obj("b", "root", "B"), obj("c", "root", "C"),
-	)
+// The bar carries the run's own account: completions against what that run
+// still owes, which is what the view computed and not the authored tree.
+func TestQuestChrome_CarriesTheRunsProgress(t *testing.T) {
 	view := &services.PlayerObjectiveView{
-		Objectives: rows,
-		Frontier: navigation.Frontier{Status: map[string]navigation.Status{
-			"a": navigation.StatusComplete,
-			"b": navigation.StatusAvailable,
-			"c": navigation.StatusLocked,
-		}},
+		Progress: navigation.Progress{Done: 11, Remaining: 4},
 	}
 
 	chrome := QuestChrome(models.Run{}, view)
-	assert.Equal(t, 1, chrome.Done)
-	assert.Equal(t, 3, chrome.Total, "the root is the quest, not a step in it")
+	assert.Equal(t, 11, chrome.Done)
+	assert.Equal(t, 15, chrome.Total, "done plus what the run still owes")
 	assert.Equal(t, "quest", chrome.Active)
 }
 

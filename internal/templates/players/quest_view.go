@@ -1,7 +1,11 @@
 package templates
 
 import (
+	"slices"
+	"strconv"
+
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/nathanhollows/Rapua/v8/navigation"
@@ -33,13 +37,32 @@ type QuestPlace struct {
 	Slug      string
 	Title     string
 	// Rule is how this place offers what it is showing, in the words a player
-	// reads.
+	// reads: its band first, then its routing.
 	Rule string
 	// Path names the drawn sections above this one, outermost first. It is what
 	// replaces the nesting: where you came from, in small type, rather than a
 	// border around everything you are looking at.
 	Path []string
 	Rows []QuestRow
+
+	// CanFinish marks a section whose band's minimum is met with room still
+	// above it. The finish affordance lives here, on the place, because the
+	// heading above it already names the section: a row of its own would print
+	// the name a second time and read as a task called the same thing.
+	CanFinish bool
+	// FinishLabel is the author's word for the press, or the plainest one.
+	FinishLabel string
+	// FinishSlug is the section's own slug for the finish post. It differs from
+	// Slug when the section is drawn under an ancestor because it sits past the
+	// depth cap.
+	FinishSlug string
+
+	// Found, Total and Minimum are the section's band as it stands: children in
+	// play that are complete, children in play, and the band's minimum. They are
+	// zero on a place that is not a section.
+	Found   int
+	Total   int
+	Minimum int
 }
 
 // QuestRow is one objective on offer.
@@ -53,9 +76,6 @@ type QuestRow struct {
 	// IsDoor marks an objective with no proof: there is nothing to do but open
 	// it, so the row must not promise work.
 	IsDoor bool
-	// CanFinish marks a section whose band is met with room still above it.
-	CanFinish   bool
-	FinishLabel string
 	// IconSVG is the first block in this objective's proof that asks for
 	// something: the plainest answer to "what will this want from me". Empty
 	// when the proof asks nothing.
@@ -97,12 +117,50 @@ func RoutingRule(parent models.Objective, offered int) string {
 	}
 }
 
-func pluralise(n int, suffix string) string {
-	words := []string{"none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
-	if n < len(words) {
-		return words[n] + " " + suffix
+var numberWords = []string{"none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
+
+// numberWord words a count for copy that reads as prose. Past nine it falls
+// back to the numeral, because "Complete all several" is not a rule a player
+// can follow.
+func numberWord(n int) string {
+	if n >= 0 && n < len(numberWords) {
+		return numberWords[n]
 	}
-	return "several " + suffix
+	return strconv.Itoa(n)
+}
+
+func pluralise(n int, suffix string) string {
+	return numberWord(n) + " " + suffix
+}
+
+// questRule words a section's band for a player, then its routing.
+//
+// The band is the part a player has to be told: a range means the section can
+// close before everything in it is found, so the rule says what the least is.
+// The band counts the children in play; the routing counts what is on offer.
+func questRule(objective models.Objective, childCount, offered int) string {
+	band := game.FillBand(objective.ChildrenMin, objective.ChildrenMax, childCount)
+	var bandText string
+	switch {
+	case band.AutoCompletes():
+		if childCount > 1 {
+			bandText = "Complete all " + numberWord(childCount)
+		}
+	case band.Min <= 0:
+		bandText = "Finish whenever you are ready"
+	default:
+		bandText = "Complete at least " + numberWord(band.Min)
+	}
+
+	routing := RoutingRule(objective, offered)
+	switch {
+	case bandText == "":
+		return routing
+	case routing == "":
+		return bandText
+	default:
+		return bandText + " · " + routing
+	}
 }
 
 // finishLabel names the button on a finishable section. An author may name it;
@@ -135,33 +193,72 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	// Places keep the frontier's tree order: sorting would rearrange a quest
 	// the author laid out by hand.
 	index := make(map[string]int, len(view.Objectives))
+	placeAt := func(place models.Objective, path []string) int {
+		key := place.ID
+		if at, seen := index[key]; seen {
+			return at
+		}
+		index[key] = len(built.Places)
+		built.Places = append(built.Places, QuestPlace{
+			IsSection: key != "",
+			ID:        place.ID,
+			Slug:      place.Slug,
+			Title:     place.Title,
+			Path:      path,
+		})
+		return len(built.Places) - 1
+	}
 
 	for _, objective := range view.Frontier.Available {
-		place, path := b.placeFor(objective)
-		key := place.ID
-		at, seen := index[key]
-		if !seen {
-			at = len(built.Places)
-			index[key] = at
-			built.Places = append(built.Places, QuestPlace{
-				IsSection: key != "",
-				ID:        place.ID,
-				Slug:      place.Slug,
-				Title:     place.Title,
-				Path:      path,
-			})
+		// A finishable section is not something to do. It is the finish press on
+		// the section itself, so it lands on the place the section's heading
+		// already draws: a row of its own would print the name twice.
+		if view.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
+			place, path := b.finishPlace(objective)
+			at := placeAt(place, path)
+			built.Places[at].CanFinish = true
+			built.Places[at].FinishLabel = finishLabel(objective)
+			built.Places[at].FinishSlug = objective.Slug
+			continue
 		}
+
+		place, path := b.placeFor(objective)
+		at := placeAt(place, path)
 		built.Places[at].Rows = append(built.Places[at].Rows, b.rowFor(objective))
 	}
 
-	// Last, because the rule counts what the place ended up offering.
+	// Last, because the counts read what the place ended up holding.
+	inPlay := inPlaySet(view.Objectives)
 	for i := range built.Places {
 		if !built.Places[i].IsSection {
 			continue
 		}
-		built.Places[i].Rule = RoutingRule(byID[built.Places[i].ID], len(built.Places[i].Rows))
+		objective := byID[built.Places[i].ID]
+		total, found := 0, 0
+		for _, child := range view.Objectives {
+			if child.ParentID != objective.ID || !inPlay[child.ID] {
+				continue
+			}
+			total++
+			if view.Frontier.StatusOf(child.ID) == navigation.StatusComplete {
+				found++
+			}
+		}
+		built.Places[i].Found = found
+		built.Places[i].Total = total
+		built.Places[i].Minimum = game.FillBand(objective.ChildrenMin, objective.ChildrenMax, total).Min
+		built.Places[i].Rule = questRule(objective, total, len(built.Places[i].Rows))
 	}
 	return built
+}
+
+// inPlaySet is the objectives a run can still reach, as a set.
+func inPlaySet(objectives []models.Objective) map[string]bool {
+	set := make(map[string]bool, len(objectives))
+	for _, objective := range navigation.InPlay(objectives) {
+		set[objective.ID] = true
+	}
+	return set
 }
 
 type builder struct {
@@ -211,8 +308,41 @@ func (b builder) placeFor(objective models.Objective) (models.Objective, []strin
 	return chain[len(chain)-1], path
 }
 
+// finishPlace finds the drawn container a finishable section's press belongs
+// on: the section itself when the section is drawn, and the nearest drawn
+// ancestor when it sits past the depth cap, which is also where its children
+// group. The root is not a place, so a finishable root lands in the loose
+// group.
+func (b builder) finishPlace(section models.Objective) (models.Objective, []string) {
+	if section.ParentID == "" {
+		return models.Objective{}, nil
+	}
+
+	var ancestors []models.Objective
+	seen := map[string]bool{section.ID: true}
+	for id := section.ParentID; id != ""; {
+		parent, ok := b.byID[id]
+		if !ok || seen[parent.ID] || parent.ParentID == "" {
+			break
+		}
+		seen[parent.ID] = true
+		ancestors = append([]models.Objective{parent}, ancestors...)
+		id = parent.ParentID
+	}
+
+	chain := slices.Concat(ancestors, []models.Objective{section})
+	if len(chain) > maxDrawnDepth {
+		chain = chain[:maxDrawnDepth]
+	}
+	path := make([]string, 0, len(chain)-1)
+	for _, ancestor := range chain[:len(chain)-1] {
+		path = append(path, ancestor.Title)
+	}
+	return chain[len(chain)-1], path
+}
+
 func (b builder) rowFor(objective models.Objective) QuestRow {
-	row := QuestRow{
+	return QuestRow{
 		ID:          objective.ID,
 		Slug:        objective.Slug,
 		Title:       objective.Title,
@@ -220,11 +350,4 @@ func (b builder) rowFor(objective models.Objective) QuestRow {
 		IsDoor:      !b.view.HasProof[objective.ID],
 		IconSVG:     blocks.IconSVGForType(b.view.FirstProofBlock[objective.ID]),
 	}
-	if b.view.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
-		row.CanFinish = true
-		row.FinishLabel = finishLabel(objective)
-		// The finish button is the whole task, not a door into one.
-		row.IsDoor = false
-	}
-	return row
 }
