@@ -140,6 +140,8 @@ func (b *YourBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 }
 ```
 
+A validating block that completes must call `SetPointsAwarded` on every completing path: the value it computes is what the run is credited and what the event log records. A completion that never sets it earns nothing, and nothing will say so.
+
 ### 3. Create Player Data Structure
 
 If your block needs to track player progress or state, define a player data structure:

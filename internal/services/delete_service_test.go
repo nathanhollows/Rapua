@@ -641,6 +641,50 @@ func TestDeleteService_ResetTeams_ClearsSectionFinishes(t *testing.T) {
 	assert.Zero(t, count, "the reset leaves no section finishes behind")
 }
 
+// The reset event carries the negative of the total it cleared, so the stream
+// still sums to the run's score: without it, every award before the reset would
+// keep counting against a score that no longer holds them.
+func TestDeleteService_ResetTeams_NegatesTheClearedScore(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+	team := &models.Run{
+		ID: gofakeit.UUID(), Code: "AAAAA", QuestID: instance.ID, HasStarted: true, Points: 30,
+	}
+	_, err = dbc.NewInsert().Model(team).Exec(ctx)
+	require.NoError(t, err)
+
+	events := repositories.NewRunEventRepository(dbc)
+	for _, earned := range []int{10, 20} {
+		require.NoError(t, events.Record(ctx, &models.RunEvent{
+			RunCode: team.Code, QuestID: instance.ID,
+			Type: models.EventBlockAnswered, Points: earned,
+		}))
+	}
+
+	require.NoError(t, svc.ResetTeams(ctx, instance.ID, []string{team.Code}))
+
+	var run models.Run
+	require.NoError(t, dbc.NewSelect().Model(&run).Where("code = ?", team.Code).Scan(ctx))
+	assert.Zero(t, run.Points, "the reset zeroes the score")
+
+	stored, err := events.ListByRun(ctx, team.Code)
+	require.NoError(t, err)
+	sum := 0
+	for _, e := range stored {
+		sum += e.Points
+	}
+	assert.Equal(t, run.Points, sum, "and the stream still sums to it")
+}
+
 func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()

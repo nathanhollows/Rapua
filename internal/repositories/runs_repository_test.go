@@ -174,7 +174,7 @@ func TestRunRepository_Reset(t *testing.T) {
 		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
 		require.NoError(t, err, "expected no error when starting transaction")
 	}
-	if resetErr := repo.Reset(ctx, tx, sampleTeam[0].QuestID, []string{sampleTeam[0].Code}); resetErr != nil {
+	if _, resetErr := repo.Reset(ctx, tx, sampleTeam[0].QuestID, []string{sampleTeam[0].Code}); resetErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
 			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")

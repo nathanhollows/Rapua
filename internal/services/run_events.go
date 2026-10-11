@@ -33,9 +33,12 @@ func eventBase(runCode, questID string, eventType models.EventType) *models.RunE
 }
 
 // runResetEvent records an admin resetting a run. Earlier events stay, so this
-// marks the boundary rather than erasing what came before it.
-func runResetEvent(runCode, questID string) *models.RunEvent {
-	return eventBase(runCode, questID, models.EventRunReset)
+// marks the boundary rather than erasing what came before it, and the row carries
+// the negative of the total it cleared so the stream still sums to the score.
+func runResetEvent(runCode, questID string, clearedPoints int) *models.RunEvent {
+	event := eventBase(runCode, questID, models.EventRunReset)
+	event.Points = -clearedPoints
+	return event
 }
 
 // objectivesListedEvent records a player opening the list of objectives.
@@ -95,8 +98,8 @@ func runStartedEvent(team *models.Run) *models.RunEvent {
 
 // answeredEvent records one graded answer, right or wrong.
 //
-// pointsAwarded is what the block reported, which the reachability gate may still
-// decline to credit.
+// pointsAwarded is what the block computed. Points on the returned event is the
+// credited delta, set by the caller.
 func answeredEvent(
 	team *models.Run, block blocks.Block, objectiveID string, completed bool, pointsAwarded int,
 ) *models.RunEvent {

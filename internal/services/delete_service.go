@@ -482,8 +482,9 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 		}
 	}()
 
-	// Reset team fields (preserve the team row)
-	err = s.teamRepo.Reset(ctx, tx, questID, teamCodes)
+	// Reset team fields (preserve the team row), keeping what the wipe cleared off
+	// each score for the reset events below.
+	cleared, err := s.teamRepo.Reset(ctx, tx, questID, teamCodes)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("resetting teams: %w", err)
@@ -533,9 +534,12 @@ func (s *DeleteService) ResetTeams(ctx context.Context, questID string, teamCode
 	}
 
 	// One event per run: the batch has no run code of its own, and a reset that
-	// covered three runs is three things that happened.
+	// covered three runs is three things that happened. Each carries the negative
+	// of the total it cleared, so the stream still sums to the run's score.
 	for _, runCode := range teamCodes {
-		if err := s.runEventRepo.RecordWithTx(ctx, tx, runResetEvent(runCode, questID)); err != nil {
+		if err := s.runEventRepo.RecordWithTx(
+			ctx, tx, runResetEvent(runCode, questID, cleared[runCode]),
+		); err != nil {
 			_ = tx.Rollback()
 			return fmt.Errorf("recording run reset: %w", err)
 		}

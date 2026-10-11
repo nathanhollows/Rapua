@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -52,15 +54,16 @@ func (f failingEventRepo) TimesByType(
 // seeded state rows a page view would leave behind, then returns a check-in
 // service and the wherewithal to submit an answer that completes it.
 type completingSubmission struct {
-	svc       *services.CheckInService
-	team      models.Run
-	objective *models.Objective
-	block     blocks.Block
-	dbc       *bun.DB
+	svc          *services.CheckInService
+	blockService *services.BlockService
+	team         models.Run
+	objective    *models.Objective
+	block        blocks.Block
+	dbc          *bun.DB
 }
 
 func setupCompletingSubmission(
-	t *testing.T, makeEventRepo func(*bun.DB) repositories.RunEventRepository,
+	t *testing.T, blockType string, makeEventRepo func(*bun.DB) repositories.RunEventRepository,
 ) completingSubmission {
 	t.Helper()
 	dbc, cleanup := setupDB(t)
@@ -85,7 +88,7 @@ func setupCompletingSubmission(
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 
 	block, err := blockService.NewBlockWithOwnerAndContext(
-		ctx, objective.ID, blocks.ContextObjectiveProof, "free_text",
+		ctx, objective.ID, blocks.ContextObjectiveProof, blockType,
 	)
 	require.NoError(t, err)
 
@@ -108,11 +111,12 @@ func setupCompletingSubmission(
 	)
 
 	return completingSubmission{
-		svc:       svc,
-		team:      models.Run{Code: runCode, QuestID: parents.QuestID},
-		objective: objective,
-		block:     block,
-		dbc:       dbc,
+		svc:          svc,
+		blockService: blockService,
+		team:         models.Run{Code: runCode, QuestID: parents.QuestID},
+		objective:    objective,
+		block:        block,
+		dbc:          dbc,
 	}
 }
 
@@ -121,7 +125,7 @@ func setupCompletingSubmission(
 // would take the short-circuit and never record the event: a silent hole behind a
 // loud error.
 func TestCheckInService_EventFailureRollsBackEveryWrite(t *testing.T) {
-	f := setupCompletingSubmission(t, func(*bun.DB) repositories.RunEventRepository {
+	f := setupCompletingSubmission(t, "free_text", func(*bun.DB) repositories.RunEventRepository {
 		return failingEventRepo{err: errors.New("event write failed")}
 	})
 	ctx := context.Background()
@@ -157,10 +161,146 @@ func TestCheckInService_EventFailureRollsBackEveryWrite(t *testing.T) {
 	assert.Empty(t, events, "nothing was written to the stream either")
 }
 
+// The stream sums to the score: the credit rides the answered row, and the
+// completion it triggered carries none.
+func TestCheckInService_EventsSumToTheScore(t *testing.T) {
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	// The default block is worth zero, which would make the invariant vacuous.
+	_, err := f.dbc.NewUpdate().
+		Model((*models.Block)(nil)).
+		Set("points = ?", 10).
+		Where("id = ?", f.block.GetID()).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	_, _, err = f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "response": {"the answer"},
+	})
+	require.NoError(t, err)
+
+	var run models.Run
+	require.NoError(t, f.dbc.NewSelect().Model(&run).Where("code = ?", f.team.Code).Scan(ctx))
+	require.Equal(t, 10, run.Points, "the completion was credited")
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+	require.NotEmpty(t, stored)
+
+	sum := 0
+	for _, e := range stored {
+		sum += e.Points
+	}
+	assert.Equal(t, run.Points, sum, "the events sum to the score they describe")
+}
+
+// A wrong answer that completes a no-retry block earns nothing: the credit is the
+// value the block computed, not the configured points the test sets to 100.
+func TestCheckInService_CreditsTheComputedValue(t *testing.T) {
+	f := setupCompletingSubmission(t, "quiz", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	_, err := f.blockService.UpdateBlock(ctx, f.block, map[string][]string{
+		"points":         {"100"},
+		"question":       {"Which one?"},
+		"option_text":    {"A boat", "A train"},
+		"option_correct": {"option_1"},
+	})
+	require.NoError(t, err)
+
+	// option_0 is wrong, and with retries off the submission completes anyway.
+	_, _, err = f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "quiz_option": {"option_0"},
+	})
+	require.NoError(t, err)
+
+	var run models.Run
+	require.NoError(t, f.dbc.NewSelect().Model(&run).Where("code = ?", f.team.Code).Scan(ctx))
+	assert.Zero(t, run.Points, "a wrong answer earns nothing, not the configured points")
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+
+	var answered *models.RunEvent
+	for i := range stored {
+		if stored[i].Type == models.EventBlockAnswered {
+			answered = &stored[i]
+		}
+	}
+	require.NotNil(t, answered, "the wrong answer is still an attempt")
+	assert.Zero(t, answered.Points, "and the log records what was credited")
+}
+
+// A completion the game turned away is never credited: the payload keeps the
+// value the block computed, the column records the zero, and nothing claims the
+// objective finished. The objective sits behind an ordered parent whose first
+// child is unfinished, so the run cannot reach it.
+func TestCheckInService_GateDeclinedCreditIsRecordedAsZero(t *testing.T) {
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	parent := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: f.team.QuestID, Slug: "campus", Title: "Campus",
+		Routing: game.RouteStrategyOrdered,
+	}
+	_, err := f.dbc.NewInsert().Model(parent).Exec(ctx)
+	require.NoError(t, err)
+
+	first := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: f.team.QuestID, ParentID: parent.ID,
+		Position: 0, Slug: "first", Title: "First",
+	}
+	_, err = f.dbc.NewInsert().Model(first).Exec(ctx)
+	require.NoError(t, err)
+
+	_, err = f.dbc.NewUpdate().Model((*models.Objective)(nil)).
+		Set("parent_id = ?", parent.ID).
+		Set("position = ?", 1).
+		Where("id = ?", f.objective.ID).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	// The block is worth 10, so the divergence between the two numbers is real.
+	_, err = f.dbc.NewUpdate().Model((*models.Block)(nil)).
+		Set("points = ?", 10).
+		Where("id = ?", f.block.GetID()).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	_, _, err = f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "response": {"the answer"},
+	})
+	require.NoError(t, err)
+
+	var run models.Run
+	require.NoError(t, f.dbc.NewSelect().Model(&run).Where("code = ?", f.team.Code).Scan(ctx))
+	assert.Zero(t, run.Points, "an unreachable completion is never credited")
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+
+	var answered *models.RunEvent
+	for i := range stored {
+		require.NotEqual(t, models.EventObjectiveContextCompleted, stored[i].Type,
+			"a completion the game turned away was recorded as finished")
+		if stored[i].Type == models.EventBlockAnswered {
+			answered = &stored[i]
+		}
+	}
+	require.NotNil(t, answered)
+
+	assert.Zero(t, answered.Points, "the column records the zero that was credited")
+
+	var payload models.BlockAnsweredData
+	require.NoError(t, json.Unmarshal(answered.Data, &payload))
+	assert.Equal(t, 10, payload.PointsAwarded, "while the payload keeps what the block computed")
+}
+
 // A resubmission of an answer that already completed its block writes nothing at
 // all, so one click does not become two attempts in the record.
 func TestCheckInService_ResubmissionRecordsNoSecondEvent(t *testing.T) {
-	f := setupCompletingSubmission(t, repositories.NewRunEventRepository)
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
 	ctx := context.Background()
 	events := repositories.NewRunEventRepository(f.dbc)
 
@@ -192,7 +332,7 @@ func TestCheckInService_ResubmissionRecordsNoSecondEvent(t *testing.T) {
 // refused by the database, and that is a legitimate outcome; what must hold is
 // what ends up recorded.
 func TestCheckInService_ConcurrentCompletionsRecordOneEvent(t *testing.T) {
-	f := setupCompletingSubmission(t, repositories.NewRunEventRepository)
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
 	ctx := context.Background()
 	events := repositories.NewRunEventRepository(f.dbc)
 

@@ -37,8 +37,9 @@ type RunRepository interface {
 	AddPointsWithTx(ctx context.Context, tx *bun.Tx, code string, delta int) error
 	// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction
 	UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error
-	// Reset wipes a team's progress for re-use
-	Reset(ctx context.Context, tx *bun.Tx, questID string, runCodes []string) error
+	// Reset wipes a team's progress for re-use, returning each run's points as
+	// they stood before the wipe.
+	Reset(ctx context.Context, tx *bun.Tx, questID string, runCodes []string) (map[string]int, error)
 
 	// Delete removes the team from the database
 	// Requires a transaction as related data will also need to be deleted
@@ -108,16 +109,36 @@ func (r *teamRepository) UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx
 	return err
 }
 
-// Reset wipes a team's progress for re-use.
-func (r *teamRepository) Reset(ctx context.Context, tx *bun.Tx, questID string, runCodes []string) error {
-	_, err := tx.NewUpdate().Model(&models.Run{}).
+// Reset wipes a team's progress for re-use, returning each run's points as they
+// stood before the wipe. The caller needs those numbers to record what the reset
+// took off the score, and anywhere but inside this transaction the read could
+// land after the wipe.
+func (r *teamRepository) Reset(
+	ctx context.Context, tx *bun.Tx, questID string, runCodes []string,
+) (map[string]int, error) {
+	var runs []models.Run
+	if err := tx.NewSelect().Model(&runs).
+		Column("code", "points").
+		Where("quest_id = ? AND code IN (?)", questID, bun.In(runCodes)).
+		Scan(ctx); err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.NewUpdate().Model(&models.Run{}).
 		Set("name = ''").
 		Set("has_started = false").
 		Set("started_at = NULL").
 		Set("points = 0").
 		Where("quest_id = ? AND code IN (?)", questID, bun.In(runCodes)).
-		Exec(ctx)
-	return err
+		Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	cleared := make(map[string]int, len(runs))
+	for _, run := range runs {
+		cleared[run.Code] = run.Points
+	}
+	return cleared, nil
 }
 
 func (r *teamRepository) Delete(ctx context.Context, tx *bun.Tx, questID string, runCode string) error {

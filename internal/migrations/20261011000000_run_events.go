@@ -17,7 +17,8 @@ func init() {
 // run_code and quest_id cascade, so deleting a run or quest takes its stream with
 // it. objective_id and block_id deliberately carry no constraint: an author
 // deleting an objective should not erase the record of teams having visited it,
-// so those two columns may dangle.
+// so those two columns may dangle. The points column holds the change this event
+// made to the run's score.
 func m20261011000000_up(ctx context.Context, db *bun.DB) error {
 	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS "run_events" (
 		"id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,6 +27,7 @@ func m20261011000000_up(ctx context.Context, db *bun.DB) error {
 		"type" VARCHAR(48) NOT NULL,
 		"objective_id" VARCHAR(36),
 		"block_id" VARCHAR(36),
+		"points" INTEGER NOT NULL DEFAULT 0,
 		"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 		"data" JSONB
 	)`); err != nil {

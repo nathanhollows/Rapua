@@ -27,7 +27,7 @@ func TestRunEventsMigration_CreatesTheStream(t *testing.T) {
 	}
 
 	for _, column := range []string{
-		"id", "run_code", "quest_id", "type", "objective_id", "block_id", "created_at", "data",
+		"id", "run_code", "quest_id", "type", "objective_id", "block_id", "points", "created_at", "data",
 	} {
 		assert.True(t, columnExists(ctx, dbc, "run_events", column), "run_events.%s", column)
 	}

@@ -45,15 +45,24 @@ type RunEvent struct {
 	BlockID     string          `bun:"block_id,nullzero,type:varchar(36)"`
 	CreatedAt   time.Time       `bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	Data        json.RawMessage `bun:"data,type:jsonb"`
+
+	// Points is the change this event made to the run's score: the credited
+	// delta, negative for a block that deducts and for a reset, which carries
+	// what its wipe took off. Summing the column over a run rebuilds that run's
+	// total.
+	Points int `bun:"points,notnull,default:0"`
 }
 
 // BlockAnsweredData is the payload of an EventBlockAnswered row. Completed means
 // the submission completed the block, which is not the same as the answer being
 // right: only the block knows what right means.
 type BlockAnsweredData struct {
-	BlockType     string `json:"block_type"`
-	Completed     bool   `json:"completed"`
-	PointsAwarded int    `json:"points_awarded"`
+	BlockType string `json:"block_type"`
+	Completed bool   `json:"completed"`
+	// PointsAwarded is what the block computed for this submission. The row's
+	// Points column carries what was credited, zero whenever the block did not
+	// complete or the gate declined.
+	PointsAwarded int `json:"points_awarded"`
 }
 
 // RunNamedData is the payload of an EventRunNamed row.

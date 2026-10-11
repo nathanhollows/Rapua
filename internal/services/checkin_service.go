@@ -153,11 +153,18 @@ func (s *CheckInService) applyAnswer(
 		return false, nil
 	}
 
+	// One number feeds the score and the event, so the stream's sum and the run's
+	// total cannot drift apart.
+	credited := 0
 	if plan.awardPoints {
 		// Incremented in the database, not by writing a total read before this
 		// transaction opened: two submissions landing together would each write
 		// their own total and one award would be lost.
-		if err := s.teamRepo.AddPointsWithTx(ctx, tx, team.Code, block.GetPoints()); err != nil {
+		//
+		// The block's computed value, not its configured points: a partial score
+		// is what the player was shown, and it is what they earn.
+		credited = state.GetPointsAwarded()
+		if err := s.teamRepo.AddPointsWithTx(ctx, tx, team.Code, credited); err != nil {
 			return false, fmt.Errorf("awarding points: %w", err)
 		}
 	}
@@ -180,13 +187,17 @@ func (s *CheckInService) applyAnswer(
 		objectiveID = block.GetOwnerID()
 	}
 
-	if err := s.runEventRepo.RecordWithTx(ctx, tx, answeredEvent(
-		team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded(),
-	)); err != nil {
+	answerEvent := answeredEvent(team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded())
+	// The payload carries what the block computed; the column carries what the
+	// score moved by.
+	answerEvent.Points = credited
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, answerEvent); err != nil {
 		return false, fmt.Errorf("recording answer: %w", err)
 	}
 
 	if completedContext {
+		// The completion carries no points of its own: the award rode the answer
+		// that triggered it, and writing it again here would double the sum.
 		if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
 			team, block.GetOwnerID(), blockContext,
 		)); err != nil {
