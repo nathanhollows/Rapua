@@ -190,6 +190,19 @@ func TestNavigationService_FinishSection(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotContains(t, availableSlugs(view), "second",
 		"finishing the section closes what was left inside it")
+
+	// The section was the root's only child, so the press finished the run, and
+	// the finish is recorded where it happened.
+	events, err := repositories.NewRunEventRepository(dbc).ListByRun(ctx, run.Code)
+	require.NoError(t, err)
+	finishes := 0
+	for i, e := range events {
+		if e.Type == models.EventRunCompleted {
+			finishes++
+			assert.Equal(t, len(events)-1, i, "the finish is the last thing recorded")
+		}
+	}
+	assert.Equal(t, 1, finishes)
 }
 
 func TestNavigationService_GetPreviewObjectiveView(t *testing.T) {

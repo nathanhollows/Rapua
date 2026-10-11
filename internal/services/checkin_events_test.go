@@ -50,6 +50,10 @@ func (f failingEventRepo) TimesByType(
 	return nil, f.err
 }
 
+func (f failingEventRepo) CompletedSinceResetWithTx(context.Context, *bun.Tx, string) (bool, error) {
+	return false, f.err
+}
+
 // completingSubmission builds an objective with one proof block, a run, and the
 // seeded state rows a page view would leave behind, then returns a check-in
 // service and the wherewithal to submit an answer that completes it.
@@ -193,6 +197,20 @@ func TestCheckInService_EventsSumToTheScore(t *testing.T) {
 		sum += e.Points
 	}
 	assert.Equal(t, run.Points, sum, "the events sum to the score they describe")
+
+	// The completion's payload carries the closing credit for reporting reads,
+	// while its column stays zero, so the sum never doubles.
+	var completion *models.RunEvent
+	for i := range stored {
+		if stored[i].Type == models.EventObjectiveContextCompleted {
+			completion = &stored[i]
+		}
+	}
+	require.NotNil(t, completion)
+	var payload models.ObjectiveContextCompletedData
+	require.NoError(t, json.Unmarshal(completion.Data, &payload))
+	assert.Equal(t, 10, payload.Points)
+	assert.Zero(t, completion.Points, "the column stays zero, or the sum would double")
 }
 
 // A wrong answer that completes a no-retry block earns nothing: the credit is the
@@ -295,6 +313,30 @@ func TestCheckInService_GateDeclinedCreditIsRecordedAsZero(t *testing.T) {
 	var payload models.BlockAnsweredData
 	require.NoError(t, json.Unmarshal(answered.Data, &payload))
 	assert.Equal(t, 10, payload.PointsAwarded, "while the payload keeps what the block computed")
+}
+
+// The finish is recorded where it happens. The fixture's objective is the
+// quest's root, so completing it is the run completing.
+func TestCheckInService_CompletingTheRootRecordsTheFinish(t *testing.T) {
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	_, _, err := f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "response": {"the answer"},
+	})
+	require.NoError(t, err)
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+
+	finishes := 0
+	for i, e := range stored {
+		if e.Type == models.EventRunCompleted {
+			finishes++
+			assert.Equal(t, len(stored)-1, i, "the finish is the last thing recorded")
+		}
+	}
+	assert.Equal(t, 1, finishes)
 }
 
 // A resubmission of an answer that already completed its block writes nothing at

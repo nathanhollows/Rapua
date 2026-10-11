@@ -44,6 +44,8 @@ type PlayerObjectiveView struct {
 	// the only thing that means the run is finished. An empty available list
 	// does not: everything below may simply be waiting on a depends.
 	Complete bool
+	// Progress is how far the run has come and how much it still owes.
+	Progress navigation.Progress
 	// Objectives is the quest's whole tree. The frontier is flat by design, and
 	// a row in it carries only its parent's ID, so the player view needs this
 	// to draw the section a row came out of.
@@ -114,6 +116,7 @@ func (s *NavigationService) GetPlayerObjectiveView(
 		Settings:        team.Quest.Settings,
 		Frontier:        frontier,
 		Complete:        rootComplete(objectives, frontier),
+		Progress:        navigation.ComputeProgress(objectives, complete),
 		Objectives:      objectives,
 		HasProof:        state.HasProofBlocks,
 		FirstProofBlock: icons,
@@ -131,6 +134,24 @@ func rootComplete(objectives []models.Objective, frontier navigation.Frontier) b
 		}
 		roots++
 		if frontier.StatusOf(obj.ID) != navigation.StatusComplete {
+			return false
+		}
+	}
+	return roots > 0
+}
+
+// rootsComplete asks rootComplete's question of the derived completion map
+// instead of the frontier, which is what the write paths hold: completion is a
+// pure function of the recorded facts, so one more fact answers it without a
+// second load.
+func rootsComplete(objectives []models.Objective, complete map[string]bool) bool {
+	roots := 0
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			continue
+		}
+		roots++
+		if !complete[obj.ID] {
 			return false
 		}
 	}
@@ -174,6 +195,16 @@ func (s *NavigationService) FinishSection(
 
 	if err := s.runEventRepo.RecordWithTx(ctx, tx, sectionFinishedEvent(team, objectiveID)); err != nil {
 		return false, fmt.Errorf("recording section finish: %w", err)
+	}
+
+	// The press may be what tips the root over. The section closing is the only
+	// fact that changed, and the derivation is pure, so the answer comes from
+	// the state already in hand.
+	state.SectionFinished[objectiveID] = true
+	if rootsComplete(objectives, navigation.ComputeCompleted(objectives, state)) {
+		if err := recordRunCompleted(ctx, tx, s.runEventRepo, team); err != nil {
+			return false, fmt.Errorf("recording run completion: %w", err)
+		}
 	}
 
 	return true, tx.Commit()

@@ -196,12 +196,17 @@ func (s *CheckInService) applyAnswer(
 	}
 
 	if completedContext {
-		// The completion carries no points of its own: the award rode the answer
-		// that triggered it, and writing it again here would double the sum.
+		// The completion's column carries no points: the award rode the answer
+		// that triggered it, and writing it again there would double the sum.
 		if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
-			team, block.GetOwnerID(), blockContext,
+			team, block.GetOwnerID(), blockContext, credited,
 		)); err != nil {
 			return false, fmt.Errorf("recording objective completion: %w", err)
+		}
+		if plan.completesRun {
+			if err := recordRunCompleted(ctx, tx, s.runEventRepo, team); err != nil {
+				return false, fmt.Errorf("recording run completion: %w", err)
+			}
 		}
 	}
 
@@ -242,6 +247,11 @@ func (s *CheckInService) validateInPreview(
 type completionPlan struct {
 	awardPoints bool
 	objective   *models.Objective
+	// completesRun is true when this submission's completion is what tips the
+	// root over. Derived before the transaction from state already in hand: the
+	// post-state is the pre-state plus this one proof, and the derivation is
+	// pure, so the answer costs no reads inside the lock.
+	completesRun bool
 }
 
 // planCompletion runs the gates before anything is written, so points are never
@@ -267,11 +277,11 @@ func (s *CheckInService) planCompletion(
 		return completionPlan{}, fmt.Errorf("loading objective: %w", err)
 	}
 
-	reachable, err := s.ObjectiveIsReachable(ctx, team, objective)
+	objectives, state, completion, err := s.loader.load(ctx, team)
 	if err != nil {
-		return completionPlan{}, err
+		return completionPlan{}, fmt.Errorf("loading run state: %w", err)
 	}
-	if !reachable {
+	if !reachableIn(navigation.ComputeFrontier(objectives, state, completion), objective) {
 		return completionPlan{}, nil
 	}
 
@@ -285,6 +295,12 @@ func (s *CheckInService) planCompletion(
 	plan := completionPlan{awardPoints: true}
 	if !stillRequired {
 		plan.objective = objective
+		// Only a proof landing changes what the derivation counts: a reveal
+		// completing leaves completion exactly where it was.
+		if blockContext == game.ContextObjectiveProof {
+			state.ProofCompleted[objective.ID] = true
+			plan.completesRun = rootsComplete(objectives, navigation.ComputeCompleted(objectives, state))
+		}
 	}
 	return plan, nil
 }
@@ -324,11 +340,11 @@ func (s *CheckInService) CompleteObjectiveContext(
 	// A slug is guessable and the objective view completes content-only
 	// contexts on GET, so without this a player could reach a gated objective
 	// directly and fire its sets, opening every downstream gate out of order.
-	reachable, err := s.ObjectiveIsReachable(ctx, team, objective)
+	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
-		return err
+		return fmt.Errorf("loading run state: %w", err)
 	}
-	if !reachable {
+	if !reachableIn(navigation.ComputeFrontier(objectives, state, complete), objective) {
 		return nil
 	}
 
@@ -350,14 +366,43 @@ func (s *CheckInService) CompleteObjectiveContext(
 	}
 
 	if inserted {
-		if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
-			team, objective.ID, blockContext,
-		)); err != nil {
-			return fmt.Errorf("recording objective completion: %w", err)
+		if err := s.recordContextCompleted(
+			ctx, tx, team, objective, blockContext, objectives, state,
+		); err != nil {
+			return err
 		}
 	}
 
 	return tx.Commit()
+}
+
+// recordContextCompleted writes the completion's event and, when the proof is
+// what tips the root over, the finish.
+func (s *CheckInService) recordContextCompleted(
+	ctx context.Context, tx *bun.Tx, team *models.Run, objective *models.Objective,
+	blockContext game.BlockContext, objectives []models.Objective, state navigation.RunState,
+) error {
+	// Content-only contexts complete through this path, where no submission
+	// earned anything: zero by definition, not by omission.
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, objectiveContextCompletedEvent(
+		team, objective.ID, blockContext, 0,
+	)); err != nil {
+		return fmt.Errorf("recording objective completion: %w", err)
+	}
+
+	// Only a proof landing can tip the root; the derivation is pure, so the
+	// answer comes from the state already in hand plus this one completion.
+	if blockContext != game.ContextObjectiveProof {
+		return nil
+	}
+	state.ProofCompleted[objective.ID] = true
+	if !rootsComplete(objectives, navigation.ComputeCompleted(objectives, state)) {
+		return nil
+	}
+	if err := recordRunCompleted(ctx, tx, s.runEventRepo, team); err != nil {
+		return fmt.Errorf("recording run completion: %w", err)
+	}
+	return nil
 }
 
 // IsObjectiveContextPending reports whether an objective's proof or reveal
@@ -389,16 +434,20 @@ func (s *CheckInService) ObjectiveIsReachable(
 		return false, fmt.Errorf("loading run state: %w", err)
 	}
 
-	frontier := navigation.ComputeFrontier(objectives, state, complete)
+	return reachableIn(navigation.ComputeFrontier(objectives, state, complete), objective), nil
+}
+
+// reachableIn reports whether the frontier leaves the objective open to the
+// run. Complete counts: revisiting somewhere already finished is reading it
+// again, not reaching somewhere out of bounds.
+func reachableIn(frontier navigation.Frontier, objective *models.Objective) bool {
 	switch frontier.StatusOf(objective.ID) {
 	case navigation.StatusAvailable, navigation.StatusFinishable, navigation.StatusComplete:
-		// Complete counts: revisiting somewhere already finished is reading it
-		// again, not reaching somewhere out of bounds.
-		return true, nil
+		return true
 	case navigation.StatusLocked:
-		return false, nil
+		return false
 	}
-	return false, nil
+	return false
 }
 
 // GetObjectiveByID finds an objective by id, for the places that hold a parent

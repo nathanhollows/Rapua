@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,44 @@ func setupRunEventRepo(t *testing.T) (repositories.RunEventRepository, *bun.DB, 
 
 func event(runCode, questID string, eventType models.EventType) *models.RunEvent {
 	return &models.RunEvent{RunCode: runCode, QuestID: questID, Type: eventType}
+}
+
+// The finish guard reads inside the caller's transaction, and it is per leg: a
+// completion before the last reset does not stop the next leg's own finish from
+// being recorded.
+func TestRunEventRepository_CompletedSinceReset(t *testing.T) {
+	repo, dbc, cleanup := setupRunEventRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+	runCode := createTestTeam(t, dbc, parents.QuestID)
+
+	// Committed rather than rolled back, like the other transaction tests here:
+	// a rolled-back transaction wedges the next WipeData into a spin.
+	tx, err := db.NewTransactor(dbc).BeginTx(ctx, nil)
+	require.NoError(t, err)
+
+	recorded, err := repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	assert.False(t, recorded, "nothing recorded yet")
+
+	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunCompleted)))
+	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	assert.True(t, recorded, "seen inside the same transaction that wrote it")
+
+	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunReset)))
+	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	assert.False(t, recorded, "a reset opens a new leg")
+
+	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunCompleted)))
+	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	assert.True(t, recorded, "the new leg finishes in its own right")
+
+	require.NoError(t, tx.Commit())
 }
 
 func TestRunEventRepository_RecordAndListInOrder(t *testing.T) {

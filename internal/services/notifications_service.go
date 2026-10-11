@@ -67,7 +67,9 @@ func (s *NotificationService) sendNotification(
 		return models.Notification{}, err
 	}
 
-	if err := s.runEventRepo.RecordWithTx(ctx, tx, notificationSentEvent(team, notification.ID)); err != nil {
+	if err := s.runEventRepo.RecordWithTx(
+		ctx, tx, notificationSentEvent(team, notification.ID, notification.Content),
+	); err != nil {
 		return models.Notification{}, fmt.Errorf("recording notification: %w", err)
 	}
 

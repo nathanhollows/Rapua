@@ -1,12 +1,16 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/uptrace/bun"
 )
 
 // Each event is a pure function of what happened, so these are package functions
@@ -69,10 +73,11 @@ func uploadAddedEvent(runCode, questID, blockID, url, mediaType string) *models.
 	return event
 }
 
-// notificationSentEvent records a message being sent to a run.
-func notificationSentEvent(team *models.Run, notificationID string) *models.RunEvent {
+// notificationSentEvent records a message being sent to a run, words included:
+// the log is the copy that survives a dismissal.
+func notificationSentEvent(team *models.Run, notificationID, content string) *models.RunEvent {
 	event := eventBase(team.Code, team.QuestID, models.EventNotificationSent)
-	event.Data = eventPayload(models.NotificationData{NotificationID: notificationID})
+	event.Data = eventPayload(models.NotificationData{NotificationID: notificationID, Content: content})
 	return event
 }
 
@@ -96,6 +101,31 @@ func runStartedEvent(team *models.Run) *models.RunEvent {
 	return eventBase(team.Code, team.QuestID, models.EventRunStarted)
 }
 
+// runCompletedEvent records the run finishing. There is no state change of its
+// own to ride with, because completion is derived rather than written: the
+// paths that can tip the root over record it inside their own transactions,
+// where the derivation says the tipping actually happened.
+func runCompletedEvent(team *models.Run) *models.RunEvent {
+	return eventBase(team.Code, team.QuestID, models.EventRunCompleted)
+}
+
+// recordRunCompleted records the finish once per leg. The guard reads inside
+// the caller's transaction, where the write lock makes it decisive: a second
+// completion racing the first sees the row the first committed and lands as a
+// no-op rather than a second ending.
+func recordRunCompleted(
+	ctx context.Context, tx *bun.Tx, repo repositories.RunEventRepository, team *models.Run,
+) error {
+	recorded, err := repo.CompletedSinceResetWithTx(ctx, tx, team.Code)
+	if err != nil {
+		return fmt.Errorf("checking for an earlier finish: %w", err)
+	}
+	if recorded {
+		return nil
+	}
+	return repo.RecordWithTx(ctx, tx, runCompletedEvent(team))
+}
+
 // answeredEvent records one graded answer, right or wrong.
 //
 // pointsAwarded is what the block computed. Points on the returned event is the
@@ -114,11 +144,13 @@ func answeredEvent(
 	return event
 }
 
+// objectiveContextCompletedEvent records a context clearing, carrying the credit
+// that rode the submission which cleared it.
 func objectiveContextCompletedEvent(
-	team *models.Run, objectiveID string, blockContext game.BlockContext,
+	team *models.Run, objectiveID string, blockContext game.BlockContext, points int,
 ) *models.RunEvent {
 	event := eventBase(team.Code, team.QuestID, models.EventObjectiveContextCompleted)
 	event.ObjectiveID = objectiveID
-	event.Data = eventPayload(models.ObjectiveContextCompletedData{Context: blockContext})
+	event.Data = eventPayload(models.ObjectiveContextCompletedData{Context: blockContext, Points: points})
 	return event
 }

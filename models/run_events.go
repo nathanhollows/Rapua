@@ -30,6 +30,10 @@ const (
 	EventNotificationRead EventType = "notification_read"
 	// EventRunReset fires when an admin resets a run.
 	EventRunReset EventType = "run_reset"
+	// EventRunCompleted fires once per leg of a run, when its root objective
+	// completes. Completion is derived rather than written, so without this row
+	// the finish, which is the whole story's last line, has no record anywhere.
+	EventRunCompleted EventType = "run_completed"
 )
 
 // RunEvent is one thing that happened to one run.
@@ -73,8 +77,15 @@ type RunNamedData struct {
 // ObjectiveContextCompletedData is the payload of an
 // EventObjectiveContextCompleted row. Proof and reveal complete separately, so an
 // objective produces one row each.
+//
+// Points is the credit that rode the submission which cleared the context, zero
+// on paths with no award. It duplicates the answer's ledger row deliberately,
+// the same way a sent message records its own words, so a reporting read of the
+// completion alone still sees what closed it. The event's own Points column
+// stays zero, or summing the stream would count the credit twice.
 type ObjectiveContextCompletedData struct {
 	Context game.BlockContext `json:"context"`
+	Points  int               `json:"points"`
 }
 
 // UploadAddedData is the payload of an EventUploadAdded row. The URL may outlive
@@ -84,7 +95,11 @@ type UploadAddedData struct {
 	MediaType string `json:"media_type"`
 }
 
-// NotificationData is the payload of both notification events.
+// NotificationData is the payload of both notification events. Content is the
+// message text, carried only by notification_sent: the notifications table
+// filters dismissed rows out of every read, so the log is the copy of the words
+// that survives a dismissal.
 type NotificationData struct {
 	NotificationID string `json:"notification_id"`
+	Content        string `json:"content,omitempty"`
 }
