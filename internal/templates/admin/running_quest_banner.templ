@@ -28,9 +28,8 @@ templ questLock(quest models.Quest) {
 				class="tooltip tooltip-bottom"
 				data-tip="Editing is locked while the game is running. Click to unlock."
 			>
-				<button type="button" class="btn btn-sm btn-warning btn-outline gap-1.5" onclick="confirm_unlock_modal.showModal()">
+				<button type="button" class="btn btn-sm btn-square btn-warning btn-outline" aria-label="Unlock editing" onclick="confirm_unlock_modal.showModal()">
 					@icon("lock", templ.Attributes{"class": "w-4 h-4 shrink-0"})
-					<span class="hidden sm:inline">Unlock</span>
 				</button>
 			</span>
 			<span
@@ -38,9 +37,8 @@ templ questLock(quest models.Quest) {
 				class="tooltip tooltip-bottom hidden"
 				data-tip="You are editing a running game. Click to lock it again."
 			>
-				<button type="button" id="quest-relock" class="btn btn-sm btn-warning gap-1.5">
+				<button type="button" id="quest-relock" class="btn btn-sm btn-square btn-warning" aria-label="Lock editing again">
 					@icon("lock-open", templ.Attributes{"class": "w-4 h-4 shrink-0"})
-					<span class="hidden sm:inline">Editing</span>
 				</button>
 			</span>
 		</span>
@@ -199,8 +197,7 @@ templ questLockScript(quest models.Quest) {
 			const button = document.getElementById('quest-unlock');
 			if (!main || !button) return;
 
-			// Lives in the nav beside the status: it is about the quest, not
-			// the page.
+			// Lives in the nav: it is about the quest, not the page.
 			const slot = document.getElementById('quest-unlock-slot');
 			if (slot) slot.appendChild(button);
 

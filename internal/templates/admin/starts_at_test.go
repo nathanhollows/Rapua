@@ -60,7 +60,7 @@ func TestQuestStatus_ScheduledCarriesTheInstant(t *testing.T) {
 	quest := models.Quest{StartTime: bun.NullTime{Time: start}}
 
 	var out strings.Builder
-	require.NoError(t, questStatusIndicator(quest, false).Render(context.Background(), &out))
+	require.NoError(t, questStatusIndicator(quest).Render(context.Background(), &out))
 
 	html := out.String()
 	assert.Contains(t, html, `datetime="`+start.UTC().Format(time.RFC3339)+`"`,
@@ -72,7 +72,7 @@ func TestQuestStatus_ScheduledCarriesTheInstant(t *testing.T) {
 // An empty datetime would be read as 1970.
 func TestQuestStatus_NoStartTimeCarriesNoInstant(t *testing.T) {
 	var out strings.Builder
-	require.NoError(t, questStatusIndicator(models.Quest{}, false).Render(context.Background(), &out))
+	require.NoError(t, questStatusIndicator(models.Quest{}).Render(context.Background(), &out))
 
 	assert.NotContains(t, out.String(), "data-starts-at")
 }

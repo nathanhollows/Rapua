@@ -127,8 +127,8 @@ func TestQuestLock_BothStatesAreRenderedOneHidden(t *testing.T) {
 
 	assert.Contains(t, html, `data-lock-state="locked"`)
 	assert.Contains(t, html, `data-lock-state="unlocked"`)
-	assert.Contains(t, html, "btn btn-sm btn-warning btn-outline", "locked is a control")
-	assert.Contains(t, html, "btn btn-sm btn-warning gap-1.5", "and so is unlocked")
+	assert.Contains(t, html, "btn btn-sm btn-square btn-warning btn-outline", "locked is a control")
+	assert.Contains(t, html, "btn btn-sm btn-square btn-warning\"", "and so is unlocked")
 	assert.NotContains(t, html, "button.className", "nothing is restyled in script")
 
 	// Otherwise both words show before anything is pressed.
@@ -169,27 +169,74 @@ func renderNav(t *testing.T, quest models.Quest) string {
 	return out.String()
 }
 
-// The dot is daisyUI's status component, not a hand-rolled div.
-func TestQuestStatus_UsesTheStatusComponent(t *testing.T) {
-	html := renderNav(t, running())
-
-	assert.Contains(t, html, "status-success")
-	assert.Contains(t, html, `class="status shrink-0 status-success"`)
-	assert.NotContains(t, html, "rounded-full bg-success", "no hand-rolled dot")
+// Each state has its own icon, tone and words.
+func TestQuestSwitch_IconFollowsTheState(t *testing.T) {
+	cases := map[string]struct {
+		quest models.Quest
+		icon  string
+		word  string
+	}{
+		"live": {running(), `class="w-6 h-6 shrink-0 text-success"`, "Live"},
+		"scheduled": {
+			models.Quest{ID: "q", StartTime: bun.NullTime{Time: time.Now().Add(time.Hour)}},
+			`class="w-6 h-6 shrink-0 text-info"`,
+			"Starts ",
+		},
+		"closed": {models.Quest{ID: "q"}, `class="w-6 h-6 shrink-0 text-base-content/45"`, "Closed"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			html := renderNav(t, c.quest)
+			assert.Contains(t, html, c.icon)
+			assert.Contains(t, html, `<span class="sr-only">`+c.word)
+		})
+	}
 }
 
-// The control sits left of the status so the status does not shift.
-func TestQuestStatus_ControlComesBeforeTheStatus(t *testing.T) {
+// The hover text carries the full name, which truncates.
+func TestQuestSwitch_TitleSaysNameAndState(t *testing.T) {
+	quest := running()
+	quest.Name = "A very long game name that will not fit"
+	html := renderNav(t, quest)
+
+	assert.Contains(t, html, `title="A very long game name that will not fit · Live"`)
+	assert.Contains(t, html, "truncate")
+}
+
+// The lock sits left of the switcher so the switcher does not shift.
+func TestQuestLock_SlotComesBeforeTheSwitcher(t *testing.T) {
 	html := renderNav(t, running())
 
-	// Scoped to the bar: the drawer's status card renders earlier.
-	at := strings.Index(html, "navbar-end")
-	require.GreaterOrEqual(t, at, 0)
-	bar := html[at:]
-
-	slot := strings.Index(bar, "quest-unlock-slot")
-	status := strings.Index(bar, "status-success")
+	slot := strings.Index(html, "quest-unlock-slot")
+	switcher := strings.Index(html, "btn btn-ghost flex-nowrap")
 	require.GreaterOrEqual(t, slot, 0)
-	require.GreaterOrEqual(t, status, 0)
-	assert.Less(t, slot, status)
+	require.GreaterOrEqual(t, switcher, 0)
+	assert.Less(t, slot, switcher)
+}
+
+// The dropdown header names the current game.
+func TestQuestSwitch_ListLeavesOutTheCurrentGame(t *testing.T) {
+	current := running()
+	current.Name = "Current game"
+	other := models.Quest{ID: "other", Name: "Other game"}
+	user := models.User{CurrentQuestID: current.ID, CurrentQuest: current, Quests: []models.Quest{current, other}}
+
+	var out strings.Builder
+	require.NoError(t, nav(user, "Quest").Render(context.Background(), &out))
+	html := out.String()
+
+	assert.NotContains(t, html, "/admin/quests/"+current.ID+"/switch")
+	assert.Contains(t, html, "/admin/quests/other/switch")
+	assert.NotContains(t, html, "lucide-check", "no check mark on a game that is not listed")
+}
+
+// No other games, no list.
+func TestQuestSwitch_NoListWhenOnlyOneGame(t *testing.T) {
+	current := running()
+	user := models.User{CurrentQuestID: current.ID, CurrentQuest: current, Quests: []models.Quest{current}}
+
+	var out strings.Builder
+	require.NoError(t, nav(user, "Quest").Render(context.Background(), &out))
+
+	assert.NotContains(t, out.String(), "Switch games")
 }
