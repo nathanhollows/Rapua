@@ -80,6 +80,7 @@ A game document exported from v7 will not import into v8. The format changed sha
 
 ### Removed
 
+- Resetting a run. It existed to let a run code be reused, and it cost more than it gave: a reset wiped progress while leaving the record of the play, so the run read differently depending on who was looking. Delete a run and add a fresh one instead; codes are cheap, and the record stays honest.
 - The Broker block, an interactive block that let players spend points to reveal a clue without knowing what they were buying. It was unused.
 - Per-block visibility conditions: a block can no longer carry its own condition, and the admin condition-builder sidebar for wiring one up is gone. Only objective-level `depends` remains.
 - The "Unlocked" badge on the objective reveal view.
@@ -893,7 +894,7 @@ This update introduces significant architectural changes to make the codebase ea
   - A new [facilitator dashboard](/docs/user/facilitator-dashboard) helps staff know the current progress of the game, reducing the need for practice communication. [#56](https://github.com/nathanhollows/Rapua/issues/56)
 
 - **UI/UX Improvements:**
-  - [Reset and delete actions for teams](/docs/user/players-and-teams#deleting-and-resetting-teams) now require confirmation to prevent accidental data loss.
+  - [Reset and delete actions for teams](/docs/user/players-and-teams#deleting-teams) now require confirmation to prevent accidental data loss.
   
 ### Changed
 - Deleting teams now refreshes the entire list view instead of partial updates for better consistency.

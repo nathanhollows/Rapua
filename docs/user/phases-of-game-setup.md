@@ -37,7 +37,7 @@ Conduct a trial run to identify issues and improve flow:
 - **Simulate Real Play** - Carry out the game from a player’s perspective.
 - **Measure Time** - Track how long each stage takes.
 - **Make Changes** - Adjust content, interactions, and objectives as needed. Stop the game first: a running game is locked, because a change reaches players straight away.
-- **Reset or Delete Team Data** - [Clear test team data](/docs/user/players-and-teams#deleting-and-resetting-teams) to prepare for the live game.
+- **Delete Team Data** - [Delete the test teams](/docs/user/players-and-teams#deleting-teams) and add a fresh set for the live game.
 
 ## 4. Iteration
 

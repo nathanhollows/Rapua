@@ -56,16 +56,11 @@ Once you've copied the team codes, you can distribute them to your players by:
 * Create "quickstart cards" with team codes and instructions for players to join.
     - Note: This is a feature from [The Amazing Trace](/docs/user/history#the-amazing-trace-2022) that will eventually be ported over. [#46](https://github.com/nathanhollows/Rapua/issues/46)
 
-## Deleting and Resetting Teams
+## Deleting Teams
 
-Deleting and resetting teams can be done in the [Teams](/admin/runs) section of your dashboard. Here's how it works:
+Delete a team from the run's own page, or several at once from the [Teams](/admin/runs) section of your dashboard. Deleting removes the team and all of its data, which is what you want once the game is done and the results are no longer needed.
 
-- **Delete Teams**: Removes teams and all associated data from the system.
-- **Reset Teams**: Clears team progress and completions, but keeps the team for future use.
-
-Delete teams when you no longer need them. Reset teams when you want to reuse them for another game, for example, after a [trial run](/docs/user/phases-of-game-setup#3-testing).
-
-<video autoplay loop muted src="/static/images/docs/user/teams-reset.webm" frameborder="0" allowfullscreen controls></video>
+A run cannot be cleared and reused. Codes are cheap: after a [trial run](/docs/user/phases-of-game-setup#3-testing), delete the test teams and add a fresh set for the live game.
 
 ## Team roles
 
