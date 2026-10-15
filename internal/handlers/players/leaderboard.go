@@ -36,9 +36,9 @@ func (h *PlayerHandler) leaderboard(
 		h.logger.ErrorContext(r.Context(), "leaderboard: loading runs", "error", err)
 		return nil
 	}
-	completed, err := h.runService.CountCompletedObjectivesByRun(r.Context(), team.QuestID)
+	summaries, err := h.runService.GetQuestRunSummaries(r.Context(), team.QuestID)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), "leaderboard: counting completions", "error", err)
+		h.logger.ErrorContext(r.Context(), "leaderboard: loading run summaries", "error", err)
 		return nil
 	}
 	// Loaded for the ranking tiebreak, not for display: the board shows no
@@ -54,9 +54,8 @@ func (h *PlayerHandler) leaderboard(
 	board, err := h.leaderBoardService.GetLeaderBoardData(
 		r.Context(),
 		teams,
-		len(team.Quest.Objectives),
-		completed,
 		lastSeen,
+		summaries,
 		leaderboardScheme(team.Quest.Settings),
 		"rank",
 		"asc",

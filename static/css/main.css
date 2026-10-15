@@ -775,3 +775,132 @@ p.label {
    updateJoinRounding (objective_tree.templ), not here: CSS-only attempts
    kept losing to daisyUI's own cascade at a run's edges. */
 
+/* ---- The run page's cadence strip ----------------------------------------
+   Time along the axis, cadence state as the colour. It says nothing about
+   what the run was doing, which is the point: under a free-roam frontier a
+   team may be on three objectives at once, and any strip built from "what
+   were they on" is inventing a serial story the log does not contain.
+   Width is real time, so the shape of one run compares with another's. */
+.heat {
+  display: flex;
+  height: 2.75rem;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--color-base-content) 12%, transparent);
+  position: relative;
+}
+.hseg {
+  min-width: 3px;
+}
+.h-playing {
+  background: color-mix(in oklch, var(--color-success) 55%, transparent);
+}
+.h-idle {
+  background: color-mix(in oklch, var(--color-info) 45%, transparent);
+}
+.h-stalled {
+  background: color-mix(in oklch, var(--color-warning) 45%, transparent);
+}
+.h-abandoned {
+  background: color-mix(in oklch, var(--color-error) 50%, transparent);
+}
+
+/* The window marks the span of time the visible entries cover. Both edges
+   animate: left drives the left edge and width the right, since right is
+   left plus width. Short and ease-out, so it reads as sliding rather than
+   snapping, and still keeps up with a fast scroll. */
+.strip-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 2px solid var(--color-base-content);
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  transition: left 150ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    width 150ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.strip-window.dragging {
+  cursor: grabbing;
+}
+
+/* ---- The quest map on a run page -----------------------------------------
+   State carries the colour, because on a run page the question is "how far
+   have they got", not "how is this quest routed". Routing is a fact about the
+   parent and is drawn only where it governs something: on a section. */
+.map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.76rem;
+}
+.maprow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0.4rem;
+  border-radius: 0.4rem;
+}
+.maprow:hover {
+  background: color-mix(in oklch, var(--color-base-content) 5%, transparent);
+}
+
+/* Three states, told apart by shape first and colour second, so they survive
+   greyscale and a colour-blind reader. */
+.mapstate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+}
+.mapstate[data-state="done"] {
+  color: var(--color-success);
+}
+.mapstate[data-state="started"] {
+  color: var(--color-warning);
+}
+.mapstate[data-state="todo"] {
+  color: color-mix(in oklch, var(--color-base-content) 45%, transparent);
+}
+.mapstate[data-state="locked"] {
+  color: color-mix(in oklch, var(--color-base-content) 45%, transparent);
+}
+
+/* Muting is a colour, never opacity: faded text is just harder to read, and
+   the state already has its shape. */
+.mapname {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mapname.todo {
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* An excluded objective is not a dimmer todo: it is struck from the run, and
+   the strike is what shows a choice, or the finish, left it behind. */
+.mapname.excluded {
+  color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  text-decoration: line-through;
+}
+.maprole {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.68rem;
+  color: color-mix(in oklch, var(--color-base-content) 80%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.maproute {
+  flex: none;
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* The log scrolls inside its own box rather than the page, which is what
+   keeps the strip above it in view while the entries move. */
+.runlog {
+  position: relative;
+  max-height: 34rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+

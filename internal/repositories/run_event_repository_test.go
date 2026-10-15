@@ -23,40 +23,37 @@ func event(runCode, questID string, eventType models.EventType) *models.RunEvent
 	return &models.RunEvent{RunCode: runCode, QuestID: questID, Type: eventType}
 }
 
-// The finish guard reads inside the caller's transaction, and it is per leg: a
-// completion before the last reset does not stop the next leg's own finish from
-// being recorded.
-func TestRunEventRepository_CompletedSinceReset(t *testing.T) {
+// The finish guard reads inside the caller's transaction, so a second
+// completion racing the first sees the row the first committed.
+func TestRunEventRepository_RunCompleted(t *testing.T) {
 	repo, dbc, cleanup := setupRunEventRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	parents := createTestParents(t, dbc)
 	runCode := createTestTeam(t, dbc, parents.QuestID)
+	// Seeded before the transaction opens: a write through the pool while the
+	// lock is held deadlocks the shared-cache test database.
+	other := createTestTeam(t, dbc, parents.QuestID)
 
 	// Committed rather than rolled back, like the other transaction tests here:
 	// a rolled-back transaction wedges the next WipeData into a spin.
 	tx, err := db.NewTransactor(dbc).BeginTx(ctx, nil)
 	require.NoError(t, err)
 
-	recorded, err := repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	recorded, err := repo.RunCompletedWithTx(ctx, tx, runCode)
 	require.NoError(t, err)
 	assert.False(t, recorded, "nothing recorded yet")
 
 	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunCompleted)))
-	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	recorded, err = repo.RunCompletedWithTx(ctx, tx, runCode)
 	require.NoError(t, err)
 	assert.True(t, recorded, "seen inside the same transaction that wrote it")
 
-	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunReset)))
-	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
+	// Another run's finish is its own.
+	recorded, err = repo.RunCompletedWithTx(ctx, tx, other)
 	require.NoError(t, err)
-	assert.False(t, recorded, "a reset opens a new leg")
-
-	require.NoError(t, repo.RecordWithTx(ctx, tx, event(runCode, parents.QuestID, models.EventRunCompleted)))
-	recorded, err = repo.CompletedSinceResetWithTx(ctx, tx, runCode)
-	require.NoError(t, err)
-	assert.True(t, recorded, "the new leg finishes in its own right")
+	assert.False(t, recorded, "the guard reads one run's stream, not the quest's")
 
 	require.NoError(t, tx.Commit())
 }

@@ -2,10 +2,10 @@ package templates
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // journalChip is one filter on the feed, and the kinds it keeps. Nil kinds
@@ -77,15 +77,16 @@ func journalTime(t time.Time) string {
 	return t.Local().Format("3:04pm")
 }
 
+// journalPhotoLabel switches on the upload's kind (image or video), not a MIME type.
 func journalPhotoLabel(mediaType string) string {
-	if strings.HasPrefix(mediaType, "image/") {
+	if mediaType == string(models.MediaTypeImage) {
 		return "Took a photo"
 	}
 	return "Added a file"
 }
 
 func journalIsImage(mediaType string) bool {
-	return strings.HasPrefix(mediaType, "image/")
+	return mediaType == string(models.MediaTypeImage)
 }
 
 // journalReadLabel is how long a message waited to be cleared. The log records

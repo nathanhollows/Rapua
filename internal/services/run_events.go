@@ -36,15 +36,6 @@ func eventBase(runCode, questID string, eventType models.EventType) *models.RunE
 	}
 }
 
-// runResetEvent records an admin resetting a run. Earlier events stay, so this
-// marks the boundary rather than erasing what came before it, and the row carries
-// the negative of the total it cleared so the stream still sums to the score.
-func runResetEvent(runCode, questID string, clearedPoints int) *models.RunEvent {
-	event := eventBase(runCode, questID, models.EventRunReset)
-	event.Points = -clearedPoints
-	return event
-}
-
 // objectivesListedEvent records a player opening the list of objectives.
 func objectivesListedEvent(team *models.Run) *models.RunEvent {
 	return eventBase(team.Code, team.QuestID, models.EventObjectivesListed)
@@ -109,14 +100,14 @@ func runCompletedEvent(team *models.Run) *models.RunEvent {
 	return eventBase(team.Code, team.QuestID, models.EventRunCompleted)
 }
 
-// recordRunCompleted records the finish once per leg. The guard reads inside
-// the caller's transaction, where the write lock makes it decisive: a second
+// recordRunCompleted records the finish once. The guard reads inside the
+// caller's transaction, where the write lock makes it decisive: a second
 // completion racing the first sees the row the first committed and lands as a
 // no-op rather than a second ending.
 func recordRunCompleted(
 	ctx context.Context, tx *bun.Tx, repo repositories.RunEventRepository, team *models.Run,
 ) error {
-	recorded, err := repo.CompletedSinceResetWithTx(ctx, tx, team.Code)
+	recorded, err := repo.RunCompletedWithTx(ctx, tx, team.Code)
 	if err != nil {
 		return fmt.Errorf("checking for an earlier finish: %w", err)
 	}

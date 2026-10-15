@@ -151,6 +151,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	runService := services.NewRunService(
 		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
+		sectionFinishRepo, blockRepo,
 		runEventRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()

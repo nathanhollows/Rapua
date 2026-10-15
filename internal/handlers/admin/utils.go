@@ -103,7 +103,6 @@ type DeleteService interface {
 	DeleteBlock(ctx context.Context, blockID string) error
 	DeleteQuest(ctx context.Context, userID, instanceID string) error
 	DeleteObjective(ctx context.Context, objectiveID string) error
-	ResetTeams(ctx context.Context, instanceID string, runCodes []string) error
 	DeleteTeams(ctx context.Context, instanceID string, teamIDs []string) error
 	DeleteUser(ctx context.Context, userID string) error
 }
@@ -207,6 +206,9 @@ type RunService interface {
 
 	BuildObjectiveSectionMap(ctx context.Context, questID string) (map[string]services.ObjectiveSectionInfo, error)
 	GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
+	GetRunLog(ctx context.Context, quest *models.Quest, team *models.Run) (services.RunLog, error)
+	GetRunProgress(ctx context.Context, questID, runCode string) (services.RunProgress, error)
+	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 	// LastSeenByRun returns each run's most recent block interaction, keyed by run code.
 	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
@@ -240,9 +242,8 @@ type LeaderBoardService interface {
 	GetLeaderBoardData(
 		ctx context.Context,
 		teams []models.Run,
-		objectiveCount int,
-		completedCounts map[string]int,
 		lastSeen map[string]time.Time,
+		summaries map[string]services.RunSummary,
 		rankingScheme string,
 		sortField string,
 		sortOrder string,

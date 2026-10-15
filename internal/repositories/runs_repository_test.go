@@ -150,42 +150,6 @@ func TestRunRepository_Delete(t *testing.T) {
 	}
 }
 
-func TestRunRepository_Reset(t *testing.T) {
-	repo, transactor, dbc, cleanup := setupTeamRepo(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	parents := createTestParents(t, dbc)
-
-	sampleTeam := []models.Run{{
-		ID:      uuid.New().String(),
-		Code:    gofakeit.Password(false, true, false, false, false, 4),
-		QuestID: parents.QuestID,
-	}}
-
-	// Insert team first
-	err := repo.Update(ctx, &sampleTeam[0])
-	require.NoError(t, err, "expected no error when saving team")
-
-	// Now reset it
-	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		require.NoError(t, err, "expected no error when starting transaction")
-	}
-	if _, resetErr := repo.Reset(ctx, tx, sampleTeam[0].QuestID, []string{sampleTeam[0].Code}); resetErr != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			require.NoError(t, rollbackErr, "expected no error when rolling back transaction")
-		}
-		require.NoError(t, resetErr, "expected no error when resetting team")
-	} else {
-		commitErr := tx.Commit()
-		require.NoError(t, commitErr, "expected no error when committing transaction")
-	}
-}
-
 func TestRunRepository_FindAll(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupTeamRepo(t)
 	defer cleanup()

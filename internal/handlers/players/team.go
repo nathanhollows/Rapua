@@ -23,7 +23,6 @@ func (h *PlayerHandler) Team(w http.ResponseWriter, r *http.Request) {
 	page := templates.Team(templates.TeamParams{
 		Run:         *team,
 		Leaderboard: h.leaderboard(r, team),
-		Objectives:  len(team.Quest.Objectives),
 	})
 	if err := templates.AppLayout(
 		page, templates.TeamChrome(*team), "Team", team.Messages,

@@ -11,9 +11,6 @@ type TeamParams struct {
 	Run models.Run
 	// Leaderboard is empty when the quest does not show one.
 	Leaderboard []services.LeaderBoardTeamData
-	// Objectives is how many there are to finish, for the progress a board
-	// entry counts against.
-	Objectives int
 }
 
 // standing finds this run's own entry, so its position can be said plainly
@@ -68,15 +65,20 @@ templ Team(data TeamParams) {
 				</li>
 				<!-- Only with a board, because the count comes from one. Not
 				said at all when points are on: the board is already ranking by
-				those, and two measures would compete. -->
+				those, and two measures would compete.
+
+				The entry's own total, not the quest's objective count: the
+				count carries the root and every draft, and would hand the
+				player a different denominator to the one their rank was
+				worked out against. -->
 				if !data.Run.Quest.Settings.EnablePoints {
 					<li class="list-row items-center">
 						<span class="opacity-60 text-sm">Objectives done</span>
 						<span class="list-col-grow"></span>
 						<span class="font-semibold tabular-nums">
 							{ fmt.Sprint(me.Progress) }
-							if data.Objectives > 0 {
-								<span class="font-normal opacity-50">of { fmt.Sprint(data.Objectives) }</span>
+							if me.Total > 0 {
+								<span class="font-normal opacity-50">of { fmt.Sprint(me.Total) }</span>
 							}
 						</span>
 					</li>

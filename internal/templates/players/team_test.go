@@ -53,3 +53,19 @@ func TestTeam_ShowsPositionOnlyWithABoard(t *testing.T) {
 	assert.Contains(t, html, "of 2")
 	assert.Equal(t, 1, strings.Count(html, ">Points</span>"), "the score is said once")
 }
+
+// Progress counts against the board entry's own total, so the number beside
+// the rank is the one the rank was worked out against. The quest's objective
+// count carries the root and every draft, and would read as a different game.
+func TestTeam_ProgressCountsAgainstTheBoardTotal(t *testing.T) {
+	html := render(t, Team(TeamParams{
+		Run: pointsRun(0, false),
+		Leaderboard: []services.LeaderBoardTeamData{
+			{Code: "FYHG", Progress: 7, Total: 12, Rank: 1},
+		},
+	}))
+
+	assert.Contains(t, html, ">Objectives done</span>")
+	assert.Contains(t, html, "7")
+	assert.Contains(t, html, "of 12")
+}

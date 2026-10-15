@@ -16,15 +16,12 @@ func NewLeaderBoardService() *LeaderBoardService {
 	return &LeaderBoardService{}
 }
 
-// GetLeaderBoardData returns sorted and ranked leaderboard data. completedCounts
-// and lastSeen are keyed by run code: each team's completed-objective count and
-// the time it last touched a block (see RunService.LastSeenByRun).
+// GetLeaderBoardData returns sorted and ranked data. lastSeen and summaries are keyed by run code.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
 	teams []models.Run,
-	objectiveCount int,
-	completedCounts map[string]int,
 	lastSeen map[string]time.Time,
+	summaries map[string]RunSummary,
 	rankingScheme string,
 	sortField string,
 	sortOrder string,
@@ -41,12 +38,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 			continue
 		}
 
-		teamData := s.convertTeamToLeaderBoardData(
-			team,
-			objectiveCount,
-			completedCounts[team.Code],
-			lastSeen[team.Code],
-		)
+		teamData := s.convertTeamToLeaderBoardData(team, lastSeen[team.Code], summaries[team.Code])
 		leaderBoardData = append(leaderBoardData, teamData)
 	}
 
@@ -64,10 +56,14 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 // last thing known about it. A zero value there would read as older than every
 // other run and quietly win the ranking tiebreak.
 func (s *LeaderBoardService) convertTeamToLeaderBoardData(
-	team models.Run, objectiveCount, completedCount int, lastSeen time.Time,
+	team models.Run, lastSeen time.Time, summary RunSummary,
 ) LeaderBoardTeamData {
 	if lastSeen.IsZero() {
 		lastSeen = team.StartedAt
+	}
+	if summary.Status == "" {
+		// A started run with an empty stream has no summary.
+		summary.Status = StatusStarted
 	}
 
 	return LeaderBoardTeamData{
@@ -76,21 +72,26 @@ func (s *LeaderBoardService) convertTeamToLeaderBoardData(
 		Name:       team.Name,
 		Points:     team.Points,
 		LastSeen:   lastSeen,
-		Progress:   completedCount,
-		Status:     s.determineTeamStatus(objectiveCount, completedCount),
+		Progress:   summary.Done,
+		Total:      summary.Total,
+		Status:     summary.Status,
 		HasStarted: team.HasStarted,
 	}
 }
 
-func (s *LeaderBoardService) determineTeamStatus(objectiveCount, completedCount int) TeamStatus {
-	if completedCount > 0 {
-		if objectiveCount > 0 && completedCount == objectiveCount {
-			return StatusFinished
-		}
-		return StatusTransit
+// fractionBefore compares shares, not counts: a run that finished a cut-short
+// branch would otherwise rank below one halfway through a long one, against its bar.
+func fractionBefore(a, b LeaderBoardTeamData) bool {
+	if a.Total > 0 && b.Total > 0 {
+		return a.Progress*b.Total > b.Progress*a.Total
 	}
+	return a.Progress > b.Progress
+}
 
-	return StatusStarted
+// fractionTied is defined through fractionBefore so the tie and order tests
+// cannot disagree, which would leave sort.Slice's result undefined.
+func fractionTied(a, b LeaderBoardTeamData) bool {
+	return !fractionBefore(a, b) && !fractionBefore(b, a)
 }
 
 // All ranking schemes use earliest last-updated time as tiebreaker to ensure no tied ranks.
@@ -108,12 +109,12 @@ func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme Ran
 }
 
 func (s *LeaderBoardService) rankByProgress(data []LeaderBoardTeamData) {
-	// Sort by progress descending, then by last seen ascending (earlier is better)
+	// Earlier last-seen wins a tie.
 	sort.Slice(data, func(i, j int) bool {
-		if data[i].Progress == data[j].Progress {
+		if fractionTied(data[i], data[j]) {
 			return data[i].LastSeen.Before(data[j].LastSeen)
 		}
-		return data[i].Progress > data[j].Progress
+		return fractionBefore(data[i], data[j])
 	})
 
 	// Assign sequential ranks - no ties allowed
@@ -151,10 +152,10 @@ func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData) {
 			return iFinished // Finished teams come first
 		}
 
-		if data[i].Progress == data[j].Progress {
+		if fractionTied(data[i], data[j]) {
 			return data[i].LastSeen.Before(data[j].LastSeen)
 		}
-		return data[i].Progress > data[j].Progress
+		return fractionBefore(data[i], data[j])
 	})
 
 	// Assign sequential ranks - no ties allowed
@@ -181,7 +182,7 @@ func (s *LeaderBoardService) sortLeaderBoardData(data []LeaderBoardTeamData, fie
 		case SortByLastSeen:
 			result = data[i].LastSeen.Before(data[j].LastSeen)
 		case SortByProgress:
-			result = data[i].Progress < data[j].Progress
+			result = fractionBefore(data[j], data[i])
 		case SortByStatus:
 			result = string(data[i].Status) < string(data[j].Status)
 		default:

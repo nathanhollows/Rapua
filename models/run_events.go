@@ -28,18 +28,15 @@ const (
 	// EventNotificationRead fires when a player dismisses a message, which is not
 	// the same as seeing it.
 	EventNotificationRead EventType = "notification_read"
-	// EventRunReset fires when an admin resets a run.
-	EventRunReset EventType = "run_reset"
-	// EventRunCompleted fires once per leg of a run, when its root objective
-	// completes. Completion is derived rather than written, so without this row
-	// the finish, which is the whole story's last line, has no record anywhere.
+	// EventRunCompleted fires once per run, when its root objective completes.
+	// Completion is derived rather than written, so without this row the finish,
+	// which is the whole story's last line, has no record anywhere.
 	EventRunCompleted EventType = "run_completed"
 )
 
 // RunEvent is one thing that happened to one run.
 //
-// Append-only: nothing updates or deletes a row. A run's reset does not clear its
-// earlier events, because the reset is itself part of what happened to it.
+// Append-only: nothing updates or deletes a row.
 type RunEvent struct {
 	ID          int64           `bun:"id,pk,autoincrement"`
 	RunCode     string          `bun:"run_code,notnull,type:varchar(36)"`
@@ -51,9 +48,8 @@ type RunEvent struct {
 	Data        json.RawMessage `bun:"data,type:jsonb"`
 
 	// Points is the change this event made to the run's score: the credited
-	// delta, negative for a block that deducts and for a reset, which carries
-	// what its wipe took off. Summing the column over a run rebuilds that run's
-	// total.
+	// delta, negative for a block that deducts. Summing the column over a run
+	// rebuilds that run's total.
 	Points int `bun:"points,notnull,default:0"`
 }
 
@@ -89,7 +85,7 @@ type ObjectiveContextCompletedData struct {
 }
 
 // UploadAddedData is the payload of an EventUploadAdded row. The URL may outlive
-// the file: a run reset deletes uploads and leaves the event standing.
+// the file: deleting a run removes its uploads and leaves the events standing.
 type UploadAddedData struct {
 	URL       string `json:"url"`
 	MediaType string `json:"media_type"`

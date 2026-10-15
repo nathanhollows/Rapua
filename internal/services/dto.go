@@ -49,12 +49,14 @@ type ObjectiveUpdateData struct {
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.
 type LeaderBoardTeamData struct {
-	ID         string
-	Code       string
-	Name       string
-	Points     int
-	LastSeen   time.Time
+	ID       string
+	Code     string
+	Name     string
+	Points   int
+	LastSeen time.Time
+	// Total makes Progress a share: raw counts mislead once runs differ in length.
 	Progress   int
+	Total      int
 	Status     TeamStatus
 	Rank       int
 	HasStarted bool
@@ -64,9 +66,14 @@ type LeaderBoardTeamData struct {
 type TeamStatus string
 
 const (
-	StatusStarted  TeamStatus = "started"
-	StatusTransit  TeamStatus = "transit"
-	StatusFinished TeamStatus = "finished"
+	StatusNotStarted TeamStatus = "not_started"
+	// StatusStarted has too little history for a pace.
+	StatusStarted   TeamStatus = "started"
+	StatusPlaying   TeamStatus = "playing"
+	StatusIdle      TeamStatus = "idle"
+	StatusStalled   TeamStatus = "stalled"
+	StatusAbandoned TeamStatus = "abandoned"
+	StatusFinished  TeamStatus = "finished"
 )
 
 // SortField represents the field to sort by.

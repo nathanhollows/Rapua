@@ -56,6 +56,8 @@ func setupObjectivesHandlerServices(t *testing.T) (
 	runService := services.NewRunService(
 		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
+		repositories.NewSectionFinishRepository(dbc),
+		repositories.NewBlockRepository(dbc, blockStateRepo),
 		repositories.NewRunEventRepository(dbc),
 	)
 

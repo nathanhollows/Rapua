@@ -14,10 +14,15 @@ func setupLeaderboardService(t *testing.T) *services.LeaderBoardService {
 	return services.NewLeaderBoardService()
 }
 
-// completedCounts maps run codes to completed-objective counts, mirroring what
-// production derives from ObjectiveContextCompletion rows.
-func completedCounts() map[string]int {
-	return map[string]int{"T001": 2, "T002": 1, "T003": 3, "T005": 2}
+// summaries mirrors what production derives from the tree, the completions
+// and the event stream: each run's done-over-owed, and its cadence.
+func summaries() map[string]services.RunSummary {
+	return map[string]services.RunSummary{
+		"T001": {Done: 2, Total: 3, Status: services.StatusPlaying},
+		"T002": {Done: 1, Total: 3, Status: services.StatusIdle},
+		"T003": {Done: 3, Total: 3, Status: services.StatusFinished},
+		"T005": {Done: 2, Total: 3, Status: services.StatusStalled},
+	}
 }
 
 // Helper function to create test teams with various states.
@@ -66,11 +71,10 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	ctx := context.Background()
 	teams := createTestTeams()
-	locationCount := 3
 
 	t.Run("RankByProgress", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), nil, "progress", "rank", "asc",
+			ctx, teams, nil, summaries(), "progress", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -100,7 +104,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("RankByPoints", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), nil, "points", "rank", "asc",
+			ctx, teams, nil, summaries(), "points", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -124,13 +128,13 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("RankByCompletion", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), nil, "completion", "rank", "asc",
+			ctx, teams, nil, summaries(), "completion", "rank", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
 
-		// Team3 has completed 3 objectives == locationCount, should be finished and rank 1.
+		// Team3 has completed all three, should be finished and rank 1.
 		found := false
 		for _, team := range result {
 			if team.Code == "T003" && team.Rank == 1 {
@@ -148,7 +152,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("SortByName", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), nil, "progress", "name", "asc",
+			ctx, teams, nil, summaries(), "progress", "name", "asc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -162,7 +166,7 @@ func TestLeaderBoardService_GetLeaderBoardData(t *testing.T) {
 
 	t.Run("SortDescending", func(t *testing.T) {
 		result, err := service.GetLeaderBoardData(
-			ctx, teams, locationCount, completedCounts(), nil, "progress", "points", "desc",
+			ctx, teams, nil, summaries(), "progress", "points", "desc",
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
@@ -179,21 +183,20 @@ func TestLeaderBoardService_TeamStatus(t *testing.T) {
 	service := setupLeaderboardService(t)
 
 	teams := createTestTeams()
-	locationCount := 3
 
 	testCases := []struct {
 		runCode        string
 		expectedStatus services.TeamStatus
 	}{
-		{"T001", services.StatusTransit},  // Has 2 of 3 objectives complete.
-		{"T002", services.StatusTransit},  // Has 1 of 3 objectives complete.
+		{"T001", services.StatusPlaying},  // Two of three done, moving at its usual pace.
+		{"T002", services.StatusIdle},     // One of three done, quiet for a while.
 		{"T003", services.StatusFinished}, // Has 3 of 3 objectives complete.
-		{"T005", services.StatusTransit},  // Has 2 of 3 objectives complete.
+		{"T005", services.StatusStalled},  // Two of three done, quiet for too long.
 	}
 
 	ctx := context.Background()
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, locationCount, completedCounts(), nil, "progress", "rank", "asc",
+		ctx, teams, nil, summaries(), "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -373,7 +376,7 @@ func TestLeaderBoardService_LastSeenCalculation(t *testing.T) {
 	}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), map[string]time.Time{"T001": baseTime}, "progress", "rank", "asc",
+		ctx, teams, map[string]time.Time{"T001": baseTime}, summaries(), "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -408,7 +411,7 @@ func TestLeaderBoardService_LastSeenFallsBackToStartedAt(t *testing.T) {
 	}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), nil, "progress", "rank", "asc",
+		ctx, teams, nil, summaries(), "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -419,6 +422,41 @@ func TestLeaderBoardService_LastSeenFallsBackToStartedAt(t *testing.T) {
 	}
 }
 
+// Two runs level on progress fall back to last seen, and a run that owes
+// nothing is not level with a run part-way through: the tie test and the order
+// test are one predicate, so the order never disagrees with the bars.
+func TestLeaderBoardService_TiesAgreeWithTheOrder(t *testing.T) {
+	service := setupLeaderboardService(t)
+
+	ctx := context.Background()
+	teams := []models.Run{
+		{ID: "a", Code: "T001", Name: "Owes nothing", HasStarted: true},
+		{ID: "b", Code: "T002", Name: "Under way", HasStarted: true},
+	}
+	// Compared as products, nothing owed and nothing done multiplies out level
+	// with part-way through, which would hand the rank to whichever was seen
+	// first.
+	lastSeen := map[string]time.Time{
+		"T001": time.Now().Add(-2 * time.Hour),
+		"T002": time.Now().Add(-time.Hour),
+	}
+	progress := map[string]services.RunSummary{
+		"T001": {Done: 0, Total: 0, Status: services.StatusStalled},
+		"T002": {Done: 1, Total: 3, Status: services.StatusPlaying},
+	}
+
+	result, err := service.GetLeaderBoardData(ctx, teams, lastSeen, progress, "progress", "rank", "asc")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("Expected 2 teams, got %d", len(result))
+	}
+	if result[0].Code != "T002" {
+		t.Errorf("Expected the run part-way through to rank first, got %s", result[0].Code)
+	}
+}
+
 func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	service := setupLeaderboardService(t)
 
@@ -426,7 +464,7 @@ func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	teams := []models.Run{}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), nil, "progress", "rank", "asc",
+		ctx, teams, nil, summaries(), "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -460,15 +498,15 @@ func TestLeaderBoardService_TieBreaker(t *testing.T) {
 			HasStarted: true,
 		},
 	}
-	// T001 and T005 both map to 2 completed objectives in completedCounts(), so
-	// the tie must be broken by LastSeen alone.
+	// T001 and T005 both sit at two of three done, so the tie must be broken
+	// by LastSeen alone.
 	lastSeen := map[string]time.Time{
 		"T001": baseTime.Add(time.Minute * 10), // Later last seen.
 		"T005": baseTime,                       // Earlier last seen.
 	}
 
 	result, err := service.GetLeaderBoardData(
-		ctx, teams, 3, completedCounts(), lastSeen, "progress", "rank", "asc",
+		ctx, teams, lastSeen, summaries(), "progress", "rank", "asc",
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

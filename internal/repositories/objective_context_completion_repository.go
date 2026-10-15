@@ -32,6 +32,10 @@ type ObjectiveContextCompletionRepository interface {
 		runCode string,
 		blockContext game.BlockContext,
 	) ([]string, error)
+	// FindCompletedByQuest avoids a scan per run when a whole quest is read.
+	FindCompletedByQuest(
+		ctx context.Context, questID string, blockContext game.BlockContext,
+	) (map[string][]string, error)
 	// FindCompletedObjectiveIDsOrdered is FindCompletedObjectiveIDs ordered by
 	// completion time, most recent first, for the player's /journal.
 	FindCompletedObjectiveIDsOrdered(
@@ -97,6 +101,32 @@ func insertCompletion(
 		return false, err
 	}
 	return affected > 0, nil
+}
+
+func (r *objectiveContextCompletionRepository) FindCompletedByQuest(
+	ctx context.Context, questID string, blockContext game.BlockContext,
+) (map[string][]string, error) {
+	var rows []struct {
+		RunCode     string `bun:"run_code"`
+		ObjectiveID string `bun:"objective_id"`
+	}
+	// The log has no quest column, so go through the objective.
+	err := r.db.NewSelect().
+		TableExpr("objective_context_completions AS occ").
+		ColumnExpr("occ.run_code AS run_code").
+		ColumnExpr("occ.objective_id AS objective_id").
+		Join("JOIN objectives AS o ON o.id = occ.objective_id").
+		Where("o.quest_id = ? AND occ.context = ?", questID, blockContext).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+
+	byRun := make(map[string][]string)
+	for _, row := range rows {
+		byRun[row.RunCode] = append(byRun[row.RunCode], row.ObjectiveID)
+	}
+	return byRun, nil
 }
 
 func (r *objectiveContextCompletionRepository) FindCompletedObjectiveIDs(

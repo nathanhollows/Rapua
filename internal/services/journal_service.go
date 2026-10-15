@@ -34,9 +34,6 @@ const (
 	JournalStart JournalEntryKind = "start"
 	// JournalFinish is the story's last line: the root objective completing.
 	JournalFinish JournalEntryKind = "finish"
-	// JournalReset is the floor of the player's view, drawn where the diary
-	// begins: nothing older is shown.
-	JournalReset JournalEntryKind = "reset"
 )
 
 // JournalEntry is one line of the run's diary.
@@ -114,24 +111,12 @@ func BuildJournal(
 		byID[obj.ID] = obj
 	}
 
-	// The player's diary begins after the last reset. Everything older is one
-	// query away for the admin and the corpus, and out of the player's sight.
-	floor := 0
-	var reset *models.RunEvent
-	for i, event := range events {
-		if event.Type == models.EventRunReset {
-			floor = i + 1
-			reset = &events[i]
-		}
-	}
-	kept := events[floor:]
-
-	reads := notificationReads(kept)
+	reads := notificationReads(events)
 	children := inPlayChildren(objectives)
-	credits := objectiveCredits(kept)
+	credits := objectiveCredits(events)
 
-	entries := make([]JournalEntry, 0, len(kept))
-	for i, event := range kept {
+	entries := make([]JournalEntry, 0, len(events))
+	for i, event := range events {
 		if entry, ok := journalEntryFor(event, credits[i], byID, reads, children, complete); ok {
 			entries = append(entries, entry)
 		}
@@ -142,15 +127,9 @@ func BuildJournal(
 	// event worth its own line.
 	for i := range entries {
 		if entries[i].Kind == JournalStart {
-			entries[i].Title = lastName(kept)
+			entries[i].Title = lastName(events)
 			break
 		}
-	}
-
-	// The reset is the oldest thing in the player's view, so it opens the
-	// oldest-first list and lands at the bottom of the feed once reversed.
-	if reset != nil {
-		entries = append([]JournalEntry{{Kind: JournalReset, Time: reset.CreatedAt}}, entries...)
 	}
 
 	slices.Reverse(entries)
@@ -190,10 +169,9 @@ func journalEntryFor(
 		return journalSection(event, byID, children, complete)
 
 	case models.EventRunNamed, models.EventObjectivesListed, models.EventObjectiveViewed,
-		models.EventNotificationRead, models.EventRunReset:
+		models.EventNotificationRead:
 		// Recorded, not shown. The name folds into the opening line; views and
-		// listings are cadence data; reads annotate their own message; the
-		// reset is drawn as the floor of the view below.
+		// listings are cadence data; reads annotate their own message.
 		return JournalEntry{}, false
 	}
 	return JournalEntry{}, false
@@ -308,7 +286,7 @@ func journalSection(
 	}, true
 }
 
-// objectiveCredits maps each context completion, by its index in the kept
+// objectiveCredits maps each context completion, by its index in the
 // stream, to what the objective had paid by then: the ledger's own answers for
 // it, summed. The completion payload carries only the closing submission's
 // credit, which understates an objective whose earlier blocks paid and reads as
@@ -363,7 +341,7 @@ func inPlayChildren(objectives []models.Objective) map[string][]string {
 	return children
 }
 
-// lastName is the run's name as last set in the kept stream.
+// lastName is the run's name as last set in the stream.
 func lastName(events []models.RunEvent) string {
 	name := ""
 	for _, event := range events {

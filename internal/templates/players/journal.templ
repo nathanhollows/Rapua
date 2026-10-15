@@ -22,7 +22,7 @@ type JournalParams struct {
 // their own times.
 templ Journal(data JournalParams) {
 	{{ shown := filteredEntries(data.View.Entries, data.Show) }}
-	<div class="flex flex-col gap-3">
+	<div id="journal" class="flex flex-col gap-3">
 		@journalTabs(data.Show)
 		if len(shown) == 0 {
 			if len(data.View.Entries) == 0 {
@@ -54,7 +54,10 @@ templ journalTabs(show string) {
 			<a
 				role="tab"
 				href={ templ.URL(journalChipHref(chip.Slug)) }
-				hx-boost="true"
+				hx-get={ templ.URL(journalChipHref(chip.Slug)) }
+				hx-target="#journal"
+				hx-swap="outerHTML"
+				hx-push-url="false"
 				class={ "tab", templ.KV("tab-active", show == chip.Slug) }
 			>
 				{ chip.Label }
@@ -80,8 +83,6 @@ templ journalEntry(entry services.JournalEntry, showPoints bool) {
 			@journalStart(entry)
 		case services.JournalFinish:
 			@journalFinish(entry)
-		case services.JournalReset:
-			@journalReset(entry)
 	}
 }
 
@@ -225,15 +226,6 @@ templ journalFinish(entry services.JournalEntry) {
 			@journalTimeTag(entry)
 			<span class="block text-sm font-semibold text-pretty">You finished the run.</span>
 		</span>
-	</div>
-}
-
-// journalReset is the floor of the player's view: everything older is hidden.
-templ journalReset(entry services.JournalEntry) {
-	<div class="flex items-center gap-3 px-1 text-xs opacity-50">
-		<span class="grow border-t border-dashed border-base-content/40"></span>
-		<span>You started over here &middot; { journalTime(entry.Time) }</span>
-		<span class="grow border-t border-dashed border-base-content/40"></span>
 	</div>
 }
 

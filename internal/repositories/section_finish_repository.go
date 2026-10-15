@@ -21,6 +21,8 @@ type SectionFinishRepository interface {
 	InsertWithTx(ctx context.Context, tx *bun.Tx, runCode, objectiveID string) (inserted bool, err error)
 	// FindFinishedObjectiveIDs returns every objective this run has finished.
 	FindFinishedObjectiveIDs(ctx context.Context, runCode string) ([]string, error)
+	// FindFinishedByQuest avoids a query per run when a whole quest is read.
+	FindFinishedByQuest(ctx context.Context, questID string) (map[string][]string, error)
 }
 
 type sectionFinishRepository struct {
@@ -42,6 +44,31 @@ func (r *sectionFinishRepository) InsertWithTx(
 	ctx context.Context, tx *bun.Tx, runCode, objectiveID string,
 ) (bool, error) {
 	return insertSectionFinish(ctx, tx, runCode, objectiveID)
+}
+
+func (r *sectionFinishRepository) FindFinishedByQuest(
+	ctx context.Context, questID string,
+) (map[string][]string, error) {
+	var rows []struct {
+		RunCode     string `bun:"run_code"`
+		ObjectiveID string `bun:"objective_id"`
+	}
+	err := r.db.NewSelect().
+		TableExpr("section_finishes AS sf").
+		ColumnExpr("sf.run_code AS run_code").
+		ColumnExpr("sf.objective_id AS objective_id").
+		Join("JOIN runs AS r ON r.code = sf.run_code").
+		Where("r.quest_id = ?", questID).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+
+	byRun := make(map[string][]string)
+	for _, row := range rows {
+		byRun[row.RunCode] = append(byRun[row.RunCode], row.ObjectiveID)
+	}
+	return byRun, nil
 }
 
 // insertSectionFinish reports whether this call is the one that recorded the

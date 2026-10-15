@@ -90,9 +90,8 @@ type LeaderBoardService interface {
 	GetLeaderBoardData(
 		ctx context.Context,
 		teams []models.Run,
-		objectiveCount int,
-		completedCounts map[string]int,
 		lastSeen map[string]time.Time,
+		summaries map[string]services.RunSummary,
 		rankingScheme string,
 		sortField string,
 		sortOrder string,
@@ -108,6 +107,7 @@ type RunService interface {
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
 	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
+	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
 }
 
 type UploadService interface {

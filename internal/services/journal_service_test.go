@@ -106,24 +106,23 @@ func TestBuildJournal_FindSumsWhatTheObjectivePaid(t *testing.T) {
 	assert.Equal(t, 10, view.Entries[0].Points)
 }
 
-// Entries run newest first, and the reset is the floor: nothing older than it
-// is drawn, though the feed still ends on its line.
-func TestBuildJournal_TheResetIsTheFloor(t *testing.T) {
+// Entries run newest first, and the diary is the run's whole stream: every
+// find the stream holds is drawn.
+func TestBuildJournal_DrawsEveryFindInTheStream(t *testing.T) {
 	events := []models.RunEvent{
 		ev(at(1), models.EventObjectiveContextCompleted,
 			models.ObjectiveContextCompletedData{Context: game.ContextObjectiveProof, Points: 10}),
-		ev(at(10), models.EventRunReset, nil),
 		ev(at(20), models.EventObjectiveContextCompleted,
 			models.ObjectiveContextCompletedData{Context: game.ContextObjectiveProof, Points: 10}),
 	}
 
 	view := services.BuildJournal(events, journalTree(), map[string]bool{})
 
-	require.Len(t, view.Entries, 2, "the pre-reset find is hidden")
+	require.Len(t, view.Entries, 2)
 	assert.Equal(t, services.JournalFind, view.Entries[0].Kind)
 	assert.Equal(t, at(20), view.Entries[0].Time)
-	assert.Equal(t, services.JournalReset, view.Entries[1].Kind)
-	assert.Equal(t, at(10), view.Entries[1].Time)
+	assert.Equal(t, services.JournalFind, view.Entries[1].Kind)
+	assert.Equal(t, at(1), view.Entries[1].Time)
 }
 
 // The opening line folds the greeting and the name into one, and takes the name
@@ -220,22 +219,6 @@ func TestBuildJournal_TheFinishIsTheLastLine(t *testing.T) {
 	require.Len(t, view.Entries, 3)
 	assert.Equal(t, services.JournalFinish, view.Entries[0].Kind)
 	assert.Equal(t, at(20), view.Entries[0].Time)
-}
-
-// A reset hides everything before it, an earlier finish included: the leg the
-// player is on has not been finished yet.
-func TestBuildJournal_ResetHidesAnEarlierFinish(t *testing.T) {
-	events := []models.RunEvent{
-		ev(at(1), models.EventRunCompleted, nil),
-		ev(at(5), models.EventRunReset, nil),
-		ev(at(10), models.EventRunStarted, nil),
-	}
-
-	view := services.BuildJournal(events, journalTree(), map[string]bool{})
-
-	require.Len(t, view.Entries, 2)
-	assert.Equal(t, services.JournalStart, view.Entries[0].Kind)
-	assert.Equal(t, services.JournalReset, view.Entries[1].Kind)
 }
 
 func TestBuildJournal_EmptyStream(t *testing.T) {

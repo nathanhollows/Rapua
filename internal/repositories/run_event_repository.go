@@ -35,11 +35,10 @@ type RunEventRepository interface {
 		ctx context.Context, questID string, types []models.EventType, since time.Time,
 	) (map[string][]time.Time, error)
 
-	// CompletedSinceResetWithTx reports whether the run already has a
-	// run_completed event after its most recent reset. Read inside the caller's
-	// transaction, where the write lock makes the answer decisive against a
-	// second completion racing the first.
-	CompletedSinceResetWithTx(ctx context.Context, tx *bun.Tx, runCode string) (bool, error)
+	// RunCompletedWithTx reports whether the run has already recorded its
+	// completion. Read inside the caller's transaction, where the write lock
+	// makes the answer decisive against a second completion racing the first.
+	RunCompletedWithTx(ctx context.Context, tx *bun.Tx, runCode string) (bool, error)
 }
 
 type runEventRepository struct {
@@ -72,17 +71,13 @@ func (r *runEventRepository) RecordWithTx(ctx context.Context, tx *bun.Tx, event
 	return err
 }
 
-func (r *runEventRepository) CompletedSinceResetWithTx(
+func (r *runEventRepository) RunCompletedWithTx(
 	ctx context.Context, tx *bun.Tx, runCode string,
 ) (bool, error) {
 	return tx.NewSelect().
 		Model((*models.RunEvent)(nil)).
 		Where("run_code = ?", runCode).
 		Where("type = ?", models.EventRunCompleted).
-		Where(
-			`id > COALESCE((SELECT MAX(id) FROM run_events WHERE run_code = ? AND type = ?), 0)`,
-			runCode, models.EventRunReset,
-		).
 		Exists(ctx)
 }
 

@@ -51,12 +51,12 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		sortOrder = "asc"
 	}
 
-	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	summaries, err := h.runService.GetQuestRunSummaries(r.Context(), user.CurrentQuestID)
 	if err != nil {
 		h.handleError(
 			w,
 			r,
-			"ActivityRunsOverview: counting completed objectives",
+			"ActivityRunsOverview: building run summaries",
 			"Error getting leaderboard data",
 			"Could not load data",
 			err,
@@ -81,9 +81,8 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(
 		r.Context(),
 		teams,
-		len(user.CurrentQuest.Objectives),
-		completedCounts,
 		lastSeen,
+		summaries,
 		rankingScheme,
 		sortField,
 		sortOrder,

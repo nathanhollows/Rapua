@@ -1,11 +1,11 @@
 package admin
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v8/internal/services"
 	admin "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -13,8 +13,15 @@ import (
 func (h *Handler) Runs(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	c := admin.Teams(user.CurrentQuest.Runs, user.FreeCredits+user.PaidCredits)
-	err := admin.Layout(c, *user, "Runs", "Runs").Render(r.Context(), w)
+	// Status is a bonus on a list about codes and access, so degrade rather than fail.
+	summaries, err := h.runService.GetQuestRunSummaries(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.WarnContext(r.Context(), "Runs: building run summaries", "error", err)
+		summaries = nil
+	}
+
+	c := admin.Teams(user.CurrentQuest.Runs, user.FreeCredits+user.PaidCredits, summaries)
+	err = admin.Layout(c, *user, "Runs", "Runs").Render(r.Context(), w)
 
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering teams page", "error", err.Error())
@@ -70,7 +77,8 @@ func (h *Handler) RunsAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = admin.TeamsList(teams).Render(r.Context(), w)
+	// A new run has no stream yet, so it draws as not started.
+	err = admin.TeamsList(teams, nil).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(
 			r.Context(),
@@ -103,22 +111,25 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.runService.LoadRelations(r.Context(), team)
-	if err != nil {
-		h.handleError(w, r, "TeamOverview: loading scans", "Error loading data", "Could not load data", err)
+	// A filter click swaps the card alone, keeping scroll and skipping the other queries.
+	if r.Header.Get("Hx-Target") == "run-log-card" {
+		runLog, logErr := h.runService.GetRunLog(r.Context(), &user.CurrentQuest, team)
+		if logErr != nil {
+			h.handleError(
+				w, r, "TeamOverview: building the run log", "Error loading data", "Could not load data", logErr,
+			)
+			return
+		}
+		err = admin.RunLogCard(runLog, r.URL.Query().Get("show"), team.Code).Render(r.Context(), w)
+		if err != nil {
+			h.logger.ErrorContext(r.Context(), "rendering the run log card", "error", err.Error())
+		}
 		return
 	}
 
-	incompleteObjectives, err := h.runService.GetIncompleteObjectives(r.Context(), user.CurrentQuestID, team.Code)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"TeamOverview: getting incomplete objectives",
-			"Error getting incomplete objectives",
-			"Could not load data",
-			err,
-		)
+		h.handleError(w, r, "TeamOverview: loading scans", "Error loading data", "Could not load data", err)
 		return
 	}
 
@@ -135,35 +146,35 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get uploads for this team
-	uploads, err := h.uploadService.Search(r.Context(), map[string]string{
-		"run_code": team.Code,
-	})
+	progress, err := h.runService.GetRunProgress(r.Context(), user.CurrentQuestID, team.Code)
 	if err != nil {
-		h.logger.WarnContext(r.Context(), "TeamOverview: failed to load uploads", "error", err, "run_code", team.Code)
-		// Continue without uploads rather than failing completely
-		uploads = []*models.Upload{}
+		h.handleError(w, r, "TeamOverview: loading progress", "Error loading data", "Could not load data", err)
+		return
 	}
 
-	objectiveSections, err := h.runService.BuildObjectiveSectionMap(r.Context(), user.CurrentQuest.ID)
+	uploads := h.runOverviewUploads(r.Context(), team)
+
+	runLog, err := h.runService.GetRunLog(r.Context(), &user.CurrentQuest, team)
 	if err != nil {
-		// The section label is decoration on this card; losing it should not
-		// cost the admin the whole page.
-		h.logger.WarnContext(r.Context(), "TeamOverview: loading objective sections", "error", err)
-		objectiveSections = map[string]services.ObjectiveSectionInfo{}
+		h.handleError(w, r, "TeamOverview: building the run log", "Error loading data", "Could not load data", err)
+		return
 	}
 
 	data := admin.TeamOverviewData{
-		Quest:                user.CurrentQuest,
-		Run:                  *team,
-		Notifications:        notifications,
-		IncompleteObjectives: incompleteObjectives,
-		Uploads:              uploads,
-		TotalObjectives:      len(user.CurrentQuest.Objectives),
-		ObjectiveSections:    objectiveSections,
+		Quest:         user.CurrentQuest,
+		Run:           *team,
+		Notifications: notifications,
+		Uploads:       uploads,
+		Progress:      progress,
+		RunLog:        runLog,
+		Show:          r.URL.Query().Get("show"),
 	}
 	c := admin.TeamOverview(data)
-	err = admin.Layout(c, *user, "Runs", "Run overview").Render(r.Context(), w)
+	title := team.Name
+	if title == "" {
+		title = "Run " + team.Code
+	}
+	err = admin.Layout(c, *user, "Runs", title).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
 			w,
@@ -177,6 +188,16 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+}
+
+// runOverviewUploads degrades to empty: uploads should not cost the admin the page.
+func (h *Handler) runOverviewUploads(ctx context.Context, team *models.Run) []*models.Upload {
+	uploads, err := h.uploadService.Search(ctx, map[string]string{"run_code": team.Code})
+	if err != nil {
+		h.logger.WarnContext(ctx, "TeamOverview: failed to load uploads", "error", err, "run_code", team.Code)
+		return []*models.Upload{}
+	}
+	return uploads
 }
 
 func (h *Handler) RunDelete(w http.ResponseWriter, r *http.Request) {
@@ -220,47 +241,4 @@ func (h *Handler) RunDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.redirect(w, r, "/admin/")
-}
-
-func (h *Handler) RunReset(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-	runCode := chi.URLParam(r, "runCode")
-
-	// Verify team exists and belongs to current instance
-	team, err := h.runService.GetRunByCode(r.Context(), runCode)
-	if err != nil || team == nil || team.QuestID != user.CurrentQuestID {
-		h.handleError(
-			w,
-			r,
-			"TeamReset: team not found or access denied",
-			"Error resetting team",
-			"error",
-			err,
-			"run_code",
-			runCode,
-			"quest_id",
-			user.CurrentQuestID,
-		)
-		return
-	}
-
-	// Reset the team
-	err = h.deleteService.ResetTeams(r.Context(), user.CurrentQuestID, []string{runCode})
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"TeamReset: resetting team",
-			"Error resetting team",
-			"error",
-			err,
-			"quest_id",
-			user.CurrentQuestID,
-			"run_code",
-			runCode,
-		)
-		return
-	}
-
-	h.redirect(w, r, "/admin/runs")
 }

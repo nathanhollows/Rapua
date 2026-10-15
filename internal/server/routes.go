@@ -413,7 +413,6 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Post("/add", adminHandler.RunsAdd)
 			r.Get("/{runCode}", adminHandler.RunOverview)
 			r.Delete("/{runCode}", adminHandler.RunDelete)
-			r.Post("/{runCode}/reset", adminHandler.RunReset)
 		})
 
 		r.Route("/quests", func(r chi.Router) {

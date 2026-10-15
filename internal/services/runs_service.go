@@ -37,7 +37,9 @@ type RunService struct {
 	blockStateRepo                 repositories.BlockStateRepository
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	sectionFinishRepo              repositories.SectionFinishRepository
 	runEventRepo                   repositories.RunEventRepository
+	loader                         runStateLoader
 	batchSize                      int
 }
 
@@ -48,6 +50,8 @@ func NewRunService(
 	bsr repositories.BlockStateRepository,
 	objectiveRepo repositories.ObjectiveRepository,
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
+	sectionFinishRepo repositories.SectionFinishRepository,
+	blockRepo repositories.BlockRepository,
 	runEventRepo repositories.RunEventRepository,
 ) *RunService {
 	return &RunService{
@@ -57,8 +61,15 @@ func NewRunService(
 		blockStateRepo:                 bsr,
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		sectionFinishRepo:              sectionFinishRepo,
 		runEventRepo:                   runEventRepo,
-		batchSize:                      batchSize,
+		loader: runStateLoader{
+			objectiveRepo:                  objectiveRepo,
+			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+			sectionFinishRepo:              sectionFinishRepo,
+			blockRepo:                      blockRepo,
+		},
+		batchSize: batchSize,
 	}
 }
 
@@ -359,6 +370,21 @@ func (s *RunService) CountCompletedObjectivesByRun(ctx context.Context, questID 
 // LastSeenByRun reports each run's most recent block interaction, keyed by run code.
 func (s *RunService) LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error) {
 	return s.blockStateRepo.LastSeenByRun(ctx, questID)
+}
+
+func (s *RunService) GetRunLog(ctx context.Context, quest *models.Quest, team *models.Run) (RunLog, error) {
+	events, err := s.runEventRepo.ListByRun(ctx, team.Code)
+	if err != nil {
+		return RunLog{}, fmt.Errorf("loading run events: %w", err)
+	}
+
+	// Stands in for a run too young to have a pace.
+	times, err := s.runEventRepo.TimesByType(ctx, quest.ID, meaningfulTypes, time.Time{})
+	if err != nil {
+		return RunLog{}, fmt.Errorf("loading the quest's pace: %w", err)
+	}
+
+	return BuildRunLog(events, quest.Objectives, QuestBaseline(times), time.Now()), nil
 }
 
 // newCode generates an alpha string of easily recognisable characters.
