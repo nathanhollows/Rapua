@@ -37,7 +37,7 @@ func TestParseUploadedDoc_JSONBody(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(validImportDocJSON()))
 	req.Header.Set("Content-Type", "application/json")
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.NoError(t, err)
 	assert.Equal(t, "v8", doc.Rapua)
@@ -56,7 +56,7 @@ func TestParseUploadedDoc_MultipartFile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.NoError(t, err)
 	assert.Equal(t, "v8", doc.Rapua)
@@ -67,7 +67,7 @@ func TestParseUploadedDoc_InvalidJSON(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.Error(t, err)
 	assert.Nil(t, doc)
@@ -81,9 +81,23 @@ func TestParseUploadedDoc_MultipartMissingFile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.Error(t, err)
+	assert.Nil(t, doc)
+}
+
+// An import past the cap is refused with the size named, rather than being
+// shortened by a limit reader and read back as malformed JSON.
+func TestParseUploadedDoc_OversizedIsRefused(t *testing.T) {
+	padded := append([]byte(validImportDocJSON()), bytes.Repeat([]byte(" "), maxDocBytes)...)
+	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(padded))
+	req.Header.Set("Content-Type", "application/json")
+
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "too large")
 	assert.Nil(t, doc)
 }
 

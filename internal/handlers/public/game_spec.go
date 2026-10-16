@@ -30,7 +30,7 @@ func (h *Handler) SpecJSON(w http.ResponseWriter, _ *http.Request) {
 //
 //	POST /api/v8/lint
 func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
-	data, err := parseGameBytes(r)
+	data, err := parseGameBytes(w, r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("invalid document: %v", err), http.StatusBadRequest)
 		return
@@ -51,14 +51,30 @@ func (h *Handler) LintDoc(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-const maxUploadBytes = 4 << 20 // 4 MB
+// maxDocMB is the document limit in the units the error speaks: a reader
+// told "over 4 MB" should be able to match that to the cap.
+const maxDocMB = 4
+
+const maxDocBytes = maxDocMB << 20 // 4 MB
+
+// maxFramingMB is the MIME framing and any other fields a request carries
+// around the document, so the ceiling sits above the limit rather than on it.
+const maxFramingMB = 1
+
+//nolint:mnd // Bytes are the cap; megabytes are how it is said.
+const maxRequestBytes = maxDocBytes + (maxFramingMB << 20)
 
 // parseGameBytes reads raw JSON bytes from a multipart file upload (field "file") or raw JSON body.
-func parseGameBytes(r *http.Request) ([]byte, error) {
+//
+// This route is public, so the body is capped before anything reads it: the
+// multipart parse spills what it cannot hold in memory to disk, and an
+// unbounded read of the file grows with whatever the caller sent.
+func parseGameBytes(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
 	contentType := r.Header.Get("Content-Type")
 
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
+		if err := r.ParseMultipartForm(maxDocBytes); err != nil {
 			return nil, fmt.Errorf("parse form: %w", err)
 		}
 		f, _, err := r.FormFile("file")
@@ -66,29 +82,21 @@ func parseGameBytes(r *http.Request) ([]byte, error) {
 			return nil, fmt.Errorf("read file field: %w", err)
 		}
 		defer f.Close()
-		data, err := io.ReadAll(f)
-		if err != nil {
-			return nil, fmt.Errorf("read file: %w", err)
-		}
-		return data, nil
+		return readDocument(io.LimitReader(f, maxDocBytes+1))
 	}
 
-	data, err := io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
+	return readDocument(io.LimitReader(r.Body, maxDocBytes+1))
+}
+
+// readDocument reads a document and refuses one past the cap, which a limit reader alone would
+// silently shorten into a parse error about something else.
+func readDocument(reader io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("read body: %w", err)
 	}
+	if len(data) > maxDocBytes {
+		return nil, fmt.Errorf("document too large: over %d MB", maxDocMB)
+	}
 	return data, nil
-}
-
-// parseGameDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.
-func parseGameDoc(r *http.Request) (*game.GameDoc, error) {
-	data, err := parseGameBytes(r)
-	if err != nil {
-		return nil, err
-	}
-	var doc game.GameDoc
-	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, fmt.Errorf("unmarshal: %w", err)
-	}
-	return &doc, nil
 }

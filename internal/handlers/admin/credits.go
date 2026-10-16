@@ -65,9 +65,14 @@ func (h *Handler) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) 
 	h.redirect(w, r, session.URL)
 }
 
+// maxWebhookBytes caps a webhook body before it is read. The route is public
+// and answers to a signature rather than a session, so the size is the only
+// thing the caller cannot choose: Stripe's largest events are a fraction of it.
+const maxWebhookBytes = 1 << 20 // 1 MB
+
 // StripeWebhook handles Stripe webhook events.
 func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
-	// Read request body
+	r.Body = http.MaxBytesReader(w, r.Body, maxWebhookBytes)
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "StripeWebhook: read body", "error", err)

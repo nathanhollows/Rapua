@@ -76,7 +76,7 @@ func (h *Handler) ExportQuest(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	doc, err := parseUploadedDoc(r)
+	doc, err := parseUploadedDoc(w, r)
 	if err != nil {
 		_ = templates.ImportErrorResult(fmt.Sprintf("Could not read file: %v", err)).Render(r.Context(), w)
 		return
@@ -102,7 +102,7 @@ func (h *Handler) ImportCheck(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ImportInstanceCreate(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	doc, err := parseUploadedDoc(r)
+	doc, err := parseUploadedDoc(w, r)
 	if err != nil {
 		_ = templates.ImportErrorResult(fmt.Sprintf("Could not read file: %v", err)).Render(r.Context(), w)
 		return
@@ -144,7 +144,7 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := parseUploadedDoc(r)
+	doc, err := parseUploadedDoc(w, r)
 	if err != nil {
 		_ = templates.ImportErrorResult(fmt.Sprintf("Could not read file: %v", err)).Render(r.Context(), w)
 		return
@@ -159,13 +159,24 @@ func (h *Handler) ImportInstanceUpdate(w http.ResponseWriter, r *http.Request) {
 	h.redirect(w, r, "/admin/quests")
 }
 
-const maxUploadBytes = 4 << 20 // 4 MB
+// maxDocMB is the document limit in the units the error speaks: a reader
+// told "over 4 MB" should be able to match that to the cap.
+const maxDocMB = 4
+
+const maxDocBytes = maxDocMB << 20 // 4 MB
+
+// maxFramingMB is the MIME framing and any other fields a request carries
+// around the document, so the ceiling sits above the limit rather than on it.
+const maxFramingMB = 1
+
+//nolint:mnd // Bytes are the cap; megabytes are how it is said.
+const maxRequestBytes = maxDocBytes + (maxFramingMB << 20)
 
 // parseUploadedDoc reads a GameDoc from a multipart file upload (field "file") or raw JSON body.
-func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) {
+func parseUploadedDoc(w http.ResponseWriter, r *http.Request) (*game.GameDoc, error) {
 	contentType := r.Header.Get("Content-Type")
 
-	data, err := readUploadData(r, contentType)
+	data, err := readUploadData(w, r, contentType)
 	if err != nil {
 		return nil, err
 	}
@@ -177,16 +188,16 @@ func parseUploadedDoc(r *http.Request) (*game.GameDoc, error) {
 	return &doc, nil
 }
 
-// readUploadData reads the raw bytes from either a multipart upload or a raw JSON body.
-func readUploadData(r *http.Request, contentType string) ([]byte, error) {
+// readUploadData reads the raw bytes from either a multipart upload or a raw JSON body. The body is
+// capped before anything reads it, so an oversized import is refused rather than spooled to disk and
+// then truncated into a parse error.
+func readUploadData(w http.ResponseWriter, r *http.Request, contentType string) ([]byte, error) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
+
 	if !strings.HasPrefix(contentType, "multipart/form-data") {
-		data, err := io.ReadAll(io.LimitReader(r.Body, maxUploadBytes))
-		if err != nil {
-			return nil, fmt.Errorf("read body: %w", err)
-		}
-		return data, nil
+		return readDocument(io.LimitReader(r.Body, maxDocBytes+1))
 	}
-	if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
+	if err := r.ParseMultipartForm(maxDocBytes); err != nil {
 		return nil, fmt.Errorf("parse form: %w", err)
 	}
 	f, _, err := r.FormFile("file")
@@ -194,9 +205,18 @@ func readUploadData(r *http.Request, contentType string) ([]byte, error) {
 		return nil, fmt.Errorf("read file field: %w", err)
 	}
 	defer f.Close()
-	data, err := io.ReadAll(io.LimitReader(f, maxUploadBytes))
+	return readDocument(io.LimitReader(f, maxDocBytes+1))
+}
+
+// readDocument reads a document and refuses one past the cap, which a limit reader alone would
+// silently shorten.
+func readDocument(reader io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, fmt.Errorf("read file: %w", err)
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+	if len(data) > maxDocBytes {
+		return nil, fmt.Errorf("document too large: over %d MB", maxDocMB)
 	}
 	return data, nil
 }

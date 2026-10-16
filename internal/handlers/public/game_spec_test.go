@@ -143,58 +143,47 @@ func TestLintDoc_MultipartUpload_MissingFile(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-// --- parseGameDoc unit tests ---
+// --- body cap ---
 
-func TestParseGameDoc_JSONBody(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(validSpecDoc()))
-	req.Header.Set("Content-Type", "application/json")
+// A body past the cap is refused before anything reads it whole. This route is
+// public and the multipart parse spills to disk, so the cap is what keeps one
+// caller from deciding how much of the server's memory and disk to spend.
+//
+// The payload is a valid document padded past the cap with trailing whitespace,
+// which JSON allows: without a cap it would lint cleanly, so a 400 here says
+// the size was the reason rather than the content.
+func TestLintDoc_OversizedBodiesAreRefused(t *testing.T) {
+	oversized := append([]byte(validSpecDoc()), bytes.Repeat([]byte(" "), maxDocBytes)...)
 
-	doc, err := parseGameDoc(req)
+	t.Run("JSON body", func(t *testing.T) {
+		h := &Handler{}
+		req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", bytes.NewReader(oversized))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	require.NoError(t, err)
-	assert.Equal(t, "v8", doc.Rapua)
-	assert.Equal(t, "Test Game", doc.Name)
-}
+		h.LintDoc(w, req)
 
-func TestParseGameDoc_MultipartFile(t *testing.T) {
-	body := &bytes.Buffer{}
-	mw := multipart.NewWriter(body)
-	fw, err := mw.CreateFormFile("file", "game.json")
-	require.NoError(t, err)
-	_, err = fw.Write([]byte(validSpecDoc()))
-	require.NoError(t, err)
-	require.NoError(t, mw.Close())
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "too large")
+	})
 
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
+	t.Run("multipart file", func(t *testing.T) {
+		h := &Handler{}
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		fw, err := mw.CreateFormFile("file", "game.json")
+		require.NoError(t, err)
+		_, err = fw.Write(oversized)
+		require.NoError(t, err)
+		require.NoError(t, mw.Close())
 
-	doc, err := parseGameDoc(req)
+		req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		w := httptest.NewRecorder()
 
-	require.NoError(t, err)
-	assert.Equal(t, "v8", doc.Rapua)
-	assert.Equal(t, "Test Game", doc.Name)
-}
+		h.LintDoc(w, req)
 
-func TestParseGameDoc_InvalidJSON(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`not json`))
-	req.Header.Set("Content-Type", "application/json")
-
-	doc, err := parseGameDoc(req)
-
-	require.Error(t, err)
-	assert.Nil(t, doc)
-}
-
-func TestParseGameDoc_MultipartMissingFileField(t *testing.T) {
-	body := &bytes.Buffer{}
-	mw := multipart.NewWriter(body)
-	require.NoError(t, mw.Close())
-
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
-
-	doc, err := parseGameDoc(req)
-
-	require.Error(t, err)
-	assert.Nil(t, doc)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "too large")
+	})
 }
